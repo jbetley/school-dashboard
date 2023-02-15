@@ -5,7 +5,6 @@
 # rev:     10.31.22
 
 from dash import html, dash_table, Input, Output
-from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 from dash.exceptions import PreventUpdate
 import json

@@ -1,23 +1,22 @@
 Category,2022,2021,2020,2019,2018,2017
-Revenue,0.0,0,0,0,0,0
+Revenue,0,0,0,0,0,0
 State Grants,2146145.58,1558340,1752272,1165789,1578164,1101988
 Federal Grants,1135153.98,680429,700808,473762,425027,178871
 Total Grants,3281299.56,2238769,2453080,1639551,2003191,1280859
-Contributions and Donations,0.0,0,0,0,0,0
-Student Fees,0.0,0,0,0,17146,5374
-Interest Income,5.14,17,26,59,59,119
-Other Income,0.0,118903,8900,4047,4893,13194
-Financial Position,0.0,0,0,0,0,0
-Total Assets,838678.0,620948,501470,534611,665713,511589
-Current Assets,813056.0,552649,315584,279943,302274,136329
-Total Liabilities,743815.0,820793,906858,945480,1046165,1083525
-Current Liabilities,193815.0,270793,256858,195480,196165,133525
-Net Asset Position,94863.0,-199845,-405388,-410869,-380452,-571936
-Financial Activities,0.0,0,0,0,0,0
+Contributions and Donations,0,0,0,0,0,0
+Student Fees,0,0,0,0,17146,5374
+Other Income,5.14,118920,8926,4106,4952,13313
+Financial Position,0,0,0,0,0,0
+Total Assets,838678,620948,501470,534611,665713,511589
+Current Assets,813056,552649,315584,279943,302274,136329
+Total Liabilities,743815,820793,906858,945480,1046165,1083525
+Current Liabilities,193815,270793,256858,195480,196165,133525
+Net Asset Position,94863,-199845,-405388,-410869,-380452,-571936
+Financial Activities,0,0,0,0,0,0
 Operating Revenues,3281304.7,2357689,2462006,1643657,2025289,1299546
 Operating Expenses,2985817.34,2317646,2456525,1674074,1833805,1872205
-Change in Net Assets,295487.36000000034,40043,5481,-30417,191484,-572659
-Supplemental Information,0.0,0,0,0,0,0
+Change in Net Assets,295487.36,40043,5481,-30417,191484,-572659
+Supplemental Information,0,0,0,0,0,0
 Administrative Staff,148042.21,0,0,0,0,0
 Instructional Staff,895280.38,0,0,0,0,0
 Non-Instructional Staff,177089.13,0,0,0,0,0
@@ -25,21 +24,21 @@ Total Personnel Expenses,1409009.3,0,0,0,0,0
 Instructional and Support Staff,895280.38,0,0,0,0,0
 Instructional Supplies,303690.72,0,0,0,0,0
 Management Fee,413712.53,0,0,0,0,0
-Unrestricted Net Assets,94863.0,-199845,-405388,-410869,-380452,-571936
-Unrestricted Cash,575164.0,363222,266733,188521,285313,103652
-Principal Payments,26939.409999999996,100000,100000,100000,50000,0
-Interest Expense,3000.0,7250,8250,9250,13589,0
+Unrestricted Net Assets,94863,-199845,-405388,-410869,-380452,-571936
+Unrestricted Cash,575164,363222,266733,188521,285313,103652
+Principal Payments,26939.41,100000,100000,100000,50000,0
+Interest Expense,3000,7250,8250,9250,13589,0
 Lease/Mortgage Payments,96133.01,189208,193663,160852,165381,192476
-Depreciation/Amortization,15736.679999999998,117587,125482,114082,101697,65236
-Insurance (Facility),0.0,0,0,0,0,0
+Depreciation/Amortization,15736.68,117587,125482,114082,101697,65236
+Insurance (Facility),0,0,0,0,0,0
 Electric and Gas,64433.2,0,0,0,0,0
-Water and Sewer,5812.9800000000005,0,0,0,0,0
+Water and Sewer,5812.98,0,0,0,0,0
 Waste Disposal,6269.75,0,0,0,0,0
-Security Services,0.0,0,0,0,0,0
-Repair and Maintenance,65921.84000000001,0,0,0,0,0
-Enrollment Information,0.0,0,0,0,0,0
-September Count,226.0,198,251,161,227,150
-February Count,215.0,200,209,0,189,177
+Security Services,0,0,0,0,0,0
+Repair and Maintenance,65921.84,0,0,0,0,0
+Enrollment Information,0,0,0,0,0,0
+September Count,226,198,251,161,227,150
+February Count,215,200,209,0,189,177
 ADM Average,220.5,199,230,161,208,163.5
 Audit Information,,0,0,0,0,0
 Auditor,,Donovan,Donovan,Donovan,Donovan,Donovan

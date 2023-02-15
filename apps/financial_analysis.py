@@ -122,10 +122,13 @@ def update_about_page(data):
 
         # adjust the # of ticks based on max value
         # 1) gets the max value in the dataframe
-        # 2) divides the max value by six (arbitrary - adjust this # to increase/decrease # of ticks)
-        # 2) sends the proportionate value to a rounding function that:
+        # 2) divides the max value by a 'step' value (set to six - adjust this # to increase/decrease # of ticks)
+        # 2) sends the proportionate value to 'round_nearest' function that:
         #   a. sets a baseline tick amount (50,000 or 500,000) based on the proportionate value
         #   b. and then calculates a multipler that is the result of proportionate value divided by the baseline tick amount
+
+        max_val = revenue_expenses_data.melt().value.max()
+        step = 6
 
         def round_nearest(x):
             if x > 1000000:
@@ -137,8 +140,7 @@ def update_about_page(data):
             tick = int(multiplier*num)            
             return tick
 
-        max_val = revenue_expenses_data.melt().value.max()
-        tick_val = round_nearest(max_val / 6)
+        tick_val = round_nearest(max_val / step)
 
         revenue_expenses_bar_fig.update_xaxes(showline=False, linecolor='#a9a9a9',ticks='outside', tickcolor='#a9a9a9', title='')
         revenue_expenses_bar_fig.update_yaxes(showgrid=True, gridcolor='#a9a9a9',title='', tickmode = 'linear', tick0 = 0,dtick = tick_val)
@@ -216,8 +218,7 @@ def update_about_page(data):
         )
 
         max_val = assets_liabilities_data.melt().value.max()  # Gets highest value in df
-
-        tick_val = round_nearest(max_val / 6)       # divides value by 6 and rounds to nearest 50000/500000
+        tick_val = round_nearest(max_val / step)       # divides value by step value (6) and rounds to nearest 50000/500000
 
         assets_liabilities_bar_fig.update_xaxes(showline=False, linecolor='#a9a9a9',ticks='outside', tickcolor='#a9a9a9', title='')
         assets_liabilities_bar_fig.update_yaxes(showgrid=True, gridcolor='#a9a9a9',title='', tickmode = 'linear', tick0 = 0,dtick = tick_val)
@@ -263,31 +264,32 @@ def update_about_page(data):
         # Revenue/Expense table requires one year of data, but % Change will be N/A unless there are 2 years
         
         # Get df headers (years) and filter to two most recent (or single if only one year of data)
-        num_years = years
-        num_years.reverse()
-        num_years = num_years[:2]
+        two_year = years
+        two_year.reverse()
+        two_year = two_year[:2]
 
         # If only one year of data, financial position and financial activities tables will have no data
-        if len(num_years) == 1:
+        if len(two_year) == 1:
 
             financial_position_table = financial_activities_table = empty_table
 
         else:
 
             # TODO: This whole section is stupidly drafted
+            # Refactor using per_student code below?
 
             # add back zeros to df for calculation purposes
             finance_analysis = finance_analysis.replace('', 0)
 
-            # Find values for each year (num_years[0] & num_years[1]) by matching category and add to two element list
-            total_assets = [finance_analysis.loc[finance_analysis['Category'].isin(['Total Assets'])][num_years[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Total Assets'])][num_years[1]].values[0]]
-            current_assets = [finance_analysis.loc[finance_analysis['Category'].isin(['Current Assets'])][num_years[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Current Assets'])][num_years[1]].values[0]]
-            total_liabilities = [finance_analysis.loc[finance_analysis['Category'].isin(['Total Liabilities'])][num_years[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Total Liabilities'])][num_years[1]].values[0]]
-            current_liabilities = [finance_analysis.loc[finance_analysis['Category'].isin(['Current Liabilities'])][num_years[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Current Liabilities'])][num_years[1]].values[0]]
-            net_asset_position = [finance_analysis.loc[finance_analysis['Category'].isin(['Net Asset Position'])][num_years[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Net Asset Position'])][num_years[1]].values[0]]
-            operating_revenue = [finance_analysis.loc[finance_analysis['Category'].isin(['Operating Revenues'])][num_years[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Operating Revenues'])][num_years[1]].values[0]]
-            operating_expenses = [finance_analysis.loc[finance_analysis['Category'].isin(['Operating Expenses'])][num_years[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Operating Expenses'])][num_years[1]].values[0]]
-            change_net_assets = [finance_analysis.loc[finance_analysis['Category'].isin(['Change in Net Assets'])][num_years[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Change in Net Assets'])][num_years[1]].values[0]]
+            # Find values for each year (two_year[0] & two_year[1]) by matching category and add to two element list
+            total_assets = [finance_analysis.loc[finance_analysis['Category'].isin(['Total Assets'])][two_year[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Total Assets'])][two_year[1]].values[0]]
+            current_assets = [finance_analysis.loc[finance_analysis['Category'].isin(['Current Assets'])][two_year[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Current Assets'])][two_year[1]].values[0]]
+            total_liabilities = [finance_analysis.loc[finance_analysis['Category'].isin(['Total Liabilities'])][two_year[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Total Liabilities'])][two_year[1]].values[0]]
+            current_liabilities = [finance_analysis.loc[finance_analysis['Category'].isin(['Current Liabilities'])][two_year[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Current Liabilities'])][two_year[1]].values[0]]
+            net_asset_position = [finance_analysis.loc[finance_analysis['Category'].isin(['Net Asset Position'])][two_year[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Net Asset Position'])][two_year[1]].values[0]]
+            operating_revenue = [finance_analysis.loc[finance_analysis['Category'].isin(['Operating Revenues'])][two_year[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Operating Revenues'])][two_year[1]].values[0]]
+            operating_expenses = [finance_analysis.loc[finance_analysis['Category'].isin(['Operating Expenses'])][two_year[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Operating Expenses'])][two_year[1]].values[0]]
+            change_net_assets = [finance_analysis.loc[finance_analysis['Category'].isin(['Change in Net Assets'])][two_year[0]].values[0],finance_analysis.loc[finance_analysis['Category'].isin(['Change in Net Assets'])][two_year[1]].values[0]]
 
             # # Accounts for missing data (as a result of the DF being cleaned for display in index.py)
             # total_assets = [0 if x=='' else x for x in total_assets]
@@ -307,7 +309,7 @@ def update_about_page(data):
                 ['Net Asset Position', '{:,.2f}'.format(net_asset_position[0]), '{:,.2f}'.format(net_asset_position[1]), '{:.2%}'.format((net_asset_position[0] - net_asset_position[1]) / abs(net_asset_position[1]))]
             ]
 
-            financial_position_keys = ['Financial Position'] + num_years + ['% Change']
+            financial_position_keys = ['Financial Position'] + two_year + ['% Change']
             financial_position_data = [dict(zip(financial_position_keys, l)) for l in financial_position]
 
             financial_position_table = [
@@ -382,7 +384,7 @@ def update_about_page(data):
                 ['Change in Net Assets', '{:,.2f}'.format(change_net_assets[0]), '{:,.2f}'.format(change_net_assets[1]), '{:.2%}'.format((change_net_assets[0] - change_net_assets[1]) / abs(change_net_assets[1]))]
             ]
 
-            financial_activities_keys = ['Financial Activities'] + num_years + ['% Change']
+            financial_activities_keys = ['Financial Activities'] + two_year + ['% Change']
             financial_activities_data = [dict(zip(financial_activities_keys, l)) for l in financial_activities]
 
             financial_activities_table = [
@@ -463,7 +465,7 @@ def update_about_page(data):
         else:
             # display total number of display years + 1 (for category column)
 
-            ratio_display = (len(num_years)+1)
+            ratio_display = (len(two_year)+1)
             financial_ratios_data = financial_ratios_data.iloc[: , :ratio_display]
 
         # ['Occupancy Ratio (Occupancy Expense / Total Revenue) = Measures the percentage of total revenue used to occupy and maintain school facilities. A school\'s occupancy ratio generally should be less than 25%.],
@@ -477,6 +479,8 @@ def update_about_page(data):
         #   Instructional Staff Expense = Form 9 Object Codes between 110 & 290, excluding 115, 120, 121, 149, and 150  
         #   Occupancy Expense = Form 9 Object Codes 411, 431, 441, 450, between 621 & 626, and between 710 & 720
         #   Personnel Expense = Form 9 Object Codes between 110 & 290
+
+        # TODO: ADD 'per-pupil' % for each category?
 
             # markdown_table = """|**Occupancy Expense** (Object Codes 411, 431, 441, 450, between 621 & 626, and between 710 & 720)|
             # |:-----------:|
@@ -674,86 +678,127 @@ def update_about_page(data):
             ['Change in Net Assets']
         ]
 
-        # range is either (0,1) or (0,2) - so loops once (CY) or twice (CY & PY)
-
+        # change all cols to numeric except for Category
         for col in finance_analysis.columns[1:]:
             finance_analysis[col]=pd.to_numeric(finance_analysis[col], errors='coerce')
 
-        for i in range(0,len(num_years)):
+        # get per student data for applicable 2 year period
+        per_student_categories = ['State Grants', 'Contributions and Donations', 'Operating Revenues', 'Operating Expenses', 'Change in Net Assets', 'ADM Average']
+        per_student_data = finance_analysis.loc[finance_analysis['Category'].isin(per_student_categories)]
+        per_student_data = per_student_data.iloc[:, 0:len(two_year)+1]
 
-            state_grants = finance_analysis.loc[finance_analysis['Category'].isin(['State Grants'])][num_years[i]].values[0]
-            other_income = finance_analysis.loc[finance_analysis['Category'].isin(['Other Income'])][num_years[i]].values[0]
-            operating_revenue = finance_analysis.loc[finance_analysis['Category'].isin(['Operating Revenues'])][num_years[i]].values[0]
-            operating_expenses = finance_analysis.loc[finance_analysis['Category'].isin(['Operating Expenses'])][num_years[i]].values[0]
-            change_net_assets = finance_analysis.loc[finance_analysis['Category'].isin(['Change in Net Assets'])][num_years[i]].values[0]
+        # temporarily store and drop 'Category' column
+        tmp_category = per_student_data['Category']
+        per_student_data.drop('Category', inplace=True, axis=1)
 
-
-            # adm_average = finance_analysis.loc[finance_analysis['Category'].isin(['ADM Average'])][num_years[i]].values[0]
-            # if adm_average == '':
-            #      adm_average = finance_analysis.loc[finance_analysis['Category'].isin(['February Count'])][num_years[i]].values[0]
-            #      if adm_average == '':
-            #         adm_average = finance_analysis.loc[finance_analysis['Category'].isin(['September Count'])][num_years[i]].values[0]
-            # adm_average = float(adm_average)
-
-            # get all adm values as a series
-            adm_average = finance_analysis[finance_analysis['Category'].isin(['ADM Average', 'February Count','September Count'])][num_years[i]]
-            
-            # reverse order (so most recent count is first)
-            adm_average = adm_average.iloc[::-1]
-            
-            adm_average.replace('', np.nan, inplace=True)
-
-            # find the first valid index (first non-nan)
-            adm_average = adm_average.loc[adm_average.first_valid_index()]
-
-            per_student[0].append(float(state_grants/adm_average))
-            per_student[1].append(float(other_income/adm_average))
-            per_student[2].append(float(operating_revenue/adm_average))
-            per_student[3].append(float(operating_expenses/adm_average))
-            per_student[4].append(float(change_net_assets/adm_average))
-
-        # calculate percentage change if 2 years of data
-        if len(num_years) > 1:  
-
-            state_grant_change = (per_student[0][1] - per_student[0][2]) / abs(per_student[0][2])
-            other_income_change = (per_student[1][1] - per_student[1][2]) / abs(per_student[1][2])
-            operating_revenue_change = (per_student[2][1] - per_student[2][2]) / abs(per_student[2][2])
-            operating_expenses_change = (per_student[3][1] - per_student[3][2]) / abs(per_student[3][2])
-            change_net_assets_change = (per_student[4][1] - per_student[4][2]) / abs(per_student[4][2])
-
-            per_student[0].append(state_grant_change)
-            per_student[1].append(other_income_change)
-            per_student[2].append(operating_revenue_change)
-            per_student[3].append(operating_expenses_change)
-            per_student[4].append(change_net_assets_change)
-
-            # format each list for display
-            for i, x in enumerate(per_student):
-                x[1] = f'{x[1]:,.2f}'
-                x[2] = f'{x[2]:,.2f}'
-                x[3] = f'{x[3]:,.2%}'
-
-        # if single year of data, change is N/A
+        # divide each row by the last row in the df (which should be ADM Average)
+        per_student_data = per_student_data.div(per_student_data.iloc[len(per_student_data)-1])
+        
+        # calculate % Change (if there are two years of data)
+        if len(two_year) > 1:
+            per_student_data['% Change'] = (per_student_data[two_year[0]] - per_student_data[two_year[1]]).div(abs(per_student_data[two_year[1]]))
         else:
+            per_student_data['% Change'] = 'N/A'
 
-            for i in range(0,5):
-                per_student[i].append('N/A')
-        
-            # format CY of each list for display
-            for i, x in enumerate(per_student):
-                x[1] = f'{x[1]:,.2f}'
+        # # range is either (0,1) or (0,2) - so loops once (CY) or twice (CY & PY)
+        # for i in range(0,len(two_year)):
 
-        # TODO: Still doesnt work with '%' formatting (minor issue)
-        per_student = [[x.replace('nan','N/A') for x in l] for l in per_student]
-        per_student = [[x.replace('inf','N/A') for x in l] for l in per_student]
+        #     state_grants = finance_analysis.loc[finance_analysis['Category'].isin(['State Grants'])][two_year[i]].values[0]
+        #     other_income = finance_analysis.loc[finance_analysis['Category'].isin(['Other Income'])][two_year[i]].values[0]
+        #     operating_revenue = finance_analysis.loc[finance_analysis['Category'].isin(['Operating Revenues'])][two_year[i]].values[0]
+        #     operating_expenses = finance_analysis.loc[finance_analysis['Category'].isin(['Operating Expenses'])][two_year[i]].values[0]
+        #     change_net_assets = finance_analysis.loc[finance_analysis['Category'].isin(['Change in Net Assets'])][two_year[i]].values[0]
+
+        #     # adm_average = finance_analysis.loc[finance_analysis['Category'].isin(['ADM Average'])][two_year[i]].values[0]
+        #     # if adm_average == '':
+        #     #      adm_average = finance_analysis.loc[finance_analysis['Category'].isin(['February Count'])][two_year[i]].values[0]
+        #     #      if adm_average == '':
+        #     #         adm_average = finance_analysis.loc[finance_analysis['Category'].isin(['September Count'])][two_year[i]].values[0]
+        #     # adm_average = float(adm_average)
+
+        #     # get all adm values as a series
+        #     adm_average = finance_analysis[finance_analysis['Category'].isin(['ADM Average', 'February Count','September Count'])][two_year[i]]
+            
+        #     # reverse order (so most recent count is first)
+        #     adm_average = adm_average.iloc[::-1]
+            
+        #     adm_average.replace('', np.nan, inplace=True)
+
+        #     # find the first valid index (first non-nan)
+        #     adm_average = adm_average.loc[adm_average.first_valid_index()]
+
+        #     per_student[0].append(float(state_grants/adm_average))
+        #     per_student[1].append(float(other_income/adm_average))
+        #     per_student[2].append(float(operating_revenue/adm_average))
+        #     per_student[3].append(float(operating_expenses/adm_average))
+        #     per_student[4].append(float(change_net_assets/adm_average))
+
+        # # calculate percentage change if 2 years of data
+        # if len(two_year) > 1:
+
+        #     state_grant_change = (per_student[0][1] - per_student[0][2]) / abs(per_student[0][2])
+        #     other_income_change = (per_student[1][1] - per_student[1][2]) / abs(per_student[1][2])
+        #     operating_revenue_change = (per_student[2][1] - per_student[2][2]) / abs(per_student[2][2])
+        #     operating_expenses_change = (per_student[3][1] - per_student[3][2]) / abs(per_student[3][2])
+        #     change_net_assets_change = (per_student[4][1] - per_student[4][2]) / abs(per_student[4][2])
+
+        #     per_student[0].append(state_grant_change)
+        #     per_student[1].append(other_income_change)
+        #     per_student[2].append(operating_revenue_change)
+        #     per_student[3].append(operating_expenses_change)
+        #     per_student[4].append(change_net_assets_change)
+
+        #     print(per_student)
+        #     # format each list for display
+        #     for i, x in enumerate(per_student):
+        #         x[1] = f'{x[1]:,.2f}'
+        #         x[2] = f'{x[2]:,.2f}'
+        #         x[3] = f'{x[3]:,.2%}'
+
+        # # if single year of data, change is N/A
+        # else:
+
+        #     for i in range(0,5):
+        #         per_student[i].append('N/A')
         
-        per_student_keys = ['Revenue/Expense per Student'] + num_years + ['% Change']
-        per_student_data = [dict(zip(per_student_keys, l)) for l in per_student]
+        #     # format CY of each list for display
+        #     for i, x in enumerate(per_student):
+        #         x[1] = f'{x[1]:,.2f}'
+
+        # # TODO: Still doesnt work with '%' formatting (minor issue)
+        # per_student = [[x.replace('nan','N/A') for x in l] for l in per_student]
+        # per_student = [[x.replace('inf','N/A') for x in l] for l in per_student]
+        
+        # per_student_keys = ['Revenue/Expense per Student'] + two_year + ['% Change']
+        # per_student_data = [dict(zip(per_student_keys, l)) for l in per_student]
+
+        # print(per_student_data)
+
+        per_student_data.rename(columns={'Category':'Revenue/Expense per Student'}, inplace=True)
+        per_student_data = per_student_data.iloc[:-1] # drop last row
+        
+        # Force correct format for display of df in datatable
+        # since we are converting values to strings, we need to iterate through each series (cannot vectorize)
+        # TODO: Better way to do this?
+        for year in two_year:
+            per_student_data[year] = pd.Series(['{:,.2f}'.format(val) for val in per_student_data[year]], index = per_student_data.index)
+        per_student_data['% Change'] = pd.Series(["{0:.2f}%".format(val * 100) for val in per_student_data['% Change']], index = per_student_data.index)
+
+        # replace inf (divide by zero) and '0' with N/A
+        #per_student_data.replace([np.inf, -np.inf, 0], 'N/A', inplace=True)
+        # TODO: Confirm that this works post formatting (because everythin is now a string)
+        per_student_data.replace(['inf%', '0.00'], 'N/A', inplace=True)
+
+        # reinsert Category column
+        per_student_data.insert(loc=0,column='Category',value = tmp_category)
 
         per_student_table = [
                         dash_table.DataTable(
-                            data = per_student_data,
-                            columns = [{'name': i, 'id': i} for i in per_student_keys],
+                            # data = per_student_data,
+                            # columns = [{'name': i, 'id': i} for i in per_student_keys],
+                            per_student_data.to_dict('records'),
+                            columns = [{'name': i, 'id': i} for i in per_student_data.columns],
+                            #columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.money(2)} for i in per_student_data.columns],
                             style_data={
                                 'fontSize': '12px',
                                 'border': 'none',

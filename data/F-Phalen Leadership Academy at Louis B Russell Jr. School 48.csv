@@ -1,45 +1,44 @@
 Category,2022,2021
-Revenue,0.0,0
-State Grants,2731447.61,0
-Federal Grants,1878033.73,0
-Total Grants,4609481.34,2674092
-Contributions and Donations,0.0,1222084
-Student Fees,0.0,0
-Interest Income,0.0,0
-Other Income,644004.0,31424
-Financial Position,0.0,0
-Total Assets,634648.0,797447
-Current Assets,634648.0,797447
-Total Liabilities,508467.0,925636
-Current Liabilities,508467.0,925636
-Net Asset Position,126181.0,-128189
-Financial Activities,0.0,0
-Operating Revenues,5253485.34,3927600
+Revenue,0,0
+State Grants,2731447.61,1868372
+Federal Grants,1878033.73,805718
+Total Grants,4609481.34,2674090
+Contributions and Donations,0,1222084
+Student Fees,0,0
+Other Income,644004,31424
+Financial Position,0,0
+Total Assets,634648,797447
+Current Assets,634648,797447
+Total Liabilities,508467,925636
+Current Liabilities,508467,925636
+Net Asset Position,126181,-128189
+Financial Activities,0,0
+Operating Revenues,5253485.34,3927598
 Operating Expenses,4999114.99,4039407
-Change in Net Assets,254370.34999999963,-111807
-Supplemental Information,0.0,0
+Change in Net Assets,254370.35,-111807
+Supplemental Information,0,0
 Administrative Staff,271327.64,0
-Instructional Staff,1603921.6600000001,0
+Instructional Staff,1603921.66,0
 Non-Instructional Staff,295893.46,0
-Total Personnel Expenses,2773131.9200000004,0
-Instructional and Support Staff,1603921.6600000001,0
+Total Personnel Expenses,2773131.92,0
+Instructional and Support Staff,1603921.66,0
 Instructional Supplies,806462.86,0
 Management Fee,166006.07,0
-Unrestricted Net Assets,126181.0,-128189
-Unrestricted Cash,444472.0,417203
-Principal Payments,0.0,0
-Interest Expense,0.0,0
-Lease/Mortgage Payments,501228.0,501225
-Depreciation/Amortization,0.0,0
+Unrestricted Net Assets,126181,-128189
+Unrestricted Cash,444472,417203
+Principal Payments,0,0
+Interest Expense,0,0
+Lease/Mortgage Payments,501228,501225
+Depreciation/Amortization,0,0
 Insurance (Facility),40030.14,0
-Electric and Gas,0.0,0
-Water and Sewer,0.0,0
-Waste Disposal,0.0,0
-Security Services,0.0,0
-Repair and Maintenance,0.0,0
-Enrollment Information,0.0,0
-September Count,258.0,211
-February Count,271.0,235
+Electric and Gas,0,0
+Water and Sewer,0,0
+Waste Disposal,0,0
+Security Services,0,0
+Repair and Maintenance,0,0
+Enrollment Information,0,0
+September Count,258,211
+February Count,271,235
 ADM Average,264.5,223
 Audit Information,,0
 Auditor,,CLA

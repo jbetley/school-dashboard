@@ -8,12 +8,9 @@ from dash import html, dash_table, Input, Output
 from dash.exceptions import PreventUpdate
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
-#import plotly.express as px
-# import itertools
 import json
 import pandas as pd
 import numpy as np
-# import re
 
 from app import app
 np.warnings.filterwarnings('ignore')

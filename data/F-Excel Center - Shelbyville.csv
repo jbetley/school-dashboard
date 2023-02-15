@@ -1,45 +1,44 @@
 Category,2022,2021,2020,2019,2018,2017
-Revenue,0.0,0,0,0,0,0
-State Grants,1058156.0,1146872,1086826,1040983,849299,503533
-Federal Grants,80682.0,54112,16926,16711,0,0
-Total Grants,1138838.0,1200984,1103752,1057694,849299,503533
-Contributions and Donations,66.0,0,0,24,0,0
-Student Fees,0.0,0,0,0,0,0
-Interest Income,0.0,0,0,0,0,0
-Other Income,20740.0,15606,610951,15778,86857,100
-Financial Position,0.0,0,0,0,0,0
-Total Assets,388067.0,376546,328695,265383,169200,168861
-Current Assets,362897.0,326278,277562,183585,54963,17945
-Total Liabilities,39473.0,53494,35196,23918,20506,44018
-Current Liabilities,39473.0,53494,35196,23918,20506,44018
-Net Asset Position,348594.0,323052,293499,241465,148694,124843
-Financial Activities,0.0,0,0,0,0,0
-Operating Revenues,1159644.0,1216590,1714703,1073496,936156,503633
-Operating Expenses,1134097.0,1187037,1662669,980725,940543,723012
-Change in Net Assets,25547.0,29553,52034,92771,-4387,-219379
-Supplemental Information,0.0,0,0,0,0,0
-Administrative Staff,162627.0,0,0,0,0,0
-Instructional Staff,231931.0,0,0,0,0,0
-Non-Instructional Staff,29694.0,0,0,0,0,0
-Total Personnel Expenses,708550.0,0,0,0,0,0
-Instructional and Support Staff,345283.0,0,0,0,0,0
-Instructional Supplies,51318.0,0,0,0,0,0
-Management Fee,134760.0,0,0,0,0,0
-Unrestricted Net Assets,318594.0,293052,293499,241465,148694,124843
-Unrestricted Cash,349839.0,317710,270538,169530,6366,0
-Principal Payments,0.0,0,0,0,0,0
-Interest Expense,0.0,0,0,0,0,0
-Lease/Mortgage Payments,83364.0,83364,83364,83364,83364,61517
-Depreciation/Amortization,25709.0,40567,36589,41596,43424,41051
-Insurance (Facility),0.0,0,0,0,0,0
-Electric and Gas,28598.0,0,0,0,0,0
-Water and Sewer,0.0,0,0,0,0,0
-Waste Disposal,0.0,0,0,0,0,0
-Security Services,8221.0,0,0,0,0,0
-Repair and Maintenance,2393.0,0,0,0,0,0
-Enrollment Information,0.0,0,0,0,0,0
-September Count,155.0,163,155,154,124,84
-February Count,158.0,176,167,0,115,84
+Revenue,0,0,0,0,0,0
+State Grants,1058156,1146872,1086826,1040983,849299,503533
+Federal Grants,80682,54112,16926,16711,0,0
+Total Grants,1138838,1200984,1103752,1057694,849299,503533
+Contributions and Donations,66,0,0,24,0,0
+Student Fees,0,0,0,0,0,0
+Other Income,20740,15606,610951,15778,86857,100
+Financial Position,0,0,0,0,0,0
+Total Assets,388067,376546,328695,265383,169200,168861
+Current Assets,362897,326278,277562,183585,54963,17945
+Total Liabilities,39473,53494,35196,23918,20506,44018
+Current Liabilities,39473,53494,35196,23918,20506,44018
+Net Asset Position,348594,323052,293499,241465,148694,124843
+Financial Activities,0,0,0,0,0,0
+Operating Revenues,1159644,1216590,1714703,1073496,936156,503633
+Operating Expenses,1134097,1187037,1662669,980725,940543,723012
+Change in Net Assets,25547,29553,52034,92771,-4387,-219379
+Supplemental Information,0,0,0,0,0,0
+Administrative Staff,162627,0,0,0,0,0
+Instructional Staff,231931,0,0,0,0,0
+Non-Instructional Staff,29694,0,0,0,0,0
+Total Personnel Expenses,708550,0,0,0,0,0
+Instructional and Support Staff,345283,0,0,0,0,0
+Instructional Supplies,51318,0,0,0,0,0
+Management Fee,134760,0,0,0,0,0
+Unrestricted Net Assets,318594,293052,293499,241465,148694,124843
+Unrestricted Cash,349839,317710,270538,169530,6366,0
+Principal Payments,0,0,0,0,0,0
+Interest Expense,0,0,0,0,0,0
+Lease/Mortgage Payments,83364,83364,83364,83364,83364,61517
+Depreciation/Amortization,25709,40567,36589,41596,43424,41051
+Insurance (Facility),0,0,0,0,0,0
+Electric and Gas,28598,0,0,0,0,0
+Water and Sewer,0,0,0,0,0,0
+Waste Disposal,0,0,0,0,0,0
+Security Services,8221,0,0,0,0,0
+Repair and Maintenance,2393,0,0,0,0,0
+Enrollment Information,0,0,0,0,0,0
+September Count,155,163,155,154,124,84
+February Count,158,176,167,0,115,84
 ADM Average,156.5,169.5,161,154,119.5,84
 Audit Information,,0,0,0,0,0
 Auditor,,Blue & Co,Blue & Co,Greenwalt,Greenwalt,Greenwalt

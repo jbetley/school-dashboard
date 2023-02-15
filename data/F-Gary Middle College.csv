@@ -1,47 +1,47 @@
 Category,2022,2021,2020,2019
 Revenue,0,0,0,0
-State Grants,2031210,1750870,1743496,1378125
-Federal Grants,168011,68446,283567,533148
-Total Grants,2199221,1819316,2027063,1911273
-Contributions and Donations,117,0,0,0
+State Grants,1354107,1272476,1627919,1770037
+Federal Grants,581838,170525,196626,145210
+Total Grants,1935945,1443001,1824545,1915247
+Contributions and Donations,0,0,0,0
 Student Fees,0,0,0,0
-Other Income,17514,20658,26645,0
-Financial Position,0,0,0,0
-Total Assets,796073,713492,909640,1278137
-Current Assets,593613,316572,291119,452930
-Total Liabilities,352196,553215,661874,1314788
-Current Liabilities,352196,553215,661874,1314788
-Net Asset Position,442877,160277,247766,-36651
-Financial Activities,0,0,0,0
-Operating Revenues,2216852,1839974,2053708,1911273
-Operating Expenses,1934251,1927463,1769291,1948222
-Change in Net Assets,282601,-87489,284417,-36949
-Supplemental Information,0,0,0,0
-Administrative Staff,139573,0,0,0
-Instructional Staff,355341,0,0,0
-Non-Instructional Staff,37464,0,0,0
-Total Personnel Expenses,1073571,0,0,0
-Instructional and Support Staff,606774,0,0,0
-Instructional Supplies,66564,0,0,0
-Management Fee,259143,0,0,0
-Unrestricted Net Assets,412877,140277,247766,-36949
-Unrestricted Cash,529743,297588,216702,81183
-Principal Payments,0,0,0,0
-Interest Expense,0,0,0,0
-Lease/Mortgage Payments,211219,211219,211219,211219
-Depreciation/Amortization,194459,221603,217082,205122
-Insurance (Facility),0,0,0,0
-Electric and Gas,0,0,0,0
-Water and Sewer,0,0,0,0
-Waste Disposal,0,0,0,0
-Security Services,2542,0,0,0
-Repair and Maintenance,8738,0,0,0
+Other Income,150923,491740,240058,79431
+Financial Position,0,,,0
+Total Assets,1377497,1578659,1433168,1285688
+Current Assets,831879,1578659,1433168,1285688
+Total Liabilities,247742,243757,226613,276862
+Current Liabilities,157284,243757,226613,276862
+Net Asset Position,1129754,1334902,1206555,1008826
+Financial Activities,0,,,
+Operating Revenues,2086868,1934741,2064603,1994678
+Operating Expenses,2703607,1806394,1866874,1729335
+Change in Net Assets,-616739,128347,197729,265343
+Supplemental Information,0,,,0
+Administrative Staff,286511.35,,,0
+Instructional Staff,424576.6,,,0
+Non-Instructional Staff,228589.54,,,0
+Total Personnel Expenses,1302832,,,0
+Instructional and Support Staff,537077.11,,,0
+Instructional Supplies,357236.65,,,0
+Management Fee,264654,,,0
+Unrestricted Net Assets,1881652,1334902,1206555,1008826
+Unrestricted Cash,694425,1057813,823757,632019
+Principal Payments,15000,,,0
+Interest Expense,2008,,,0
+Lease/Mortgage Payments,65463,52895,52821,52757
+Depreciation/Amortization,127201.11,121522,124473,129085
+Insurance (Facility),27252,0,0,0
+Electric and Gas,56686,0,0,0
+Water and Sewer,3619,0,0,0
+Waste Disposal,768,0,0,0
+Security Services,699,0,0,0
+Repair and Maintenance,54470,0,0,0
 Enrollment Information,0,0,0,0
-September Count,273,274,258,245
-February Count,282,244,260,0
-ADM Average,277.5,259,259,245
+September Count,141,108,133,122
+February Count,,109,112,0
+ADM Average,,108.5,122,122
 Audit Information,,0,0,0
-Auditor,,Blue & Co,Blue & Co,Greenwalt
+Auditor,,Crowe,Crowe,Crowe
 Audit FY,,2021,2020,2019
 2.1.a|The school effectively established and monitored budgets.,,MS,MS,MS
 2.1.b|The school implemented appropriate financial policies and practices.,,MS,MS,MS
@@ -52,7 +52,7 @@ Audit FY,,2021,2020,2019
 "3.3|The school followed all applicable laws, rules and regulations (including the Individuals with Disabilities Education Act, Section 504 of the Rehabilitation Act of 1973, and the Americans with Disabilities Act, and Article 7) and all relevant provisions of the charter agreement with respect to the rights of students with disabilities",,MS,MS,MS
 "3.4|The school followed all applicable laws, rules, regulations (including Title III of the Elementary and Secondary Education Act (ESEA), as amended by the Every Student Succeeds Act of 2015 (ESSA) and US Department of Education authorities) and all relevant provisions of the charter agreement with respect to the rights of English Language Learner (ELL) students",,MS,MS,MS
 3.5|The school protected the rights of students.,,MS,MS,MS
-"3.6|The organizer complied with applicable laws, rules and regulations, and all relevant provisions of the charter agreement relating to governance of the school.",,MS,MS,MS
+"3.6|The organizer complied with applicable laws, rules and regulations, and all relevant provisions of the charter agreement relating to governance of the school.",,MS,DNMS,MS
 3.7|The school met ICSB and IDOE reporting requirements.,,MS,MS,MS
 "3.8|The school complied with applicable laws, rules and regulations, and relevant provisions of the charter agreement relating to safety, security, and health related services.",,MS,MS,MS
 "3.9|The school complied with all other applicable laws, rules and regulations, and the provisions of the charter.",,MS,MS,MS
@@ -61,4 +61,4 @@ Audit is free of findings of significant deficiency,,,,
 Audit is free of instances of noncompliance under GAAS,,,,
 Audit is free of questioned costs,,,,
 Audit includes an unqualified opinion,,,,
-Notes,,Revenue & Expense totals do not include interfund transfers.,,
+Notes,,,,

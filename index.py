@@ -113,9 +113,14 @@ def getRating(data,threshold,flag):
 # Caclulates metrics based on ICSB Accountability System financial framework
 def calculateMetrics(metrics):
 
+    # NOTE: Do not want to include pre-opening years where there is financial activity, but the school is not receiving
+    # state or federal grants - this statement includes in the dataset only those columns where 'State Grants' (index = 1) is not equal to '0'
+    metrics = metrics.loc[:,~(metrics.iloc[1]=='0')]
+
     columns = list(metrics)
 
     # get year headers as array of strings in descending order -> 2021, 2020, 2019, etc.
+    
     year = columns
     del year[0]
 
@@ -149,7 +154,7 @@ def calculateMetrics(metrics):
     for col in columns:
         metrics[col] = pd.to_numeric(metrics[col], errors='coerce')
 
-    # Loop through each column
+    ### Calculate Metrics - loop through each column ('i' is equal to the index of each column starting with most recent)
     for col in columns:
         i = metrics.columns.get_loc(col) - 1
 
@@ -581,7 +586,9 @@ def load_data(school, year):
     for col in school_adm.columns:
         school_adm[col]=pd.to_numeric(school_adm[col], errors='coerce')
 
-    if school_adm.sum(axis = 1).values[0] == 0:   # True if all columns are equal to 0
+    financial_info_adm = school_adm.copy()  # make a copy for financial info df
+
+    if school_adm.sum(axis = 1).values[0] == 0:   # true if all columns are equal to 0
         school_adm_dict = {}
 
     else:
@@ -654,7 +661,8 @@ def load_data(school, year):
             # select only up to the first 6 columns of the financial df (category + maximum of 5 years)
             school_finance = school_finance.iloc[: , :6]
 
-            school_metrics = school_finance.copy()
+## TODO: DO I NEED TO MAKE COPY HERE?
+            school_metrics = school_finance.copy() # make copy for financial metrics
 
             for col in school_finance.columns:
                 school_finance[col]=pd.to_numeric(school_finance[col], errors='coerce').fillna(school_finance[col]).tolist()
@@ -663,25 +671,26 @@ def load_data(school, year):
             years.pop(0)
             years.reverse()
 
-            financial_information = school_finance.drop(school_finance.index[42:])
+            financial_information = school_finance.drop(school_finance.index[41:])
             financial_information = financial_information.replace(np.nan, '',regex=True)
 
             for col in financial_information.columns:
                 financial_information[col]=financial_information[col].replace(0.0, '')
 
+########## TODO: DOES THIS DO ANYTHING AT THIS MPOINT?
             # NOTE: Bit of a kludge. Dash datatable 'FormatTemplate' affects all numeric rows. So we change the
             # last 7 rows (Enrollment, Audit info) to str type so data isn't automatically formatted
-            for p in range(36,42):
-                financial_information.loc[p] = financial_information.loc[p].astype(str)
-
+            # for p in range(36,42):
+            #     financial_information.loc[p] = financial_information.loc[p].astype(str)
             # Strip trailing zero from audit year (YYYY) - gets added during string conversion
-            def stripper(val):
-                if '20' in val:
-                    return val[:-2]
-                else:
-                    return val
+            # def stripper(val):
+            #     if '20' in val:
+            #         return val[:-2]
+            #     else:
+            #         return val
 
-            financial_information.loc[41] = financial_information.loc[41].apply(stripper)
+            # financial_information.loc[41] = financial_information.loc[41].apply(stripper)
+###########
 
             # Financial Ratios (processed from Form 9 file(s))
 
@@ -704,6 +713,34 @@ def load_data(school, year):
 
                 # add ratio data to financial_information
                 financial_information = pd.concat([financial_information, financial_ratios_data], ignore_index=True)
+
+
+                # add ADM data to financial_information
+                ## TODO: THIS IS DUMB
+
+                # filter by header
+                sept = financial_info_adm.loc[:, financial_info_adm.columns.str.contains('September')]
+                # reverse order
+                sept = sept[sept.columns[::-1]] 
+                # ensure adm df length is same
+                sept = sept.iloc[: , :(len(financial_information.columns) - 1)] 
+
+                feb = financial_info_adm.loc[:, financial_info_adm.columns.str.contains('February')]
+                feb = feb[feb.columns[::-1]] # reverse
+                feb = feb.iloc[: , :(len(financial_information.columns) - 1)] # ensure same number of years
+                
+                # create a list of the averages of the two months for each year
+                a = sept.values.flatten().tolist()
+                b = feb.values.flatten().tolist()
+                c = [(g + h) / 2 for g, h in zip(a, b)]
+                c.insert(0, 'ADM Average')
+
+                # insert values into financial information datafarame
+                sept.insert(loc=0, column='Category', value = 'September Count')
+                financial_information.loc[financial_information['Category'] == 'September Count'] = [sept.values.flatten().tolist()]
+                feb.insert(loc=0, column='Category', value = 'February Count')
+                financial_information.loc[financial_information['Category'] == 'February Count'] = [feb.values.flatten().tolist()]
+                financial_information.loc[financial_information['Category'] == 'ADM Average'] = [c]
 
                 # in some cases, a school will have ratio calculations, but no other financial data (e.g., when a
                 # school existed prior to being required to report financial information to ICSB). In this case, all

@@ -471,6 +471,7 @@ def update_about_page(school, year, data):
                 
                 # merge dataframes and send to chart function
                 fig16a1_all_data = pd.concat([fig16a1_corp_data,fig16a1_comp_data,fig16a1_k8_school_data])
+                print(fig16a1_all_data)
                 fig16a1 = make_group_bar_chart(fig16a1_all_data) #,'Comparison: ELA Proficiency by Ethnicity')
 
             else:

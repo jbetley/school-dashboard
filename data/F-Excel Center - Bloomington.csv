@@ -1,45 +1,44 @@
 Category,2022,2021,2020
-Revenue,0.0,0,0
-State Grants,740693.0,1107628,828799
-Federal Grants,65250.0,188281,464887
-Total Grants,805943.0,1295909,1293686
-Contributions and Donations,0.0,0,29528
-Student Fees,0.0,0,0
-Interest Income,0.0,0,0
-Other Income,12137.0,32289,24
-Financial Position,0.0,0,0
-Total Assets,687090.0,941646,1141518
-Current Assets,225809.0,277205,288474
-Total Liabilities,973843.0,960271,1194313
-Current Liabilities,973843.0,960271,1194313
-Net Asset Position,-286753.0,-18625,-52795
-Financial Activities,0.0,0,0
-Operating Revenues,818080.0,1328198,1323238
-Operating Expenses,1086209.0,1294028,1327715
-Change in Net Assets,-268129.0,34170,-4477
-Supplemental Information,0.0,0,0
-Administrative Staff,127863.0,0,0
-Instructional Staff,166130.0,0,0
-Non-Instructional Staff,33170.0,0,0
-Total Personnel Expenses,608841.0,0,0
-Instructional and Support Staff,315699.0,0,0
-Instructional Supplies,66995.0,0,0
-Management Fee,-60391.0,0,0
-Unrestricted Net Assets,-316753.0,-18625,-52795
-Unrestricted Cash,212202.0,257896,137508
-Principal Payments,0.0,0,0
-Interest Expense,0.0,0,0
-Lease/Mortgage Payments,82677.0,82677,84644
-Depreciation/Amortization,203575.0,203694,138395
-Insurance (Facility),0.0,0,0
-Electric and Gas,22622.0,0,0
-Water and Sewer,0.0,0,0
-Waste Disposal,0.0,0,0
-Security Services,2169.0,0,0
-Repair and Maintenance,2360.0,0,0
-Enrollment Information,0.0,0,0
-September Count,106.0,156,122
-February Count,95.0,172,126
+Revenue,0,0,0
+State Grants,740693,1107628,828799
+Federal Grants,65250,188281,464887
+Total Grants,805943,1295909,1293686
+Contributions and Donations,0,0,29528
+Student Fees,0,0,0
+Other Income,12137,32289,24
+Financial Position,0,0,0
+Total Assets,687090,941646,1141518
+Current Assets,225809,277205,288474
+Total Liabilities,973843,960271,1194313
+Current Liabilities,973843,960271,1194313
+Net Asset Position,-286753,-18625,-52795
+Financial Activities,0,0,0
+Operating Revenues,818080,1328198,1323238
+Operating Expenses,1086209,1294028,1327715
+Change in Net Assets,-268129,34170,-4477
+Supplemental Information,0,0,0
+Administrative Staff,127863,0,0
+Instructional Staff,166130,0,0
+Non-Instructional Staff,33170,0,0
+Total Personnel Expenses,608841,0,0
+Instructional and Support Staff,315699,0,0
+Instructional Supplies,66995,0,0
+Management Fee,-60391,0,0
+Unrestricted Net Assets,-316753,-18625,-52795
+Unrestricted Cash,212202,257896,137508
+Principal Payments,0,0,0
+Interest Expense,0,0,0
+Lease/Mortgage Payments,82677,82677,84644
+Depreciation/Amortization,203575,203694,138395
+Insurance (Facility),0,0,0
+Electric and Gas,22622,0,0
+Water and Sewer,0,0,0
+Waste Disposal,0,0,0
+Security Services,2169,0,0
+Repair and Maintenance,2360,0,0
+Enrollment Information,0,0,0
+September Count,106,156,122
+February Count,95,172,126
 ADM Average,100.5,164,124
 Audit Information,,0,0
 Auditor,,Blue & Co,Blue & Co
