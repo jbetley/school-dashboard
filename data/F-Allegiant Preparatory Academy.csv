@@ -1,52 +1,65 @@
-Category,2021,2020,2019
-Revenue,0,0,0
-State Grants,892956,562666,315634
-Federal Grants,515323,589190,262599
-Total Grants,1408279,1151856,578233
-Other Income,2709,18255,20865
-Financial Position,0,0,0
-Total Assets,562165,414541,246231
-Current Assets,431119,272066,124605
-Total Liabilities,92792,175607,163740
-Current Liabilities,49043,106349,63260
-Net Asset Position,469373,238934,82491
-Financial Activities,0,0,0
-Operating Revenue,1410988,1170111,599098
-Operating Expenses,1182725,1061492,753607
-Change in Net Assets,230439,156443,-154509
-Supplemental Information,0,0,0
-Administrative Staff,218711.36,0,0
-Instructional Staff,318523.17,0,0
-Non-Instructional Staff,11481.16,0,0
-Total Personnel Expenses,666289.48,0,0
-Instructional & Support Staff,404824.01,0,0
-Instructional Supplies,48144,157175,0
-Management Fee,0,0,0
-Unrestricted Net Assets,469373,238934,82491
-Unrestricted Cash,300847,153302,55869
-Principal Payments,70450.98,18478,17426
-Interest Expense,3416,3090,4691
-Lease Payments (Facility),90507,64035,57312
-Depreciation Expense,59425,40127,36611
-Insurance (Facility),16901,16058,15739
-Electric & Gas,0,0,0
-Water & Sewage,0,0,0
-Waste Disposal,0,0,0
-Security Services,0,0,0
-Maintenance/Repair,4180.79,0,3681
-Enrollment Information,0,0,0
-July Estimate,78,0,0
-September Count,110,66,39
-February Count,105,71,0
-ADM Average,107.5,68.5,37.5
-Audit Information,0,0,0
-Auditor,Donovan,Donovan,Donovan
-Audit FY,2021,2020,2019
-School effectively established and monitored budgets,Y,,
-School implemented appropriate financial polices and procedures,N,,
-School completed timely and accurate financial reporting,Y,,
-Audit is free of findings of Material Weakness,Y,,
-Audit is free of findings of Significant Deficiency,Y,,
-Audit is free of Instances of Noncompliance under GAAS,Y,,
-Audit is free of Questioned Costs,Y,,
-Audit includes unqualified opinion,Y,,
+Category,2022,2021,2020,2019
+Revenue,0.0,0,0,0
+State Grants,1028438.53,892956,562666,315634
+Federal Grants,372676.98,515323,589190,262599
+Total Grants,1401115.51,1408279,1151856,578233
+Contributions and Donations,116168.8,96,16161,810
+Student Fees,0.0,0,0,0
+Interest Income,252.4,141,84,390
+Other Income,3406.33,1775,2522,19665
+Financial Position,0.0,0,0,0
+Total Assets,567458.05,562165,414541,246231
+Current Assets,495838.14,431119,272066,124605
+Total Liabilities,80433.28,92792,175607,163740
+Current Liabilities,52151.17,49043,106349,63260
+Net Asset Position,487024.77,469373,238934,82491
+Financial Activities,0.0,0,0,0
+Operating Revenues,1520943.04,1410988,1170111,599098
+Operating Expenses,1491894.0,1182725,1061492,753607
+Change in Net Assets,29049.040000000037,228263,108619,-154509
+Supplemental Information,0.0,0,0,0
+Administrative Staff,208538.53999999998,0,0,0
+Instructional Staff,383251.23,0,0,0
+Non-Instructional Staff,0.0,0,0,0
+Total Personnel Expenses,732779.71,0,0,0
+Instructional and Support Staff,383251.23,0,0,0
+Instructional Supplies,200369.28999999998,0,0,0
+Management Fee,0.0,0,0,0
+Unrestricted Net Assets,457024.77,469373,238934,82491
+Unrestricted Cash,462774.09,300847,153302,55869
+Principal Payments,0.0,18568,18926,9703
+Interest Expense,2454.64,3416,3090,4691
+Lease/Mortgage Payments,86996.29000000001,90507,64035,57312
+Depreciation/Amortization,59425.0,59425,40127,36611
+Insurance (Facility),0.0,0,0,0
+Electric and Gas,0.0,0,0,0
+Water and Sewer,0.0,0,0,0
+Waste Disposal,0.0,0,0,0
+Security Services,0.0,0,0,0
+Repair and Maintenance,3928.68,0,0,0
+Enrollment Information,0.0,0,0,0
+September Count,114.0,110,66,39
+February Count,113.0,105,71,0
+ADM Average,113.5,107.5,68.5,39
+Audit Information,,0,0,0
+Auditor,,Donovan,Donovan,Donovan
+Audit FY,,2021,2020,2019
+2.1.a|The school effectively established and monitored budgets.,,MS,MS,MS
+2.1.b|The school implemented appropriate financial policies and practices.,,MS,MS,MS
+2.1.c|The school completed timely and accurate financial reporting.,,MS,MS,MS
+2.1.d|The school complied with state audit requirements.,,MS,MS,MS
+"3.1|The school conducted lawful, unbiased admissions and enrollment processes including conducting appropriate randomized lotteries where required.",,MS,MS,MS
+3.2|The school followed appropriate and lawful student discipline processes,,MS,MS,MS
+"3.3|The school followed all applicable laws, rules and regulations (including the Individuals with Disabilities Education Act, Section 504 of the Rehabilitation Act of 1973, and the Americans with Disabilities Act, and Article 7) and all relevant provisions of the charter agreement with respect to the rights of students with disabilities",,MS,MS,MS
+"3.4|The school followed all applicable laws, rules, regulations (including Title III of the Elementary and Secondary Education Act (ESEA), as amended by the Every Student Succeeds Act of 2015 (ESSA) and US Department of Education authorities) and all relevant provisions of the charter agreement with respect to the rights of English Language Learner (ELL) students",,MS,MS,MS
+3.5|The school protected the rights of students.,,MS,MS,MS
+"3.6|The organizer complied with applicable laws, rules and regulations, and all relevant provisions of the charter agreement relating to governance of the school.",,MS,MS,MS
+3.7|The school met ICSB and IDOE reporting requirements.,,MS,MS,MS
+"3.8|The school complied with applicable laws, rules and regulations, and relevant provisions of the charter agreement relating to safety, security, and health related services.",,MS,MS,MS
+"3.9|The school complied with all other applicable laws, rules and regulations, and the provisions of the charter.",,MS,MS,MS
+Audit is free of findings of material weakness,,,,
+Audit is free of findings of significant deficiency,,,,
+Audit is free of instances of noncompliance under GAAS,,,,
+Audit is free of questioned costs,,,,
+Audit includes an unqualified opinion,,,,
+Notes,,,,
