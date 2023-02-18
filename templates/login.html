@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ICSB Dashboard Login</title>
+    <link rel="shortcut icon" href="https://s3.amazonaws.com/django-blog/ico/favicon_v2.ico">
+<style>
+@import url(https://fonts.googleapis.com/css?family=Roboto:300);
+header .header{
+  background-color: #fff;
+  height: 45px;
+}
+header a img{
+  width: 134px;
+  margin-top: 4px;
+}
+.login-page {
+  width: 360px;
+  padding: 8% 0 0;
+  margin: auto;
+}
+.login-page .form .login{
+  margin-top: -31px;
+  margin-bottom: 26px;
+}
+.form {
+  position: relative;
+  z-index: 1;
+  background: #FFFFFF;
+  max-width: 360px;
+  margin: 0 auto 100px;
+  padding: 45px;
+  text-align: center;
+  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+}
+.form input {
+  font-family: "Roboto", sans-serif;
+  outline: 0;
+  background: #f2f2f2;
+  width: 100%;
+  border: 0;
+  margin: 0 0 15px;
+  padding: 15px;
+  box-sizing: border-box;
+  font-size: 14px;
+}
+.form button {
+  font-family: "Roboto", sans-serif;
+  text-transform: uppercase;
+  outline: 0;
+  background-color: #4682b4;
+  background-image: linear-gradient(45deg,#4682b4,#6397c2);
+  width: 100%;
+  border: 0;
+  padding: 15px;
+  color: #FFFFFF;
+  font-size: 14px;
+  -webkit-transition: all 0.3 ease;
+  transition: all 0.3 ease;
+  cursor: pointer;
+}
+.form .message {
+  margin: 15px 0 0;
+  color: #b3b3b3;
+  font-size: 12px;
+}
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 300px;
+  margin: 0 auto;
+}
+.login-body {
+  background-color: #4682b4;
+  background-image: linear-gradient(45deg,#4682b4,#86aed0);
+  font-family: "Roboto", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+</style>
+</head>
+<!-- <header><img src="../login/logo.jpg" alt="WTF"/></header> -->
+<header><div style="text-align: center"><img src="{{url_for('static', filename='ilogo.jpg')}}" ></div></header>
+<body class = 'login-body'>
+<form method="POST" action="/login">
+    <div class="login-page">
+        <div class="form">
+            <div class="login">
+                <div class="login-header">
+                <p>ICSB School Dashboard</p>
+                <p>Please login to continue:</p>
+                </div>
+            </div>
+            <input placeholder="Enter your username" type="text" id="uname-box" name='username'>
+            <input placeholder="Enter your password" type="password" id="pwd-box" name='password'>
+            <Button type="submit" id="login-button">Login</Button>
+            <div class="msg"><span style="color:red">{{message}}</span></div>
+        </div>
+    </div>
+</form>
+</body>
+</html>
