@@ -7,7 +7,7 @@
 import dash
 import plotly.colors
 import plotly.express as px
-from dash import html, dash_table, Input, Output, callback
+from dash import html, dcc, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
@@ -85,19 +85,50 @@ empty_table = [
     )
 ]
 
+## Blank (Loading) Fig ##
+# https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
+
+def blank_fig():
+    fig = {
+        'layout': {
+            'xaxis': {
+                'visible': False
+            },
+            'yaxis': {
+                'visible': False
+            },
+            'annotations': [
+                {
+                    'text': 'Loading . . .',
+                    'xref': 'paper',
+                    'yref': 'paper',
+                    'showarrow': False,
+                    'font': {
+                        'size': 16,
+                        'color': '#6783a9',
+                        'family': 'Roboto, sans-serif'
+                    }
+                }
+            ]
+        }
+    }
+    return fig
+
 test_data = pd.read_csv(r"data/test2022-all.csv", dtype=str)
 
 
 @callback(
     Output("k8-grade-table", "children"),
+    Output("k8-grade-fig1", "figure"),
+    # Output("k8-grade-fig2", "figure"),
     Output("k8-ethnicity-table", "children"),
-    Output("k8-status-table", "children"),
+    Output("k8-subgroup-table", "children"),
     Output("k8-other-table", "children"),
     Output("k8-not-calculated-table", "children"),
     Output("k8-table-container", "style"),
     Output("hs-grad-overview-table", "children"),
     Output("hs-grad-ethnicity-table", "children"),
-    Output("hs-grad-status-table", "children"),
+    Output("hs-grad-subgroup-table", "children"),
     Output("hs-eca-table", "children"),
     Output("hs-not-calculated-table", "children"),
     Output("hs-table-container", "style"),
@@ -119,7 +150,7 @@ def update_about_page(data, school, year):
         "Native Hawaiian or Other Pacific Islander",
         "White",
     ]
-    status = [
+    subgroup = [
         "Special Education",
         "General Education",
         "Paid Meals",
@@ -182,14 +213,14 @@ def update_about_page(data, school, year):
     ):
         hs_grad_overview_table = []
         hs_grad_ethnicity_table = []
-        hs_grad_status_table = []
+        hs_grad_subgroup_table = []
         hs_eca_table = []
         hs_not_calculated_table = []
         hs_table_container = {"display": "none"}
 
         k8_grade_table = empty_table
         k8_ethnicity_table = empty_table
-        k8_status_table = empty_table
+        k8_subgroup_table = empty_table
         k8_other_table = empty_table
         k8_not_calculated_table = empty_table
 
@@ -235,6 +266,18 @@ def update_about_page(data, school, year):
         )
 
         all_proficiency_data = school_test_data.copy()
+
+        def ordinal(n: int):
+            if 11 <= (n % 100) <= 13:
+                suffix = 'th'
+            else:
+                suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
+            return str(n) + suffix
+            
+        all_proficiency_data.columns = [x.replace("Grade", " ") for x in test_data.columns.to_list()]
+
+        print(all_proficiency_data)
+
         proficiency_rating = [
             "Below Proficiency",
             "Approaching Proficiency",
@@ -287,7 +330,7 @@ def update_about_page(data, school, year):
 
         # for each category, create a list of columns using the strings in
         #  'proficiency_rating' and then divide each column by 'Total Tested'
-        categories = grades + ethnicity + status
+        categories = grades + ethnicity + subgroup
 
         for c in categories:
             for s in subject:
@@ -343,7 +386,8 @@ def update_about_page(data, school, year):
             .reset_index()
         )
 
-        # TODO: CHANGE THESE HEADERS - Category,
+        # TODO: 3rd, 4th, 5th, etc.
+
         # split Grade column into two columns and rename what used to be the index
         all_proficiency_data[["Category", "Proficiency"]] = all_proficiency_data[
             "Category"
@@ -354,7 +398,7 @@ def update_about_page(data, school, year):
         all_proficiency_data = all_proficiency_data[
             all_proficiency_data["Category"] != "index"
         ]
-        # TEST
+
         def make_stacked_bar(data):
             colors = plotly.colors.qualitative.Prism
 
@@ -371,6 +415,23 @@ def update_about_page(data, school, year):
 
             # Don't forget to remove from update_traces
             fig.update_traces(textfont_size=12)
+            fig.update_xaxes(title='')
+            fig.update_yaxes(title='')
+            fig.update_layout(
+                legend=dict(
+                    orientation='h',
+                    title='',
+                    xanchor= 'center',
+                    yanchor='top',
+                    x=0,
+                    font = dict(
+                        family = 'Open Sans, sans-serif',
+                        color = 'steelblue',
+                        size = 10
+                        ),
+                ),
+                plot_bgcolor='white',
+            )
 
             return fig
 
@@ -379,8 +440,7 @@ def update_about_page(data, school, year):
             all_proficiency_data["Category"].str.contains("Grade")
             & all_proficiency_data["Proficiency"].str.contains("ELA")
         ]
-        fig1 = make_stacked_bar(fig1_data)
-        fig1.show()
+        k8_grade_fig1 = make_stacked_bar(fig1_data)
 
         # Math by Grade
         fig2_data = all_proficiency_data[
@@ -388,13 +448,13 @@ def update_about_page(data, school, year):
             & all_proficiency_data["Proficiency"].str.contains("Math")
         ]
         fig2 = make_stacked_bar(fig2_data)
-        fig2.show()
+        # fig2.show()
 
         # # ELA by Subgroup [TEST]
-        fig2_data = all_proficiency_data[
-            all_proficiency_data["Category"].str.contains(status)
-            & all_proficiency_data["Proficiency"].str.contains("ELA")
-        ]
+        # fig2_data = all_proficiency_data[
+        #     all_proficiency_data["Category"].str.contains(subgroup)
+        #     & all_proficiency_data["Proficiency"].str.contains("ELA")
+        # ]
         # fig1 = make_stacked_bar(fig1_data)
         # fig1.show()
 
@@ -430,7 +490,7 @@ def update_about_page(data, school, year):
             ):
                 hs_grad_overview_table = []
                 hs_grad_ethnicity_table = []
-                hs_grad_status_table = []
+                hs_grad_subgroup_table = []
                 hs_eca_table = []
                 hs_not_calculated_table = []
                 hs_table_container = {"display": "none"}
@@ -450,8 +510,8 @@ def update_about_page(data, school, year):
             years_by_grade = k8_academic_info[
                 k8_academic_info["Category"].str.contains("|".join(grades))
             ]
-            years_by_status = k8_academic_info[
-                k8_academic_info["Category"].str.contains("|".join(status))
+            years_by_subgroup = k8_academic_info[
+                k8_academic_info["Category"].str.contains("|".join(subgroup))
             ]
             years_by_ethnicity = k8_academic_info[
                 k8_academic_info["Category"].str.contains("|".join(ethnicity))
@@ -552,9 +612,9 @@ def update_about_page(data, school, year):
                 )
             ]
 
-            k8_status_table = [
+            k8_subgroup_table = [
                 dash_table.DataTable(
-                    years_by_status.to_dict("records"),
+                    years_by_subgroup.to_dict("records"),
                     columns=k8_table_columns,
                     style_data=table_style,
                     style_data_conditional=k8_table_data_conditional,
@@ -625,7 +685,7 @@ def update_about_page(data, school, year):
         ):
             k8_grade_table = []
             k8_ethnicity_table = []
-            k8_status_table = []
+            k8_subgroup_table = []
             k8_other_table = []
             k8_not_calculated_table = []
             k8_table_container = {"display": "none"}
@@ -634,7 +694,7 @@ def update_about_page(data, school, year):
             hs_grad_overview_table = (
                 hs_grad_ethnicity_table
             ) = (
-                hs_grad_status_table
+                hs_grad_subgroup_table
             ) = hs_eca_table = hs_not_calculated_table = empty_table
 
         else:
@@ -667,8 +727,8 @@ def update_about_page(data, school, year):
             grad_ethnicity = hs_academic_info[
                 hs_academic_info["Category"].str.contains("|".join(ethnicity))
             ]
-            grad_status = hs_academic_info[
-                hs_academic_info["Category"].str.contains("|".join(status))
+            grad_subgroup = hs_academic_info[
+                hs_academic_info["Category"].str.contains("|".join(subgroup))
             ]
             eca_data = hs_academic_info[
                 hs_academic_info["Category"].str.contains("|".join(["Grade 10"]))
@@ -755,9 +815,9 @@ def update_about_page(data, school, year):
                 )
             ]
 
-            hs_grad_status_table = [
+            hs_grad_subgroup_table = [
                 dash_table.DataTable(
-                    grad_status.to_dict("records"),
+                    grad_subgroup.to_dict("records"),
                     columns=hs_table_columns,
                     style_data=table_style,
                     style_data_conditional=hs_table_data_conditional,
@@ -830,14 +890,15 @@ def update_about_page(data, school, year):
 
     return (
         k8_grade_table,
+        k8_grade_fig1,
         k8_ethnicity_table,
-        k8_status_table,
+        k8_subgroup_table,
         k8_other_table,
         k8_not_calculated_table,
         k8_table_container,
         hs_grad_overview_table,
         hs_grad_ethnicity_table,
-        hs_grad_status_table,
+        hs_grad_subgroup_table,
         hs_eca_table,
         hs_not_calculated_table,
         hs_table_container,
@@ -887,6 +948,16 @@ def layout():
                                 ],
                                 className="pretty_container six columns",
                             ),
+                            html.Div(
+                                [
+                                    html.Label(
+                                        "Proficiency by Grade", style=label_style
+                                    ),
+                                    dcc.Graph(id='k8-grade-fig1', figure = blank_fig()),
+
+                                ],
+                                className="pretty_container six columns",
+                            ),
                         ],
                         className="bare_container twelve columns",
                     ),
@@ -909,9 +980,9 @@ def layout():
                             html.Div(
                                 [
                                     html.Label(
-                                        "Proficiency by Status", style=label_style
+                                        "Proficiency by Subgroup", style=label_style
                                     ),
-                                    html.Div(id="k8-status-table"),
+                                    html.Div(id="k8-subgroup-table"),
                                 ],
                                 className="pretty_container six columns",
                             ),
@@ -985,9 +1056,9 @@ def layout():
                             html.Div(
                                 [
                                     html.Label(
-                                        "Graduation Rate by Status", style=label_style
+                                        "Graduation Rate by Subgroup", style=label_style
                                     ),
-                                    html.Div(id="hs-grad-status-table"),
+                                    html.Div(id="hs-grad-subgroup-table"),
                                 ],
                                 className="pretty_container six columns",
                             ),
