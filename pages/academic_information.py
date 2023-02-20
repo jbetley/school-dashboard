@@ -354,7 +354,7 @@ def update_about_page(data, school, year):
         all_proficiency_data = all_proficiency_data[
             all_proficiency_data["Category"] != "index"
         ]
-
+        # TEST
         def make_stacked_bar(data):
             colors = plotly.colors.qualitative.Prism
 
