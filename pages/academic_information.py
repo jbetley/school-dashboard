@@ -13,6 +13,7 @@ from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 import json
 import pandas as pd
+import re
 
 # import subnav function
 from .subnav import subnav_academic
@@ -88,31 +89,29 @@ empty_table = [
 ## Blank (Loading) Fig ##
 # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
 
+
 def blank_fig():
     fig = {
-        'layout': {
-            'xaxis': {
-                'visible': False
-            },
-            'yaxis': {
-                'visible': False
-            },
-            'annotations': [
+        "layout": {
+            "xaxis": {"visible": False},
+            "yaxis": {"visible": False},
+            "annotations": [
                 {
-                    'text': 'Loading . . .',
-                    'xref': 'paper',
-                    'yref': 'paper',
-                    'showarrow': False,
-                    'font': {
-                        'size': 16,
-                        'color': '#6783a9',
-                        'family': 'Roboto, sans-serif'
-                    }
+                    "text": "Loading . . .",
+                    "xref": "paper",
+                    "yref": "paper",
+                    "showarrow": False,
+                    "font": {
+                        "size": 16,
+                        "color": "#6783a9",
+                        "family": "Roboto, sans-serif",
+                    },
                 }
-            ]
+            ],
         }
     }
     return fig
+
 
 test_data = pd.read_csv(r"data/test2022-all.csv", dtype=str)
 
@@ -167,6 +166,17 @@ def update_about_page(data, school, year):
         "Grade 8",
         "Total",
         "IREAD Pass %",
+    ]
+
+    grades_ordinal = [
+        "3rd",
+        "4th",
+        "5th",
+        "6th",
+        "7th",
+        "8th",
+        # "Total",
+        # "IREAD Pass %",
     ]
     subject = ["ELA", "Math"]
 
@@ -266,17 +276,6 @@ def update_about_page(data, school, year):
         )
 
         all_proficiency_data = school_test_data.copy()
-
-        def ordinal(n: int):
-            if 11 <= (n % 100) <= 13:
-                suffix = 'th'
-            else:
-                suffix = ['th', 'st', 'nd', 'rd', 'th'][min(n % 10, 4)]
-            return str(n) + suffix
-            
-        all_proficiency_data.columns = [x.replace("Grade", " ") for x in test_data.columns.to_list()]
-
-        print(all_proficiency_data)
 
         proficiency_rating = [
             "Below Proficiency",
@@ -379,14 +378,21 @@ def update_about_page(data, school, year):
             inplace=True,
         )
 
+        # Replace Grade X with ordinal number (e.g., Grade 3 = 3rd)
+        all_proficiency_data = all_proficiency_data.rename(
+            columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
+        )
+        # all use 'th' suffix except for 3rd - so we need to specially treat '3''
+        all_proficiency_data.columns = [
+            x.replace("3th", "3rd") for x in all_proficiency_data.columns.to_list()
+        ]
+
         # transpose df
         all_proficiency_data = (
             all_proficiency_data.T.rename_axis("Category")
             .rename_axis(None, axis=1)
             .reset_index()
         )
-
-        # TODO: 3rd, 4th, 5th, etc.
 
         # split Grade column into two columns and rename what used to be the index
         all_proficiency_data[["Category", "Proficiency"]] = all_proficiency_data[
@@ -402,6 +408,10 @@ def update_about_page(data, school, year):
         def make_stacked_bar(data):
             colors = plotly.colors.qualitative.Prism
 
+            data["Proficiency"] = data["Proficiency"].replace(
+                {"Math ": "", "ELA ": ""}, regex=True
+            )
+
             fig = px.bar(
                 data,
                 x="Percentage",
@@ -415,39 +425,40 @@ def update_about_page(data, school, year):
 
             # Don't forget to remove from update_traces
             fig.update_traces(textfont_size=12)
-            fig.update_xaxes(title='')
-            fig.update_yaxes(title='')
+            fig.update_xaxes(title="")
+            fig.update_yaxes(title="")
+
             fig.update_layout(
                 legend=dict(
-                    orientation='h',
-                    title='',
-                    xanchor= 'center',
-                    yanchor='top',
+                    orientation="h",
+                    title="",
+                    xanchor="center",
+                    yanchor="top",
                     x=0,
-                    font = dict(
-                        family = 'Open Sans, sans-serif',
-                        color = 'steelblue',
-                        size = 10
-                        ),
+                    font=dict(
+                        family="Open Sans, sans-serif", color="steelblue", size=10
+                    ),
                 ),
-                plot_bgcolor='white',
+                plot_bgcolor="white",
+                yaxis=dict(autorange="reversed"),
             )
 
             return fig
 
         # ELA by Grade
         fig1_data = all_proficiency_data[
-            all_proficiency_data["Category"].str.contains("Grade")
+            all_proficiency_data["Category"].isin(grades_ordinal)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
         ]
+        print(fig1_data)
         k8_grade_fig1 = make_stacked_bar(fig1_data)
 
         # Math by Grade
         fig2_data = all_proficiency_data[
-            all_proficiency_data["Category"].str.contains("Grade")
+            all_proficiency_data["Category"].isin(grades_ordinal)
             & all_proficiency_data["Proficiency"].str.contains("Math")
         ]
-        fig2 = make_stacked_bar(fig2_data)
+        k8_grade_fig2 = make_stacked_bar(fig2_data)
         # fig2.show()
 
         # # ELA by Subgroup [TEST]
@@ -953,8 +964,7 @@ def layout():
                                     html.Label(
                                         "Proficiency by Grade", style=label_style
                                     ),
-                                    dcc.Graph(id='k8-grade-fig1', figure = blank_fig()),
-
+                                    dcc.Graph(id="k8-grade-fig1", figure=blank_fig()),
                                 ],
                                 className="pretty_container six columns",
                             ),
