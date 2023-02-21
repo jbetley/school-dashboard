@@ -15,7 +15,11 @@ def subnav_finance():
                 for page in dash.page_registry.values()
                 if page["path"].startswith('/financial')
             ],
-            className='sub-tabs'
+            className='sub-tabs',
+            style={
+                # "padding": "-10px",
+                "marginTop": "-40px",
+    }
         )
     )
 
@@ -32,6 +36,10 @@ def subnav_academic():
                 for page in dash.page_registry.values()
                 if page["path"].startswith("/academic")
             ],
-            className='sub-tabs'
+            className='sub-tabs',
+                        style={
+                # "padding": "-10px",
+                "marginTop": "-40px",
+    }
         )
     )    

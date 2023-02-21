@@ -125,13 +125,32 @@ def calculateMetrics(metrics):
 
         ## Long Term Indicators ##
 
-        # Change in Net Assets Margin & Aggregated Three-Year Margin        
-        chNetAssMar.append(metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i]].values[0] / metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i]].values[0])
-        
+        # Change in Net Assets Margin & Aggregated Three-Year Margin
+        change_in_net_assets_margin = \
+            metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i]].values[0] / \
+            metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i]].values[0]
+
+        chNetAssMar.append(change_in_net_assets_margin)
+        # chNetAssMar.append(metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i]].values[0] / metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i]].values[0])
+
         if ((y - i) <= 2):
             aggMar.append(-999)
         else:
-            aggMar.append((metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0]) / (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0]))
+            print('first year is first:', year[i])
+
+            aggregated_3_year_margin = \
+                (metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+1]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0]) / \
+                (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0])
+            
+            print(aggregated_3_year_margin)
+
+            aggMar.append(aggregated_3_year_margin)
+            # aggMar.append((metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0]) / (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0]))
+
 
         if ((y - i) == 1):
             if (chNetAssMar[i] > 0):

@@ -345,19 +345,27 @@ def set_dropdown_options(year):
 app.layout = html.Div(
     [
         dcc.Store(id="dash-session", storage_type="session"),
+    html.Div(
+        [        
+        # html.Div(
+        #     [
+        #         html.Div(
+        #             [
+        #                 html.A("logout", href="../logout", className="logout-button"),
+        #             ],
+        #             className="bare_container one columns",
+        #         ),
+        #     ],
+        #     # className="row",
+        # ),
         html.Div(
             [
-                html.Div(
+                                html.Div(
                     [
                         html.A("logout", href="../logout", className="logout-button"),
                     ],
                     className="bare_container one columns",
                 ),
-            ],
-            className="row",
-        ),
-        html.Div(
-            [
                 html.Div(
                     [
                         html.Div(
@@ -379,25 +387,14 @@ app.layout = html.Div(
                         ),
                         # NOTE: Dummy input for dropdown
                         html.Div(id="application-state", style={"display": "none"}),
-                        # dcc.Dropdown(
-                        #     id='charter-dropdown',
-                        #     options=[{'label':name,'value':id} for name, id in charter_list.items()],
-                        #     style={
-                        #         'fontSize': '85%',
-                        #         'fontFamily': 'Roboto, sans-serif',
-                        #     },
-                        #     multi = False,
-                        #     clearable = False,
-                        #     className='school_dash_control'
-                        # ),
                     ],
-                    className="pretty_container seven columns",
+                    className="pretty_container five columns",
                 ),
                 html.Div(
                     [
                         html.Div(
                             [
-                                html.Label("Select Accountability Year:"),
+                                html.Label("Select Year:"),
                             ],
                             className="dash_label",
                             id="year_dash_label",
@@ -421,11 +418,16 @@ app.layout = html.Div(
                             className="year_dash_control",
                         ),
                     ],
-                    className="pretty_container five columns",
+                    className="pretty_container three columns",
                 ),
             ],
-            className="row",
+            className="fixed-row",
         ),
+        ],
+    className="fixed-row",
+    ),
+    html.Div(
+            [
         html.Div(
             [
                 html.Div(
@@ -446,13 +448,20 @@ app.layout = html.Div(
                         ),
                     ],
                     className="bare_container twelve columns",
+                        style={
+    "padding": "50px",
+    "paddingBottom": "60px",
+    "marginTop": "40px",
+    }
                 ),
             ],
             className="row",
         ),
-        dash.page_container
+        dash.page_container,
         # html.Div(dash.page_container),
-    ]
+        ],
+)
+    ],
 )
 
 

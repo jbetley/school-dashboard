@@ -119,7 +119,7 @@ test_data = pd.read_csv(r"data/test2022-all.csv", dtype=str)
 @callback(
     Output("k8-grade-table", "children"),
     Output("k8-grade-fig1", "figure"),
-    # Output("k8-grade-fig2", "figure"),
+    Output("k8-grade-fig2", "figure"),
     Output("k8-ethnicity-table", "children"),
     Output("k8-subgroup-table", "children"),
     Output("k8-other-table", "children"),
@@ -262,6 +262,7 @@ def update_about_page(data, school, year):
             school_test_data[col] = pd.to_numeric(
                 school_test_data[col], errors="coerce"
             )
+
         # Drop columns: 'Year','School ID', 'School Name', 'Corp ID','Corp Name'
         # TODO: May not need to do the above as we are filtering data for each chart
         # which will automatically exclude these categories
@@ -289,8 +290,7 @@ def update_about_page(data, school, year):
             https://github.com/simondo92/round-percentages
             Given an iterable of percentages that add up to 100, round them to the nearest integer such
             that the rounded percentages also add up to 100. Uses the largest remainder method.
-            E.g.
-            round_percentages([13.626332, 47.989636, 9.596008, 28.788024]) -> [14, 48, 9, 29]
+            E.g. round_percentages([13.626332, 47.989636, 9.596008, 28.788024]) -> [14, 48, 9, 29]
 
             Update: Added code to turn decimal percentages into ints
             """
@@ -419,29 +419,40 @@ def update_about_page(data, school, year):
                 color=data["Proficiency"],
                 barmode="stack",
                 text=[f"{i}%" for i in data["Percentage"]],
+                # text=[f"{i}%" if int(i) > 5 else '' for i in data["Percentage"]],                
                 orientation="h",
                 color_discrete_sequence=colors,
+                height=200
             )
 
-            # Don't forget to remove from update_traces
-            fig.update_traces(textfont_size=12)
             fig.update_xaxes(title="")
             fig.update_yaxes(title="")
 
+            # the uniformtext_minsize and uniformtext_mode settings hide bar chart
+            # text (Percentage) if the size of the chart causes the text of the font
+            # to decrease below 8px. The text is required to be positioned 'inside'
+            # the bar due to the 'textposition' variable
             fig.update_layout(
+                margin=dict(l=10, r=10, t=0, b=0),
+                font_family="Open Sans, sans-serif",
+                font_color="steelblue",
+                font_size=8,
+                showlegend = False,               
                 legend=dict(
                     orientation="h",
                     title="",
-                    xanchor="center",
-                    yanchor="top",
                     x=0,
                     font=dict(
-                        family="Open Sans, sans-serif", color="steelblue", size=10
+                        family="Open Sans, sans-serif", color="steelblue", size=8
                     ),
                 ),
                 plot_bgcolor="white",
                 yaxis=dict(autorange="reversed"),
+                uniformtext_minsize=8,
+                uniformtext_mode='hide',
             )
+
+            fig.update_traces(textfont_size=8,insidetextanchor= 'middle',textposition='inside')
 
             return fig
 
@@ -450,7 +461,6 @@ def update_about_page(data, school, year):
             all_proficiency_data["Category"].isin(grades_ordinal)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
         ]
-        print(fig1_data)
         k8_grade_fig1 = make_stacked_bar(fig1_data)
 
         # Math by Grade
@@ -459,7 +469,7 @@ def update_about_page(data, school, year):
             & all_proficiency_data["Proficiency"].str.contains("Math")
         ]
         k8_grade_fig2 = make_stacked_bar(fig2_data)
-        # fig2.show()
+
 
         # # ELA by Subgroup [TEST]
         # fig2_data = all_proficiency_data[
@@ -902,6 +912,7 @@ def update_about_page(data, school, year):
     return (
         k8_grade_table,
         k8_grade_fig1,
+        k8_grade_fig2,        
         k8_ethnicity_table,
         k8_subgroup_table,
         k8_other_table,
@@ -959,15 +970,29 @@ def layout():
                                 ],
                                 className="pretty_container six columns",
                             ),
+                        ],
+                        className="bare_container twelve columns",
+                    ),
+                    html.Div(
+                        [
                             html.Div(
                                 [
-                                    html.Label(
-                                        "Proficiency by Grade", style=label_style
-                                    ),
-                                    dcc.Graph(id="k8-grade-fig1", figure=blank_fig()),
+                                    # html.Label(
+                                    #     "Proficiency by Grade", style=label_style
+                                    # ),
+                                    dcc.Graph(id="k8-grade-fig1", figure=blank_fig(),config={'displayModeBar': False}),
                                 ],
-                                className="pretty_container six columns",
+                                className="pretty_container four columns",
                             ),
+                            html.Div(
+                                [
+                                    # html.Label(
+                                    #     "Proficiency by Grade", style=label_style
+                                    # ),
+                                    dcc.Graph(id="k8-grade-fig2", figure=blank_fig(),config={'displayModeBar': False}),
+                                ],
+                                className="pretty_container four columns",
+                            ),                    
                         ],
                         className="bare_container twelve columns",
                     ),
