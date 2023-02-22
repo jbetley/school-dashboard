@@ -88,8 +88,6 @@ empty_table = [
 
 ## Blank (Loading) Fig ##
 # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
-
-
 def blank_fig():
     fig = {
         "layout": {
@@ -112,15 +110,13 @@ def blank_fig():
     }
     return fig
 
-
-test_data = pd.read_csv(r"data/test2022-all.csv", dtype=str)
-
-
 @callback(
     Output("k8-grade-table", "children"),
-    Output("k8-grade-fig1", "figure"),
-    Output("k8-grade-fig2", "figure"),
+    Output("k8-grade-ela-fig", "figure"),
+    Output("k8-grade-math-fig", "figure"),
     Output("k8-ethnicity-table", "children"),
+    Output("k8-ethnicity-ela-fig", "figure"),
+    Output("k8-ethnicity-math-fig", "figure"),    
     Output("k8-subgroup-table", "children"),
     Output("k8-other-table", "children"),
     Output("k8-not-calculated-table", "children"),
@@ -131,6 +127,7 @@ test_data = pd.read_csv(r"data/test2022-all.csv", dtype=str)
     Output("hs-eca-table", "children"),
     Output("hs-not-calculated-table", "children"),
     Output("hs-table-container", "style"),
+    Output("year-value", "children"),
     Input("dash-session", "data"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
@@ -138,6 +135,12 @@ test_data = pd.read_csv(r"data/test2022-all.csv", dtype=str)
 def update_about_page(data, school, year):
     if not data:
         raise PreventUpdate
+
+    # Used as label for proficiency breakdown figs
+    # TODO: This is an imperfect solution. Need to ADD the subject
+    # easiest way? to get the id (year-value) and add it to the
+    # specific lable string in the layour
+    year_value = year + " Proficiency Breakdown"
 
     # NOTE: removed 'American Indian' because the category doesn't appear in all data sets
     # ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
@@ -190,7 +193,6 @@ def update_about_page(data, school, year):
         if data["10"]:
             json_data = json.loads(data["10"])
             academic_data_k8 = pd.DataFrame.from_dict(json_data)
-
         else:
             academic_data_k8 = pd.DataFrame()
 
@@ -236,47 +238,50 @@ def update_about_page(data, school, year):
 
     else:
         ## TESTING 100% Stackd Bar Chart ##
-        pd.set_option("display.max_rows", 200)
+        pd.set_option("display.max_rows", 400)
         # Clean up dataframe (none of these work)
-        # test_data.columns = test_data.columns.str.replace(r'\s+', '', regex=True)
+        # k8_all_data.columns = k8_all_data.columns.str.replace(r'\s+', '', regex=True)
         # newlines = {"\nProficient \n%":"", "\n":" ","\n":" "}
-        # test_data.columns = [x.replace(newlines) for x in test_data.columns.to_list()]
-        # test_data.columns = [x.replace({"\nProficient \n%":"", "\n":" ","\n":" "}) for x in test_data.columns.to_list()]
+        # k8_all_data.columns = [x.replace(newlines) for x in k8_all_data.columns.to_list()]
+        # k8_all_data.columns = [x.replace({"\nProficient \n%":"", "\n":" ","\n":" "}) for x in k8_all_data.columns.to_list()]
+        
+        # load all proficiency information
+        k8_all_data = pd.read_csv(r"data/ilearn2022all.csv", dtype=str)    
 
         # Clean up dataframe
-        test_data.columns = [
-            x.replace("\nProficient \n%", "") for x in test_data.columns.to_list()
+        k8_all_data.columns = [
+            x.replace("\nProficient \n%", "") for x in k8_all_data.columns.to_list()
         ]
-        test_data.columns = [x.replace(" \n", " ") for x in test_data.columns.to_list()]
-        test_data.columns = [x.replace("\n", " ") for x in test_data.columns.to_list()]
+        k8_all_data.columns = [x.replace(" \n", " ") for x in k8_all_data.columns.to_list()]
+        k8_all_data.columns = [x.replace("\n", " ") for x in k8_all_data.columns.to_list()]
 
         # Get selected school data for all categories
-        school_test_data = test_data.loc[test_data["School ID"] == school]
+        school_k8_all_data = k8_all_data.loc[k8_all_data["School ID"] == school]
 
         # drop columns with no values and reset index
-        school_test_data = school_test_data.dropna(axis=1)
-        school_test_data = school_test_data.reset_index()
+        school_k8_all_data = school_k8_all_data.dropna(axis=1)
+        school_k8_all_data = school_k8_all_data.reset_index()
 
-        # convert to numeric
-        for col in school_test_data.columns:
-            school_test_data[col] = pd.to_numeric(
-                school_test_data[col], errors="coerce"
+        # convert to numeric (this changes all '***' to NaN)
+        for col in school_k8_all_data.columns:
+            school_k8_all_data[col] = pd.to_numeric(
+                school_k8_all_data[col], errors="coerce"
             )
 
         # Drop columns: 'Year','School ID', 'School Name', 'Corp ID','Corp Name'
         # TODO: May not need to do the above as we are filtering data for each chart
         # which will automatically exclude these categories
         # Also drop 'ELA & Math' Category (not currently displayed on dashboard)
-        school_test_data = school_test_data.drop(
+        school_k8_all_data = school_k8_all_data.drop(
             list(
-                school_test_data.filter(
+                school_k8_all_data.filter(
                     regex="ELA & Math|Year|Corp ID|Corp Name|School ID|School Name"
                 )
             ),
             axis=1,
         )
 
-        all_proficiency_data = school_test_data.copy()
+        all_proficiency_data = school_k8_all_data.copy()
 
         proficiency_rating = [
             "Below Proficiency",
@@ -333,15 +338,30 @@ def update_about_page(data, school, year):
 
         for c in categories:
             for s in subject:
-                grade_subject = c + "|" + s
-                colz = [grade_subject + " " + x for x in proficiency_rating]
-                total_tested = grade_subject + " " + "Total Tested"
+                category_subject = c + "|" + s
+
+                colz = [category_subject + " " + x for x in proficiency_rating]
+                total_tested = category_subject + " " + "Total Tested"
 
                 if total_tested in all_proficiency_data.columns:
+
+                    # replace NaN with 0
+                    all_proficiency_data[colz] = all_proficiency_data[colz].fillna(0)
+
                     # For some reason, dataset uses zero instead of blank for some
-                    # categories. So we only calculate percentage for those categories
-                    # where the number of tested students is > 0
-                    if all_proficiency_data[total_tested].values[0] > 0:
+                    # categories. So we only show and calculate percentage for those
+                    # categories where the number of tested students is > 0 and where
+                    # the sum of all categories values are > 0 (if the sum of all
+                    # category values are equal to 0, it means there was insufficient
+                    # n-size for the category)
+                    if (all_proficiency_data[total_tested].values[0] > 0) and \
+                        (all_proficiency_data[colz].iloc[0].sum() != 0):
+
+                        # # drop categories where all values are '***'
+                        # # TODO: add category to annotation (insufficient n-size)
+                        # if all_proficiency_data[colz].iloc[0].sum() == 0:
+                        #     print(all_proficiency_data[colz])
+                        # else:
                         # calculate percentage
                         all_proficiency_data[colz] = all_proficiency_data[colz].divide(
                             all_proficiency_data[total_tested], axis="index"
@@ -357,6 +377,7 @@ def update_about_page(data, school, year):
                         tmp_df = pd.DataFrame([rounded])
                         cols = list(tmp_df.columns)
                         all_proficiency_data[colz] = tmp_df[cols]
+
                     else:
                         # if total tested is zero, drop all of the columns in the category
                         all_proficiency_data.drop(colz, axis=1, inplace=True)
@@ -365,7 +386,7 @@ def update_about_page(data, school, year):
                     # 'grade_subject'. Since we arent using it, we need to
                     # drop it from each category
 
-                    all_proficiency_data.drop(grade_subject, axis=1, inplace=True)
+                    all_proficiency_data.drop(category_subject, axis=1, inplace=True)
 
         # drop columns used for calculation that aren't in final chart
         all_proficiency_data.drop(
@@ -457,19 +478,33 @@ def update_about_page(data, school, year):
             return fig
 
         # ELA by Grade
-        fig1_data = all_proficiency_data[
+        grade_ela_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(grades_ordinal)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
         ]
-        k8_grade_fig1 = make_stacked_bar(fig1_data)
+        k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data)
 
         # Math by Grade
-        fig2_data = all_proficiency_data[
+        grade_math_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(grades_ordinal)
             & all_proficiency_data["Proficiency"].str.contains("Math")
         ]
-        k8_grade_fig2 = make_stacked_bar(fig2_data)
+        k8_grade_math_fig = make_stacked_bar(grade_math_fig_data)
 
+        # ELA by Ethnicity
+        ethnicity_ela_fig_data = all_proficiency_data[
+            all_proficiency_data["Category"].isin(ethnicity)
+            & all_proficiency_data["Proficiency"].str.contains("ELA")
+        ]
+
+        k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data)
+
+        # Math by Ethnicity
+        ethnicity_math_fig_data = all_proficiency_data[
+            all_proficiency_data["Category"].isin(ethnicity)
+            & all_proficiency_data["Proficiency"].str.contains("Math")
+        ]
+        k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data)
 
         # # ELA by Subgroup [TEST]
         # fig2_data = all_proficiency_data[
@@ -486,19 +521,6 @@ def update_about_page(data, school, year):
         # fig2 = make_stacked_bar(fig2_data)
         # fig2.show()
 
-        # # ELA by Ethnicity
-        # fig1_data = all_proficiency_data[
-        #     all_proficiency_data["Category"].str.contains("ELA")
-        # ]
-        # fig1 = make_stacked_bar(fig1_data)
-        # fig1.show()
-
-        # # Math by Ethnicity
-        # fig2_data = all_proficiency_data[
-        #     all_proficiency_data["Category"].str.contains("Math")
-        # ]
-        # fig2 = make_stacked_bar(fig2_data)
-        # fig2.show()
 
         ## K8 Academic Information
         if (
@@ -911,9 +933,11 @@ def update_about_page(data, school, year):
 
     return (
         k8_grade_table,
-        k8_grade_fig1,
-        k8_grade_fig2,        
+        k8_grade_ela_fig,
+        k8_grade_math_fig,
         k8_ethnicity_table,
+        k8_ethnicity_ela_fig,
+        k8_ethnicity_math_fig,
         k8_subgroup_table,
         k8_other_table,
         k8_not_calculated_table,
@@ -924,8 +948,8 @@ def update_about_page(data, school, year):
         hs_eca_table,
         hs_not_calculated_table,
         hs_table_container,
+        year_value
     )
-
 
 #### Layout
 
@@ -940,6 +964,19 @@ label_style = {
     "fontWeight": "bold",
     "paddingBottom": "5px",
     "paddingTop": "5px",
+}
+
+fig_label_style = {
+    "height": "14px",
+    "backgroundColor": "#6783a9",
+    "fontSize": "8px",
+    "fontFamily": "Roboto, sans-serif",
+    "color": "#ffffff",
+    "border": "none",
+    "textAlign": "center",
+    "fontWeight": "bold",
+    "paddingBottom": "5px",
+    "paddingTop": "5px",    
 }
 
 
@@ -977,19 +1014,16 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    # html.Label(
-                                    #     "Proficiency by Grade", style=label_style
-                                    # ),
-                                    dcc.Graph(id="k8-grade-fig1", figure=blank_fig(),config={'displayModeBar': False}),
+                                    # TODO: Gotta be a better way to do this
+                                    html.Label(id='year-value', style=fig_label_style),
+                                    html.Div(' ELA Proficiency Breakdown', style=fig_label_style),
+                                    dcc.Graph(id="k8-grade-ela-fig", figure=blank_fig(),config={'displayModeBar': False}),
                                 ],
                                 className="pretty_container four columns",
                             ),
                             html.Div(
                                 [
-                                    # html.Label(
-                                    #     "Proficiency by Grade", style=label_style
-                                    # ),
-                                    dcc.Graph(id="k8-grade-fig2", figure=blank_fig(),config={'displayModeBar': False}),
+                                    dcc.Graph(id="k8-grade-math-fig", figure=blank_fig(),config={'displayModeBar': False}),
                                 ],
                                 className="pretty_container four columns",
                             ),                    
@@ -1010,6 +1044,23 @@ def layout():
                         ],
                         className="bare_container twelve columns",
                     ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    dcc.Graph(id="k8-ethnicity-ela-fig", figure=blank_fig(),config={'displayModeBar': False}),
+                                ],
+                                className="pretty_container four columns",
+                            ),
+                            html.Div(
+                                [
+                                    dcc.Graph(id="k8-ethnicity-math-fig", figure=blank_fig(),config={'displayModeBar': False}),
+                                ],
+                                className="pretty_container four columns",
+                            ),                    
+                        ],
+                        className="bare_container twelve columns",
+                    ),                    
                     html.Div(
                         [
                             html.Div(

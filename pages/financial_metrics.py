@@ -17,6 +17,8 @@ import itertools
 from .subnav import subnav_finance
 dash.register_page(__name__, path='/financial_metrics', order=2)
 
+# TODO: Refactor this code - this is too hard to read
+
 # Caclulate metrics based on ICSB Accountability System financial framework
 def calculateMetrics(metrics):
 
@@ -64,7 +66,6 @@ def calculateMetrics(metrics):
     # convert all values to integers
     for col in columns:
         metrics[col] = pd.to_numeric(metrics[col], errors='coerce')
-
 
     ## NOTE: See financial_metrics.py for formula definitions
     for col in columns:
@@ -136,7 +137,6 @@ def calculateMetrics(metrics):
         if ((y - i) <= 2):
             aggMar.append(-999)
         else:
-            print('first year is first:', year[i])
 
             aggregated_3_year_margin = \
                 (metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i]].values[0] + 
@@ -146,11 +146,8 @@ def calculateMetrics(metrics):
                 metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + 
                 metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0])
             
-            print(aggregated_3_year_margin)
-
             aggMar.append(aggregated_3_year_margin)
             # aggMar.append((metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0]) / (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0]))
-
 
         if ((y - i) == 1):
             if (chNetAssMar[i] > 0):
@@ -166,7 +163,7 @@ def calculateMetrics(metrics):
             else:
                 r_assetMar.append("DNMS")
                 r_aggMar.append("N/A")
-        elif ((y - i) >= 3 and ((y - i) < 4)):
+        elif ((y - i) >= 3 and ((y - i) <= 4)):
             if (chNetAssMar[i] > 0 and aggMar[i] > 0):
                 r_assetMar.append("MS")
                 r_aggMar.append("MS")
@@ -174,16 +171,42 @@ def calculateMetrics(metrics):
                 r_assetMar.append("DNMS")
                 r_aggMar.append("DNMS")
         else:
-# TODO: The calculation for Aggregated Three-Year Margin is: ATYM is positive and the most recent year Change
-# in Net Assets Margin is positive; or Aggregated Three-Year Margin is greater than -1.5%, the trend is positive
-# for the last two years, and Change in Net Assets Margin for the most recent year is positive.
-# Question: Does 'last two years' mean the last year and the current year? or the last TWO years and the current year?
-# The following commented out code assumes it means CY < PY < PY-1 - This needs FIVE total years of data
-# If this is actually what we want, then uncomment this code. Comment out the following line AND
-# change the previous elif from to elif ((y - i) >= 3 and ((y - i) <= 4)): (changing < 4 to <=4)
-#            if ((chNetAssMar[i] > 0 and aggMar[i] > 0) or ((chNetAssMar[i] > 0 and aggMar[i] > -.015) and (aggMar[i] > ((metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+3]].values[0]) / (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+3]].values[0]))) and (((metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+3]].values[0]) / (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+3]].values[0])) > ((metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+3]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+4]].values[0]) / (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+3]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+4]].values[0]))))):
-# This code says meet standard if CHNAM > 0 and (AGMAR > -.015 AND AGMAR > AGMAR for PY) - This needs FOUR total years of data
-            if ((chNetAssMar[i] > 0 and aggMar[i] > 0) or ((chNetAssMar[i] > 0 and aggMar[i] > -.015) and (aggMar[i] > ((metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+3]].values[0]) / (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+3]].values[0]))))):
+
+            # NOTE: The calculation for Aggregated Three-Year Margin is: 1) ATYM is positive and the
+            # most recent year Change in Net Assets Margin is positive; or 2) Aggregated Three-Year
+            # Margin is greater than -1.5%, the trend is positive for the last two years, and Change
+            # in Net Assets Margin for the most recent year is positive.
+            # The algorithm in use considers "two year trend" to mean: CY < PY and PY < PY2 
+            
+            # Commented out code treats trend as: CY < PY
+            # if ((chNetAssMar[i] > 0 and aggMar[i] > 0) or ((chNetAssMar[i] > 0 and aggMar[i] > -.015) and
+            # (aggMar[i] > ((metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+3]].values[0]) / (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0] + metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+3]].values[0]))))):
+
+            aggregated_3_year_margin_previous_year = \
+                (metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+1]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+3]].values[0]) / \
+                (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+1]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+3]].values[0])
+
+            aggregated_3_year_margin_previous_year_2 = \
+                (metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+2]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+3]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Change in Net Assets'])][year[i+4]].values[0]) / \
+                (metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+2]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+3]].values[0] + 
+                metrics.loc[metrics['Category'].isin(['Operating Revenues'])][year[i+4]].values[0])
+
+            if (
+                    (chNetAssMar[i] > 0 and aggMar[i] > 0) or
+                    (
+                        (chNetAssMar[i] > 0 and aggMar[i] > -.015) and
+                        (aggMar[i] > aggregated_3_year_margin_previous_year) and
+                        (aggregated_3_year_margin_previous_year > aggregated_3_year_margin_previous_year_2)
+                    )
+                ):
+
                 r_assetMar.append("MS")
                 r_aggMar.append("MS")
             else:
