@@ -431,7 +431,16 @@ def update_about_page(year, data):
             status_data_t.iloc[:,i] = status_data_t.iloc[:,i] / total_enrollment[i]
         
         # this forces the categories to wrap (use 'categories' for no wrap)
-        # categories = status_data_t.index.tolist() 
+        # categories = status_data_t.index.tolist()
+
+# TODO:
+        # Use this function to create wrapped text using
+        # html tags based on the specified width
+        import textwrap
+
+        def customwrap(s,width=16):
+            return "<br>".join(textwrap.wrap(s,width=width))
+
         categories_wrap=['English<br>Language<br>Learners', 'Special<br>Education', 'Free/Reduced<br>Price Meals', 'Paid Meals']
 
         elements = status_data_t.columns.tolist()
