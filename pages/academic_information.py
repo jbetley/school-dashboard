@@ -127,7 +127,6 @@ def blank_fig():
     Output("hs-eca-table", "children"),
     Output("hs-not-calculated-table", "children"),
     Output("hs-table-container", "style"),
-    Output("year-value", "children"),
     Input("dash-session", "data"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
@@ -135,12 +134,6 @@ def blank_fig():
 def update_about_page(data, school, year):
     if not data:
         raise PreventUpdate
-
-    # Used as label for proficiency breakdown figs
-    # TODO: This is an imperfect solution. Need to ADD the subject
-    # easiest way? to get the id (year-value) and add it to the
-    # specific lable string in the layour
-    year_value = year + " Proficiency Breakdown"
 
     # NOTE: removed 'American Indian' because the category doesn't appear in all data sets
     # ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
@@ -428,10 +421,16 @@ def update_about_page(data, school, year):
 
         def make_stacked_bar(data):
             colors = plotly.colors.qualitative.Prism
-
+            
+            if data["Proficiency"].str.contains('Math').any():
+                fig_title = year + " Math Proficiency Breakdown"
+            else:
+                fig_title = year + " ELA Proficiency Breakdown"
+            
             data["Proficiency"] = data["Proficiency"].replace(
                 {"Math ": "", "ELA ": ""}, regex=True
             )
+            print(fig_title)
 
             fig = px.bar(
                 data,
@@ -443,7 +442,8 @@ def update_about_page(data, school, year):
                 # text=[f"{i}%" if int(i) > 5 else '' for i in data["Percentage"]],                
                 orientation="h",
                 color_discrete_sequence=colors,
-                height=200
+                height=200,
+                title = fig_title 
             )
 
             fig.update_xaxes(title="")
@@ -454,11 +454,11 @@ def update_about_page(data, school, year):
             # to decrease below 8px. The text is required to be positioned 'inside'
             # the bar due to the 'textposition' variable
             fig.update_layout(
-                margin=dict(l=10, r=10, t=0, b=0),
+                margin=dict(l=10, r=10, t=15, b=0),
                 font_family="Open Sans, sans-serif",
                 font_color="steelblue",
                 font_size=8,
-                showlegend = False,               
+                showlegend = False,
                 legend=dict(
                     orientation="h",
                     title="",
@@ -471,9 +471,20 @@ def update_about_page(data, school, year):
                 yaxis=dict(autorange="reversed"),
                 uniformtext_minsize=8,
                 uniformtext_mode='hide',
+                title={
+                    'y':1,
+                    'x':0.5,
+                    'xanchor': 'center',
+                    'yanchor': 'top'},
+                bargroupgap = 0
             )
 
-            fig.update_traces(textfont_size=8,insidetextanchor= 'middle',textposition='inside')
+            fig.update_traces(
+                textfont_size=8,
+                insidetextanchor = 'middle',
+                textposition='inside',
+                marker_line=dict(width=0)
+            )
 
             return fig
 
@@ -947,8 +958,7 @@ def update_about_page(data, school, year):
         hs_grad_subgroup_table,
         hs_eca_table,
         hs_not_calculated_table,
-        hs_table_container,
-        year_value
+        hs_table_container
     )
 
 #### Layout
@@ -1014,9 +1024,6 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    # TODO: Gotta be a better way to do this
-                                    html.Label(id='year-value', style=fig_label_style),
-                                    html.Div(' ELA Proficiency Breakdown', style=fig_label_style),
                                     dcc.Graph(id="k8-grade-ela-fig", figure=blank_fig(),config={'displayModeBar': False}),
                                 ],
                                 className="pretty_container four columns",
