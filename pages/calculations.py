@@ -1,14 +1,20 @@
-''' Helper Functiosn for
-    ICSB Dashboard
+'''
+Calculation Functions for ICSB Dashboard
 '''
 import pandas as pd
 import numpy as np
 import itertools
 import scipy.spatial as spatial
 
-# getRating (): determines ratings for academic indicators
-# inputs: value, list, and (flag) integer
+
 def set_academic_rating(data, threshold, flag):
+    """
+    Takes a value (string, numeric, nonetype), a list of the thresholds,
+    which varies from type to type and a 'flag' integer that tells the
+    function which switch to use.
+    Returns a string.
+    """
+
     # if data is a string
     if data == "***" or data == "No Grade":
         indicator = "NA"
@@ -82,11 +88,11 @@ def set_academic_rating(data, threshold, flag):
 def round_percentages(percentages):
     """
     https://github.com/simondo92/round-percentages
-    Given an iterable of percentages that add up to 100, round them to the nearest integer such
-    that the rounded percentages also add up to 100. Uses the largest remainder method.
-    E.g. round_percentages([13.626332, 47.989636, 9.596008, 28.788024]) -> [14, 48, 9, 29]
-
-    Update: Added code to turn decimal percentages into ints
+    Given an iterable of percentages that add up to 100 (or decimals that add up
+    to 1), round them to the nearest integer such that the rounded percentages
+    also add up to 100. Uses the largest remainder method. 
+    E.g. round_percentages([13.626332, 47.989636, 9.596008, 28.788024])
+    -> [14, 48, 9, 29]
     """
 
     # if numbers are in decimal format (e.g. .57, .90) then the sum of the numbers should
@@ -123,16 +129,24 @@ def round_percentages(percentages):
 
 # Find nearest schools in miles using a KDTree
 def find_nearest(school_idx,data):
-    "Based on https://stackoverflow.com/q/43020919/190597"
-    "Uses scipy.spatial KDTree "
-# https://stackoverflow.com/questions/45127141/find-the-nearest-point-in-distance-for-all-the-points-in-the-dataset-python
-# https://stackoverflow.com/questions/43020919/scipy-how-to-convert-kd-tree-distance-from-query-to-kilometers-python-pandas
-# https://kanoki.org/2020/08/05/find-nearest-neighbor-using-kd-tree/
+    """
+    Based on https://stackoverflow.com/q/43020919/190597
+    Uses scipy.spatial KDTree method to find the nearest schools to the
+    selected school
+ 
+    Takes Lat and Lon for selected school (school_idx) and Lat and Lon
+    for comparison schools (data).
+    Returns an index list of the schools and the distances
 
+    https://stackoverflow.com/questions/45127141/find-the-nearest-point-in-distance-for-all-the-points-in-the-dataset-python
+    https://stackoverflow.com/questions/43020919/scipy-how-to-convert-kd-tree-distance-from-query-to-kilometers-python-pandas
+    https://kanoki.org/2020/08/05/find-nearest-neighbor-using-kd-tree/
+    """
     # the radius of earth in miles. For kilometers use 6372.8 km
     R = 3959.87433 
 
-    # as the selected school already exists in 'data' df, just pass in index and use that to find it
+    # as the selected school already exists in the 'data' df,
+    # just pass in index and use that to find it
     data = data.apply(pd.to_numeric)
 
     phi = np.deg2rad(data['Lat'])
@@ -150,14 +164,18 @@ def find_nearest(school_idx,data):
     
     return index, distance
 
-''' Takes a dataframe of a schools grade range and a dataframe of
-the grade ranges of comparison schools and creates a boolean mask
-of those schools where there is a grade overlap based on a list created
-from the Low Grade and High Grade values. We use it to filter out
-those schools within the school corporation that do not overlap on grade
-span'''
-
 def filter_grades(row, compare):
+    """
+    Takes two dataframes, of school and comparison school data that
+    includes the Low and High Grades for each. Creates a boolean
+    mask of the comparison schools where there is a grade overlap
+    based on an integer list created from the Low Grade and High
+    Grade values.
+    
+    If there is a grade range overlap, the function returns True,
+    If there is no grade range overlap, the function returns False.
+    """
+
     row[['Low Grade', 'High Grade']] = row[['Low Grade', 'High Grade']].astype(int)
     row_grade_range = list(range(row['Low Grade'], row['High Grade']+1))
 
@@ -166,19 +184,29 @@ def filter_grades(row, compare):
     else:
         return False
 
-# Caclulate metrics based on ICSB Accountability System financial framework
+
 def calculate_metrics(metrics):
+    """
+    Caclulate financial metrics and financial accountability ratings
+    based on ICSBs Accountability System financial framework
+    """
+
+#TODO: Going to refactor this
+
+# Currently uses a loop. Need to vectorize. Also is one large confusing
+# fucntion. Need to break down into smaller chunks
+# Also ADM is incorrect because up to date ADM is in school_index and
+# not financial file
 
     # Need to handle pre-opening year data where there is financial activity
     # but school is not receiving state/federal grants. This 'easy' fix ignore
     # all columns (years) where the value in the State Grant column is equal to '0'
+    metrics = metrics.loc[:,~(metrics.iloc[1]==0)]
 
     # TODO: A more precise fix would be to keep all columns (including those with
     # no value in grant columns), but ignore/except any calculation that requires
     # either grant revenue and adm
 
-    metrics = metrics.loc[:,~(metrics.iloc[1]==0)]
-    
     columns = list(metrics)
 
     # get year headers as array of strings in descending order
@@ -214,6 +242,17 @@ def calculate_metrics(metrics):
     for col in columns:
         metrics[col] = pd.to_numeric(metrics[col], errors='coerce')
 
+    test_metrics = (
+        metrics.set_index("Category")
+        .T.rename_axis("Year")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    print(test_metrics)
+
+    test = pd.DataFrame()
+
     ## NOTE: See financial_metrics.py for formula definitions
     for col in columns:
         i = metrics.columns.get_loc(col) - 1
@@ -222,6 +261,8 @@ def calculate_metrics(metrics):
 
         # Current Ratio
         currentRatio.append(metrics.loc[metrics['Category'].isin(['Current Assets'])][year[i]].values[0]/metrics.loc[metrics['Category'].isin(['Current Liabilities'])][year[i]].values[0])
+
+        test['Current Ratio'] = test_metrics['Current Assets']/test_metrics['Current Liabilities']
 
         if ((y - i) == 1):
             if (currentRatio[i] > 1.1):
@@ -236,6 +277,8 @@ def calculate_metrics(metrics):
 
         # Days Cash On Hand
         daysCash.append(metrics.loc[metrics['Category'].isin(['Unrestricted Cash'])][year[i]].values[0] / ((metrics.loc[metrics['Category'].isin(['Operating Expenses'])][year[i]].values[0] - metrics.loc[metrics['Category'].isin(['Depreciation/Amortization'])][year[i]].values[0])/365))
+
+        test['Days Cash'] = test_metrics['Unrestricted Cash'] / ((test_metrics['Operating Expenses'] - test_metrics['Depreciation/Amortization'])/365)
 
         if ((y - i) == 1):
             if (daysCash[i] >= 45):
@@ -254,6 +297,9 @@ def calculate_metrics(metrics):
         else:
             enrollChange.append((metrics.loc[metrics['Category'].isin(['ADM Average'])][year[i]].values[0] - metrics.loc[metrics['Category'].isin(['ADM Average'])][year[i+1]].values[0]) / metrics.loc[metrics['Category'].isin(['ADM Average'])][year[i+1]].values[0])
 
+        print(test_metrics['ADM Average'].shift())
+        test['Annual Enrollment Change'] = (test_metrics['ADM Average'].shift() - test_metrics['ADM Average']) / test_metrics['ADM Average']
+        
         if ((y - i) == 1):
             r_enrollChange.append("N/A")
         else:
@@ -266,6 +312,10 @@ def calculate_metrics(metrics):
         # Primary Reserve Ratio
         primaryReserve.append(metrics.loc[metrics['Category'].isin(['Unrestricted Net Assets'])][year[i]].values[0] / metrics.loc[metrics['Category'].isin(['Operating Expenses'])][year[i]].values[0])
 
+        test['Primary Reserve Ratio'] = test_metrics['Unrestricted Net Assets'] / test_metrics['Operating Expenses']
+
+        print(test)
+        
         if (primaryReserve[i] > 0.25):
             r_primaryReserve.append("MS")
         else:
