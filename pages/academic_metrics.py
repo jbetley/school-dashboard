@@ -11,548 +11,11 @@ from dash.exceptions import PreventUpdate
 import json
 import pandas as pd
 
+from .table_helpers import create_empty_table, create_metric_table, set_table_layout
+
 # import subnav function
 from .subnav import subnav_academic
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
-
-
-## Global table styles
-
-# TODO: dont want global font size, but need to change numbers font sized
-# to 10 to align with the difference columns
-# JUST WANT NUMBERS (?) <- what does this mean? 
-table_style = {
-    'fontSize': '11px',
-    'border': 'none',
-    'fontFamily': 'Open Sans, sans-serif',
-}
-
-table_cell = {
-    'whiteSpace': 'normal',
-    'height': 'auto',
-    'textAlign': 'center',
-    'color': '#6783a9',
-    'boxShadow': '0 0',
-    'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-}
-
-# Functions
-def createTable(label, content):
-# Generate tables given data and label - could
-# possibly be less complicated than it is, or
-# maybe not - gonna leave it up to future me
-    data = content.copy()
-    
-    cols = data.columns
-    table_size = len(cols)
-
-    if len(data.index) == 0 or table_size == 1:
-        table = [
-            html.Div(
-                [
-                    html.Label(label, style=label_style),
-                    html.Div(
-                        dash_table.DataTable(
-                            columns = [
-                                {'id': 'emptytable', 'name': 'No Data to Display'},
-                            ],
-                            style_header={
-                                'fontSize': '14px',
-                                'border': 'none',
-                                'textAlign': 'center',
-                                'color': '#6783a9',
-                                'fontFamily': 'Open Sans, sans-serif',
-                            },
-                        )
-                    )
-                ],
-                className = 'pretty_container ten columns'
-            )
-        ]
-
-    else:
-
-        # Formatting on the fly - determines the col_width class and width
-        # of the category column based on the size on the dataframe
-        if table_size == 2:
-            col_width = 'eight'
-            category_width = 70
-        if table_size > 2 and table_size <=4:
-            col_width = 'eight'
-            category_width = 35
-        elif table_size >= 5 and table_size <= 9:
-            col_width = 'eight'
-            category_width = 30
-        elif table_size >= 10 and table_size <= 15:
-            col_width = 'twelve'
-            category_width = 15
-        elif table_size >= 16:
-            col_width = 'twelve'
-            category_width = 15
-        
-        year_headers = [y for y in data.columns.tolist() if 'School' in y]
-        rating_headers = [y for y in data.columns.tolist() if 'Rating' in y]
-        difference_headers = [y for y in data.columns.tolist() if '+/-' in y]
-        corporation_headers = [y for y in data.columns.tolist() if 'Rate' in y or 'Avg' in y] # Gets cols with 'Rate' and 'Avg' in header
-
-        # splits column width evenly for all columns other than 'Category'
-        # right now is even, but can finesse this by splitting data_width
-        # into unequal values for each 'data' category, e.g.:
-        #   rating_width = data_col_width + (data_col_width * .1)
-        #   remaining_width = data_width - rating_width
-        #   remaining_col_width = remaining_width / (table_size - 1)
-
-        data_width = 100 - category_width
-        data_col_width = data_width / (table_size - 1)
-        rating_width = year_width = difference_width = corporation_width = data_col_width
-
-        class_name = 'pretty_container ' + col_width + ' columns'
-
-        headers = data.columns.tolist()
-
-        table_cell_conditional = [
-            {
-                'if': {
-                    'column_id': 'Category'
-                },
-                'textAlign': 'left',
-                'paddingLeft': '20px',
-                'fontWeight': '500',
-                'width': str(category_width) + '%'
-            },
-        ] + [
-            {
-                'if': {
-                    'column_id': year
-                },
-                'textAlign': 'center',
-                'fontWeight': '500',
-                'width': str(year_width) + '%',
-            } for year in year_headers
-        ]  + [
-            {   'if': {
-                'column_id': rating
-            },
-                'textAlign': 'center',
-                'fontWeight': '600',
-                'width': str(rating_width) + '%'
-            } for rating in rating_headers
-        ]  + [
-            {   'if': {
-                'column_id': difference
-            },
-                'textAlign': 'center',
-                'fontWeight': '500',
-                'width': str(difference_width) + '%'
-            } for difference in difference_headers
-        ]  + [
-            {   'if': {
-                'column_id': corporation
-            },
-                'textAlign': 'center',
-                'fontWeight': '500',
-                'width': str(corporation_width) + '%'
-            } for corporation in corporation_headers
-        ]
-
-        table_data_conditional =  [
-            {
-                'if': {
-                    'row_index': 'odd'
-                },
-                'backgroundColor': '#eeeeee',
-            }
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "DNMS"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#e56565',
-                'color': 'white',
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "AS"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#ddd75a',
-                'color': 'white',
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "ES"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#b29600',
-                'color': 'white',
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "MS"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#75b200',
-                'color': 'white',
-            } for col in cols
-        ]
-
-        data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
-
-        # build multi-level headers
-        # get list of +/- columns (used by datatable filter_query' to ID columns for color formatting)
-
-        format_cols = [k for k in headers if '+/-' in k or 'Rating' in k]
-
-        name_cols = [['Category','']]
-    
-        for item in headers:
-            if item.startswith('20'):
-                if 'Rating' in item:
-                    item = item[:10]
-                
-                name_cols.append([item[:4],item[4:]])
-
-        # NOTE: The next two two styling blocks add a border to header_index:1
-        # For a single bottom line: comment out blocks, comment out
-        # style_header_conditional in table declaration,
-        # and uncomment style_as_list in table declaration
-
-        table_header = {
-            'backgroundColor': '#ffffff',
-            'fontSize': '11px',
-            'fontFamily': 'Roboto, sans-serif',
-            'color': '#6783a9',
-            'textAlign': 'center',
-            'fontWeight': 'bold',
-            'border': 'none'     
-        }
-
-        table_header_conditional = [
-            {
-                'if': {
-                    'column_id': year,
-                    'header_index': 1,
-                },
-                'borderLeft': '.5px solid #b2bdd4',
-                'borderTop': '.5px solid #b2bdd4',
-                'borderBottom': '.5px solid #b2bdd4',
-            } for year in year_headers
-        ] + [
-            {   'if': {
-                'column_id': corporation,
-                'header_index': 1,
-            },
-                'borderTop': '.5px solid #b2bdd4',
-                'borderBottom': '.5px solid #b2bdd4',
-        } for corporation in corporation_headers
-        ]  + [
-            {   'if': {
-                'column_id': rating,
-                'header_index': 1,
-            },
-                'borderTop': '.5px solid #b2bdd4',
-                'borderBottom': '.5px solid #b2bdd4',
-        } for rating in rating_headers
-        ]  + [
-            {   'if': {
-                'column_id': difference,
-                'header_index': 1,
-            },
-                'borderTop': '.5px solid #b2bdd4',
-                'borderBottom': '.5px solid #b2bdd4',
-        } for difference in difference_headers
-        ] + [
-            # Two options:
-            #   1) use 'headers[-1]' and 'borderRight' for each subheader to have full border
-            #   2) use 'headers[1]' and 'borderLeft' to leave first and last columns open on right and left
-            {   'if': {
-                'column_id': headers[-1],
-            #    'column_id': headers[1],
-                'header_index': 1,
-            },
-            'borderRight': '.5px solid #b2bdd4',
-            }
-        ]
-
-        # formatting logic is different for multi-header table
-        table_data_conditional = [
-            {
-                'if': {
-                    'row_index': 'odd'
-                },
-                'backgroundColor': '#eeeeee'
-            }
-        ] + [
-            {
-                'if': {
-                'filter_query': '{{{col}}} = "DNMS"'.format(col=col),
-                'column_id': col
-                },
-                'backgroundColor': '#e56565',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white'
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                'filter_query': '{{{col}}} = "AS"'.format(col=col),
-                'column_id': col
-                },
-                'backgroundColor': '#ddd75a',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white'
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                'filter_query': '{{{col}}} = "ES"'.format(col=col),
-                'column_id': col
-                },
-                'backgroundColor': '#b29600',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white'
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                'filter_query': '{{{col}}} = "MS"'.format(col=col),
-                'column_id': col
-                },
-                'backgroundColor': '#75b200',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white'
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "NA"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#9a9a9a',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white',
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                    'column_id': headers[-1],
-                },
-                'borderRight': '.5px solid #b2bdd4',
-            },
-        ] + [
-            {
-                'if': {
-                    'row_index': 0
-                },
-                'paddingTop': '5px'
-            }
-        ] + [
-            {
-                'if': {
-                    'row_index': len(data)-1
-                },
-                'borderBottom': '.5px solid #b2bdd4',
-            }
-        ] + [
-            {
-                'if': {
-                    'column_id': 'Category',
-                },
-                'borderRight': '.5px solid #b2bdd4',
-                'borderBottom': 'none',                
-            },
-        ] + [ 
-            {
-                'if': {
-                    'column_id': rating,
-                },
-                'borderRight': '.5px solid #b2bdd4',
-            } for rating in rating_headers                
-        ] + [ 
-            {
-                'if': {
-                    'filter_query': '{{{col}}} < 0'.format(col=col),
-                    'column_id': col
-                },
-                
-                'fontWeight': 'bold',
-                'color': '#b44655',
-                'fontSize': '10px',
-            } for col in format_cols
-        ] + [ 
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "-***"'.format(col=col),
-                    'column_id': col
-                },                        
-                'fontWeight': 'bold',
-                'color': '#b44655',
-                'fontSize': '10px',
-            } for col in format_cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} > 0'.format(col=col),
-                    'column_id': col
-                },
-                'fontWeight': 'bold',
-                'color': '#81b446',
-                'fontSize': '10px',
-            } for col in format_cols
-        ]
-
-        table = [
-            html.Div(
-                [
-                    html.Label(label, style=label_style),
-                    html.Div(
-                        dash_table.DataTable(
-                            data.to_dict('records'),
-                            columns=[
-                                    {
-                                        'name': col,
-                                        'id': headers[idx],
-                                        'type':'numeric',
-                                        'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
-                                    } for (idx, col) in enumerate(name_cols)
-                                ],
-                            style_data = table_style,
-                            style_data_conditional = table_data_conditional,
-                            style_header = table_header,
-                            style_header_conditional = table_header_conditional,
-                            style_cell = table_cell,
-                            style_cell_conditional = table_cell_conditional,
-                            merge_duplicate_headers=True,
-                        )
-                    )
-                ],
-                className = class_name
-            )
-        ]
-
-    # else:
-    #     # headers
-    #     clean_headers = []
-    #     for i, x in enumerate (headers):
-    #         if 'Rating' in x:
-    #             clean_headers.append('Rating')
-    #         else:
-    #             clean_headers.append(x)
-
-    #     table_header = {
-    #         'backgroundColor': '#ffffff',
-    #         'fontSize': '11px',
-    #         'fontFamily': 'Roboto, sans-serif',
-    #         'color': '#6783a9',
-    #         'textAlign': 'center',
-    #         'fontWeight': 'bold'            
-    #     }
-
-    #     table = [
-    #         html.Div(
-    #             [
-    #                 html.Label(label, style=label_style),
-    #                 html.Div(
-    #                     dash_table.DataTable(
-    #                         data.to_dict('records'),
-    #                         columns=[{
-    #                             'name': col, 
-    #                             'id': headers[idx],
-    #                             'type':'numeric',
-    #                             'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)                                    
-    #                             } for (idx, col) in enumerate(clean_headers)],
-    #                         style_data = table_style,
-    #                         style_data_conditional = table_data_conditional,
-    #                         style_header = table_header,
-    #                         style_cell = table_cell,
-    #                         style_cell_conditional = table_cell_conditional,
-    #                         style_as_list_view=True
-    #                     )
-    #                 )
-    #             ],
-    #             className = class_name
-    #         )
-    #     ]
-
-    return table
-
-# Display tables either side by side or on individual rows depending on # of columns
-def setLayout(table1, table2, cols):
-
-    # Can force single table layout by passing same table twice
-    if table1 == table2:
-
-        table_layout = [
-                html.Div(
-                    table1,
-                    className = 'bare_container twelve columns',
-                )
-        ]
-    else:
-        if len(cols) >= 4:
-
-            table_layout = [
-                    html.Div(
-                        table1,
-                        className = 'bare_container twelve columns',
-                    ),
-                    html.Div(
-                        table2,
-                        className = 'bare_container twelve columns',
-                    ),
-            ]
-
-        else:
-
-            table_layout = [
-                    html.Div(
-                        [
-                            table1[0],
-                            table2[0],
-                        ],
-                        className = 'bare_container twelve columns',
-                    ),
-            ]
-
-    return table_layout
-
-# create empty table with custom label
-def emptyTable(label):
-
-    empty_table = [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Label(label, style=label_style),
-                                html.Div(
-                                    dash_table.DataTable(
-                                        columns = [
-                                            {'id': 'emptytable', 'name': 'No Data to Display'},
-                                        ],
-                                        style_header={
-                                            'fontSize': '14px',
-                                            'border': 'none',
-                                            'textAlign': 'center',
-                                            'color': '#6783a9',
-                                            'fontFamily': 'Open Sans, sans-serif',
-                                        },
-                                    ),
-                                ),
-                            ],
-                            className = 'pretty_container eight columns'
-                        ),
-                    ],
-                    className = 'bare_container twelve columns',
-                )
-    ]
-
-    return empty_table
-# End Functions
 
 @callback(
     Output('table-container-11ab', 'children'),
@@ -621,8 +84,8 @@ def update_about_page(data,year):
             metric_ahs_113_data.drop('Metric', inplace=True, axis=1)
 
             metric_ahs_113_label = 'Adult High School Accountability Metrics 1.1 & 1.3'
-            table_ahs_113 = createTable(metric_ahs_113_label, metric_ahs_113_data)
-            table_container_ahs_113 = setLayout(table_ahs_113, table_ahs_113, metric_ahs_113_data.columns)
+            table_ahs_113 = create_metric_table(metric_ahs_113_label, metric_ahs_113_data)
+            table_container_ahs_113 = set_table_layout(table_ahs_113, table_ahs_113, metric_ahs_113_data.columns)
 
             # Create placeholders (Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b)
             all_cols = metric_ahs_113_data.columns.tolist()
@@ -649,14 +112,14 @@ def update_about_page(data,year):
                     metric_ahs_1214_data[h].fillna(value='No Data', inplace=True)
             
             metric_ahs_1214_label = 'Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b (Not Calculated)'
-            table_ahs_1214 = createTable(metric_ahs_1214_label, metric_ahs_1214_data)
-            table_container_ahs_1214 = setLayout(table_ahs_1214, table_ahs_1214, metric_ahs_1214_data.columns)
+            table_ahs_1214 = create_metric_table(metric_ahs_1214_label, metric_ahs_1214_data)
+            table_container_ahs_1214 = set_table_layout(table_ahs_1214, table_ahs_1214, metric_ahs_1214_data.columns)
 
         else:
             table_container_ahs_113 = {}
             table_container_ahs_1214 = {}
             display_ahs_metrics = {'display': 'none'}
-            table_container_empty = emptyTable('Adult High School Accountability Metrics')
+            table_container_empty = create_empty_table('Adult High School Accountability Metrics')
             display_empty_table = {}
     
     # K8, K12, & High School Accountability Metrics
@@ -688,8 +151,8 @@ def update_about_page(data,year):
                 combined_grad_metrics_data = pd.DataFrame.from_dict(json_data)
 
                 metric_17ab_label = 'High School Accountability Metrics 1.7.a & 1.7.b'
-                table_17ab = createTable(metric_17ab_label, combined_grad_metrics_data)
-                table_container_17ab = setLayout(table_17ab, table_17ab, combined_grad_metrics_data.columns)
+                table_17ab = create_metric_table(metric_17ab_label, combined_grad_metrics_data)
+                table_container_17ab = set_table_layout(table_17ab, table_17ab, combined_grad_metrics_data.columns)
 
                 # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
                 all_cols = combined_grad_metrics_data.columns.tolist()
@@ -712,15 +175,15 @@ def update_about_page(data,year):
                         metric_17cd_data[h].fillna(value='No Data', inplace=True)
                 
                 metric_17cd_label = 'High School Accountability Metrics 1.7.c & 1.7.d'
-                table_17cd = createTable(metric_17cd_label, metric_17cd_data)
-                table_container_17cd = setLayout(table_17cd, table_17cd, metric_17cd_data.columns)
+                table_17cd = create_metric_table(metric_17cd_label, metric_17cd_data)
+                table_container_17cd = set_table_layout(table_17cd, table_17cd, metric_17cd_data.columns)
 
             else:
             
                 table_container_17ab = {}
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
-                table_container_empty = emptyTable('Academic Accountability Metrics')
+                table_container_empty = create_empty_table('Academic Accountability Metrics')
                 display_empty_table = {}
                     
         # K8 Academic Metrics (for K8 and K12 schools)
@@ -749,23 +212,23 @@ def update_about_page(data,year):
 
                 metric_14a_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades))) & (combined_years['Category'].str.contains('ELA'))]
                 metric_14a_label = ['1.4a Grade level proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' compared with the previous school year.']
-                table_14a = createTable(metric_14a_label, metric_14a_data)
+                table_14a = create_metric_table(metric_14a_label, metric_14a_data)
 
                 metric_14b_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades))) & (combined_years['Category'].str.contains('Math'))]
                 metric_14b_label = ['1.4b Grade level proficiency on the state assessment in',html.Br(), html.U('Math'), ' compared with the previous school year.']
-                table_14b = createTable(metric_14b_label, metric_14b_data)
+                table_14b = create_metric_table(metric_14b_label, metric_14b_data)
 
-                table_container_14ab = setLayout(table_14a,table_14b,combined_years.columns)
+                table_container_14ab = set_table_layout(table_14a,table_14b,combined_years.columns)
 
                 metric_14c_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(grades))) & (combined_delta['Category'].str.contains('ELA'))]
                 metric_14c_label = ['1.4c Grade level proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' compared with traditional school corporation.']
-                table_14c = createTable(metric_14c_label, metric_14c_data)
+                table_14c = create_metric_table(metric_14c_label, metric_14c_data)
 
                 metric_14d_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(grades))) & (combined_delta['Category'].str.contains('Math'))]            
                 metric_14d_label = ['1.4.d Grade level proficiency on the state assessment in',html.Br(), html.U('Math'), ' compared with traditional school corporation.']
-                table_14d = createTable(metric_14d_label, metric_14d_data)
+                table_14d = create_metric_table(metric_14d_label, metric_14d_data)
 
-                table_container_14cd = setLayout(table_14c,table_14d,combined_delta.columns)
+                table_container_14cd = set_table_layout(table_14c,table_14d,combined_delta.columns)
 
                 # Create placeholders (Accountability Metrics 1.4.e & 1.4.f)
                 all_cols = combined_years.columns.tolist()
@@ -790,8 +253,8 @@ def update_about_page(data,year):
                         metric_14ef_data[h].fillna(value='No Data', inplace=True)
 
                 metric_14ef_label = 'Accountability Metrics 1.4.e & 1.4.f'
-                table_14ef = createTable(metric_14ef_label, metric_14ef_data)
-                table_container_14ef = setLayout(table_14ef, table_14ef, metric_14ef_data.columns)
+                table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
+                table_container_14ef = set_table_layout(table_14ef, table_14ef, metric_14ef_data.columns)
                 
                 # iread_data_json
                 if data['9']:
@@ -799,11 +262,11 @@ def update_about_page(data,year):
                     iread_data = pd.DataFrame.from_dict(json_data)
 
                     metric_14g_label = '1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment.'
-                    table_14g = createTable(metric_14g_label, iread_data)
-                    table_container_14g = setLayout(table_14g, table_14g, iread_data.columns)
+                    table_14g = create_metric_table(metric_14g_label, iread_data)
+                    table_container_14g = set_table_layout(table_14g, table_14g, iread_data.columns)
 
                 else:
-                    table_container_14g = emptyTable('1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.')
+                    table_container_14g = create_empty_table('1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.')
 
                 # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
                 growth_metrics_empty = pd.DataFrame(columns = simple_cols)
@@ -830,28 +293,28 @@ def update_about_page(data,year):
                         metric_15abcd_data[h].fillna(value='No Data', inplace=True)
 
                 metric_15abcd_label = 'Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d'
-                table_15abcd = createTable(metric_15abcd_label, metric_15abcd_data)
-                table_container_15abcd = setLayout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
+                table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
+                table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
 
                 metric_16a_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(subgroup))) & (combined_delta['Category'].str.contains('ELA'))]
                 metric_16a_label = ['1.6a Proficiency on the state assessment in ', html.U('English Language Arts'), html.Br(),'for each subgroup compared with traditional school corporation.']
-                table_16a = createTable(metric_16a_label,metric_16a_data)
+                table_16a = create_metric_table(metric_16a_label,metric_16a_data)
 
                 metric_16b_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(subgroup))) & (combined_delta['Category'].str.contains('Math'))]            
                 metric_16b_label = ['1.6b Proficiency on the state assessment in ', html.U('Math'), ' for each', html.Br(), 'subgroup compared with traditional school corporation.']
-                table_16b = createTable(metric_16b_label, metric_16b_data)
+                table_16b = create_metric_table(metric_16b_label, metric_16b_data)
 
-                table_container_16ab = setLayout(table_16a,table_16b,combined_delta.columns)
+                table_container_16ab = set_table_layout(table_16a,table_16b,combined_delta.columns)
 
                 metric_16c_data = combined_years[(combined_years['Category'].str.contains('|'.join(subgroup))) & (combined_years['Category'].str.contains('ELA'))]
                 metric_16c_label = ['1.6c The change in proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' for each subgroup compared with the previous school year.']
-                table_16c = createTable(metric_16c_label,metric_16c_data)
+                table_16c = create_metric_table(metric_16c_label,metric_16c_data)
 
                 metric_16d_data = combined_years[(combined_years['Category'].str.contains('|'.join(subgroup))) & (combined_years['Category'].str.contains('Math'))]
                 metric_16d_label = ['1.6d The change in proficiency on the state assessment in',html.Br(), html.U('Math'), ' for each subgroup compared with the previous school year.']
-                table_16d = createTable(metric_16d_label,metric_16d_data)
+                table_16d = create_metric_table(metric_16d_label,metric_16d_data)
 
-                table_container_16cd = setLayout(table_16c,table_16d,combined_years.columns)
+                table_container_16cd = set_table_layout(table_16c,table_16d,combined_years.columns)
 
             else:
 
@@ -866,7 +329,7 @@ def update_about_page(data,year):
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
 
-                table_container_empty = emptyTable('Academic Accountability Metrics')
+                table_container_empty = create_empty_table('Academic Accountability Metrics')
                 display_empty_table = {}
 
     # If no matching school_type - display empty table (catch-all)
@@ -892,7 +355,7 @@ def update_about_page(data,year):
         table_container_ahs_1214 = {}
         display_ahs_metrics = {'display': 'none'}
 
-        table_container_empty = emptyTable('Academic Accountability Metrics')
+        table_container_empty = create_empty_table('Academic Accountability Metrics')
         display_empty_table = {}
 
     metric_11ab_label = 'Accountability Metrics 1.1.a & 1.1.b'
@@ -914,8 +377,8 @@ def update_about_page(data,year):
             else:
                 metric_11ab_data[h].fillna(value='No Data', inplace=True)
 
-        table_11ab = createTable(metric_11ab_label, metric_11ab_data)
-        table_container_11ab = setLayout(table_11ab, table_11ab, metric_11ab_data.columns)
+        table_11ab = create_metric_table(metric_11ab_label, metric_11ab_data)
+        table_container_11ab = set_table_layout(table_11ab, table_11ab, metric_11ab_data.columns)
 
     else:
 
@@ -944,12 +407,12 @@ def update_about_page(data,year):
             else:
                 metric_11cd_data[h].fillna(value='No Data', inplace=True)
 
-        table_11cd = createTable(metric_11cd_label, metric_11cd_data)
-        table_container_11cd = setLayout(table_11cd, table_11cd, metric_11cd_data.columns)
+        table_11cd = create_metric_table(metric_11cd_label, metric_11cd_data)
+        table_container_11cd = set_table_layout(table_11cd, table_11cd, metric_11cd_data.columns)
 
     else:
 
-        table_container_11cd = emptyTable(metric_11cd_label)
+        table_container_11cd = create_empty_table(metric_11cd_label)
 
 #### ALL teh tables
  
@@ -961,7 +424,7 @@ def update_about_page(data,year):
 
 #### ALL teh layouts
 
-label_style = {
+key_label_style = {
     'height': 'auto',
     'lineHeight': '1.5em',
     'backgroundColor': '#6783a9',
@@ -993,7 +456,7 @@ def layout():
                     [
                         html.Div(
                             [
-                                html.Label('Key', style=label_style),
+                                html.Label('Key', style=key_label_style),
                                 html.Table(className='md_table',
                                     children = 
                                         [

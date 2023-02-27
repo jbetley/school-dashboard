@@ -9,13 +9,18 @@
 
 import dash
 from dash import dcc, dash_table, html, Input, Output, callback
-from dash.dash_table import FormatTemplate
+# from dash.dash_table import FormatTemplate
 from dash.exceptions import PreventUpdate
-import plotly.express as px
+# import plotly.express as px
 import pandas as pd
 import numpy as np
 import json
-import scipy.spatial as spatial
+# import scipy.spatial as spatial
+
+from .calculations import find_nearest, filter_grades
+from .chart_helpers import blank_fig, make_line_chart,make_bar_chart, \
+    make_group_bar_chart
+from .table_helpers import create_comparison_table
 
 # Debuggging #
 # pd.set_option('display.max_rows', None)
@@ -53,460 +58,6 @@ school_index= pd.read_csv(r'data/school_index.csv', dtype=str)
 initial_load_time = timeit.default_timer() - initial_load_start
 print ('initial load time (Academic Analysis):', initial_load_time)
 ################
-
-## Blank (Loading) Fig ##
-# https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
-
-def blank_fig():
-    fig = {
-        'layout': {
-            'xaxis': {
-                'visible': False
-            },
-            'yaxis': {
-                'visible': False
-            },
-            'annotations': [
-                {
-                    'text': 'Loading . . .',
-                    'xref': 'paper',
-                    'yref': 'paper',
-                    'showarrow': False,
-                    'font': {
-                        'size': 16,
-                        'color': '#6783a9',
-                        'family': 'Roboto, sans-serif'
-                    }
-                }
-            ]
-        }
-    }
-    return fig
-
-# Functions
-# single line chart (input: dataframe)
-def make_line_chart(values):
-    data = values.copy()
-
-    data.columns = data.columns.str.split('|').str[0]
-
-    cols=[i for i in data.columns if i not in ['School Name','Year']]
-    for col in cols:
-        data[col]=pd.to_numeric(data[col], errors='coerce')
-
-    data.sort_values('Year', inplace=True)
-
-    marks = [v for v in list(data.columns) if v not in ['School Name','Year']]
-
-    # determine tick range [Not currently using/skews graph too much]
-    # # get max value in dataframe
-    # max_val = data[cols].select_dtypes(include=[np.number]).max().max()
-    
-    # # round to nearest .1
-    # tick_val = np.round(max_val,1)
-    
-    # # if it rounded down, add .1
-    # if tick_val < max_val:
-    #     tick_val = tick_val + .1
-
-    fig = px.line(
-        data,
-        x='Year',
-        y=marks,
-        markers=True,
-        color_discrete_sequence=color,
-    )
-
-    fig.update_traces(mode='markers+lines', hovertemplate=None)
-    fig.update_layout(
-        margin=dict(l=40, r=40, t=40, b=60),
-        title_x=0.5,
-        font = dict(
-            family = 'Open Sans, sans-serif',
-            color = 'steelblue',
-            size = 10
-            ),
-        plot_bgcolor='white',
-        # xaxis = dict(
-        #     # title='',
-        #     # type='category',
-        #     # mirror=True,
-        #     # showline=True,
-        #     # # tickmode = 'linear',
-        #     # # tick0 = data['Year'][0],
-        #     # # dtick = 1,
-        #     # # tickmode = 'array',
-        #     # # tickvals = data['Year'],
-        #     # # ticktext = data['Year'],
-        #     # linecolor='#b0c4de',
-        #     # linewidth=.5,
-        #     # gridwidth=.5,
-        #     # showgrid=True,
-        #     # gridcolor='#b0c4de',
-        #     # zeroline=False,
-        #     ),   
-        legend=dict(orientation="h"),         
-        hovermode='x unified',
-        height=400,
-        legend_title='',
-    )
-
-# TODO: default tick behavior is quite ugly for small number of points. How to fix?
-# May not be able to fix easily- at least find a way to space small number of ticks
-# equally within chart space
-
-    fig.update_xaxes(
-        title='',
-        # type='category',
-        mirror=True,
-        showline=True,
-        # tickmode = 'linear',
-        # tick0 = data['Year'].min() - 2,
-        # dtick = 1,
-        tickmode = 'array',
-        tickvals = data['Year'],
-        ticktext = data['Year'],
-        linecolor='#b0c4de',
-        linewidth=.5,
-        gridwidth=.5,
-        showgrid=True,
-        gridcolor='#b0c4de',
-        zeroline=False,     
-    )
-
-    fig.update_yaxes(
-        title='',
-        mirror=True,
-        showline=True,
-        linecolor='#b0c4de',
-        linewidth=.5,
-        gridwidth=.5,
-        showgrid=True,
-        gridcolor='#b0c4de',
-        zeroline=False,
-        range=[0, 1], #tick_val],  # adjusting tick value skews graph too much
-        dtick=.2,
-        tickformat=',.0%',
-    )
-
-    return fig
-
-# single bar chart (input: dataframe and title string)
-def make_bar_chart(values, category, school_name):
-    data = values.copy()
-    
-    schools = data['School Name'].tolist()
-
-    # assign colors for each comparison school
-    trace_color = {schools[i]: color[i] for i in range(len(schools))}
-
-    # use specific color for selected school
-    for key, value in trace_color.items():
-        if key == school_name:
-            trace_color[key] = '#b86949'
-
-    # format distance data (not displayed)
-    # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
-
-    fig = px.bar(
-        data,
-        x='School Name',
-        y=category,
-        color_discrete_map=trace_color,
-        color='School Name',
-        custom_data  = ['Low Grade','High Grade'] #,'Distance']
-    )
-
-    fig.update_yaxes(range=[0, 1], dtick=0.2, tickformat=',.0%',title='',showgrid=True, gridcolor='#b0c4de')
-    fig.update_xaxes(type='category', showticklabels=False, title='',showline=True,linewidth=1,linecolor='#b0c4de')
-
-    fig.update_layout(
-        title_x=0.5,
-        margin=dict(l=40, r=40, t=40, b=60),
-        font = dict(
-            family='Open Sans, sans-serif',
-            color='steelblue',
-            size=10
-            ),
-        legend=dict(
-            orientation='h',
-            title='',
-            xanchor= 'center',
-            x=0.45
-        ),
-        height=350,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
-
-    # TODO: Make prettier?
-    fig.update_traces(
-        # hovertemplate = '<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br>Distance in miles: %{customdata[2]}<br>Proficiency: %{y}<br><extra></extra>'
-        hovertemplate = '<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br>Proficiency: %{y}<br><extra></extra>'
-    )
-
-    return fig
-
-# grouped bar chart (input: dataframe)
-def make_group_bar_chart(values, school_name):
-
-    data = values.copy()
-
-    # find the index of the row containing the school name,
-    # use this to filter data (next line) and also with
-    # data_table row_index to Bold the school's name.
-    school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
-
-    # Only want to display categories where the selected school has data - this
-    # drops all columns where the row at school_name_idx has a NaN value
-    data = data.loc[:, ~data.iloc[school_name_idx].isna()]
-
-    # reset index
-    data.reset_index(drop=True,inplace=True)
-
-    # remove trailing string
-    data.columns = data.columns.str.split('|').str[0]
-
-    # replace any '***' values (insufficient n-size) with NaN
-    data = data.replace('***', np.nan)
-
-    # force non-string columns to numeric
-    cols=[i for i in data.columns if i not in ['School Name','Year']]
-    for col in cols:
-        data[col]=pd.to_numeric(data[col], errors='coerce')
-
-    # num_schools = len(data['School Name'])
-
-    categories = data.columns.tolist()
-    categories.remove('School Name')
-    schools = data['School Name'].tolist()
-
-    # melt dataframe from 'wide' format to 'long' format (plotly express
-    # can handle either, but long format makes hovertemplate easier
-    #  - trust me)
-    data_set = pd.melt(data, id_vars='School Name',value_vars = categories, var_name='Categories', ignore_index=False)
-
-    data_set.reset_index(drop=True, inplace=True)
-
-    # replace any remaining NaN with 0
-    data_set = data_set.fillna(0)
-
-    # assign colors for each comparison
-    trace_color = {schools[i]: color[i] for i in range(len(schools))}
-
-    # replace color for selected school
-    for key, value in trace_color.items():
-        if key == school_name:
-            trace_color[key] = '#b86949'
-
-    fig = px.bar(
-        data_frame = data_set,
-        x = 'Categories',
-        y = 'value',
-        color = 'School Name',
-        color_discrete_map = trace_color,
-        orientation = 'v',
-        barmode = 'group',
-        custom_data = ['School Name']
-    )
-
-    fig.update_yaxes(range=[0, 1], dtick=0.2, tickformat=',.0%', title='',showgrid=True, gridcolor='#b0c4de')
-    fig.update_xaxes(title='',showline=True,linewidth=.5,linecolor='#b0c4de')
-
-    # TODO: Issue with the relationship between the chart and the table.
-    # Cannot figure out a way to reduce the bottom margin of a chart to
-    # reduce the amount of empty space
-
-    # Cannot seem to shrink bottom margin here - had to add negative margin
-    # to each fig layout. Try this maybe:
-    # it takes maximum value and multiplies it by three for max range (eg., less than 100)
-    #fig.update_layout(yaxis=dict(range=[0, ymax*3]))
-
-    fig.update_layout(
-        title_x=0.5,
-        margin=dict(l=40, r=40, t=40, b=40),
-        font = dict(
-            family='Open Sans, sans-serif',
-            color='steelblue',
-            size=10
-            ),
-        bargap=.15,
-        bargroupgap=0,
-        height=400,
-        legend_title='',
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
-
-# TODO: In progress - The purpose of all this is to get '0' values in
-# a bar chart to show up as a thin line (as opposed to no line for no data)
-
-# TODO: Add thin marker_line_color (border) to each bar - This will cause '0' vals to show up as a thin line
-# Currently cannot figure out how to make the marker_line_color match the bar color
-# May be able to use Go to add each trace separately and just flag the zero value bar for a markerline, but
-# that would require a complete rewrite which I'd like to avoid.
-# Surely there is a way to get this to work with plotly express
-# https://plotly.com/python/marker-style/
-#
-    # {'ACE Preparatory Academy': '#98abc5', 'Indianapolis Public Schools': '#919ab6', 'Center for Inquiry School 70': '#8a89a6', 'IPS/Butler Lab at Eliza Blaker 55': '#837997', 'Merle Sidener Gifted Academy': '#7b6888', 'Rousseau McClellan School 91': '#73587a'}
-    # for i in range(num_schools):
-    #     print(i)
-    # colorlist = [[0, '#98abc5'], [.2, '#919ab6'], [.4, '#8a89a6'], [.6, '#837997'], [.8, '#7b6888'], [1, '#73587a']]
-    # #colorlist = [[0, 'rgb(152, 171, 197)'], [1, 'rgb(145, 154, 182)'], [2, 'rgb(138, 137, 166)'], [3, 'rgb(131, 121, 151)'], [4, 'rgb(123, 104, 136)'], [5, 'rgb(115, 88, 122)']]
-
-    # fig.update_traces(marker_line_width = 2, marker_line_color = colorlist) #marker_line_color = dict(trace_color),
-    # fig.update_traces(
-    #     marker_size=2,
-    #     marker_line=dict(width=12, colorscale = colorlist), #color['hex']),
-    #     selector=dict(mode='markers')
-    # )
-
-# https://stackoverflow.com/questions/69000770/plotly-bar-chart-with-dotted-or-dashed-border-how-to-implement
-    # data2={"years":[2019,2020,2021,2022],
-    #     "total_value":[100000000000,220000000000,350000000000,410000000000]}
-    # print(data2)
-    # print(data)
-    # x_location = data["years"].index(2022)
-    # print(x_location)
-    # def get_plotly_xcoordinates(category, width=0.8):
-    #     x_location = data_set['Categories'].index(category)
-    #     print(x_location)
-    #     return x_location - width/2, x_location + width/2
-    
-    # for cat in data_set['Categories']:
-    #     print(cat)
-    #     x0,x1 = get_plotly_xcoordinates(cat)
-
-    #     fig.add_shape(type="rect", xref="x", yref="y",
-    #         x0=x0, y0=0,
-    #         x1=x1, y1=410000000000,
-    #         line=dict(color="#FED241",dash="dash",width=3)
-    # )
-
-    #TODO: Make prettier?
-    fig.update_traces(
-        hovertemplate="<br>".join(
-            [
-                s.replace(" ", "&nbsp;")
-                for s in [
-                    '%{customdata[0]}',
-                    'Proficiency: %{y}<br><extra></extra>',
-                ]
-            ]
-        )
-    )
-
-    return fig
-
-def make_table(data,school_name):
-
-    # find the index of the row containing the school name
-    school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
-
-    # drop all columns where the row at school_name_idx has a NaN value
-    data = data.loc[:, ~data.iloc[school_name_idx].isna()]
-
-    # sort dataframe by the 'first' proficiency column and reset index
-    data = data.sort_values(data.columns[1], ascending=False)
-    data = data.reset_index(drop=True)
-
-    # need to find the index again because the sort has jumbled things up
-    school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
-
-    # hide the header 'School Name'
-    data = data.rename(columns = {'School Name' : ''})
-    
-    table = dash_table.DataTable(
-        data.to_dict('records'),
-        columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.percentage(2)} for i in data.columns],
-        merge_duplicate_headers=True,
-        style_as_list_view=True,
-        id='tst-table',
-        style_data={
-            'fontSize': '10px',
-            'fontFamily': 'Arial, Helvetica, sans-serif',
-            'color': '#6783a9'
-        },
-        style_data_conditional=[
-            {
-                'if': {
-                    'row_index': 'even'
-                },
-                'backgroundColor': '#eeeeee',
-                'border': 'none',
-            },
-            {
-                'if': {
-                    'row_index': school_name_idx
-                },
-                'fontWeight': 'bold',
-                'color': '#b86949',
-            },
-        ],
-        style_header={
-            'height': '10px',
-            'backgroundColor': 'white',
-            'fontSize': '10px',
-            'fontFamily': 'Arial, Helvetica, sans-serif',
-            'color': '#6783a9',
-            'textAlign': 'center',
-            'fontWeight': 'bold',
-            'borderBottom': 'none',
-            'borderTop': 'none',    
-        },
-        style_header_conditional=[
-            {
-                'if': {
-                    'header_index': 0,
-                    },
-                    'text-decoration': 'underline'
-            },
-        ],
-        style_cell={
-            'whiteSpace': 'normal',
-            'height': 'auto',
-            'textAlign': 'center',
-            'minWidth': '25px', 'width': '25px', 'maxWidth': '25px',
-            'border': 'none',
-        },
-        style_cell_conditional=[
-            {'if': {'column_id': ''},
-            'textAlign': 'left',
-            'paddingLeft': '30px'}
-        ],
-    )
-    return table
-
-# Find nearest schools in miles using a KDTree
-def find_nearest(school_idx,data):
-    "Based on https://stackoverflow.com/q/43020919/190597"
-    "Uses scipy.spatial KDTree "
-# https://stackoverflow.com/questions/45127141/find-the-nearest-point-in-distance-for-all-the-points-in-the-dataset-python
-# https://stackoverflow.com/questions/43020919/scipy-how-to-convert-kd-tree-distance-from-query-to-kilometers-python-pandas
-# https://kanoki.org/2020/08/05/find-nearest-neighbor-using-kd-tree/
-
-    # the radius of earth in miles. For kilometers use 6372.8 km
-    R = 3959.87433 
-
-    # as the selected school already exists in 'data' df, just pass in index and use that to find it
-    data = data.apply(pd.to_numeric)
-
-    phi = np.deg2rad(data['Lat'])
-    theta = np.deg2rad(data['Lon'])
-    data['x'] = R * np.cos(phi) * np.cos(theta)
-    data['y'] = R * np.cos(phi) * np.sin(theta)
-    data['z'] = R * np.sin(phi)
-    tree = spatial.KDTree(data[['x', 'y','z']])
-
-    num_hits = 30
-
-    # gets a list of the indexes and distances in the data tree that
-    # match the [num_hits] number of 'nearest neighbor' schools
-    distance, index = tree.query(data.iloc[school_idx][['x', 'y','z']], k = num_hits)
-    
-    return index, distance
-
-## Callbacks
 
 # Set options for comparison schools (multi-select dropdown)
 # NOTE: See 01.10.22 backup for original code
@@ -581,19 +132,7 @@ def set_dropdown_options(school, year, selected):
     # drop schools with no grades (NOTE: Not sure why dropna doesn't work here, but it doesn't)
     comparison_set = comparison_set[comparison_set['Low Grade'].str.contains('nan')==False]
 
-    # creates a boolean mask of those schools where there is a grade overlap based on a list created
-    # from the Low Grade and High Grade values. We use it to filter out those schools within the school
-    # corporation that do not overlap on grade span
-    def filter_fn(row):
-        row[['Low Grade', 'High Grade']] = row[['Low Grade', 'High Grade']].astype(int)
-        row_grade_range = list(range(row['Low Grade'], row['High Grade']+1))
-
-        if (set(school_grade_range) & set(row_grade_range)):
-            return True
-        else:
-            return False
-
-    grade_mask = comparison_set.apply(filter_fn, axis=1)
+    grade_mask = comparison_set.apply(filter_grades, compare=school_grade_range, axis=1)
     comparison_set = comparison_set[grade_mask]
 
     # limit maximum dropdown to the [n] closest schools
@@ -1068,7 +607,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14c_table_data = fig14c_table_data[['School Name', category]]
                 fig14c_table_data.reset_index(drop=True,inplace=True)
 
-                fig14c_table = make_table(fig14c_table_data, school_name)
+                fig14c_table = create_comparison_table(fig14c_table_data, school_name)
             else:
 
                 fig14c = blank_chart
@@ -1102,7 +641,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14d_table_data = fig14d_table_data[['School Name', category]]
                 fig14d_table_data.reset_index(drop=True,inplace=True)
 
-                fig14d_table = make_table(fig14d_table_data, school_name)
+                fig14d_table = create_comparison_table(fig14d_table_data, school_name)
             else:
                 fig14d = blank_chart
                 fig14d_table = empty_table
@@ -1187,7 +726,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 first_column = final_data.pop('School Name')
                 final_data.insert(0, 'School Name', first_column)
 
-                table = make_table(final_data, school_name)
+                table = create_comparison_table(final_data, school_name)
 
                 return chart, table, category_string, school_string
 

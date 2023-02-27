@@ -20,6 +20,8 @@ from flask import Flask, url_for, redirect, request, render_template, session, j
 from flask_login import login_user, LoginManager, UserMixin, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 
+from pages.calculations import set_academic_rating
+
 # from flask_migrate import Migrate
 from sqlalchemy import create_engine, text, select
 
@@ -27,7 +29,6 @@ from sqlalchemy import create_engine, text, select
 from flask_bcrypt import Bcrypt
 
 # from flask_wtf.csrf import CSRFProtect
-
 # dash #
 import dash
 from dash import dcc, html, Input, Output, State, callback
@@ -39,15 +40,15 @@ import json
 import numpy as np
 import itertools
 
+# To access .env files in virtualenv
+from dotenv import load_dotenv
+
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Roboto:400"]
 
 # Authentication with Flask-Login, Sqlite3, and Bcrypt
 # https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/38
 # https://stackoverflow.com/questions/52286507/how-to-merge-flask-login-with-a-dash-application
 server = Flask(__name__, static_folder="./static")
-
-# To access .env files in virtualenv
-from dotenv import load_dotenv
 
 # dotenv_path = join(dirname(__file__), '.env')
 # load_dotenv(dotenv_path)
@@ -121,8 +122,8 @@ def check_login():
 # Login logic
 message = "Invalid username and/or password."
 
-
 @server.route("/login", methods=["GET", "POST"])
+
 def login():
     if request.method == "GET":
         # if user is authenticated - redirect to dash app
@@ -179,78 +180,77 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 
+# # set_academic_rating (): determines ratings for academic indicators
+# # inputs: value, list, and (flag) integer
+# def set_academic_rating(data, threshold, flag):
+#     # if data is a string
+#     if data == "***" or data == "No Grade":
+#         indicator = "NA"
+#         return indicator
 
-# getRating (): determines ratings for academic indicators
-# inputs: value, list, and (flag) integer
-def getRating(data, threshold, flag):
-    # if data is a string
-    if data == "***" or data == "No Grade":
-        indicator = "NA"
-        return indicator
+#     if data == "-***":
+#         indicator = "DNMS"
+#         return indicator
 
-    if data == "-***":
-        indicator = "DNMS"
-        return indicator
+#     # if data is NoneType
+#     if data is None:
+#         indicator = "NA"
+#         return indicator
 
-    # if data is NoneType
-    if data is None:
-        indicator = "NA"
-        return indicator
+#     # letter_grade ratings (type string)
+#     if flag == 4:  # lettergrade ratings
+#         if data == threshold[0]:
+#             indicator = "ES"
+#         elif data == threshold[1]:
+#             indicator = "MS"
+#         elif data == threshold[2]:
+#             indicator = "AS"
+#         else:
+#             indicator = "DNMS"
+#         return indicator
 
-    # letter_grade ratings (type string)
-    if flag == 4:  # lettergrade ratings
-        if data == threshold[0]:
-            indicator = "ES"
-        elif data == threshold[1]:
-            indicator = "MS"
-        elif data == threshold[2]:
-            indicator = "AS"
-        else:
-            indicator = "DNMS"
-        return indicator
+#     # numeric checks - ensure type is float
+#     data = float(data)
 
-    # numeric checks - ensure type is float
-    data = float(data)
+#     # if data is NaN
+#     if np.isnan(data):
+#         indicator = "NA"
+#         return indicator
 
-    # if data is NaN
-    if np.isnan(data):
-        indicator = "NA"
-        return indicator
+#     # academic ratings (numeric)
+#     if flag == 1:
+#         if data >= threshold[0]:
+#             indicator = "ES"
+#         elif data > threshold[1]:
+#             indicator = "MS"
+#         elif data >= threshold[2]:
+#             indicator = "AS"
+#         elif data <= threshold[3]:
+#             indicator = "DNMS"
 
-    # academic ratings (numeric)
-    if flag == 1:
-        if data >= threshold[0]:
-            indicator = "ES"
-        elif data > threshold[1]:
-            indicator = "MS"
-        elif data >= threshold[2]:
-            indicator = "AS"
-        elif data <= threshold[3]:
-            indicator = "DNMS"
+#     # graduation rate ratings (numeric)
+#     if flag == 2:
+#         if data >= threshold[0]:
+#             indicator = "ES"
+#         elif data < threshold[0] and data >= threshold[1]:
+#             indicator = "MS"
+#         elif data < threshold[1] and data >= threshold[2]:
+#             indicator = "AS"
+#         else:
+#             indicator = "DNMS"
 
-    # graduation rate ratings (numeric)
-    if flag == 2:
-        if data >= threshold[0]:
-            indicator = "ES"
-        elif data < threshold[0] and data >= threshold[1]:
-            indicator = "MS"
-        elif data < threshold[1] and data >= threshold[2]:
-            indicator = "AS"
-        else:
-            indicator = "DNMS"
+#     # attendance rate ratings (numeric)
+#     if flag == 3:
+#         if data > threshold[0]:
+#             indicator = "ES"
+#         elif data < threshold[0] and data >= threshold[1]:
+#             indicator = "MS"
+#         # elif data < threshold[1]:
+#         #     indicator = 'AS'
+#         else:
+#             indicator = "DNMS"
 
-    # attendance rate ratings (numeric)
-    if flag == 3:
-        if data > threshold[0]:
-            indicator = "ES"
-        elif data < threshold[0] and data >= threshold[1]:
-            indicator = "MS"
-        # elif data < threshold[1]:
-        #     indicator = 'AS'
-        else:
-            indicator = "DNMS"
-
-    return indicator
+#     return indicator
 
 
 # category variables
@@ -682,9 +682,9 @@ def load_data(school, year):
         #   2) for each step, the code inserts a new column, at index 'i'. The column header is a string that is
         #   equal to 'the year (YYYY) part of the column string (attendance_data_metrics.columns[i-1])[:7 - 3]) +
         #   'Rating' + 'i' (the value of 'i' doesn't matter other than to differentiate the columns) +
-        #   the accountability value, a string returned by the getRating() function.
+        #   the accountability value, a string returned by the set_academic_rating() function.
         #
-        #   3) the getRating() function calculates an 'accountability rating' ('MS', 'DNMS', 'N/A', etc) taking as args:
+        #   3) the set_academic_rating() function calculates an 'accountability rating' ('MS', 'DNMS', 'N/A', etc) taking as args:
         #       i) the 'value' to be rated. this will be from the 'School' column, if the value itself is rated
         #          (e.g., iread performance), or the difference ('+/-') column, if there is an additional calculation
         #           required (e.g., year over year or compared to corp);
@@ -697,7 +697,7 @@ def load_data(school, year):
                 + "Rating"
                 + str(i),
                 attendance_data_metrics.apply(
-                    lambda x: getRating(
+                    lambda x: set_academic_rating(
                         x[attendance_data_metrics.columns[i - 1]], attendance_limits, 3
                     ),
                     axis=1,
@@ -1145,7 +1145,7 @@ def load_data(school, year):
                         i,
                         str(iread_data.columns[i - 1])[: 7 - 3] + "Rating" + str(i),
                         iread_data.apply(
-                            lambda x: getRating(
+                            lambda x: set_academic_rating(
                                 x[iread_data.columns[i - 1]], iread_limits, 1
                             ),
                             axis=1,
@@ -1304,7 +1304,7 @@ def load_data(school, year):
                     i,
                     str(diff_to_corp.columns[i - 1])[: 7 - 3] + "Rating" + str(i),
                     diff_to_corp.apply(
-                        lambda x: getRating(
+                        lambda x: set_academic_rating(
                             x[diff_to_corp.columns[i - 1]], delta_limits, 1
                         ),
                         axis=1,
@@ -1319,7 +1319,7 @@ def load_data(school, year):
                     + "Rating"
                     + str(i),
                     year_over_year_values.apply(
-                        lambda x: getRating(
+                        lambda x: set_academic_rating(
                             x[year_over_year_values.columns[i - 1]], years_limits, 1
                         ),
                         axis=1,
@@ -1347,11 +1347,11 @@ def load_data(school, year):
             diff_to_corp_dict = diff_to_corp.to_dict(into=OrderedDict)
             diff_to_corp_json = json.dumps(diff_to_corp_dict)
 
-            # one last processing step is needed to ensure proper ratings. The getRating() function assigns a rating based on
+            # one last processing step is needed to ensure proper ratings. The set_academic_rating() function assigns a rating based on
             # the '+/-' difference value (either year over year or as compared to corp). For the year over year comparison
             # it is possible to get a rating of 'Approaches Standard' for a '+/-' value of '0.00%' when the yearly ratings
             # are both 0. E.g., both 2022 and 2021 proficiency are both 0% and there is no case where we want a school
-            # to receive anything other than a 'DNMS' for a 0% proficiency. However, the getRating() function does not have
+            # to receive anything other than a 'DNMS' for a 0% proficiency. However, the set_academic_rating() function does not have
             # access to the values used to calculate the difference value (so it cannot tell if a 0 value is the result of
             # a 0 proficiency). So we manually replace any rating in the Rating column with 'DMNS' where the School proficiency
             # value is '0.00%.'
@@ -1948,7 +1948,7 @@ def load_data(school, year):
                         i,
                         str(ahs_metric_cols[i - 2]) + "Rating" + str(i),
                         ahs_metric_data.apply(
-                            lambda x: getRating(
+                            lambda x: set_academic_rating(
                                 x[ahs_metric_data.columns[i - 1]], ccr_limits, 2
                             ),
                             axis=1,
@@ -1980,7 +1980,7 @@ def load_data(school, year):
                         i,
                         str(ahs_metric_cols[i - 2]) + "Rating" + str(i),
                         ahs_state_grades.apply(
-                            lambda x: getRating(
+                            lambda x: set_academic_rating(
                                 x[ahs_state_grades.columns[i - 1]],
                                 letter_grade_limits,
                                 4,
@@ -2020,7 +2020,7 @@ def load_data(school, year):
                         + "Rating"
                         + str(i),
                         state_grad_metric.apply(
-                            lambda x: getRating(
+                            lambda x: set_academic_rating(
                                 x[state_grad_metric.columns[i - 1]],
                                 grad_limits_state,
                                 2,
@@ -2044,7 +2044,7 @@ def load_data(school, year):
                         + "Rating"
                         + str(i),
                         local_grad_metric.apply(
-                            lambda x: getRating(
+                            lambda x: set_academic_rating(
                                 x[local_grad_metric.columns[i - 1]],
                                 grad_limits_local,
                                 2,

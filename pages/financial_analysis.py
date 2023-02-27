@@ -15,6 +15,8 @@ import numpy as np
 import os.path
 import plotly.graph_objects as go
 
+from .chart_helpers import blank_fig
+
 # import subnav function
 from .subnav import subnav_finance
 dash.register_page(__name__, path = '/financial_analysis', order=3)
@@ -1052,33 +1054,33 @@ def update_financial_analysis_page(data, year, radio_value):
 
 # Layout
 
-## Blank (Loading) Fig ##
-# https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
-def blank_fig():
-    fig = {
-        'layout': {
-            'xaxis': {
-                'visible': False
-            },
-            'yaxis': {
-                'visible': False
-            },
-            'annotations': [
-                {
-                    'text': 'Loading . . .',
-                    'xref': 'paper',
-                    'yref': 'paper',
-                    'showarrow': False,
-                    'font': {
-                        'size': 16,
-                        'color': '#6783a9',
-                        'family': 'Roboto, sans-serif'
-                    }
-                }
-            ]
-        }
-    }
-    return fig
+# ## Blank (Loading) Fig ##
+# # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
+# def blank_fig():
+#     fig = {
+#         'layout': {
+#             'xaxis': {
+#                 'visible': False
+#             },
+#             'yaxis': {
+#                 'visible': False
+#             },
+#             'annotations': [
+#                 {
+#                     'text': 'Loading . . .',
+#                     'xref': 'paper',
+#                     'yref': 'paper',
+#                     'showarrow': False,
+#                     'font': {
+#                         'size': 16,
+#                         'color': '#6783a9',
+#                         'family': 'Roboto, sans-serif'
+#                     }
+#                 }
+#             ]
+#         }
+#     }
+#     return fig
 
 label_style = {
     'height': '20px',

@@ -11,10 +11,13 @@ from dash import html, dcc, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
-import numpy as np
+# import numpy as np
 import json
 import pandas as pd
 import re
+
+from .chart_helpers import blank_fig, make_stacked_bar
+from .calculations import round_percentages
 
 # import subnav function
 from .subnav import subnav_academic
@@ -87,29 +90,29 @@ empty_table = [
     )
 ]
 
-## Blank (Loading) Fig ##
-# https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
-def blank_fig():
-    fig = {
-        "layout": {
-            "xaxis": {"visible": False},
-            "yaxis": {"visible": False},
-            "annotations": [
-                {
-                    "text": "Loading . . .",
-                    "xref": "paper",
-                    "yref": "paper",
-                    "showarrow": False,
-                    "font": {
-                        "size": 16,
-                        "color": "#6783a9",
-                        "family": "Roboto, sans-serif",
-                    },
-                }
-            ],
-        }
-    }
-    return fig
+# ## Blank (Loading) Fig ##
+# # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
+# def blank_fig():
+#     fig = {
+#         "layout": {
+#             "xaxis": {"visible": False},
+#             "yaxis": {"visible": False},
+#             "annotations": [
+#                 {
+#                     "text": "Loading . . .",
+#                     "xref": "paper",
+#                     "yref": "paper",
+#                     "showarrow": False,
+#                     "font": {
+#                         "size": 16,
+#                         "color": "#6783a9",
+#                         "family": "Roboto, sans-serif",
+#                     },
+#                 }
+#             ],
+#         }
+#     }
+#     return fig
 
 @callback(
     Output("k8-grade-table", "children"),
@@ -286,47 +289,47 @@ def update_about_page(data, school, year):
             "Above Proficiency",
         ]
 
-        def round_percentages(percentages):
-            """
-            https://github.com/simondo92/round-percentages
-            Given an iterable of percentages that add up to 100, round them to the nearest integer such
-            that the rounded percentages also add up to 100. Uses the largest remainder method.
-            E.g. round_percentages([13.626332, 47.989636, 9.596008, 28.788024]) -> [14, 48, 9, 29]
+        # def round_percentages(percentages):
+        #     """
+        #     https://github.com/simondo92/round-percentages
+        #     Given an iterable of percentages that add up to 100, round them to the nearest integer such
+        #     that the rounded percentages also add up to 100. Uses the largest remainder method.
+        #     E.g. round_percentages([13.626332, 47.989636, 9.596008, 28.788024]) -> [14, 48, 9, 29]
 
-            Update: Added code to turn decimal percentages into ints
-            """
+        #     Update: Added code to turn decimal percentages into ints
+        #     """
 
-            # if numbers are in decimal format (e.g. .57, .90) then the sum of the numbers should
-            # bet at or near (1). To be safe we test to see if sum is less than 2. If it is, we
-            # multiple all of the numbers in the list by 100 (e.g., 57, 90)
-            if sum(percentages) < 2:
-                percentages = [x * 100 for x in percentages]
+        #     # if numbers are in decimal format (e.g. .57, .90) then the sum of the numbers should
+        #     # bet at or near (1). To be safe we test to see if sum is less than 2. If it is, we
+        #     # multiple all of the numbers in the list by 100 (e.g., 57, 90)
+        #     if sum(percentages) < 2:
+        #         percentages = [x * 100 for x in percentages]
 
-            result = []
-            sum_of_integer_parts = 0
+        #     result = []
+        #     sum_of_integer_parts = 0
 
-            for index, percentage in enumerate(percentages):
-                integer, decimal = str(float(percentage)).split(".")
-                integer = int(integer)
-                decimal = int(decimal)
+        #     for index, percentage in enumerate(percentages):
+        #         integer, decimal = str(float(percentage)).split(".")
+        #         integer = int(integer)
+        #         decimal = int(decimal)
 
-                result.append([integer, decimal, index])
-                sum_of_integer_parts += integer
+        #         result.append([integer, decimal, index])
+        #         sum_of_integer_parts += integer
 
-            result.sort(key=lambda x: x[1], reverse=True)
-            difference = 100 - sum_of_integer_parts
+        #     result.sort(key=lambda x: x[1], reverse=True)
+        #     difference = 100 - sum_of_integer_parts
 
-            for percentage in result:
-                if difference == 0:
-                    break
-                percentage[0] += 1
-                difference -= 1
+        #     for percentage in result:
+        #         if difference == 0:
+        #             break
+        #         percentage[0] += 1
+        #         difference -= 1
 
-            # order by the original order
-            result.sort(key=lambda x: x[2])
+        #     # order by the original order
+        #     result.sort(key=lambda x: x[2])
 
-            # return just the percentage
-            return [percentage[0] for percentage in result]
+        #     # return just the percentage
+        #     return [percentage[0] for percentage in result]
 
         # for each category, create a list of columns using the strings in
         #  'proficiency_rating' and then divide each column by 'Total Tested'
@@ -423,155 +426,155 @@ def update_about_page(data, school, year):
             all_proficiency_data["Category"] != "index"
         ]
 
-        def make_stacked_bar(data):
-            colors = plotly.colors.qualitative.Prism
+        # def make_stacked_bar(data):
+        #     colors = plotly.colors.qualitative.Prism
             
-            if data["Proficiency"].str.contains('Math').any():
-                fig_title = year + " Math Proficiency Breakdown"
-            else:
-                fig_title = year + " ELA Proficiency Breakdown"
+        #     if data["Proficiency"].str.contains('Math').any():
+        #         fig_title = year + " Math Proficiency Breakdown"
+        #     else:
+        #         fig_title = year + " ELA Proficiency Breakdown"
             
-            data["Proficiency"] = data["Proficiency"].replace(
-                {"Math ": "", "ELA ": ""}, regex=True
-            )
+        #     data["Proficiency"] = data["Proficiency"].replace(
+        #         {"Math ": "", "ELA ": ""}, regex=True
+        #     )
 
-            # Use this function to create wrapped text using
-            # html tags based on the specified width
-            # NOTE: adding two spaces before <br> to ensure the words at
-            # the end of each break have the same spacing as 'ticksuffix'
-            # below
-            import textwrap
-            def customwrap(s,width=16):
-                return "  <br>".join(textwrap.wrap(s,width=width))
+        #     # Use this function to create wrapped text using
+        #     # html tags based on the specified width
+        #     # NOTE: adding two spaces before <br> to ensure the words at
+        #     # the end of each break have the same spacing as 'ticksuffix'
+        #     # below
+        #     import textwrap
+        #     def customwrap(s,width=16):
+        #         return "  <br>".join(textwrap.wrap(s,width=width))
             
-            # In order to get the total_tested value into hovertemplate
-            # without displaying it on the chart, we need to pull the
-            # Total Tested values out of the dataframe and into a new
-            # column
-            # Copy all of the Total Tested Values
-            total_tested = data.loc[data['Proficiency'] == 'Total Tested']
+        #     # In order to get the total_tested value into hovertemplate
+        #     # without displaying it on the chart, we need to pull the
+        #     # Total Tested values out of the dataframe and into a new
+        #     # column
+        #     # Copy all of the Total Tested Values
+        #     total_tested = data.loc[data['Proficiency'] == 'Total Tested']
 
-            # Merge the total tested values with the existing dataframe
-            # This adds 'percentage_x' and 'percentage_y' columns.
-            # 'percentage_y' is equal to the Total Tested Values
-            data = pd.merge(data, total_tested[['Category','Percentage']], on=['Category'], how='left')
+        #     # Merge the total tested values with the existing dataframe
+        #     # This adds 'percentage_x' and 'percentage_y' columns.
+        #     # 'percentage_y' is equal to the Total Tested Values
+        #     data = pd.merge(data, total_tested[['Category','Percentage']], on=['Category'], how='left')
 
-            # rename the columns (percentage_x to Percentage & percentage_y to Total Tested)
-            data.columns = ['Category','Percentage','Proficiency','Total Tested']
+        #     # rename the columns (percentage_x to Percentage & percentage_y to Total Tested)
+        #     data.columns = ['Category','Percentage','Proficiency','Total Tested']
 
-            # drop the Total Tested Rows
-            data = data[(data['Proficiency'] != 'Total Tested')]
+        #     # drop the Total Tested Rows
+        #     data = data[(data['Proficiency'] != 'Total Tested')]
 
-            fig = px.bar(
-                data,
-                x= data['Percentage'],
-                y = data['Category'].map(customwrap),
-                color=data['Proficiency'],
-                barmode='stack',
-                text=[f'{i}%' for i in data['Percentage']],
-                # custom_data = np.stack((data['Proficiency'], data['Total Tested']), axis=-1),
-                custom_data = [data['Proficiency'], data['Total Tested']],
-                orientation="h",
-                color_discrete_sequence=colors,
-                height=200,
-                title = fig_title
-            )
+        #     fig = px.bar(
+        #         data,
+        #         x= data['Percentage'],
+        #         y = data['Category'].map(customwrap),
+        #         color=data['Proficiency'],
+        #         barmode='stack',
+        #         text=[f'{i}%' for i in data['Percentage']],
+        #         # custom_data = np.stack((data['Proficiency'], data['Total Tested']), axis=-1),
+        #         custom_data = [data['Proficiency'], data['Total Tested']],
+        #         orientation="h",
+        #         color_discrete_sequence=colors,
+        #         height=200,
+        #         title = fig_title
+        #     )
 
-            #TODO: Remove trace name. Show Total Tested only once. Remove legend colors.
+        #     #TODO: Remove trace name. Show Total Tested only once. Remove legend colors.
             
-            #customize the hovertemplate for each segment of each bar
-            fig['data'][0]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
-            fig['data'][1]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
-            fig['data'][2]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
-            fig['data'][3]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
+        #     #customize the hovertemplate for each segment of each bar
+        #     fig['data'][0]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
+        #     fig['data'][1]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
+        #     fig['data'][2]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
+        #     fig['data'][3]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
 
-            print(fig['data'][3])
-            # Add hoverdata
-            # TODO: Issue: In a 100% stacked bar chart traces are generated by grouping
-            # a column with values adding up to 100%. In this case, there will always
-            # be 4 values (the number of items in "proficiency_rating"). So each trace
-            # is made up of 4 rows. With a unified hovermode, customdata[0] and customdata[1]
-            #  read only the number of rows in the dataframe equal to the number of traces, in
-            # this case 4. So we need to restructure customdata to include: each rating
-            # print(data['Total Tested'])
-            # data.loc[1, 'Total Tested'] = '99'
-            # print(data['Total Tested'])
+        #     print(fig['data'][3])
+        #     # Add hoverdata
+        #     # TODO: Issue: In a 100% stacked bar chart traces are generated by grouping
+        #     # a column with values adding up to 100%. In this case, there will always
+        #     # be 4 values (the number of items in "proficiency_rating"). So each trace
+        #     # is made up of 4 rows. With a unified hovermode, customdata[0] and customdata[1]
+        #     #  read only the number of rows in the dataframe equal to the number of traces, in
+        #     # this case 4. So we need to restructure customdata to include: each rating
+        #     # print(data['Total Tested'])
+        #     # data.loc[1, 'Total Tested'] = '99'
+        #     # print(data['Total Tested'])
 
-            # customdata = np.stack((data['Proficiency'], data['Total Tested']), axis=-1)
-            # print(customdata)
-            # hovertemplate = (
-            #     'Total Tested: %{customdata[1]}<br>' +
-            #     '%{text}: %{customdata[0]}<extra></extra>')
+        #     # customdata = np.stack((data['Proficiency'], data['Total Tested']), axis=-1)
+        #     # print(customdata)
+        #     # hovertemplate = (
+        #     #     'Total Tested: %{customdata[1]}<br>' +
+        #     #     '%{text}: %{customdata[0]}<extra></extra>')
             
-            # fig.update_traces(customdata=customdata, hovertemplate=hovertemplate)
+        #     # fig.update_traces(customdata=customdata, hovertemplate=hovertemplate)
 
 
-            # the uniformtext_minsize and uniformtext_mode settings hide bar chart
-            # text (Percentage) if the size of the chart causes the text of the font
-            # to decrease below 8px. The text is required to be positioned 'inside'
-            # the bar due to the 'textposition' variable
-            fig.update_layout(
-                margin=dict(l=10, r=10, t=20, b=0),
-                font_family="Open Sans, sans-serif",
-                font_color="steelblue",
-                font_size=8,
-                # legend=dict(
-                #     orientation="h",
-                #     title="",
-                #     x=0,
-                #     font=dict(
-                #         family="Open Sans, sans-serif", color="steelblue", size=8
-                #     ),
-                # ),
-                plot_bgcolor="white",
-                hovermode='y unified',
-                hoverlabel=dict(
-                    bgcolor = 'grey',
-                    font=dict(
-                        family="Open Sans, sans-serif", color="white", size=8
-                    ),
-                ),
-                yaxis=dict(autorange="reversed"),
-                uniformtext_minsize=8,
-                uniformtext_mode='hide',
-                title={
-                    'y':0.975,
-                    'x':0.5,
-                    'xanchor': 'center',
-                    'yanchor': 'top'},
-                bargroupgap = 0,
-                showlegend = False,
-            )
+        #     # the uniformtext_minsize and uniformtext_mode settings hide bar chart
+        #     # text (Percentage) if the size of the chart causes the text of the font
+        #     # to decrease below 8px. The text is required to be positioned 'inside'
+        #     # the bar due to the 'textposition' variable
+        #     fig.update_layout(
+        #         margin=dict(l=10, r=10, t=20, b=0),
+        #         font_family="Open Sans, sans-serif",
+        #         font_color="steelblue",
+        #         font_size=8,
+        #         # legend=dict(
+        #         #     orientation="h",
+        #         #     title="",
+        #         #     x=0,
+        #         #     font=dict(
+        #         #         family="Open Sans, sans-serif", color="steelblue", size=8
+        #         #     ),
+        #         # ),
+        #         plot_bgcolor="white",
+        #         hovermode='y unified',
+        #         hoverlabel=dict(
+        #             bgcolor = 'grey',
+        #             font=dict(
+        #                 family="Open Sans, sans-serif", color="white", size=8
+        #             ),
+        #         ),
+        #         yaxis=dict(autorange="reversed"),
+        #         uniformtext_minsize=8,
+        #         uniformtext_mode='hide',
+        #         title={
+        #             'y':0.975,
+        #             'x':0.5,
+        #             'xanchor': 'center',
+        #             'yanchor': 'top'},
+        #         bargroupgap = 0,
+        #         showlegend = False,
+        #     )
 
-            fig.update_traces(
-                textfont_size=8,
-                insidetextanchor = 'middle',
-                textposition='inside',
-                marker_line=dict(width=0),
-                # bar_width=0,
-                showlegend = False, # Trying to get rid of legend in hoverlabel
-            )
+        #     fig.update_traces(
+        #         textfont_size=8,
+        #         insidetextanchor = 'middle',
+        #         textposition='inside',
+        #         marker_line=dict(width=0),
+        #         # bar_width=0,
+        #         showlegend = False, # Trying to get rid of legend in hoverlabel
+        #     )
 
-            fig.update_xaxes(title="")
+        #     fig.update_xaxes(title="")
 
-            # ticksuffix increases the space between the end of the tick label and the chart
-            fig.update_yaxes(title="",ticksuffix = "  ")
+        #     # ticksuffix increases the space between the end of the tick label and the chart
+        #     fig.update_yaxes(title="",ticksuffix = "  ")
 
-            return fig
+        #     return fig
 
         # ELA by Grade
         grade_ela_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(grades_ordinal)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
         ]
-        k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data)
+        k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data,year)
 
         # Math by Grade
         grade_math_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(grades_ordinal)
             & all_proficiency_data["Proficiency"].str.contains("Math")
         ]
-        k8_grade_math_fig = make_stacked_bar(grade_math_fig_data)
+        k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,year)
 
         # ELA by Ethnicity
         ethnicity_ela_fig_data = all_proficiency_data[
@@ -579,28 +582,28 @@ def update_about_page(data, school, year):
             & all_proficiency_data["Proficiency"].str.contains("ELA")
         ]
 
-        k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data)
+        k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,year)
 
         # Math by Ethnicity
         ethnicity_math_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(ethnicity)
             & all_proficiency_data["Proficiency"].str.contains("Math")
         ]
-        k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data)
+        k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,year)
 
         # ELA by Subgroup
         subgroup_ela_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(subgroup)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
         ]
-        k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data)
+        k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data,year)
 
         # Math by Subgroup
         subgroup_math_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(subgroup)
             & all_proficiency_data["Proficiency"].str.contains("Math")
         ]
-        k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data)
+        k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,year)
 
         ## K8 Academic Information
         if (
