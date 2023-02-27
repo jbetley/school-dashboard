@@ -170,10 +170,11 @@ def update_financial_metrics(data,year,radio_value):
             # reset index, which shifts Category back to column one
             financial_data = financial_data.reset_index()
 
+            # TODO: TESTING
             # Ensure that only the 'max_display_years' number of years (currently 5)
             # worth of financial data is displayed (add +1 to max_display_years to
             # account for the category column). To show all years of data, comment out this line.
-            financial_data = financial_data.iloc[: , :(max_display_years+1)]
+            #financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
             years = financial_data.columns.tolist()
             years.pop(0)

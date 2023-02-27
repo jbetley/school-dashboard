@@ -190,7 +190,6 @@ def calculate_metrics(metrics):
     Caclulate financial metrics and financial accountability ratings
     based on ICSBs Accountability System financial framework
     """
-
 #TODO: Going to refactor this
 
 # Currently uses a loop. Need to vectorize. Also is one large confusing
@@ -249,43 +248,146 @@ def calculate_metrics(metrics):
         .reset_index()
     )
 
-    print(test_metrics)
-
     test = pd.DataFrame()
+    tmp = pd.DataFrame()
 
+#https://stackoverflow.com/questions/13331698/how-to-apply-a-function-to-two-columns-of-pandas-dataframe
+    # Current Ratio
     test['Current Ratio'] = test_metrics['Current Assets']/test_metrics['Current Liabilities']
+    # returns true if raio is greater than 1.1 or greater than 1 and 
+    # greater than the previous year
+    def ratio_metric_calc(cur,diff):
+        return 'MS' if ((cur > 1.1) | ((cur > 1) & (diff == True))) else 'DNMS'
+    test['Current Ratio Previous'] = test['Current Ratio'].shift(-1)
+    test['Current Ratio Trend'] = test['Current Ratio'] > test['Current Ratio Previous']
+    test['Current Ratio Metric'] = test.apply(lambda x: ratio_metric_calc(x['Current Ratio'], x['Current Ratio Trend']), axis=1)
+    test = test.drop(columns=['Current Ratio Previous','Current Ratio Trend'], axis=1)
+
+
+    # Day's Cash
     test['Days Cash'] = test_metrics['Unrestricted Cash'] / ((test_metrics['Operating Expenses'] - test_metrics['Depreciation/Amortization'])/365)
+    # returns true if day's cash is > 45 or greater or equal to 30 and is greater
+    # than the previous year
+    def days_cash_metric_calc(cur,diff):
+        return 'MS' if ((cur > 45) | ((cur >= 30) & (diff == True))) else 'DNMS'
+    test['Days Cash Previous'] = test['Days Cash'].shift(-1)
+    test['Days Cash Trend'] = test['Days Cash'] > test['Days Cash Previous']
+    test['Days Cash Metric'] = test.apply(lambda x: days_cash_metric_calc(x['Days Cash'], x['Days Cash Trend']), axis=1)
+    test = test.drop(columns=['Days Cash Previous','Days Cash Trend'], axis=1)
+
+
+    # Annual Enrollment Change
     test['Annual Enrollment Change'] = (test_metrics['ADM Average'].shift() - test_metrics['ADM Average']) / test_metrics['ADM Average']
+    # need to shift the column up as a result of the above shift calculation
+    test['Annual Enrollment Change'] = test['Annual Enrollment Change'].shift(-1)
+    test['Annual Enrollment Change Metric'] = test['Annual Enrollment Change'].apply(lambda x: 'MS' if (x > -0.1) else 'DNMS')    
+
+
+    # Primary Reserve Ratio
     test['Primary Reserve Ratio'] = test_metrics['Unrestricted Net Assets'] / test_metrics['Operating Expenses']
+    test['Primary Reserve Ratio Metric'] = test['Primary Reserve Ratio'].apply(lambda x: 'MS' if (x > 0.25) else 'DNMS')
 
-    test['Change in Net Assets Margin'] = test_metrics['Change in Net Assets'] / test_metrics['Operating Revenues']
+
+    # Change in Net ASsets Margin/Aggregated Three-Year Margin
+    test['Change in Net Assets Margin'] = test_metrics['Change in Net Assets'] / test_metrics['Operating Revenues'] 
+    test['Aggregated Three-Year Margin'] = (test_metrics['Change in Net Assets'] + test_metrics['Change in Net Assets'].shift() + test_metrics['Change in Net Assets'].shift(2)) / \
+        (test_metrics['Operating Revenues'] + test_metrics['Operating Revenues'].shift() + test_metrics['Operating Revenues'].shift(2))
+    # need to shift the column up as a result of the above shift calculation
+    test['Aggregated Three-Year Margin'] = test['Aggregated Three-Year Margin'].shift(-2)
+
+    test['AgMar Previous'] = test['Aggregated Three-Year Margin'].shift(-1)
+    test['AgMar Previous 2'] = test['Aggregated Three-Year Margin'].shift(-2)
+    test['AgMar Trend'] = ((test['Aggregated Three-Year Margin'] > test['AgMar Previous']) & (test['AgMar Previous'] > test['AgMar Previous 2']))
+
+    # Aggregated Three-Year Margin is positive and the most recent year Change
+    # in Net Assets Margin is positive; or Aggregated Three-Year Margin is greater
+    # than -1.5%, the trend is positive for the last two years, and Change in Net
+    # Assets Margin for the most recent year is positive. For schools in their
+    # first and second year of operation, the cumulative Change in Net Assets
+    # Margin must be positive.
+    def asset_margin_calc(chcur,agcur,diff):
+        return 'MS' if ((
+            (chcur > 0) & (agcur > 0)) | \
+            (((chcur > 0) & (agcur > .015)) & (diff == True)) \
+        ) else 'DNMS'
+
+    test['Aggregated Three-Year Margin Metric'] = test.apply(lambda x: asset_margin_calc(x['Change in Net Assets Margin'], x['Aggregated Three-Year Margin'],x['AgMar Trend']), axis=1)
     
-    test['Aggregated Three-Year Margin'] = (test_metrics['Change in Net Assets'] + test_metrics['Change in Net Assets'].shift() + test_metrics['Change in Net Assets'].shift().shift()) / \
-        (test_metrics['Operating Revenues'] + test_metrics['Operating Revenues'].shift() + test_metrics['Operating Revenues'].shift().shift())
+    # TODO:
+    # If test['Aggregated Three-Year Margin'].isnan
+    # then test['Aggregated Three-Year Margin Metric'] = N/A
 
-    # if (
-    #         (test['Change in Net Assets Margin'] > 0 and test['Aggregated Three-Year Margin'] > 0) or
-    #         (
-    #             (test['Change in Net Assets Margin'] > 0 and test['Aggregated Three-Year Margin'] > -.015) and
-    #             (aggMar[i] > aggregated_3_year_margin_previous_year) and
-    #             (aggregated_3_year_margin_previous_year > aggregated_3_year_margin_previous_year_2)
-    #         )
-    # test['Metrics'] = 
-    # test['Aggregated Three-Year Margin'] = df.value / np.roll(df.value, shift=-1)
-
-    # test['PY Aggregated Three-Year Margin'] = (test_metrics['Change in Net Assets'].shift() + test_metrics['Change in Net Assets'].shift().shift() + test_metrics['Change in Net Assets'].shift().shift().shift()) / \
-    #         (test_metrics['Operating Revenues'].shift() + test_metrics['Operating Revenues'].shift().shift() + test_metrics['Operating Revenues'].shift().shift().shift())
-
-    # test['2PY Aggregated Three-Year Margin'] = (test_metrics['Change in Net Assets'].shift().shift() + test_metrics['Change in Net Assets'].shift().shift().shift() + test_metrics['Change in Net Assets'].shift().shift().shift().shift()) / \
-    #         (test_metrics['Operating Revenues'].shift().shift() + test_metrics['Operating Revenues'].shift().shift().shift() + test_metrics['Operating Revenues'].shift().shift().shift().shift())
-
-
-    test['Debt to Asset Ratio'] = test_metrics['Total Liabilities'] / test_metrics['Total Assets']
-    test['Cash Flow'] = test_metrics['Unrestricted Cash'].shift() - test_metrics['Unrestricted Cash']
-    test['Multi-Year Cash Flow'] = test_metrics['Unrestricted Cash'].shift().shift() - test_metrics['Unrestricted Cash']
-    test['Debt Service Coverage Ratio'] = (test_metrics['Change in Net Assets'] + test_metrics['Lease/Mortgage Payments'] + test_metrics['Depreciation/Amortization'] + test_metrics['Interest Expense']) / (test_metrics['Lease/Mortgage Payments'] + test_metrics['Principal Payments'] + test_metrics['Interest Expense'])
-
+    # TODO:
+    # If Y1 or Y2 and CHNM is > 0 then  test['Change in Net Assets Margin Metric']
+    # should be MS  
     print(test.T)
+
+    # TODO: Need to figure out the "Must have equal len keys and value when
+    # setting with an ndarray" error
+    # TODO: Account for the First two years CHNM positive
+
+    test['Change in Net Assets Margin Metric'] = test['Change in Net Assets Margin'].apply(lambda x: 'MS' if (x > 0) else 'DNMS')
+    
+    # Create a separate df to do the accountabilities calcuations
+    # tmp['Aggregated Three-Year Margin'] = test['Aggregated Three-Year Margin'].copy()
+    
+    # # create temporary columns with shifted values to do comparisons
+    # tmp['P'] = tmp['Aggregated Three-Year Margin'].shift(-1)
+    # tmp['P2'] = tmp['Aggregated Three-Year Margin'].shift(-2)
+    # # create temporary column that is true if the trend is positive for the last
+    # # two years (e.g., CY > PY and PY > PY2)
+    # tmp['Meets'] = (tmp['Aggregated Three-Year Margin'] > tmp['P']) & (tmp['P'] > tmp['P2'])
+
+    # # delete first two rows (caused by shifting)
+    # tmp = tmp.iloc[2:]
+    # tmp=tmp.reset_index(drop=True)
+
+    # # drop ATYM column from df and add the tmp columns instead
+    # test = test.drop(columns=['Aggregated Three-Year Margin'], axis=1)
+    # test = test.join(tmp[['Aggregated Three-Year Margin','Meets']])
+
+    # # the test
+    # test['Acctbility Standard'] = ((test['Change in Net Assets Margin'] > 0) & (test['Aggregated Three-Year Margin'] > 0)) | \
+    #     ((test['Change in Net Assets Margin'] > 0) & (test['Aggregated Three-Year Margin'] > -.015) & (test['Meets'] == True))
+
+    # # drop last temp column
+    # test = test.drop(columns=['Meets'], axis=1)
+
+    #test['Change in Net Assets Margin Metric'] = test['Change in Net Assets Margin'].apply(lambda x: 'MS' if (x > 0) else 'DNMS')
+
+
+    # Debt to Asset Ratio
+    test['Debt to Asset Ratio'] = test_metrics['Total Liabilities'] / test_metrics['Total Assets']
+    test['Debt to Asset Ratio Metric'] = test['Debt to Asset Ratio'].apply(lambda x: 'MS' if (x < 0.9) else 'DNMS')    
+
+
+    # Cash Flow and Multi-Year Cash Flow
+    # Multi-Year Cash Flow is positive and One Year Cash Flow is positive in two
+    # out of three years, including the most recent year. For schools in the first
+    # two years of operation, both years must have a positive Cash Flow (for
+    # purposes of calculating Cash Flow, the school's Year 0 balance is assumed
+    # to be zero).
+
+    test['Cash Flow'] = test_metrics['Unrestricted Cash'].shift() - test_metrics['Unrestricted Cash']
+    # need to shift the column up as a result of the above shift calculation
+    test['Cash Flow'] = test['Cash Flow'].shift(-1)
+
+    # first value in cash flow will always be the value of the first
+    # year of unrestricted cash - so add last value of unrestricted cash
+    # to last value of Cash Flow (not added as new row, replacing last row)
+    test.loc[len(test['Cash Flow'])-1,'Cash Flow'] = test_metrics['Unrestricted Cash'].iloc[-1]
+    #test = test.append({'Cash Flow':test_metrics['Unrestricted Cash'].iloc[-1]}, ignore_index=True)
+
+    test['Multi-Year Cash Flow'] = test_metrics['Unrestricted Cash'].shift(2) - test_metrics['Unrestricted Cash']
+    # need to shift the column up twice as a result of the above shift calculation
+    test['Multi-Year Cash Flow'] = test['Multi-Year Cash Flow'].shift(-2)
+
+    # Debt Service Coverage Ratio
+    test['Debt Service Coverage Ratio'] = (test_metrics['Change in Net Assets'] + test_metrics['Lease/Mortgage Payments'] + test_metrics['Depreciation/Amortization'] + test_metrics['Interest Expense']) / (test_metrics['Lease/Mortgage Payments'] + test_metrics['Principal Payments'] + test_metrics['Interest Expense'])
+    test['Debt Service Coverage Ratio Metric'] = test['Debt Service Coverage Ratio'].apply(lambda x: 'MS' if (x > 1) else 'DNMS')    
+    
+    # print(test.T)
+
     test.T.to_csv('calc_test.csv', index=True)
 
     ## NOTE: See financial_metrics.py for formula definitions
