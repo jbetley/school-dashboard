@@ -253,6 +253,41 @@ def calculate_metrics(metrics):
 
     test = pd.DataFrame()
 
+    test['Current Ratio'] = test_metrics['Current Assets']/test_metrics['Current Liabilities']
+    test['Days Cash'] = test_metrics['Unrestricted Cash'] / ((test_metrics['Operating Expenses'] - test_metrics['Depreciation/Amortization'])/365)
+    test['Annual Enrollment Change'] = (test_metrics['ADM Average'].shift() - test_metrics['ADM Average']) / test_metrics['ADM Average']
+    test['Primary Reserve Ratio'] = test_metrics['Unrestricted Net Assets'] / test_metrics['Operating Expenses']
+
+    test['Change in Net Assets Margin'] = test_metrics['Change in Net Assets'] / test_metrics['Operating Revenues']
+    
+    test['Aggregated Three-Year Margin'] = (test_metrics['Change in Net Assets'] + test_metrics['Change in Net Assets'].shift() + test_metrics['Change in Net Assets'].shift().shift()) / \
+        (test_metrics['Operating Revenues'] + test_metrics['Operating Revenues'].shift() + test_metrics['Operating Revenues'].shift().shift())
+
+    # if (
+    #         (test['Change in Net Assets Margin'] > 0 and test['Aggregated Three-Year Margin'] > 0) or
+    #         (
+    #             (test['Change in Net Assets Margin'] > 0 and test['Aggregated Three-Year Margin'] > -.015) and
+    #             (aggMar[i] > aggregated_3_year_margin_previous_year) and
+    #             (aggregated_3_year_margin_previous_year > aggregated_3_year_margin_previous_year_2)
+    #         )
+    # test['Metrics'] = 
+    # test['Aggregated Three-Year Margin'] = df.value / np.roll(df.value, shift=-1)
+
+    # test['PY Aggregated Three-Year Margin'] = (test_metrics['Change in Net Assets'].shift() + test_metrics['Change in Net Assets'].shift().shift() + test_metrics['Change in Net Assets'].shift().shift().shift()) / \
+    #         (test_metrics['Operating Revenues'].shift() + test_metrics['Operating Revenues'].shift().shift() + test_metrics['Operating Revenues'].shift().shift().shift())
+
+    # test['2PY Aggregated Three-Year Margin'] = (test_metrics['Change in Net Assets'].shift().shift() + test_metrics['Change in Net Assets'].shift().shift().shift() + test_metrics['Change in Net Assets'].shift().shift().shift().shift()) / \
+    #         (test_metrics['Operating Revenues'].shift().shift() + test_metrics['Operating Revenues'].shift().shift().shift() + test_metrics['Operating Revenues'].shift().shift().shift().shift())
+
+
+    test['Debt to Asset Ratio'] = test_metrics['Total Liabilities'] / test_metrics['Total Assets']
+    test['Cash Flow'] = test_metrics['Unrestricted Cash'].shift() - test_metrics['Unrestricted Cash']
+    test['Multi-Year Cash Flow'] = test_metrics['Unrestricted Cash'].shift().shift() - test_metrics['Unrestricted Cash']
+    test['Debt Service Coverage Ratio'] = (test_metrics['Change in Net Assets'] + test_metrics['Lease/Mortgage Payments'] + test_metrics['Depreciation/Amortization'] + test_metrics['Interest Expense']) / (test_metrics['Lease/Mortgage Payments'] + test_metrics['Principal Payments'] + test_metrics['Interest Expense'])
+
+    print(test.T)
+    test.T.to_csv('calc_test.csv', index=True)
+
     ## NOTE: See financial_metrics.py for formula definitions
     for col in columns:
         i = metrics.columns.get_loc(col) - 1
@@ -261,8 +296,6 @@ def calculate_metrics(metrics):
 
         # Current Ratio
         currentRatio.append(metrics.loc[metrics['Category'].isin(['Current Assets'])][year[i]].values[0]/metrics.loc[metrics['Category'].isin(['Current Liabilities'])][year[i]].values[0])
-
-        test['Current Ratio'] = test_metrics['Current Assets']/test_metrics['Current Liabilities']
 
         if ((y - i) == 1):
             if (currentRatio[i] > 1.1):
@@ -278,7 +311,6 @@ def calculate_metrics(metrics):
         # Days Cash On Hand
         daysCash.append(metrics.loc[metrics['Category'].isin(['Unrestricted Cash'])][year[i]].values[0] / ((metrics.loc[metrics['Category'].isin(['Operating Expenses'])][year[i]].values[0] - metrics.loc[metrics['Category'].isin(['Depreciation/Amortization'])][year[i]].values[0])/365))
 
-        test['Days Cash'] = test_metrics['Unrestricted Cash'] / ((test_metrics['Operating Expenses'] - test_metrics['Depreciation/Amortization'])/365)
 
         if ((y - i) == 1):
             if (daysCash[i] >= 45):
@@ -296,10 +328,7 @@ def calculate_metrics(metrics):
             enrollChange.append(-999)
         else:
             enrollChange.append((metrics.loc[metrics['Category'].isin(['ADM Average'])][year[i]].values[0] - metrics.loc[metrics['Category'].isin(['ADM Average'])][year[i+1]].values[0]) / metrics.loc[metrics['Category'].isin(['ADM Average'])][year[i+1]].values[0])
-
-        print(test_metrics['ADM Average'].shift())
-        test['Annual Enrollment Change'] = (test_metrics['ADM Average'].shift() - test_metrics['ADM Average']) / test_metrics['ADM Average']
-        
+ 
         if ((y - i) == 1):
             r_enrollChange.append("N/A")
         else:
@@ -312,10 +341,6 @@ def calculate_metrics(metrics):
         # Primary Reserve Ratio
         primaryReserve.append(metrics.loc[metrics['Category'].isin(['Unrestricted Net Assets'])][year[i]].values[0] / metrics.loc[metrics['Category'].isin(['Operating Expenses'])][year[i]].values[0])
 
-        test['Primary Reserve Ratio'] = test_metrics['Unrestricted Net Assets'] / test_metrics['Operating Expenses']
-
-        print(test)
-        
         if (primaryReserve[i] > 0.25):
             r_primaryReserve.append("MS")
         else:
