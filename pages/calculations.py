@@ -454,6 +454,10 @@ def calculate_metrics(metrics):
     summary = pd.DataFrame([subhead1,m1,m2,m3,m4,subhead2,m5,m6,m7,m8,m9,m10],columns=mcolumns)
 
 ## NOTE: REWORK STARTS HERE ##
+## TODO: TEST FOR ALL YEARS - ERRORS:
+#   IndexError: index -2 is out of bounds for axis 0 with size 1 (Many Schools - Early Years)
+#   ValueError: Must have equal len keys and value when setting with an ndarray (Excel-Lafayette 2021)
+#   
     # Need to handle pre-opening year data where there is financial activity
     # but school is not receiving state/federal grants. This 'easy' fix ignore
     # all columns (years) where the value in the State Grant column is equal to '0'
@@ -524,6 +528,7 @@ def calculate_metrics(metrics):
     metric_grid['Primary Reserve Ratio'] = metrics['Unrestricted Net Assets'] / metrics['Operating Expenses']
     metric_grid['Primary Reserve Ratio Metric'] = metric_grid['Primary Reserve Ratio'].apply(lambda x: 'MS' if (x > 0.25) else 'DNMS')
 
+  
     # Change in Net Assets Margin/Aggregated Three-Year Margin
     metric_grid['Change in Net Assets Margin'] = metrics['Change in Net Assets'] / metrics['Operating Revenues'] 
     metric_grid['Aggregated Three-Year Margin'] = (metrics['Change in Net Assets'] + metrics['Change in Net Assets'].shift() + metrics['Change in Net Assets'].shift(2)) / \
@@ -553,18 +558,22 @@ def calculate_metrics(metrics):
     # if ATYM is NaN (no calculation is possible), ATYM Metric should be N/A
     metric_grid.loc[metric_grid['Aggregated Three-Year Margin'].isnull(), 'Aggregated Three-Year Margin Metric'] = 'N/A'
 
+    print('Testing Error 1 - 1')
+
     # in the dataframe, each row is a year, with earliest years at the end. In YR 1 and Y2
     # CHNM Metric is 'MS' if the cumulative value of CHNM is > 0 (positive)
-    # TODO: CHeck to see if need to set else as DNMS
     if metric_grid.loc[metric_grid.index[-1],'Change in Net Assets Margin'] > 0:
         metric_grid.loc[metric_grid.index[-1], 'Change in Net Assets Margin Metric'] = 'MS'
     else:
         metric_grid.loc[metric_grid.index[-1], 'Change in Net Assets Margin Metric'] = 'DNMS'
+    
     # CHNM Metric is 'MS' if first + second year value is > 0
-    if (metric_grid.loc[metric_grid.index[-1],'Change in Net Assets Margin'] + metric_grid.loc[metric_grid.index[-2],'Change in Net Assets Margin']) > 0:
-        metric_grid.loc[metric_grid.index[-2],'Change in Net Assets Margin Metric'] = 'MS'
-    else:
-        metric_grid.loc[metric_grid.index[-2], 'Change in Net Assets Margin Metric'] = 'DNMS'
+    # Only test if there are at least 2 years of data
+    if len(metric_grid.index) >= 2:
+        if (metric_grid.loc[metric_grid.index[-1],'Change in Net Assets Margin'] + metric_grid.loc[metric_grid.index[-2],'Change in Net Assets Margin']) > 0:
+            metric_grid.loc[metric_grid.index[-2],'Change in Net Assets Margin Metric'] = 'MS'
+        else:
+            metric_grid.loc[metric_grid.index[-2], 'Change in Net Assets Margin Metric'] = 'DNMS'
 
     # Debt to Asset Ratio
     metric_grid['Debt to Asset Ratio'] = metrics['Total Liabilities'] / metrics['Total Assets']
@@ -588,6 +597,7 @@ def calculate_metrics(metrics):
 
     # NOTE: I am positive there is a more pythonic way to do this, but I'm to tired
     # to figure it out, maybe later
+
     for i in range(len(metric_grid['Cash Flow'])-2):
         # get current year value
         current_year_cash = metric_grid.loc[i,'Cash Flow']
@@ -611,16 +621,19 @@ def calculate_metrics(metrics):
 
     # A school meets standard if Cash Flow is positive in first two years (see above)
     # TODO: CHeck to see if need to set else as DNMS
+
     if metric_grid.loc[metric_grid.index[-1],'Cash Flow'] > 0:
         metric_grid.loc[metric_grid.index[-1], 'Cash Flow Metric'] = 'MS'
     else:
         metric_grid.loc[metric_grid.index[-2],'Cash Flow Metric'] = 'DNMS'
 
     # CHNM Metric is 'MS' if first + second year value is > 0
-    if (metric_grid.loc[metric_grid.index[-1],'Cash Flow'] > 0) & (metric_grid.loc[metric_grid.index[-2],'Cash Flow'] > 0):
-        metric_grid.loc[metric_grid.index[-2],'Cash Flow Metric'] = 'MS'
-    else:
-        metric_grid.loc[metric_grid.index[-2],'Cash Flow Metric'] = 'DNMS'
+    # Only test if there are at least 2 years of data
+    if len(metric_grid.index) >= 2:        
+        if (metric_grid.loc[metric_grid.index[-1],'Cash Flow'] > 0) & (metric_grid.loc[metric_grid.index[-2],'Cash Flow'] > 0):
+            metric_grid.loc[metric_grid.index[-2],'Cash Flow Metric'] = 'MS'
+        else:
+            metric_grid.loc[metric_grid.index[-2],'Cash Flow Metric'] = 'DNMS'
 
     # if Multi-Year Cash Flow is NaN (no calculation is possible), Multi-Year Cash FlowMetric should be N/A
     metric_grid.loc[metric_grid['Multi-Year Cash Flow'].isnull(), 'Multi-Year Cash Flow Metric'] = 'N/A'
