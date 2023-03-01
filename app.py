@@ -1083,7 +1083,7 @@ def load_data(school, year):
                 )
 
             # add headers
-            k8_result.set_axis(result_cols, axis=1, inplace=True)
+            k8_result = k8_result.set_axis(result_cols, axis=1)
             k8_result.insert(loc=0, column="Category", value=tmp_category)
 
             # combined merged (school and corp) and result dataframes and reorder (according to result columns)
@@ -1229,7 +1229,7 @@ def load_data(school, year):
             year_over_year_values_values[first_year.columns] = first_year
 
             # reorder using k8_year_cols list and add Category back
-            year_over_year_values_values.set_axis(k8_year_cols, axis=1, inplace=True)
+            year_over_year_values_values = year_over_year_values_values.set_axis(k8_year_cols, axis=1)
             year_over_year_values_values.insert(
                 loc=0, column="Category", value=category_header
             )

@@ -190,7 +190,7 @@ def filter_grades(row, compare):
 # loop version. it is also longer.
 
 ## TODO: TEST FOR ALL YEARS - ERRORS:
-#   IndexError: index -2 is out of bounds for axis 0 with size 1 (Many Schools - Early Years)
+#   IndexError: index -2 is out of bounds for axis 0 with size 1 (Many Schools - Early Years) Excel Elkhart
 #   ValueError: Must have equal len keys and value when setting with an ndarray (Excel-Lafayette 2021)
 
 def calculate_metrics(data):
@@ -198,21 +198,25 @@ def calculate_metrics(data):
     # begins to operate and receive state/federal grants. The below code
     # ignores all columns (years) where the value in the State Grant column
     # is equal to '0'. Any pre-opening data will be lost
-    data = data.loc[:,~(data.iloc[1]==0)]
+    operating_data = data.loc[:,~(data.iloc[1]==0)].copy()
 
+    # print(operating_data)
     # TODO: A more precise fix would be to keep all columns (including those with
     # no value in grant columns), but ignore/except (N/A) any calculation that requires
     # either grant revenue or adm. Need to test
 
+# https://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas
+
+    cols = [i for i in operating_data.columns if i not in ['Category']]
     # TODO: Is this better than the commented out code?
-    # for col in cols:
-    #     data[col] = pd.to_numeric(data[col], errors='coerce')
-    cols = data.columns.drop('Category')
-    data[cols] = data[cols].apply(pd.to_numeric, errors='coerce')
+    for col in cols:
+        operating_data[col] = pd.to_numeric(operating_data[col], errors='coerce')
+    # cols = data.columns.drop('Category')
+    # data[cols] = data[cols].apply(pd.to_numeric, errors='coerce')
 
     # transpose financial information
     metrics = (
-        data.set_index("Category")
+        operating_data.set_index("Category")
         .T.rename_axis("Year")
         .rename_axis(None, axis=1)
         .reset_index()
@@ -375,9 +379,8 @@ def calculate_metrics(data):
     # A school meets standard if Cash Flow is positive in first two years (see above)
     if metric_grid.loc[metric_grid.index[-1],'Cash Flow'] > 0:
         metric_grid.loc[metric_grid.index[-1], 'Cash Flow Metric'] = 'MS'
-
     else:
-        metric_grid.loc[metric_grid.index[-2],'Cash Flow Metric'] = 'DNMS'
+        metric_grid.loc[metric_grid.index[-1],'Cash Flow Metric'] = 'DNMS'
 
     # CHNM Metric is 'MS' if first + second year value is > 0
     # Only test if there are at least 2 years of data
@@ -393,6 +396,7 @@ def calculate_metrics(data):
     # Debt Service Coverage Ratio
     metric_grid['Debt Service Coverage Ratio'] = \
         (metrics['Change in Net Assets'] + metrics['Lease/Mortgage Payments'] + metrics['Depreciation/Amortization'] + metrics['Interest Expense']) / (metrics['Lease/Mortgage Payments'] + metrics['Principal Payments'] + metrics['Interest Expense'])
+
     metric_grid['Debt Service Coverage Ratio Metric'] = \
         metric_grid['Debt Service Coverage Ratio'].apply(lambda x: 'MS' if (x > 1) else 'DNMS')    
     

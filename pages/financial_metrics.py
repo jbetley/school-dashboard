@@ -154,9 +154,14 @@ def update_financial_metrics(data,year,radio_value):
         if excluded_finance_years > 0:
             financial_data.drop(financial_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
 
-        # financial file exists, but is empty
-        if len(financial_data.columns) <= 1:
-            financial_metrics_table = empty_table
+        # TODO: Choking on schools with financial data but who are not operating, e.g., no state or federal
+        # grants or adm - need to treat these as empty tables.
+
+        # financial file exists, but is empty OR school has financial data, but does not have
+        # a value for any State Grants (e.g., they are not operating)
+        if (len(financial_data.columns) <= 1) | \
+            ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == '0')):
+                financial_metrics_table = empty_table
 
         else:
 
