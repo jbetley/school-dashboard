@@ -18,11 +18,24 @@ from .calculations import calculate_metrics
 from .subnav import subnav_finance
 dash.register_page(__name__, path='/financial_metrics', order=2)
 
+## Layout
+label_style = {
+    'height': '20px',
+    'backgroundColor': '#6783a9',
+    'fontSize': '12px',
+    'fontFamily': 'Roboto, sans-serif',
+    'color': '#ffffff',
+    'textAlign': 'center',
+    'fontWeight': 'bold',
+    'paddingBottom': '5px',
+    'paddingTop': '5px'
+}
+
 @callback(
     Output('financial-metrics-table', 'children'),
     Output('radio-finance-metrics-content', 'children'),
     Output('radio-finance-metrics-display', 'style'),
-    Output('finance-metrics-table-title', 'children'),
+    # Output('finance-metrics-table-title', 'children'),
     Output('financial-indicators-table', 'children'),
     Output('financial-metrics-definitions-table', 'children'),
     Input('dash-session', 'data'),
@@ -155,7 +168,7 @@ def update_financial_metrics(data,year,radio_value):
             for col in financial_data.columns:
                 financial_data[col]=pd.to_numeric(financial_data[col], errors='coerce').fillna(financial_data[col]).tolist()
 
-            # set Category as index (so we can use .loc). This assumes that the final
+            # set Category as index (so we can use .loc). This assumes that the calculated
             # rows already exist in the dataframe. If they do not, then need to use the
             # following pattern:
             # new_row = financial_data.loc['State Grants'] + financial_data.loc['Federal Grants']
@@ -170,15 +183,16 @@ def update_financial_metrics(data,year,radio_value):
             # reset index, which shifts Category back to column one
             financial_data = financial_data.reset_index()
 
-            # TODO: TESTING
             # Ensure that only the 'max_display_years' number of years (currently 5)
             # worth of financial data is displayed (add +1 to max_display_years to
-            # account for the category column). To show all years of data, comment out this line.
-            #financial_data = financial_data.iloc[: , :(max_display_years+1)]
+            # account for the category column).
+            # NOTE: To show all financial data, comment out this line. This may cause
+            # unexpected errors
+            financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
-            years = financial_data.columns.tolist()
-            years.pop(0)
-            years.reverse()
+            # years = financial_data.columns.tolist()
+            # years.pop(0)
+            # years.reverse()
 
             # remove audit and other indicator data (it is displayed on the financial metrics page)
             financial_values = financial_data.drop(financial_data.index[41:])
@@ -216,9 +230,7 @@ def update_financial_metrics(data,year,radio_value):
             # Release The Hounds!
             financial_metrics = calculate_metrics(financial_values)
 
-            # In calculations we distinguish 'numerical zero' from 'no data' using -999
-            # need to replace -999 with blank
-            financial_metrics = financial_metrics.replace(-999, '',regex=True)
+            financial_metrics = financial_metrics.fillna('')
 
             # Force correct format for display of df in datatable
             for x in range(1,len(financial_metrics.columns),2):
@@ -228,7 +240,7 @@ def update_financial_metrics(data,year,radio_value):
                     financial_metrics.iat[9,x] = '{:,.2f}'.format(financial_metrics.iat[9,x])
                 if financial_metrics.iat[10,x]:
                     financial_metrics.iat[10,x] = '{:,.2f}'.format(financial_metrics.iat[10,x])
-        
+
             headers = financial_metrics.columns.tolist()
 
             clean_headers = []
@@ -238,103 +250,161 @@ def update_financial_metrics(data,year,radio_value):
                 else:
                     clean_headers.append(x)
 
-            # The ratios are shown on the Financial Analysis page
-            remove_categories = ['Other Metrics', 'Instruction Ratio','Human Capitol Ratio','Occupancy Ratio']
+            year_headers = [i for i in financial_metrics.columns if i not in ['Metric','Rating']]
+            
+            # Formatting on the fly - determines the col_width class and width
+            # of the category column based on the size on the dataframe
+            table_size = len(financial_metrics.columns)
 
-            financial_metrics = financial_metrics[~financial_metrics['Metric'].isin(remove_categories)]
+#TODO: Can this be put into a function? Maybe
+# input: table_size
+# output: col_width, category_width, rating_width, and year_width, (difference_width, corporation_width)
+# Problem: variable number of return items. table_size adjustments are differente between financial
+# metrics table and academic metrics table
+            if table_size == 3:
+                col_width = 'four'
+                category_width = 70
+            if table_size > 3 and table_size <=8:
+                col_width = 'eight'
+                category_width = 35
+            elif table_size >= 9:
+                col_width = 'ten'
+                category_width = 25
+            elif table_size >= 10:
+                col_width = 'twelve'
+                category_width = 15
 
+            # splits column width evenly for all columns other than 'Category'
+            # right now is even, but can finesse this by splitting data_width
+            # into unequal values for each 'data' category, e.g.:
+            #   rating_width = data_col_width + (data_col_width * .1)
+            #   remaining_width = data_width - rating_width
+            #   remaining_col_width = remaining_width / (table_size - 1)
+            data_width = 100 - category_width
+            data_col_width = data_width / (table_size - 1)
+            rating_width = data_col_width
+            year_width = data_col_width
+
+            class_name = 'pretty_container ' + col_width + ' columns'
+            
             financial_metrics_table = [
-                            dash_table.DataTable(
-                            financial_metrics.to_dict('records'),
-                            columns=[{
-                                'name': col,
-                                'id': headers[idx]
-                                } for (idx, col) in enumerate(clean_headers)],
-                            style_data={
-                                'fontSize': '12px',
-                                'border': 'none',
-                                'fontFamily': 'Roboto, sans-serif',
-                            },
-                            style_data_conditional=
+                html.Div(
+                    [                
+                        html.Div(
                             [
-                                {
-                                    'if': {
-                                        'row_index': 'odd'
-                                    },
-                                    'backgroundColor': '#eeeeee',
-                                },
-                                {
-                                    'if': {
-                                        'filter_query': "{Metric} eq 'Near Term' || {Metric} eq 'Long Term' || {Metric} eq 'Other Metrics'"
-                                    },
-                                    'paddingLeft': '10px',
-                                    'text-decoration': 'underline',
-                                    'fontWeight': 'bold'
-                                },
-                            ] +
-                            [
-                                {
-                                    'if': {
-                                        'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
-                                        'column_id': col
-                                    },
-                                    'backgroundColor': '#b44655',
-                                    'fontWeight': 'bold',
-                                    'color': 'white',
-                                    'borderBottom': 'solid 1px white',
-                                } for col in financial_metrics.columns
-                            ] +
-                            [
-                                {
-                                    'if': {
-                                        'filter_query': "{{{col}}} = 'MS'".format(col=col),
-                                        'column_id': col
-                                    },
-                                    'backgroundColor': '#81b446',
-                                    'fontWeight': 'bold',
-                                    'color': 'white',
-                                    'borderBottom': 'solid 1px white',
-                                } for col in financial_metrics.columns
+                                html.Label(table_title, style=label_style),
+                                html.Div(
+                                    dash_table.DataTable(
+                                        financial_metrics.to_dict('records'),
+                                        columns=[{
+                                            'name': col,
+                                            'id': headers[idx]
+                                            } for (idx, col) in enumerate(clean_headers)],
+                                        style_data={
+                                            'fontSize': '12px',
+                                            'border': 'none',
+                                            'fontFamily': 'Roboto, sans-serif',
+                                        },
+                                        style_data_conditional=
+                                        [
+                                            {
+                                                'if': {
+                                                    'row_index': 'odd'
+                                                },
+                                                'backgroundColor': '#eeeeee',
+                                            },
+                                            {
+                                                'if': {
+                                                    'filter_query': "{Metric} eq 'Near Term' || {Metric} eq 'Long Term' || {Metric} eq 'Other Metrics'"
+                                                },
+                                                'paddingLeft': '10px',
+                                                'text-decoration': 'underline',
+                                                'fontWeight': 'bold'
+                                            },
+                                        ] +
+                                        [
+                                            {
+                                                'if': {
+                                                    'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
+                                                    'column_id': col
+                                                },
+                                                'backgroundColor': '#b44655',
+                                                'fontWeight': 'bold',
+                                                'color': 'white',
+                                                'borderBottom': 'solid 1px white',
+                                            } for col in financial_metrics.columns
+                                        ] +
+                                        [
+                                            {
+                                                'if': {
+                                                    'filter_query': "{{{col}}} = 'MS'".format(col=col),
+                                                    'column_id': col
+                                                },
+                                                'backgroundColor': '#81b446',
+                                                'fontWeight': 'bold',
+                                                'color': 'white',
+                                                'borderBottom': 'solid 1px white',
+                                            } for col in financial_metrics.columns
+                                        ],
+                                        style_header={
+                                            'height': '20px',
+                                            'backgroundColor': '#ffffff',
+                                            'border': 'none',
+                                            'borderBottom': '.5px solid #6783a9',
+                                            'fontSize': '12px',
+                                            'fontFamily': 'Roboto, sans-serif',
+                                            'color': '#6783a9',
+                                            'textAlign': 'center',
+                                            'fontWeight': 'bold'
+                                        },
+                                        style_cell={
+                                            'whiteSpace': 'normal',
+                                            'height': 'auto',
+                                            'textAlign': 'center',
+                                            'color': '#6783a9',
+                                            'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                                        },
+                                        style_cell_conditional=[
+                                            {
+                                                'if': {
+                                                    'column_id': 'Metric'
+                                                },
+                                                'textAlign': 'left',
+                                                'fontWeight': '500',
+                                                'paddingLeft': '20px',
+                                                'width': str(category_width) + '%'
+                                            },
+                                        ] + [                                    
+                                            {
+                                                'if': {
+                                                    'column_id': year
+                                                },
+                                                'textAlign': 'center',
+                                                'fontWeight': '500',
+                                                'width': str(year_width) + '%',
+                                            } for year in year_headers
+                                        ] + [  
+                                            {
+                                                'if': {
+                                                    'column_id': ['Rating 1','Rating 2','Rating 3','Rating 4','Rating 5',
+                                                                'Rating 6','Rating 7','Rating 8','Rating 9','Rating 10',
+                                                                'Rating 11','Rating 12','Rating 13','Rating 14','Rating 15',
+                                                                'Rating 16','Rating 17','Rating 18','Rating 19','Rating 20',]
+                                                },
+                                                'width': str(rating_width) + '%'
+                                            },
+                                        ],
+                                        style_as_list_view=True
+                                    )
+                                )
                             ],
-                            style_header={
-                                'height': '20px',
-                                'backgroundColor': '#ffffff',
-                                'border': 'none',
-                                'borderBottom': '.5px solid #6783a9',
-                                'fontSize': '12px',
-                                'fontFamily': 'Roboto, sans-serif',
-                                'color': '#6783a9',
-                                'textAlign': 'center',
-                                'fontWeight': 'bold'
-                            },
-                            style_cell={
-                                'whiteSpace': 'normal',
-                                'height': 'auto',
-                                'textAlign': 'center',
-                                'color': '#6783a9',
-                                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                            },
-                            style_cell_conditional=[
-                                {
-                                    'if': {
-                                        'column_id': 'Metric'
-                                    },
-                                    'textAlign': 'left',
-                                    'fontWeight': '500',
-                                    'paddingLeft': '20px',
-                                    'width': '20%'
-                                },
-                                {
-                                    'if': {
-                                        'column_id': ['Rating 1','Rating 2','Rating 3','Rating 4','Rating 5']
-                                    },
-                                    'width': '6%'
-                                },
-                            ],
-                            style_as_list_view=True
-                        )
+                            className = class_name,
+                        ),
+                    ],
+                    className = 'bare_container twelve columns',
+                )
             ]
-
+       
         # Financial Indicators
         financial_indicators = financial_data[financial_data['Category'].str.startswith('2.1.')].copy()
         
@@ -516,20 +586,7 @@ def update_financial_metrics(data,year,radio_value):
             )
     ]
 
-    return financial_metrics_table, radio_content, display_radio, table_title, financial_indicators_table, financial_metrics_definitions_table
-
-## Layout
-label_style = {
-    'height': '20px',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
+    return financial_metrics_table, radio_content, display_radio, financial_indicators_table, financial_metrics_definitions_table #  table_title,
 
 def layout():
     return html.Div(
@@ -551,7 +608,7 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label(id='finance-metrics-table-title', style=label_style),
+                                        # html.Label(id='finance-metrics-table-title', style=label_style),
                                         html.Div(
                                             [
                                             html.Div(
@@ -563,9 +620,8 @@ def layout():
                                             ],
                                             id = 'radio-finance-metrics-display',
                                         ),
-                                        html.Div(id='financial-metrics-table')
                                     ],
-                                    className = 'pretty_container ten columns',
+                                    # className = 'pretty_container ten columns',
                                 ),
                             ],
                             className = 'bare_container twelve columns',
@@ -573,6 +629,7 @@ def layout():
                     ],
                     className = 'row',
                 ),
+                html.Div(id='financial-metrics-table', children=[]),
                 html.Div(
                     [
                         html.Div(

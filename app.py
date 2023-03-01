@@ -651,7 +651,7 @@ def load_data(school, year):
         final_cols.insert(0, "Category")
 
         # add headers
-        result_attendance_rate.set_axis(diff_cols, axis=1, inplace=True)
+        result_attendance_rate = result_attendance_rate.set_axis(diff_cols, axis=1)
         result_attendance_rate.insert(loc=0, column="Category", value=tmp_category)
 
         # merge result data with school/corp df and reorder according to the interwoven columns created earlier
