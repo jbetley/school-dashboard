@@ -17,11 +17,13 @@ import textwrap
 def customwrap(s,width=16):
     return "  <br>".join(textwrap.wrap(s,width=width))
 
-def make_stacked_bar(data,year):
-
+def make_stacked_bar(values,year):
+    data = values.copy()
     # https://plotly.com/python/discrete-color/
     colors = plotly.colors.qualitative.T10
     
+    # print(data)
+
     if data["Proficiency"].str.contains('Math').any():
         fig_title = year + " Math Proficiency Breakdown"
     else:

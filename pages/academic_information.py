@@ -260,8 +260,15 @@ def update_about_page(data, school, year):
         # drop columns with no values and reset index
         school_k8_all_data = school_k8_all_data.dropna(axis=1)
         school_k8_all_data = school_k8_all_data.reset_index()
+        
+        # TODO: May need this if we want to differentiate those categories
+        # where there is no data from those categories where there were tested
+        # students, but the proficiency value does not meet 'n-size' requirements
+        # e.g., the value is '***'
+        # school_k8_all_data =  school_k8_all_data.replace({'***': float(-99)})
 
-        # convert to numeric (this changes all '***' to NaN)
+        # NOTE: Leaving the above line commented out means that the below
+        # conversion turns all '***' to NaN.
         for col in school_k8_all_data.columns:
             school_k8_all_data[col] = pd.to_numeric(
                 school_k8_all_data[col], errors="coerce"
@@ -289,48 +296,6 @@ def update_about_page(data, school, year):
             "Above Proficiency",
         ]
 
-        # def round_percentages(percentages):
-        #     """
-        #     https://github.com/simondo92/round-percentages
-        #     Given an iterable of percentages that add up to 100, round them to the nearest integer such
-        #     that the rounded percentages also add up to 100. Uses the largest remainder method.
-        #     E.g. round_percentages([13.626332, 47.989636, 9.596008, 28.788024]) -> [14, 48, 9, 29]
-
-        #     Update: Added code to turn decimal percentages into ints
-        #     """
-
-        #     # if numbers are in decimal format (e.g. .57, .90) then the sum of the numbers should
-        #     # bet at or near (1). To be safe we test to see if sum is less than 2. If it is, we
-        #     # multiple all of the numbers in the list by 100 (e.g., 57, 90)
-        #     if sum(percentages) < 2:
-        #         percentages = [x * 100 for x in percentages]
-
-        #     result = []
-        #     sum_of_integer_parts = 0
-
-        #     for index, percentage in enumerate(percentages):
-        #         integer, decimal = str(float(percentage)).split(".")
-        #         integer = int(integer)
-        #         decimal = int(decimal)
-
-        #         result.append([integer, decimal, index])
-        #         sum_of_integer_parts += integer
-
-        #     result.sort(key=lambda x: x[1], reverse=True)
-        #     difference = 100 - sum_of_integer_parts
-
-        #     for percentage in result:
-        #         if difference == 0:
-        #             break
-        #         percentage[0] += 1
-        #         difference -= 1
-
-        #     # order by the original order
-        #     result.sort(key=lambda x: x[2])
-
-        #     # return just the percentage
-        #     return [percentage[0] for percentage in result]
-
         # for each category, create a list of columns using the strings in
         #  'proficiency_rating' and then divide each column by 'Total Tested'
         categories = grades + ethnicity + subgroup
@@ -344,23 +309,58 @@ def update_about_page(data, school, year):
 
                 if total_tested in all_proficiency_data.columns:
 
+                    # if all_proficiency_data[colz].iloc[0].sum() == 0:
+                    #     print(all_proficiency_data[colz])
+                    # else
                     # replace NaN with 0
-                    all_proficiency_data[colz] = all_proficiency_data[colz].fillna(0)
+                    
+                    # NOTE:
+                    # At this point in the code there are three possible data configurations for 
+                    # each grouping of Category + Subject:
+                    # 1) Total Tested > 0 and all proficiency_rating(s) are > 0 (School has tested category AND
+                    #       there is publicly available data)
+                    # 2) Total Tested > 0 and all proficiency_rating(s) are == 'NaN' (School has tested category BUT
+                    #       there is no publicly available data (insufficient N-size)))
+                    # 3) Total Tested and all proficiency_rating == 0 (School does not have tested category)
 
-                    # For some reason, dataset uses zero instead of blank for some
-                    # categories. So we only show and calculate percentage for those
-                    # categories where the number of tested students is > 0 and where
-                    # the sum of all categories values are > 0 (if the sum of all
-                    # category values are equal to 0, it means there was insufficient
-                    # n-size for the category)
+                    # Neither (2) nor (3) should be displayed. However, we do want to track which
+                    # Category/Subject combinations meet either condition (for figure annotation
+                    # purposes).
+
+                    #all_proficiency_data[colz] = all_proficiency_data[colz].fillna(0)
+
+                    # Only want to calculate a percentage for those categories where both
+                    # 'Total Tested' > 0 and the sum of all 'Category' values are > 0. If
+                    # the sum of all 'Category' values is 0, there is no data. If the sum
+                    # of all 'Category' values is NaN, there is insufficient data.
+                    import numpy as np
+
+                    # This is a bit of a hack.
+                    # The sum of a series of '0' values is a numpy.int64 (0).
+                    # The sume of a series of 'NaN' values is a numpy.float65 (0.0).
+                    # So checking type of a sum of the row tells us whether a Category +
+                    # Subject falls under (2) or (3) above.
+                    
+                    # print(all_proficiency_data[colz].iloc[0].sum())
+                    # print(type(all_proficiency_data[colz].iloc[0].sum()))
+                    # print(all_proficiency_data[colz].iloc[0].sum() == 0)
+                    
+                    if all_proficiency_data[colz].iloc[0].sum() == 0:
+
+                        if isinstance(all_proficiency_data[colz].iloc[0].sum(), np.floating):
+                            print('INSUFFICIENT N-SIZE')
+                            print(colz)
+                        elif isinstance(all_proficiency_data[colz].iloc[0].sum(), np.integer):
+                            print('NO DATA')
+                            print(colz)
+                        # print((all_proficiency_data[colz].iloc[0].sum() == 0))
+                    else:
+                        print('YAY DATA')
+                        print(colz)
+
                     if (all_proficiency_data[total_tested].values[0] > 0) and \
                         (all_proficiency_data[colz].iloc[0].sum() != 0):
 
-                        # # drop categories where all values are '***'
-                        # # TODO: add category to annotation (insufficient n-size)
-                        # if all_proficiency_data[colz].iloc[0].sum() == 0:
-                        #     print(all_proficiency_data[colz])
-                        # else:
                         # calculate percentage
                         all_proficiency_data[colz] = all_proficiency_data[colz].divide(
                             all_proficiency_data[total_tested], axis="index"
@@ -379,6 +379,8 @@ def update_about_page(data, school, year):
 
                     else:
                         # if total tested is zero, drop all of the columns in the category
+                        # print('No Data: ', colz)
+                        # print('Insufficient Data: ', colz)
                         all_proficiency_data.drop(colz, axis=1, inplace=True)
 
                     # each category has a calculated proficiency column named
@@ -398,6 +400,7 @@ def update_about_page(data, school, year):
             inplace=True,
         )
 
+        # print(all_proficiency_data.T)
         # Replace Grade X with ordinal number (e.g., Grade 3 = 3rd)
         all_proficiency_data = all_proficiency_data.rename(
             columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
@@ -563,6 +566,7 @@ def update_about_page(data, school, year):
         #     return fig
 
         # ELA by Grade
+        
         grade_ela_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(grades_ordinal)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
@@ -581,7 +585,6 @@ def update_about_page(data, school, year):
             all_proficiency_data["Category"].isin(ethnicity)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
         ]
-
         k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,year)
 
         # Math by Ethnicity

@@ -46,24 +46,6 @@ def update_financial_metrics(data,year,radio_value):
     if not data:
          raise PreventUpdate
 
-    empty_table = [
-        dash_table.DataTable(
-            columns = [
-                {'id': 'emptytable', 'name': 'No Data to Display'},
-            ],
-            style_header={
-                'fontSize': '16px',
-                'border': 'none',
-                'backgroundColor': '#ffffff',
-                'paddingTop': '15px',                    
-                'verticalAlign': 'center',
-                'textAlign': 'center',
-                'color': '#6783a9',
-                'fontFamily': 'Roboto, sans-serif',
-            },
-        )
-    ]
-
     max_display_years = 5
     school_index = pd.DataFrame.from_dict(data['0'])
 
@@ -140,9 +122,38 @@ def update_financial_metrics(data,year,radio_value):
         
         # don't display school name in title if the school isn't part of a network
         if school_index['Network'].values[0] == 'None':
-            table_title = 'Financial Accountability Metrics'        
+            table_title = 'Financial Accountability Metrics'
         else:
             table_title = 'Financial Accountability Metrics (' + school_index['School Name'].values[0] + ')'
+
+    empty_table = [
+        html.Div(
+            [                
+                html.Div(
+                    [
+                        html.Label(table_title, style=label_style),                
+                        dash_table.DataTable(
+                            columns = [
+                                {'id': 'emptytable', 'name': 'No Data to Display'},
+                            ],
+                            style_header={
+                                'fontSize': '16px',
+                                'border': 'none',
+                                'backgroundColor': '#ffffff',
+                                'paddingTop': '15px',                    
+                                'verticalAlign': 'center',
+                                'textAlign': 'center',
+                                'color': '#6783a9',
+                                'fontFamily': 'Roboto, sans-serif',
+                            },
+                        )
+                    ],
+                    className = 'pretty_container ten columns',
+                ),
+            ],
+            className = 'bare_container twelve columns',
+        )
+    ]
 
     if os.path.isfile(finance_file):
 
@@ -159,6 +170,8 @@ def update_financial_metrics(data,year,radio_value):
 
         # financial file exists, but is empty OR school has financial data, but does not have
         # a value for any State Grants (e.g., they are not operating)
+        # NOTE: if we want to show metrics for schools in pre-opening years, we need
+        # to remove this check and modify the financial metric calculation code
         if (len(financial_data.columns) <= 1) | \
             ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == '0')):
                 financial_metrics_table = empty_table
@@ -413,6 +426,7 @@ def update_financial_metrics(data,year,radio_value):
         # Financial Indicators
         financial_indicators = financial_data[financial_data['Category'].str.startswith('2.1.')].copy()
         
+        print(table_title)
         # Display an empty table if financial indicators has fewer than 2 columns
         # (Category + Year)
         if len(financial_indicators.columns) <= 1 or financial_indicators.empty:    
@@ -430,92 +444,106 @@ def update_financial_metrics(data,year,radio_value):
             financial_indicators.insert(loc=0, column='Standard', value = standard)
 
             financial_indicators_table = [
-                        dash_table.DataTable(
-                        financial_indicators.to_dict('records'),
-                        columns = [{'name': i, 'id': i} for i in financial_indicators.columns],
-                        style_data={
-                            'fontSize': '12px',
-                            'fontFamily': 'Roboto, sans-serif',
-                            'border': 'none'
-                        },
-                        style_data_conditional=
-                        [
-                            {
-                                'if': {
-                                    'row_index': 'odd'
-                                },
-                                'backgroundColor': '#eeeeee',
-                            },
-                        ] +
-                        [
-                            {
-                                'if': {
-                                    'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
-                                    'column_id': col
-                                },
-                                'backgroundColor': '#b44655',
-                                'fontWeight': 'bold',
-                                'color': 'white',
-                                'borderBottom': 'solid 1px white',
-                                'borderRight': 'solid 1px white',
-                            } for col in financial_indicators.columns
-                        ] +
-                        [
-                            {
-                                'if': {
-                                    'filter_query': "{{{col}}} = 'MS'".format(col=col),
-                                    'column_id': col
-                                },
-                                'backgroundColor': '#81b446',
-                                'fontWeight': 'bold',
-                                'color': 'white',
-                                'position': 'relative',
-                                'borderBottom': 'solid 1px white',
-                                'borderRight': 'solid 1px white',
-                            } for col in financial_indicators.columns
+                    html.Div(
+                        [             
+                             html.Div(
+                                [
+                                    html.Label('Other Financial Accountability Indicators', style=label_style),
+                                    html.Div(
+                                        dash_table.DataTable(
+                                            financial_indicators.to_dict('records'),
+                                            columns = [{'name': i, 'id': i} for i in financial_indicators.columns],
+                                            style_data={
+                                                'fontSize': '12px',
+                                                'fontFamily': 'Roboto, sans-serif',
+                                                'border': 'none'
+                                            },
+                                            style_data_conditional=
+                                            [
+                                                {
+                                                    'if': {
+                                                        'row_index': 'odd'
+                                                    },
+                                                    'backgroundColor': '#eeeeee',
+                                                },
+                                            ] +
+                                            [
+                                                {
+                                                    'if': {
+                                                        'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
+                                                        'column_id': col
+                                                    },
+                                                    'backgroundColor': '#b44655',
+                                                    'fontWeight': 'bold',
+                                                    'color': 'white',
+                                                    'borderBottom': 'solid 1px white',
+                                                    'borderRight': 'solid 1px white',
+                                                } for col in financial_indicators.columns
+                                            ] +
+                                            [
+                                                {
+                                                    'if': {
+                                                        'filter_query': "{{{col}}} = 'MS'".format(col=col),
+                                                        'column_id': col
+                                                    },
+                                                    'backgroundColor': '#81b446',
+                                                    'fontWeight': 'bold',
+                                                    'color': 'white',
+                                                    'position': 'relative',
+                                                    'borderBottom': 'solid 1px white',
+                                                    'borderRight': 'solid 1px white',
+                                                } for col in financial_indicators.columns
+                                            ],
+                                            style_header={
+                                                'height': '20px',
+                                                'backgroundColor': '#ffffff',
+                                                'border': 'none',
+                                                'borderBottom': '.5px solid #6783a9',
+                                                'fontSize': '12px',
+                                                'fontFamily': 'Roboto, sans-serif',
+                                                'color': '#6783a9',
+                                                'textAlign': 'center',
+                                                'fontWeight': 'bold'
+                                            },
+                                            style_cell={
+                                                'whiteSpace': 'normal',
+                                                'height': 'auto',
+                                                'textAlign': 'center',
+                                                'color': '#6783a9',
+                                                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                                            },
+                                            style_cell_conditional=[
+                                                {
+                                                    'if': {
+                                                        'column_id': 'Standard'
+                                                    },
+                                                    'textAlign': 'center',
+                                                    'fontWeight': '500',
+                                                    'width': '7%'
+                                                },
+                                                {
+                                                    'if': {
+                                                        'column_id': 'Description'
+                                                    },
+                                                    'width': '45%',
+                                                    'textAlign': 'Left',
+                                                    'fontWeight': '500',
+                                                    'paddingLeft': '20px',
+                                                },
+                                            ],
+                                        ),
+                                    ),
+                                ],
+                                className = 'pretty_container eight columns',
+                            ),
                         ],
-                        style_header={
-                            'height': '20px',
-                            'backgroundColor': '#ffffff',
-                            'border': 'none',
-                            'borderBottom': '.5px solid #6783a9',
-                            'fontSize': '12px',
-                            'fontFamily': 'Roboto, sans-serif',
-                            'color': '#6783a9',
-                            'textAlign': 'center',
-                            'fontWeight': 'bold'
-                        },
-                        style_cell={
-                            'whiteSpace': 'normal',
-                            'height': 'auto',
-                            'textAlign': 'center',
-                            'color': '#6783a9',
-                            'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                        },
-                        style_cell_conditional=[
-                            {
-                                'if': {
-                                    'column_id': 'Standard'
-                                },
-                                'textAlign': 'center',
-                                'fontWeight': '500',
-                                'width': '7%'
-                            },
-                            {
-                                'if': {
-                                    'column_id': 'Description'
-                                },
-                                'width': '45%',
-                                'textAlign': 'Left',
-                                'fontWeight': '500',
-                                'paddingLeft': '20px',
-                            },
-                        ],
+                        className = 'bare_container twelve columns',
                     )
-            ]
+                ]
 
     else:
         financial_metrics_table = empty_table
+        label_title = 'Other Financial Accountability Indicators'
         financial_indicators_table = empty_table
 
 # TODO: Possibly make this table easier to read either through Markdown or embedded images
@@ -635,23 +663,25 @@ def layout():
                     className = 'row',
                 ),
                 html.Div(id='financial-metrics-table', children=[]),
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Label('Other Financial Accountability Indicators', style=label_style),
-                                        html.Div(id='financial-indicators-table')
-                                    ],
-                                    className = 'pretty_container ten columns',
-                                ),
-                            ],
-                            className = 'bare_container twelve columns',
-                        ),
-                    ],
-                    className = 'row pagebreak',
-                ),
+                html.Div(id='financial-indicators-table', children=[]),
+#                 html.Div(
+#                     [
+
+
+#                                 html.Div(
+#                                     [
+
+# # #                                        html.Label('Other Financial Accountability Indicators', style=label_style),
+# #                                         html.Div(id='financial-indicators-table', children=[]),
+# #                                     ],
+# #                                     className = 'pretty_container ten columns',
+# #                                 ),
+#                             ],
+#                             className = 'bare_container twelve columns',
+#                         ),
+#                     ],
+#                     className = 'row pagebreak',
+#                 ),
                 html.Div(
                     [
                         html.Div(

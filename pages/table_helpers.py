@@ -524,8 +524,6 @@ def create_metric_table(label, content):
 
     return table
 
-
-
 # create empty table with custom label
 def create_empty_table(label):
 
