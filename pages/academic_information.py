@@ -245,6 +245,8 @@ def update_about_page(data, school, year):
         # k8_all_data.columns = [x.replace({"\nProficient \n%":"", "\n":" ","\n":" "}) for x in k8_all_data.columns.to_list()]
         
         # load all proficiency information
+        # NOTE: This data is annoyingly inconsistent. In some cases missing data is blank, but
+        # in other cases, it is represented by a '0.'
         k8_all_data = pd.read_csv(r"data/ilearn2022all.csv", dtype=str)    
 
         # Clean up dataframe
@@ -300,67 +302,51 @@ def update_about_page(data, school, year):
         #  'proficiency_rating' and then divide each column by 'Total Tested'
         categories = grades + ethnicity + subgroup
 
+        annotations = pd.DataFrame(columns= ['Category','Total Tested','Status'])
+
         for c in categories:
             for s in subject:
                 category_subject = c + "|" + s
-
                 colz = [category_subject + " " + x for x in proficiency_rating]
                 total_tested = category_subject + " " + "Total Tested"
-
+                
+                # We do not want categories that do not appear in the dataframe
                 if total_tested in all_proficiency_data.columns:
-
-                    # if all_proficiency_data[colz].iloc[0].sum() == 0:
-                    #     print(all_proficiency_data[colz])
-                    # else
-                    # replace NaN with 0
-                    
-                    # NOTE:
-                    # At this point in the code there are three possible data configurations for 
-                    # each grouping of Category + Subject:
+                    # NOTE: at this point in the code there are three possible data configurations for 
+                    # each column:
                     # 1) Total Tested > 0 and all proficiency_rating(s) are > 0 (School has tested category AND
                     #       there is publicly available data)
                     # 2) Total Tested > 0 and all proficiency_rating(s) are == 'NaN' (School has tested category BUT
                     #       there is no publicly available data (insufficient N-size)))
-                    # 3) Total Tested and all proficiency_rating == 0 (School does not have tested category)
+                    # 3) Total Tested AND all proficiency_rating == 0 (School does not have tested category)
 
                     # Neither (2) nor (3) should be displayed. However, we do want to track which
                     # Category/Subject combinations meet either condition (for figure annotation
-                    # purposes).
-
-                    #all_proficiency_data[colz] = all_proficiency_data[colz].fillna(0)
-
-                    # Only want to calculate a percentage for those categories where both
-                    # 'Total Tested' > 0 and the sum of all 'Category' values are > 0. If
-                    # the sum of all 'Category' values is 0, there is no data. If the sum
-                    # of all 'Category' values is NaN, there is insufficient data.
+                    # purposes). So we use a little trick. The sum of a series of '0' values
+                    # is 0 (a numpy.int64). The sum of a series of 'NaN' values is 0.0 (because NaN
+                    # is a numpy.float64). Either result returns True when tested if it == 0. But we
+                    # can use the 'type' of the result (using np.integer and np.floating) to distinuish
+                    # between them.
                     import numpy as np
 
-                    # This is a bit of a hack.
-                    # The sum of a series of '0' values is a numpy.int64 (0).
-                    # The sume of a series of 'NaN' values is a numpy.float65 (0.0).
-                    # So checking type of a sum of the row tells us whether a Category +
-                    # Subject falls under (2) or (3) above.
-                    
-                    # print(all_proficiency_data[colz].iloc[0].sum())
-                    # print(type(all_proficiency_data[colz].iloc[0].sum()))
-                    # print(all_proficiency_data[colz].iloc[0].sum() == 0)
-                    
                     if all_proficiency_data[colz].iloc[0].sum() == 0:
-
                         if isinstance(all_proficiency_data[colz].iloc[0].sum(), np.floating):
-                            print('INSUFFICIENT N-SIZE')
-                            print(colz)
+                            annotations.loc[len(annotations.index)] = [colz[0],all_proficiency_data[total_tested].values[0],'Insufficient']
+
                         elif isinstance(all_proficiency_data[colz].iloc[0].sum(), np.integer):
-                            print('NO DATA')
-                            print(colz)
-                        # print((all_proficiency_data[colz].iloc[0].sum() == 0))
+                            # Only add to annotations if it is a non 'Grade' category.
+                            # this is to account for IDOE's shitty data practices- sometimes
+                            # they treat missing grades, e.g., a school does not offer that
+                            # grade level, as blank (the correct way) and sometimes with '0's
+                            # (the dumbass way). So if everything is 0 AND it is a Grade
+                            # category, we assume it is just IDOE's fucked up data entry
+                            if ~all_proficiency_data[colz].columns.str.contains('Grade').any():
+                                annotations.loc[len(annotations.index)] = [colz[0],all_proficiency_data[total_tested].values[0],'Missing']
+                        
+                        # either way, drop the category from the chart data
+                        all_proficiency_data.drop(colz, axis=1, inplace=True)                            
+
                     else:
-                        print('YAY DATA')
-                        print(colz)
-
-                    if (all_proficiency_data[total_tested].values[0] > 0) and \
-                        (all_proficiency_data[colz].iloc[0].sum() != 0):
-
                         # calculate percentage
                         all_proficiency_data[colz] = all_proficiency_data[colz].divide(
                             all_proficiency_data[total_tested], axis="index"
@@ -377,18 +363,21 @@ def update_about_page(data, school, year):
                         cols = list(tmp_df.columns)
                         all_proficiency_data[colz] = tmp_df[cols]
 
-                    else:
-                        # if total tested is zero, drop all of the columns in the category
-                        # print('No Data: ', colz)
-                        # print('Insufficient Data: ', colz)
-                        all_proficiency_data.drop(colz, axis=1, inplace=True)
+                        # each existing category has a calculated proficiency column named
+                        # 'grade_subject'. Since we arent using it, we need to
+                        # drop it from each category
+                        all_proficiency_data.drop(category_subject, axis=1, inplace=True)
 
-                    # each category has a calculated proficiency column named
-                    # 'grade_subject'. Since we arent using it, we need to
-                    # drop it from each category
+                    # else:
+                    #     # if total tested is zero, AND the Category is a Grade
+                    #     # drop all of the columns in the category, otherwise add
+                    #     # the category to the annotations DF as missing (this is to
+                    #     # account for IDOE's shitty data practices- sometimes they
+                    #     # treat missing grades as blank (the correct way) and
+                    #     # sometimes with '0's (the dumbass way))
 
-                    all_proficiency_data.drop(category_subject, axis=1, inplace=True)
-
+                    #     all_proficiency_data.drop(colz, axis=1, inplace=True)
+        
         # drop columns used for calculation that aren't in final chart
         all_proficiency_data.drop(
             list(
@@ -400,7 +389,6 @@ def update_about_page(data, school, year):
             inplace=True,
         )
 
-        # print(all_proficiency_data.T)
         # Replace Grade X with ordinal number (e.g., Grade 3 = 3rd)
         all_proficiency_data = all_proficiency_data.rename(
             columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
@@ -429,144 +417,10 @@ def update_about_page(data, school, year):
             all_proficiency_data["Category"] != "index"
         ]
 
-        # def make_stacked_bar(data):
-        #     colors = plotly.colors.qualitative.Prism
-            
-        #     if data["Proficiency"].str.contains('Math').any():
-        #         fig_title = year + " Math Proficiency Breakdown"
-        #     else:
-        #         fig_title = year + " ELA Proficiency Breakdown"
-            
-        #     data["Proficiency"] = data["Proficiency"].replace(
-        #         {"Math ": "", "ELA ": ""}, regex=True
-        #     )
-
-        #     # Use this function to create wrapped text using
-        #     # html tags based on the specified width
-        #     # NOTE: adding two spaces before <br> to ensure the words at
-        #     # the end of each break have the same spacing as 'ticksuffix'
-        #     # below
-        #     import textwrap
-        #     def customwrap(s,width=16):
-        #         return "  <br>".join(textwrap.wrap(s,width=width))
-            
-        #     # In order to get the total_tested value into hovertemplate
-        #     # without displaying it on the chart, we need to pull the
-        #     # Total Tested values out of the dataframe and into a new
-        #     # column
-        #     # Copy all of the Total Tested Values
-        #     total_tested = data.loc[data['Proficiency'] == 'Total Tested']
-
-        #     # Merge the total tested values with the existing dataframe
-        #     # This adds 'percentage_x' and 'percentage_y' columns.
-        #     # 'percentage_y' is equal to the Total Tested Values
-        #     data = pd.merge(data, total_tested[['Category','Percentage']], on=['Category'], how='left')
-
-        #     # rename the columns (percentage_x to Percentage & percentage_y to Total Tested)
-        #     data.columns = ['Category','Percentage','Proficiency','Total Tested']
-
-        #     # drop the Total Tested Rows
-        #     data = data[(data['Proficiency'] != 'Total Tested')]
-
-        #     fig = px.bar(
-        #         data,
-        #         x= data['Percentage'],
-        #         y = data['Category'].map(customwrap),
-        #         color=data['Proficiency'],
-        #         barmode='stack',
-        #         text=[f'{i}%' for i in data['Percentage']],
-        #         # custom_data = np.stack((data['Proficiency'], data['Total Tested']), axis=-1),
-        #         custom_data = [data['Proficiency'], data['Total Tested']],
-        #         orientation="h",
-        #         color_discrete_sequence=colors,
-        #         height=200,
-        #         title = fig_title
-        #     )
-
-        #     #TODO: Remove trace name. Show Total Tested only once. Remove legend colors.
-            
-        #     #customize the hovertemplate for each segment of each bar
-        #     fig['data'][0]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
-        #     fig['data'][1]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
-        #     fig['data'][2]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
-        #     fig['data'][3]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
-
-        #     print(fig['data'][3])
-        #     # Add hoverdata
-        #     # TODO: Issue: In a 100% stacked bar chart traces are generated by grouping
-        #     # a column with values adding up to 100%. In this case, there will always
-        #     # be 4 values (the number of items in "proficiency_rating"). So each trace
-        #     # is made up of 4 rows. With a unified hovermode, customdata[0] and customdata[1]
-        #     #  read only the number of rows in the dataframe equal to the number of traces, in
-        #     # this case 4. So we need to restructure customdata to include: each rating
-        #     # print(data['Total Tested'])
-        #     # data.loc[1, 'Total Tested'] = '99'
-        #     # print(data['Total Tested'])
-
-        #     # customdata = np.stack((data['Proficiency'], data['Total Tested']), axis=-1)
-        #     # print(customdata)
-        #     # hovertemplate = (
-        #     #     'Total Tested: %{customdata[1]}<br>' +
-        #     #     '%{text}: %{customdata[0]}<extra></extra>')
-            
-        #     # fig.update_traces(customdata=customdata, hovertemplate=hovertemplate)
-
-
-        #     # the uniformtext_minsize and uniformtext_mode settings hide bar chart
-        #     # text (Percentage) if the size of the chart causes the text of the font
-        #     # to decrease below 8px. The text is required to be positioned 'inside'
-        #     # the bar due to the 'textposition' variable
-        #     fig.update_layout(
-        #         margin=dict(l=10, r=10, t=20, b=0),
-        #         font_family="Open Sans, sans-serif",
-        #         font_color="steelblue",
-        #         font_size=8,
-        #         # legend=dict(
-        #         #     orientation="h",
-        #         #     title="",
-        #         #     x=0,
-        #         #     font=dict(
-        #         #         family="Open Sans, sans-serif", color="steelblue", size=8
-        #         #     ),
-        #         # ),
-        #         plot_bgcolor="white",
-        #         hovermode='y unified',
-        #         hoverlabel=dict(
-        #             bgcolor = 'grey',
-        #             font=dict(
-        #                 family="Open Sans, sans-serif", color="white", size=8
-        #             ),
-        #         ),
-        #         yaxis=dict(autorange="reversed"),
-        #         uniformtext_minsize=8,
-        #         uniformtext_mode='hide',
-        #         title={
-        #             'y':0.975,
-        #             'x':0.5,
-        #             'xanchor': 'center',
-        #             'yanchor': 'top'},
-        #         bargroupgap = 0,
-        #         showlegend = False,
-        #     )
-
-        #     fig.update_traces(
-        #         textfont_size=8,
-        #         insidetextanchor = 'middle',
-        #         textposition='inside',
-        #         marker_line=dict(width=0),
-        #         # bar_width=0,
-        #         showlegend = False, # Trying to get rid of legend in hoverlabel
-        #     )
-
-        #     fig.update_xaxes(title="")
-
-        #     # ticksuffix increases the space between the end of the tick label and the chart
-        #     fig.update_yaxes(title="",ticksuffix = "  ")
-
-        #     return fig
-
+# TODO: Build annotations
         # ELA by Grade
-        
+        grade_annotations = annotations.loc[annotations['Category'].str.contains("Grade")]
+
         grade_ela_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(grades_ordinal)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
@@ -581,6 +435,7 @@ def update_about_page(data, school, year):
         k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,year)
 
         # ELA by Ethnicity
+        ethnicity_annotations = annotations.loc[annotations['Category'].str.contains("Ethnicity")]
         ethnicity_ela_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(ethnicity)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
@@ -595,6 +450,7 @@ def update_about_page(data, school, year):
         k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,year)
 
         # ELA by Subgroup
+        subgroup_annotations = annotations.loc[annotations['Category'].str.contains("Subgroup")]
         subgroup_ela_fig_data = all_proficiency_data[
             all_proficiency_data["Category"].isin(subgroup)
             & all_proficiency_data["Proficiency"].str.contains("ELA")
