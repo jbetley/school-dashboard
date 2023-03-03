@@ -12,6 +12,7 @@ import pandas as pd
 import numpy as np
 import os.path
 
+from .table_helpers import create_empty_table
 from .subnav import subnav_finance
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
 
@@ -20,6 +21,9 @@ dash.register_page(__name__, top_nav=True, path = '/financial_information', orde
     Output('radio-finance-info-display', 'style'),
     Output('finance-info-table-title', 'children'),
     Output('radio-finance-info-content', 'children'),
+    Output('financial-information-main-container', 'style'),
+    Output('financial-information-empty-container', 'style'),
+    Output('financial-information-no-data', 'children'),    
     Input('dash-session', 'data'),
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-info', component_property='value')
@@ -28,26 +32,12 @@ def update_financial_info(data,year,radio_value):
     if not data:
         raise PreventUpdate
 
+    main_container = {'display': 'block'}
+    empty_container = {'display': 'none'}
+    no_data_to_display = create_empty_table('Audited Financial Information')
+
     max_display_years = 5
     school_index = pd.DataFrame.from_dict(data['0'])
-
-    empty_table = [
-        dash_table.DataTable(
-            columns = [
-                {'id': 'emptytable', 'name': 'No Data to Display'},
-            ],
-            style_header={
-                'fontSize': '16px',
-                'border': 'none',
-                'backgroundColor': '#ffffff',
-                'paddingTop': '15px',                    
-                'verticalAlign': 'center',
-                'textAlign': 'center',
-                'color': '#6783a9',
-                'fontFamily': 'Roboto, sans-serif',
-            },
-        )
-    ]
 
     # Displays either School or Network level financials, if a school is not
     # part of a network, no radio buttons are displayed at all. If a school
@@ -135,10 +125,9 @@ def update_financial_info(data,year,radio_value):
 
     if os.path.isfile(finance_file):
 
-#TODO: FIGURE OUT WHERE WE ARE PUTTING ADM DATA
-
         financial_data = pd.read_csv(finance_file)
 
+#TODO: FIGURE OUT WHERE WE ARE PUTTING ADM DATA
         # school_adm_dict        
         school_adm = pd.DataFrame.from_dict(data['6'])
 
@@ -157,7 +146,9 @@ def update_financial_info(data,year,radio_value):
 
         # financial file exists, but is empty
         if len(financial_data.columns) <= 1:
-            financial_information_table = empty_table
+            financial_information_table = {}
+            main_container = {'display': 'none'}
+            empty_container = {'display': 'block'}
 
         else:
 
@@ -292,9 +283,12 @@ def update_financial_info(data,year,radio_value):
                     )
             ]
     else:
-        financial_information_table = empty_table
+        financial_information_table = {}
+        main_container = {'display': 'none'}
+        empty_container = {'display': 'block'}
 
-    return financial_information_table, display_radio, table_title, radio_content
+    return financial_information_table, display_radio, table_title, \
+        radio_content, main_container, empty_container, no_data_to_display
 
 ## Layout
 label_style = {
@@ -327,25 +321,48 @@ def layout():
                     [
                         html.Div(
                             [
-
-                                html.Label(id='finance-info-table-title', style=label_style),
                                 html.Div(
                                     [
-                                    html.Div(
-                                        [
-                                            html.Div(id='radio-finance-info-content', children=[]),
-                                        ],
-                                        id = 'radio-button-finance-info',
+
+                                        html.Label(id='finance-info-table-title', style=label_style),
+                                        html.Div(
+                                            [
+                                            html.Div(
+                                                [
+                                                    html.Div(id='radio-finance-info-content', children=[]),
+                                                ],
+                                                id = 'radio-button-finance-info',
+                                                ),
+                                            ],
+                                            id = 'radio-finance-info-display',
                                         ),
+                                        html.Div(id='financial-information-table')
                                     ],
-                                    id = 'radio-finance-info-display',
+                                    className = 'pretty_container ten columns',
                                 ),
-                                html.Div(id='financial-information-table')
                             ],
-                            className = 'pretty_container ten columns',
+                            className = 'bare_container twelve columns',
                         ),
                     ],
-                    className = 'bare_container twelve columns',
+                    id = 'financial-information-main-container',
+                ),                
+                html.Div(
+                    [
+                        html.Div(id='financial-information-no-data'),        
+                        # html.Div(
+                        #     [
+                        #         html.Div(
+                        #             [
+                        #                 html.Label('Academic Information', style=label_style),
+                        #                 dcc.Graph(id='academic-information-no-data',config={'displayModeBar': False})
+                        #             ],
+                        #             className = 'pretty_close_container twelve columns',
+                        #         ),
+                        #     ],
+                        #     className='row'
+                        # ),
+                    ],
+                    id = 'financial-information-empty-container',
                 ),
             ],
             id='mainContainer',

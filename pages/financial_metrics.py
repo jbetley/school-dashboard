@@ -13,6 +13,7 @@ import pandas as pd
 import os.path
 # import itertools
 from .calculations import calculate_metrics
+from .table_helpers import create_empty_table
 
 # import subnav function
 from .subnav import subnav_finance
@@ -38,6 +39,9 @@ label_style = {
     # Output('finance-metrics-table-title', 'children'),
     Output('financial-indicators-table', 'children'),
     Output('financial-metrics-definitions-table', 'children'),
+    Output('financial-metrics-main-container', 'style'),
+    Output('financial-metrics-empty-container', 'style'),
+    Output('financial-metrics-no-data', 'children'),      
     Input('dash-session', 'data'),
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-metrics', component_property='value')
@@ -45,6 +49,10 @@ label_style = {
 def update_financial_metrics(data,year,radio_value):
     if not data:
          raise PreventUpdate
+
+    main_container = {'display': 'block'}
+    empty_container = {'display': 'none'}
+    no_data_to_display = create_empty_table('Financial Metrics')
 
     max_display_years = 5
     school_index = pd.DataFrame.from_dict(data['0'])
@@ -126,35 +134,36 @@ def update_financial_metrics(data,year,radio_value):
         else:
             table_title = 'Financial Accountability Metrics (' + school_index['School Name'].values[0] + ')'
 
-    empty_table = [
-        html.Div(
-            [                
-                html.Div(
-                    [
-                        html.Label(table_title, style=label_style),                
-                        dash_table.DataTable(
-                            columns = [
-                                {'id': 'emptytable', 'name': 'No Data to Display'},
-                            ],
-                            style_header={
-                                'fontSize': '16px',
-                                'border': 'none',
-                                'backgroundColor': '#ffffff',
-                                'paddingTop': '15px',                    
-                                'verticalAlign': 'center',
-                                'textAlign': 'center',
-                                'color': '#6783a9',
-                                'fontFamily': 'Roboto, sans-serif',
-                            },
-                        )
-                    ],
-                    className = 'pretty_container ten columns',
-                ),
-            ],
-            className = 'bare_container twelve columns',
-        )
-    ]
+    # empty_table = [
+    #     html.Div(
+    #         [                
+    #             html.Div(
+    #                 [
+    #                     html.Label(table_title, style=label_style),                
+    #                     dash_table.DataTable(
+    #                         columns = [
+    #                             {'id': 'emptytable', 'name': 'No Data to Display'},
+    #                         ],
+    #                         style_header={
+    #                             'fontSize': '16px',
+    #                             'border': 'none',
+    #                             'backgroundColor': '#ffffff',
+    #                             'paddingTop': '15px',                    
+    #                             'verticalAlign': 'center',
+    #                             'textAlign': 'center',
+    #                             'color': '#6783a9',
+    #                             'fontFamily': 'Roboto, sans-serif',
+    #                         },
+    #                     )
+    #                 ],
+    #                 className = 'pretty_container ten columns',
+    #             ),
+    #         ],
+    #         className = 'bare_container twelve columns',
+    #     )
+    # ]
 
+## TODO: IF NOT FINAMCIAL DATA - ENTIRE PAGE IS BLANK - DONT DO BY TABLE
     if os.path.isfile(finance_file):
 
         financial_data = pd.read_csv(finance_file)
@@ -174,7 +183,7 @@ def update_financial_metrics(data,year,radio_value):
         # to remove this check and modify the financial metric calculation code
         if (len(financial_data.columns) <= 1) | \
             ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == '0')):
-                financial_metrics_table = empty_table
+                financial_metrics_table = create_empty_table('Financial Metrics')
 
         else:
 
@@ -429,7 +438,7 @@ def update_financial_metrics(data,year,radio_value):
         # Display an empty table if financial indicators has fewer than 2 columns
         # (Category + Year)
         if len(financial_indicators.columns) <= 1 or financial_indicators.empty:    
-            financial_indicators_table = empty_table
+            financial_indicators_table = create_empty_table('Financial Indicators')
 
         else:
             financial_indicators[['Standard','Description']] = financial_indicators['Category'].str.split('|', expand=True).copy()
@@ -539,87 +548,88 @@ def update_financial_metrics(data,year,radio_value):
                         className = 'bare_container twelve columns',
                     )
                 ]
+        # TODO: Possibly make this table easier to read either through Markdown or embedded images
+        # (neither works currently with dash 2.6 datatables)
+        # http://www.latex2png.com/
+        # https://stackoverflow.com/questions/70205486/clickable-hyperlinks-in-plotly-dash-datatable
+        # https://stackoverflow.com/questions/66583063/how-to-add-hyperlink-in-column-field-of-dash-datatable
 
+        financial_metrics_definitions_data = [
+            ['Current Ratio = Current Assets ÷ Current Liabilities','Current Ratio is greater than 1.1; or is between 1.0 and 1.1 and the one-year trend is not negative.'],
+            ['Days Cash on Hand = Unrestricted Cash ÷ ((Operating Expenses - Depreciation Expense) ÷ 365)','School has greater than 45 unrestricted days cash; or between 30 - 45 unrestricted days cash and the one-year trend is not negative.'],
+            ['Annual Enrollment Change = (Current Year ADM - Previous Year ADM) ÷ Previous Year ADM','Annual Enrollment Change increases or shows a current year decrease of less than 10%.'],
+            ['Primary Reserve Ratio = Unrestricted Net Assets ÷ Operating Expenses','Primary Reserve Ratio is greater than .25.'],
+            ['Change in Net Assets Margin = (Operating Revenues - Operating Expenses) ÷ Operating Revenues ; Aggregated 3-Year Margin = (3 Year Operating Revenues - 3 Year Operating Expense) ÷ 3 Year Operating Revenues','Aggregated Three-Year Margin is positive and the most recent year Change in Net Assets Margin is positive; or Aggregated Three-Year Margin is greater than -1.5%, the trend is positive for the last two years, and Change in Net Assets Margin for the most recent year is positive. For schools in their first and second year of operation, the cumulative Change in Net Assets Margin must be positive.'],
+            ['Debt to Asset Ratio = Total Liabilities ÷ Total Assets','Debt to Asset Ratio is less than 0.9.'],
+            ['One Year Cash Flow = Recent Year Total Cash - Previous Year Total Cash; Multi-Year Cash Flow = Recent Year Total Cash - Two Years Previous Total Cash','Multi-Year Cash Flow is positive and One Year Cash Flow is positive in two out of three years, including the most recent year. For schools in the first two years of operation, both years must have a positive Cash Flow (for purposes of calculating Cash Flow, the school\'s Year 0 balance is assumed to be zero).'],
+            ['Debt Service Coverage Ratio = (Change in Net Assets + Depreciation/Amortization Expense + Interest Expense + Rent/Lease Expense) ÷ (Principal Payments + Interest Expense + Rent/Lease Expense)','Debt Service Coverage Ratio is greater than or equal to 1.0.']
+        ]
+
+        financial_metrics_definitions_keys = ['Calculation','Requirement to Meet Standard']
+        financial_metrics_definitions_dict = [dict(zip(financial_metrics_definitions_keys, l)) for l in financial_metrics_definitions_data ]
+
+        financial_metrics_definitions_table = [
+                dash_table.DataTable(
+                    data = financial_metrics_definitions_dict,
+                    columns = [{'name': i, 'id': i, 'presentation': 'markdown'} for i in financial_metrics_definitions_keys],
+                    style_data={
+                        'fontSize': '12px',
+                        'border': 'none',
+                        'fontFamily': 'Roboto, sans-serif',
+                    },
+                    style_data_conditional=[
+                        {
+                            'if': {
+                                'row_index': 'odd'
+                            },
+                            'backgroundColor': '#eeeeee',
+                        },
+                        {   # Kludge to ensure first col header has border
+                            'if': {
+                                'row_index': 0,
+                                'column_id': 'Calculation'
+                            },
+                            'borderTop': '.75px solid rgb(103,131,169)'
+                        },
+                    ],
+                    style_header={
+                        'backgroundColor': '#ffffff',
+                        'fontSize': '12px',
+                        'fontFamily': 'Roboto, sans-serif',
+                        'color': '#6783a9',
+                        'textAlign': 'center',
+                        'fontWeight': 'bold',
+                        'text-decoration': 'none',
+                        'borderBottom': '.75px solid rgb(103,131,169)'                    
+                    },
+                    style_cell={
+                        'whiteSpace': 'normal',
+                        'height': 'auto',
+                        'textAlign': 'left',
+                        'color': '#6783a9',
+                    },
+                    style_cell_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Calculation'
+                            },
+                            'width': '50%',
+                            'fontWeight': 'bold'
+                        },
+                    ],
+                    style_as_list_view=True
+                )
+        ]
     else:
-        # TODO: ADD LABEL TO EMPTY TABLE ?
-        financial_metrics_table = empty_table
-        label_title = 'Other Financial Accountability Indicators'
-        financial_indicators_table = empty_table
+        financial_metrics_table = {}
+        financial_indicators_table = {}
+        financial_metrics_definitions_table = {}
+        main_container = {'display': 'none'}
+        empty_container = {'display': 'block'}
 
-# TODO: Possibly make this table easier to read either through Markdown or embedded images
-# (neither works currently with dash 2.6 datatables)
-# http://www.latex2png.com/
-# https://stackoverflow.com/questions/70205486/clickable-hyperlinks-in-plotly-dash-datatable
-# https://stackoverflow.com/questions/66583063/how-to-add-hyperlink-in-column-field-of-dash-datatable
-
-    financial_metrics_definitions_data = [
-        ['Current Ratio = Current Assets ÷ Current Liabilities','Current Ratio is greater than 1.1; or is between 1.0 and 1.1 and the one-year trend is not negative.'],
-        ['Days Cash on Hand = Unrestricted Cash ÷ ((Operating Expenses - Depreciation Expense) ÷ 365)','School has greater than 45 unrestricted days cash; or between 30 - 45 unrestricted days cash and the one-year trend is not negative.'],
-        ['Annual Enrollment Change = (Current Year ADM - Previous Year ADM) ÷ Previous Year ADM','Annual Enrollment Change increases or shows a current year decrease of less than 10%.'],
-        ['Primary Reserve Ratio = Unrestricted Net Assets ÷ Operating Expenses','Primary Reserve Ratio is greater than .25.'],
-        ['Change in Net Assets Margin = (Operating Revenues - Operating Expenses) ÷ Operating Revenues ; Aggregated 3-Year Margin = (3 Year Operating Revenues - 3 Year Operating Expense) ÷ 3 Year Operating Revenues','Aggregated Three-Year Margin is positive and the most recent year Change in Net Assets Margin is positive; or Aggregated Three-Year Margin is greater than -1.5%, the trend is positive for the last two years, and Change in Net Assets Margin for the most recent year is positive. For schools in their first and second year of operation, the cumulative Change in Net Assets Margin must be positive.'],
-        ['Debt to Asset Ratio = Total Liabilities ÷ Total Assets','Debt to Asset Ratio is less than 0.9.'],
-        ['One Year Cash Flow = Recent Year Total Cash - Previous Year Total Cash; Multi-Year Cash Flow = Recent Year Total Cash - Two Years Previous Total Cash','Multi-Year Cash Flow is positive and One Year Cash Flow is positive in two out of three years, including the most recent year. For schools in the first two years of operation, both years must have a positive Cash Flow (for purposes of calculating Cash Flow, the school\'s Year 0 balance is assumed to be zero).'],
-        ['Debt Service Coverage Ratio = (Change in Net Assets + Depreciation/Amortization Expense + Interest Expense + Rent/Lease Expense) ÷ (Principal Payments + Interest Expense + Rent/Lease Expense)','Debt Service Coverage Ratio is greater than or equal to 1.0.']
-    ]
-
-    financial_metrics_definitions_keys = ['Calculation','Requirement to Meet Standard']
-    financial_metrics_definitions_dict = [dict(zip(financial_metrics_definitions_keys, l)) for l in financial_metrics_definitions_data ]
-
-    financial_metrics_definitions_table = [
-            dash_table.DataTable(
-                data = financial_metrics_definitions_dict,
-                columns = [{'name': i, 'id': i, 'presentation': 'markdown'} for i in financial_metrics_definitions_keys],
-                style_data={
-                    'fontSize': '12px',
-                    'border': 'none',
-                    'fontFamily': 'Roboto, sans-serif',
-                },
-                style_data_conditional=[
-                    {
-                        'if': {
-                            'row_index': 'odd'
-                        },
-                        'backgroundColor': '#eeeeee',
-                    },
-                    {   # Kludge to ensure first col header has border
-                        'if': {
-                            'row_index': 0,
-                            'column_id': 'Calculation'
-                        },
-                        'borderTop': '.75px solid rgb(103,131,169)'
-                    },
-                ],
-                style_header={
-                    'backgroundColor': '#ffffff',
-                    'fontSize': '12px',
-                    'fontFamily': 'Roboto, sans-serif',
-                    'color': '#6783a9',
-                    'textAlign': 'center',
-                    'fontWeight': 'bold',
-                    'text-decoration': 'none',
-                    'borderBottom': '.75px solid rgb(103,131,169)'                    
-                },
-                style_cell={
-                    'whiteSpace': 'normal',
-                    'height': 'auto',
-                    'textAlign': 'left',
-                    'color': '#6783a9',
-                },
-                style_cell_conditional=[
-                    {
-                        'if': {
-                            'column_id': 'Calculation'
-                        },
-                        'width': '50%',
-                        'fontWeight': 'bold'
-                    },
-                ],
-                style_as_list_view=True
-            )
-    ]
-
-    return financial_metrics_table, radio_content, display_radio, financial_indicators_table, financial_metrics_definitions_table #  table_title,
+    return financial_metrics_table, radio_content, display_radio, \
+        financial_indicators_table, financial_metrics_definitions_table, \
+        main_container, empty_container, no_data_to_display#  table_title,
 
 def layout():
     return html.Div(
@@ -635,6 +645,8 @@ def layout():
                     ],
                     className='row'
                 ),
+                html.Div(
+                    [                
                 html.Div(
                     [
                         html.Div(
@@ -699,6 +711,15 @@ def layout():
                     ],
                     className = 'row'
                 ),
+                ],
+                id = 'financial-metrics-main-container',
+            ),
+                html.Div(
+                    [
+                        html.Div(id='financial-metrics-no-data'),
+                    ],
+                    id = 'financial-metrics-empty-container',
+                ),                            
             ],
             id='mainContainer',
             style={
