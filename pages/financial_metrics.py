@@ -426,7 +426,6 @@ def update_financial_metrics(data,year,radio_value):
         # Financial Indicators
         financial_indicators = financial_data[financial_data['Category'].str.startswith('2.1.')].copy()
         
-        print(table_title)
         # Display an empty table if financial indicators has fewer than 2 columns
         # (Category + Year)
         if len(financial_indicators.columns) <= 1 or financial_indicators.empty:    
@@ -542,6 +541,7 @@ def update_financial_metrics(data,year,radio_value):
                 ]
 
     else:
+        # TODO: ADD LABEL TO EMPTY TABLE ?
         financial_metrics_table = empty_table
         label_title = 'Other Financial Accountability Indicators'
         financial_indicators_table = empty_table

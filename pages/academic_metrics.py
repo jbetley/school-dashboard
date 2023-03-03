@@ -125,7 +125,8 @@ def update_about_page(data,year):
     # K8, K12, & High School Accountability Metrics
     else:   
 
-        table_container_ahs_113 = table_container_ahs_1214 = {}
+        table_container_ahs_113 = {}
+        table_container_ahs_1214 = {}
         display_ahs_metrics = {'display': 'none'}
 
         # High School Academic Metrics (and CHS if prior to 2021)

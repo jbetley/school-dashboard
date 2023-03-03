@@ -1,6 +1,6 @@
-import plotly.express as px
-import pandas as pd
-import numpy as np
+# import plotly.express as px
+# import pandas as pd
+# import numpy as np
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
@@ -18,6 +18,38 @@ label_style = {
     'paddingTop': '5px'
 }
 color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
+
+# create empty table with custom label
+def create_empty_table(label):
+    empty_table = [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Label(label, style=label_style),
+                                html.Div(
+                                    dash_table.DataTable(
+                                        columns = [
+                                            {'id': 'emptytable', 'name': 'No Data to Display'},
+                                        ],
+                                        style_header={
+                                            'fontSize': '14px',
+                                            'border': 'none',
+                                            'textAlign': 'center',
+                                            'color': '#6783a9',
+                                            'fontFamily': 'Open Sans, sans-serif',
+                                        },
+                                    ),
+                                ),
+                            ],
+                            className = 'pretty_container eight columns'
+                        ),
+                    ],
+                    className = 'bare_container twelve columns',
+                )
+    ]
+
+    return empty_table
 
 
 # Display tables either side by side or on individual rows depending on # of columns
@@ -523,39 +555,6 @@ def create_metric_table(label, content):
     #     ]
 
     return table
-
-# create empty table with custom label
-def create_empty_table(label):
-
-    empty_table = [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Label(label, style=label_style),
-                                html.Div(
-                                    dash_table.DataTable(
-                                        columns = [
-                                            {'id': 'emptytable', 'name': 'No Data to Display'},
-                                        ],
-                                        style_header={
-                                            'fontSize': '14px',
-                                            'border': 'none',
-                                            'textAlign': 'center',
-                                            'color': '#6783a9',
-                                            'fontFamily': 'Open Sans, sans-serif',
-                                        },
-                                    ),
-                                ),
-                            ],
-                            className = 'pretty_container eight columns'
-                        ),
-                    ],
-                    className = 'bare_container twelve columns',
-                )
-    ]
-
-    return empty_table
 
 def create_comparison_table(data,school_name):
 

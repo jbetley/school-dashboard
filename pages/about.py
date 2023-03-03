@@ -12,6 +12,8 @@ import pandas as pd
 import numpy as np
 import json
 
+from .chart_helpers import loading_fig
+
 dash.register_page(__name__, path="/", order=0, top_nav=True)
 
 ## Callback ##
@@ -543,35 +545,6 @@ def update_about_page(year, data):
 
 ## Layout ##
 
-## Blank (Loading) Fig ##
-# https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
-
-def blank_fig():
-    fig = {
-        'layout': {
-            'xaxis': {
-                'visible': False
-            },
-            'yaxis': {
-                'visible': False
-            },
-            'annotations': [
-                {
-                    'text': 'Loading . . .',
-                    'xref': 'paper',
-                    'yref': 'paper',
-                    'showarrow': False,
-                    'font': {
-                        'size': 16,
-                        'color': '#6783a9',
-                        'family': 'Roboto, sans-serif'
-                    }
-                }
-            ]
-        }
-    }
-    return fig
-
 label_style = {
     'height': '20px',
     'backgroundColor': '#6783a9',
@@ -627,7 +600,7 @@ layout = html.Div(
                             html.Div(
                                 [
                                     html.Label('Average Daily Membership History', style=label_style),
-                                    dcc.Graph(id='adm_fig', figure = blank_fig(),config={'displayModeBar': False}) # figure={}
+                                    dcc.Graph(id='adm_fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
                                 ],
                                 className = 'pretty_container six columns'
                             ),
@@ -639,14 +612,14 @@ layout = html.Div(
                             html.Div(
                                 [
                                     html.Label(id='subgroup-title', style=label_style),
-                                    dcc.Graph(id='status-fig', figure = blank_fig(),config={'displayModeBar': False}) # figure={}
+                                    dcc.Graph(id='status-fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
                                 ],
                                 className = 'pretty_container six columns'
                             ),
                             html.Div(
                                 [
                                     html.Label(id='ethnicity-title', style=label_style),
-                                    dcc.Graph(id='ethnicity-fig', figure = blank_fig(),config={'displayModeBar': False}) # figure={}
+                                    dcc.Graph(id='ethnicity-fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
                                 ],
                                 className = 'pretty_container six columns'
                             ),

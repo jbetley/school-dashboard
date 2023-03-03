@@ -15,13 +15,13 @@ import numpy as np
 import os.path
 import plotly.graph_objects as go
 
-from .chart_helpers import blank_fig
+from .chart_helpers import loading_fig, no_data_fig
 
 # import subnav function
 from .subnav import subnav_finance
 dash.register_page(__name__, path = '/financial_analysis', order=3)
 
-# NOTE: THe "federal audit findings table" is not currently displayed
+# NOTE: The "federal audit findings table" is not currently displayed
 
 @callback(
     Output('revenue-expenses-fig', 'figure'),
@@ -1054,34 +1054,6 @@ def update_financial_analysis_page(data, year, radio_value):
 
 # Layout
 
-# ## Blank (Loading) Fig ##
-# # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
-# def blank_fig():
-#     fig = {
-#         'layout': {
-#             'xaxis': {
-#                 'visible': False
-#             },
-#             'yaxis': {
-#                 'visible': False
-#             },
-#             'annotations': [
-#                 {
-#                     'text': 'Loading . . .',
-#                     'xref': 'paper',
-#                     'yref': 'paper',
-#                     'showarrow': False,
-#                     'font': {
-#                         'size': 16,
-#                         'color': '#6783a9',
-#                         'family': 'Roboto, sans-serif'
-#                     }
-#                 }
-#             ]
-#         }
-#     }
-#     return fig
-
 label_style = {
     'height': '20px',
     'backgroundColor': '#6783a9',
@@ -1124,14 +1096,14 @@ def layout():
                             html.Div(
                                 [
                                     html.Label(id='finance-analysis-RandE-title', style=label_style),                                    
-                                    dcc.Graph(id='revenue-expenses-fig', figure = blank_fig(),config={'displayModeBar': False})
+                                    dcc.Graph(id='revenue-expenses-fig', figure = loading_fig(),config={'displayModeBar': False})
                                 ],
                                 className = 'pretty_container six columns'
                             ),
                             html.Div(
                                 [
                                     html.Label(id='finance-analysis-AandL-title', style=label_style),                                       
-                                    dcc.Graph(id='assets-liabilities-fig', figure = blank_fig(),config={'displayModeBar': False})
+                                    dcc.Graph(id='assets-liabilities-fig', figure = loading_fig(),config={'displayModeBar': False})
                                 ],
                                 className = 'pretty_container six columns'
                             )

@@ -18,9 +18,9 @@ import json
 # import scipy.spatial as spatial
 
 from .calculations import find_nearest, filter_grades
-from .chart_helpers import blank_fig, make_line_chart,make_bar_chart, \
-    make_group_bar_chart
-from .table_helpers import create_comparison_table
+from .chart_helpers import loading_fig, no_data_fig, \
+    make_line_chart,make_bar_chart, make_group_bar_chart
+from .table_helpers import create_comparison_table, create_empty_table
 
 # Debuggging #
 # pd.set_option('display.max_rows', None)
@@ -206,9 +206,10 @@ def set_dropdown_options(school, year, selected):
     Output('fig16b2-category-string', 'children'),
     Output('fig16b2-school-string', 'children'),
     Output('fig16b2-table-container', 'style'),
-    Output('main-container', 'style'),
-    Output('empty-container', 'style'),
-    Output('no-data-fig', 'figure'),            
+    Output('academic-analysis-main-container', 'style'),
+    Output('academic-analysis-empty-container', 'style'),
+    # Output('academic-analysis-no-data', 'figure'),
+    Output('academic-analysis-no-data', 'children'),
     Input('charter-dropdown', 'value'),
     Input('year-dropdown', 'value'),
     Input('dash-session', 'data'),
@@ -220,31 +221,31 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
     selected_year = str(year)
 
-    # blank chart
-    blank_chart = {
-            'layout': {
-                'height': 200,
-                'xaxis': {
-                    'visible': False
-                },
-                'yaxis': {
-                    'visible': False
-                },
-                'annotations': [
-                    {
-                        'text': 'No Data to Display',
-                        'xref': 'paper',
-                        'yref': 'paper',
-                        'showarrow': False,
-                        'font': {
-                            'size': 16,
-                            'color': '#4682b4',
-                            'family': 'Open Sans, sans-serif'
-                        }
-                    }
-                ]
-            }
-        }
+    # # blank chart
+    # blank_chart = {
+    #         'layout': {
+    #             'height': 200,
+    #             'xaxis': {
+    #                 'visible': False
+    #             },
+    #             'yaxis': {
+    #                 'visible': False
+    #             },
+    #             'annotations': [
+    #                 {
+    #                     'text': 'No Data to Display',
+    #                     'xref': 'paper',
+    #                     'yref': 'paper',
+    #                     'showarrow': False,
+    #                     'font': {
+    #                         'size': 16,
+    #                         'color': '#4682b4',
+    #                         'family': 'Open Sans, sans-serif'
+    #                     }
+    #                 }
+    #             ]
+    #         }
+    #     }
 
     # empty_table
     empty_table = [
@@ -268,8 +269,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
     # default styles
     main_container = {'display': 'block'}
     empty_container = {'display': 'none'}
-    no_data_fig = blank_chart
-
+    # no_data_to_display = no_data_fig()
+    no_data_to_display = create_empty_table('Academic Analysis')
     ### START TIME ###
     main_load_start = timeit.default_timer()
     ##################
@@ -293,8 +294,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
     if (school_info['School Type'].values[0] == 'K8' and not data['8']) or \
         school_info['School Type'].values[0] == 'HS' or school_info['School Type'].values[0] == 'AHS':
 
-        fig14a = fig14b = fig14c = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig16a1 = fig16b1 = fig16a2 = fig16b2 = blank_chart
-        fig14c_table = fig14d_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = empty_table
+        fig14a = fig14b = fig14c = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig16a1 = fig16b1 = fig16a2 = fig16b2 = {}
+        fig14c_table = fig14d_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = {}
         fig16a1_category_string = fig16b1_category_string = fig16a2_category_string = fig16b2_category_string = ''
         fig16a1_school_string = fig16b1_school_string = fig16a2_school_string = fig16b2_school_string = ''
         fig16a1_table_container = {'display': 'none'}
@@ -318,8 +319,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
         # Testing (3) and (4)
         if tested_header not in tested_academic_data.columns or tested_academic_data[tested_header].isnull().all():
-            fig14a = fig14b = fig14c = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig16a1 = fig16b1 = fig16a2 = fig16b2 = blank_chart
-            fig14c_table = fig14d_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = empty_table
+            fig14a = fig14b = fig14c = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig16a1 = fig16b1 = fig16a2 = fig16b2 = {}
+            fig14c_table = fig14d_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = {}
             fig16a1_category_string = fig16b1_category_string = fig16a2_category_string = fig16b2_category_string = ''
             fig16a1_school_string = fig16b1_school_string = fig16a2_school_string = fig16b2_school_string = ''
             fig16a1_table_container = {'display': 'none'}
@@ -421,7 +422,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             else:   # only one year of data (zero years would be empty dataframe)
 
-                fig14a = fig14b = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = blank_chart
+                fig14a = fig14b = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = no_data_fig()
 
         ## Charts (3 & 4)- Comparison Data
         # Uses: single [selected] year of data
@@ -610,7 +611,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14c_table = create_comparison_table(fig14c_table_data, school_name)
             else:
 
-                fig14c = blank_chart
+                fig14c = no_data_fig()
                 fig14c_table = empty_table
 
         #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
@@ -643,7 +644,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
                 fig14d_table = create_comparison_table(fig14d_table_data, school_name)
             else:
-                fig14d = blank_chart
+                fig14d = no_data_fig()
                 fig14d_table = empty_table
 
     #### Comparison Charts & Tables
@@ -747,8 +748,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16a1_table_container = {'display': 'block'}
             
             else:
-                fig16a1 = blank_chart
-                fig16a1_table = empty_table
+                fig16a1 = {}
+                fig16a1_table = {}
                 fig16a1_category_string = ''
                 fig16a1_school_string = ''                
                 fig16a1_table_container = {'display': 'none'}
@@ -770,8 +771,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16b1_table_container = {'display': 'block'}
             
             else:
-                fig16b1 = blank_chart
-                fig16b1_table = empty_table
+                fig16b1 = {}
+                fig16b1_table = {}
                 fig16b1_category_string = ''
                 fig16b1_school_string = ''                
                 fig16b1_table_container = {'display': 'none'}
@@ -793,8 +794,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16a2_table_container = {'display': 'block'}
             
             else:
-                fig16a2 = blank_chart
-                fig16a2_table = empty_table
+                fig16a2 = {}
+                fig16a2_table = {}
                 fig16a2_category_string = ''
                 fig16a2_school_string = ''                
                 fig16a2_table_container = {'display': 'none'}
@@ -816,8 +817,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16b2_table_container = {'display': 'block'}
             
             else:
-                fig16b2 = blank_chart
-                fig16b2_table = empty_table
+                fig16b2 = {}
+                fig16b2_table = {}
                 fig16b2_category_string = ''
                 fig16b2_school_string = ''                
                 fig16b2_table_container = {'display': 'none'}
@@ -832,7 +833,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
         fig16a1, fig16a1_table, fig16a1_category_string, fig16a1_school_string, fig16a1_table_container, fig16b1, \
         fig16b1_table, fig16b1_category_string, fig16b1_school_string, fig16b1_table_container, fig16a2, fig16a2_table, \
         fig16a2_category_string, fig16a2_school_string, fig16a2_table_container, fig16b2, fig16b2_table, \
-        fig16b2_category_string, fig16b2_school_string, fig16b2_table_container, main_container, empty_container, no_data_fig
+        fig16b2_category_string, fig16b2_school_string, fig16b2_table_container, main_container, empty_container, no_data_to_display
 
 ## Layout ##
 label_style = {
@@ -912,14 +913,14 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label('Year over Year ELA Proficiency by Grade', style=label_style),
-                                        dcc.Graph(id='fig14a', figure = blank_fig())
+                                        dcc.Graph(id='fig14a', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
                                 ),
                                 html.Div(
                                     [
                                         html.Label('Year over Year Math Proficiency by Grade', style=label_style),
-                                        dcc.Graph(id='fig14b', figure = blank_fig())
+                                        dcc.Graph(id='fig14b', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
                                 )
@@ -931,14 +932,14 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label('Year over Year ELA Proficiency by Ethnicity', style=label_style),
-                                        dcc.Graph(id='fig16c1', figure = blank_fig())
+                                        dcc.Graph(id='fig16c1', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
                                 ),
                                 html.Div(
                                     [
                                         html.Label('Year over Year Math Proficiency by Ethnicity', style=label_style),
-                                        dcc.Graph(id='fig16d1', figure = blank_fig())
+                                        dcc.Graph(id='fig16d1', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
                                 )
@@ -950,14 +951,14 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label('Year over Year ELA Proficiency by Subgroup', style=label_style),
-                                        dcc.Graph(id='fig16c2', figure = blank_fig())
+                                        dcc.Graph(id='fig16c2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
                                 ),
                                 html.Div(
                                     [
                                         html.Label('Year over Year Math Proficiency by Subgroup', style=label_style),
-                                        dcc.Graph(id='fig16d2', figure = blank_fig())
+                                        dcc.Graph(id='fig16d2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
                                 )
@@ -992,7 +993,7 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label('Comparison: Current Year ELA Proficiency', style=label_style),
-                                        dcc.Graph(id='fig14c', figure = blank_fig())
+                                        dcc.Graph(id='fig14c', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container nine columns',
                                 ),
@@ -1011,7 +1012,7 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label('Comparison: Current Year Math Proficiency', style=label_style),
-                                        dcc.Graph(id='fig14d', figure = blank_fig())
+                                        dcc.Graph(id='fig14d', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container nine columns',
                                 ),
@@ -1030,7 +1031,7 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label('Comparison: ELA Proficiency by Ethnicity', style=label_style),
-                                        dcc.Graph(id='fig16a1', figure = blank_fig()) #, style={'margin-bottom': -20}),
+                                        dcc.Graph(id='fig16a1', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1077,7 +1078,7 @@ def layout():
                                         # TODO: Margin-bottom makes for better graph display, but it breaks empty
                                         # chart display.. Need to figure out how to change margin in fig creation itself
                                         html.Label('Comparison: Math Proficiency by Ethnicity', style=label_style),
-                                        dcc.Graph(id='fig16b1', figure = blank_fig()) #, style={'margin-bottom': -20}),
+                                        dcc.Graph(id='fig16b1', figure = loading_fig(),config={'displayModeBar': False}) #, style={'margin-bottom': -20}),
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1121,7 +1122,7 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label('Comparison: ELA Proficiency by Subgroup', style=label_style),
-                                        dcc.Graph(id='fig16a2', figure = blank_fig()) #, style={'margin-bottom': -20}),
+                                        dcc.Graph(id='fig16a2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1165,7 +1166,7 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label('Comparison: Math Proficiency by Subgroup', style=label_style),
-                                        dcc.Graph(id='fig16b2', figure = blank_fig()) #, style={'margin-bottom': -20}),
+                                        dcc.Graph(id='fig16b2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1197,33 +1198,43 @@ def layout():
                                                 ),                        
                                             ],
                                             className = 'close_container twelve columns'
-                                        )
+                                        ),
                                     ],
                                     className='row'
                                 ),
                             ],
                             id = 'fig16b2-table-container',
                         ),
-
                     ],
-                    id = 'main-container',
+                    id = 'academic-analysis-main-container',
                 ),
                 html.Div(
                     [
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Label('Academic Analysis', style=label_style),
-                                        dcc.Graph(id='no-data-fig', figure = blank_fig()) #, style={'margin-bottom': -20}),
-                                    ],
-                                    className = 'pretty_close_container twelve columns',
-                                ),
-                            ],
-                            className='row'
-                        ),
+                    html.Div(id='academic-analysis-no-data'),
+                        # html.Div(
+                        #     [
+                                # html.Div(
+                                #     [
+                                #         # TODO: TRY REPLACING WITH BLANK TABLE?
+                                #         html.Div(
+                                #             [
+                                #                 # html.Label('Academic Analysis', style=label_style),
+                                #                 # dcc.Graph(
+                                #                 #     id='academic-analysis-no-data',
+                                #                 #     config={'displayModeBar': False}
+                                #                 # ),
+
+                                #             ],
+                                #             className = 'pretty_close_container six columns',
+                                #         ),
+                                #     ],
+                                #     className = 'bare-container twelve columns',
+                                # ),                                
+                        #     ],
+                        #     className='row'
+                        # ),
                     ],
-                    id = 'empty-container',
+                    id = 'academic-analysis-empty-container',
                 ),
             ],
             id='mainContainer',

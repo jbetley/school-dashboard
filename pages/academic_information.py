@@ -5,18 +5,19 @@
 # version:  .99.021323
 
 import dash
-import plotly.colors
-import plotly.express as px
+# import plotly.colors
+# import plotly.express as px
 from dash import html, dcc, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
-# import numpy as np
+import numpy as np
 import json
 import pandas as pd
 import re
 
-from .chart_helpers import blank_fig, make_stacked_bar
+from .table_helpers import create_empty_table
+from .chart_helpers import loading_fig, no_data_fig, make_stacked_bar
 from .calculations import round_percentages
 
 # import subnav function
@@ -93,7 +94,6 @@ empty_table = [
     )
 ]
 
-# TODO: Standardize Blanks across all Pages
 blank_chart = {
             'layout': {
                 'xaxis': {
@@ -124,7 +124,7 @@ blank_chart = {
     Output("k8-grade-math-fig", "figure"),
     Output("k8-ethnicity-table", "children"),
     Output("k8-ethnicity-ela-fig", "figure"),
-    Output("k8-ethnicity-math-fig", "figure"),    
+    Output("k8-ethnicity-math-fig", "figure"),
     Output("k8-subgroup-table", "children"),
     Output("k8-subgroup-ela-fig", "figure"),
     Output("k8-subgroup-math-fig", "figure"),
@@ -137,6 +137,9 @@ blank_chart = {
     Output("hs-eca-table", "children"),
     Output("hs-not-calculated-table", "children"),
     Output("hs-table-container", "style"),
+    Output('academic-information-main-container', 'style'),
+    Output('academic-information-empty-container', 'style'),
+    Output('academic-information-no-data', 'children'),  
     Input("dash-session", "data"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
@@ -184,6 +187,13 @@ def update_about_page(data, school, year):
     ]
     subject = ["ELA", "Math"]
 
+    # default styles
+    main_container = {'display': 'block'}
+    k8_table_container = {'display': 'block'}
+    hs_table_container = {'display': 'block'}
+    empty_container = {'display': 'none'}
+    no_data_to_display = create_empty_table('Academic Information')
+
     school_index = pd.DataFrame.from_dict(data["0"])
 
     if (
@@ -214,37 +224,30 @@ def update_about_page(data, school, year):
         else:
             academic_data_hs = pd.DataFrame()
 
-    # School_type determines which tables to display - default is display both
-    k8_table_container = {}
-    hs_table_container = {}
-
-    # TODO:
-    # if school type is K8 and there is no data in dataframe, hide
-    # all tables and return a single table with 'No Data' message
-
     if (
         school_index["School Type"].values[0] == "K8"
         and len(academic_data_k8.index) == 0
     ):
-        hs_grad_overview_table = []
-        hs_grad_ethnicity_table = []
-        hs_grad_subgroup_table = []
-        hs_eca_table = []
-        hs_not_calculated_table = []
+        hs_grad_overview_table = {}
+        hs_grad_ethnicity_table = {}
+        hs_grad_subgroup_table = {}
+        hs_eca_table = {}
+        hs_not_calculated_table = {}
         hs_table_container = {"display": "none"}
 
-        k8_grade_table = empty_table
-        k8_ethnicity_table = empty_table
-        k8_subgroup_table = empty_table
-        k8_other_table = empty_table
-        k8_not_calculated_table = empty_table
+        k8_grade_table = {}
+        k8_ethnicity_table = {}
+        k8_subgroup_table = {}
+        k8_other_table = {}
+        k8_not_calculated_table = {}
+        k8_table_container = {"display": "none"}
 
-        k8_grade_ela_fig = blank_chart
-        k8_grade_math_fig = blank_chart
-        k8_ethnicity_ela_fig = blank_chart
-        k8_ethnicity_math_fig = blank_chart
-        k8_subgroup_ela_fig = blank_chart
-        k8_subgroup_math_fig = blank_chart
+        k8_grade_ela_fig = {}
+        k8_grade_math_fig = {}
+        k8_ethnicity_ela_fig = {}
+        k8_ethnicity_math_fig = {}
+        k8_subgroup_ela_fig = {}
+        k8_subgroup_math_fig = {}
 
         main_container = {'display': 'none'}
         empty_container = {'display': 'block'}
@@ -260,11 +263,11 @@ def update_about_page(data, school, year):
             if school_index["School Type"].values[0] == "K8" and not (
                 school_index["School ID"].values[0] == "5874" and int(year) < 2021
             ):
-                hs_grad_overview_table = []
-                hs_grad_ethnicity_table = []
-                hs_grad_subgroup_table = []
-                hs_eca_table = []
-                hs_not_calculated_table = []
+                hs_grad_overview_table = {}
+                hs_grad_ethnicity_table = {}
+                hs_grad_subgroup_table = {}
+                hs_eca_table = {}
+                hs_not_calculated_table = {}
                 hs_table_container = {"display": "none"}
 
             # for academic information, strip out all comparative data and clean headers
@@ -416,7 +419,7 @@ def update_about_page(data, school, year):
                 ]
 
             else:
-                k8_other_table = empty_table
+                k8_other_table = create_empty_table('Attendance Data')
 
             k8_not_calculated_table = [
                 dash_table.DataTable(
@@ -442,18 +445,18 @@ def update_about_page(data, school, year):
                 )
             ]
 
-            # Proficiency Breakdown Charts 
+            # Proficiency Breakdown Charts
 
             # Clean up dataframe (none of these work)
             # k8_all_data.columns = k8_all_data.columns.str.replace(r'\s+', '', regex=True)
             # newlines = {"\nProficient \n%":"", "\n":" ","\n":" "}
             # k8_all_data.columns = [x.replace(newlines) for x in k8_all_data.columns.to_list()]
             # k8_all_data.columns = [x.replace({"\nProficient \n%":"", "\n":" ","\n":" "}) for x in k8_all_data.columns.to_list()]
-            
+
             # load all proficiency information
             # NOTE: This data is annoyingly inconsistent. In some cases missing data is blank, but
             # in other cases, it is represented by a '0.'
-            k8_all_data = pd.read_csv(r"data/ilearn2022all.csv", dtype=str)    
+            k8_all_data = pd.read_csv(r"data/ilearn2022all.csv", dtype=str)
 
             # Clean up dataframe
             k8_all_data.columns = [
@@ -468,7 +471,7 @@ def update_about_page(data, school, year):
             # drop columns with no values and reset index
             school_k8_all_data = school_k8_all_data.dropna(axis=1)
             school_k8_all_data = school_k8_all_data.reset_index()
-            
+
             # TODO: May need this if we want to differentiate those categories
             # where there is no data from those categories where there were tested
             # students, but the proficiency value does not meet 'n-size' requirements
@@ -515,10 +518,10 @@ def update_about_page(data, school, year):
                     category_subject = c + "|" + s
                     colz = [category_subject + " " + x for x in proficiency_rating]
                     total_tested = category_subject + " " + "Total Tested"
-                    
+
                     # We do not want categories that do not appear in the dataframe
                     if total_tested in all_proficiency_data.columns:
-                        # NOTE: at this point in the code there are three possible data configurations for 
+                        # NOTE: at this point in the code there are three possible data configurations for
                         # each column:
                         # 1) Total Tested > 0 and all proficiency_rating(s) are > 0 (School has tested category AND
                         #       there is publicly available data)
@@ -533,7 +536,6 @@ def update_about_page(data, school, year):
                         # is a numpy.float64). Either result returns True when tested if it == 0. But we
                         # can use the 'type' of the result (using np.integer and np.floating) to distinuish
                         # between them.
-                        import numpy as np
 
                         if all_proficiency_data[colz].iloc[0].sum() == 0:
                             if isinstance(all_proficiency_data[colz].iloc[0].sum(), np.floating):
@@ -548,10 +550,10 @@ def update_about_page(data, school, year):
                                 # category, we assume it is just IDOE's fucked up data entry
                                 if ~all_proficiency_data[colz].columns.str.contains('Grade').any():
                                     annotations.loc[len(annotations.index)] = [colz[0],all_proficiency_data[total_tested].values[0],'Missing']
-                            
+
                             # either way, drop the entire category from the chart data
                             all_colz = colz + [total_tested]
-                            all_proficiency_data.drop(all_colz, axis=1, inplace=True)                            
+                            all_proficiency_data.drop(all_colz, axis=1, inplace=True)
 
                         else:
                             # calculate percentage
@@ -616,7 +618,7 @@ def update_about_page(data, school, year):
             ]
 
             # TODO: Currently, annotations are collected but not used
-            
+
             # ELA by Grade
             grade_annotations = annotations.loc[annotations['Category'].str.contains("Grade")]
 
@@ -628,8 +630,7 @@ def update_about_page(data, school, year):
             if not grade_ela_fig_data.empty:
                 k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data,year)
             else:
-                print('HERE')
-                k8_grade_ela_fig = blank_chart
+                k8_grade_ela_fig = no_data_fig()
 
             # Math by Grade
             grade_math_fig_data = all_proficiency_data[
@@ -640,8 +641,7 @@ def update_about_page(data, school, year):
             if not grade_math_fig_data.empty:
                 k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,year)
             else:
-                print('HERE')
-                k8_grade_math_fig = blank_chart
+                k8_grade_math_fig = no_data_fig()
 
             # ELA by Ethnicity
             ethnicity_annotations = annotations.loc[annotations['Category'].str.contains("Ethnicity")]
@@ -653,8 +653,7 @@ def update_about_page(data, school, year):
             if not ethnicity_ela_fig_data.empty:
                 k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,year)
             else:
-                print('HERE')
-                k8_ethnicity_ela_fig = blank_chart
+                k8_ethnicity_ela_fig = no_data_fig()
 
             # Math by Ethnicity
             ethnicity_math_fig_data = all_proficiency_data[
@@ -665,8 +664,7 @@ def update_about_page(data, school, year):
             if not ethnicity_math_fig_data.empty:
                 k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,year)
             else:
-                print('HERE')
-                k8_ethnicity_math_fig = blank_chart
+                k8_ethnicity_math_fig = no_data_fig()
 
             # ELA by Subgroup
             subgroup_annotations = annotations.loc[annotations['Category'].str.contains("Subgroup")]
@@ -674,12 +672,11 @@ def update_about_page(data, school, year):
                 all_proficiency_data["Category"].isin(subgroup)
                 & all_proficiency_data["Proficiency"].str.contains("ELA")
             ]
-            print(subgroup_ela_fig_data)
+
             if not subgroup_ela_fig_data.empty:
                 k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data,year)
             else:
-                print('HERE')
-                k8_subgroup_ela_fig = blank_chart
+                k8_subgroup_ela_fig = no_data_fig()
 
             # Math by Subgroup
             subgroup_math_fig_data = all_proficiency_data[
@@ -690,8 +687,8 @@ def update_about_page(data, school, year):
             if not subgroup_math_fig_data.empty:
                 k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,year)
             else:
-                print('HERE')
-                k8_subgroup_math_fig = blank_chart
+
+                k8_subgroup_math_fig = no_data_fig()
 
     ## HS academic information
     ## TODO: ADD SAT GRADE 11/ACT SCORES
@@ -706,19 +703,27 @@ def update_about_page(data, school, year):
             school_index["School Type"].values[0] == "HS"
             or school_index["School Type"].values[0] == "AHS"
         ):
-            k8_grade_table = []
-            k8_ethnicity_table = []
-            k8_subgroup_table = []
-            k8_other_table = []
-            k8_not_calculated_table = []
+            k8_grade_table = {}
+            k8_ethnicity_table = {}
+            k8_subgroup_table = {}
+            k8_other_table = {}
+            k8_not_calculated_table = {}
+
+            k8_grade_ela_fig = {}
+            k8_grade_math_fig = {}
+            k8_ethnicity_ela_fig = {}
+            k8_ethnicity_math_fig = {}
+            k8_subgroup_ela_fig = {}
+            k8_subgroup_math_fig = {}
+
             k8_table_container = {"display": "none"}
 
         if len(academic_data_hs.index) == 0:
-            hs_grad_overview_table = (
-                hs_grad_ethnicity_table
-            ) = (
-                hs_grad_subgroup_table
-            ) = hs_eca_table = hs_not_calculated_table = empty_table
+            hs_grad_overview_table = {}
+            hs_grad_ethnicity_table = {}
+            hs_grad_subgroup_table = {}
+            hs_eca_table = {}
+            hs_not_calculated_table = {}
 
         else:
             # split data into subsets for display in various tables
@@ -932,7 +937,7 @@ def update_about_page(data, school, year):
         hs_table_container,
         main_container,
         empty_container,
-        no_data_fig
+        no_data_to_display
     )
 
 #### Layout
@@ -960,7 +965,7 @@ fig_label_style = {
     "textAlign": "center",
     "fontWeight": "bold",
     "paddingBottom": "5px",
-    "paddingTop": "5px",    
+    "paddingTop": "5px",
 }
 
 
@@ -1000,16 +1005,16 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    dcc.Graph(id="k8-grade-ela-fig", figure=blank_fig(),config={'displayModeBar': False}),
+                                    dcc.Graph(id="k8-grade-ela-fig", figure=loading_fig(),config={'displayModeBar': False}),
                                 ],
                                 className="pretty_container four columns",
                             ),
                             html.Div(
                                 [
-                                    dcc.Graph(id="k8-grade-math-fig", figure=blank_fig(),config={'displayModeBar': False}),
+                                    dcc.Graph(id="k8-grade-math-fig", figure=loading_fig(),config={'displayModeBar': False}),
                                 ],
                                 className="pretty_container four columns",
-                            ),                    
+                            ),
                         ],
                         className="bare_container twelve columns",
                     ),
@@ -1031,16 +1036,16 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    dcc.Graph(id="k8-ethnicity-ela-fig", figure=blank_fig(),config={'displayModeBar': False}),
+                                    dcc.Graph(id="k8-ethnicity-ela-fig", figure=loading_fig(),config={'displayModeBar': False}),
                                 ],
                                 className="pretty_container four columns",
                             ),
                             html.Div(
                                 [
-                                    dcc.Graph(id="k8-ethnicity-math-fig", figure=blank_fig(),config={'displayModeBar': False}),
+                                    dcc.Graph(id="k8-ethnicity-math-fig", figure=loading_fig(),config={'displayModeBar': False}),
                                 ],
                                 className="pretty_container four columns",
-                            ),                    
+                            ),
                         ],
                         className="bare_container twelve columns",
                     ),
@@ -1062,19 +1067,19 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    dcc.Graph(id="k8-subgroup-ela-fig", figure=blank_fig(),config={'displayModeBar': False}),
+                                    dcc.Graph(id="k8-subgroup-ela-fig", figure=loading_fig(),config={'displayModeBar': False}),
                                 ],
                                 className="pretty_container four columns",
                             ),
                             html.Div(
                                 [
-                                    dcc.Graph(id="k8-subgroup-math-fig", figure=blank_fig(),config={'displayModeBar': False}),
+                                    dcc.Graph(id="k8-subgroup-math-fig", figure=loading_fig(),config={'displayModeBar': False}),
                                 ],
                                 className="pretty_container four columns",
-                            ),                    
+                            ),
                         ],
                         className="bare_container twelve columns",
-                    ),                    
+                    ),
                     html.Div(
                         [
                             html.Div(
@@ -1182,26 +1187,26 @@ def layout():
                 ],
                 id="hs-table-container",
             ),
-
                 ],
-                id = 'main-container',
-            ),            
+                id = 'academic-information-main-container',
+            ),
             html.Div(
                 [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Label('Academic Information', style=label_style),
-                                    dcc.Graph(id='no-data-fig', figure = blank_fig()) #, style={'margin-bottom': -20}),
-                                ],
-                                className = 'pretty_close_container twelve columns',
-                            ),
-                        ],
-                        className='row'
-                    ),
+                    html.Div(id='academic-information-no-data'),        
+                    # html.Div(
+                    #     [
+                    #         html.Div(
+                    #             [
+                    #                 html.Label('Academic Information', style=label_style),
+                    #                 dcc.Graph(id='academic-information-no-data',config={'displayModeBar': False})
+                    #             ],
+                    #             className = 'pretty_close_container twelve columns',
+                    #         ),
+                    #     ],
+                    #     className='row'
+                    # ),
                 ],
-                id = 'empty-container',
+                id = 'academic-information-empty-container',
             ),
         ],
         id="mainContainer",

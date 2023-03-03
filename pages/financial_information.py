@@ -12,7 +12,6 @@ import pandas as pd
 import numpy as np
 import os.path
 
-# import subnavigation function (for 2nd tier tabs)
 from .subnav import subnav_finance
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
 
@@ -49,8 +48,6 @@ def update_financial_info(data,year,radio_value):
             },
         )
     ]
-
-# TODO: CAN I MAKE THIS A FUNCTION? IT IS USED 3 TIMES
 
     # Displays either School or Network level financials, if a school is not
     # part of a network, no radio buttons are displayed at all. If a school

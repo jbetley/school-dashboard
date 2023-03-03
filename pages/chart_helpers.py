@@ -8,6 +8,64 @@ from dash.dash_table.Format import Format, Scheme, Sign
 
 color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
+## Blank (Loading) Fig ##
+# https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
+
+def loading_fig():
+    fig = {
+        'layout': {
+            'xaxis': {
+                'visible': False
+            },
+            'yaxis': {
+                'visible': False
+            },
+            'annotations': [
+                {
+                    'text': 'Loading . . .',
+                    'xref': 'paper',
+                    'yref': 'paper',
+                    'showarrow': False,
+                    'font': {
+                        'size': 16,
+                        'color': '#6783a9',
+                        'family': 'Roboto, sans-serif'
+                    }
+                }
+            ]
+        }
+    }
+    return fig
+
+def no_data_fig():
+    fig = {
+        'layout': {
+            'height': 200,
+            'xaxis': {
+                'visible': False,
+                'fixedrange': True
+            },
+            'yaxis': {
+                'visible': False,
+                'fixedrange': True
+            },
+            'annotations': [
+                {
+                    'text': 'No Data to Display . . .',
+                    'xref': 'paper',
+                    'yref': 'paper',
+                    'showarrow': False,
+                    'font': {
+                        'size': 16,
+                        'color': '#6783a9',
+                        'family': 'Roboto, sans-serif'
+                    }
+                }
+            ]
+        }
+    }
+    return fig
+
 # Use this function to create wrapped text using
 # html tags based on the specified width
 # NOTE: adding two spaces before <br> to ensure the words at
@@ -460,33 +518,4 @@ def make_group_bar_chart(values, school_name):
         )
     )
 
-    return fig
-        
-## Blank (Loading) Fig ##
-# https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
-
-def blank_fig():
-    fig = {
-        'layout': {
-            'xaxis': {
-                'visible': False
-            },
-            'yaxis': {
-                'visible': False
-            },
-            'annotations': [
-                {
-                    'text': 'Loading . . .',
-                    'xref': 'paper',
-                    'yref': 'paper',
-                    'showarrow': False,
-                    'font': {
-                        'size': 16,
-                        'color': '#6783a9',
-                        'family': 'Roboto, sans-serif'
-                    }
-                }
-            ]
-        }
-    }
     return fig
