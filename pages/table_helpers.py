@@ -38,6 +38,7 @@ def create_empty_table(label):
                                             'textAlign': 'center',
                                             'color': '#6783a9',
                                             'fontFamily': 'Open Sans, sans-serif',
+                                            'height': '30vh',
                                         },
                                     ),
                                 ),

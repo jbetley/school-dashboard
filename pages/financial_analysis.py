@@ -15,9 +15,9 @@ import numpy as np
 import os.path
 import plotly.graph_objects as go
 
+# import local functions
+from .table_helpers import create_empty_table
 from .chart_helpers import loading_fig, no_data_fig
-
-# import subnav function
 from .subnav import subnav_finance
 dash.register_page(__name__, path = '/financial_analysis', order=3)
 
@@ -37,13 +37,20 @@ dash.register_page(__name__, path = '/financial_analysis', order=3)
     Output('financial-ratios-table', 'children'),
 #    Output('audit-findings-table', 'children'),
     Output('per-student-table', 'children'),
+    Output('financial-analysis-main-container', 'style'),
+    Output('financial-analysis-empty-container', 'style'),
+    Output('financial-analysis-no-data', 'children'),
     Input('dash-session', 'data'),
-    Input('year-dropdown', 'value'),    
+    Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-analysis', component_property='value')
 )
 def update_financial_analysis_page(data, year, radio_value):
     if not data:
         raise PreventUpdate
+
+    main_container = {'display': 'block'}
+    empty_container = {'display': 'none'}
+    no_data_to_display = create_empty_table('Financial Analysis')
 
     empty_table = [
             dash_table.DataTable(
@@ -241,13 +248,15 @@ def update_financial_analysis_page(data, year, radio_value):
 
         # if there are no columns or only one column ('Category'), then all tables and figs are empty
         if len(financial_data.columns) <= 1:
-            financial_position_table = empty_table
-            financial_activities_table = empty_table
-            financial_ratios_table = empty_table
-            per_student_table = empty_table
+            financial_position_table = {}
+            financial_activities_table = {}
+            financial_ratios_table = {}
+            per_student_table = {}
 
-            revenue_expenses_fig = blank_chart
-            assets_liabilities_fig = blank_chart
+            revenue_expenses_fig = {}
+            assets_liabilities_fig = {}
+            main_container = {'display': 'none'}
+            empty_container = {'display': 'block'}        
 
         else:
 
@@ -480,7 +489,6 @@ def update_financial_analysis_page(data, year, radio_value):
             financial_position_categories = ['Total Assets','Current Assets','Total Liabilities','Current Liabilities','Net Asset Position']
             financial_position_data = financial_data.loc[financial_data['Category'].isin(financial_position_categories)]
 
-
             # temporarily store and drop 'Category' column
             tmp_category = financial_position_data['Category']
             financial_position_data = financial_position_data.drop('Category', axis=1)
@@ -668,7 +676,7 @@ def update_financial_analysis_page(data, year, radio_value):
                                 },
                                 ],
                             )
-            ]
+                ]
 
             # Table #3: Per-Student Expenditures
 
@@ -778,7 +786,7 @@ def update_financial_analysis_page(data, year, radio_value):
                                 },
                                 ],
                             )        
-            ]
+                ]
 
             # Get financial ratios
             school_corp = school_index['Corporation ID'].values[0]
@@ -949,7 +957,7 @@ def update_financial_analysis_page(data, year, radio_value):
             ]
 
             else:
-                financial_ratios_table  = empty_table
+                financial_ratios_table  = create_empty_table('Financial Ratios')
 
             # # federal_audit_findings_json
             # if not data['9']:
@@ -1042,15 +1050,20 @@ def update_financial_analysis_page(data, year, radio_value):
 
     else:
 
-        financial_position_table = empty_table
-        financial_activities_table = empty_table
-        financial_ratios_table = empty_table
-        per_student_table = empty_table
+        financial_position_table = {}
+        financial_activities_table = {}
+        financial_ratios_table = {}
+        per_student_table = {}
 
-        revenue_expenses_fig = blank_chart
-        assets_liabilities_fig = blank_chart
+        revenue_expenses_fig = {}
+        assets_liabilities_fig = {}
+        main_container = {'display': 'none'}
+        empty_container = {'display': 'block'}       
 
-    return revenue_expenses_fig, assets_liabilities_fig, financial_position_table, financial_activities_table, radio_content, display_radio, RandE_title, AandL_title, FP_title, FA_title, financial_ratios_table, per_student_table # audit_findings_table,
+    return revenue_expenses_fig, assets_liabilities_fig, financial_position_table,\
+        financial_activities_table, radio_content, display_radio, RandE_title, \
+        AandL_title, FP_title, FA_title, financial_ratios_table, per_student_table, \
+        main_container, empty_container, no_data_to_display # audit_findings_table,
 
 # Layout
 
@@ -1091,6 +1104,8 @@ def layout():
                         ],
                         id = 'radio-finance-analysis-display',
                     ),
+                    html.Div(
+                        [                    
                     html.Div(
                         [
                             html.Div(
@@ -1171,6 +1186,20 @@ def layout():
                             ),
                         ],
                         className = 'row',
-                    )
-                ]
-            )         
+                    ),
+                    ],
+                    id = 'financial-analysis-main-container',
+                ),                      
+                html.Div(
+                    [
+                        html.Div(id='financial-analysis-no-data'),
+                    ],
+                    id = 'financial-analysis-empty-container',
+                ),
+            ],
+            id='mainContainer',
+            style={
+                'display': 'flex',
+                'flexDirection': 'column'
+            }
+        )

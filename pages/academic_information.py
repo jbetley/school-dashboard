@@ -76,47 +76,47 @@ table_cell_conditional = [
     }
 ]
 
-empty_table = [
-    dash_table.DataTable(
-        columns=[
-            {"id": "emptytable", "name": "No Data to Display"},
-        ],
-        style_header={
-            "fontSize": "16px",
-            "border": "none",
-            "backgroundColor": "#ffffff",
-            "paddingTop": "15px",
-            "verticalAlign": "center",
-            "textAlign": "center",
-            "color": "#6783a9",
-            "fontFamily": "Roboto, sans-serif",
-        },
-    )
-]
+# empty_table = [
+#     dash_table.DataTable(
+#         columns=[
+#             {"id": "emptytable", "name": "No Data to Display"},
+#         ],
+#         style_header={
+#             "fontSize": "16px",
+#             "border": "none",
+#             "backgroundColor": "#ffffff",
+#             "paddingTop": "15px",
+#             "verticalAlign": "center",
+#             "textAlign": "center",
+#             "color": "#6783a9",
+#             "fontFamily": "Roboto, sans-serif",
+#         },
+#     )
+# ]
 
-blank_chart = {
-            'layout': {
-                'xaxis': {
-                    'visible': False
-                },
-                'yaxis': {
-                    'visible': False
-                },
-                'annotations': [
-                    {
-                        'text': 'No Data to Display',
-                        'xref': 'paper',
-                        'yref': 'paper',
-                        'showarrow': False,
-                        'font': {
-                            'size': 16,
-                            'color': '#6783a9',
-                            'family': 'Roboto, sans-serif'
-                        }
-                    }
-                ]
-            }
-        }
+# blank_chart = {
+#             'layout': {
+#                 'xaxis': {
+#                     'visible': False
+#                 },
+#                 'yaxis': {
+#                     'visible': False
+#                 },
+#                 'annotations': [
+#                     {
+#                         'text': 'No Data to Display',
+#                         'xref': 'paper',
+#                         'yref': 'paper',
+#                         'showarrow': False,
+#                         'font': {
+#                             'size': 16,
+#                             'color': '#6783a9',
+#                             'family': 'Roboto, sans-serif'
+#                         }
+#                     }
+#                 ]
+#             }
+#         }
 
 @callback(
     Output("k8-grade-table", "children"),

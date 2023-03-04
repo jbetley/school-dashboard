@@ -16,10 +16,22 @@ from .table_helpers import create_empty_table
 from .subnav import subnav_finance
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
 
+## Layout
+label_style = {
+    'height': '20px',
+    'backgroundColor': '#6783a9',
+    'fontSize': '12px',
+    'fontFamily': 'Roboto, sans-serif',
+    'color': '#ffffff',
+    'textAlign': 'center',
+    'fontWeight': 'bold',
+    'paddingBottom': '5px',
+    'paddingTop': '5px'
+}
+
 @callback(
     Output('financial-information-table', 'children'),
     Output('radio-finance-info-display', 'style'),
-    Output('finance-info-table-title', 'children'),
     Output('radio-finance-info-content', 'children'),
     Output('financial-information-main-container', 'style'),
     Output('financial-information-empty-container', 'style'),
@@ -28,7 +40,7 @@ dash.register_page(__name__, top_nav=True, path = '/financial_information', orde
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-info', component_property='value')
 )
-def update_financial_info(data,year,radio_value):
+def update_financial_information_page(data,year,radio_value):
     if not data:
         raise PreventUpdate
 
@@ -127,7 +139,7 @@ def update_financial_info(data,year,radio_value):
 
         financial_data = pd.read_csv(finance_file)
 
-#TODO: FIGURE OUT WHERE WE ARE PUTTING ADM DATA
+        #TODO: FIGURE OUT WHERE WE ARE PUTTING ADM DATA
         # school_adm_dict        
         school_adm = pd.DataFrame.from_dict(data['6'])
 
@@ -218,90 +230,124 @@ def update_financial_info(data,year,radio_value):
             # clean file for display, replacing nan and 0.00 with ''
             financial_data.replace([0.0, '0.0',0.00,'0.00', np.nan], '', inplace=True)
 
+            year_headers = [i for i in financial_data.columns if i not in ['Category']]
+            table_size = len(financial_data.columns)
+
+            if table_size == 2:
+                col_width = 'four'
+                category_width = 55
+            if table_size == 3:
+                col_width = 'six'
+                category_width = 55
+            if table_size > 3 and table_size <=8:
+                col_width = 'eight'
+                category_width = 35
+            elif table_size >= 9:
+                col_width = 'ten'
+                category_width = 25
+            elif table_size >= 10:
+                col_width = 'twelve'
+                category_width = 15
+
+            data_width = 100 - category_width
+            data_col_width = data_width / (table_size - 1)
+            year_width = data_col_width
+
+            class_name = 'pretty_container ' + col_width + ' columns'
+
             financial_information_table = [
-                    dash_table.DataTable(
-                        financial_data.to_dict('records'),
-                        columns = [{'name': i, 'id': i} for i in financial_data.columns],
-                        style_data={
-                            'fontSize': '12px',
-                            'fontFamily': 'Roboto, sans-serif',
-                            'border': 'none'
-                        },
-                        style_data_conditional=[
-                            {
-                                'if': {
-                                    'row_index': 'odd'
-                                },
-                                'backgroundColor': '#eeeeee',
-                            },
-                            {
-                                'if': {
-                                    'filter_query': "{Category} eq 'Revenue' || {Category} eq 'Financial Position' || {Category} eq 'Financial Activities' || {Category} eq 'Supplemental Information' || {Category} eq 'Enrollment Information' || {Category} eq 'Audit Information'"
-                                },
-                                'paddingLeft': '10px',
-                                'text-decoration': 'underline',
-                                'fontWeight': 'bold'
-                            },
-                            {   # NOTE: Kludge to ensure first col header has border
-                                'if': {
-                                    'row_index': 0,
-                                    'column_id': 'Category'
-                                },
-                                'borderTop': '.5px solid #6783a9'
-                            },
-                        ],
-                        style_header={
-                            'height': '20px',
-                            'backgroundColor': '#ffffff',
-                            'border': 'none',
-                            'borderBottom': '.5px solid #6783a9',
-                            'fontSize': '12px',
-                            'fontFamily': 'Roboto, sans-serif',
-                            'color': '#6783a9',
-                            'textAlign': 'center',
-                            'fontWeight': 'bold'
-                        },
-                        style_cell={
-                            'whiteSpace': 'normal',
-                            'height': 'auto',
-                            'textAlign': 'center',
-                            'color': '#6783a9',
-                            'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                        },
-                        style_cell_conditional=[
-                            {
-                                'if': {
-                                    'column_id': 'Category'
-                                },
-                                'textAlign': 'left',
-                                'fontWeight': '500',
-                                'paddingLeft': '20px',
-                                'width': '20%'
-                            },
-                        ],
-                        style_as_list_view=True
-                    )
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Label(table_title, style=label_style),
+                                html.Div(
+                                    dash_table.DataTable(
+                                        financial_data.to_dict('records'),
+                                        columns = [{'name': i, 'id': i} for i in financial_data.columns],
+                                        style_data={
+                                            'fontSize': '12px',
+                                            'fontFamily': 'Roboto, sans-serif',
+                                            'border': 'none'
+                                        },
+                                        style_data_conditional=[
+                                            {
+                                                'if': {
+                                                    'row_index': 'odd'
+                                                },
+                                                'backgroundColor': '#eeeeee',
+                                            },
+                                            {
+                                                'if': {
+                                                    'filter_query': "{Category} eq 'Revenue' || {Category} eq 'Financial Position' || {Category} eq 'Financial Activities' || {Category} eq 'Supplemental Information' || {Category} eq 'Enrollment Information' || {Category} eq 'Audit Information'"
+                                                },
+                                                'paddingLeft': '10px',
+                                                'text-decoration': 'underline',
+                                                'fontWeight': 'bold'
+                                            },
+                                            {
+                                                'if': {
+                                                    'row_index': 0,
+                                                    'column_id': 'Category'
+                                                },
+                                                'borderTop': '.5px solid #6783a9'
+                                            },
+                                        ],
+                                        style_header={
+                                            'height': '20px',
+                                            'backgroundColor': '#ffffff',
+                                            'border': 'none',
+                                            'borderBottom': '.5px solid #6783a9',
+                                            'fontSize': '12px',
+                                            'fontFamily': 'Roboto, sans-serif',
+                                            'color': '#6783a9',
+                                            'textAlign': 'center',
+                                            'fontWeight': 'bold'
+                                        },
+                                        style_cell={
+                                            'whiteSpace': 'normal',
+                                            'height': 'auto',
+                                            'textAlign': 'center',
+                                            'color': '#6783a9',
+                                            'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                                        },
+                                        style_cell_conditional=[
+                                            {
+                                                'if': {
+                                                    'column_id': 'Category'
+                                                },
+                                                'textAlign': 'left',
+                                                'fontWeight': '500',
+                                                'paddingLeft': '20px',
+                                                'width': str(category_width) + '%'
+                                            },
+                                        ] + [                                    
+                                            {
+                                                'if': {
+                                                    'column_id': year
+                                                },
+                                                'textAlign': 'center',
+                                                'fontWeight': '500',
+                                                'width': str(year_width) + '%',
+                                            } for year in year_headers
+                                        ],
+                                        style_as_list_view=True
+                                    )
+                                )
+                            ],
+                            className = class_name,
+                        ),
+                    ],
+                    className = 'bare_container twelve columns',
+                )
             ]
     else:
         financial_information_table = {}
         main_container = {'display': 'none'}
         empty_container = {'display': 'block'}
 
-    return financial_information_table, display_radio, table_title, \
-        radio_content, main_container, empty_container, no_data_to_display
-
-## Layout
-label_style = {
-    'height': '20px',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
+    return financial_information_table, display_radio,radio_content, \
+        main_container, empty_container, no_data_to_display
 
 def layout():
     return html.Div(
@@ -323,44 +369,30 @@ def layout():
                             [
                                 html.Div(
                                     [
-
-                                        html.Label(id='finance-info-table-title', style=label_style),
                                         html.Div(
                                             [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='radio-finance-info-content', children=[]),
-                                                ],
-                                                id = 'radio-button-finance-info',
-                                                ),
+                                                html.Div(id='radio-finance-info-content', children=[]),
                                             ],
-                                            id = 'radio-finance-info-display',
+                                            id = 'radio-button-finance-info',
                                         ),
-                                        html.Div(id='financial-information-table')
                                     ],
-                                    className = 'pretty_container ten columns',
+                                    id = 'radio-finance-info-display',
                                 ),
                             ],
                             className = 'bare_container twelve columns',
                         ),
                     ],
+                    className = 'row',
+                ),
+                html.Div(
+                    [                    
+                        html.Div(id='financial-information-table', children=[]),
+                    ],
                     id = 'financial-information-main-container',
                 ),                
                 html.Div(
                     [
-                        html.Div(id='financial-information-no-data'),        
-                        # html.Div(
-                        #     [
-                        #         html.Div(
-                        #             [
-                        #                 html.Label('Academic Information', style=label_style),
-                        #                 dcc.Graph(id='academic-information-no-data',config={'displayModeBar': False})
-                        #             ],
-                        #             className = 'pretty_close_container twelve columns',
-                        #         ),
-                        #     ],
-                        #     className='row'
-                        # ),
+                        html.Div(id='financial-information-no-data'),
                     ],
                     id = 'financial-information-empty-container',
                 ),
