@@ -20,7 +20,7 @@ import json
 from .calculations import find_nearest, filter_grades
 from .chart_helpers import loading_fig, no_data_fig, \
     make_line_chart,make_bar_chart, make_group_bar_chart
-from .table_helpers import create_comparison_table, create_empty_table
+from .table_helpers import create_comparison_table, no_data_page, no_data_table
 
 # Debuggging #
 # pd.set_option('display.max_rows', None)
@@ -269,7 +269,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
     # default styles
     main_container = {'display': 'block'}
     empty_container = {'display': 'none'}
-    no_data_to_display = create_empty_table('Academic Analysis')
+    no_data_to_display = no_data_page('Academic Analysis')
 
     ### START TIME ###
     main_load_start = timeit.default_timer()
@@ -612,7 +612,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             else:
 
                 fig14c = no_data_fig()
-                fig14c_table = create_empty_table() #empty_table
+                fig14c_table = no_data_table() #empty_table
 
         #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
             category = 'Total|Math Proficient %'
@@ -645,7 +645,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14d_table = create_comparison_table(fig14d_table_data, school_name)
             else:
                 fig14d = no_data_fig()
-                fig14d_table = create_empty_table() #empty_table
+                fig14d_table = no_data_table()
 
     #### Comparison Charts & Tables
         # NOTE: See backup data 01.23.23 for pre- full_chart() function code

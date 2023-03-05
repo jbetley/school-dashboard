@@ -11,7 +11,7 @@ from dash.exceptions import PreventUpdate
 import json
 import pandas as pd
 
-from .table_helpers import create_empty_table, create_metric_table, set_table_layout
+from .table_helpers import no_data_page, create_metric_table, set_table_layout
 
 # import subnav function
 from .subnav import subnav_academic
@@ -119,7 +119,7 @@ def update_about_page(data,year):
             table_container_ahs_113 = {}
             table_container_ahs_1214 = {}
             display_ahs_metrics = {'display': 'none'}
-            table_container_empty = create_empty_table('Adult High School Accountability Metrics')
+            table_container_empty = no_data_page('Adult High School Accountability Metrics')
             display_empty_table = {}
     
     # K8, K12, & High School Accountability Metrics
@@ -184,7 +184,7 @@ def update_about_page(data,year):
                 table_container_17ab = {}
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
-                table_container_empty = create_empty_table('Academic Accountability Metrics')
+                table_container_empty = no_data_page('Academic Accountability Metrics')
                 display_empty_table = {}
                     
         # K8 Academic Metrics (for K8 and K12 schools)
@@ -267,7 +267,7 @@ def update_about_page(data,year):
                     table_container_14g = set_table_layout(table_14g, table_14g, iread_data.columns)
 
                 else:
-                    table_container_14g = create_empty_table('1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.')
+                    table_container_14g = no_data_page('1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.')
 
                 # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
                 growth_metrics_empty = pd.DataFrame(columns = simple_cols)
@@ -330,7 +330,7 @@ def update_about_page(data,year):
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
 
-                table_container_empty = create_empty_table('Academic Accountability Metrics')
+                table_container_empty = no_data_page('Academic Accountability Metrics')
                 display_empty_table = {}
 
     # If no matching school_type - display empty table (catch-all)
@@ -356,7 +356,7 @@ def update_about_page(data,year):
         table_container_ahs_1214 = {}
         display_ahs_metrics = {'display': 'none'}
 
-        table_container_empty = create_empty_table('Academic Accountability Metrics')
+        table_container_empty = no_data_page('Academic Accountability Metrics')
         display_empty_table = {}
 
     metric_11ab_label = 'Accountability Metrics 1.1.a & 1.1.b'
@@ -413,7 +413,7 @@ def update_about_page(data,year):
 
     else:
 
-        table_container_11cd = create_empty_table(metric_11cd_label)
+        table_container_11cd = no_data_page(metric_11cd_label)
 
 #### ALL teh tables
  

@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 import os.path
 
-from .table_helpers import create_empty_table
+from .table_helpers import no_data_page
 from .subnav import subnav_finance
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
 
@@ -46,7 +46,7 @@ def update_financial_information_page(data,year,radio_value):
 
     main_container = {'display': 'block'}
     empty_container = {'display': 'none'}
-    no_data_to_display = create_empty_table('Audited Financial Information')
+    no_data_to_display = no_data_page('Audited Financial Information')
 
     max_display_years = 5
     school_index = pd.DataFrame.from_dict(data['0'])

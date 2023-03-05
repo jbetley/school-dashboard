@@ -16,7 +16,7 @@ import json
 import pandas as pd
 import re
 
-from .table_helpers import create_empty_table
+from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig, no_data_fig, make_stacked_bar
 from .calculations import round_percentages
 
@@ -192,7 +192,7 @@ def update_about_page(data, school, year):
     k8_table_container = {'display': 'block'}
     hs_table_container = {'display': 'block'}
     empty_container = {'display': 'none'}
-    no_data_to_display = create_empty_table('Academic Information')
+    no_data_to_display = no_data_page('Academic Information')
 
     school_index = pd.DataFrame.from_dict(data["0"])
 
@@ -419,7 +419,7 @@ def update_about_page(data, school, year):
                 ]
 
             else:
-                k8_other_table = create_empty_table('Attendance Data')
+                k8_other_table = no_data_table('Attendance Data')
 
             k8_not_calculated_table = [
                 dash_table.DataTable(

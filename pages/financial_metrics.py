@@ -13,7 +13,7 @@ import pandas as pd
 import os.path
 # import itertools
 from .calculations import calculate_metrics
-from .table_helpers import create_empty_table
+from .table_helpers import no_data_page
 
 # import subnav function
 from .subnav import subnav_finance
@@ -52,7 +52,7 @@ def update_financial_metrics(data,year,radio_value):
 
     main_container = {'display': 'block'}
     empty_container = {'display': 'none'}
-    no_data_to_display = create_empty_table('Financial Metrics')
+    no_data_to_display = no_data_page('Financial Metrics')
 
     # # test
     # radio_value == 'school-metrics'
@@ -218,9 +218,7 @@ def update_financial_metrics(data,year,radio_value):
                 financial_values.loc[financial_values['Category'] == 'ADM Average'] = [adm_avg]
 
             # Release The Hounds!
-            print(financial_values)
             financial_metrics = calculate_metrics(financial_values)
-            print(financial_metrics)
             
             financial_metrics = financial_metrics.fillna('')
 
@@ -404,7 +402,7 @@ def update_financial_metrics(data,year,radio_value):
 
             # Networks do not have financial indicators
             if len(financial_indicators.columns) <= 1 or financial_indicators.empty:
-                financial_indicators_table = create_empty_table('Financial Indicators')
+                financial_indicators_table = no_data_page('Financial Indicators')
 
             else:
                 financial_indicators[['Standard','Description']] = financial_indicators['Category'].str.split('|', expand=True).copy()
