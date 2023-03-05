@@ -21,7 +21,7 @@ from .chart_helpers import loading_fig, no_data_fig
 from .subnav import subnav_finance
 dash.register_page(__name__, path = '/financial_analysis', order=3)
 
-# NOTE: The "federal audit findings table" is not currently displayed
+# NOTE: The "federal audit findings" table is not currently displayed
 
 @callback(
     Output('revenue-expenses-fig', 'figure'),
@@ -52,47 +52,49 @@ def update_financial_analysis_page(data, year, radio_value):
     empty_container = {'display': 'none'}
     no_data_to_display = create_empty_table('Financial Analysis')
 
-    empty_table = [
-            dash_table.DataTable(
-                columns = [
-                    {'id': 'emptytable', 'name': 'No Data to Display'},
-                ],
-                style_header={
-                    'fontSize': '16px',
-                    'border': 'none',
-                    'backgroundColor': '#ffffff',
-                    'paddingTop': '15px',                    
-                    'verticalAlign': 'center',
-                    'textAlign': 'center',
-                    'color': '#6783a9',
-                    'fontFamily': 'Roboto, sans-serif',
-                },
-            )
-        ]
+# TODO: REFACTOR LAYOUT - SEE FINANCIAL METRICS
 
-    blank_chart = {
-                'layout': {
-                    'xaxis': {
-                        'visible': False
-                    },
-                    'yaxis': {
-                        'visible': False
-                    },
-                    'annotations': [
-                        {
-                            'text': 'No Data to Display',
-                            'xref': 'paper',
-                            'yref': 'paper',
-                            'showarrow': False,
-                            'font': {
-                                'size': 16,
-                                'color': '#6783a9',
-                                'family': 'Roboto, sans-serif'
-                            }
-                        }
-                    ]
-                }
-            }
+    # empty_table = [
+    #         dash_table.DataTable(
+    #             columns = [
+    #                 {'id': 'emptytable', 'name': 'No Data to Display'},
+    #             ],
+    #             style_header={
+    #                 'fontSize': '16px',
+    #                 'border': 'none',
+    #                 'backgroundColor': '#ffffff',
+    #                 'paddingTop': '15px',                    
+    #                 'verticalAlign': 'center',
+    #                 'textAlign': 'center',
+    #                 'color': '#6783a9',
+    #                 'fontFamily': 'Roboto, sans-serif',
+    #             },
+    #         )
+    #     ]
+
+    # blank_chart = {
+    #             'layout': {
+    #                 'xaxis': {
+    #                     'visible': False
+    #                 },
+    #                 'yaxis': {
+    #                     'visible': False
+    #                 },
+    #                 'annotations': [
+    #                     {
+    #                         'text': 'No Data to Display',
+    #                         'xref': 'paper',
+    #                         'yref': 'paper',
+    #                         'showarrow': False,
+    #                         'font': {
+    #                             'size': 16,
+    #                             'color': '#6783a9',
+    #                             'family': 'Roboto, sans-serif'
+    #                         }
+    #                     }
+    #                 ]
+    #             }
+    #         }
 
     max_display_years = 5
     school_index = pd.DataFrame.from_dict(data['0'])
@@ -193,6 +195,7 @@ def update_financial_analysis_page(data, year, radio_value):
         # Current ADM data is in the school_index file for schools and the respective
         # F- (finance) file for networks. If showing school data, need to replace the
         # ADM data in the F- file with the ADM data in the school_index file
+
         # TODO: move current ADM data to financial table
         
         if radio_value == 'network-analysis':
@@ -484,6 +487,8 @@ def update_financial_analysis_page(data, year, radio_value):
 
                 financial_data.insert(loc = i, column = missing_year[0], value = 0)
                 financial_data = financial_data[display_years]
+
+            # Table 1: 2-Year Financial Position
 
             # get financial position data for applicable 2 year period
             financial_position_categories = ['Total Assets','Current Assets','Total Liabilities','Current Liabilities','Net Asset Position']
@@ -788,6 +793,7 @@ def update_financial_analysis_page(data, year, radio_value):
                             )        
                 ]
 
+            # Table 4: Financial Ratios
             # Get financial ratios
             school_corp = school_index['Corporation ID'].values[0]
             
@@ -813,8 +819,6 @@ def update_financial_analysis_page(data, year, radio_value):
                 # ensure data is adjusted to display from the selected year
                 if excluded_finance_years > 0:
                     financial_ratios_data.drop(financial_ratios_data.columns[1:excluded_finance_years], axis=1, inplace=True)
-
-                #per_student_data['% Change'] = pd.Series(["{0:.2f}%".format(val * 100) for val in per_student_data['% Change']], index = per_student_data.index)
 
                 # change all cols to numeric except for Category
                 for col in financial_ratios_data.columns[1:]:
@@ -1049,7 +1053,6 @@ def update_financial_analysis_page(data, year, radio_value):
             #     ]
 
     else:
-
         financial_position_table = {}
         financial_activities_table = {}
         financial_ratios_table = {}
@@ -1095,111 +1098,112 @@ def layout():
                     ),
                     html.Div(
                         [
-                        html.Div(
-                            [
-                                html.Div(id='radio-finance-analysis-content', children=[]),
-                            ],
-                            id = 'radio-button-finance-analysis',
-                            ),
+                            html.Div(
+                                [
+                                    html.Div(id='radio-finance-analysis-content', children=[]),
+                                ],
+                                id = 'radio-button-finance-analysis',
+                                ),
                         ],
                         id = 'radio-finance-analysis-display',
                     ),
                     html.Div(
                         [                    
-                    html.Div(
-                        [
                             html.Div(
                                 [
-                                    html.Label(id='finance-analysis-RandE-title', style=label_style),                                    
-                                    dcc.Graph(id='revenue-expenses-fig', figure = loading_fig(),config={'displayModeBar': False})
+                                    html.Div(
+                                        [
+                                            html.Label(id='finance-analysis-RandE-title', style=label_style),                                    
+                                            dcc.Graph(id='revenue-expenses-fig', figure = loading_fig(),config={'displayModeBar': False})
+                                        ],
+                                        className = 'pretty_container six columns'
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Label(id='finance-analysis-AandL-title', style=label_style),                                       
+                                            dcc.Graph(id='assets-liabilities-fig', figure = loading_fig(),config={'displayModeBar': False})
+                                        ],
+                                        className = 'pretty_container six columns'
+                                    )
                                 ],
-                                className = 'pretty_container six columns'
+                                className='row'
                             ),
                             html.Div(
                                 [
-                                    html.Label(id='finance-analysis-AandL-title', style=label_style),                                       
-                                    dcc.Graph(id='assets-liabilities-fig', figure = loading_fig(),config={'displayModeBar': False})
-                                ],
-                                className = 'pretty_container six columns'
-                            )
-                        ],
-                        className='row'
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Label(id='finance-analysis-FP-title', style=label_style),                                      
-                                    html.P(''),
-                                    html.Div(id='financial-position-table')
-                                ],
-                                className = 'pretty_container six columns'
-                            ),
-                            html.Div(
-                                [
-                                    html.Label(id='finance-analysis-FA-title', style=label_style),                                        
-                                    html.P(''),
-                                    html.Div(id='financial-activities-table')
-                                ],
-                                className = 'pretty_container six columns',
-                            ),
-                        ],
-                        className = 'row',
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Label('Financial Ratios', style=label_style),
-                                    html.P(''),
-                                    html.Div(id='financial-ratios-table'),
-                                    html.P(''),
-                                    html.P('Source: IDOE Form 9 (hover over category for details).',
-                                    style={
-                                        'color': '#6783a9',
-                                        'fontSize': 10,
-                                        'marginLeft': '10px',
-                                        'marginRight': '10px',
-                                        'marginTop': '20px',
-                                        'paddingTop': '5px',
-                                        'borderTop': '.5px solid #c9d3e0',
-                                        },
+                                    html.Div(
+                                        [
+                                            html.Label(id='finance-analysis-FP-title', style=label_style),                                      
+                                            html.P(''),
+                                            html.Div(id='financial-position-table')
+                                        ],
+                                        className = 'pretty_container six columns'
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Label(id='finance-analysis-FA-title', style=label_style),                                        
+                                            html.P(''),
+                                            html.Div(id='financial-activities-table')
+                                        ],
+                                        className = 'pretty_container six columns',
                                     ),
                                 ],
-                                className = 'pretty_container six columns'
+                                className = 'row',
                             ),
-                            # html.Div(
-                            #     [
-                            #         html.Label('Federal Audit Findings', style=label_style),
-                            #         html.P(''),
-                            #         html.Div(id='audit-findings-table')
-                            #     ],
-                            #     className = 'pretty_container six columns'
-                            # ),
                             html.Div(
-                                [
-                                    html.Label('Per Student Revenues and Expenditures', style=label_style),
-                                    html.P(''),
-                                    html.Div(id='per-student-table')
+                                [   
+                                    # TODO: FIX THIS EMPTY
+                                    html.Div(
+                                        [
+                                            html.Label('Financial Ratios', style=label_style),
+                                            html.P(''),
+                                            html.Div(id='financial-ratios-table'),
+                                            html.P(''),
+                                            html.P('Source: IDOE Form 9 (hover over category for details).',
+                                            style={
+                                                'color': '#6783a9',
+                                                'fontSize': 10,
+                                                'marginLeft': '10px',
+                                                'marginRight': '10px',
+                                                'marginTop': '20px',
+                                                'paddingTop': '5px',
+                                                'borderTop': '.5px solid #c9d3e0',
+                                                },
+                                            ),
+                                        ],
+                                        className = 'pretty_container six columns'
+                                    ),
+                                    # html.Div(
+                                    #     [
+                                    #         html.Label('Federal Audit Findings', style=label_style),
+                                    #         html.P(''),
+                                    #         html.Div(id='audit-findings-table')
+                                    #     ],
+                                    #     className = 'pretty_container six columns'
+                                    # ),
+                                    html.Div(
+                                        [
+                                            html.Label('Per Student Revenues and Expenditures', style=label_style),
+                                            html.P(''),
+                                            html.Div(id='per-student-table')
+                                        ],
+                                        className = 'pretty_container six columns',
+                                    ),
                                 ],
-                                className = 'pretty_container six columns',
+                                className = 'row',
                             ),
                         ],
-                        className = 'row',
+                        id = 'financial-analysis-main-container',
                     ),
-                    ],
-                    id = 'financial-analysis-main-container',
-                ),                      
-                html.Div(
-                    [
-                        html.Div(id='financial-analysis-no-data'),
-                    ],
-                    id = 'financial-analysis-empty-container',
-                ),
-            ],
-            id='mainContainer',
-            style={
-                'display': 'flex',
-                'flexDirection': 'column'
-            }
-        )
+                    html.Div(
+                        [
+                            html.Div(id='financial-analysis-no-data'),
+                        ],
+                        id = 'financial-analysis-empty-container',
+                    ),
+                ],
+                id='mainContainer',
+                style={
+                    'display': 'flex',
+                    'flexDirection': 'column'
+                }
+            )
