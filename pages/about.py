@@ -22,7 +22,6 @@ dash.register_page(__name__, path="/", order=0, top_nav=True)
     Output('school-name', 'children'),
     Output('info-table', 'children'),
     Output('letter-grade-table', 'children'),
-    Output('hold-harmless-string', 'children'),
     Output('enroll-title', 'children'),
     Output('enroll-table', 'children'),
     Output('adm_fig', 'figure'),
@@ -32,7 +31,9 @@ dash.register_page(__name__, path="/", order=0, top_nav=True)
     Output('status-fig', 'figure'),
     Output('about-main-container', 'style'),
     Output('about-empty-container', 'style'),
-    Output('about-no-data', 'children'),      
+    Output('school-name-no-data', 'children'),
+    Output('info-table-no-data', 'children'),    
+    Output('about-no-data', 'children'),
     State('year-dropdown', 'value'),
     Input('dash-session', 'data')
 )
@@ -44,11 +45,12 @@ def update_about_page(year, data):
     status = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
     bar_colors=['#98abc5','#c5b298']
 
+    # default is to display main container
     main_container = {'display': 'block'}
     empty_container = {'display': 'none'}
-    no_data_to_display = no_data_page('Audited Financial Information')
+    no_data_to_display = no_data_page('School Enrollment & Demographics')
 
-    # the school index will never be empty, so this is displayed
+    # school_index will never be empty and will be displayed
     # even if there is no other data
     school_index = pd.DataFrame.from_dict(data['0'])
 
@@ -63,35 +65,38 @@ def update_about_page(year, data):
     school_info.columns = headers
 
     info_table = [
-                    dash_table.DataTable(
-                        school_info.to_dict('records'),
-                        columns = [{'name': i, 'id': i} for i in school_info.columns],
-                        style_data={
-                            'fontSize': '12px',
-                            'fontFamily': 'Roboto, sans-serif',
-                            'border': 'none'
-                        },
-                        style_data_conditional=[
-                            {
-                                'if': {
-                                    'column_id': 'Category',
-                                },
-                                'borderRight': '.5px solid #6783a9',
-                            },
-                        ],
-                        style_header={
-                            'display': 'none',
-                            'border': 'none',
-                        },
-                        style_cell={
-                            'whiteSpace': 'normal',
-                            'height': 'auto',
-                            'textAlign': 'center',
-                            'color': '#6783a9',
-                            'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                        },
-                    )
-        ]
+        dash_table.DataTable(
+            school_info.to_dict('records'),
+            columns = [{'name': i, 'id': i} for i in school_info.columns],
+            style_table={
+                'height': '20vh'
+            },            
+            style_data={
+                'fontSize': '12px',
+                'fontFamily': 'Roboto, sans-serif',
+                'border': 'none'
+            },
+            style_data_conditional=[
+                {
+                    'if': {
+                        'column_id': 'Category',
+                    },
+                    'borderRight': '.5px solid #6783a9',
+                },
+            ],
+            style_header={
+                'display': 'none',
+                'border': 'none',
+            },
+            style_cell={
+                'whiteSpace': 'normal',
+                'height': 'auto',
+                'textAlign': 'center',
+                'color': '#6783a9',
+                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+            },
+        )
+    ]
 
     # get enrollment data (overall and by category)
     school_demographics = pd.DataFrame.from_dict(data['1'])
@@ -107,7 +112,7 @@ def update_about_page(year, data):
           len(school_adm.index) == 0):
         
         letter_grade_table = {}
-        hold_harmless_string = {}
+        # hold_harmless_string = {}
         enroll_title = {}
         enroll_table = {}
         adm_fig = {}
@@ -116,7 +121,8 @@ def update_about_page(year, data):
         subgroup_title = {}
         status_fig = {}
 
-        print('Missing ALL the DATA!')
+        main_container = {'display': 'none'}
+        empty_container = {'display': 'block'}
 
     else:
     # if one or more of the data files exist, we show info table
@@ -155,122 +161,156 @@ def update_about_page(year, data):
             school_enrollment = school_enrollment.reset_index()
 
             enroll_table = [
-                            dash_table.DataTable(
-                                school_enrollment.to_dict('records'),
-                                columns = [{'name': i, 'id': i} for i in school_enrollment.columns],
-                                style_data={
-                                    'fontSize': '12px',
-                                    'fontFamily': 'Roboto, sans-serif',
-                                    'border': 'none'
-                                },
-                                style_data_conditional=[
-                                    {
-                                        'if': {
-                                            'row_index': 'odd'
-                                        },
-                                        'backgroundColor': '#eeeeee'
-                                    },
-                                    {
-                                        'if': {
-                                            'column_id': 'index',
-                                        },
-                                        'borderRight': '.5px solid #6783a9',
-                                    },
-                                    {
-                                        'if': {
-                                            'filter_query': '{index} eq "Total"'
-                                        },
-                                        'borderTop': '.5px solid #6783a9',
-                                    }
-                                ],
-                                style_header={
-                                    'display': 'none',
-                                    'border': 'none',
-                                },
-                                style_cell={
-                                    'whiteSpace': 'normal',
-                                    'height': 'auto',
-                                    'textAlign': 'center',
-                                    'color': '#6783a9',
-                                    'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                                },
-                            )
+                dash_table.DataTable(
+                    school_enrollment.to_dict('records'),
+                    columns = [{'name': i, 'id': i} for i in school_enrollment.columns],
+                    style_data={
+                        'fontSize': '12px',
+                        'fontFamily': 'Roboto, sans-serif',
+                        'border': 'none'
+                    },
+                    style_data_conditional=[
+                        {
+                            'if': {
+                                'row_index': 'odd'
+                            },
+                            'backgroundColor': '#eeeeee'
+                        },
+                        {
+                            'if': {
+                                'column_id': 'index',
+                            },
+                            'borderRight': '.5px solid #6783a9',
+                        },
+                        {
+                            'if': {
+                                'filter_query': '{index} eq "Total"'
+                            },
+                            'borderTop': '.5px solid #6783a9',
+                        }
+                    ],
+                    style_header={
+                        'display': 'none',
+                        'border': 'none',
+                    },
+                    style_cell={
+                        'whiteSpace': 'normal',
+                        'height': 'auto',
+                        'textAlign': 'center',
+                        'color': '#6783a9',
+                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                    },
+                )
             ]
 
-        # State and Federal ratings table
+        # State and Federal ratings table (test json file to see if
+        # it exists before loading)
         if not data['3']:
-            hold_harmless_string = ''
+            # hold_harmless_string = ''
             letter_grade_table = no_data_table('State and Federal Ratings')
 
         else:
+
             # school_letter_grades_dict
             letter_grade_json = json.loads(data['3'])
             letter_grade_data = pd.DataFrame.from_dict(letter_grade_json)
 
-            # 2019 and 2020 were 'Hold Harmless' years for all schools
-            if '2019' in letter_grade_data:
-                hold_harmless_years = '2020 and 2019'
-            else:
-                hold_harmless_years = '2020'
+            year_columns = [i for i in letter_grade_data.columns if i not in ['Category','2018']]
 
-            hold_harmless_string = 'Schools were \'Held Harmless\' in ' + hold_harmless_years + '. Under Hold Harmless, a school cannot receive a lower A-F grade than what the school received for the previous school year.'
+            # schools have been held harmless by the State of Indiana since
+            # 2019, and continue to be held harmless (2019-2023). This builds
+            # a list of all hold harmless years for the table tooltip.
+            # NOTE: This will need to be re-configured once (if) the State
+            # ever begins holding schools accountable again.
+            if year_columns:
+                year_columns.reverse()
+                last_year = year_columns[-1]
+                hold_harmless_years = year_columns.copy()
+                hold_harmless_years.remove(last_year)
+
+                if hold_harmless_years:
+                    hold_harmless_year_string = ', '.join(hold_harmless_years) + ', and ' + last_year
+                else:
+                    hold_harmless_year_string = last_year
+
+                hold_harmless_string = 'Schools were \'Held Harmless\' by the State in ' \
+                    + hold_harmless_year_string + '. Under Hold Harmless, a school cannot receive a \
+                    lower A-F grade than what it received for the previous school year.'
+            else:
+                hold_harmless_string =''
 
             letter_grade_table = [
-                        dash_table.DataTable(
-                            letter_grade_data.to_dict('records'),
-                            columns = [{'name': str(i), 'id': str(i)} for i in letter_grade_data.columns],
-                            style_data={
-                                'fontSize': '12px',
-                                'fontFamily': 'Roboto, sans-serif',
-                                'border': 'none'
+                dash_table.DataTable(
+                    letter_grade_data.to_dict('records'),
+                    columns = [{'name': str(i), 'id': str(i)} for i in letter_grade_data.columns],
+                    style_table={
+                        'height': '20vh'
+                    },
+                    style_data={
+                        'fontSize': '12px',
+                        'fontFamily': 'Roboto, sans-serif',
+                        'border': 'none',
+                    },
+                    style_data_conditional=[
+                        {
+                            'if': {
+                                'row_index': 0,
+                                'column_id': 'Category'
                             },
-                            style_data_conditional=[
-                                {   # Kludge to ensure first col header has border
-                                    'if': {
-                                        'row_index': 0,
-                                        'column_id': 'Category'
-                                    },
-                                    'borderTop': '.5px solid #6783a9',
-                                },
-                                {
-                                    'if': {
-                                        'row_index': 'odd'
-                                    },
-                                    'backgroundColor': '#eeeeee'
-                                },
-                            ],
-                            style_header={
-                                'height': '20px',
-                                'backgroundColor': '#ffffff',
-                                'border': 'none',
-                                'borderBottom': '.5px solid #6783a9',
-                                'fontSize': '12px',
-                                'fontFamily': 'Roboto, sans-serif',
-                                'color': '#6783a9',
-                                'textAlign': 'center',
-                                'fontWeight': 'bold'
+                            'borderTop': '.5px solid #6783a9',
+                        },
+                        {
+                            'if': {
+                                'row_index': 'odd'
                             },
-                            style_cell={
-                                'whiteSpace': 'normal',
-                                'textAlign': 'center',
-                                'color': '#6783a9',
-                                'fontFamily': 'Roboto, sans-serif',
-                                'boxShadow': '0 0',
-                                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                            'backgroundColor': '#eeeeee'
+                        },
+                    ],
+                    style_header={
+                        'height': '20px',
+                        'backgroundColor': '#ffffff',
+                        'border': 'none',
+                        'borderBottom': '.5px solid #6783a9',
+                        'fontSize': '12px',
+                        'fontFamily': 'Roboto, sans-serif',
+                        'color': '#6783a9',
+                        'textAlign': 'center',
+                        'fontWeight': 'bold'
+                    },
+                    style_cell={
+                        'whiteSpace': 'normal',
+                        'textAlign': 'center',
+                        'color': '#6783a9',
+                        'fontFamily': 'Roboto, sans-serif',
+                        'boxShadow': '0 0',
+                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                    },
+                    style_cell_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category'
                             },
-                            style_cell_conditional=[
-                                {
-                                    'if': {
-                                        'column_id': 'Category'
-                                    },
-                                    'textAlign': 'left',
-                                    'fontWeight': '500',
-                                    'paddingLeft': '20px',
-                                    'width': '35%',
-                                },
-                            ],
-                            style_as_list_view=True
-                        )
+                            'textAlign': 'left',
+                            'fontWeight': '500',
+                            'paddingLeft': '20px',
+                            'width': '35%',
+                        },
+                    ],
+                    tooltip_header={
+                        col: [
+                            {
+                                'type': 'markdown',
+                                'value': hold_harmless_string #create_tooltip(df.loc[i, col])
+                            }
+                        ]
+                        for col in year_columns
+                    },
+                    css=[{
+                    'selector': '.dash-table-tooltip',
+                    'rule': 'background-color: grey; font-family: Roboto, sans-serif; color: white'
+                }],
+                    style_as_list_view=True
+                )
             ]
 
         # ADM chart
@@ -280,29 +320,8 @@ def update_about_page(year, data):
         # school_adm = pd.DataFrame.from_dict(data['6'])
 
         if len(school_adm.index) == 0:
-            adm_fig = {
-                'layout': {
-                    'xaxis': {
-                        'visible': False
-                    },
-                    'yaxis': {
-                        'visible': False
-                    },
-                    'annotations': [
-                        {
-                            'text': 'No Data to Display',
-                            'xref': 'paper',
-                            'yref': 'paper',
-                            'showarrow': False,
-                            'font': {
-                                'size': 16,
-                                'color': '#6783a9',
-                                'family': 'Roboto, sans-serif',
-                            }
-                        }
-                    ]
-                }
-            }
+            adm_fig = no_data_fig()
+
         else:
 
             # turn single row dataframe into two lists (column headers and data)
@@ -539,33 +558,13 @@ def update_about_page(year, data):
                 )
 
         else:
-            status_fig = ethnicity_fig = {
-                'layout': {
-                    'xaxis': {
-                        'visible': False
-                    },
-                    'yaxis': {
-                        'visible': False
-                    },
-                    'annotations': [
-                        {
-                            'text': 'No Data to Display',
-                            'xref': 'paper',
-                            'yref': 'paper',
-                            'showarrow': False,
-                            'font': {
-                                'size': 16,
-                                'color': '#6783a9',
-                                'family': 'Roboto, sans-serif',
-                            }
-                        }
-                    ]
-                }
-            }
+            status_fig = no_data_fig()
+            ethnicity_fig = no_data_fig()
 
-    return school_name, info_table, letter_grade_table, hold_harmless_string, \
+    return school_name, info_table, letter_grade_table, \
         enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, \
-        subgroup_title, status_fig, main_container, empty_container, no_data_to_display
+        subgroup_title, status_fig, main_container, empty_container, school_name,\
+        info_table, no_data_to_display
 
 ## Layout ##
 
@@ -581,56 +580,59 @@ label_style = {
     'paddingTop': '5px'
 }
 
-layout = html.Div(
-            [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Label(id='school-name', style=label_style),
-                                html.Div(id='info-table'),
-                            ],
-                            className='pretty_container six columns'
-                        ),
-                        html.Div(
-                            [
-                                html.Label('State and Federal Ratings', style=label_style),
-                                html.Div(id='letter-grade-table'),
-                                html.P(id='hold-harmless-string',
-                                style={
-                                    'color': '#6783a9',
-                                    'fontSize': 10,
-                                    'marginLeft': '10px',
-                                    'marginRight': '10px',
-                                    'marginTop': '10px',
-                                    # 'borderTop': '.5px solid #c9d3e0',
-                                    }
-                                )
-                            ],
-                            className='pretty_container six columns'
-                        ),
-                    ],
-                    className='bare_container twelve columns'
-                ),
+layout = \
+    html.Div(
+        [
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(
+                                [     
+                                    html.Div(
+                                        [
+                                            html.Label(id='school-name', style=label_style),
+                                            html.Div(id='info-table'),
+                                        ],
+                                        className='pretty_container six columns'
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Label('State and Federal Ratings', style=label_style),
+                                            html.Div(id='letter-grade-table'),
+                                        ],
+                                        className='pretty_container six columns'
+                                    ),
+                                ],
+                                className='bare_container twelve columns'
+                            ),
+                        ],
+                        className = 'row',
+                    ),
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    html.Label(id='enroll-title', style=label_style),
-                                    html.Div(id='enroll-table')
+                                    html.Div(
+                                        [
+                                            html.Label(id='enroll-title', style=label_style),
+                                            html.Div(id='enroll-table')
+                                        ],
+                                        className='pretty_container six columns'
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Label('Average Daily Membership History', style=label_style),
+                                            dcc.Graph(id='adm_fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
+                                        ],
+                                        className = 'pretty_container six columns'
+                                    ),
                                 ],
-                                className='pretty_container six columns'
-                            ),
-                            html.Div(
-                                [
-                                    html.Label('Average Daily Membership History', style=label_style),
-                                    dcc.Graph(id='adm_fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
-                                ],
-                                className = 'pretty_container six columns'
+                                className='bare_container_no_center twelve columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
-                    ),
+                        className = 'row',
+                    ),                    
                     html.Div(
                         [
                             html.Div(
@@ -651,9 +653,30 @@ layout = html.Div(
                         className='bare_container twelve columns',
                     ),
                 ],
-                id='mainContainer',
-                style={
-                    'display': 'flex',
-                    'flexDirection': 'column'
-                }
-            )
+                id = 'about-main-container',
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [    
+                            html.Div(
+                                [
+                                    html.Label(id='school-name-no-data', style=label_style),
+                                    html.Div(id='info-table-no-data'),
+                                ],
+                                className='pretty_container eight columns'
+                            ),
+                        ],
+                        className = 'bare_container twelve columns',
+                    ),
+                    html.Div(id='about-no-data'),
+                ],
+                id = 'about-empty-container',
+            ),
+        ],
+        id='mainContainer',
+        style={
+            'display': 'flex',
+            'flexDirection': 'column'
+        }
+    )

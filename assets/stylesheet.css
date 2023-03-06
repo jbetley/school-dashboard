@@ -427,15 +427,14 @@ body {
   width: 100%;
   box-shadow: 2px 2px 2px lightgrey;
 
-/*  display: -webkit-box;
-  display: -ms-flexbox;
+}
+.bare_container_no_center {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+  /* justify-content: center; */
+  /* text-align: center;
+  align-items: center; */
   display: flex;
-  -webkit-box-pack: center;
-  -ms-flex-pack: center;
-  justify-content: center;
-  align-items: center;
-  flex-direction: row;
-  flex-wrap: wrap;*/
 }
 .bare_container {
   margin: 0 0 0 0;
