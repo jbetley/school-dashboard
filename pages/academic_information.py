@@ -19,8 +19,6 @@ import re
 from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig, no_data_fig, make_stacked_bar
 from .calculations import round_percentages
-
-# import subnav function
 from .subnav import subnav_academic
 
 ### Testing ###
@@ -28,95 +26,90 @@ pd.set_option("display.max_rows", 400)
 
 dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
 
-# default table styles
-table_style = {"fontSize": "11px", "fontFamily": "Roboto, sans-serif", "border": "none"}
+def create_academic_info_table(data):
 
-table_header = {
-    "height": "20px",
-    "backgroundColor": "#ffffff",
-    "border": "none",
-    "borderBottom": ".5px solid #6783a9",
-    "fontSize": "12px",
-    "fontFamily": "Roboto, sans-serif",
-    "color": "#6783a9",
-    "textAlign": "center",
-    "fontWeight": "bold",
-}
+    table = [
+        dash_table.DataTable(
+            data.to_dict("records"),
+            columns = [
+                {
+                    "name": col,
+                    "id": col,
+                    "type": "numeric",
+                    "format": Format(
+                        scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
+                    ),
+                }
+                for (col) in data.columns
+            ],
+            style_data = {
+                "fontSize": "11px",
+                "fontFamily": "Roboto,sans-serif",
+                "border": "none"
+            },
+            style_data_conditional = [
+                {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
+                {
+                    "if": {"row_index": 0, "column_id": "Category"},
+                    "borderTop": ".5px solid #6783a9",
+                },
+            ],
+            style_header =  {
+                "height": "20px",
+                "backgroundColor": "#ffffff",
+                "border": "none",
+                "borderBottom": ".5px solid #6783a9",
+                "fontSize": "12px",
+                "fontFamily": "Roboto, sans-serif",
+                "color": "#6783a9",
+                "textAlign": "center",
+                "fontWeight": "bold",
+            },
+            style_cell = {
+                "whiteSpace": "normal",
+                "height": "auto",
+                "textAlign": "center",
+                "color": "#6783a9",
+                "minWidth": "25px",
+                "width": "25px",
+                "maxWidth": "25px",
+            },
+            style_header_conditional = [
+                {
+                    "if": {"column_id": "Category"},
+                    "textAlign": "left",
+                    "paddingLeft": "10px",
+                    "width": "35%",
+                    "fontSize": "11px",
+                    "fontFamily": "Roboto, sans-serif",
+                    "color": "#6783a9",
+                    "fontWeight": "bold",
+                }
+            ],
 
-table_header_conditional = [
-    {
-        "if": {"column_id": "Category"},
-        "textAlign": "left",
-        "paddingLeft": "10px",
-        "width": "35%",
-        "fontSize": "11px",
-        "fontFamily": "Roboto, sans-serif",
-        "color": "#6783a9",
-        "fontWeight": "bold",
-    }
-]
+            # conditional width (?)
+            # not_calculated = 40 k8 - data['Category'].startswith("The school’s teacher retention")
+            # not_calculated = 40 hs - data['Category'].startswith("The percentage of students entering grade 12"
+            # k8 = 35
+            # hs = 25
 
-table_cell = {
-    "whiteSpace": "normal",
-    "height": "auto",
-    "textAlign": "center",
-    "color": "#6783a9",
-    "minWidth": "25px",
-    "width": "25px",
-    "maxWidth": "25px",
-}
-
-table_cell_conditional = [
-    {
-        "if": {"column_id": "Category"},
-        "textAlign": "left",
-        "fontWeight": "500",
-        "paddingLeft": "10px",
-        "width": "35%",
-    }
-]
-
-# empty_table = [
-#     dash_table.DataTable(
-#         columns=[
-#             {"id": "emptytable", "name": "No Data to Display"},
-#         ],
-#         style_header={
-#             "fontSize": "16px",
-#             "border": "none",
-#             "backgroundColor": "#ffffff",
-#             "paddingTop": "15px",
-#             "verticalAlign": "center",
-#             "textAlign": "center",
-#             "color": "#6783a9",
-#             "fontFamily": "Roboto, sans-serif",
-#         },
-#     )
-# ]
-
-# blank_chart = {
-#             'layout': {
-#                 'xaxis': {
-#                     'visible': False
-#                 },
-#                 'yaxis': {
-#                     'visible': False
-#                 },
-#                 'annotations': [
-#                     {
-#                         'text': 'No Data to Display',
-#                         'xref': 'paper',
-#                         'yref': 'paper',
-#                         'showarrow': False,
-#                         'font': {
-#                             'size': 16,
-#                             'color': '#6783a9',
-#                             'family': 'Roboto, sans-serif'
-#                         }
-#                     }
-#                 ]
-#             }
-#         }
+            style_cell_conditional = [
+                {
+                    "if": {"column_id": "Category"},
+                    "textAlign": "left",
+                    "fontWeight": "500",
+                    "paddingLeft": "10px",
+                    "width": "40%", #conditional_width,
+                }
+            ],
+            merge_duplicate_headers=True,
+            style_as_list_view=True,
+            # add this to each table if we want to be able to export
+            # export_format='xlsx',
+            # export_headers='display'
+        )
+    ]
+    return table
 
 @callback(
     Output("k8-grade-table", "children"),
@@ -148,8 +141,10 @@ def update_about_page(data, school, year):
     if not data:
         raise PreventUpdate
 
-    # NOTE: removed 'American Indian' because the category doesn't appear in all data sets
-    # ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
+    # NOTE: removed 'American Indian' because the category doesn't 
+    # appear in all data sets
+    # ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial',
+    # 'Native Hawaiian or Other Pacific Islander','White']
     ethnicity = [
         "Asian",
         "Black",
@@ -259,7 +254,8 @@ def update_about_page(data, school, year):
             school_index["School Type"].values[0] == "K8"
             or school_index["School Type"].values[0] == "K12"
         ):
-            # if K8, hide HS table (except for CHS prior to 2021)
+            # if K8, hide HS table (except for CHS prior to 2021 when it
+            # was a K12)
             if school_index["School Type"].values[0] == "K8" and not (
                 school_index["School ID"].values[0] == "5874" and int(year) < 2021
             ):
@@ -285,12 +281,29 @@ def update_about_page(data, school, year):
             years_by_grade = k8_academic_info[
                 k8_academic_info["Category"].str.contains("|".join(grades))
             ]
+
+            if not years_by_grade.empty:
+                k8_grade_table = create_academic_info_table(years_by_grade)
+            else:
+                k8_grade_table = no_data_table('Proficiency by Grade')
+
             years_by_subgroup = k8_academic_info[
                 k8_academic_info["Category"].str.contains("|".join(subgroup))
             ]
+
+            if not years_by_subgroup.empty:            
+                k8_subgroup_table = create_academic_info_table(years_by_subgroup)
+            else:
+                k8_subgroup_table = no_data_table('Proficiency by Subgroup')
+
             years_by_ethnicity = k8_academic_info[
                 k8_academic_info["Category"].str.contains("|".join(ethnicity))
             ]
+
+            if not years_by_ethnicity.empty:            
+                k8_ethnicity_table = create_academic_info_table(years_by_ethnicity)
+            else:
+                k8_ethnicity_table = no_data_table('Proficiency by Ethnicity')
 
             # attendance_rate_data_json
             if data["4"]:
@@ -317,9 +330,18 @@ def update_about_page(data, school, year):
 
             final_attendance_data = final_attendance_data.fillna("No Data")
 
+            if not final_attendance_data.empty:
+                k8_other_table = create_academic_info_table(final_attendance_data)
+            else:
+                k8_other_table = no_data_table('Attendance Data')
+
             k8_not_calculated = [
-                {"Category": "The school’s teacher retention rate."},
-                {"Category": "The school’s student re-enrollment rate."},
+                {
+                    "Category": "The school’s teacher retention rate."
+                },
+                {
+                    "Category": "The school’s student re-enrollment rate."
+                },
                 {
                     "Category": "Proficiency in ELA and Math of students who have been enrolled in school for at least two (2) full years."
                 },
@@ -334,116 +356,7 @@ def update_about_page(data, school, year):
             )
             k8_not_calculated_data = k8_not_calculated_data.fillna("N/A")
 
-            k8_table_columns = [
-                {
-                    "name": col,
-                    "id": col,
-                    "type": "numeric",
-                    "format": Format(
-                        scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
-                    ),
-                }
-                for (col) in k8_academic_info.columns
-            ]
-
-            k8_table_data_conditional = [
-                {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
-                {  # Kludge to ensure first col header has border
-                    "if": {"row_index": 0, "column_id": "Category"},
-                    "borderTop": ".5px solid #6783a9",
-                },
-            ]
-
-            k8_grade_table = [
-                dash_table.DataTable(
-                    years_by_grade.to_dict("records"),
-                    columns=k8_table_columns,
-                    style_data=table_style,
-                    style_data_conditional=k8_table_data_conditional,
-                    style_header=table_header,
-                    style_cell=table_cell,
-                    style_header_conditional=table_header_conditional,
-                    style_cell_conditional=table_cell_conditional,
-                    merge_duplicate_headers=True,
-                    style_as_list_view=True,
-                    # add this to each table if we want to be able to export
-                    # export_format='xlsx',
-                    # export_headers='display'
-                )
-            ]
-
-            k8_ethnicity_table = [
-                dash_table.DataTable(
-                    years_by_ethnicity.to_dict("records"),
-                    columns=k8_table_columns,
-                    style_data=table_style,
-                    style_data_conditional=k8_table_data_conditional,
-                    style_header=table_header,
-                    style_header_conditional=table_header_conditional,
-                    style_cell=table_cell,
-                    style_cell_conditional=table_cell_conditional,
-                    merge_duplicate_headers=True,
-                    style_as_list_view=True,
-                )
-            ]
-
-            k8_subgroup_table = [
-                dash_table.DataTable(
-                    years_by_subgroup.to_dict("records"),
-                    columns=k8_table_columns,
-                    style_data=table_style,
-                    style_data_conditional=k8_table_data_conditional,
-                    style_header=table_header,
-                    style_header_conditional=table_header_conditional,
-                    style_cell=table_cell,
-                    style_cell_conditional=table_cell_conditional,
-                    merge_duplicate_headers=True,
-                    style_as_list_view=True,
-                )
-            ]
-
-            if not final_attendance_data.empty:
-                k8_other_table = [
-                    dash_table.DataTable(
-                        final_attendance_data.to_dict("records"),
-                        columns=k8_table_columns,
-                        style_data=table_style,
-                        style_data_conditional=k8_table_data_conditional,
-                        style_header=table_header,
-                        style_header_conditional=table_header_conditional,
-                        style_cell=table_cell,
-                        style_cell_conditional=table_cell_conditional,
-                        merge_duplicate_headers=True,
-                        style_as_list_view=True,
-                    )
-                ]
-
-            else:
-                k8_other_table = no_data_table('Attendance Data')
-
-            k8_not_calculated_table = [
-                dash_table.DataTable(
-                    k8_not_calculated_data.to_dict("records"),
-                    columns=[
-                        {"name": i, "id": i} for i in k8_not_calculated_data.columns
-                    ],
-                    style_data=table_style,
-                    style_data_conditional=k8_table_data_conditional,
-                    style_header=table_header,
-                    style_header_conditional=table_header_conditional,
-                    style_cell=table_cell,
-                    style_cell_conditional=[
-                        {
-                            "if": {"column_id": "Category"},
-                            "textAlign": "left",
-                            "fontWeight": "500",
-                            "paddingLeft": "10px",
-                            "width": "40%",  # Width is different than default
-                        },
-                    ],
-                    style_as_list_view=True,
-                )
-            ]
+            k8_not_calculated_table = create_academic_info_table(k8_not_calculated_data)
 
             # Proficiency Breakdown Charts
 
@@ -520,22 +433,25 @@ def update_about_page(data, school, year):
                     total_tested = category_subject + " " + "Total Tested"
 
                     # We do not want categories that do not appear in the dataframe
-                    if total_tested in all_proficiency_data.columns:
-                        # NOTE: at this point in the code there are three possible data configurations for
-                        # each column:
-                        # 1) Total Tested > 0 and all proficiency_rating(s) are > 0 (School has tested category AND
-                        #       there is publicly available data)
-                        # 2) Total Tested > 0 and all proficiency_rating(s) are == 'NaN' (School has tested category BUT
-                        #       there is no publicly available data (insufficient N-size)))
-                        # 3) Total Tested AND all proficiency_rating == 0 (School does not have tested category)
+                    # NOTE: at this point in the code there are three possible data 
+                    # configurations for each column:
+                    # 1) Total Tested > 0 and all proficiency_rating(s) are > 0
+                    #   (School has tested category and there is publicly available data)
+                    # 2) Total Tested > 0 and all proficiency_rating(s) are == 'NaN'
+                    #   (School has tested category but there is no publicly available
+                    #   data (insufficient N-size)))
+                    # 3) Total Tested AND all proficiency_rating == 0 (School does
+                    #   not have tested category)
 
-                        # Neither (2) nor (3) should be displayed. However, we do want to track which
-                        # Category/Subject combinations meet either condition (for figure annotation
-                        # purposes). So we use a little trick. The sum of a series of '0' values
-                        # is 0 (a numpy.int64). The sum of a series of 'NaN' values is 0.0 (because NaN
-                        # is a numpy.float64). Either result returns True when tested if it == 0. But we
-                        # can use the 'type' of the result (using np.integer and np.floating) to distinuish
-                        # between them.
+                    # Neither (2) nor (3) should be displayed. However, we do want to
+                    # track which Category/Subject combinations meet either condition
+                    # (for figure annotation purposes). So we use a little trick. The
+                    # sum of a series of '0' values is 0 (a numpy.int64). The sum of a
+                    # series of 'NaN' values is also 0.0 (but the value is a float because
+                    # numpy treats NaN as a numpy.float64). While either value returns True
+                    # when tested if it == 0, we can test the 'type' of the result (using
+                    # np.integer and np.floating) to distinuish between them.
+                    if total_tested in all_proficiency_data.columns:
 
                         if all_proficiency_data[colz].iloc[0].sum() == 0:
                             if isinstance(all_proficiency_data[colz].iloc[0].sum(), np.floating):
@@ -617,8 +533,7 @@ def update_about_page(data, school, year):
                 all_proficiency_data["Category"] != "index"
             ]
 
-            # TODO: Currently, annotations are collected but not used
-
+            # NOTE: TODO: Currently, annotations are collected but not used
             # ELA by Grade
             grade_annotations = annotations.loc[annotations['Category'].str.contains("Grade")]
 
@@ -691,6 +606,8 @@ def update_about_page(data, school, year):
                 k8_subgroup_math_fig = no_data_fig()
 
     ## HS academic information
+    ## TODO: ADD EMPTY PAGE FOR NO DATA!
+    
     ## TODO: ADD SAT GRADE 11/ACT SCORES
     if (
         school_index["School Type"].values[0] == "HS"
@@ -745,6 +662,7 @@ def update_about_page(data, school, year):
                     if "School" in col or "Category" in col
                 ]
             ]
+
             hs_academic_info.columns = hs_academic_info.columns.str.replace(
                 r"School$", "", regex=True
             )
@@ -752,15 +670,40 @@ def update_about_page(data, school, year):
             grad_overview = hs_academic_info[
                 hs_academic_info["Category"].str.contains("|".join(overview))
             ]
+## TODO: NOT SHOWING EMPTy PAGE FOR NO HS DATA
+            print(hs_academic_info)
+            print(grad_overview)
+            if not grad_overview.empty:          
+                hs_grad_overview_table = create_academic_info_table(grad_overview)
+            else:
+                hs_grad_overview_table = no_data_table('Graduation Rate Overview')
+
             grad_ethnicity = hs_academic_info[
                 hs_academic_info["Category"].str.contains("|".join(ethnicity))
             ]
+
+            if not grad_ethnicity.empty:                 
+                hs_grad_ethnicity_table = create_academic_info_table(grad_ethnicity)
+            else:
+                hs_grad_ethnicity_table = no_data_table('Graduation Rate by Ethnicity')
+
             grad_subgroup = hs_academic_info[
                 hs_academic_info["Category"].str.contains("|".join(subgroup))
             ]
+
+            if not grad_subgroup.empty:                
+                hs_grad_subgroup_table = create_academic_info_table(grad_subgroup)
+            else:
+                hs_grad_subgroup_table = no_data_table('Graduation Rate by Subgroup')
+
             eca_data = hs_academic_info[
                 hs_academic_info["Category"].str.contains("|".join(["Grade 10"]))
             ]
+
+            if not eca_data.empty:            
+                hs_eca_table = create_academic_info_table(eca_data)            
+            else:
+                hs_eca_table = no_data_table('End of Course Assessments')
 
             hs_not_calculated = [
                 {
@@ -777,144 +720,7 @@ def update_about_page(data, school, year):
             )
             hs_not_calculated_data = hs_not_calculated_data.fillna("NA")
 
-            hs_table_columns = [
-                {
-                    "name": col,
-                    "id": col,
-                    "type": "numeric",
-                    "format": Format(
-                        scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
-                    ),
-                }
-                for (col) in hs_academic_info.columns
-            ]
-
-            # color average difference either red (lower than average)
-            # or green (higher than average) in '+/-' cols
-            hs_table_data_conditional = [
-                {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
-                {  # Kludge to ensure first col header has border
-                    "if": {"row_index": 0, "column_id": "Category"},
-                    "borderTop": ".5px solid #6783a9",
-                },
-            ]
-
-            hs_grad_overview_table = [
-                dash_table.DataTable(
-                    grad_overview.to_dict("records"),
-                    columns=hs_table_columns,
-                    style_data=table_style,
-                    style_data_conditional=hs_table_data_conditional,
-                    style_header=table_header,
-                    style_cell=table_cell,
-                    style_cell_conditional=[
-                        {
-                            "if": {"column_id": "Category"},
-                            "textAlign": "left",
-                            "fontWeight": "500",
-                            "paddingLeft": "20px",
-                            "width": "25%",
-                        },
-                    ],
-                    merge_duplicate_headers=True,
-                    style_as_list_view=True,
-                )
-            ]
-
-            hs_grad_ethnicity_table = [
-                dash_table.DataTable(
-                    grad_ethnicity.to_dict("records"),
-                    columns=hs_table_columns,
-                    style_data=table_style,
-                    style_data_conditional=hs_table_data_conditional,
-                    style_header=table_header,
-                    style_cell=table_cell,
-                    style_cell_conditional=[
-                        {
-                            "if": {"column_id": "Category"},
-                            "textAlign": "left",
-                            "fontWeight": "500",
-                            "paddingLeft": "20px",
-                            "width": "25%",
-                        },
-                    ],
-                    merge_duplicate_headers=True,
-                    style_as_list_view=True,
-                )
-            ]
-
-            hs_grad_subgroup_table = [
-                dash_table.DataTable(
-                    grad_subgroup.to_dict("records"),
-                    columns=hs_table_columns,
-                    style_data=table_style,
-                    style_data_conditional=hs_table_data_conditional,
-                    style_header=table_header,
-                    style_cell=table_cell,
-                    style_cell_conditional=[
-                        {
-                            "if": {"column_id": "Category"},
-                            "textAlign": "left",
-                            "fontWeight": "500",
-                            "paddingLeft": "20px",
-                            "width": "25%",
-                        },
-                    ],
-                    merge_duplicate_headers=True,
-                    style_as_list_view=True,
-                )
-            ]
-
-            hs_eca_table = [
-                dash_table.DataTable(
-                    eca_data.to_dict("records"),
-                    columns=hs_table_columns,
-                    style_data=table_style,
-                    style_data_conditional=hs_table_data_conditional,
-                    style_header=table_header,
-                    style_cell=table_cell,
-                    style_cell_conditional=[
-                        {
-                            "if": {"column_id": "Category"},
-                            "textAlign": "left",
-                            "fontWeight": "500",
-                            "paddingLeft": "20px",
-                            "width": "25%",
-                        },
-                    ],
-                    merge_duplicate_headers=True,
-                    style_as_list_view=True,
-                )
-            ]
-
-            hs_not_calculated_table = [
-                dash_table.DataTable(
-                    hs_not_calculated_data.to_dict("records"),
-                    columns=[
-                        {
-                            "name": i,
-                            "id": i,
-                            "type": "numeric",
-                            "format": FormatTemplate.percentage(2),
-                        }
-                        for i in hs_not_calculated_data.columns
-                    ],
-                    style_data=table_style,
-                    style_data_conditional=hs_table_data_conditional,
-                    style_header=table_header,
-                    style_cell=table_cell,
-                    style_cell_conditional=[
-                        {
-                            "if": {"column_id": "Category"},
-                            "textAlign": "left",
-                            "fontWeight": "500",
-                            "paddingLeft": "20px",
-                            "width": "45%",
-                        },
-                    ],
-                    style_as_list_view=True,
-                )
-            ]
+            hs_not_calculated_table = create_academic_info_table(hs_not_calculated_data)
 
     return (
         k8_grade_table,
@@ -1192,19 +998,7 @@ def layout():
             ),
             html.Div(
                 [
-                    html.Div(id='academic-information-no-data'),        
-                    # html.Div(
-                    #     [
-                    #         html.Div(
-                    #             [
-                    #                 html.Label('Academic Information', style=label_style),
-                    #                 dcc.Graph(id='academic-information-no-data',config={'displayModeBar': False})
-                    #             ],
-                    #             className = 'pretty_close_container twelve columns',
-                    #         ),
-                    #     ],
-                    #     className='row'
-                    # ),
+                    html.Div(id='academic-information-no-data'),
                 ],
                 id = 'academic-information-empty-container',
             ),
