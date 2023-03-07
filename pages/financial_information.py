@@ -234,7 +234,7 @@ def update_financial_information_page(data,year,radio_value):
             table_size = len(financial_data.columns)
 
             if table_size == 2:
-                col_width = 'four'
+                col_width = 'five'
                 category_width = 55
             if table_size == 3:
                 col_width = 'six'
@@ -294,7 +294,7 @@ def update_financial_information_page(data,year,radio_value):
                                             },
                                         ],
                                         style_header={
-                                            'height': '20px',
+                                            # 'height': '20px',
                                             'backgroundColor': '#ffffff',
                                             'border': 'none',
                                             'borderBottom': '.5px solid #6783a9',

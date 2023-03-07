@@ -11,10 +11,9 @@ from dash.exceptions import PreventUpdate
 import json
 import pandas as pd
 
-from .table_helpers import no_data_page, create_metric_table, set_table_layout
-
-# import subnav function
+from .table_helpers import no_data_page, no_data_table, create_metric_table, set_table_layout
 from .subnav import subnav_academic
+
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
 @callback(
@@ -35,30 +34,33 @@ dash.register_page(__name__,  path = '/academic_metrics', order=5)
     Output('table-container-ahs-113', 'children'),
     Output('table-container-ahs-1214', 'children'),
     Output('display-ahs-metrics', 'style'),
-    Output('table-container-empty', 'children'),
-    Output('display-empty-table', 'style'),
+    # Output('table-container-empty', 'children'),
+    # Output('display-empty-table', 'style'),
+    Output('academic-metrics-main-container', 'style'),
+    Output('academic-metrics-empty-container', 'style'),
+    Output('academic-metrics-no-data', 'children'),  
     Input('dash-session', 'data'),
     Input('year-dropdown', 'value')
 )
-def update_about_page(data,year):
+def update_academic_metrics(data,year):
     if not data:
         raise PreventUpdate
 
     school_index = pd.DataFrame.from_dict(data['0'])
 
+    # default styles
     display_attendance = {}
     display_k8_metrics = {}
     display_hs_metrics = {}
     display_ahs_metrics = {}
-    
-    # used if no data at all available
-    table_container_empty = {}
-    display_empty_table = {'display': 'none'}
+    main_container = {'display': 'block'}
+    empty_container = {'display': 'none'}
+    no_data_to_display = no_data_page('Academic Metrics')    
 
      # Adult High School Academic Metrics
     if school_index['School Type'].values[0] == 'AHS':
 
-#TODO: Do we measure attendance for AHS? if not, then add ('table_container_11ab =') back in
+        # if AHS, hide all non-AHS related metrics
         table_container_11cd = {}
         table_container_14ab = {}
         table_container_14cd = {}
@@ -73,7 +75,7 @@ def update_about_page(data,year):
         table_container_17cd = {}
         display_hs_metrics = {'display': 'none'}
 
-        # ahs_academic_metrics_json
+        # load ahs_academic_metrics_json
         if data['13']:
              
             json_data = json.loads(data['13'])
@@ -116,24 +118,27 @@ def update_about_page(data,year):
             table_container_ahs_1214 = set_table_layout(table_ahs_1214, table_ahs_1214, metric_ahs_1214_data.columns)
 
         else:
+            # school is AHS, but has no data
             table_container_ahs_113 = {}
             table_container_ahs_1214 = {}
-            display_ahs_metrics = {'display': 'none'}
-            table_container_empty = no_data_page('Adult High School Accountability Metrics')
-            display_empty_table = {}
-    
+            display_ahs_metrics = {'display': 'none'}            
+            no_data_to_display = no_data_page('Adult High School Accountability Metrics')
+            main_container = {'display': 'none'}
+            empty_container = {'display': 'block'}
+
     # K8, K12, & High School Accountability Metrics
     else:   
-
+        
+        # hide AHS metrics
         table_container_ahs_113 = {}
         table_container_ahs_1214 = {}
         display_ahs_metrics = {'display': 'none'}
 
-        # High School Academic Metrics (and CHS if prior to 2021)
+        # High School Academic Metrics (including CHS if prior to 2021)
         if school_index['School Type'].values[0] == 'HS' or school_index['School Type'].values[0] == 'K12' or \
             (school_index['School ID'].values[0] == '5874' and int(year) < 2021):
         
-            # if HS only, no K8 data (other than potential attendance container_11ab)
+            # if HS only, no K8 data
             if school_index['School Type'].values[0] == 'HS':
                 table_container_11cd = {}
                 table_container_14ab = {}
@@ -180,22 +185,24 @@ def update_about_page(data,year):
                 table_container_17cd = set_table_layout(table_17cd, table_17cd, metric_17cd_data.columns)
 
             else:
-            
+                # school is HS, but has no data
                 table_container_17ab = {}
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
-                table_container_empty = no_data_page('Academic Accountability Metrics')
-                display_empty_table = {}
-                    
+                no_data_to_display = no_data_page('Academic Accountability Metrics')
+                main_container = {'display': 'none'}
+                empty_container = {'display': 'block'}
+
         # K8 Academic Metrics (for K8 and K12 schools)
         if school_index['School Type'].values[0] == 'K8' or school_index['School Type'].values[0] == 'K12':
 
-            # if schooltype is K8, hide HS table (except for CHS prior to 2021)
+            # if schooltype is K8, hide 9-12(HS) tables (except for CHS prior to 2021)
             if school_index['School Type'].values[0] == 'K8' and not (school_index['School ID'].values[0] == '5874' and int(year) < 2021):
                 table_container_17ab = {}
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
-                        
+
+            # load k-8 data files                        
             if (data['10'] and data['11']):
 
                 # diff_to_corp_json
@@ -319,7 +326,7 @@ def update_about_page(data,year):
 
             else:
 
-                # K8 - 'No Data to Display' (except attendance (container_11ab))
+                # school is K8 only and has no data
                 table_container_11cd = {}
                 table_container_14ab = {}
                 table_container_14cd = {}
@@ -330,8 +337,9 @@ def update_about_page(data,year):
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
 
-                table_container_empty = no_data_page('Academic Accountability Metrics')
-                display_empty_table = {}
+                no_data_to_display = no_data_page('Academic Accountability Metrics')
+                main_container = {'display': 'none'}
+                empty_container = {'display': 'block'}
 
     # If no matching school_type - display empty table (catch-all)
     if school_index['School Type'].values[0] != 'K8' and school_index['School Type'].values[0] != 'K12' and school_index['School Type'].values[0] != 'HS' and school_index['School Type'].values[0] != 'AHS':
@@ -356,8 +364,9 @@ def update_about_page(data,year):
         table_container_ahs_1214 = {}
         display_ahs_metrics = {'display': 'none'}
 
-        table_container_empty = no_data_page('Academic Accountability Metrics')
-        display_empty_table = {}
+        no_data_to_display = no_data_page('Academic Accountability Metrics')
+        main_container = {'display': 'none'}
+        empty_container = {'display': 'block'}
 
     metric_11ab_label = 'Accountability Metrics 1.1.a & 1.1.b'
     
@@ -384,6 +393,7 @@ def update_about_page(data,year):
     else:
 
         table_container_11ab = {}
+        table_container_11ab = no_data_table(metric_11ab_label) # TODO
         display_attendance = {'display': 'none'}
 
     # Create placeholders (Acountability Metrics 1.1.c & 1.1.d)
@@ -413,7 +423,7 @@ def update_about_page(data,year):
 
     else:
 
-        table_container_11cd = no_data_page(metric_11cd_label)
+        table_container_11cd = no_data_table(metric_11cd_label)
 
 #### ALL teh tables
  
@@ -421,7 +431,8 @@ def update_about_page(data,year):
         table_container_14cd, table_container_14ef, table_container_14g, \
         table_container_15abcd, table_container_16ab, table_container_16cd, display_k8_metrics, \
         table_container_17ab, table_container_17cd, display_hs_metrics, \
-        table_container_ahs_113, table_container_ahs_1214, display_ahs_metrics, table_container_empty, display_empty_table
+        table_container_ahs_113, table_container_ahs_1214, display_ahs_metrics, \
+        main_container, empty_container, no_data_to_display
 
 #### ALL teh layouts
 
@@ -454,86 +465,91 @@ def layout():
                     className='row'
                 ),
                 html.Div(
-                    [
+                    [                
                         html.Div(
                             [
-                                html.Label('Key', style=key_label_style),
-                                html.Table(className='md_table',
-                                    children = 
-                                        [
-                                        html.Tr( [html.Td('Corp Rate'), html.Td('The corporation rate for the school corporation in which the school\
-                                            is located (including only grades for which the school has a tested average).') ]),
-                                        html.Tr( [html.Td('+/-'), html.Td('The difference between the school\'s proficiency and the corporation rate.') ]),
-                                        html.Tr( [html.Td('Blank Cell'), html.Td('No data available.') ]),
-                                        html.Tr( [html.Td('***'), html.Td(
-                                            [html.Span('Insufficient n-size (a '),
-                                            html.Span('-***', style={'color': '#b44655'}),
-                                            html.Span(' value indicates a reduction from a measurable, but not reportable, value to 0).')]
-                                        ) ] ),
-                                        ], 
-                                        style={
-                                            'color': 'steelblue',
-                                            'fontSize': '.75em',
-                                        },
-                                ),
-                                html.P(""),
-                                html.Center(
-                                    html.P("Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)",
-                                    style={
-                                        'color': '#6783a9',
-                                        'fontSize': 10,
-                                        'marginLeft': '10px',
-                                        'marginRight': '10px',
-                                        'marginTop': '10px',
-                                    })
+                                html.Div(
+                                    [
+                                        html.Label('Key', style=key_label_style),
+                                        html.Table(className='md_table',
+                                            children = 
+                                                [
+                                                html.Tr( [html.Td('Corp Rate'), html.Td('The corporation rate for the school corporation in which the school\
+                                                    is located (including only grades for which the school has a tested average).') ]),
+                                                html.Tr( [html.Td('+/-'), html.Td('The difference between the school\'s proficiency and the corporation rate.') ]),
+                                                html.Tr( [html.Td('Blank Cell'), html.Td('No data available.') ]),
+                                                html.Tr( [html.Td('***'), html.Td(
+                                                    [html.Span('Insufficient n-size (a '),
+                                                    html.Span('-***', style={'color': '#b44655'}),
+                                                    html.Span(' value indicates a reduction from a measurable, but not reportable, value to 0).')]
+                                                ) ] ),
+                                                ], 
+                                                style={
+                                                    'color': 'steelblue',
+                                                    'fontSize': '.75em',
+                                                },
+                                        ),
+                                        html.P(""),
+                                        html.Center(
+                                            html.P("Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)",
+                                            style={
+                                                'color': '#6783a9',
+                                                'fontSize': 10,
+                                                'marginLeft': '10px',
+                                                'marginRight': '10px',
+                                                'marginTop': '10px',
+                                            })
+                                        ),
+                                    ],
+                                    className = "pretty_container eight columns"
                                 ),
                             ],
-                            className = "pretty_container eight columns"
+                            className = "bare_container twelve columns"
+                        ),
+                        # Display attendance separately: 1) because new schools will have attendance data even if they
+                        # have no academic data, and 2) we measure it for HS (and AHS (?)) 
+                        html.Div(
+                            [
+                                html.Div(id='table-container-11ab', children=[]),
+                            ],
+                            id = 'display-attendance',
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id='table-container-11cd', children=[]),
+                                html.Div(id='table-container-14ab', children=[]),
+                                html.Div(id='table-container-14cd', children=[]),
+                                html.Div(id='table-container-14ef', children=[]),
+                                html.Div(id='table-container-14g', children=[]),
+                                html.Div(id='table-container-15abcd', children=[]),
+                                html.Div(id='table-container-16ab', children=[]),
+                                html.Div(id='table-container-16cd', children=[]),
+                            ],
+                            id = 'display-k8-metrics',
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id='table-container-17ab', children=[]),
+                                html.Div(id='table-container-17cd', children=[]),
+                            ],
+                            id = 'display-hs-metrics',
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id='table-container-ahs-113', children=[]),
+                                html.Div(id='table-container-ahs-1214', children=[]),
+                            ],
+                            id = 'display-ahs-metrics',
                         ),
                     ],
-                    className = "bare_container twelve columns"
-                ),
-                # Display attendance separately: 1) because new schools will have attendance data even if they
-                # have no academic data, and 2) we measure it for HS (and AHS (?)) 
+                    id = 'academic-metrics-main-container',
+                ),                
                 html.Div(
                     [
-                        html.Div(id='table-container-11ab', children=[]),
+                        html.Div(id='academic-metrics-no-data'),
                     ],
-                    id = 'display-attendance',
-                ),
-                html.Div(
-                    [
-                        html.Div(id='table-container-11cd', children=[]),
-                        html.Div(id='table-container-14ab', children=[]),
-                        html.Div(id='table-container-14cd', children=[]),
-                        html.Div(id='table-container-14ef', children=[]),
-                        html.Div(id='table-container-14g', children=[]),
-                        html.Div(id='table-container-15abcd', children=[]),
-                        html.Div(id='table-container-16ab', children=[]),
-                        html.Div(id='table-container-16cd', children=[]),
-                    ],
-                    id = 'display-k8-metrics',
-                ),
-                html.Div(
-                    [
-                        html.Div(id='table-container-17ab', children=[]),
-                        html.Div(id='table-container-17cd', children=[]),
-                    ],
-                    id = 'display-hs-metrics',
-                ),
-                html.Div(
-                    [
-                        html.Div(id='table-container-ahs-113', children=[]),
-                        html.Div(id='table-container-ahs-1214', children=[]),
-                    ],
-                    id = 'display-ahs-metrics',
-                ),
-                html.Div(
-                    [
-                        html.Div(id='table-container-empty', children=[]),
-                    ],
-                    id = 'display-empty-table',
-                ),
+                    id = 'academic-metrics-empty-container',
+                ),   
         ],
         id='mainContainer',
         style={

@@ -606,9 +606,8 @@ def update_about_page(data, school, year):
                 k8_subgroup_math_fig = no_data_fig()
 
     ## HS academic information
-    ## TODO: ADD EMPTY PAGE FOR NO DATA!
-    
-    ## TODO: ADD SAT GRADE 11/ACT SCORES
+## TODO: ADD SAT GRADE 11/ACT SCORES
+
     if (
         school_index["School Type"].values[0] == "HS"
         or school_index["School Type"].values[0] == "AHS"
@@ -632,7 +631,6 @@ def update_about_page(data, school, year):
             k8_ethnicity_math_fig = {}
             k8_subgroup_ela_fig = {}
             k8_subgroup_math_fig = {}
-
             k8_table_container = {"display": "none"}
 
         if len(academic_data_hs.index) == 0:
@@ -641,6 +639,10 @@ def update_about_page(data, school, year):
             hs_grad_subgroup_table = {}
             hs_eca_table = {}
             hs_not_calculated_table = {}
+            hs_table_container = {"display": "none"}
+
+            main_container = {'display': 'none'}
+            empty_container = {'display': 'block'}
 
         else:
             # split data into subsets for display in various tables
@@ -670,9 +672,7 @@ def update_about_page(data, school, year):
             grad_overview = hs_academic_info[
                 hs_academic_info["Category"].str.contains("|".join(overview))
             ]
-## TODO: NOT SHOWING EMPTy PAGE FOR NO HS DATA
-            print(hs_academic_info)
-            print(grad_overview)
+
             if not grad_overview.empty:          
                 hs_grad_overview_table = create_academic_info_table(grad_overview)
             else:
@@ -700,6 +700,7 @@ def update_about_page(data, school, year):
                 hs_academic_info["Category"].str.contains("|".join(["Grade 10"]))
             ]
 
+            print(eca_data)
             if not eca_data.empty:            
                 hs_eca_table = create_academic_info_table(eca_data)            
             else:

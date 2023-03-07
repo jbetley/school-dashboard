@@ -180,82 +180,9 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
 )
 
-# # set_academic_rating (): determines ratings for academic indicators
-# # inputs: value, list, and (flag) integer
-# def set_academic_rating(data, threshold, flag):
-#     # if data is a string
-#     if data == "***" or data == "No Grade":
-#         indicator = "NA"
-#         return indicator
-
-#     if data == "-***":
-#         indicator = "DNMS"
-#         return indicator
-
-#     # if data is NoneType
-#     if data is None:
-#         indicator = "NA"
-#         return indicator
-
-#     # letter_grade ratings (type string)
-#     if flag == 4:  # lettergrade ratings
-#         if data == threshold[0]:
-#             indicator = "ES"
-#         elif data == threshold[1]:
-#             indicator = "MS"
-#         elif data == threshold[2]:
-#             indicator = "AS"
-#         else:
-#             indicator = "DNMS"
-#         return indicator
-
-#     # numeric checks - ensure type is float
-#     data = float(data)
-
-#     # if data is NaN
-#     if np.isnan(data):
-#         indicator = "NA"
-#         return indicator
-
-#     # academic ratings (numeric)
-#     if flag == 1:
-#         if data >= threshold[0]:
-#             indicator = "ES"
-#         elif data > threshold[1]:
-#             indicator = "MS"
-#         elif data >= threshold[2]:
-#             indicator = "AS"
-#         elif data <= threshold[3]:
-#             indicator = "DNMS"
-
-#     # graduation rate ratings (numeric)
-#     if flag == 2:
-#         if data >= threshold[0]:
-#             indicator = "ES"
-#         elif data < threshold[0] and data >= threshold[1]:
-#             indicator = "MS"
-#         elif data < threshold[1] and data >= threshold[2]:
-#             indicator = "AS"
-#         else:
-#             indicator = "DNMS"
-
-#     # attendance rate ratings (numeric)
-#     if flag == 3:
-#         if data > threshold[0]:
-#             indicator = "ES"
-#         elif data < threshold[0] and data >= threshold[1]:
-#             indicator = "MS"
-#         # elif data < threshold[1]:
-#         #     indicator = 'AS'
-#         else:
-#             indicator = "DNMS"
-
-#     return indicator
-
-
 # category variables
-# NOTE: 'American Indian' has been removed from ethnicity variable - it seems to break some functionality
-# due to inconsistent use as a category in data
+# NOTE: 'American Indian' has been removed from ethnicity variable
+# - it seems to break some functionality due to inconsistent use as a category in data
 ethnicity = [
     "Asian",
     "Black",
@@ -341,126 +268,113 @@ def set_dropdown_options(year):
 
     return options
 
-
 app.layout = html.Div(
     [
         dcc.Store(id="dash-session", storage_type="session"),
-    html.Div(
-        [        
-        # html.Div(
-        #     [
-        #         html.Div(
-        #             [
-        #                 html.A("logout", href="../logout", className="logout-button"),
-        #             ],
-        #             className="bare_container one columns",
-        #         ),
-        #     ],
-        #     # className="row",
-        # ),
         html.Div(
-            [
+            [        
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.A("logout", href="../logout", className="logout-button"),
+                            ],
+                            className="bare_container one columns",
+                        ),
+                        html.Div(
+                            [
                                 html.Div(
-                    [
-                        html.A("logout", href="../logout", className="logout-button"),
-                    ],
-                    className="bare_container one columns",
-                ),
-                html.Div(
-                    [
+                                    [
+                                        html.Label("Select School:"),
+                                    ],
+                                    className="dash_label",
+                                    id="school_dash_label",
+                                ),
+                                dcc.Dropdown(
+                                    id="charter-dropdown",
+                                    style={
+                                        "fontSize": "85%",
+                                        "fontFamily": "Roboto, sans-serif",
+                                    },
+                                    multi=False,
+                                    clearable=False,
+                                    className="school_dash_control",
+                                ),
+                                # NOTE: Dummy input for dropdown
+                                html.Div(id="application-state", style={"display": "none"}),
+                            ],
+                            className="pretty_container five columns",
+                        ),
                         html.Div(
                             [
-                                html.Label("Select School:"),
+                                html.Div(
+                                    [
+                                        html.Label("Select Year:"),
+                                    ],
+                                    className="dash_label",
+                                    id="year_dash_label",
+                                ),
+                                dcc.Dropdown(
+                                    id="year-dropdown",
+                                    options=[
+                                        {"label": str(y), "value": str(y)}
+                                        for y in range(
+                                            int(current_academic_year) - num_academic_years,
+                                            int(current_academic_year) + 1,
+                                        )
+                                    ],
+                                    style={
+                                        "fontSize": "85%",
+                                        "fontFamily": "Roboto, sans-serif",
+                                    },
+                                    value=current_academic_year,
+                                    multi=False,
+                                    clearable=False,
+                                    className="year_dash_control",
+                                ),
                             ],
-                            className="dash_label",
-                            id="school_dash_label",
-                        ),
-                        dcc.Dropdown(
-                            id="charter-dropdown",
-                            style={
-                                "fontSize": "85%",
-                                "fontFamily": "Roboto, sans-serif",
-                            },
-                            multi=False,
-                            clearable=False,
-                            className="school_dash_control",
-                        ),
-                        # NOTE: Dummy input for dropdown
-                        html.Div(id="application-state", style={"display": "none"}),
-                    ],
-                    className="pretty_container five columns",
-                ),
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Label("Select Year:"),
-                            ],
-                            className="dash_label",
-                            id="year_dash_label",
-                        ),
-                        dcc.Dropdown(
-                            id="year-dropdown",
-                            options=[
-                                {"label": str(y), "value": str(y)}
-                                for y in range(
-                                    int(current_academic_year) - num_academic_years,
-                                    int(current_academic_year) + 1,
-                                )
-                            ],
-                            style={
-                                "fontSize": "85%",
-                                "fontFamily": "Roboto, sans-serif",
-                            },
-                            value=current_academic_year,
-                            multi=False,
-                            clearable=False,
-                            className="year_dash_control",
+                            className="pretty_container three columns",
                         ),
                     ],
-                    className="pretty_container three columns",
+                    className="fixed-row",
                 ),
             ],
             className="fixed-row",
         ),
-        ],
-    className="fixed-row",
-    ),
-    html.Div(
-            [
         html.Div(
             [
                 html.Div(
                     [
-                        dbc.Nav(
+                        html.Div(
                             [
-                                dbc.NavLink(
-                                    page["name"],
-                                    href=page["path"],
-                                    className="tab",
-                                    active="exact",
-                                )
-                                for page in dash.page_registry.values()
-                                if page.get("top_nav")
-                                if page["module"] != "pages.not_found_404"
+                                dbc.Nav(
+                                    [
+                                        dbc.NavLink(
+                                            page["name"],
+                                            href=page["path"],
+                                            className="tab",
+                                            active="exact",
+                                        )
+                                        for page in dash.page_registry.values()
+                                        if page.get("top_nav")
+                                        if page["module"] != "pages.not_found_404"
+                                    ],
+                                    className="tabs",
+                                ),
                             ],
-                            className="tabs",
+                            className="bare_container twelve columns",
+                                style={
+                                    "padding": "50px",
+                                    "paddingBottom": "60px",
+                                    "marginTop": "40px",
+                                }
                         ),
                     ],
-                    className="bare_container twelve columns",
-                        style={
-    "padding": "50px",
-    "paddingBottom": "60px",
-    "marginTop": "40px",
-    }
+                    className="row",
                 ),
+                dash.page_container,
             ],
-            className="row",
-        ),
-        dash.page_container,
-        # html.Div(dash.page_container),
-        ],
-)
+        )
     ],
 )
 
@@ -567,7 +481,7 @@ def load_data(school, year):
             .T.rename_axis(None, axis=1)
             .reset_index()
         )
-        school_attendance_rate.drop("index", inplace=True, axis=1)
+        school_attendance_rate = school_attendance_rate.drop("index", axis=1)
 
         corp_attendance_rate = corp_demographic_data[["Year", "Avg Attendance"]]
         corp_attendance_rate = (
@@ -575,7 +489,7 @@ def load_data(school, year):
             .T.rename_axis(None, axis=1)
             .reset_index()
         )
-        corp_attendance_rate.drop("index", inplace=True, axis=1)
+        corp_attendance_rate = corp_attendance_rate.drop("index", axis=1)
 
         # align corp df columns to school df (will drop years in corp df that aren't in school df)
         corp_attendance_rate = corp_attendance_rate[school_attendance_rate.columns]
@@ -591,7 +505,7 @@ def load_data(school, year):
             )
 
         # add accountability category
-        school_attendance_rate.replace(0, np.nan, inplace=True)
+        school_attendance_rate = school_attendance_rate.replace(0, np.nan)
         school_attendance_rate[
             "Category"
         ] = "1.1.a. Attendance Rate (compared to school corporation average)"
@@ -633,8 +547,8 @@ def load_data(school, year):
         # temporarily store and drop 'Category' column from attendance rate dataframes
         tmp_category = school_attendance_rate["Category"]
 
-        school_attendance_rate.drop("Category", inplace=True, axis=1)
-        corp_attendance_rate.drop("Category", inplace=True, axis=1)
+        school_attendance_rate = school_attendance_rate.drop("Category", axis=1)
+        corp_attendance_rate = corp_attendance_rate.drop("Category", axis=1)
 
         # calculate difference between two dataframes
         result_attendance_rate = pd.DataFrame(
@@ -753,12 +667,11 @@ def load_data(school, year):
 
         # if number of available years exceeds year_limit, drop excess columns (years)
         if operating_years_by_adm > max_display_years:
-            school_adm.drop(
+            school_adm = school_adm.drop(
                 columns=school_adm.columns[
                     : (operating_years_by_adm - max_display_years)
                 ],
-                axis=1,
-                inplace=True,
+                axis=1
             )
 
         # if the display year is less than current year
@@ -775,9 +688,9 @@ def load_data(school, year):
     ### Academic Data
 
     # K8 Academic Data
-    import timeit
+    # import timeit
 
-    start_time = timeit.default_timer()
+    # start_time = timeit.default_timer()
 
     if (
         school_info["School Type"].values[0] == "K8"
@@ -858,7 +771,7 @@ def load_data(school, year):
                 )
 
             # reset index as 'Year'
-            k8_corp_rate_filtered.set_index("Year", inplace=True)
+            k8_corp_rate_filtered = k8_corp_rate_filtered.set_index("Year")
 
             def calculate_proficiency(proficient_col, tested_col):
                 return np.where(
@@ -954,7 +867,7 @@ def load_data(school, year):
                 ) / pd.to_numeric(k8_school_data["IREAD Test N"], errors="coerce")
 
                 # Need this in case where IREAD Test or Pass has '***' value (which results in Nan when divided)
-                k8_school_data["IREAD Pass %"].fillna("***", inplace=True)
+                k8_school_data["IREAD Pass %"] = k8_school_data["IREAD Pass %"].fillna("***")
 
             # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
             k8_school_data = k8_school_data.filter(
@@ -1058,8 +971,8 @@ def load_data(school, year):
             # temporarily drop 'Category' column to simplify calculating difference
             tmp_category = k8_school_data["Category"]
 
-            k8_school_data.drop("Category", inplace=True, axis=1)
-            k8_corp_data.drop("Category", inplace=True, axis=1)
+            k8_school_data = k8_school_data.drop("Category", axis=1)
+            k8_corp_data = k8_corp_data.drop("Category", axis=1)
 
             # calculate difference between school and corp dataframes (with mixed data types)
             def calculate_difference(value1, value2):
@@ -1127,6 +1040,7 @@ def load_data(school, year):
             )
 
             # calculate IREAD metrics
+
             # NOTE: See code explanation in discussion of 'attendance_data_metrics' above.
             if not iread_data.empty:
                 iread_limits = [
@@ -1155,7 +1069,7 @@ def load_data(school, year):
                 ]
 
             # replace NaN and ensure columns are strings
-            iread_data.fillna("No Data", inplace=True)
+            iread_data = iread_data.fillna("No Data")
             iread_data.columns = iread_data.columns.astype(str)
 
             # save iread_data to_dict
@@ -1166,7 +1080,7 @@ def load_data(school, year):
 
             # Store category column and drop from dataframe to simplify calculation
             category_header = k8_school_metric_data["Category"]
-            k8_school_metric_data.drop("Category", inplace=True, axis=1)
+            k8_school_metric_data = k8_school_metric_data.drop("Category", axis=1)
 
             # temporarily store last column (first year of data chronologically)
             first_year = pd.DataFrame()
@@ -1238,14 +1152,13 @@ def load_data(school, year):
             year_over_year_values = final_k8_academic_data.copy()
 
             # delete 'Corp Rate' and '+/-' columns as they aren't used in year over year calculation
-            year_over_year_values.drop(
+            year_over_year_values = year_over_year_values.drop(
                 [
                     col
                     for col in year_over_year_values.columns
                     if "Corp Rate" in col or "+/-" in col
                 ],
-                axis=1,
-                inplace=True,
+                axis=1
             )
 
             # TODO: See above - is this redundant?
@@ -1329,8 +1242,8 @@ def load_data(school, year):
             ]
 
             # Replace NaN
-            diff_to_corp.fillna("No Data", inplace=True)
-            year_over_year_values.fillna("No Data", inplace=True)
+            diff_to_corp = diff_to_corp.fillna("No Data")
+            year_over_year_values = year_over_year_values.fillna("No Data")
 
             # ensure all column headers are strings
             diff_to_corp.columns = diff_to_corp.columns.astype(str)
@@ -1381,9 +1294,9 @@ def load_data(school, year):
             year_over_year_values_json = json.dumps(year_over_year_values_dict)
 
     #### HS Academic Information ####
-    elapsed = timeit.default_timer() - start_time
-    print("elapsed time:")
-    print(elapsed)
+    # elapsed = timeit.default_timer() - start_time
+    # print("elapsed time:")
+    # print(elapsed)
 
     # NOTE: CHS (School ID: 5874) converted from a K12 to a K8 and separate HS in 2021. We need to make a special exception here
     # to show HS data for CHS prior to 2021. In 2021 and thereafter, the HS data is under CHMWHS (School ID: 9709)
@@ -1463,11 +1376,11 @@ def load_data(school, year):
             )
 
             # remove 'ELA & Math' columns (NOTE: Comment this out to retain 'ELA & Math' columns)
-            hs_school_data.drop(
-                list(hs_school_data.filter(regex="ELA & Math")), axis=1, inplace=True
+            hs_school_data = hs_school_data.drop(
+                list(hs_school_data.filter(regex="ELA & Math")), axis=1
             )
-            hs_corp_data.drop(
-                list(hs_corp_data.filter(regex="ELA & Math")), axis=1, inplace=True
+            hs_corp_data = hs_corp_data.drop(
+                list(hs_corp_data.filter(regex="ELA & Math")), axis=1
             )
 
             # valid_mask returns a boolean series of columns where column is true if any element in the column is not equal to null
@@ -1587,7 +1500,7 @@ def load_data(school, year):
             )
 
             # reset index
-            hs_corp_rate_data.reset_index(drop=True, inplace=True)
+            hs_corp_rate_data = hs_corp_rate_data.reset_index(drop=True)
 
             # if there is a missing year add new row to hs_corp_rate_data with all blanks except for the year value
             # add the year value to the 'Year' column at last index (most recently added row)
@@ -1609,8 +1522,8 @@ def load_data(school, year):
                     hs_corp_rate_data.at[hs_corp_rate_data.index[-1], "Year"] = y
 
             # sort columns and reset index so the two df's match
-            hs_corp_rate_data.sort_values(by="Year", inplace=True, ascending=False)
-            hs_corp_rate_data.reset_index(drop=True, inplace=True)
+            hs_corp_rate_data = hs_corp_rate_data.sort_values(by="Year", ascending=False)
+            hs_corp_rate_data = hs_corp_rate_data.reset_index(drop=True)
 
             # calculate ECA averages ('Grade 10' + '|ELA/Math' + 'Test N' / 'Grade 10' + '|ELA/Math' + 'Pass N')
             # if none_categories includes 'Grade 10' - there is no ECA data available for the school for the selected Years
@@ -1725,7 +1638,7 @@ def load_data(school, year):
             ]
 
             state_grad_average = (
-                filtered_academic_data_hs.groupby("Year", as_index=False)
+                filtered_academic_data_hs.groupby("Year", as_index=False, numeric_only=True)
                 .sum()
                 .eval("State_Grad_Average = `Total|Graduates` / `Total|Cohort Count`")
             )
@@ -1740,9 +1653,8 @@ def load_data(school, year):
             hs_corp_data = hs_corp_data.merge(
                 state_grad_average, on="Year", how="inner"
             )
-            hs_corp_data.rename(
-                columns={"State_Grad_Average": "Average State Graduation Rate"},
-                inplace=True,
+            hs_corp_data = hs_corp_data.rename(
+                columns={"State_Grad_Average": "Average State Graduation Rate"}
             )
 
             # duplicate 'Total Grad' row and name it 'State Average Graduation Rate' for comparison purposes
@@ -1848,8 +1760,8 @@ def load_data(school, year):
 
             # temporarily drop 'Category' column to simplify calculating difference
             tmp_category = hs_school_data["Category"]
-            hs_school_data.drop("Category", inplace=True, axis=1)
-            hs_corp_data.drop("Category", inplace=True, axis=1)
+            hs_school_data = hs_school_data.drop("Category", axis=1)
+            hs_corp_data = hs_corp_data.drop("Category", axis=1)
 
             # make sure there are no lingering NoneTypes to screw up the creation of hs_results
             hs_school_data = hs_school_data.fillna(value=np.nan)
@@ -1878,7 +1790,7 @@ def load_data(school, year):
                 )
 
             # add headers
-            hs_results.set_axis(result_cols, axis=1, inplace=True)
+            hs_results = hs_results.set_axis(result_cols, axis=1)
             hs_results.insert(loc=0, column="Category", value=tmp_category)
 
             final_hs_academic_data = hs_merged_data.merge(

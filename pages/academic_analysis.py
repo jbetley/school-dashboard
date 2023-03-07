@@ -8,41 +8,38 @@
 # TODO: Add AHS/HS Analysis
 
 import dash
-from dash import dcc, dash_table, html, Input, Output, callback
-# from dash.dash_table import FormatTemplate
+from dash import ctx, dcc, dash_table, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
-# import plotly.express as px
 import pandas as pd
 import numpy as np
 import json
-# import scipy.spatial as spatial
 
 from .calculations import find_nearest, filter_grades
 from .chart_helpers import loading_fig, no_data_fig, \
     make_line_chart,make_bar_chart, make_group_bar_chart
 from .table_helpers import create_comparison_table, no_data_page, no_data_table
+from .subnav import subnav_academic
+
+dash.register_page(__name__, path = '/academic_analysis', order=6)
 
 # Debuggging #
 # pd.set_option('display.max_rows', None)
 # pd.set_option('display.max_columns', None)
 # pd.set_option('display.max_colwidth', None)
-import timeit
+# import timeit
 # #
 
 ### START TIME ###
-initial_load_start = timeit.default_timer()
+# initial_load_start = timeit.default_timer()
 ##################
-
-# import subnav function
-from .subnav import subnav_academic
-dash.register_page(__name__, path = '/academic_analysis', order=6)
 
 color_short=['#98abc5','#8a89a6','#7b6888','#6b486b','#a05d56','#d0743c','#ff8c00']
 color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
-# NOTE: removed 'American Indian' because the category doesn't appear in all data sets (?)
-#ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
-
+# NOTE: removed 'American Indian' because the category doesn't appear
+# in all data sets TODO: CONFIRM
+# ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial',
+# 'Native Hawaiian or Other Pacific Islander','White']
 ethnicity = ['Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
 subgroup = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
 grades = ['Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8']
@@ -55,8 +52,8 @@ all_academic_data_k8 = pd.read_csv(r'data/academic_data_k8.csv', dtype=str)
 school_index= pd.read_csv(r'data/school_index.csv', dtype=str)
 
 ### END TIME ###
-initial_load_time = timeit.default_timer() - initial_load_start
-print ('initial load time (Academic Analysis):', initial_load_time)
+# initial_load_time = timeit.default_timer() - initial_load_start
+# print ('initial load time (Academic Analysis):', initial_load_time)
 ################
 
 # Set options for comparison schools (multi-select dropdown)
@@ -69,17 +66,20 @@ print ('initial load time (Academic Analysis):', initial_load_time)
     Input('year-dropdown', 'value'),
     Input('comparison-dropdown', 'value'),
 )
-def set_dropdown_options(school, year, selected):
+def set_dropdown_options(school, year, comparison_schools):
 
-### START TIME ###
-    build_kd_start = timeit.default_timer()
-##################
+    # clear the list of comparison_schools only when 'charter-dropdown'
+    # is triggered (a new school is selected). otherwise comparison_schools
+    # will carry over from school to school
+    input_trigger = ctx.triggered_id
+    if input_trigger == 'charter-dropdown':
+        comparison_schools = []
 
     # filter out schools that did not exist in the selected year
     eval_year = [str(year)]
     
     filtered_academic_data_k8 = all_academic_data_k8[all_academic_data_k8['Year'].isin(eval_year)]
-    filtered_academic_data_k8.reset_index(drop=True,inplace=True)
+    filtered_academic_data_k8 = filtered_academic_data_k8.reset_index(drop=True)
 
     location_data = filtered_academic_data_k8[['Lat','Lon']]
     school_idx = filtered_academic_data_k8[filtered_academic_data_k8['School ID'] == school].index
@@ -100,7 +100,7 @@ def set_dropdown_options(school, year, selected):
 
     # create dataframe with distances and indexes
     distances = pd.DataFrame({'index':index_list, 'y':distance_list})
-    distances.set_index(list(distances)[0], inplace=True)
+    distances = distances.set_index(list(distances)[0])
 
     # filter comparison set by matching indexes
     closest_schools = filtered_academic_data_k8[filtered_academic_data_k8.index.isin(index_list)]
@@ -108,12 +108,6 @@ def set_dropdown_options(school, year, selected):
     # add 'Distance' column to comparison_set
     comparison_set = pd.merge(closest_schools,distances,left_index=True, right_index=True)
     comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
-
-### END TIME ###
-    build_kd_time = timeit.default_timer() - build_kd_start
-    print ('kdtree complete:')
-    print (build_kd_time)
-################
 
     # Drop the selected school from the list of available selections,
     # so selected school cannot be removed from dropdown. Comment this
@@ -156,13 +150,13 @@ def set_dropdown_options(school, year, selected):
     # the following tracks the number of selections and disables all remaining
     # selections once 8 schools have been selected
     input_warning = None
-    
+
     # if list is None or empty ([]), use the default options
-    if not selected:
-        selected = [d['value'] for d in options[:default_num]]
+    if not comparison_schools:
+        comparison_schools = [d['value'] for d in options[:default_num]]
 
     else:
-        if len(selected) > 7:
+        if len(comparison_schools) > 7:
             input_warning = html.P(
                 id='input-warning',
                 children='Limit reached (Maximum of 8 schools).',
@@ -172,7 +166,9 @@ def set_dropdown_options(school, year, selected):
                 for option in default_options
             ]
     
-    return options, input_warning, selected
+    return options, input_warning, comparison_schools
+
+##### TODO: Currently no charts for AHS or HS
 
 # Graphs and Tables
 @callback(
@@ -208,7 +204,6 @@ def set_dropdown_options(school, year, selected):
     Output('fig16b2-table-container', 'style'),
     Output('academic-analysis-main-container', 'style'),
     Output('academic-analysis-empty-container', 'style'),
-    # Output('academic-analysis-no-data', 'figure'),
     Output('academic-analysis-no-data', 'children'),
     Input('charter-dropdown', 'value'),
     Input('year-dropdown', 'value'),
@@ -221,65 +216,18 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
     selected_year = str(year)
 
-    # # blank chart
-    # blank_chart = {
-    #         'layout': {
-    #             'height': 200,
-    #             'xaxis': {
-    #                 'visible': False
-    #             },
-    #             'yaxis': {
-    #                 'visible': False
-    #             },
-    #             'annotations': [
-    #                 {
-    #                     'text': 'No Data to Display',
-    #                     'xref': 'paper',
-    #                     'yref': 'paper',
-    #                     'showarrow': False,
-    #                     'font': {
-    #                         'size': 16,
-    #                         'color': '#4682b4',
-    #                         'family': 'Open Sans, sans-serif'
-    #                     }
-    #                 }
-    #             ]
-    #         }
-    #     }
-
-    # empty_table
-    empty_table = [
-        dash_table.DataTable(
-            columns = [
-                {'id': 'emptytable', 'name': 'No Data to Display'},
-            ],
-            style_header={
-                'fontSize': '16px',
-                'border': 'none',
-                'backgroundColor': '#ffffff',
-                'paddingTop': '15px',
-                'verticalAlign': 'center',
-                'textAlign': 'center',
-                'color': '#6783a9',
-                'fontFamily': 'Roboto, sans-serif',
-            },
-        )
-    ]
-
     # default styles
     main_container = {'display': 'block'}
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('Academic Analysis')
 
     ### START TIME ###
-    main_load_start = timeit.default_timer()
+    # main_load_start = timeit.default_timer()
     ##################
 
     # school_index.json
     school_info = pd.DataFrame.from_dict(data['0'])
     school_name = school_info['School Name'].values[0]
-
-    ##### TODO: Currently no charts for AHS or HS
 
     # Test if data exists - there are 4 possibilities:
     #   1) the dataframe itself does not exist because there is no academic data for the school at all
@@ -318,7 +266,9 @@ def update_academic_analysis(school, year, data, comparison_school_list):
         tested_header = selected_year + 'School'
 
         # Testing (3) and (4)
-        if tested_header not in tested_academic_data.columns or tested_academic_data[tested_header].isnull().all():
+        if tested_header not in tested_academic_data.columns or \
+            tested_academic_data[tested_header].isnull().all():
+            
             fig14a = fig14b = fig14c = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig16a1 = fig16b1 = fig16a2 = fig16b2 = {}
             fig14c_table = fig14d_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = {}
             fig16a1_category_string = fig16b1_category_string = fig16a2_category_string = fig16b2_category_string = ''
@@ -473,11 +423,10 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             comparison_schools_filtered = filtered_academic_data_k8[filtered_academic_data_k8['School ID'].isin(comparison_school_list)]
 
-
-            # add 'Distance' value to dataframe using the gc_distance function [not currently implemented due to SLOWness]
+            # NOTE: this would add the 'Distance' value to dataframe using the
+            # gc_distance function [not currently implemented due to SLOWness]
             # def get_distance(row):
             #     return gc_distance(school_info['Lon'].values[0],school_info['Lat'].values[0],row['Lon'],row['Lat'])
-
             # comparison_schools['Distance'] = comparison_schools.apply(get_distance, axis=1)
 
             # drop unused columns
@@ -575,7 +524,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # get name of school corporation
             school_corporation_name = filtered_academic_data_k8.loc[(all_academic_data_k8['Corp ID'] == school_info['GEO Corp'].values[0])]['Corp Name'].values[0]
 
-        #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
+            #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
             category = 'Total|ELA Proficient %'
 
             # Get school value for specific category
@@ -600,13 +549,12 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14c_all_data[category] = pd.to_numeric(fig14c_all_data[category])
 
                 # make the bar chart
-
                 fig14c = make_bar_chart(fig14c_all_data,category, school_name)
 
                 # merge column names and make ELA Proficiency table
                 fig14c_table_data['School Name'] = fig14c_table_data['School Name'] + " (" + fig14c_table_data['Low Grade'] + "-" + fig14c_table_data['High Grade'] + ")"
                 fig14c_table_data = fig14c_table_data[['School Name', category]]
-                fig14c_table_data.reset_index(drop=True,inplace=True)
+                fig14c_table_data = fig14c_table_data.reset_index(drop=True)
 
                 fig14c_table = create_comparison_table(fig14c_table_data, school_name)
             else:
@@ -640,18 +588,22 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 # Math Proficiency table
                 fig14d_table_data['School Name'] = fig14d_table_data['School Name'] + " (" + fig14d_table_data['Low Grade'] + "-" + fig14d_table_data['High Grade'] + ")"
                 fig14d_table_data = fig14d_table_data[['School Name', category]]
-                fig14d_table_data.reset_index(drop=True,inplace=True)
+                fig14d_table_data = fig14d_table_data.reset_index(drop=True)
 
                 fig14d_table = create_comparison_table(fig14d_table_data, school_name)
             else:
                 fig14d = no_data_fig()
                 fig14d_table = no_data_table()
 
-    #### Comparison Charts & Tables
-        # NOTE: See backup data 01.23.23 for pre- full_chart() function code
+            #### Comparison Charts & Tables
+            # NOTE: See backup data 01.23.23 for pre- full_chart() function code
 
             # info col headers is the same for all dataframes
             info_categories = ['School Name','Low Grade','High Grade']
+
+            # NOTE: This is messy. Uses functions from both helper files.
+            # Could move to chart-helpers and call table_helpers there
+            # but does that cause any circular references?
 
             # A function that returns a fig, a table, and two strings
             def create_full_chart(school_data, categories, corp_name):
@@ -748,7 +700,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16a1_table_container = {'display': 'block'}
             
             else:
-                fig16a1 = {}
+                fig16a1 = no_data_fig()
                 fig16a1_table = {}
                 fig16a1_category_string = ''
                 fig16a1_school_string = ''                
@@ -771,7 +723,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16b1_table_container = {'display': 'block'}
             
             else:
-                fig16b1 = {}
+                fig16b1 = no_data_fig()
                 fig16b1_table = {}
                 fig16b1_category_string = ''
                 fig16b1_school_string = ''                
@@ -794,7 +746,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16a2_table_container = {'display': 'block'}
             
             else:
-                fig16a2 = {}
+                fig16a2 = no_data_fig()
                 fig16a2_table = {}
                 fig16a2_category_string = ''
                 fig16a2_school_string = ''                
@@ -817,15 +769,15 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16b2_table_container = {'display': 'block'}
             
             else:
-                fig16b2 = {}
+                fig16b2 = no_data_fig()
                 fig16b2_table = {}
                 fig16b2_category_string = ''
                 fig16b2_school_string = ''                
                 fig16b2_table_container = {'display': 'none'}
 
     ### END TIME ###
-    main_load_time = timeit.default_timer() - main_load_start
-    print ('main (re)load time:', main_load_time)
+    # main_load_time = timeit.default_timer() - main_load_start
+    # print ('main (re)load time:', main_load_time)
     ################
 
     # main_container = {'display': 'block'}

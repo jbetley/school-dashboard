@@ -21,39 +21,31 @@ color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#8
 
 # create empty table with custom label
 def no_data_table(label):
+
     table = [
-                # html.Div(
-                #     [
-                #         html.Div(
-                #             [
-                                html.Label(label, style=label_style),
-                                html.Div(
-                                    dash_table.DataTable(
-                                        columns = [
-                                            {'id': 'emptytable', 'name': 'No Data to Display'},
-                                        ],
-                                        style_header={
-                                            'fontSize': '14px',
-                                            'border': 'none',
-                                            'textAlign': 'center',
-                                            'color': '#6783a9',
-                                            'fontFamily': 'Open Sans, sans-serif',
-                                            'height': '30vh',
-                                        },
-                                    ),
-                                ),
-                #             ],
-                #             className = 'pretty_container eight columns'
-                #         ),
-                #     ],
-                #     className = 'bare_container twelve columns',
-                # )
-    ]
+                html.Label(label, style=label_style),
+                html.Div(
+                    dash_table.DataTable(
+                        columns = [
+                            {'id': 'emptytable', 'name': 'No Data to Display'},
+                        ],
+                        style_header={
+                            'fontSize': '14px',
+                            'border': 'none',
+                            'textAlign': 'center',
+                            'color': '#6783a9',
+                            'fontFamily': 'Open Sans, sans-serif',
+                            'height': '30vh',
+                        },
+                    ),
+                ),
+            ]
 
     return table
 
-# create empty table with custom label
+# create empty page with custom label
 def no_data_page(label):
+
     table = [
                 html.Div(
                     [
@@ -182,22 +174,28 @@ def create_metric_table(label, content):
     else:
 
         # Formatting on the fly - determines the col_width class and width
-        # of the category column based on the size on the dataframe
-        if table_size == 2:
-            col_width = 'eight'
+        # of the category column based on the size (# of cols) of the dataframe
+        if table_size <= 3:
+            col_width = 'four'
             category_width = 70
-        if table_size > 2 and table_size <=4:
-            col_width = 'eight'
+        if table_size > 3 and table_size <=4:
+            col_width = 'six'
             category_width = 35
-        elif table_size >= 5 and table_size <= 9:
-            col_width = 'eight'
+        elif table_size >= 5 and table_size <= 8:
+            col_width = 'six'
             category_width = 30
-        elif table_size >= 10 and table_size <= 15:
-            col_width = 'twelve'
+        elif table_size > 8 and table_size <= 9:
+            col_width = 'seven'
+            category_width = 30            
+        elif table_size >= 10 and table_size <= 13:
+            col_width = 'ten'
             category_width = 15
-        elif table_size >= 16:
-            col_width = 'twelve'
+        elif table_size > 13 and table_size <=17:
+            col_width = 'eleven'
             category_width = 15
+        elif table_size > 17:
+            col_width = 'twelve'
+            category_width = 15            
         
         year_headers = [y for y in data.columns.tolist() if 'School' in y]
         rating_headers = [y for y in data.columns.tolist() if 'Rating' in y]
