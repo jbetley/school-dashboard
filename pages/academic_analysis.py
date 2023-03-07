@@ -485,8 +485,9 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             comparison_schools = comparison_schools.filter(regex = r'\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficiency|^Year$',axis=1)
 
             # drop all columns from the comparison dataframe that aren't in the school dataframe
-            # a bit of kludge - as the school file has already been processed, column names will not directly
-            # match, so we create a list of unique substrings from the column names and use it to filter the comparison set
+            # because the school file has already been processed, column names will not directly
+            # match, so we create a list of unique substrings from the column names and use it
+            # to filter the comparison set
             valid_columns = school_current_data.columns.str.split('|').str[0].tolist()
             comparison_schools = comparison_schools.filter(regex='|'.join(valid_columns))
 

@@ -665,3 +665,88 @@ def create_comparison_table(data,school_name):
         ],
     )
     return table
+
+def create_academic_info_table(data):
+
+    table = [
+        dash_table.DataTable(
+            data.to_dict("records"),
+            columns = [
+                {
+                    "name": col,
+                    "id": col,
+                    "type": "numeric",
+                    "format": Format(
+                        scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
+                    ),
+                }
+                for (col) in data.columns
+            ],
+            style_data = {
+                "fontSize": "11px",
+                "fontFamily": "Roboto,sans-serif",
+                "border": "none"
+            },
+            style_data_conditional = [
+                {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
+                {
+                    "if": {"row_index": 0, "column_id": "Category"},
+                    "borderTop": ".5px solid #6783a9",
+                },
+            ],
+            style_header =  {
+                "height": "20px",
+                "backgroundColor": "#ffffff",
+                "border": "none",
+                "borderBottom": ".5px solid #6783a9",
+                "fontSize": "12px",
+                "fontFamily": "Roboto, sans-serif",
+                "color": "#6783a9",
+                "textAlign": "center",
+                "fontWeight": "bold",
+            },
+            style_cell = {
+                "whiteSpace": "normal",
+                "height": "auto",
+                "textAlign": "center",
+                "color": "#6783a9",
+                "minWidth": "25px",
+                "width": "25px",
+                "maxWidth": "25px",
+            },
+            style_header_conditional = [
+                {
+                    "if": {"column_id": "Category"},
+                    "textAlign": "left",
+                    "paddingLeft": "10px",
+                    "width": "35%",
+                    "fontSize": "11px",
+                    "fontFamily": "Roboto, sans-serif",
+                    "color": "#6783a9",
+                    "fontWeight": "bold",
+                }
+            ],
+
+            # conditional width (?)
+            # not_calculated = 40 k8 - data['Category'].startswith("The school’s teacher retention")
+            # not_calculated = 40 hs - data['Category'].startswith("The percentage of students entering grade 12"
+            # k8 = 35
+            # hs = 25
+
+            style_cell_conditional = [
+                {
+                    "if": {"column_id": "Category"},
+                    "textAlign": "left",
+                    "fontWeight": "500",
+                    "paddingLeft": "10px",
+                    "width": "40%", #conditional_width,
+                }
+            ],
+            merge_duplicate_headers=True,
+            style_as_list_view=True,
+            # add this to each table if we want to be able to export
+            # export_format='xlsx',
+            # export_headers='display'
+        )
+    ]
+    return table

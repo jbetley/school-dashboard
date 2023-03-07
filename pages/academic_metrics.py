@@ -122,7 +122,7 @@ def update_academic_metrics(data,year):
             table_container_ahs_113 = {}
             table_container_ahs_1214 = {}
             display_ahs_metrics = {'display': 'none'}            
-            no_data_to_display = no_data_page('Adult High School Accountability Metrics')
+            # no_data_to_display = no_data_page('Adult High School Accountability Metrics')
             main_container = {'display': 'none'}
             empty_container = {'display': 'block'}
 
@@ -189,7 +189,7 @@ def update_academic_metrics(data,year):
                 table_container_17ab = {}
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
-                no_data_to_display = no_data_page('Academic Accountability Metrics')
+                # no_data_to_display = no_data_page('Academic Accountability Metrics')
                 main_container = {'display': 'none'}
                 empty_container = {'display': 'block'}
 
@@ -274,7 +274,7 @@ def update_academic_metrics(data,year):
                     table_container_14g = set_table_layout(table_14g, table_14g, iread_data.columns)
 
                 else:
-                    table_container_14g = no_data_page('1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.')
+                    table_container_14g = no_data_table('1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.')
 
                 # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
                 growth_metrics_empty = pd.DataFrame(columns = simple_cols)
@@ -337,7 +337,7 @@ def update_academic_metrics(data,year):
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
 
-                no_data_to_display = no_data_page('Academic Accountability Metrics')
+                # no_data_to_display = no_data_page('Academic Accountability Metrics')
                 main_container = {'display': 'none'}
                 empty_container = {'display': 'block'}
 
@@ -364,7 +364,7 @@ def update_academic_metrics(data,year):
         table_container_ahs_1214 = {}
         display_ahs_metrics = {'display': 'none'}
 
-        no_data_to_display = no_data_page('Academic Accountability Metrics')
+        # no_data_to_display = no_data_page('Academic Accountability Metrics')
         main_container = {'display': 'none'}
         empty_container = {'display': 'block'}
 

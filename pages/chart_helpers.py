@@ -37,10 +37,18 @@ def loading_fig():
     }
     return fig
 
-def no_data_fig():
+def no_data_fig(label,height):
+
+    # TODO: FIGURE OUT HOW TO MAKE A TITLE!@
     fig = {
         'layout': {
-            'height': 200,
+            # 'title': label,
+            # # 'title_font-color': 'steelblue',
+            'title': {
+                'title_text': label,
+                'font_color':'steelblue',
+            },
+            'height': height,
             'xaxis': {
                 'visible': False,
                 'fixedrange': True
@@ -64,6 +72,13 @@ def no_data_fig():
             ]
         }
     }
+
+    # fig.update_layout(
+    #     title_font_family = "Roboto, sans-serif",
+    #     title_font_color = "steelblue",
+    #     title_font_size = 8
+    # )
+
     return fig
 
 # Use this function to create wrapped text using
@@ -75,21 +90,19 @@ import textwrap
 def customwrap(s,width=16):
     return "  <br>".join(textwrap.wrap(s,width=width))
 
-def make_stacked_bar(values,year):
+def make_stacked_bar(values,fig_title):
     data = values.copy()
     # https://plotly.com/python/discrete-color/
     colors = plotly.colors.qualitative.T10
-    
-    # print(data)
 
-    if data["Proficiency"].str.contains('Math').any():
-        fig_title = year + " Math Proficiency Breakdown"
-    else:
-        fig_title = year + " ELA Proficiency Breakdown"
+    # if data["Proficiency"].str.contains('Math').any():
+    #     fig_title = year + " Math Proficiency Breakdown"
+    # else:
+    #     fig_title = year + " ELA Proficiency Breakdown"
     
-    data["Proficiency"] = data["Proficiency"].replace(
-        {"Math ": "", "ELA ": ""}, regex=True
-    )
+    # data["Proficiency"] = data["Proficiency"].replace(
+    #     {"Math ": "", "ELA ": ""}, regex=True
+    # )
 
     # In order to get the total_tested value into hovertemplate
     # without displaying it on the chart, we need to pull the

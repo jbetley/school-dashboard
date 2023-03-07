@@ -16,7 +16,7 @@ import json
 import pandas as pd
 import re
 
-from .table_helpers import no_data_page, no_data_table
+from .table_helpers import no_data_page, no_data_table, create_academic_info_table
 from .chart_helpers import loading_fig, no_data_fig, make_stacked_bar
 from .calculations import round_percentages
 from .subnav import subnav_academic
@@ -25,91 +25,6 @@ from .subnav import subnav_academic
 pd.set_option("display.max_rows", 400)
 
 dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
-
-def create_academic_info_table(data):
-
-    table = [
-        dash_table.DataTable(
-            data.to_dict("records"),
-            columns = [
-                {
-                    "name": col,
-                    "id": col,
-                    "type": "numeric",
-                    "format": Format(
-                        scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
-                    ),
-                }
-                for (col) in data.columns
-            ],
-            style_data = {
-                "fontSize": "11px",
-                "fontFamily": "Roboto,sans-serif",
-                "border": "none"
-            },
-            style_data_conditional = [
-                {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
-                {
-                    "if": {"row_index": 0, "column_id": "Category"},
-                    "borderTop": ".5px solid #6783a9",
-                },
-            ],
-            style_header =  {
-                "height": "20px",
-                "backgroundColor": "#ffffff",
-                "border": "none",
-                "borderBottom": ".5px solid #6783a9",
-                "fontSize": "12px",
-                "fontFamily": "Roboto, sans-serif",
-                "color": "#6783a9",
-                "textAlign": "center",
-                "fontWeight": "bold",
-            },
-            style_cell = {
-                "whiteSpace": "normal",
-                "height": "auto",
-                "textAlign": "center",
-                "color": "#6783a9",
-                "minWidth": "25px",
-                "width": "25px",
-                "maxWidth": "25px",
-            },
-            style_header_conditional = [
-                {
-                    "if": {"column_id": "Category"},
-                    "textAlign": "left",
-                    "paddingLeft": "10px",
-                    "width": "35%",
-                    "fontSize": "11px",
-                    "fontFamily": "Roboto, sans-serif",
-                    "color": "#6783a9",
-                    "fontWeight": "bold",
-                }
-            ],
-
-            # conditional width (?)
-            # not_calculated = 40 k8 - data['Category'].startswith("The school’s teacher retention")
-            # not_calculated = 40 hs - data['Category'].startswith("The percentage of students entering grade 12"
-            # k8 = 35
-            # hs = 25
-
-            style_cell_conditional = [
-                {
-                    "if": {"column_id": "Category"},
-                    "textAlign": "left",
-                    "fontWeight": "500",
-                    "paddingLeft": "10px",
-                    "width": "40%", #conditional_width,
-                }
-            ],
-            merge_duplicate_headers=True,
-            style_as_list_view=True,
-            # add this to each table if we want to be able to export
-            # export_format='xlsx',
-            # export_headers='display'
-        )
-    ]
-    return table
 
 @callback(
     Output("k8-grade-table", "children"),
@@ -281,7 +196,6 @@ def update_about_page(data, school, year):
             years_by_grade = k8_academic_info[
                 k8_academic_info["Category"].str.contains("|".join(grades))
             ]
-
             if not years_by_grade.empty:
                 k8_grade_table = create_academic_info_table(years_by_grade)
             else:
@@ -290,7 +204,6 @@ def update_about_page(data, school, year):
             years_by_subgroup = k8_academic_info[
                 k8_academic_info["Category"].str.contains("|".join(subgroup))
             ]
-
             if not years_by_subgroup.empty:            
                 k8_subgroup_table = create_academic_info_table(years_by_subgroup)
             else:
@@ -299,7 +212,6 @@ def update_about_page(data, school, year):
             years_by_ethnicity = k8_academic_info[
                 k8_academic_info["Category"].str.contains("|".join(ethnicity))
             ]
-
             if not years_by_ethnicity.empty:            
                 k8_ethnicity_table = create_academic_info_table(years_by_ethnicity)
             else:
@@ -324,7 +236,6 @@ def update_about_page(data, school, year):
 
                 # replace 'metric' title with more generic name
                 final_attendance_data["Category"] = "Attendance Rate"
-
             else:
                 final_attendance_data = pd.DataFrame()
 
@@ -356,6 +267,7 @@ def update_about_page(data, school, year):
             )
             k8_not_calculated_data = k8_not_calculated_data.fillna("N/A")
 
+            # as this is generated by the script, it will always have data
             k8_not_calculated_table = create_academic_info_table(k8_not_calculated_data)
 
             # Proficiency Breakdown Charts
@@ -454,9 +366,13 @@ def update_about_page(data, school, year):
                     if total_tested in all_proficiency_data.columns:
 
                         if all_proficiency_data[colz].iloc[0].sum() == 0:
+                            # if the value is a float, the measured values were NaN, which
+                            # means they were converted '***', and thus insufficient data
                             if isinstance(all_proficiency_data[colz].iloc[0].sum(), np.floating):
                                 annotations.loc[len(annotations.index)] = [colz[0],all_proficiency_data[total_tested].values[0],'Insufficient']
 
+                            # if the value is an integer, the measured values were '0'. which
+                            # means missing data
                             elif isinstance(all_proficiency_data[colz].iloc[0].sum(), np.integer):
                                 # Only add to annotations if it is a non 'Grade' category.
                                 # this is to account for IDOE's shitty data practices- sometimes
@@ -534,6 +450,8 @@ def update_about_page(data, school, year):
             ]
 
             # NOTE: TODO: Currently, annotations are collected but not used
+            ela_title = '2022 ELA Proficiency Breakdown'
+            math_title = '2022 Math Proficiency Breakdown'
             # ELA by Grade
             grade_annotations = annotations.loc[annotations['Category'].str.contains("Grade")]
 
@@ -542,10 +460,11 @@ def update_about_page(data, school, year):
                 & all_proficiency_data["Proficiency"].str.contains("ELA")
             ]
 
+            # TODO: CLEAN THIS UP - BLANK FIG IS TOO BIG AND IS MISSING LABEL
             if not grade_ela_fig_data.empty:
-                k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data,year)
+                k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data,ela_title)
             else:
-                k8_grade_ela_fig = no_data_fig()
+                k8_grade_ela_fig = no_data_fig(ela_title, 50)
 
             # Math by Grade
             grade_math_fig_data = all_proficiency_data[
@@ -554,9 +473,9 @@ def update_about_page(data, school, year):
             ]
 
             if not grade_math_fig_data.empty:
-                k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,year)
+                k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,math_title)
             else:
-                k8_grade_math_fig = no_data_fig()
+                k8_grade_math_fig = no_data_fig(math_title, 50)
 
             # ELA by Ethnicity
             ethnicity_annotations = annotations.loc[annotations['Category'].str.contains("Ethnicity")]
@@ -566,9 +485,9 @@ def update_about_page(data, school, year):
             ]
 
             if not ethnicity_ela_fig_data.empty:
-                k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,year)
+                k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,ela_title)
             else:
-                k8_ethnicity_ela_fig = no_data_fig()
+                k8_ethnicity_ela_fig = no_data_fig(ela_title, 50)
 
             # Math by Ethnicity
             ethnicity_math_fig_data = all_proficiency_data[
@@ -577,9 +496,9 @@ def update_about_page(data, school, year):
             ]
 
             if not ethnicity_math_fig_data.empty:
-                k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,year)
+                k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,math_title)
             else:
-                k8_ethnicity_math_fig = no_data_fig()
+                k8_ethnicity_math_fig = no_data_fig(math_title, 50)
 
             # ELA by Subgroup
             subgroup_annotations = annotations.loc[annotations['Category'].str.contains("Subgroup")]
@@ -589,9 +508,9 @@ def update_about_page(data, school, year):
             ]
 
             if not subgroup_ela_fig_data.empty:
-                k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data,year)
+                k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data,ela_title)
             else:
-                k8_subgroup_ela_fig = no_data_fig()
+                k8_subgroup_ela_fig = no_data_fig(ela_title, 50)
 
             # Math by Subgroup
             subgroup_math_fig_data = all_proficiency_data[
@@ -600,10 +519,10 @@ def update_about_page(data, school, year):
             ]
 
             if not subgroup_math_fig_data.empty:
-                k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,year)
+                k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,math_title)
             else:
 
-                k8_subgroup_math_fig = no_data_fig()
+                k8_subgroup_math_fig = no_data_fig(math_title, 50)
 
     ## HS academic information
 ## TODO: ADD SAT GRADE 11/ACT SCORES
@@ -701,6 +620,7 @@ def update_about_page(data, school, year):
             ]
 
             print(eca_data)
+
             if not eca_data.empty:            
                 hs_eca_table = create_academic_info_table(eca_data)            
             else:
@@ -860,9 +780,7 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    html.Label(
-                                        "Proficiency by Subgroup", style=label_style
-                                    ),
+                                    html.Label("Proficiency by Subgroup", style=label_style),
                                     html.Div(id="k8-subgroup-table"),
                                 ],
                                 className="pretty_container six columns",

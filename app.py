@@ -1638,8 +1638,8 @@ def load_data(school, year):
             ]
 
             state_grad_average = (
-                filtered_academic_data_hs.groupby("Year", as_index=False, numeric_only=True)
-                .sum()
+                filtered_academic_data_hs.groupby("Year", as_index=False)
+                .sum(numeric_only=True)
                 .eval("State_Grad_Average = `Total|Graduates` / `Total|Cohort Count`")
             )
 
