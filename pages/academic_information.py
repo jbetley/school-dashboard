@@ -272,18 +272,19 @@ def update_about_page(data, school, year):
 
             # Proficiency Breakdown Charts
 
-            # Clean up dataframe (none of these work)
-            # k8_all_data.columns = k8_all_data.columns.str.replace(r'\s+', '', regex=True)
-            # newlines = {"\nProficient \n%":"", "\n":" ","\n":" "}
-            # k8_all_data.columns = [x.replace(newlines) for x in k8_all_data.columns.to_list()]
-            # k8_all_data.columns = [x.replace({"\nProficient \n%":"", "\n":" ","\n":" "}) for x in k8_all_data.columns.to_list()]
-
             # load all proficiency information
             # NOTE: This data is annoyingly inconsistent. In some cases missing data is blank, but
             # in other cases, it is represented by a '0.'
-            k8_all_data = pd.read_csv(r"data/ilearn2022all.csv", dtype=str)
+            k8_all_data_all_years = pd.read_csv(r"data/ilearnAll.csv", dtype=str)
+            
+            # k8_all_data_all_years = pd.read_csv(r"data/ilearn2022all.csv", dtype=str)
 
-            # Clean up dataframe
+            k8_all_data = k8_all_data_all_years.loc[
+            k8_all_data_all_years["Year"] == year
+            ]
+
+            # Clean up dataframe (this is belt and suspenders, may not be needed for
+            # all data)
             k8_all_data.columns = [
                 x.replace("\nProficient \n%", "") for x in k8_all_data.columns.to_list()
             ]
@@ -450,8 +451,8 @@ def update_about_page(data, school, year):
             ]
 
             # NOTE: TODO: Currently, annotations are collected but not used
-            ela_title = '2022 ELA Proficiency Breakdown'
-            math_title = '2022 Math Proficiency Breakdown'
+            ela_title = year + ' ELA Proficiency Breakdown'
+            math_title = year + ' Math Proficiency Breakdown'
             # ELA by Grade
             grade_annotations = annotations.loc[annotations['Category'].str.contains("Grade")]
 
@@ -464,7 +465,7 @@ def update_about_page(data, school, year):
             if not grade_ela_fig_data.empty:
                 k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data,ela_title)
             else:
-                k8_grade_ela_fig = no_data_fig(ela_title, 50)
+                k8_grade_ela_fig = no_data_fig(ela_title, 100)
 
             # Math by Grade
             grade_math_fig_data = all_proficiency_data[
@@ -475,7 +476,7 @@ def update_about_page(data, school, year):
             if not grade_math_fig_data.empty:
                 k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,math_title)
             else:
-                k8_grade_math_fig = no_data_fig(math_title, 50)
+                k8_grade_math_fig = no_data_fig(math_title, 100)
 
             # ELA by Ethnicity
             ethnicity_annotations = annotations.loc[annotations['Category'].str.contains("Ethnicity")]
@@ -487,7 +488,7 @@ def update_about_page(data, school, year):
             if not ethnicity_ela_fig_data.empty:
                 k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,ela_title)
             else:
-                k8_ethnicity_ela_fig = no_data_fig(ela_title, 50)
+                k8_ethnicity_ela_fig = no_data_fig(ela_title, 100)
 
             # Math by Ethnicity
             ethnicity_math_fig_data = all_proficiency_data[
@@ -498,7 +499,7 @@ def update_about_page(data, school, year):
             if not ethnicity_math_fig_data.empty:
                 k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,math_title)
             else:
-                k8_ethnicity_math_fig = no_data_fig(math_title, 50)
+                k8_ethnicity_math_fig = no_data_fig(math_title, 100)
 
             # ELA by Subgroup
             subgroup_annotations = annotations.loc[annotations['Category'].str.contains("Subgroup")]
@@ -510,7 +511,7 @@ def update_about_page(data, school, year):
             if not subgroup_ela_fig_data.empty:
                 k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data,ela_title)
             else:
-                k8_subgroup_ela_fig = no_data_fig(ela_title, 50)
+                k8_subgroup_ela_fig = no_data_fig(ela_title, 100)
 
             # Math by Subgroup
             subgroup_math_fig_data = all_proficiency_data[
@@ -522,7 +523,7 @@ def update_about_page(data, school, year):
                 k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,math_title)
             else:
 
-                k8_subgroup_math_fig = no_data_fig(math_title, 50)
+                k8_subgroup_math_fig = no_data_fig(math_title, 100)
 
     ## HS academic information
 ## TODO: ADD SAT GRADE 11/ACT SCORES
@@ -792,13 +793,29 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    dcc.Graph(id="k8-subgroup-ela-fig", figure=loading_fig(),config={'displayModeBar': False}),
+                                    dcc.Graph(id="k8-subgroup-ela-fig",
+                                            figure=loading_fig(),
+                                            config={
+                                                'displayModeBar': False,
+                                                'showAxisDragHandles': False,
+                                                'showAxisRangeEntryBoxes': False,
+                                                'scrollZoom': False
+                                            }
+                                        ),
                                 ],
                                 className="pretty_container four columns",
                             ),
                             html.Div(
                                 [
-                                    dcc.Graph(id="k8-subgroup-math-fig", figure=loading_fig(),config={'displayModeBar': False}),
+                                    dcc.Graph(id="k8-subgroup-math-fig",
+                                        figure=loading_fig(),
+                                        config={
+                                            'displayModeBar': False,
+                                            'showAxisDragHandles': False,
+                                            'showAxisRangeEntryBoxes': False,
+                                            'scrollZoom': False
+                                        }
+                                    ),
                                 ],
                                 className="pretty_container four columns",
                             ),

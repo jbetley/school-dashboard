@@ -2,6 +2,7 @@ import plotly.express as px
 import plotly.colors
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
@@ -37,47 +38,50 @@ def loading_fig():
     }
     return fig
 
+# Create an empty figure with the provided label and height.
 def no_data_fig(label,height):
 
-    # TODO: FIGURE OUT HOW TO MAKE A TITLE!@
-    fig = {
-        'layout': {
-            # 'title': label,
-            # # 'title_font-color': 'steelblue',
-            'title': {
-                'title_text': label,
-                'font_color':'steelblue',
-            },
-            'height': height,
-            'xaxis': {
-                'visible': False,
-                'fixedrange': True
-            },
-            'yaxis': {
-                'visible': False,
-                'fixedrange': True
-            },
-            'annotations': [
-                {
-                    'text': 'No Data to Display . . .',
-                    'xref': 'paper',
-                    'yref': 'paper',
-                    'showarrow': False,
-                    'font': {
-                        'size': 16,
-                        'color': '#6783a9',
-                        'family': 'Roboto, sans-serif'
-                    }
+    fig = go.Figure()
+    
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=20, b=0),
+        height = height,
+        title={
+            'text': label,
+            'y':0.975,
+            'x':0.5,
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font_family': 'Roboto, sans-serif',
+            'font_color': 'steelblue',
+            'font_size': 10
+        },
+        xaxis =  {
+            "visible": False,
+            'fixedrange': True
+        },
+        yaxis =  {
+            "visible": False,
+            'fixedrange': True
+        },
+        annotations = [
+            {
+                'text': 'No Data to Display . . .',
+                'y': 0.5,
+                'xref': 'paper',
+                'yref': 'paper',
+                'showarrow': False,
+                'font': {
+                    'size': 16,
+                    'color': '#6783a9',
+                    'family': 'Roboto, sans-serif'
                 }
-            ]
-        }
-    }
-
-    # fig.update_layout(
-    #     title_font_family = "Roboto, sans-serif",
-    #     title_font_color = "steelblue",
-    #     title_font_size = 8
-    # )
+            }
+        ],
+        dragmode = False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
 
     return fig
 
@@ -95,21 +99,14 @@ def make_stacked_bar(values,fig_title):
     # https://plotly.com/python/discrete-color/
     colors = plotly.colors.qualitative.T10
 
-    # if data["Proficiency"].str.contains('Math').any():
-    #     fig_title = year + " Math Proficiency Breakdown"
-    # else:
-    #     fig_title = year + " ELA Proficiency Breakdown"
-    
-    # data["Proficiency"] = data["Proficiency"].replace(
-    #     {"Math ": "", "ELA ": ""}, regex=True
-    # )
-
     # In order to get the total_tested value into hovertemplate
     # without displaying it on the chart, we need to pull the
     # Total Tested values out of the dataframe and into a new
     # column
+
     # Copy all of the Total Tested Values
-    total_tested = data.loc[data['Proficiency'] == 'Total Tested']
+    # total_tested = data.loc[data['Proficiency'] == 'Total Tested']
+    total_tested = data[data['Proficiency'].str.contains('Total Tested')]
 
     # Merge the total tested values with the existing dataframe
     # This adds 'percentage_x' and 'percentage_y' columns.
@@ -120,8 +117,9 @@ def make_stacked_bar(values,fig_title):
     data.columns = ['Category','Percentage','Proficiency','Total Tested']
 
     # drop the Total Tested Rows
-    data = data[(data['Proficiency'] != 'Total Tested')]
-
+    # data = data[(data['Proficiency'] != 'Total Tested')]
+    data = data[data['Proficiency'].str.contains('Total Tested') == False]
+    
     fig = px.bar(
         data,
         x= data['Percentage'],
@@ -172,7 +170,7 @@ def make_stacked_bar(values,fig_title):
     # the bar due to the 'textposition' variable
     fig.update_layout(
         margin=dict(l=10, r=10, t=20, b=0),
-        font_family="Open Sans, sans-serif",
+        font_family="Roboto, sans-serif",
         font_color="steelblue",
         font_size=8,
         # legend=dict(
