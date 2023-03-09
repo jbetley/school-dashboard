@@ -696,6 +696,20 @@ fig_label_style = {
     "paddingTop": "5px",
 }
 
+key_label_style = {
+    'height': 'auto',
+    'lineHeight': '1.5em',
+    'backgroundColor': '#6783a9',
+    'fontSize': '12px',
+    'fontFamily': 'Roboto, sans-serif',
+    'color': '#ffffff',
+    'textAlign': 'center',
+    'fontWeight': 'bold',
+    'paddingBottom': '5px',
+    'paddingTop': '5px'
+}
+
+# NOTE: Adds md_table as a 'key'. Doesn't look great. Other options? go.table?
 
 def layout():
     return html.Div(
@@ -711,224 +725,263 @@ def layout():
                 ],
                 className="row",
             ),
-    html.Div(
-        [
             html.Div(
                 [
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    html.Label(
-                                        "Proficiency by Grade", style=label_style
+                                    html.Label('Notes:', style=key_label_style),
+                                    html.Table(className='md_table',
+                                        children = 
+                                            [
+                                            html.Tr( [html.Td('2018'), html.Td('The last year of ISTEP.') ]),
+                                            html.Tr( [html.Td('2019'), html.Td('First year of ILEARN. Different test, different modality. Not possible to determine \
+                                                                               growth from 2018 to 2019.') ]),
+                                            html.Tr( [html.Td('2020'), html.Td('No state assessment given.') ]),
+                                            html.Tr( [html.Td('2021-'), html.Td('ILEARN is the state assessment.') ]),
+                                            ], 
+                                            style={
+                                                'color': 'steelblue',
+                                                'fontSize': '.75em',
+                                            },
                                     ),
-                                    html.Div(id="k8-grade-table"),
+                                    html.P(""),
+                                    # html.Center(
+                                        html.P("Cannot compare 2021 ILEARN to 2019 ILEARN:  Skip a grade in academic standards, \
+                                                   testing year, and grade level.  In addition, the sample set is for ALL students in \
+                                                   2021 and 162 day in 2019.  Not one in the same.",
+                                            style={
+                                                    'color': '#6783a9',
+                                                    'fontSize': 12,
+                                                    'marginLeft': '10px',
+                                                    'marginRight': '10px',
+                                                    'marginTop': '10px',
+                                                }
+                                            ),
+                                    # ),
                                 ],
-                                className="pretty_container six columns",
+                                className = "pretty_container eight columns"
                             ),
                         ],
-                        className="bare_container twelve columns",
-                    ),
+                        className = "bare_container twelve columns"
+                    ),        
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    dcc.Graph(id="k8-grade-ela-fig", figure=loading_fig(),config={'displayModeBar': False}),
-                                ],
-                                className="pretty_container four columns",
-                            ),
-                            html.Div(
-                                [
-                                    dcc.Graph(id="k8-grade-math-fig", figure=loading_fig(),config={'displayModeBar': False}),
-                                ],
-                                className="pretty_container four columns",
-                            ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Label(
-                                        "Proficiency by Ethnicity", style=label_style
-                                    ),
-                                    html.Div(id="k8-ethnicity-table"),
-                                ],
-                                className="pretty_container six columns",
-                            ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    dcc.Graph(id="k8-ethnicity-ela-fig", figure=loading_fig(),config={'displayModeBar': False}),
-                                ],
-                                className="pretty_container four columns",
-                            ),
-                            html.Div(
-                                [
-                                    dcc.Graph(id="k8-ethnicity-math-fig", figure=loading_fig(),config={'displayModeBar': False}),
-                                ],
-                                className="pretty_container four columns",
-                            ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Label("Proficiency by Subgroup", style=label_style),
-                                    html.Div(id="k8-subgroup-table"),
-                                ],
-                                className="pretty_container six columns",
-                            ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    dcc.Graph(id="k8-subgroup-ela-fig",
-                                            figure=loading_fig(),
-                                            config={
-                                                'displayModeBar': False,
-                                                'showAxisDragHandles': False,
-                                                'showAxisRangeEntryBoxes': False,
-                                                'scrollZoom': False
-                                            }
-                                        ),
-                                ],
-                                className="pretty_container four columns",
-                            ),
-                            html.Div(
-                                [
-                                    dcc.Graph(id="k8-subgroup-math-fig",
-                                        figure=loading_fig(),
-                                        config={
-                                            'displayModeBar': False,
-                                            'showAxisDragHandles': False,
-                                            'showAxisRangeEntryBoxes': False,
-                                            'scrollZoom': False
-                                        }
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Proficiency by Grade", style=label_style
+                                            ),
+                                            html.Div(id="k8-grade-table"),
+                                        ],
+                                        className="pretty_container six columns",
                                     ),
                                 ],
-                                className="pretty_container four columns",
+                                className="bare_container twelve columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            dcc.Graph(id="k8-grade-ela-fig", figure=loading_fig(),config={'displayModeBar': False}),
+                                        ],
+                                        className="pretty_container four columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Graph(id="k8-grade-math-fig", figure=loading_fig(),config={'displayModeBar': False}),
+                                        ],
+                                        className="pretty_container four columns",
+                                    ),
+                                ],
+                                className="bare_container twelve columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Proficiency by Ethnicity", style=label_style
+                                            ),
+                                            html.Div(id="k8-ethnicity-table"),
+                                        ],
+                                        className="pretty_container six columns",
+                                    ),
+                                ],
+                                className="bare_container twelve columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            dcc.Graph(id="k8-ethnicity-ela-fig", figure=loading_fig(),config={'displayModeBar': False}),
+                                        ],
+                                        className="pretty_container four columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Graph(id="k8-ethnicity-math-fig", figure=loading_fig(),config={'displayModeBar': False}),
+                                        ],
+                                        className="pretty_container four columns",
+                                    ),
+                                ],
+                                className="bare_container twelve columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Label("Proficiency by Subgroup", style=label_style),
+                                            html.Div(id="k8-subgroup-table"),
+                                        ],
+                                        className="pretty_container six columns",
+                                    ),
+                                ],
+                                className="bare_container twelve columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            dcc.Graph(id="k8-subgroup-ela-fig",
+                                                    figure=loading_fig(),
+                                                    config={
+                                                        'displayModeBar': False,
+                                                        'showAxisDragHandles': False,
+                                                        'showAxisRangeEntryBoxes': False,
+                                                        'scrollZoom': False
+                                                    }
+                                                ),
+                                        ],
+                                        className="pretty_container four columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Graph(id="k8-subgroup-math-fig",
+                                                figure=loading_fig(),
+                                                config={
+                                                    'displayModeBar': False,
+                                                    'showAxisDragHandles': False,
+                                                    'showAxisRangeEntryBoxes': False,
+                                                    'scrollZoom': False
+                                                }
+                                            ),
+                                        ],
+                                        className="pretty_container four columns",
+                                    ),
+                                ],
+                                className="bare_container twelve columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Other Academic Indicators", style=label_style
+                                            ),
+                                            html.Div(id="k8-other-table"),
+                                        ],
+                                        className="pretty_container six columns",
+                                    ),
+                                ],
+                                className="bare_container twelve columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Not Currently Calculated", style=label_style
+                                            ),
+                                            html.Div(id="k8-not-calculated-table"),
+                                        ],
+                                        className="pretty_container six columns",
+                                    ),
+                                ],
+                                className="bare_container twelve columns",
                             ),
                         ],
-                        className="bare_container twelve columns",
+                        id="k8-table-container",
                     ),
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    html.Label(
-                                        "Other Academic Indicators", style=label_style
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Graduation Rate Overview", style=label_style
+                                            ),
+                                            html.Div(id="hs-grad-overview-table"),
+                                        ],
+                                        className="pretty_container six columns",
                                     ),
-                                    html.Div(id="k8-other-table"),
                                 ],
-                                className="pretty_container six columns",
+                                className="bare_container twelve columns",
                             ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                    html.Div(
-                        [
                             html.Div(
                                 [
-                                    html.Label(
-                                        "Not Currently Calculated", style=label_style
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Graduation Rate by Ethnicity",
+                                                style=label_style,
+                                            ),
+                                            html.Div(id="hs-grad-ethnicity-table"),
+                                        ],
+                                        className="pretty_container six columns",
                                     ),
-                                    html.Div(id="k8-not-calculated-table"),
                                 ],
-                                className="pretty_container six columns",
+                                className="bare_container twelve columns",
                             ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                ],
-                id="k8-table-container",
-            ),
-            html.Div(
-                [
-                    html.Div(
-                        [
                             html.Div(
                                 [
-                                    html.Label(
-                                        "Graduation Rate Overview", style=label_style
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Graduation Rate by Subgroup", style=label_style
+                                            ),
+                                            html.Div(id="hs-grad-subgroup-table"),
+                                        ],
+                                        className="pretty_container six columns",
                                     ),
-                                    html.Div(id="hs-grad-overview-table"),
                                 ],
-                                className="pretty_container six columns",
+                                className="bare_container twelve columns",
                             ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                    html.Div(
-                        [
                             html.Div(
                                 [
-                                    html.Label(
-                                        "Graduation Rate by Ethnicity",
-                                        style=label_style,
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "End of Course Assessments", style=label_style
+                                            ),
+                                            html.Div(id="hs-eca-table"),
+                                        ],
+                                        className="pretty_container six columns",
                                     ),
-                                    html.Div(id="hs-grad-ethnicity-table"),
                                 ],
-                                className="pretty_container six columns",
+                                className="bare_container twelve columns",
                             ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                    html.Div(
-                        [
                             html.Div(
                                 [
-                                    html.Label(
-                                        "Graduation Rate by Subgroup", style=label_style
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Not Currently Calculated", style=label_style
+                                            ),
+                                            html.Div(id="hs-not-calculated-table"),
+                                        ],
+                                        className="pretty_container six columns",
                                     ),
-                                    html.Div(id="hs-grad-subgroup-table"),
                                 ],
-                                className="pretty_container six columns",
+                                className="bare_container twelve columns",
                             ),
                         ],
-                        className="bare_container twelve columns",
+                        id="hs-table-container",
                     ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Label(
-                                        "End of Course Assessments", style=label_style
-                                    ),
-                                    html.Div(id="hs-eca-table"),
-                                ],
-                                className="pretty_container six columns",
-                            ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Label(
-                                        "Not Currently Calculated", style=label_style
-                                    ),
-                                    html.Div(id="hs-not-calculated-table"),
-                                ],
-                                className="pretty_container six columns",
-                            ),
-                        ],
-                        className="bare_container twelve columns",
-                    ),
-                ],
-                id="hs-table-container",
-            ),
                 ],
                 id = 'academic-information-main-container',
             ),

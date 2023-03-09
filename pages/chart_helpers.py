@@ -7,8 +7,26 @@ from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 
-color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
+# Steelblue
+#color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
+# Easter at Grandmas
+#color=["#fbf8cc","#fde4cf","#ffcfd2","#f1c0e8","#cfbaf0","#a3c4f3","#90dbf4","#8eecf5","#98f5e1","#b9fbc0"]
+
+# Squid Game
+#color = ['#e27d60','#85cdca','#e8a87c','#c38d9e','#41b3a3','#e27d60','#85cdca','#e8a87c','#c38d9e','#41b3a3']
+
+# Earthy Kitt
+color = ['#8d8741','#659dbd','#daad86','#bc986a','#fbeec1','#8d8741','#659dbd','#daad86','#bc986a','#fbeec1']
+
+# Russian Green
+#color = ['#8ee4af','#edf5e1','#5cdb95','#907163','#379683','#8ee4af','#edf5e1','#5cdb95','#907163','#379683',]
+
+# Bridgett's Favorite
+#color = ['#5d5c61','#379683','#7395ae','#557a95','#b1a296','#5d5c61','#379683','#7395ae','#557a95','#b1a296',]
+
+# Clown Car
+#color = ['#d79922','#efe2ba','#f13c20','#4056a1','#c5cbe3','#d79922','#efe2ba','#f13c20','#4056a1','#c5cbe3']
 ## Blank (Loading) Fig ##
 # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
 
@@ -97,7 +115,8 @@ def customwrap(s,width=16):
 def make_stacked_bar(values,fig_title):
     data = values.copy()
     # https://plotly.com/python/discrete-color/
-    colors = plotly.colors.qualitative.T10
+
+    # colors = plotly.colors.qualitative.T10
 
     # In order to get the total_tested value into hovertemplate
     # without displaying it on the chart, we need to pull the
@@ -130,7 +149,7 @@ def make_stacked_bar(values,fig_title):
         # custom_data = np.stack((data['Proficiency'], data['Total Tested']), axis=-1),
         custom_data = [data['Proficiency'], data['Total Tested']],
         orientation="h",
-        color_discrete_sequence=colors,
+        color_discrete_sequence=color,
         height=200,
         title = fig_title
     )
