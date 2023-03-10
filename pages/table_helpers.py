@@ -1,6 +1,6 @@
 # import plotly.express as px
 # import pandas as pd
-# import numpy as np
+import numpy as np
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
@@ -117,6 +117,38 @@ def set_table_layout(table1, table2, cols):
 
     return table_layout
 
+# https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
+# https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
+def get_svg_circle(val):
+    ''' Takes a dataframe and replaces text with svg circles coded
+        the correct colors based on rating text.
+    '''
+    rating_columns = val.loc[:, val.columns.str.contains('Rating')].columns
+
+    for col in rating_columns:
+        
+        conditions = [
+        val[col].eq('DNMS'),
+        val[col].eq('AS'),
+        val[col].eq('MS'),
+        val[col].eq('ES'),
+        val[col].eq('N/A'),
+        ]
+
+    # TODO: FIGURE OUT HOW TO KEEP CIRCLE AT FIXED SIZE
+    
+        did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="red" /></svg>'
+        approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="yellow" /></svg>'
+        meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="green" /></svg>'
+        exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="purple" /></svg>'
+        no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="grey" /></svg>'
+
+        rating = [did_not_meet,approaching,meets,exceeds,no_rating]
+
+        val[col] = np.select(conditions, rating, default=no_rating)
+
+    return val
+
 def create_metric_table(label, content):
 # Generate tables given data and label - could
 # possibly be less complicated than it is, or
@@ -173,6 +205,20 @@ def create_metric_table(label, content):
 
     else:
 
+        # NOTE: Testing a version of the table comparing school and corporation rates
+        # that does not include the corp rate, only the difference. This is in order
+        # to decrease the number of columns. Eventually may want to remove the 
+        # calculation from calculateMetrics(), but am leaving it in for now in case
+        # we ultimately choose to display it
+
+        # NOTE: Order of these operations matters
+        # remove all Corp Rate columns
+        data = data.loc[:, ~data.columns.str.contains('Corp')]
+
+        # rename '+/-' columns
+        data.columns = data.columns.str.replace('\+/-', 'Diff from Corp')
+ 
+
         # Formatting on the fly - determines the col_width class and width
         # of the category column based on the size (# of cols) of the dataframe
         if table_size <= 3:
@@ -199,7 +245,7 @@ def create_metric_table(label, content):
         
         year_headers = [y for y in data.columns.tolist() if 'School' in y]
         rating_headers = [y for y in data.columns.tolist() if 'Rating' in y]
-        difference_headers = [y for y in data.columns.tolist() if '+/-' in y]
+        difference_headers = [y for y in data.columns.tolist() if 'Diff from Corp' in y]
         corporation_headers = [y for y in data.columns.tolist() if 'Rate' in y or 'Avg' in y] # Gets cols with 'Rate' and 'Avg' in header
 
         # splits column width evenly for all columns other than 'Category'
@@ -312,7 +358,7 @@ def create_metric_table(label, content):
         # build multi-level headers
         # get list of +/- columns (used by datatable filter_query' to ID columns for color formatting)
 
-        format_cols = [k for k in headers if '+/-' in k or 'Rating' in k]
+        format_cols = [k for k in headers if 'Diff from Corp' in k or 'Rating' in k]
 
         name_cols = [['Category','']]
     
@@ -519,14 +565,25 @@ def create_metric_table(label, content):
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict('records'),
+
+                            # Use this version for colored shapes in lieu of Rating text,
+                            # otherwise use second version
                             columns=[
-                                    {
-                                        'name': col,
-                                        'id': headers[idx],
-                                        'type':'numeric',
-                                        'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
-                                    } for (idx, col) in enumerate(name_cols)
+                                {'name': col, 'id': headers[idx], 'presentation': 'markdown'}
+                                if 'Rating' in col                                
+                                else {'name': col, 'id': headers[idx], 'type':'numeric',
+                                'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
+                                }
+                                for (idx, col) in enumerate(name_cols)
                                 ],
+                            # columns=[
+                            #         {
+                            #             'name': col,
+                            #             'id': headers[idx],
+                            #             'type':'numeric',
+                            #             'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
+                            #         } for (idx, col) in enumerate(name_cols)
+                            #     ],
                             style_data = table_style,
                             style_data_conditional = table_data_conditional,
                             style_header = table_header,
@@ -534,56 +591,13 @@ def create_metric_table(label, content):
                             style_cell = table_cell,
                             style_cell_conditional = table_cell_conditional,
                             merge_duplicate_headers=True,
+                            markdown_options={"html": True},    
                         )
                     )
                 ],
                 className = class_name
             )
         ]
-
-    # else:
-    #     # headers
-    #     clean_headers = []
-    #     for i, x in enumerate (headers):
-    #         if 'Rating' in x:
-    #             clean_headers.append('Rating')
-    #         else:
-    #             clean_headers.append(x)
-
-    #     table_header = {
-    #         'backgroundColor': '#ffffff',
-    #         'fontSize': '11px',
-    #         'fontFamily': 'Roboto, sans-serif',
-    #         'color': '#6783a9',
-    #         'textAlign': 'center',
-    #         'fontWeight': 'bold'            
-    #     }
-
-    #     table = [
-    #         html.Div(
-    #             [
-    #                 html.Label(label, style=label_style),
-    #                 html.Div(
-    #                     dash_table.DataTable(
-    #                         data.to_dict('records'),
-    #                         columns=[{
-    #                             'name': col, 
-    #                             'id': headers[idx],
-    #                             'type':'numeric',
-    #                             'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)                                    
-    #                             } for (idx, col) in enumerate(clean_headers)],
-    #                         style_data = table_style,
-    #                         style_data_conditional = table_data_conditional,
-    #                         style_header = table_header,
-    #                         style_cell = table_cell,
-    #                         style_cell_conditional = table_cell_conditional,
-    #                         style_as_list_view=True
-    #                     )
-    #                 )
-    #             ],
-    #             className = class_name
-    #         )
-    #     ]
 
     return table
 

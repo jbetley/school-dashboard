@@ -11,7 +11,8 @@ from dash.exceptions import PreventUpdate
 import json
 import pandas as pd
 
-from .table_helpers import no_data_page, no_data_table, create_metric_table, set_table_layout
+from .table_helpers import no_data_page, no_data_table, create_metric_table, \
+    set_table_layout, get_svg_circle
 from .subnav import subnav_academic
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
@@ -34,8 +35,6 @@ dash.register_page(__name__,  path = '/academic_metrics', order=5)
     Output('table-container-ahs-113', 'children'),
     Output('table-container-ahs-1214', 'children'),
     Output('display-ahs-metrics', 'style'),
-    # Output('table-container-empty', 'children'),
-    # Output('display-empty-table', 'style'),
     Output('academic-metrics-main-container', 'style'),
     Output('academic-metrics-empty-container', 'style'),
     Output('academic-metrics-no-data', 'children'),  
@@ -86,6 +85,7 @@ def update_academic_metrics(data,year):
             metric_ahs_113_data.drop('Metric', inplace=True, axis=1)
 
             metric_ahs_113_label = 'Adult High School Accountability Metrics 1.1 & 1.3'
+            metric_ahs_113_data = get_svg_circle(metric_ahs_113_data)            
             table_ahs_113 = create_metric_table(metric_ahs_113_label, metric_ahs_113_data)
             table_container_ahs_113 = set_table_layout(table_ahs_113, table_ahs_113, metric_ahs_113_data.columns)
 
@@ -121,8 +121,7 @@ def update_academic_metrics(data,year):
             # school is AHS, but has no data
             table_container_ahs_113 = {}
             table_container_ahs_1214 = {}
-            display_ahs_metrics = {'display': 'none'}            
-            # no_data_to_display = no_data_page('Adult High School Accountability Metrics')
+            display_ahs_metrics = {'display': 'none'}
             main_container = {'display': 'none'}
             empty_container = {'display': 'block'}
 
@@ -157,6 +156,7 @@ def update_academic_metrics(data,year):
                 combined_grad_metrics_data = pd.DataFrame.from_dict(json_data)
 
                 metric_17ab_label = 'High School Accountability Metrics 1.7.a & 1.7.b'
+                combined_grad_metrics_data = get_svg_circle(combined_grad_metrics_data)                  
                 table_17ab = create_metric_table(metric_17ab_label, combined_grad_metrics_data)
                 table_container_17ab = set_table_layout(table_17ab, table_17ab, combined_grad_metrics_data.columns)
 
@@ -220,20 +220,28 @@ def update_academic_metrics(data,year):
 
                 metric_14a_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades))) & (combined_years['Category'].str.contains('ELA'))]
                 metric_14a_label = ['1.4a Grade level proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' compared with the previous school year.']
+
+                metric_14a_data = get_svg_circle(metric_14a_data)
                 table_14a = create_metric_table(metric_14a_label, metric_14a_data)
 
                 metric_14b_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades))) & (combined_years['Category'].str.contains('Math'))]
                 metric_14b_label = ['1.4b Grade level proficiency on the state assessment in',html.Br(), html.U('Math'), ' compared with the previous school year.']
+                
+                metric_14b_data = get_svg_circle(metric_14b_data)
                 table_14b = create_metric_table(metric_14b_label, metric_14b_data)
 
                 table_container_14ab = set_table_layout(table_14a,table_14b,combined_years.columns)
 
                 metric_14c_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(grades))) & (combined_delta['Category'].str.contains('ELA'))]
                 metric_14c_label = ['1.4c Grade level proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' compared with traditional school corporation.']
+                
+                metric_14c_data = get_svg_circle(metric_14c_data)
                 table_14c = create_metric_table(metric_14c_label, metric_14c_data)
 
                 metric_14d_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(grades))) & (combined_delta['Category'].str.contains('Math'))]            
                 metric_14d_label = ['1.4.d Grade level proficiency on the state assessment in',html.Br(), html.U('Math'), ' compared with traditional school corporation.']
+                
+                metric_14d_data = get_svg_circle(metric_14d_data)
                 table_14d = create_metric_table(metric_14d_label, metric_14d_data)
 
                 table_container_14cd = set_table_layout(table_14c,table_14d,combined_delta.columns)
@@ -270,6 +278,7 @@ def update_academic_metrics(data,year):
                     iread_data = pd.DataFrame.from_dict(json_data)
 
                     metric_14g_label = '1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment.'
+                    iread_data = get_svg_circle(iread_data)   
                     table_14g = create_metric_table(metric_14g_label, iread_data)
                     table_container_14g = set_table_layout(table_14g, table_14g, iread_data.columns)
 
@@ -301,25 +310,30 @@ def update_academic_metrics(data,year):
                         metric_15abcd_data[h].fillna(value='No Data', inplace=True)
 
                 metric_15abcd_label = 'Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d'
+                metric_15abcd_data = get_svg_circle(metric_15abcd_data)
                 table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
                 table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
 
                 metric_16a_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(subgroup))) & (combined_delta['Category'].str.contains('ELA'))]
                 metric_16a_label = ['1.6a Proficiency on the state assessment in ', html.U('English Language Arts'), html.Br(),'for each subgroup compared with traditional school corporation.']
+                metric_16a_data = get_svg_circle(metric_16a_data)
                 table_16a = create_metric_table(metric_16a_label,metric_16a_data)
 
                 metric_16b_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(subgroup))) & (combined_delta['Category'].str.contains('Math'))]            
                 metric_16b_label = ['1.6b Proficiency on the state assessment in ', html.U('Math'), ' for each', html.Br(), 'subgroup compared with traditional school corporation.']
+                metric_16b_data = get_svg_circle(metric_16b_data)
                 table_16b = create_metric_table(metric_16b_label, metric_16b_data)
 
                 table_container_16ab = set_table_layout(table_16a,table_16b,combined_delta.columns)
 
                 metric_16c_data = combined_years[(combined_years['Category'].str.contains('|'.join(subgroup))) & (combined_years['Category'].str.contains('ELA'))]
                 metric_16c_label = ['1.6c The change in proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' for each subgroup compared with the previous school year.']
+                metric_16c_data = get_svg_circle(metric_16c_data)
                 table_16c = create_metric_table(metric_16c_label,metric_16c_data)
 
                 metric_16d_data = combined_years[(combined_years['Category'].str.contains('|'.join(subgroup))) & (combined_years['Category'].str.contains('Math'))]
                 metric_16d_label = ['1.6d The change in proficiency on the state assessment in',html.Br(), html.U('Math'), ' for each subgroup compared with the previous school year.']
+                metric_16d_data = get_svg_circle(metric_16d_data)
                 table_16d = create_metric_table(metric_16d_label,metric_16d_data)
 
                 table_container_16cd = set_table_layout(table_16c,table_16d,combined_years.columns)
@@ -336,8 +350,6 @@ def update_academic_metrics(data,year):
                 table_container_16ab = {}
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
-
-                # no_data_to_display = no_data_page('Academic Accountability Metrics')
                 main_container = {'display': 'none'}
                 empty_container = {'display': 'block'}
 
@@ -364,7 +376,6 @@ def update_academic_metrics(data,year):
         table_container_ahs_1214 = {}
         display_ahs_metrics = {'display': 'none'}
 
-        # no_data_to_display = no_data_page('Academic Accountability Metrics')
         main_container = {'display': 'none'}
         empty_container = {'display': 'block'}
 
@@ -387,6 +398,7 @@ def update_academic_metrics(data,year):
             else:
                 metric_11ab_data[h].fillna(value='No Data', inplace=True)
 
+        metric_11ab_data = get_svg_circle(metric_11ab_data)
         table_11ab = create_metric_table(metric_11ab_label, metric_11ab_data)
         table_container_11ab = set_table_layout(table_11ab, table_11ab, metric_11ab_data.columns)
 
@@ -449,6 +461,12 @@ key_label_style = {
     'paddingTop': '5px'
 }
 
+did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="red" /></svg>'
+approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="yellow" /></svg>'
+meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="green" /></svg>'
+exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="purple" /></svg>'
+no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="grey" /></svg>'
+
 # NOTE: Adds md_table as a 'key'. Doesn't look great. Other options? go.table?
 def layout():
     return html.Div(
@@ -470,13 +488,13 @@ def layout():
                             [
                                 html.Div(
                                     [
+        # TODO: BUILD KEY WITH SVG ELEMENTS
                                         html.Label('Key', style=key_label_style),
                                         html.Table(className='md_table',
                                             children = 
                                                 [
-                                                html.Tr( [html.Td('Corp Rate'), html.Td('The corporation rate for the school corporation in which the school\
-                                                    is located (including only grades for which the school has a tested average).') ]),
-                                                html.Tr( [html.Td('+/-'), html.Td('The difference between the school\'s proficiency and the corporation rate.') ]),
+                                                html.Tr( [html.Td('Ratings'), html.Td('Did Not Meet Standard:', did_not_meet) ]),
+                                                html.Tr( [html.Td('Diff from Corp'), html.Td('The difference between the school\'s proficiency and the corporation rate.') ]),
                                                 html.Tr( [html.Td('Blank Cell'), html.Td('No data available.') ]),
                                                 html.Tr( [html.Td('***'), html.Td(
                                                     [html.Span('Insufficient n-size (a '),

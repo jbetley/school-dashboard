@@ -22,7 +22,7 @@ from .calculations import round_percentages
 from .subnav import subnav_academic
 
 ### Testing ###
-pd.set_option("display.max_rows", 400)
+# pd.set_option("display.max_rows", 400)
 
 dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
 
