@@ -192,62 +192,56 @@ def update_financial_analysis_page(data, year, radio_value):
         most_recent_finance_year = financial_data.columns[1]
         excluded_finance_years = int(most_recent_finance_year) - int(year)
 
-        # Current ADM data is in the school_index file for schools and the respective
-        # F- (finance) file for networks. If showing school data, need to replace the
-        # ADM data in the F- file with the ADM data in the school_index file
-
-        # TODO: move current ADM data to financial table
-        
         if radio_value == 'network-analysis':
             # drop columns (years) from the dataframe that are more recent than the selected year
             if excluded_finance_years > 0:
                 financial_data.drop(financial_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
 
         else:
-            # Replace ADM data
-            adm_data = school_index.filter(regex = r'September ADM|February ADM',axis=1).copy()
+            # # Replace ADM data
+            # adm_data = school_index.filter(regex = r'September ADM|February ADM',axis=1).copy()
 
-            # force numeric
-            for col in adm_data.columns:
-                adm_data[col]=pd.to_numeric(adm_data[col], errors='coerce')
+            # # force numeric
+            # for col in adm_data.columns:
+            #     adm_data[col]=pd.to_numeric(adm_data[col], errors='coerce')
 
-            # transpose ADM dataframe and group by year (by splitting 'Name' Column,
-            # e.g., '2022 February ADM', etc. after 1st space) and sum() result
-            # https://stackoverflow.com/questions/35746847/sum-values-of-columns-starting-with-the-same-string-in-pandas-dataframe
-            adm_data = adm_data.T.groupby([s.split(' ',1)[0] for s in adm_data.T.index.values]).sum().T
+            # # transpose ADM dataframe and group by year (by splitting 'Name' Column,
+            # # e.g., '2022 February ADM', etc. after 1st space) and sum() result
+            # # https://stackoverflow.com/questions/35746847/sum-values-of-columns-starting-with-the-same-string-in-pandas-dataframe
+            # adm_data = adm_data.T.groupby([s.split(' ',1)[0] for s in adm_data.T.index.values]).sum().T
 
-            # average resulting sum (September and February Count)
-            adm_data = adm_data / 2
+            # # average resulting sum (September and February Count)
+            # adm_data = adm_data / 2
 
-            # For Financial Analysis purposes, we drop any column (year) in financial_data for which
-            # there is no ADM value (e.g., Year 0)
-            adm_data = adm_data.loc[:, (adm_data != 0).any(axis=0)].reset_index(drop=True)            
+            # # For Financial Analysis purposes, we drop any column (year) in financial_data for which
+            # # there is no ADM value (e.g., Year 0)
+            # adm_data = adm_data.loc[:, (adm_data != 0).any(axis=0)].reset_index(drop=True)            
 
-            # reverse order and add Category
-            adm_data = adm_data[adm_data.columns[::-1]]
-            adm_data.insert(loc=0, column='Category', value = 'ADM Average')
+            # # reverse order and add Category
+            # adm_data = adm_data[adm_data.columns[::-1]]
+            # adm_data.insert(loc=0, column='Category', value = 'ADM Average')
 
             # drop columns (years) from both dataframes that are more recent than the selected year
             if excluded_finance_years > 0:
                 financial_data.drop(financial_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
-                adm_data.drop(adm_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
+                # adm_data.drop(adm_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
 
             # If the number of columns (years) in adm_data is greater than or equal to
             # the number of columns (years) in financial_data, replace the entire existing
             # Category ('ADM Average') in data with adm_data. Non-matching columns in
             # adm_data are dropped.
-            if (len(financial_data.columns) <= len(adm_data.columns)):
-                cols = list(financial_data.columns)
-                financial_data.loc[financial_data['Category'].isin(adm_data['Category']), cols] = adm_data[cols].values
+            # if (len(financial_data.columns) <= len(adm_data.columns)):
+            #     cols = list(financial_data.columns)
+            #     financial_data.loc[financial_data['Category'].isin(adm_data['Category']), cols] = adm_data[cols].values
 
-            else:
-                # If the number of columns (years) in adm_data is less than the number
-                # of columns (years) in data, we drop those data columns from data by
-                # filtering data with adm_data columns. As noted above, this is most
-                # common for Year 0 data. We then replace the 'ADM Average' category.
-                financial_data = financial_data[adm_data.columns]
-                cols = list(financial_data.columns)
-                financial_data.loc[financial_data['Category'].isin(adm_data['Category']), cols] = adm_data[cols].values                
+            # else:
+            #     # If the number of columns (years) in adm_data is less than the number
+            #     # of columns (years) in data, we drop those data columns from data by
+            #     # filtering data with adm_data columns. As noted above, this is most
+            #     # common for Year 0 data. We then replace the 'ADM Average' category.
+            #     financial_data = financial_data[adm_data.columns]
+            #     cols = list(financial_data.columns)
+            #     financial_data.loc[financial_data['Category'].isin(adm_data['Category']), cols] = adm_data[cols].values                
 
         # if there are no columns or only one column ('Category'), then all tables and figs are empty
         if len(financial_data.columns) <= 1:

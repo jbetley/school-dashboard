@@ -467,6 +467,37 @@ meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns=
 exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="purple" /></svg>'
 no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="grey" /></svg>'
 
+# import base64
+
+# image_filename = 'purple.png' # replace with your own image
+# encoded_image = base64.b64encode(open(image_filename, 'rb').read())
+
+# es_purple = ('purple.png')
+# ms_green = ('purple.png')
+# as_yellow = ('purple.png')
+# dnms_red = ('purple.png')
+# no_grey = ('purple.png')
+
+dot = '<i class="fa fa-circle" ></i>'
+
+proficiency_key = pd.DataFrame(
+    dict(
+        [
+            (
+                'Rating',
+                [
+                    "Exceeds Standard",
+                    "Meets Standard",
+                    "Approaches Standard",
+                    "Does not Meet Standard",
+                    "No Rating",                    
+                ],
+            ),
+            ('icon', [dot, dot, dot, dot, dot]),
+        ]
+    )
+)
+
 # NOTE: Adds md_table as a 'key'. Doesn't look great. Other options? go.table?
 def layout():
     return html.Div(
@@ -489,11 +520,80 @@ def layout():
                                 html.Div(
                                     [
         # TODO: BUILD KEY WITH SVG ELEMENTS
+        # https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
+                        dash_table.DataTable(
+                                    css=[dict(selector="p", rule="margin: 0px;")],
+                                    data=proficiency_key.to_dict("records"),
+                                    columns=[
+                                        {"id": "Rating", "name": "Rating", "presentation": "markdown"},
+                                        {"id": "icon", "name": "", "presentation": "markdown"},
+                                    ],
+                                    markdown_options={"html": True},
+                                    style_header=
+                                    {
+                                        'backgroundColor': '#ffffff',
+                                        'fontSize': '11px',
+                                        'fontFamily': 'Roboto, sans-serif',
+                                        'color': '#6783a9',
+                                        'textAlign': 'center',
+                                        'fontWeight': 'bold',
+                                        'border': 'none'     
+                                    },                                    
+                                    style_table={
+                                        'fontSize': '11px',
+                                        'border': 'none',
+                                        'fontFamily': 'Open Sans, sans-serif',
+                                        "width": 300
+                                    },
+                                    style_cell = {
+                                        'whiteSpace': 'normal',
+                                        'height': 'auto',
+                                        'textAlign': 'center',
+                                        'color': '#6783a9',
+                                        'boxShadow': '0 0',
+                                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                                    },
+                                    style_data_conditional=[
+                                        {
+                                            "if": {
+                                                "filter_query": '{Rating} = "Exceeds Standard"',
+                                                "column_id": "icon",
+                                            },
+                                            "color": "purple",
+                                        },
+                                        {
+                                            "if": {"filter_query": '{Rating} = "Meets Standard"',
+                                                "column_id": "icon"
+                                            },
+                                            "color": "green",
+                                        },
+                                        {
+                                            "if": {"filter_query": '{Rating} = "Approaches Standard"',
+                                                "column_id": "icon"
+                                            },
+                                            "color": "yellow",
+                                        },
+                                        {
+                                            "if": {"filter_query": '{Rating} = "Does Not Meet Standard"',
+                                                "column_id": "icon"
+                                            },
+                                            "color": "red",
+                                        },
+                                        {
+                                            "if": {"filter_query": '{Rating} = "No Rating"',
+                                                "column_id": "icon"
+                                            },
+                                            "color": "grey",
+                                        },                                                                                
+                                    ],
+                                ),
                                         html.Label('Key', style=key_label_style),
                                         html.Table(className='md_table',
                                             children = 
                                                 [
-                                                html.Tr( [html.Td('Ratings'), html.Td('Did Not Meet Standard:', did_not_meet) ]),
+                                                html.Tr( [html.Td('Ratings'), html.Td('Did Not Meet Standard:'),
+                                                # html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()))
+                                                ]),
                                                 html.Tr( [html.Td('Diff from Corp'), html.Td('The difference between the school\'s proficiency and the corporation rate.') ]),
                                                 html.Tr( [html.Td('Blank Cell'), html.Td('No data available.') ]),
                                                 html.Tr( [html.Td('***'), html.Td(

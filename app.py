@@ -42,8 +42,9 @@ import itertools
 
 # To access .env files in virtualenv
 from dotenv import load_dotenv
+FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 
-external_stylesheets = ["https://fonts.googleapis.com/css2?family=Roboto:400"]
+external_stylesheets = ["https://fonts.googleapis.com/css2?family=Roboto:400", FONT_AWESOME]
 
 # Authentication with Flask-Login, Sqlite3, and Bcrypt
 # https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/38
@@ -627,61 +628,108 @@ def load_data(school, year):
     ## Financial, Organizational, Average Daily Membership, and Federal Audit Findings
 
     ## Average Daily Membership
-    # NOTE: Any time you see a copy() it is usually to avoid pandas SettingWithCopyWarning
-    school_adm = school_info.filter(regex=r"September ADM|February ADM", axis=1).copy()
+    # NOTE: Earlier versions used ADM from school_index. Current version uses
+    # ADM Average as calculated from the school's financial file.
+    finance_file = 'data/F-' + school_info['School Name'].values[0] + '.csv'
 
-    for col in school_adm.columns:
-        school_adm[col] = pd.to_numeric(school_adm[col], errors="coerce")
+    if os.path.isfile(finance_file):
+        financial_data = pd.read_csv(finance_file)
 
-    if (
-        school_adm.sum(axis=1).values[0] == 0
-    ):  # this is true if all columns are equal to 0
-        school_adm_dict = {}
+        adm_values = financial_data[financial_data['Category'].str.contains('ADM Average')]
+        adm_values = adm_values.drop('Category', axis=1)
+        adm_values = adm_values.reset_index(drop=True)
+        
+        for col in adm_values.columns:
+            adm_values[col] = pd.to_numeric(adm_values[col], errors="coerce")
+        
+        adm_values = adm_values.loc[:, (adm_values != 0).any(axis=0)]
 
-    else:
-        # transpose adm dataframe and group by year (by splitting 'Name' Column e.g., '2022 February ADM', etc.
-        # after 1st space) and sum() result
-        # https://stackoverflow.com/questions/35746847/sum-values-of-columns-starting-with-the-same-string-in-pandas-dataframe
-        school_adm = (
-            school_adm.T.groupby(
-                [s.split(" ", 1)[0] for s in school_adm.T.index.values]
-            )
-            .sum()
-            .T
-        )
+        # reverse order
+        adm_values = adm_values[adm_values.columns[::-1]]
 
-        # average resulting sum (September and February Count)
-        school_adm = school_adm / 2
+        if (
+            adm_values.sum(axis=1).values[0] == 0
+        ):  # this is true if all columns are equal to 0
+            school_adm_dict = {}
+        else:
 
-        # years with no students (ADM = 0)
-        school_adm = school_adm.loc[:, (school_adm != 0).any(axis=0)].reset_index(
-            drop=True
-        )
+            # NOTE: number of years with positive ADM is the most reliable way to track the number of years a school has been open to students
+            # The ADM dataset can be longer than five years, so we have to filter it by both the selected year (the year to display) and the total # of years
+            operating_years_by_adm = len(adm_values.columns)
 
-        # NOTE: number of years with positive ADM is the most reliable way to track the number of years a school has been open to students
-        # The ADM dataset can be longer than five years, so we have to filter it by both the selected year (the year to display) and the total # of years
-        operating_years_by_adm = len(school_adm.columns)
+            # if number of available years exceeds year_limit, drop excess columns (years)
+            if operating_years_by_adm > max_display_years:
+                adm_values = adm_values.drop(
+                    columns = adm_values.columns[
+                        : (operating_years_by_adm - max_display_years)
+                    ],
+                    axis=1
+                )
 
-        # we want to limit display of certain data (e.g. ratios to years with students)
-        years_with_adm = school_adm.columns.tolist()
+            # if the display year is less than current year
+            # drop columns where year matches any years in 'excluded years' list
+            if excluded_years:
+                adm_values = adm_values.loc[
+                    :, ~adm_values.columns.str.contains("|".join(excluded_years))
+                ]
 
-        # if number of available years exceeds year_limit, drop excess columns (years)
-        if operating_years_by_adm > max_display_years:
-            school_adm = school_adm.drop(
-                columns=school_adm.columns[
-                    : (operating_years_by_adm - max_display_years)
-                ],
-                axis=1
-            )
+            school_adm_dict = adm_values.to_dict()
 
-        # if the display year is less than current year
-        # drop columns where year matches any years in 'excluded years' list
-        if excluded_years:
-            school_adm = school_adm.loc[
-                :, ~school_adm.columns.str.contains("|".join(excluded_years))
-            ]
+    # # NOTE: Any time you see a copy() it is usually to avoid pandas SettingWithCopyWarning
+    # school_adm = school_info.filter(regex=r"September ADM|February ADM", axis=1).copy()
 
-        school_adm_dict = school_adm.to_dict()
+    # for col in school_adm.columns:
+    #     school_adm[col] = pd.to_numeric(school_adm[col], errors="coerce")
+
+    # if (
+    #     school_adm.sum(axis=1).values[0] == 0
+    # ):  # this is true if all columns are equal to 0
+    #     school_adm_dict = {}
+
+    # else:
+    #     # transpose adm dataframe and group by year (by splitting 'Name' Column e.g., '2022 February ADM', etc.
+    #     # after 1st space) and sum() result
+    #     # https://stackoverflow.com/questions/35746847/sum-values-of-columns-starting-with-the-same-string-in-pandas-dataframe
+    #     school_adm = (
+    #         school_adm.T.groupby(
+    #             [s.split(" ", 1)[0] for s in school_adm.T.index.values]
+    #         )
+    #         .sum()
+    #         .T
+    #     )
+
+    #     # average resulting sum (September and February Count)
+    #     school_adm = school_adm / 2
+
+    #     # years with no students (ADM = 0)
+    #     school_adm = school_adm.loc[:, (school_adm != 0).any(axis=0)].reset_index(
+    #         drop=True
+    #     )
+
+    #     # NOTE: number of years with positive ADM is the most reliable way to track the number of years a school has been open to students
+    #     # The ADM dataset can be longer than five years, so we have to filter it by both the selected year (the year to display) and the total # of years
+    #     operating_years_by_adm = len(school_adm.columns)
+
+    #     # we want to limit display of certain data (e.g. ratios to years with students)
+    #     years_with_adm = school_adm.columns.tolist()
+
+    #     # if number of available years exceeds year_limit, drop excess columns (years)
+    #     if operating_years_by_adm > max_display_years:
+    #         school_adm = school_adm.drop(
+    #             columns=school_adm.columns[
+    #                 : (operating_years_by_adm - max_display_years)
+    #             ],
+    #             axis=1
+    #         )
+
+    #     # if the display year is less than current year
+    #     # drop columns where year matches any years in 'excluded years' list
+    #     if excluded_years:
+    #         school_adm = school_adm.loc[
+    #             :, ~school_adm.columns.str.contains("|".join(excluded_years))
+    #         ]
+
+    #     school_adm_dict = school_adm.to_dict()
 
     ## Financial & Organization Compliance Data is accessed in applicable application
 

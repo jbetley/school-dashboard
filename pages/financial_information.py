@@ -139,10 +139,6 @@ def update_financial_information_page(data,year,radio_value):
 
         financial_data = pd.read_csv(finance_file)
 
-        #TODO: FIGURE OUT WHERE WE ARE PUTTING ADM DATA
-        # school_adm_dict        
-        school_adm = pd.DataFrame.from_dict(data['6'])
-
         # 'operating_years_by_finance' is equal to the total number of years a school
         # has been financially active,by counting the total number of years in the
         # financial df (subtracting 1 for category column). We do not currently use this,

@@ -184,38 +184,38 @@ def update_financial_metrics(data,year,radio_value):
 
             # remove audit and other indicator data (it is displayed on the financial metrics page)
             financial_values = financial_data.drop(financial_data.index[41:])
-
+            print(financial_values)
             # School ADM is calculated from actual count day numbers,
             # Network ADM is manually calculated in each Network's finance
             # file - so skip this process for Networks
-            if radio_value != 'network-metrics':
-                print('here')
-                school_adm = school_index.filter(regex = r'September ADM|February ADM',axis=1).copy()
+            # if radio_value != 'network-metrics':
+            #     print('here')
+            #     school_adm = school_index.filter(regex = r'September ADM|February ADM',axis=1).copy()
 
-                for col in school_adm.columns:
-                    school_adm[col]=pd.to_numeric(school_adm[col], errors='coerce')
+            #     for col in school_adm.columns:
+            #         school_adm[col]=pd.to_numeric(school_adm[col], errors='coerce')
 
-                # filter each month by header, reverse order, and match years to financial information df
-                sept = school_adm.loc[:, school_adm.columns.str.contains('September')]
-                sept = sept[sept.columns[::-1]] 
-                sept = sept.iloc[: , :(len(financial_values.columns) - 1)] 
+            #     # filter each month by header, reverse order, and match years to financial information df
+            #     sept = school_adm.loc[:, school_adm.columns.str.contains('September')]
+            #     sept = sept[sept.columns[::-1]] 
+            #     sept = sept.iloc[: , :(len(financial_values.columns) - 1)] 
 
-                feb = school_adm.loc[:, school_adm.columns.str.contains('February')]
-                feb = feb[feb.columns[::-1]]
-                feb = feb.iloc[: , :(len(financial_values.columns) - 1)]
+            #     feb = school_adm.loc[:, school_adm.columns.str.contains('February')]
+            #     feb = feb[feb.columns[::-1]]
+            #     feb = feb.iloc[: , :(len(financial_values.columns) - 1)]
                 
-                # create a list of (Sept/Feb) average for each year
-                sept_val = sept.values.flatten().tolist()
-                feb_val = feb.values.flatten().tolist()
-                adm_avg = [(g + h) / 2 for g, h in zip(sept_val, feb_val)]
-                adm_avg.insert(0, 'ADM Average')
+            #     # create a list of (Sept/Feb) average for each year
+            #     sept_val = sept.values.flatten().tolist()
+            #     feb_val = feb.values.flatten().tolist()
+            #     adm_avg = [(g + h) / 2 for g, h in zip(sept_val, feb_val)]
+            #     adm_avg.insert(0, 'ADM Average')
 
-                # insert values into financial information datafarame
-                sept.insert(loc=0, column='Category', value = 'September Count')
-                financial_values.loc[financial_values['Category'] == 'September Count'] = [sept.values.flatten().tolist()]
-                feb.insert(loc=0, column='Category', value = 'February Count')
-                financial_values.loc[financial_values['Category'] == 'February Count'] = [feb.values.flatten().tolist()]
-                financial_values.loc[financial_values['Category'] == 'ADM Average'] = [adm_avg]
+            #     # insert values into financial information datafarame
+            #     sept.insert(loc=0, column='Category', value = 'September Count')
+            #     financial_values.loc[financial_values['Category'] == 'September Count'] = [sept.values.flatten().tolist()]
+            #     feb.insert(loc=0, column='Category', value = 'February Count')
+            #     financial_values.loc[financial_values['Category'] == 'February Count'] = [feb.values.flatten().tolist()]
+            #     financial_values.loc[financial_values['Category'] == 'ADM Average'] = [adm_avg]
 
             # Release The Hounds!
             financial_metrics = calculate_metrics(financial_values)
