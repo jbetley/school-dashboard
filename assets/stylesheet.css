@@ -548,6 +548,10 @@ body {
   display: flex;
 }
 
+.center-icon {
+  text-align: center;
+  width: 100%;
+}
 .center-row {
   display: flex;
   margin: auto;

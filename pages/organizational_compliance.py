@@ -94,7 +94,7 @@ def update_about_page(data, year):
                                         'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
                                         'column_id': col
                                     },
-                                    'backgroundColor': '#b44655',
+                                    'backgroundColor': '#ea5545',
                                     'fontWeight': 'bold',
                                     'color': 'white',
                                     'borderBottom': 'solid 1px white',
@@ -107,7 +107,7 @@ def update_about_page(data, year):
                                         'filter_query': "{{{col}}} = 'MS'".format(col=col),
                                         'column_id': col
                                     },
-                                    'backgroundColor': '#81b446',
+                                    'backgroundColor': '#87bc45',
                                     'fontWeight': 'bold',
                                     'color': 'white',
                                     'borderBottom': 'solid 1px white',

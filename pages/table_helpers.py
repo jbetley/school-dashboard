@@ -119,35 +119,41 @@ def set_table_layout(table1, table2, cols):
 
 # https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
 # https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
+# https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
 def get_svg_circle(val):
     ''' Takes a dataframe and replaces text with svg circles coded
         the correct colors based on rating text.
     '''
-    rating_columns = val.loc[:, val.columns.str.contains('Rating')].columns
+    result = val.copy()
+    rating_columns = val.loc[:, val.columns.str.contains('Rate')].columns
 
-    for col in rating_columns:
-        
+    for col in rating_columns:        
+
         conditions = [
-        val[col].eq('DNMS'),
-        val[col].eq('AS'),
-        val[col].eq('MS'),
-        val[col].eq('ES'),
-        val[col].eq('N/A'),
+        result[col].eq('DNMS'),
+        result[col].eq('AS'),
+        result[col].eq('MS'),
+        result[col].eq('ES'),
+        result[col].eq('N/A'),
         ]
 
-    # TODO: FIGURE OUT HOW TO KEEP CIRCLE AT FIXED SIZE
-    
-        did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="red" /></svg>'
-        approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="yellow" /></svg>'
-        meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="green" /></svg>'
-        exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="purple" /></svg>'
-        no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="grey" /></svg>'
+        # NOTE: Using font-awesome circle icon. the commented out code uses svg circle, which also
+        # works, but is harder to keep consistent in different sized tables.
+        did_not_meet ='<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>'
+        approaching ='<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>'
+        meets ='<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>'
+        exceeds ='<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>'
+        no_rating ='<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
+        # did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ea5545" /></svg>'
+        # approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ede15b" /></svg>'
+        # meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#87bc45" /></svg>'
+        # exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#b33dc6" /></svg>'
+        # no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#a4a2a8" /></svg>'
 
         rating = [did_not_meet,approaching,meets,exceeds,no_rating]
+        result[col] = np.select(conditions, rating, default=no_rating)
 
-        val[col] = np.select(conditions, rating, default=no_rating)
-
-    return val
+    return result
 
 def create_metric_table(label, content):
 # Generate tables given data and label - could
@@ -212,13 +218,12 @@ def create_metric_table(label, content):
         # we ultimately choose to display it
 
         # NOTE: Order of these operations matters
-        # remove all Corp Rate columns
+        # remove all Corp Rate / Corp Avg columns
         data = data.loc[:, ~data.columns.str.contains('Corp')]
 
         # rename '+/-' columns
-        data.columns = data.columns.str.replace('\+/-', 'Diff from Corp')
+        data.columns = data.columns.str.replace('\+/-', 'Diff', regex=True)
  
-
         # Formatting on the fly - determines the col_width class and width
         # of the category column based on the size (# of cols) of the dataframe
         if table_size <= 3:
@@ -230,24 +235,24 @@ def create_metric_table(label, content):
         elif table_size >= 5 and table_size <= 8:
             col_width = 'six'
             category_width = 30
-        elif table_size > 8 and table_size <= 9:
+        elif table_size == 9:
             col_width = 'seven'
             category_width = 30            
         elif table_size >= 10 and table_size <= 13:
-            col_width = 'ten'
+            col_width = 'seven'
             category_width = 15
         elif table_size > 13 and table_size <=17:
-            col_width = 'eleven'
+            col_width = 'nine'
             category_width = 15
         elif table_size > 17:
-            col_width = 'twelve'
+            col_width = 'ten'
             category_width = 15            
         
         year_headers = [y for y in data.columns.tolist() if 'School' in y]
-        rating_headers = [y for y in data.columns.tolist() if 'Rating' in y]
-        difference_headers = [y for y in data.columns.tolist() if 'Diff from Corp' in y]
-        corporation_headers = [y for y in data.columns.tolist() if 'Rate' in y or 'Avg' in y] # Gets cols with 'Rate' and 'Avg' in header
-
+        rating_headers = [y for y in data.columns.tolist() if 'Rate' in y]
+        difference_headers = [y for y in data.columns.tolist() if 'Diff' in y]
+        average_headers = [y for y in data.columns.tolist() if 'Average' in y]
+        
         # splits column width evenly for all columns other than 'Category'
         # right now is even, but can finesse this by splitting data_width
         # into unequal values for each 'data' category, e.g.:
@@ -257,7 +262,8 @@ def create_metric_table(label, content):
 
         data_width = 100 - category_width
         data_col_width = data_width / (table_size - 1)
-        rating_width = year_width = difference_width = corporation_width = data_col_width
+        rating_width = year_width = difference_width = data_col_width # corporation_width =
+        rating_width=rating_width/2
 
         class_name = 'pretty_container ' + col_width + ' columns'
 
@@ -298,16 +304,7 @@ def create_metric_table(label, content):
                 'fontWeight': '500',
                 'width': str(difference_width) + '%'
             } for difference in difference_headers
-        ]  + [
-            {   'if': {
-                'column_id': corporation
-            },
-                'textAlign': 'center',
-                'fontWeight': '500',
-                'width': str(corporation_width) + '%'
-            } for corporation in corporation_headers
         ]
-
         table_data_conditional =  [
             {
                 'if': {
@@ -315,58 +312,22 @@ def create_metric_table(label, content):
                 },
                 'backgroundColor': '#eeeeee',
             }
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "DNMS"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#e56565',
-                'color': 'white',
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "AS"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#ddd75a',
-                'color': 'white',
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "ES"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#b29600',
-                'color': 'white',
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "MS"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#75b200',
-                'color': 'white',
-            } for col in cols
         ]
 
         data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
 
         # build multi-level headers
         # get list of +/- columns (used by datatable filter_query' to ID columns for color formatting)
-
-        format_cols = [k for k in headers if 'Diff from Corp' in k or 'Rating' in k]
+        format_cols = [k for k in headers if 'Diff' in k or 'Rate' in k]
 
         name_cols = [['Category','']]
-    
+
+        # NOTE: This removes the identifying number from the header for display purposes.
         for item in headers:
             if item.startswith('20'):
-                if 'Rating' in item:
-                    item = item[:10]
-                
+                if 'Rate' in item:
+                    item = item[:8]
+
                 name_cols.append([item[:4],item[4:]])
 
         # NOTE: The next two two styling blocks add a border to header_index:1
@@ -396,14 +357,6 @@ def create_metric_table(label, content):
             } for year in year_headers
         ] + [
             {   'if': {
-                'column_id': corporation,
-                'header_index': 1,
-            },
-                'borderTop': '.5px solid #b2bdd4',
-                'borderBottom': '.5px solid #b2bdd4',
-        } for corporation in corporation_headers
-        ]  + [
-            {   'if': {
                 'column_id': rating,
                 'header_index': 1,
             },
@@ -418,10 +371,18 @@ def create_metric_table(label, content):
                 'borderTop': '.5px solid #b2bdd4',
                 'borderBottom': '.5px solid #b2bdd4',
         } for difference in difference_headers
+        ]  + [
+            {   'if': {
+                'column_id': average_headers,
+                'header_index': 1,
+            },
+                'borderTop': '.5px solid #b2bdd4',
+                'borderBottom': '.5px solid #b2bdd4',
+        } 
         ] + [
-            # Two options:
-            #   1) use 'headers[-1]' and 'borderRight' for each subheader to have full border
-            #   2) use 'headers[1]' and 'borderLeft' to leave first and last columns open on right and left
+            # Use 'headers[-1]' and 'borderRight' for each subheader to have full border
+            # Use 'headers[1]' and 'borderLeft' to leave first and last columns open on
+            # right and left
             {   'if': {
                 'column_id': headers[-1],
             #    'column_id': headers[1],
@@ -430,7 +391,6 @@ def create_metric_table(label, content):
             'borderRight': '.5px solid #b2bdd4',
             }
         ]
-
         # formatting logic is different for multi-header table
         table_data_conditional = [
             {
@@ -439,56 +399,6 @@ def create_metric_table(label, content):
                 },
                 'backgroundColor': '#eeeeee'
             }
-        ] + [
-            {
-                'if': {
-                'filter_query': '{{{col}}} = "DNMS"'.format(col=col),
-                'column_id': col
-                },
-                'backgroundColor': '#e56565',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white'
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                'filter_query': '{{{col}}} = "AS"'.format(col=col),
-                'column_id': col
-                },
-                'backgroundColor': '#ddd75a',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white'
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                'filter_query': '{{{col}}} = "ES"'.format(col=col),
-                'column_id': col
-                },
-                'backgroundColor': '#b29600',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white'
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                'filter_query': '{{{col}}} = "MS"'.format(col=col),
-                'column_id': col
-                },
-                'backgroundColor': '#75b200',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white'
-            } for col in cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} = "NA"'.format(col=col),
-                    'column_id': col
-                },
-                'backgroundColor': '#9a9a9a',
-                'color': 'white',
-                'boxShadow': 'inset 0px 0px 0px 1px white',
-            } for col in cols
         ] + [
             {
                 'if': {
@@ -565,12 +475,11 @@ def create_metric_table(label, content):
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict('records'),
-
-                            # Use this version for colored shapes in lieu of Rating text,
+                            # Use this version for colored shapes in lieu of Rate text,
                             # otherwise use second version
                             columns=[
                                 {'name': col, 'id': headers[idx], 'presentation': 'markdown'}
-                                if 'Rating' in col                                
+                                if 'Rate' in col                                
                                 else {'name': col, 'id': headers[idx], 'type':'numeric',
                                 'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
                                 }

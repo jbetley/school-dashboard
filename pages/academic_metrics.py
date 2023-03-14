@@ -108,12 +108,13 @@ def update_academic_metrics(data,year):
             metric_ahs_1214_data.reset_index()
             
             for h in metric_ahs_1214_data.columns:
-                if 'Rating' in h:
+                if 'Rate' in h:
                     metric_ahs_1214_data[h].fillna(value='N/A', inplace=True)
                 else:
                     metric_ahs_1214_data[h].fillna(value='No Data', inplace=True)
             
             metric_ahs_1214_label = 'Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b (Not Calculated)'
+            metric_ahs_1214_data = get_svg_circle(metric_ahs_1214_data) 
             table_ahs_1214 = create_metric_table(metric_ahs_1214_label, metric_ahs_1214_data)
             table_container_ahs_1214 = set_table_layout(table_ahs_1214, table_ahs_1214, metric_ahs_1214_data.columns)
 
@@ -156,13 +157,13 @@ def update_academic_metrics(data,year):
                 combined_grad_metrics_data = pd.DataFrame.from_dict(json_data)
 
                 metric_17ab_label = 'High School Accountability Metrics 1.7.a & 1.7.b'
-                combined_grad_metrics_data = get_svg_circle(combined_grad_metrics_data)                  
+                combined_grad_metrics_data = get_svg_circle(combined_grad_metrics_data)  
                 table_17ab = create_metric_table(metric_17ab_label, combined_grad_metrics_data)
                 table_container_17ab = set_table_layout(table_17ab, table_17ab, combined_grad_metrics_data.columns)
 
                 # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
                 all_cols = combined_grad_metrics_data.columns.tolist()
-                simple_cols = [x for x in all_cols if (not x.endswith('+/-') and not x.endswith('Avg'))]
+                simple_cols = [x for x in all_cols if (not x.endswith('+/-') and not x.endswith('Average'))]
 
                 grad_metrics_empty = pd.DataFrame(columns = simple_cols)
 
@@ -175,12 +176,13 @@ def update_academic_metrics(data,year):
                 metric_17cd_data.reset_index()
 
                 for h in metric_17cd_data.columns:
-                    if 'Rating' in h:
-                        metric_17cd_data[h].fillna(value='NA', inplace=True)
+                    if 'Rate' in h:
+                        metric_17cd_data[h].fillna(value='N/A', inplace=True)
                     else:
                         metric_17cd_data[h].fillna(value='No Data', inplace=True)
                 
                 metric_17cd_label = 'High School Accountability Metrics 1.7.c & 1.7.d'
+                metric_17cd_data = get_svg_circle(metric_17cd_data)          
                 table_17cd = create_metric_table(metric_17cd_label, metric_17cd_data)
                 table_container_17cd = set_table_layout(table_17cd, table_17cd, metric_17cd_data.columns)
 
@@ -253,8 +255,8 @@ def update_academic_metrics(data,year):
                 year_proficiency_empty = pd.DataFrame(columns = simple_cols)
 
                 year_proficiency_dict = {
-                    'Category': ['1.4.e. Percentage of students enrolled for at least two (2) school years achieving proficiency on the state assessment in English Language Arts.', 
-                            '1.4.f. Percentage of students enrolled for at least two (2) school years achieving proficiency on the state assessment in Math.'
+                    'Category': ['1.4.e. Two (2) year student proficiency in ELA.', 
+                            '1.4.f. Two (2) year student proficiency in Math.'
                         ]
                     }
                 year_proficiency = pd.DataFrame(year_proficiency_dict)
@@ -263,12 +265,13 @@ def update_academic_metrics(data,year):
                 metric_14ef_data.reset_index()
 
                 for h in metric_14ef_data.columns:
-                    if 'Rating' in h:
-                        metric_14ef_data[h].fillna(value='NA', inplace=True)
+                    if 'Rate' in h:
+                        metric_14ef_data[h].fillna(value='N/A', inplace=True)
                     else:
                         metric_14ef_data[h].fillna(value='No Data', inplace=True)
 
-                metric_14ef_label = 'Accountability Metrics 1.4.e & 1.4.f'
+                metric_14ef_label = 'Percentage of students enrolled for at least two (2) school years achieving proficiency on the state assessment in English Language Arts (1.4.e.) and Math (1.4.f.)'
+                metric_14ef_data = get_svg_circle(metric_14ef_data)
                 table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
                 table_container_14ef = set_table_layout(table_14ef, table_14ef, metric_14ef_data.columns)
                 
@@ -304,8 +307,8 @@ def update_academic_metrics(data,year):
                 metric_15abcd_data.reset_index()
 
                 for h in metric_15abcd_data.columns:
-                    if 'Rating' in h:
-                        metric_15abcd_data[h].fillna(value='NA', inplace=True)
+                    if 'Rate' in h:
+                        metric_15abcd_data[h].fillna(value='N/A', inplace=True)
                     else:
                         metric_15abcd_data[h].fillna(value='No Data', inplace=True)
 
@@ -379,7 +382,7 @@ def update_academic_metrics(data,year):
         main_container = {'display': 'none'}
         empty_container = {'display': 'block'}
 
-    metric_11ab_label = 'Accountability Metrics 1.1.a & 1.1.b'
+    metric_11ab_label = 'Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation.'
     
     # attendance_data_metrics_json
     if data['5']:
@@ -388,13 +391,13 @@ def update_academic_metrics(data,year):
         attendance_data = pd.DataFrame.from_dict(json_data)
 
         # Create placeholders (Acountability Metric 1.1.b.)
-        teacher_retention_rate = pd.DataFrame({'Category': ['1.1.b. Teacher Retention Rate (compared to school corporation rate)']})
+        teacher_retention_rate = pd.DataFrame({'Category': ['1.1.b. Teacher Retention Rate']})
 
         metric_11ab_data = pd.merge(attendance_data, teacher_retention_rate, how='outer', on='Category')
 
         for h in metric_11ab_data.columns:
-            if 'Rating' in h:
-                metric_11ab_data[h].fillna(value='NA', inplace=True)
+            if 'Rate' in h:
+                metric_11ab_data[h].fillna(value='N/A', inplace=True)
             else:
                 metric_11ab_data[h].fillna(value='No Data', inplace=True)
 
@@ -410,13 +413,13 @@ def update_academic_metrics(data,year):
 
     # Create placeholders (Acountability Metrics 1.1.c & 1.1.d)
     # if school has academic data
-    metric_11cd_label = 'Accountability Metrics 1.1.c & 1.1.d'
+    metric_11cd_label = 'End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate.'
     
     # Test to see if year_over_year_values_json exists
     if data['11']:
 
-        student_retention_rate_dict = {'Category': ['1.1.c. Student Re-Enrollment Rate (End of Year to Beginning of Year)',
-            '1.1.d. Student Re-Enrollment Rate (Year over Year)']
+        student_retention_rate_dict = {'Category': ['1.1.c. Re-Enrollment Rate',
+            '1.1.d. Re-Enrollment Rate']
         }
         student_retention_empty = pd.DataFrame(columns = combined_years.columns.tolist())
         student_retention_rate = pd.DataFrame(student_retention_rate_dict)
@@ -425,11 +428,12 @@ def update_academic_metrics(data,year):
         metric_11cd_data.reset_index()
 
         for h in metric_11cd_data.columns:
-            if 'Rating' in h:
-                metric_11cd_data[h].fillna(value='NA', inplace=True)
+            if 'Rate' in h:
+                metric_11cd_data[h].fillna(value='N/A', inplace=True)
             else:
                 metric_11cd_data[h].fillna(value='No Data', inplace=True)
 
+        metric_11cd_data = get_svg_circle(metric_11cd_data)
         table_11cd = create_metric_table(metric_11cd_label, metric_11cd_data)
         table_container_11cd = set_table_layout(table_11cd, table_11cd, metric_11cd_data.columns)
 
@@ -448,6 +452,7 @@ def update_academic_metrics(data,year):
 
 #### ALL teh layouts
 
+# Key Table
 key_label_style = {
     'height': 'auto',
     'lineHeight': '1.5em',
@@ -461,44 +466,54 @@ key_label_style = {
     'paddingTop': '5px'
 }
 
-did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="red" /></svg>'
-approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="yellow" /></svg>'
-meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="green" /></svg>'
-exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="purple" /></svg>'
-no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".25" fill="grey" /></svg>'
-
-# import base64
-
-# image_filename = 'purple.png' # replace with your own image
-# encoded_image = base64.b64encode(open(image_filename, 'rb').read())
-
-# es_purple = ('purple.png')
-# ms_green = ('purple.png')
-# as_yellow = ('purple.png')
-# dnms_red = ('purple.png')
-# no_grey = ('purple.png')
-
-dot = '<i class="fa fa-circle" ></i>'
+rating_icon = '<span style="font-size: 1em;"><i class="fa fa-circle"></i></span>'
 
 proficiency_key = pd.DataFrame(
     dict(
         [
             (
-                'Rating',
+                'Rate',
                 [
                     "Exceeds Standard",
-                    "Meets Standard",
-                    "Approaches Standard",
-                    "Does not Meet Standard",
-                    "No Rating",                    
                 ],
             ),
-            ('icon', [dot, dot, dot, dot, dot]),
+            ('icon', [rating_icon]),
+            (
+                'Rate2',
+                [
+                    "Meets Standard",
+                ],
+            ),
+            ('icon2', [rating_icon]),
+            (
+                'Rate3',
+                [
+                    "Approaches Standard",
+                ],
+            ),
+            ('icon3', [rating_icon]),
+            (
+                'Rate4',
+                [
+                    "Does Not Meet Standard",
+                ],
+            ),
+            ('icon4', [rating_icon]),
+            (
+                'Rate5',
+                [
+                    "No Rating",
+                ],
+            ),
+            ('icon5', [rating_icon]),
         ]
     )
 )
 
-# NOTE: Adds md_table as a 'key'. Doesn't look great. Other options? go.table?
+rating_headers = proficiency_key.columns.tolist()
+rating_cols = list(col for col in proficiency_key.columns if "Rate" in col)
+icon_cols = list(col for col in proficiency_key.columns if "icon" in col)
+
 def layout():
     return html.Div(
             [
@@ -519,107 +534,113 @@ def layout():
                             [
                                 html.Div(
                                     [
-        # TODO: BUILD KEY WITH SVG ELEMENTS
-        # https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
-                        dash_table.DataTable(
-                                    css=[dict(selector="p", rule="margin: 0px;")],
-                                    data=proficiency_key.to_dict("records"),
-                                    columns=[
-                                        {"id": "Rating", "name": "Rating", "presentation": "markdown"},
-                                        {"id": "icon", "name": "", "presentation": "markdown"},
-                                    ],
-                                    markdown_options={"html": True},
-                                    style_header=
-                                    {
-                                        'backgroundColor': '#ffffff',
-                                        'fontSize': '11px',
-                                        'fontFamily': 'Roboto, sans-serif',
-                                        'color': '#6783a9',
-                                        'textAlign': 'center',
-                                        'fontWeight': 'bold',
-                                        'border': 'none'     
-                                    },                                    
-                                    style_table={
-                                        'fontSize': '11px',
-                                        'border': 'none',
-                                        'fontFamily': 'Open Sans, sans-serif',
-                                        "width": 300
-                                    },
-                                    style_cell = {
-                                        'whiteSpace': 'normal',
-                                        'height': 'auto',
-                                        'textAlign': 'center',
-                                        'color': '#6783a9',
-                                        'boxShadow': '0 0',
-                                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                                    },
-                                    style_data_conditional=[
-                                        {
-                                            "if": {
-                                                "filter_query": '{Rating} = "Exceeds Standard"',
-                                                "column_id": "icon",
-                                            },
-                                            "color": "purple",
-                                        },
-                                        {
-                                            "if": {"filter_query": '{Rating} = "Meets Standard"',
-                                                "column_id": "icon"
-                                            },
-                                            "color": "green",
-                                        },
-                                        {
-                                            "if": {"filter_query": '{Rating} = "Approaches Standard"',
-                                                "column_id": "icon"
-                                            },
-                                            "color": "yellow",
-                                        },
-                                        {
-                                            "if": {"filter_query": '{Rating} = "Does Not Meet Standard"',
-                                                "column_id": "icon"
-                                            },
-                                            "color": "red",
-                                        },
-                                        {
-                                            "if": {"filter_query": '{Rating} = "No Rating"',
-                                                "column_id": "icon"
-                                            },
-                                            "color": "grey",
-                                        },                                                                                
-                                    ],
-                                ),
                                         html.Label('Key', style=key_label_style),
-                                        html.Table(className='md_table',
-                                            children = 
-                                                [
-                                                html.Tr( [html.Td('Ratings'), html.Td('Did Not Meet Standard:'),
-                                                # html.Img(src='data:image/png;base64,{}'.format(encoded_image.decode()))
-                                                ]),
-                                                html.Tr( [html.Td('Diff from Corp'), html.Td('The difference between the school\'s proficiency and the corporation rate.') ]),
-                                                html.Tr( [html.Td('Blank Cell'), html.Td('No data available.') ]),
-                                                html.Tr( [html.Td('***'), html.Td(
-                                                    [html.Span('Insufficient n-size (a '),
-                                                    html.Span('-***', style={'color': '#b44655'}),
-                                                    html.Span(' value indicates a reduction from a measurable, but not reportable, value to 0).')]
-                                                ) ] ),
-                                                ], 
-                                                style={
-                                                    'color': 'steelblue',
-                                                    'fontSize': '.75em',
-                                                },
-                                        ),
-                                        html.P(""),
-                                        html.Center(
-                                            html.P("Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)",
-                                            style={
+                                        dash_table.DataTable(
+                                            # css=[dict(selector="p", rule="margin: 0px;")],
+                                            css=[dict(selector="tr:first-child", rule="display: none")],
+                                            data=proficiency_key.to_dict("records"),
+                                            cell_selectable=False,
+                                            columns=[
+                                                {"id": "icon", "name": "", "presentation": "markdown"},
+                                                {"id": "Rate", "name": "", "presentation": "markdown"},
+                                                {"id": "icon2", "name": "", "presentation": "markdown"},
+                                                {"id": "Rate2", "name": "", "presentation": "markdown"},
+                                                {"id": "icon3", "name": "", "presentation": "markdown"},
+                                                {"id": "Rate3", "name": "", "presentation": "markdown"},
+                                                {"id": "icon4", "name": "", "presentation": "markdown"},
+                                                {"id": "Rate4", "name": "", "presentation": "markdown"},
+                                                {"id": "icon5", "name": "", "presentation": "markdown"},
+                                                {"id": "Rate5", "name": "", "presentation": "markdown"},
+                                            ],
+                                            markdown_options={"html": True},
+                                            style_table={
+                                                'paddingTop': '15px',
+                                                'fontSize': '.75em',
+                                                'border': 'none',
+                                                'fontFamily': 'Roboto, sans-serif',
+                                            },
+                                            style_cell = {
+                                                'whiteSpace': 'normal',
+                                                'height': 'auto',
+                                                'border': 'none',                                        
+                                                'textAlign': 'right',
                                                 'color': '#6783a9',
-                                                'fontSize': 10,
-                                                'marginLeft': '10px',
-                                                'marginRight': '10px',
-                                                'marginTop': '10px',
-                                            })
+                                                'boxShadow': '0 0',
+                                            },
+                                            style_cell_conditional = [
+                                                {
+                                                    'if': {
+                                                        'column_id': rating
+                                                    },
+                                                    'textAlign': 'right',
+                                                    # 'width': '18%',
+                                                } for rating in rating_cols        
+                                            ] + [
+                                                {
+                                                    'if': {
+                                                        'column_id': icon
+                                                    },
+                                                    'textAlign': 'left',
+                                                    'width': '2%',
+                                                } for icon in icon_cols             
+                                            ],                                   
+                                            style_data_conditional=[
+                                                {
+                                                    "if": {
+                                                        "filter_query": '{Rate} = "Exceeds Standard"',
+                                                        "column_id": "icon",
+                                                    },
+                                                    "color": "#b33dc6",
+                                                },
+                                                {
+                                                    "if": {"filter_query": '{Rate2} = "Meets Standard"',
+                                                        "column_id": "icon2"
+                                                    },
+                                                    "color": "#87bc45",
+                                                },
+                                                {
+                                                    "if": {"filter_query": '{Rate3} = "Approaches Standard"',
+                                                        "column_id": "icon3"
+                                                    },
+                                                    "color": "#ede15b",
+                                                },
+                                                {
+                                                    "if": {"filter_query": '{Rate4} = "Does Not Meet Standard"',
+                                                        "column_id": "icon4"
+                                                    },
+                                                    "color": "#ea5545",
+                                                },
+                                                {
+                                                    "if": {"filter_query": '{Rate5} = "No Rating"',
+                                                        "column_id": "icon5"
+                                                    },
+                                                    "color": "#a4a2a8",
+                                                },
+                                                {
+                                                'if': {
+                                                    'column_id': rating_headers[1],
+                                                },
+                                                'marginLeft':'10px',
+                                            },
+                                        ],
+                                    ),
+                                    html.P(""),
+                                    html.Table(className='md_table',
+                                        children = 
+                                            [
+                                            html.Tr( [html.Td('***'), html.Td(
+                                                [html.Span('Insufficient n-size (a '),
+                                                html.Span('-***', style={'color': '#b44655'}),
+                                                html.Span(' value indicates a reduction from a measurable, but not reportable, value to 0).')]
+                                            ) ] ),
+                                            ], 
+                                            style={
+                                                'color': 'steelblue',
+                                                'fontSize': '.75em',
+                                            },
                                         ),
                                     ],
-                                    className = "pretty_container eight columns"
+                                    className = "pretty_container six columns"
                                 ),
                             ],
                             className = "bare_container twelve columns"

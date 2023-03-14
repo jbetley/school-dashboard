@@ -732,26 +732,30 @@ def layout():
                             html.Div(
                                 [
                                     html.Label('Notes:', style=key_label_style),
-                                    html.Table(className='md_table',
-                                        children = 
-                                            [
-                                            html.Tr( [html.Td('2018'), html.Td('The last year of ISTEP.') ]),
-                                            html.Tr( [html.Td('2019'), html.Td('First year of ILEARN. Different test, different modality. Not possible to determine \
-                                                                               growth from 2018 to 2019.') ]),
-                                            html.Tr( [html.Td('2020'), html.Td('No state assessment given.') ]),
-                                            html.Tr( [html.Td('2021-'), html.Td('ILEARN is the state assessment.') ]),
-                                            ], 
-                                            style={
-                                                'color': 'steelblue',
-                                                'fontSize': '.75em',
-                                            },
-                                    ),
+                                    # html.Table(className='md_table',
+                                    #     children = 
+                                    #         [
+                                    #         html.Tr( [html.Td('2018'), html.Td('The last year of ISTEP.') ]),
+                                    #         html.Tr( [html.Td('2019'), html.Td('First year of ILEARN. Different test, different modality. Not possible to determine \
+                                    #                                            growth from 2018 to 2019.') ]),
+                                    #         html.Tr( [html.Td('2020'), html.Td('No state assessment given.') ]),
+                                    #         html.Tr( [html.Td('2021-'), html.Td('ILEARN is the state assessment.') ]),
+                                    #         ], 
+                                    #         style={
+                                    #             'color': 'steelblue',
+                                    #             'fontSize': '.75em',
+                                    #         },
+                                    # ),
                                     html.P(""),
                                     # html.Center(
-                                        html.P("Cannot compare 2021 ILEARN to 2019 ILEARN:  Skip a grade in academic standards, \
-                                                   testing year, and grade level.  In addition, the sample set is for ALL students in \
-                                                   2021 and 162 day in 2019.  Not one in the same.",
+                                        html.P("While data is presented in a longitudinal format, there are a number of factors that make it difficult \
+                                               to make valid and reliable comparisons from 2019 to 2022. For example, ILEARN was administered for the first \
+                                               time during the 2018-19 SY and represented an entirely new type and mode of assessment (adaptive \
+                                               and online-only). No State assessment was administered in 2020 because of the Covid-19 pandemic. Finally, \
+                                               the 2019 data set includes only students who attended the testing school for 162 days, while \
+                                               the 2021 and 2022 data sets included all tested students.",
                                             style={
+                                                    'textAlign': 'Left',
                                                     'color': '#6783a9',
                                                     'fontSize': 12,
                                                     'marginLeft': '10px',
@@ -759,9 +763,17 @@ def layout():
                                                     'marginTop': '10px',
                                                 }
                                             ),
+                                            html.P("Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)",
+                                            style={
+                                                'color': '#6783a9',
+                                                'fontSize': 10,
+                                                'marginLeft': '10px',
+                                                'marginRight': '10px',
+                                                'marginTop': '10px',
+                                            }),                                           
                                     # ),
                                 ],
-                                className = "pretty_container eight columns"
+                                className = "pretty_container seven columns"
                             ),
                         ],
                         className = "bare_container twelve columns"

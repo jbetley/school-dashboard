@@ -3,7 +3,7 @@ Calculation Functions for ICSB Dashboard
 '''
 import pandas as pd
 import numpy as np
-import itertools
+# import itertools
 import scipy.spatial as spatial
 
 
@@ -208,11 +208,9 @@ def calculate_metrics(data):
 # https://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas
 
     cols = [i for i in operating_data.columns if i not in ['Category']]
-    # TODO: Is this better than the commented out code?
+
     for col in cols:
         operating_data[col] = pd.to_numeric(operating_data[col], errors='coerce')
-    # cols = data.columns.drop('Category')
-    # data[cols] = data[cols].apply(pd.to_numeric, errors='coerce')
 
     # transpose financial information
     metrics = (
@@ -413,6 +411,7 @@ def calculate_metrics(data):
         .reset_index()
     )
 
+    # A helper function in the helper function
     # Because this is for display, we need to manually reorder the columns
     def sort_metrics(column):
         reorder = [
@@ -477,4 +476,4 @@ def calculate_metrics(data):
     for col in year_cols:
         final_grid[col] = pd.to_numeric(final_grid[col], errors='coerce').round(2) #.fillna(final_grid[col])
 
-    return final_grid 
+    return final_grid

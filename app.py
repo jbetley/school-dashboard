@@ -240,7 +240,6 @@ current_academic_year = school_academic_data_k8["Year"].unique().max()
 
 num_academic_years = len(school_academic_data_k8["Year"].unique())
 
-
 # Build dropdown list based on current_user
 # NOTE: application-state is a dummy input
 @callback(
@@ -509,18 +508,18 @@ def load_data(school, year):
         school_attendance_rate = school_attendance_rate.replace(0, np.nan)
         school_attendance_rate[
             "Category"
-        ] = "1.1.a. Attendance Rate (compared to school corporation average)"
+        ] = "1.1.a. Attendance Rate"
         last_col = school_attendance_rate.pop("Category")
         school_attendance_rate.insert(0, "Category", last_col)
         corp_attendance_rate[
             "Category"
-        ] = "1.1.a. Attendance Rate (compared to school corporation average)"
+        ] = "1.1.a. Attendance Rate"
         last_col = corp_attendance_rate.pop("Category")
         corp_attendance_rate.insert(0, "Category", last_col)
 
         corp_attendance_rate = (
             corp_attendance_rate.set_index(["Category"])
-            .add_suffix("Corp Avg")
+            .add_suffix("Corp Average")
             .reset_index()
         )
         school_attendance_rate = (
@@ -609,7 +608,7 @@ def load_data(school, year):
             attendance_data_metrics.insert(
                 i,
                 str(attendance_data_metrics.columns[i - 1])[: 7 - 3]
-                + "Rating"
+                + "Rate"
                 + str(i),
                 attendance_data_metrics.apply(
                     lambda x: set_academic_rating(
@@ -625,11 +624,11 @@ def load_data(school, year):
         attendance_data_metrics_dict = attendance_data_metrics.to_dict(into=OrderedDict)
         attendance_data_metrics_json = json.dumps(attendance_data_metrics_dict)
 
-    ## Financial, Organizational, Average Daily Membership, and Federal Audit Findings
-
+    # NOTE: school finances are accessed in each financial page because of the need to load
+    # either school or network financial information. It is accessed here to provide adm
+    # data to 'about.py' because it uses variables not currently available in about.py
+    
     ## Average Daily Membership
-    # NOTE: Earlier versions used ADM from school_index. Current version uses
-    # ADM Average as calculated from the school's financial file.
     finance_file = 'data/F-' + school_info['School Name'].values[0] + '.csv'
 
     if os.path.isfile(finance_file):
@@ -675,63 +674,8 @@ def load_data(school, year):
 
             school_adm_dict = adm_values.to_dict()
 
-    # # NOTE: Any time you see a copy() it is usually to avoid pandas SettingWithCopyWarning
-    # school_adm = school_info.filter(regex=r"September ADM|February ADM", axis=1).copy()
-
-    # for col in school_adm.columns:
-    #     school_adm[col] = pd.to_numeric(school_adm[col], errors="coerce")
-
-    # if (
-    #     school_adm.sum(axis=1).values[0] == 0
-    # ):  # this is true if all columns are equal to 0
-    #     school_adm_dict = {}
-
-    # else:
-    #     # transpose adm dataframe and group by year (by splitting 'Name' Column e.g., '2022 February ADM', etc.
-    #     # after 1st space) and sum() result
-    #     # https://stackoverflow.com/questions/35746847/sum-values-of-columns-starting-with-the-same-string-in-pandas-dataframe
-    #     school_adm = (
-    #         school_adm.T.groupby(
-    #             [s.split(" ", 1)[0] for s in school_adm.T.index.values]
-    #         )
-    #         .sum()
-    #         .T
-    #     )
-
-    #     # average resulting sum (September and February Count)
-    #     school_adm = school_adm / 2
-
-    #     # years with no students (ADM = 0)
-    #     school_adm = school_adm.loc[:, (school_adm != 0).any(axis=0)].reset_index(
-    #         drop=True
-    #     )
-
-    #     # NOTE: number of years with positive ADM is the most reliable way to track the number of years a school has been open to students
-    #     # The ADM dataset can be longer than five years, so we have to filter it by both the selected year (the year to display) and the total # of years
-    #     operating_years_by_adm = len(school_adm.columns)
-
-    #     # we want to limit display of certain data (e.g. ratios to years with students)
-    #     years_with_adm = school_adm.columns.tolist()
-
-    #     # if number of available years exceeds year_limit, drop excess columns (years)
-    #     if operating_years_by_adm > max_display_years:
-    #         school_adm = school_adm.drop(
-    #             columns=school_adm.columns[
-    #                 : (operating_years_by_adm - max_display_years)
-    #             ],
-    #             axis=1
-    #         )
-
-    #     # if the display year is less than current year
-    #     # drop columns where year matches any years in 'excluded years' list
-    #     if excluded_years:
-    #         school_adm = school_adm.loc[
-    #             :, ~school_adm.columns.str.contains("|".join(excluded_years))
-    #         ]
-
-    #     school_adm_dict = school_adm.to_dict()
-
-    ## Financial & Organization Compliance Data is accessed in applicable application
+    else:
+        school_adm_dict = {}
 
     ### Academic Data
 
@@ -840,7 +784,7 @@ def load_data(school, year):
             # iterate over (non missing) columns, calculate the average, and store in a new column
             # TODO: THIS IS INEFFICIENT -> FIX
             # For school calculate all columns
-            # for corp rate calculate school columns
+            # for Corp Proficiency calculate school columns
 
             k8_corp_rate_data = k8_corp_rate_filtered.copy()
 
@@ -942,7 +886,7 @@ def load_data(school, year):
             k8_school_data.columns = k8_school_data.columns.astype(str)
             k8_corp_rate_data.columns = k8_corp_rate_data.columns.astype(str)
 
-            # freeze corp rate dataframe in current state for use in academic analysis page
+            # freeze Corp Proficiency dataframe in current state for use in academic analysis page
             academic_analysis_corp_dict = k8_corp_rate_data.to_dict()
             k8_corp_data = k8_corp_rate_data.copy()
 
@@ -984,10 +928,11 @@ def load_data(school, year):
             # Create copy of school dataframe to use later for metric calculations
             k8_school_metric_data = k8_school_data.copy()
 
-            # add_suffix is applied to entire df. To hide columns we dont want renamed, set them as index and reset back after renaming.
+            # add_suffix is applied to entire df. To hide columns we dont want\
+            # renamed, set it as index and reset back after renaming.
             k8_corp_data = (
                 k8_corp_data.set_index(["Category"])
-                .add_suffix("Corp Rate")
+                .add_suffix("Corp Proficiency")
                 .reset_index()
             )
             k8_school_data = (
@@ -1040,7 +985,7 @@ def load_data(school, year):
             for c in k8_school_data.columns:
                 c = c[0:4]  # keeps only YYYY part of string
                 k8_result[c + "+/-"] = calculate_difference(
-                    k8_school_data[c + "School"], k8_corp_data[c + "Corp Rate"]
+                    k8_school_data[c + "School"], k8_corp_data[c + "Corp Proficiency"]
                 )
 
             # add headers
@@ -1105,7 +1050,7 @@ def load_data(school, year):
                 [
                     iread_data.insert(
                         i,
-                        str(iread_data.columns[i - 1])[: 7 - 3] + "Rating" + str(i),
+                        str(iread_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
                         iread_data.apply(
                             lambda x: set_academic_rating(
                                 x[iread_data.columns[i - 1]], iread_limits, 1
@@ -1199,12 +1144,12 @@ def load_data(school, year):
             # duplicate final academic data in preparation for adding year_over_year data and calculating Ratings
             year_over_year_values = final_k8_academic_data.copy()
 
-            # delete 'Corp Rate' and '+/-' columns as they aren't used in year over year calculation
+            # delete 'Corp Proficiency' and '+/-' columns as they aren't used in year over year calculation
             year_over_year_values = year_over_year_values.drop(
                 [
                     col
                     for col in year_over_year_values.columns
-                    if "Corp Rate" in col or "+/-" in col
+                    if "Corp Proficiency" in col or "+/-" in col
                 ],
                 axis=1
             )
@@ -1263,7 +1208,7 @@ def load_data(school, year):
             [
                 diff_to_corp.insert(
                     i,
-                    str(diff_to_corp.columns[i - 1])[: 7 - 3] + "Rating" + str(i),
+                    str(diff_to_corp.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
                     diff_to_corp.apply(
                         lambda x: set_academic_rating(
                             x[diff_to_corp.columns[i - 1]], delta_limits, 1
@@ -1277,7 +1222,7 @@ def load_data(school, year):
                 year_over_year_values.insert(
                     i,
                     str(year_over_year_values.columns[i - 1])[: 7 - 3]
-                    + "Rating"
+                    + "Rate"
                     + str(i),
                     year_over_year_values.apply(
                         lambda x: set_academic_rating(
@@ -1326,7 +1271,7 @@ def load_data(school, year):
             # the single 'Initial Year' column from the list. It returns an empty list if school_years_cols
             # only contains the Initial Year columns (because rating_cols will be empty)
             rating_cols = list(
-                col for col in year_over_year_values.columns if "Rating" in col
+                col for col in year_over_year_values.columns if "Rate" in col
             )
             col_pair = list(zip(school_years_cols, rating_cols))
 
@@ -1406,7 +1351,7 @@ def load_data(school, year):
             # tmp remove text columns from dataframe
             hs_school_info = hs_school_data[["School Name"]].copy()
 
-            # drop adult high schools (AHS) from corp avg df
+            # drop adult high schools (AHS) from Corp Average df
             hs_corp_data = hs_corp_data[
                 hs_corp_data["School Type"].str.contains("AHS") == False
             ]
@@ -1664,7 +1609,7 @@ def load_data(school, year):
                 axis=1,
             )
 
-            ## State Avg Graduation Rate
+            ## State Average Graduation Rate
 
             filtered_academic_data_hs["Total|Graduates"] = pd.to_numeric(
                 filtered_academic_data_hs["Total|Graduates"], errors="coerce"
@@ -1760,7 +1705,7 @@ def load_data(school, year):
             # add_suffix is applied to entire df. To hide columns we dont want renamed, set them as index and reset back after renaming.
             hs_corp_data = (
                 hs_corp_data.set_index(["Category"])
-                .add_suffix("Corp Avg")
+                .add_suffix("Corp Average")
                 .reset_index()
             )
             hs_school_data = (
@@ -1834,7 +1779,7 @@ def load_data(school, year):
             hs_results = pd.DataFrame()
             for y in hs_year_cols:
                 hs_results[y] = calculate_graduation_rate_difference(
-                    hs_school_data[y + "School"], hs_corp_data[y + "Corp Avg"]
+                    hs_school_data[y + "School"], hs_corp_data[y + "Corp Average"]
                 )
 
             # add headers
@@ -1851,7 +1796,7 @@ def load_data(school, year):
             # # 1) replace negative values in School column with '***';
             # # 2) replace either '1' or '1.08' in School column with '***';
             # # 3) change '+/-' to '***' if school column is '***'; and
-            # # 4) change 'Corp Avg' & '+/-' columns to NaN if School column is NaN
+            # # 4) change 'Corp Average' & '+/-' columns to NaN if School column is NaN
             # # NOTE: we test for 1.08 because of diploma strength calculation (-99 * 1.08 / -99)
 
             # # for y in hs_year_cols:
@@ -1859,7 +1804,7 @@ def load_data(school, year):
             # #     final_hs_academic_data[str(y) + 'School'] = np.where(final_hs_academic_data[str(y) + 'School'] == 1,'***', final_hs_academic_data[str(y) + 'School'])
             # #     final_hs_academic_data[str(y) + 'School'] = np.where(final_hs_academic_data[str(y) + 'School'] == 1.08,'***', final_hs_academic_data[str(y) + 'School'])
             # #     final_hs_academic_data[str(y) + '+/-'] = np.where(final_hs_academic_data[str(y) + 'School'] == '***','***', final_hs_academic_data[str(y) + '+/-'])
-            # #     final_hs_academic_data[str(y) + 'Corp Avg'] = np.where(final_hs_academic_data[str(y) + 'School'].isnull(), final_hs_academic_data[str(y) + '+/-'], final_hs_academic_data[str(y) + 'Corp Avg'])
+            # #     final_hs_academic_data[str(y) + 'Corp Average'] = np.where(final_hs_academic_data[str(y) + 'School'].isnull(), final_hs_academic_data[str(y) + '+/-'], final_hs_academic_data[str(y) + 'Corp Average'])
 
             # If AHS - add CCR data to hs_data file
             if school_info["School Type"].values[0] == "AHS":
@@ -1906,7 +1851,7 @@ def load_data(school, year):
                 [
                     ahs_metric_data.insert(
                         i,
-                        str(ahs_metric_cols[i - 2]) + "Rating" + str(i),
+                        str(ahs_metric_cols[i - 2]) + "Rate" + str(i),
                         ahs_metric_data.apply(
                             lambda x: set_academic_rating(
                                 x[ahs_metric_data.columns[i - 1]], ccr_limits, 2
@@ -1926,7 +1871,8 @@ def load_data(school, year):
                     .reset_index()
                 )
 
-                # ensure state_grades df contains same years of data as ahs_metric_cols (drop cols that don't match)
+                # ensure state_grades df contains same years of data as
+                # ahs_metric_cols (drop cols that don't match)
                 ahs_state_grades = ahs_state_grades.loc[
                     :,
                     ahs_state_grades.columns.str.contains(
@@ -1938,7 +1884,7 @@ def load_data(school, year):
                 [
                     ahs_state_grades.insert(
                         i,
-                        str(ahs_metric_cols[i - 2]) + "Rating" + str(i),
+                        str(ahs_metric_cols[i - 2]) + "Rate" + str(i),
                         ahs_state_grades.apply(
                             lambda x: set_academic_rating(
                                 x[ahs_state_grades.columns[i - 1]],
@@ -1963,9 +1909,9 @@ def load_data(school, year):
             else:
                 combined_hs_metrics = final_hs_academic_data.copy()
 
-                # rename 'Corp Avg' to 'Avg'
+                # rename 'Corp Average' to 'Average'
                 combined_hs_metrics.columns = combined_hs_metrics.columns.str.replace(
-                    r"Corp Avg", "Avg"
+                    r"Corp Average", "Average"
                 )
 
                 grad_limits_state = [0, 0.05, 0.15, 0.15]
@@ -1977,7 +1923,7 @@ def load_data(school, year):
                     state_grad_metric.insert(
                         i,
                         str(state_grad_metric.columns[i - 1])[: 7 - 3]
-                        + "Rating"
+                        + "Rate"
                         + str(i),
                         state_grad_metric.apply(
                             lambda x: set_academic_rating(
@@ -2001,7 +1947,7 @@ def load_data(school, year):
                     local_grad_metric.insert(
                         i,
                         str(local_grad_metric.columns[i - 1])[: 7 - 3]
-                        + "Rating"
+                        + "Rate"
                         + str(i),
                         local_grad_metric.apply(
                             lambda x: set_academic_rating(
