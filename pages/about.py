@@ -108,11 +108,11 @@ def update_about_page(year, data):
     # no data if the file does not exist. For dicts, we check the
     # length of the index. It will be [] if there is no data 
     # if all empty/not exist then we show info table + no_data_page
+
     if not data['3'] and (len(school_demographics.index) == 0 & \
           len(school_adm.index) == 0):
         
         letter_grade_table = {}
-        # hold_harmless_string = {}
         enroll_title = {}
         enroll_table = {}
         adm_fig = {}
@@ -206,7 +206,6 @@ def update_about_page(year, data):
         # State and Federal ratings table (test json file to see if
         # it exists before loading)
         if not data['3']:
-            # hold_harmless_string = ''
             letter_grade_table = no_data_table('State and Federal Ratings')
 
         else:
@@ -315,9 +314,6 @@ def update_about_page(year, data):
 
         # ADM chart
         linecolor=['#d0743c','#a05d56']
-
-        # school_adm_dict
-        # school_adm = pd.DataFrame.from_dict(data['6'])
 
         if len(school_adm.index) == 0:
             adm_fig = no_data_fig()
@@ -476,7 +472,6 @@ def update_about_page(year, data):
             # this forces the categories to wrap (use 'categories' for no wrap)
             # categories = status_data_t.index.tolist()
 
-    # TODO:
             # Use this function to create wrapped text using
             # html tags based on the specified width
             import textwrap

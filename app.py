@@ -4,13 +4,16 @@
 # author:    jbetley
 # version:  1.0.02.01.23
 
-## NOTE: Need to manually determine certain data points at the school level if it is stored at the Corp Level
-# E.g., Split Grade K8 and 912 enrollment / Proportionate split of demographic enrollment (subgroups, etc.)
+## NOTE: Need to manually determine certain data points at the
+# school level if it is stored at the Corp Level
+# E.g., Split Grade K8 and 912 enrollment / Proportionate split
+# of demographic enrollment (subgroups, etc.):
 # Christel House South (CHS/CHWMHS)
 # Circle City Prep (Ele/Mid)
 
-## NOTE: Using pandas dataframes (not typically used for display) to build lots of dash datatables
-# to be used for display, so there is quite a bit of funky ass fiddly dataframe manipulation shit
+## NOTE: Using pandas dataframes (not typically used for display)
+# to build lots of dash datatables to be used for display, so there
+# is quite a bit of funky ass fiddly dataframe manipulation shit
 # required to get everything aligned and in the order that we want it.
 
 # flask and flask-login #
@@ -19,16 +22,11 @@ import os
 from flask import Flask, url_for, redirect, request, render_template, session, jsonify
 from flask_login import login_user, LoginManager, UserMixin, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
-
-from pages.calculations import set_academic_rating
-
-# from flask_migrate import Migrate
-from sqlalchemy import create_engine, text, select
-
-# from sqlalchemy.orm import sessionmaker, Session
 from flask_bcrypt import Bcrypt
+# from flask_migrate import Migrate
+# from sqlalchemy import create_engine, text, select
+# from sqlalchemy.orm import sessionmaker, Session
 
-# from flask_wtf.csrf import CSRFProtect
 # dash #
 import dash
 from dash import dcc, html, Input, Output, State, callback
@@ -39,11 +37,12 @@ import pandas as pd
 import json
 import numpy as np
 import itertools
+from dotenv import load_dotenv # To access .env files in virtualenv
 
-# To access .env files in virtualenv
-from dotenv import load_dotenv
+# local functions
+from pages.calculations import set_academic_rating
+
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
-
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Roboto:400", FONT_AWESOME]
 
 # Authentication with Flask-Login, Sqlite3, and Bcrypt
@@ -65,25 +64,17 @@ server.config.update(SECRET_KEY=os.getenv("SECRET_KEY"))
 
 bcrypt = Bcrypt()
 
-# TODO: IMPLEMENT?
-# Create CSRF protect
-# csrf = CSRFProtect()
-# csrf.init_app(server)
-
 db = SQLAlchemy(server)
-
-# Session = sessionmaker(bind=db)
-# session = Session()
 
 login_manager = LoginManager()
 login_manager.init_app(server)
 login_manager.login_view = "/login"
 
-
-# each table in the database needs a class to be created for it using the db.Model, all
-# db columns must be identified by name and data type.
-# UserMixin provides a get_id method that returns the id attribute or raises an exception.x
-# Need to either name the database attribute 'id' or override the get_id function to return user_id
+# each table in the database needs a class to be created for it
+# using the db.Model, all db columns must be identified by name
+# and data type. UserMixin provides a get_id method that returns
+# the id attribute or raises an exception. Need to either name the
+# database attribute 'id' or override the get_id function to return user_id
 class User(UserMixin, db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
@@ -91,19 +82,19 @@ class User(UserMixin, db.Model):
     password = db.Column(db.Text, unique=True)
 
 
-# load_user is used by login_user, passes the user_id and gets the User object that matches that id
+# load_user is used by login_user, passes the user_id
+# and gets the User object that matches that id
 # The 'User.query.get(int(id))' method has been deprecated
 # https://stackoverflow.com/questions/75365194/sqlalchemy-2-0-version-of-user-query-get1-in-flask-sqlalchemy
 @login_manager.user_loader
 def load_user(id):
     return db.session.get(User, int(id))
 
-
 # The default is to block all requests unless user is on login page or is authenticated
 @server.before_request
 def check_login():
     if request.method == "GET":
-        if request.path in ["/login"]:  # , '/logout']:
+        if request.path in ["/login"]:
             return
         if current_user:
             if current_user.is_authenticated:
@@ -161,7 +152,6 @@ def login():
     # Redirect to login page on error
     return redirect(url_for("login", error=1))
 
-
 @server.route("/logout", methods=["GET"])
 def logout():
     if current_user:
@@ -169,10 +159,8 @@ def logout():
             logout_user()
     return render_template("login.html", message="You have been logged out.")
 
-
 # Latest version was refactors to use new dash pages functionality (added dash 2.5)
 # https://github.com/AnnMarieW/dash-multi-page-app-demos/tree/main/multi_page_layout_functions
-# app = dash.Dash(__name__, use_pages=True, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 app = dash.Dash(
     __name__,
     server=server,
@@ -182,8 +170,9 @@ app = dash.Dash(
 )
 
 # category variables
-# NOTE: 'American Indian' has been removed from ethnicity variable
-# - it seems to break some functionality due to inconsistent use as a category in data
+# NOTE: 'American Indian' has been removed from ethnicity
+# variable as it seems to break some functionality due to
+# inconsistent use as a category in data
 ethnicity = [
     "Asian",
     "Black",
@@ -240,14 +229,20 @@ current_academic_year = school_academic_data_k8["Year"].unique().max()
 
 num_academic_years = len(school_academic_data_k8["Year"].unique())
 
-# Build dropdown list based on current_user
+# Dropdown shows single school if school login is used
+# It shows all schools if admin login is used.
 # NOTE: application-state is a dummy input
 @callback(
-    Output("charter-dropdown", "options"), [Input("application-state", "children")]
+    Output("year-dropdown", "options"),        
+    Output("charter-dropdown", "options"),
+    [Input("application-state", "children")]
 )
 def set_dropdown_options(year):
-    # Get the current user id using the current_user proxy, use the ._get_current_object()
-    # method to return the underlying object (User)
+
+    # Charter Dropdown Options    
+    # Get the current user id using the current_user proxy,
+    # use the ._get_current_object() method to return the
+    # underlying object (User)
     authorized_user = current_user._get_current_object()
 
     # admin user
@@ -260,13 +255,45 @@ def set_dropdown_options(year):
         # object. need to subtract 1 from id to get correct school from index, because
         # the admin login is at index 0
         charters = school_index.iloc[[(authorized_user.id - 1)]]
-        # dropdown_data = school[['School Name','School ID','School Type']]
 
     dropdown_dict = dict(zip(charters["School Name"], charters["School ID"]))
     dropdown_list = dict(sorted(dropdown_dict.items()))
-    options = [{"label": name, "value": id} for name, id in dropdown_list.items()]
+    dropdown_options = [{"label": name, "value": id} for name, id in dropdown_list.items()]
 
-    return options
+    # Year Dropdown Options
+    # the length of the adm_values dataframe at this point should
+    # be equal to the total number of years of academic data for
+    # the school (although academic df may still be blank due to
+    # non-qualifying gradespan). So we use it to create the range
+    # for the year dropdown. max_display_years controls the number
+    # of years to display, it should be 1 less than the desired number
+    # of years. We are setting it at '3' right now because we do
+    # not want to show 2018 data. Eventually, it should be '4' because
+    # that will display 5 years of data, which is the maximum
+    
+    # get display school
+    display_school = list(dropdown_list.values())[0]
+
+    # this gets first dict school - count number of rows (len.index)
+    # and that gives you max_display years (note 2020 will never)
+    # appear in index, so need to add 1
+    max_display_years = 3
+    school_year_data = school_academic_data_k8.loc[
+        school_academic_data_k8["School ID"] == display_school
+    ]
+    print(school_year_data)
+    # num_academic_years =
+    # academic_years = len(adm_values.columns) if len(adm_values.columns) <= max_display_years else max_display_years
+    # display_years=[int(current_academic_year)-academic_years,int(current_academic_year)+1]
+    # year_options=[
+    #     {"label": str(y), "value": str(y)}
+    #     for y in range(
+    #         int(current_academic_year) - num_academic_years,
+    #         int(current_academic_year) + 1,
+    #     )
+    # ],    
+
+    return year_options, dropdown_options
 
 app.layout = html.Div(
     [
@@ -643,7 +670,6 @@ def load_data(school, year):
         
         adm_values = adm_values.loc[:, (adm_values != 0).any(axis=0)]
 
-        # reverse order
         adm_values = adm_values[adm_values.columns[::-1]]
 
         if (
@@ -678,12 +704,10 @@ def load_data(school, year):
         school_adm_dict = {}
 
     ### Academic Data
-
-    # K8 Academic Data
     # import timeit
-
     # start_time = timeit.default_timer()
 
+    # K8 Academic Data
     if (
         school_info["School Type"].values[0] == "K8"
         or school_info["School Type"].values[0] == "K12"
@@ -1032,9 +1056,10 @@ def load_data(school, year):
                 ].index
             )
 
-            # calculate IREAD metrics
+            # IREAD Metrics
 
-            # NOTE: See code explanation in discussion of 'attendance_data_metrics' above.
+            # NOTE: See code explanation in discussion of
+            # 'attendance_data_metrics'above.
             if not iread_data.empty:
                 iread_limits = [
                     0.9,
@@ -1294,7 +1319,7 @@ def load_data(school, year):
     # NOTE: CHS (School ID: 5874) converted from a K12 to a K8 and separate HS in 2021. We need to make a special exception here
     # to show HS data for CHS prior to 2021. In 2021 and thereafter, the HS data is under CHMWHS (School ID: 9709)
 
-    ## TODO: THIS CONDITIONAL IS BROKEN
+    ## TODO: THIS CONDITIONAL IS BROKEN (HOW? TELL ME!!)
 
     if (
         school_info["School Type"].values[0] == "HS"
@@ -1326,6 +1351,7 @@ def load_data(school, year):
         filtered_academic_data_hs = all_academic_data_hs[
             ~all_academic_data_hs["Year"].isin(excluded_years)
         ].copy()
+
         hs_school_data = filtered_academic_data_hs.loc[
             filtered_academic_data_hs["School ID"] == school
         ]
@@ -1338,7 +1364,6 @@ def load_data(school, year):
             # academic_analysis_comp_dict = {}
 
         else:
-            ### TODO:   1) ADD SAT GRADE 11/ACT SCORES (DATASET IS MISSING 2019-2021?)
 
             # get school and school corporation hs academic data
             hs_corp_data = filtered_academic_data_hs.loc[
@@ -1361,11 +1386,15 @@ def load_data(school, year):
                 ahs_data = hs_school_data.filter(regex=r"GradAll$|CCR$", axis=1)
 
             # keep only those columns used in calculations
+            # SAT Data Categories: 'Total Tested', 'Below Benchmark',
+            # 'Approaching Benchmark', 'At Benchmark', 'Benchmark %'
+            # Grade 10 ECA Categories are:'Pass N' and 'Test N'
+            # Graduation Categories are: 'Cohort Count' and 'Graduates'
             hs_school_data = hs_school_data.filter(
-                regex=r"Cohort Count$|Graduates$|Pass N|Test N|^Year$", axis=1
+                regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1
             )
             hs_corp_data = hs_corp_data.filter(
-                regex=r"Cohort Count$|Graduates$|Pass N|Test N|^Year$", axis=1
+                regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1
             )
 
             # remove 'ELA & Math' columns (NOTE: Comment this out to retain 'ELA & Math' columns)

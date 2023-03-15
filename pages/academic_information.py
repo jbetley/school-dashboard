@@ -283,13 +283,12 @@ def update_about_page(data, school, year):
             k8_all_data_all_years["Year"] == year
             ]
 
-            # Clean up dataframe (this is belt and suspenders, may not be needed for
-            # all data)
-            k8_all_data.columns = [
-                x.replace("\nProficient \n%", "") for x in k8_all_data.columns.to_list()
-            ]
-            k8_all_data.columns = [x.replace(" \n", " ") for x in k8_all_data.columns.to_list()]
-            k8_all_data.columns = [x.replace("\n", " ") for x in k8_all_data.columns.to_list()]
+            # Clean up dataframe (this is not needed)
+            # k8_all_data.columns = [
+            #     x.replace("\nProficient \n%", "") for x in k8_all_data.columns.to_list()
+            # ]
+            # k8_all_data.columns = [x.replace(" \n", " ") for x in k8_all_data.columns.to_list()]
+            # k8_all_data.columns = [x.replace("\n", " ") for x in k8_all_data.columns.to_list()]
 
             # Get selected school data for all categories
             school_k8_all_data = k8_all_data.loc[k8_all_data["School ID"] == school]
@@ -526,8 +525,6 @@ def update_about_page(data, school, year):
                 k8_subgroup_math_fig = no_data_fig(math_title, 100)
 
     ## HS academic information
-## TODO: ADD SAT GRADE 11/ACT SCORES
-
     if (
         school_index["School Type"].values[0] == "HS"
         or school_index["School Type"].values[0] == "AHS"
@@ -565,6 +562,7 @@ def update_about_page(data, school, year):
             empty_container = {'display': 'block'}
 
         else:
+            # Gradution Rate
             # split data into subsets for display in various tables
             overview = [
                 "Total Graduation Rate",
@@ -616,10 +614,21 @@ def update_about_page(data, school, year):
             else:
                 hs_grad_subgroup_table = no_data_table('Graduation Rate by Subgroup')
 
+            sat_data = hs_academic_info[
+                hs_academic_info["Category"].str.contains("|".join(["Benchmark|Total Tested"]))
+            ]
+            print('SAT')
+            print(sat_data)
             eca_data = hs_academic_info[
                 hs_academic_info["Category"].str.contains("|".join(["Grade 10"]))
             ]
-
+## TODO: ADD SAT GRADE 11/ACT SCORES
+    # print(hs_corp_data.T)
+    # tst = hs_corp_data.loc[:, hs_corp_data.columns.str.contains('Benchmark|Total Tested')]
+    
+    
+    # print(tst)
+            print('ECA')
             print(eca_data)
 
             if not eca_data.empty:            
