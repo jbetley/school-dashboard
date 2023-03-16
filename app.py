@@ -227,17 +227,16 @@ school_academic_data_k8["High Grade"] = (
 # Get current year - demographic data will almost always be more current than academic data (due to IDOE release cadence)
 current_academic_year = school_academic_data_k8["Year"].unique().max()
 
-num_academic_years = len(school_academic_data_k8["Year"].unique())
+# num_academic_years = len(school_academic_data_k8["Year"].unique())
 
 # Dropdown shows single school if school login is used
 # It shows all schools if admin login is used.
 # NOTE: application-state is a dummy input
 @callback(
-    Output("year-dropdown", "options"),        
     Output("charter-dropdown", "options"),
     [Input("application-state", "children")]
 )
-def set_dropdown_options(year):
+def set_dropdown_options(app_state):
 
     # Charter Dropdown Options    
     # Get the current user id using the current_user proxy,
@@ -260,40 +259,67 @@ def set_dropdown_options(year):
     dropdown_list = dict(sorted(dropdown_dict.items()))
     dropdown_options = [{"label": name, "value": id} for name, id in dropdown_list.items()]
 
-    # Year Dropdown Options
-    # the length of the adm_values dataframe at this point should
-    # be equal to the total number of years of academic data for
-    # the school (although academic df may still be blank due to
-    # non-qualifying gradespan). So we use it to create the range
-    # for the year dropdown. max_display_years controls the number
-    # of years to display, it should be 1 less than the desired number
-    # of years. We are setting it at '3' right now because we do
-    # not want to show 2018 data. Eventually, it should be '4' because
-    # that will display 5 years of data, which is the maximum
+    return dropdown_options
+
+@callback(
+    Output("year-dropdown", "options"),        
+    Input("charter-dropdown", "value"),
+)
+def set_year_dropdown_options(school):
     
-    # get display school
-    display_school = list(dropdown_list.values())[0]
-
-    # this gets first dict school - count number of rows (len.index)
-    # and that gives you max_display years (note 2020 will never)
-    # appear in index, so need to add 1
+    # TODO: NEED TO RETHINK THIS - IT BREAKS OTHER THINGS
+    
+    # Year Dropdown Options
+    # the number of rows (years) of academic data matching the
+    # school ID in the relevant school_academic_data dataframe
+    # should be equal to the total number of years of academic
+    # data for the school (although the df may still be blank
+    # due to non-qualifying gradespan). So we use it to create
+    # the range for the year dropdown. max_display_years controls
+    # the number of total years to display, it should be 1 less
+    # than the desired number of years. It is set to '3' because
+    # we do not want to show 2018 data. Eventually, it should be
+    # '4' to display 5 years of data, which is the maximum
     max_display_years = 3
-    school_year_data = school_academic_data_k8.loc[
-        school_academic_data_k8["School ID"] == display_school
-    ]
-    print(school_year_data)
-    # num_academic_years =
-    # academic_years = len(adm_values.columns) if len(adm_values.columns) <= max_display_years else max_display_years
-    # display_years=[int(current_academic_year)-academic_years,int(current_academic_year)+1]
-    # year_options=[
-    #     {"label": str(y), "value": str(y)}
-    #     for y in range(
-    #         int(current_academic_year) - num_academic_years,
-    #         int(current_academic_year) + 1,
-    #     )
-    # ],    
+    # We need to get the type of school (K8, K12, HS, or AHS)
+    # to know which academic dataframe to check.
+    school_type = school_index.loc[school_index["School ID"] == school]['School Type'].values[0]
+    
+    if school_type == 'K8' or school_type == 'K12':
+        num_academic_years = len(school_academic_data_k8.loc[school_academic_data_k8["School ID"] == school].index)
 
-    return year_options, dropdown_options
+    elif school_type == 'HS' or school_type == 'AHS':
+        num_academic_years = len(all_academic_data_hs.loc[all_academic_data_hs["School ID"] == school].index)
+        print(school_index.loc[school_index["School ID"] == school]['School Name'])
+        print(num_academic_years)
+    else:
+        num_academic_years = max_display_years # TODO: Need to think of other edge cases
+
+    # TODO: Alternative way to do this (and most likelu faster?) is to open the finance
+    # file of the school and count the number of years where ADM is not zero. E.g.,
+    # finance_file = 'data/F-' + school_index.loc[school_index["School ID"] == school]['School Name'].values[0] + '.csv'
+
+    # if os.path.isfile(finance_file):
+    #     financial_data = pd.read_csv(finance_file)
+    #     adm_years = financial_data[financial_data['Category'].str.contains('ADM Average')]
+    #     num_academic_years = len(adm_years.columns) - 1
+        
+    academic_years = num_academic_years if num_academic_years <= max_display_years else max_display_years
+    
+    print(academic_years)
+    # we subtract 1 from academic years because we need to count the current year as
+    # 1 year
+    year_options=[
+        {"label": str(y), "value": str(y)}
+        for y in range(
+            int(current_academic_year) - (academic_years -1),
+            int(current_academic_year) + 1,
+        )
+    ]
+
+    print(year_options)
+    
+    return year_options
 
 app.layout = html.Div(
     [
@@ -343,13 +369,13 @@ app.layout = html.Div(
                                 ),
                                 dcc.Dropdown(
                                     id="year-dropdown",
-                                    options=[
-                                        {"label": str(y), "value": str(y)}
-                                        for y in range(
-                                            int(current_academic_year) - num_academic_years,
-                                            int(current_academic_year) + 1,
-                                        )
-                                    ],
+                                    # options=[
+                                    #     {"label": str(y), "value": str(y)}
+                                    #     for y in range(
+                                    #         int(current_academic_year) - num_academic_years,
+                                    #         int(current_academic_year) + 1,
+                                    #     )
+                                    # ],
                                     style={
                                         "fontSize": "85%",
                                         "fontFamily": "Roboto, sans-serif",
