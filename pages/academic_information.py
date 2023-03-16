@@ -52,7 +52,7 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
 )
-def update_about_page(data, school, year):
+def update_abcademic_information_page(data, school, year):
     if not data:
         raise PreventUpdate
 
@@ -181,6 +181,8 @@ def update_about_page(data, school, year):
                 hs_not_calculated_table = {}
                 hs_table_container = {"display": "none"}
 
+            print('Entering:')
+            print(academic_data_k8)
             # for academic information, strip out all comparative data and clean headers
             k8_academic_info = academic_data_k8[
                 [
@@ -277,10 +279,14 @@ def update_about_page(data, school, year):
             # in other cases, it is represented by a '0.'
             k8_all_data_all_years = pd.read_csv(r"data/ilearnAll.csv", dtype=str)
             
-            # k8_all_data_all_years = pd.read_csv(r"data/ilearn2022all.csv", dtype=str)
+            # Get selected school data for all categories
+            school_k8_all_data = k8_all_data_all_years.loc[k8_all_data_all_years["School ID"] == school]
 
-            k8_all_data = k8_all_data_all_years.loc[
-            k8_all_data_all_years["Year"] == year
+            # Skip 2020 as there is no data
+            year = '2019' if year == '2020' else year
+
+            school_k8_proficiency_data = school_k8_all_data.loc[
+            school_k8_all_data["Year"] == year
             ]
 
             # Clean up dataframe (this is not needed)
@@ -290,40 +296,39 @@ def update_about_page(data, school, year):
             # k8_all_data.columns = [x.replace(" \n", " ") for x in k8_all_data.columns.to_list()]
             # k8_all_data.columns = [x.replace("\n", " ") for x in k8_all_data.columns.to_list()]
 
-            # Get selected school data for all categories
-            school_k8_all_data = k8_all_data.loc[k8_all_data["School ID"] == school]
 
+            
             # drop columns with no values and reset index
-            school_k8_all_data = school_k8_all_data.dropna(axis=1)
-            school_k8_all_data = school_k8_all_data.reset_index()
+            school_k8_proficiency_data = school_k8_proficiency_data.dropna(axis=1)
+            school_k8_proficiency_data = school_k8_proficiency_data.reset_index()
 
             # TODO: May need this if we want to differentiate those categories
             # where there is no data from those categories where there were tested
             # students, but the proficiency value does not meet 'n-size' requirements
             # e.g., the value is '***'
-            # school_k8_all_data =  school_k8_all_data.replace({'***': float(-99)})
+            # school_k8_proficiency_data =  school_k8_proficiency_data.replace({'***': float(-99)})
 
             # NOTE: Leaving the above line commented out means that the below
             # conversion turns all '***' to NaN.
-            for col in school_k8_all_data.columns:
-                school_k8_all_data[col] = pd.to_numeric(
-                    school_k8_all_data[col], errors="coerce"
+            for col in school_k8_proficiency_data.columns:
+                school_k8_proficiency_data[col] = pd.to_numeric(
+                    school_k8_proficiency_data[col], errors="coerce"
                 )
 
             # Drop columns: 'Year','School ID', 'School Name', 'Corp ID','Corp Name'
             # TODO: May not need to do the above as we are filtering data for each chart
             # which will automatically exclude these categories
             # Also drop 'ELA & Math' Category (not currently displayed on dashboard)
-            school_k8_all_data = school_k8_all_data.drop(
+            school_k8_proficiency_data = school_k8_proficiency_data.drop(
                 list(
-                    school_k8_all_data.filter(
+                    school_k8_proficiency_data.filter(
                         regex="ELA & Math|Year|Corp ID|Corp Name|School ID|School Name"
                     )
                 ),
                 axis=1,
             )
 
-            all_proficiency_data = school_k8_all_data.copy()
+            all_proficiency_data = school_k8_proficiency_data.copy()
 
             proficiency_rating = [
                 "Below Proficiency",
@@ -366,6 +371,7 @@ def update_about_page(data, school, year):
                     if total_tested in all_proficiency_data.columns:
 
                         if all_proficiency_data[colz].iloc[0].sum() == 0:
+
                             # if the value is a float, the measured values were NaN, which
                             # means they were converted '***', and thus insufficient data
                             if isinstance(all_proficiency_data[colz].iloc[0].sum(), np.floating):
