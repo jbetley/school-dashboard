@@ -282,7 +282,7 @@ def update_abcademic_information_page(data, school, year):
             # Get selected school data for all categories
             school_k8_all_data = k8_all_data_all_years.loc[k8_all_data_all_years["School ID"] == school]
 
-            # Skip 2020 as there is no data
+            # Skip 2020 as there is no academic data
             year = '2019' if year == '2020' else year
 
             school_k8_proficiency_data = school_k8_all_data.loc[
@@ -763,8 +763,8 @@ def layout():
                                     # ),
                                     html.P(""),
                                     # html.Center(
-                                        html.P("While data is presented in a longitudinal format, there are a number of factors that make it difficult \
-                                               to make valid and reliable comparisons from 2019 to 2022. For example, ILEARN was administered for the first \
+                                        html.P("There are a number of factors that make it difficult to make valid and reliable comparisons between \
+                                               test scores from 2019 to 2022. For example, ILEARN was administered for the first \
                                                time during the 2018-19 SY and represented an entirely new type and mode of assessment (adaptive \
                                                and online-only). No State assessment was administered in 2020 because of the Covid-19 pandemic. Finally, \
                                                the 2019 data set includes only students who attended the testing school for 162 days, while \

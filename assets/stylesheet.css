@@ -361,11 +361,11 @@ html {
 }
 
 body {
-  font-size: 1.5em; /* currently ems cause chrome bug misinterpreting rems on body element */
+  font-size: 1em; /* currently ems cause chrome bug misinterpreting rems on body element */
   line-height: 1.6;
   font-weight: 400;
-  font-family: 'Jost', sans-serif; /*"Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;*/
-  color: rgb(50, 50, 50);
+  font-family: 'Roboto', sans-serif; /*"Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;*/
+  color: steelblue; /*color: rgb(50, 50, 50);*/
   background-color: #F2F2F2;
   margin: 0 8px 8px 8px;
   /* margin: 3%; */
@@ -457,6 +457,21 @@ body {
 .layout_div {
   display: flex;
 }
+/* Base color of all dropdown menu options */
+.VirtualizedSelectOption {
+  background-color: white;
+  color: steelblue;
+}
+/* Color for selected item in dropdown list */
+.VirtualizedSelectFocusedOption {
+  background-color: lightgrey;
+  color: steelblue;
+}
+/* Colors the selected item once selected*/
+.Select-value-label {
+  color: steelblue !important;
+}
+
 .dcc_control {
     margin: 0;
     padding: 5px;
@@ -484,7 +499,7 @@ body {
 
 .dash_label {
   margin-right: 0;
-  padding-top: 5px;
+  padding-top: 10px;
   color: steelblue;
   display: inline-block;
   vertical-align: middle;

@@ -224,10 +224,9 @@ school_academic_data_k8["High Grade"] = (
     school_academic_data_k8["High Grade"].astype(str).str.replace(".0", "", regex=False)
 )
 
-# Get current year - demographic data will almost always be more current than academic data (due to IDOE release cadence)
+# Get current year - demographic data will almost always be more current
+# than academic data (due to IDOE release cadence), so use academic data
 current_academic_year = school_academic_data_k8["Year"].unique().max()
-
-# num_academic_years = len(school_academic_data_k8["Year"].unique())
 
 # Dropdown shows single school if school login is used
 # It shows all schools if admin login is used.
@@ -270,7 +269,7 @@ def set_dropdown_options(app_state):
 def set_year_dropdown_options(school,year):
 
     # Year Dropdown Options
-    max_display_years = 4
+    max_dropdown_years = 4
 
     # Option #1: Determine Years to display based on years with academic data
     # Upside: Fewer empty academic data graphs/tables
@@ -293,34 +292,32 @@ def set_year_dropdown_options(school,year):
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
         adm_years = financial_data[financial_data['Category'].str.contains('ADM Average')]
-        num_academic_years = len(adm_years.columns) - 1
+        school_academic_years = len(adm_years.columns) - 1
         
-    academic_years = num_academic_years if num_academic_years <= max_display_years else max_display_years
+    num_dropdown_years = school_academic_years if school_academic_years <= max_dropdown_years else max_dropdown_years
     
-    # TODO: First value = current_year
-    # Every other value is equal to the selected year as
-    # long as it is greater than the earliest value available
-    # for the school
-  
+    # subtract 1 total to account for current year in display
+    first_available_year = int(current_academic_year) - (num_dropdown_years-1)
+    
     # 'year' represents the state of the year-dropdown when a
     # school is selected. This sets the current year_value
-    # equal either to current_year state or to the closest
-    # year of academic data that is available for the school
-    first_available_year = int(current_academic_year) - (academic_years-1)
+    # equal to: current_academic_year (when app is first
+    # opened); current_year state (if the school has available
+    # data for that year), or to the next earliest year of academic
+    # data that is available for the school
     if year is None:
         year_value = current_academic_year
+    
     elif int(year) < first_available_year:
         year_value = first_available_year
+    
     else:
         year_value = year
 
-    print(year_value)
-    # we subtract 1 from academic years because we need to count
-    # the current year as a year
     year_options=[
         {"label": str(y), "value": str(y)}
         for y in range(
-            int(current_academic_year) - (academic_years -1),
+            first_available_year,
             int(current_academic_year) + 1,
         )
     ]
@@ -352,8 +349,9 @@ app.layout = html.Div(
                                 dcc.Dropdown(
                                     id="charter-dropdown",
                                     style={
-                                        "fontSize": "85%",
                                         "fontFamily": "Roboto, sans-serif",
+                                        'color': 'steelblue',
+
                                     },
                                     multi=False,
                                     clearable=False,
@@ -376,10 +374,9 @@ app.layout = html.Div(
                                 dcc.Dropdown(
                                     id="year-dropdown",
                                     style={
-                                        "fontSize": "85%",
                                         "fontFamily": "Roboto, sans-serif",
+                                        'color': 'steelblue',
                                     },
-                                    # value=current_academic_year,
                                     multi=False,
                                     clearable=False,
                                     className="year_dash_control",
