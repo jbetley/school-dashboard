@@ -6,6 +6,46 @@ import numpy as np
 # import itertools
 import scipy.spatial as spatial
 
+def calculate_percentage(numerator,denominator):
+    """
+    Calculates a percentage taking into account a string representing insufficent n-size ('***') and
+    special cases where a '0' result has a different meaning. The function does the following:
+        1) When either the numerator or the denominator is equal to '***', the function returns '****'
+        2) When either the numerator or the denominator is null/nan, the function returns 'None'
+        3) When the numerator is null/nan, but the denominatir is not, the function returns '0'
+        4) if none of the above are true, the function divides the numerator by the denominator.
+    """
+    return np.where(
+        (numerator == "***") | (denominator == "***"),
+        "***",
+        np.where(
+            (numerator.isna()) & (denominator.isna()),
+            None,
+            np.where(
+                numerator.isna(),
+                0,
+                pd.to_numeric(numerator, errors="coerce")
+                / pd.to_numeric(denominator, errors="coerce"),
+            ),
+        ),
+    )
+
+
+def calculate_difference(value1, value2):
+    """
+    Calculate difference between two dataframes with specific mixed datatypes
+    and conditions.
+    """
+    return np.where(
+        (value1 == "***") | (value2 == "***"),
+        "***",
+        np.where(
+            value1.isna(),
+            None,
+            pd.to_numeric(value1, errors="coerce")
+            - pd.to_numeric(value2, errors="coerce"),
+        ),
+    )
 
 def set_academic_rating(data, threshold, flag):
     """

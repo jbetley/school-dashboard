@@ -40,7 +40,8 @@ import itertools
 from dotenv import load_dotenv # To access .env files in virtualenv
 
 # local functions
-from pages.calculations import set_academic_rating
+from pages.calculations import set_academic_rating, calculate_percentage, \
+    calculate_difference
 
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Roboto:400", FONT_AWESOME]
@@ -259,6 +260,13 @@ def set_dropdown_options(app_state):
     dropdown_options = [{"label": name, "value": id} for name, id in dropdown_list.items()]
 
     return dropdown_options
+
+@callback(
+    Output("charter-dropdown", "value"),
+    Input("charter-dropdown", "options")
+)
+def set_dropdown_value(charter_options):
+    return charter_options[0]["value"]
 
 @callback(
     Output("year-dropdown", "options"),
@@ -811,21 +819,21 @@ def load_data(school, year):
             # reset index as 'Year'
             k8_corp_rate_filtered = k8_corp_rate_filtered.set_index("Year")
 
-            def calculate_proficiency(proficient_col, tested_col):
-                return np.where(
-                    (proficient_col == "***") | (tested_col == "***"),
-                    "***",
-                    np.where(
-                        (proficient_col.isna()) & (tested_col.isna()),
-                        None,
-                        np.where(
-                            proficient_col.isna(),
-                            0,
-                            pd.to_numeric(proficient_col, errors="coerce")
-                            / pd.to_numeric(tested_col, errors="coerce"),
-                        ),
-                    ),
-                )
+            # def calculate_proficiency(proficient_col, tested_col):
+            #     return np.where(
+            #         (proficient_col == "***") | (tested_col == "***"),
+            #         "***",
+            #         np.where(
+            #             (proficient_col.isna()) & (tested_col.isna()),
+            #             None,
+            #             np.where(
+            #                 proficient_col.isna(),
+            #                 0,
+            #                 pd.to_numeric(proficient_col, errors="coerce")
+            #                 / pd.to_numeric(tested_col, errors="coerce"),
+            #             ),
+            #         ),
+            #     )
 
             # iterate over (non missing) columns, calculate the average, and store in a new column
             # TODO: THIS IS INEFFICIENT -> FIX
@@ -843,7 +851,7 @@ def load_data(school, year):
                     tested = c + "|" + s + " Total Tested"
 
                     if proficient not in missing_cols:
-                        k8_school_data[new_col] = calculate_proficiency(
+                        k8_school_data[new_col] = calculate_percentage(
                             k8_school_data[proficient], k8_school_data[tested]
                         )
                         k8_corp_rate_data[new_col] = (
@@ -1014,17 +1022,17 @@ def load_data(school, year):
             k8_corp_data = k8_corp_data.drop("Category", axis=1)
 
             # calculate difference between school and corp dataframes (with mixed data types)
-            def calculate_difference(value1, value2):
-                return np.where(
-                    (value1 == "***") | (value2 == "***"),
-                    "***",
-                    np.where(
-                        value1.isna(),
-                        None,
-                        pd.to_numeric(value1, errors="coerce")
-                        - pd.to_numeric(value2, errors="coerce"),
-                    ),
-                )
+            # def calculate_difference(value1, value2):
+            #     return np.where(
+            #         (value1 == "***") | (value2 == "***"),
+            #         "***",
+            #         np.where(
+            #             value1.isna(),
+            #             None,
+            #             pd.to_numeric(value1, errors="coerce")
+            #             - pd.to_numeric(value2, errors="coerce"),
+            #         ),
+            #     )
 
             k8_result = pd.DataFrame()
 
@@ -1065,7 +1073,8 @@ def load_data(school, year):
             #### Academic Metrics (k8)
 
             ## Non-comparative indicators
-            # NOTE: Need to pull out (and drop from main dataframe) and calculate ratings for any data point that is not comparative
+            # NOTE: Pull out (and drop from main dataframe) and
+            # calculate ratings for any data point that is not comparative
             # (e.g., that is not year over year or diff from school corp)
 
             # IREAD Data
@@ -1128,8 +1137,7 @@ def load_data(school, year):
                 k8_school_metric_data.columns[-1]
             ]
 
-            # the following function is necessary because a string representing insufficent n-size ('***') is included in
-            # the data set and because there are special cases where a '0' result has a different meaning:
+            # This one is different
             # 1) When Total Tested is the same for two consecutive years and Total Proficient
             #   is *** -> this must be treated as a ***
             # 2) When Total Tested is the same for two consecutive years and Total Proficient is a
@@ -1338,10 +1346,12 @@ def load_data(school, year):
     # print("elapsed time:")
     # print(elapsed)
 
-    # NOTE: CHS (School ID: 5874) converted from a K12 to a K8 and separate HS in 2021. We need to make a special exception here
-    # to show HS data for CHS prior to 2021. In 2021 and thereafter, the HS data is under CHMWHS (School ID: 9709)
+    # NOTE: CHS (School ID: 5874) converted from a K12 to a K8 and
+    # separate HS in 2021. We need to make a special exception here
+    # to show HS data for CHS prior to 2021. In 2021 and thereafter,
+    # the HS data is under CHMWHS (School ID: 9709)
 
-    ## TODO: THIS CONDITIONAL IS BROKEN (HOW? TELL ME!!)
+    ## TODO: THIS CONDITIONAL IS BROKEN (IS IT THO? HOW? TELL ME!!)
 
     if (
         school_info["School Type"].values[0] == "HS"
@@ -1359,7 +1369,6 @@ def load_data(school, year):
             year_over_year_values_json = {}
             iread_data_json = {}
             academic_analysis_corp_dict = {}
-            # academic_analysis_comp_dict = {} # Use {} or ""?
 
         # if the school is a HS or K12 -> the ahs json will be empty
         if (
@@ -1382,8 +1391,6 @@ def load_data(school, year):
             hs_academic_data_json = {}
             combined_grad_metrics_json = {}
             ahs_metrics_data_json = {}
-            # academic_analysis_corp_dict = {}
-            # academic_analysis_comp_dict = {}
 
         else:
 
@@ -1403,7 +1410,8 @@ def load_data(school, year):
                 hs_corp_data["School Type"].str.contains("AHS") == False
             ]
 
-            ## AHS- temporarily pull AHS specific values (CCR and GradAll) that don't have corp equivalent.
+            ## AHS- temporarily pull AHS specific values (CCR and GradAll)
+            # that don't have corp equivalent.
             if school_info["School Type"].values[0] == "AHS":
                 ahs_data = hs_school_data.filter(regex=r"GradAll$|CCR$", axis=1)
 
@@ -1427,11 +1435,13 @@ def load_data(school, year):
                 list(hs_corp_data.filter(regex="ELA & Math")), axis=1
             )
 
-            # valid_mask returns a boolean series of columns where column is true if any element in the column is not equal to null
+            # valid_mask returns a boolean series of columns where column
+            # is true if any element in the column is not equal to null
             valid_mask = ~pd.isnull(hs_school_data[hs_school_data.columns]).all()
 
             # create list of columns with no data (used in loop below)
-            # missing_mask returns boolean series of columns where column is true if all elements in the column are equal to null
+            # missing_mask returns boolean series of columns where column
+            # is true if all elements in the column are equal to null
             missing_mask = pd.isnull(hs_school_data[hs_school_data.columns]).all()
             missing_cols = hs_school_data.columns[missing_mask].to_list()
 
@@ -1440,13 +1450,20 @@ def load_data(school, year):
             hs_corp_data = hs_corp_data[hs_corp_data.columns[valid_mask]]
 
             # Calculate Graduation Rates
-            # Coercing corp values to numeric converts all '***' (insufficient n-size) to NaN which effectively
-            # removes the school from the average calculation. This won't have a large effect as there are few
-            # traditional public high schools with supressed data.
-            # Do not convert school values because the function to calculate differences anticipates mixed dtypes.
-            # See:
+            # NOTE: Coercing has_corp_data values to numeric has the effect
+            # of converting all '***' (insufficient n-size) values to NaN.
+            # Because we are manually calculating a corp average, a NaN means
+            # the school has been removed from the average calculation.
+            # Typically, this won't have a large effect as there are few
+            # traditional public high schools with supressed data, but it
+            # could still potentially skew the results. No easy way to
+            # fix. See,
             # https://towardsdatascience.com/imputing-missing-data-with-simple-and-advanced-techniques-f5c7b157fb87
             # https://cardoai.com/handling-missing-data-with-python/
+            
+            # Do not convert school_corp_data values because the function to
+            # calculate differences anticipates mixed dtypes.
+
             for col in hs_corp_data.columns:
                 hs_corp_data[col] = pd.to_numeric(hs_corp_data[col], errors="coerce")
 
@@ -1457,23 +1474,22 @@ def load_data(school, year):
             hs_corp_data = hs_corp_data.loc[::-1].reset_index()
 
             # calculate graduation rate
-            def calculate_grad_rate(graduate_col, cohort_col):
-                return np.where(
-                    (graduate_col == "***") | (cohort_col == "***"),
-                    "***",
-                    np.where(
-                        (graduate_col.isna()) & (cohort_col.isna()),
-                        None,
-                        np.where(
-                            graduate_col.isna(),
-                            0,
-                            pd.to_numeric(graduate_col, errors="coerce")
-                            / pd.to_numeric(cohort_col, errors="coerce"),
-                        ),
-                    ),
-                )
+            # def calculate_grad_rate(graduate_col, cohort_col):
+            #     return np.where(
+            #         (graduate_col == "***") | (cohort_col == "***"),
+            #         "***",
+            #         np.where(
+            #             (graduate_col.isna()) & (cohort_col.isna()),
+            #             None,
+            #             np.where(
+            #                 graduate_col.isna(),
+            #                 0,
+            #                 pd.to_numeric(graduate_col, errors="coerce")
+            #                 / pd.to_numeric(cohort_col, errors="coerce"),
+            #             ),
+            #         ),
+            #     )
 
-            # calculate grad rates
             grad_categories = ethnicity + status + ["Total"]
             for g in grad_categories:
                 new_col = g + " Graduation Rate"
@@ -1481,7 +1497,7 @@ def load_data(school, year):
                 cohort = g + "|Cohort Count"
 
                 if cohort not in missing_cols:
-                    hs_school_data[new_col] = calculate_grad_rate(
+                    hs_school_data[new_col] = calculate_percentage(
                         hs_school_data[graduates], hs_school_data[cohort]
                     )
                     hs_corp_data[new_col] = (
@@ -1489,21 +1505,21 @@ def load_data(school, year):
                     )
 
             # Calculate ECA (Grade 10) rate
-            def calculate_eca_rate(passN, testN):
-                return np.where(
-                    (passN == "***") | (testN == "***"),
-                    "***",
-                    np.where(
-                        (passN.isna()) & (testN.isna()),
-                        None,
-                        np.where(
-                            passN.isna(),
-                            0,
-                            pd.to_numeric(passN, errors="coerce")
-                            / pd.to_numeric(testN, errors="coerce"),
-                        ),
-                    ),
-                )
+            # def calculate_eca_rate(passN, testN):
+            #     return np.where(
+            #         (passN == "***") | (testN == "***"),
+            #         "***",
+            #         np.where(
+            #             (passN.isna()) & (testN.isna()),
+            #             None,
+            #             np.where(
+            #                 passN.isna(),
+            #                 0,
+            #                 pd.to_numeric(passN, errors="coerce")
+            #                 / pd.to_numeric(testN, errors="coerce"),
+            #             ),
+            #         ),
+            #     )
 
             # Use ECA data as calculated at the corporation level (from corporation_rates datafile).
             # NOTE:
@@ -1581,7 +1597,7 @@ def load_data(school, year):
                     passN = e + " Pass N"
                     testN = e + " Test N"
 
-                    hs_school_data[new_col] = calculate_eca_rate(
+                    hs_school_data[new_col] = calculate_percentage(
                         hs_school_data[passN], hs_school_data[testN]
                     )
                     # TODO: Not currently using corp_rate (TODO: Add to Academic Analysis)
@@ -1589,8 +1605,51 @@ def load_data(school, year):
                         hs_corp_rate_data[passN] / hs_corp_rate_data[testN]
                     )
 
-            ### TODO: I Suspect that I got derailed here and stopped working on hs/ahs data
-            ###       Need to revisit this entire section
+            # def calculate_sat_rate(at_benchmarkN, total_testedN):
+            #     return np.where(
+            #         (at_benchmarkN == "***") | (total_testedN == "***"),
+            #         "***",
+            #         np.where(
+            #             (at_benchmarkN.isna()) & (total_testedN.isna()),
+            #             None,
+            #             np.where(
+            #                 at_benchmarkN.isna(),
+            #                 0,
+            #                 pd.to_numeric(at_benchmarkN, errors="coerce")
+            #                 / pd.to_numeric(total_testedN, errors="coerce"),
+            #             ),
+            #         ),
+            #     )
+            sat_categories = ethnicity + status + ["School Total"]
+            sat_subject = ['EBRW','Math','Both']
+
+            # TODO: FIGURE OUT HOW TO DO STACKED BAR CHART AT, BELOW, APPROACHING SAT Proficiency
+            # NOTE: Do not currently use SAT hs_corp_data for anything as SAT is not an official
+            # metrics, but keeping in in the even we want to run comparisons later
+            for ss in sat_subject:
+                for sc in sat_categories:
+                    new_col = sc + "|" + ss + " Benchmark %"
+                    at_benchmark = sc + "|" + ss + " At Benchmark"
+                    total_tested = sc + "|" + ss + " Total Tested"
+
+                    if total_tested not in missing_cols:
+                        # IDOE sometimes leaves 0's where there should be nulls
+                        # so we drop all columns for a category where the
+                        # total tested # of students is '0' (values are currently
+                        # strings, get converted to numeric in the calculate-percentage
+                        # function)
+                        if hs_school_data[total_tested].values[0] == '0':
+                            # drop category
+                            drop_columns = [new_col, at_benchmark, total_tested]
+                            hs_school_data = hs_school_data.drop(drop_columns, axis=1)
+                            hs_corp_data = hs_corp_data.drop(drop_columns, axis=1)
+                        else:
+                            hs_school_data[new_col] = calculate_percentage(
+                                hs_school_data[at_benchmark], hs_school_data[total_tested]
+                            )
+                            hs_corp_data[new_col] = (
+                                hs_corp_data[at_benchmark] / hs_corp_data[total_tested]
+                            )
 
             # add 'non-waiver grad rate' ('Non-Waiver|Cohort Count' / 'Total|Cohort Count')
             # and 'strength of diploma' (Non-Waiver|Cohort Count` * 1.08) / `Total|Cohort Count`) calculation and average to both dataframes
@@ -1630,7 +1689,8 @@ def load_data(school, year):
                 ) / hs_school_data["Total|Cohort Count"]
 
             # Calculate CCR Rate (AHS Only), add Year column and store in temporary dataframe
-            # NOTE: ALl other values pulled from HS dataframe required for AHS calculations should happen here
+            # NOTE: ALl other values pulled from HS dataframe required for AHS calculations
+            # should happen here
             if school_info["School Type"].values[0] == "AHS":
                 ahs_school_data = pd.DataFrame()
                 ahs_school_data["Year"] = hs_school_data["Year"]
@@ -1652,11 +1712,11 @@ def load_data(school, year):
 
             # filter all columns keeping only the relevant ones (NOTE: comment this out to retain all columns)
             hs_school_data = hs_school_data.filter(
-                regex=r"^Category|Graduation Rate$|Pass Rate$|^Strength of Diploma|^CCR Percentage|^Year$",
+                regex=r"^Category|Graduation Rate$|Pass Rate$|^Strength of Diploma|Benchmark %|^CCR Percentage|^Year$",
                 axis=1,
             )
             hs_corp_data = hs_corp_data.filter(
-                regex=r"^Category|Graduation Rate$|Pass Rate$|^Strength of Diploma|^Year$",
+                regex=r"^Category|Graduation Rate$|Pass Rate$|^Strength of Diploma|Benchmark %|^Year$",
                 axis=1,
             )
 
@@ -1812,24 +1872,24 @@ def load_data(school, year):
             hs_corp_data = hs_corp_data.fillna(value=np.nan)
 
             # calculate graduation rate differences
-            def calculate_graduation_rate_difference(school_col, corp_col):
-                return np.where(
-                    (school_col == "***") | (corp_col == "***"),
-                    "***",
-                    # np.where((school_col.isna()) & (corp_col.isna()),None,
-                    #          np.where(school_col.isna(),0,
-                    np.where(
-                        school_col.isna(),
-                        None,
-                        pd.to_numeric(school_col, errors="coerce")
-                        - pd.to_numeric(corp_col, errors="coerce"),
-                    ),
-                )  # )
+            # def calculate_graduation_rate_difference(school_col, corp_col):
+            #     return np.where(
+            #         (school_col == "***") | (corp_col == "***"),
+            #         "***",
+            #         # np.where((school_col.isna()) & (corp_col.isna()),None,
+            #         #          np.where(school_col.isna(),0,
+            #         np.where(
+            #             school_col.isna(),
+            #             None,
+            #             pd.to_numeric(school_col, errors="coerce")
+            #             - pd.to_numeric(corp_col, errors="coerce"),
+            #         ),
+            #     )  # )
 
             # calculate difference between two dataframes
             hs_results = pd.DataFrame()
             for y in hs_year_cols:
-                hs_results[y] = calculate_graduation_rate_difference(
+                hs_results[y] = calculate_difference(
                     hs_school_data[y + "School"], hs_corp_data[y + "Corp Average"]
                 )
 
@@ -2071,12 +2131,6 @@ def load_data(school, year):
     dict_of_df[14] = combined_grad_metrics_json
 
     return dict_of_df
-
-
-@callback(Output("charter-dropdown", "value"), Input("charter-dropdown", "options"))
-def set_dropdown_value(charter_options):
-    return charter_options[0]["value"]
-
 
 if __name__ == "__main__":
     app.run_server(debug=True)
