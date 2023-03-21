@@ -22,7 +22,7 @@ from .calculations import round_percentages
 from .subnav import subnav_academic
 
 ### Testing ###
-# pd.set_option("display.max_rows", 400)
+pd.set_option("display.max_rows", 400)
 
 dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
 
@@ -341,7 +341,7 @@ def update_abcademic_information_page(data, school, year):
                 "Below Proficiency",
                 "Approaching Proficiency",
                 "At Proficiency",
-                "Above Proficiency",
+                "Above Proficiency"
             ]
 
             # for each category, create a list of columns using the strings in
@@ -350,6 +350,7 @@ def update_abcademic_information_page(data, school, year):
 
             annotations = pd.DataFrame(columns= ['Category','Total Tested','Status'])
 
+            print(all_proficiency_data)
             for c in categories:
                 for s in subject:
                     category_subject = c + "|" + s
@@ -421,6 +422,8 @@ def update_abcademic_information_page(data, school, year):
                         # 'grade_subject'. Since we arent using it, we need to
                         # drop it from each category
                         all_proficiency_data.drop(category_subject, axis=1, inplace=True)
+
+            print(all_proficiency_data.T)
 
             # drop all remaining columns used for calculation that we
             # dont want to chart
@@ -650,44 +653,143 @@ def update_abcademic_information_page(data, school, year):
             else:
                 hs_grad_subgroup_table = no_data_table('Graduation Rate by Subgroup')
       
-            # SAT Benchmark Tables           
-            sat_data = hs_academic_info[
-                hs_academic_info["Category"].str.contains('Benchmark')
+            # SAT Benchmark Tables
+            sat_rating = [
+                "Below Benchmark",
+                "Approaching Benchmark",
+                "At Benchmark"
+            ]
+
+            sat_breakdown = hs_academic_info[
+                hs_academic_info["Category"].str.contains("|".join(sat_rating + ['Total Tested']))
+            ].copy()
+
+            sat_breakdown = sat_breakdown.reset_index(drop=True)
+            sat_breakdown = sat_breakdown.set_index('Category')
+            sat_breakdown = sat_breakdown.T
+
+############
+
+# TODO: WORKING TO BUILD STACKED BARS #
+
+            sat_breakdown_data = sat_breakdown.copy()
+
+            for col in sat_breakdown_data.columns:
+                sat_breakdown_data[col] = pd.to_numeric(
+                    sat_breakdown_data[col], errors="coerce"
+                )
+
+            # for each category, create a list of columns using the strings in
+            #  'proficiency_rating' and then divide each column by 'Total Tested'
+            categories = ['School Total'] + ethnicity + subgroup
+            sat_subject = ['EBRW', 'Math']
+            sat_annotations = pd.DataFrame(columns= ['Category','Total Tested'])
+
+            # TESTING PURPOSES - DROPS LAST ROW #
+            sat_breakdown_data = sat_breakdown_data[:-1]
+
+            # TODO: Math is Screwy because only 3 values (fix round percentages to take
+            # number of values)
+            print(sat_breakdown_data.T)
+            print(sat_breakdown_data.columns)
+            for c in categories:
+                for s in sat_subject:
+                    category_subject = c + "|" + s
+                    colz = [category_subject + " " + x for x in sat_rating]
+
+                    total_tested = category_subject + " " + "Total Tested"
+
+                    if total_tested in sat_breakdown_data.columns:
+                        print('is_total_tested')
+                        if sat_breakdown_data[colz].iloc[0].sum() == 0:
+                            print('is_zero')
+
+                            # if isinstance(sat_breakdown_data[colz].iloc[0].sum(), np.floating):
+                            #     sat_annotations.loc[len(sat_annotations.index)] = [colz[0],sat_breakdown_data[total_tested].values[0],'Insufficient']
+
+                            # elif isinstance(sat_breakdown_data[colz].iloc[0].sum(), np.integer):
+                            #     if ~sat_breakdown_data[colz].columns.str.contains('Grade').any():
+                            #         sat_annotations.loc[len(sat_annotations.index)] = [colz[0],sat_breakdown_data[total_tested].values[0],'Missing']
+
+                            # either way, drop the entire category from the chart data
+                            all_colz = colz + [total_tested]
+                            sat_breakdown_data.drop(all_colz, axis=1, inplace=True)
+
+                        else:
+                            # calculate percentage
+                            print('here?')
+                            sat_breakdown_data[colz] = sat_breakdown_data[colz].divide(
+                                sat_breakdown_data[total_tested], axis="index"
+                            )
+
+                            # get a list of all values
+                            row_list = sat_breakdown_data[colz].values.tolist()
+
+                            # round percentages using Largest Remainder Method
+                            rounded = round_percentages(row_list[0])
+
+                            # add back to dataframe
+                            tmp2_df = pd.DataFrame([rounded])
+                            cols = list(tmp2_df.columns)
+                            sat_breakdown_data[colz] = tmp2_df[cols]
+
+                        # each existing category has a calculated proficiency column named
+                        # 'grade_subject'. Since we arent using it, we need to
+                        # drop it from each category
+                        # all_proficiency_data.drop(category_subject, axis=1, inplace=True)
+            # TODO: NOT WORKING
+            print('RESULT:')
+            print(sat_breakdown_data.T)
+            # drop all remaining columns used for calculation that we
+            # dont want to chart
+            # all_proficiency_data.drop(
+            #     list(
+            #         all_proficiency_data.filter(
+            #             regex="School Total|Total Proficient"
+            #         )
+            #     ),
+            #     axis=1,
+            #     inplace=True,
+            # )
+
+############
+
+            sat_table_data = hs_academic_info[
+                hs_academic_info["Category"].str.contains('Benchmark %')
             ].copy()
 
             # drop 'Graduation Rate' from all 'Category' rows and remove whitespace
-            sat_data["Category"] = (
-                sat_data["Category"]
+            sat_table_data["Category"] = (
+                sat_table_data["Category"]
                 .str.replace("Benchmark %", "")
                 .str.strip()
             )
 
-            sat_overview = sat_data[
-                sat_data["Category"].str.contains('School Total')
+            sat_overview = sat_table_data[
+                sat_table_data["Category"].str.contains('School Total')
             ]
-            print(sat_overview)
+
             if not sat_overview.empty:          
                 sat_overview_table = create_academic_info_table(sat_overview)
             else:
                 sat_overview_table = no_data_table('SAT Overview')
 
-            sat_ethnicity = sat_data[
-                sat_data["Category"].str.contains("|".join(ethnicity))
+            sat_ethnicity = sat_table_data[
+                sat_table_data["Category"].str.contains("|".join(ethnicity))
             ]
             if not sat_ethnicity.empty:                 
                 sat_ethnicity_table = create_academic_info_table(sat_ethnicity)
             else:
                 sat_ethnicity_table = no_data_table('SAT Benchmarks by Ethnicity')
 
-            sat_subgroup = sat_data[
-                sat_data["Category"].str.contains("|".join(subgroup))
+            sat_subgroup = sat_table_data[
+                sat_table_data["Category"].str.contains("|".join(subgroup))
             ]
             if not sat_subgroup.empty:                
                 sat_subgroup_table = create_academic_info_table(sat_subgroup)
             else:
                 sat_subgroup_table = no_data_table('SAT Benchmarks by Subgroup')
 
-            # TODO: Calculate
             hs_not_calculated = [
                 {
                     "Category": "The percentage of students entering grade 12 at the beginning of the school year who graduated from high school"
