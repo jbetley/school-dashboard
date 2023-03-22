@@ -135,12 +135,10 @@ def round_percentages(percentages):
     -> [14, 48, 9, 29]
     """
 
-    # print(percentages)
-    # num_values = len(percentages)
-    # print(num_values)
-    # if numbers are in decimal format (e.g. .57, .90) then the sum of the numbers should
-    # bet at or near (1). To be safe we test to see if sum is less than 2. If it is, we
-    # multiple all of the numbers in the list by 100 (e.g., 57, 90)
+    # if numbers are in decimal format (e.g. .57, .90) then the sum
+    # of the numbers should bet at or near (1). To be safe we test
+    # to see if sum is less than 2. If it is, we multiple all of
+    # the numbers in the list by 100 (e.g., 57, 90)
     if sum(percentages) < 2:
         percentages = [x * 100 for x in percentages]
 
@@ -154,8 +152,6 @@ def round_percentages(percentages):
 
         result.append([integer, decimal, index])
         sum_of_integer_parts += integer
-
-    # print(sum_of_integer_parts)
 
     result.sort(key=lambda x: x[1], reverse=True)
     difference = 100 - sum_of_integer_parts
@@ -245,7 +241,6 @@ def calculate_metrics(data):
     # is equal to '0'. Any pre-opening data will be lost
     operating_data = data.loc[:,~(data.iloc[1]==0)].copy()
 
-    # print(operating_data)
     # TODO: A more precise fix would be to keep all columns (including those with
     # no value in grant columns), but ignore/except (N/A) any calculation that requires
     # either grant revenue or adm. Need to test

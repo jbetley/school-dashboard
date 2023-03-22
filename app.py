@@ -452,14 +452,16 @@ def load_data(school, year):
     # 'year' is selected year
     excluded_academic_years = int(current_academic_year) - int(year)
 
-    # 'excluded years' is a list of YYYY strings (all years more recent than selected year)
-    # that can be used to filter data that should not be displayed
+    # 'excluded years' is a list of YYYY strings (all years more
+    # recent than selected year) that can be used to filter data
+    # that should not be displayed
     excluded_years = []
     for i in range(excluded_academic_years):
         excluded_year = int(current_academic_year) - i
         excluded_years.append(str(excluded_year))
 
-    # store current year separately for demographic data because demographic data exists for 2020
+    # store current year separately for demographic data because
+    # demographic data exists for 2020
     demographic_year = str(year)
 
     # NOTE: Maximum number of years of data to display
@@ -539,7 +541,7 @@ def load_data(school, year):
         # calculate difference
         attendance_merge['+/-'] = attendance_merge['School'].astype(float) - attendance_merge['Corp Average'].astype(float)
         
-        # set year as index and unstack the dataframe
+        # set year as index and unstack the dataframe,
         # unstack returns a series having a new level of column labels whose
         # inner-most level consists of the pivoted index ('Year') levels
         # use to_frame() to convert to df and then transpose
@@ -605,9 +607,10 @@ def load_data(school, year):
         attendance_data_metrics_dict = attendance_data_metrics.to_dict(into=OrderedDict)
         attendance_data_metrics_json = json.dumps(attendance_data_metrics_dict)
 
-    # NOTE: school finances are accessed in each financial page because of the need to load
-    # either school or network financial information. It is accessed here to provide adm
-    # data to 'about.py' because the adm data uses variables not currently available in about.py
+    # NOTE: school finances are accessed in each financial page because
+    # of the need to load either school or network financial information.
+    # It is accessed here to provide adm data to 'about.py' because the
+    # adm data uses variables not currently available in about.py
     
     ## Average Daily Membership
     finance_file = 'data/F-' + school_info['School Name'].values[0] + '.csv'
@@ -689,10 +692,11 @@ def load_data(school, year):
             academic_analysis_corp_dict = {}
 
         else:
-            # get corporation proficiency rates (keyed to the GEO Corp value in index)
-            # NOTE: corporation_rate values are calculated differently than school level
-            # values (when combined), so we need to use corporation_rate values whenever
-            # we compare a charter (school corporation) to a traditional school corporation.
+            # get corporation proficiency rates (keyed to the GEO Corp
+            # value in index). NOTE: corporation_rate values are calculated
+            # differently than school level values (when combined), so we
+            # need to use corporation_rate values whenever we compare a
+            # charter (school corporation) to a traditional school corporation.
             k8_corp_rates_filtered = corporation_rates[
                 ~corporation_rates["Year"].isin(excluded_years)
             ]
@@ -703,8 +707,9 @@ def load_data(school, year):
             # temporarily store School Name
             k8_school_info = k8_school_data[["School Name"]].copy()
 
-            # filter to remove columns not used in calculations (need this in order to ensure
-            # columns match). Need to keep School ID and School Name only for Academic Analysis
+            # filter to remove columns not used in calculations (need
+            # this in order to ensure columns match). Need to keep
+            # School ID and School Name only for Academic Analysis
             # data tab purposes
             k8_school_data = k8_school_data.filter(
                 regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",
@@ -828,6 +833,8 @@ def load_data(school, year):
             # Prepare for display
 
 #### TODO: REFACTOR IN PROGRESS ###
+# Probably need to refactor the entire thing #
+
             # tst_data = k8_school_data.copy()
             # tst_data = tst_data.reset_index(drop=True)
             # tst_data = tst_data.set_index('Year')

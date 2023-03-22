@@ -4,7 +4,6 @@
 # author:   jbetley
 # version:  .99.021323
 
-# TODO: Add IREAD-3 chart? (14g)
 # TODO: Add AHS/HS Analysis
 
 import dash
@@ -381,6 +380,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # Get current year school data
             school_current_data = k8_academic_infoT.loc[k8_academic_infoT['Year'] == int(selected_year)]
 
+# TODO: Add IREAD
             # temporarily store and drop 'School Name' string column to simplify calculations
             info_categories = school_current_data[['School Name']]
             school_current_data = school_current_data.drop(columns=['School Name'], axis=1)
@@ -595,6 +595,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             else:
                 fig14d = no_data_fig()
                 fig14d_table = no_data_table()
+
+            # TODO: Add IREAD-3 chart (14g)
 
             #### Comparison Charts & Tables
             # NOTE: See backup data 01.23.23 for pre- full_chart() function code
