@@ -139,12 +139,28 @@ def update_financial_information_page(data,year,radio_value):
 
         financial_data = pd.read_csv(finance_file)
 
+        # The first (most recent) column of the financial data file is a string that will
+        # either be in the format 'YYYY' or 'YYYY (QQ)', which QQ representing the 'quarter'
+        # of the financial data (Q1, Q2, Q3, Q4). If '(QQ)' is not in the string, it means
+        # the data in the column is audited data.
+
+        # Set the financial_quarter variable to the (QQ) part of string
+        recent_financial_quarter = financial_data.columns[1][6:8] if len(financial_data.columns[1]) > 4 else 'Audited'
+
+        # remove the quarter string from the year header (note: index is not mutable, so cannot
+        # rename just one column, must 'replace' all column names) - this just replaces all
+        # column names with the first 4 letters of the string
+        financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != 'Category' else x)
+        
         # 'operating_years_by_finance' is equal to the total number of years a school
         # has been financially active,by counting the total number of years in the
         # financial df (subtracting 1 for category column). We do not currently use this,
         # for dashboard purposes, we only care whether a school has five or fewer years of data
-        operating_years_by_finance = max_display_years if len(financial_data.columns) - 1 >= max_display_years else len(financial_data.columns) - 1
+        
+        # NOTE: Not currently used
+        # operating_years_by_finance = max_display_years if len(financial_data.columns) - 1 >= max_display_years else len(financial_data.columns) - 1
 
+## TODO: DISPLAY MOST RECENT FINANCIAL INFO
         # drop any years that are later in time than the selected year
         most_recent_finance_year = financial_data.columns[1]
         excluded_finance_years = int(most_recent_finance_year) - int(year)
