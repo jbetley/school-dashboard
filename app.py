@@ -225,13 +225,15 @@ school_academic_data_k8["High Grade"] = (
     school_academic_data_k8["High Grade"].astype(str).str.replace(".0", "", regex=False)
 )
 
-# Get current year - demographic data will almost always be more current
-# than academic data (due to IDOE release cadence), so use academic data
+# Get the most recent year of academic data.
+# NOTE: Both demographic and financial data will almost always be
+# more current than academic data due to IDOE release cadence and ICSB
+# reporting schedule
 current_academic_year = school_academic_data_k8["Year"].unique().max()
 
 # Dropdown shows single school if school login is used
 # It shows all schools if admin login is used.
-# NOTE: application-state is a dummy input
+# NOTE: 'application-state' is a dummy input
 @callback(
     Output("charter-dropdown", "options"),
     [Input("application-state", "children")]
@@ -261,6 +263,8 @@ def set_dropdown_options(app_state):
 
     return dropdown_options
 
+# Set default charter dropdown option to the first
+# school in the list (alphanumeric)
 @callback(
     Output("charter-dropdown", "value"),
     Input("charter-dropdown", "options")
@@ -268,6 +272,12 @@ def set_dropdown_options(app_state):
 def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
 
+# year options are the range of:
+#   max = current_academic_year
+#   min = the earliest year for which the school
+#         has adm (is open)
+#   limit = typically a limit of 5 years (currently and 
+#   temporarily 4 years so that 2018 academic data is not shown)
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
@@ -277,29 +287,20 @@ def set_dropdown_value(charter_options):
 def set_year_dropdown_options(school,year):
 
     # Year Dropdown Options
+    # TODO: Change to 5 years in 2023
     max_dropdown_years = 4
-
-    # Option #1: Determine Years to display based on years with academic data
-    # Upside: Fewer empty academic data graphs/tables
-    # Downside: Missing financial data (years where school served students, but
-    # did not have any reportable academic data)
-    
-    # school_type = school_index.loc[school_index["School ID"] == school]['School Type'].values[0]
-    # if school_type == 'K8' or school_type == 'K12':
-    #     num_academic_years = len(school_academic_data_k8.loc[school_academic_data_k8["School ID"] == school].index)
-
-    # elif school_type == 'HS' or school_type == 'AHS':
-    #     num_academic_years = len(all_academic_data_hs.loc[all_academic_data_hs["School ID"] == school].index)
-    # else:
-    #     num_academic_years = max_display_years
-
-    # Option #2: Determine Years to display based on years with ADM
-    # Upside: Includes all financial data
-    # Downside: More empty academic data graphs/tables    
+  
+    # count the number of years that a school has ADM data, ignoring
+    # any most recent years with a 'Q#' prefix (incomplete)
     finance_file = 'data/F-' + school_index.loc[school_index["School ID"] == school]['School Name'].values[0] + '.csv'
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
+
+        if 'Q' in financial_data.columns[1]:
+            financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
+
         adm_years = financial_data[financial_data['Category'].str.contains('ADM Average')]
+
         school_academic_years = len(adm_years.columns) - 1
         
     num_dropdown_years = school_academic_years if school_academic_years <= max_dropdown_years else max_dropdown_years
@@ -749,7 +750,8 @@ def load_data(school, year):
             # reset index as 'Year' for corp_rate data
             k8_corp_rate_filtered = k8_corp_rate_filtered.set_index("Year")
 
-            # iterate over (non missing) columns, calculate the average, and store in a new column
+            # iterate over (non missing) columns, calculate the average,
+            # and store in a new column
             k8_corp_rate_data = k8_corp_rate_filtered.copy()
 
             categories = ethnicity + status + grades + ["Total"]
@@ -2019,6 +2021,10 @@ def load_data(school, year):
                 )
                 combined_grad_metrics_json = json.dumps(combined_grad_metrics_dict)
 
+    # Store the current_academic_year in dcc.store so other
+    # pages can use it
+    current_academic_year_dict = {'current_academic_year': current_academic_year}
+	
     # combine into dictionary of dictionarys for dcc.store
     dict_of_df = {}
 
@@ -2037,6 +2043,7 @@ def load_data(school, year):
     dict_of_df[12] = hs_academic_data_json
     dict_of_df[13] = ahs_metrics_data_json
     dict_of_df[14] = combined_grad_metrics_json
+    dict_of_df[15] = current_academic_year_dict
 
     return dict_of_df
 

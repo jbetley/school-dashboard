@@ -3,7 +3,6 @@ Calculation Functions for ICSB Dashboard
 '''
 import pandas as pd
 import numpy as np
-# import itertools
 import scipy.spatial as spatial
 
 def calculate_percentage(numerator,denominator):

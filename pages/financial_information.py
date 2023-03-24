@@ -5,7 +5,7 @@
 # version:  .99.021323
 
 import dash
-from dash import html, dash_table, Input, Output, callback
+from dash import html, dash_table, Input, Output, callback, ctx
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
@@ -35,7 +35,7 @@ label_style = {
     Output('radio-finance-info-content', 'children'),
     Output('financial-information-main-container', 'style'),
     Output('financial-information-empty-container', 'style'),
-    Output('financial-information-no-data', 'children'),    
+    Output('financial-information-no-data', 'children'),
     Input('dash-session', 'data'),
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-info', component_property='value')
@@ -128,7 +128,7 @@ def update_financial_information_page(data,year,radio_value):
         table_title = 'Audited Financial Information (' + school_index['Network'].values[0] + ')'
     else:
         finance_file = 'data/F-' + school_index['School Name'].values[0] + '.csv'
-        
+
         # don't display the school name in table title if the school isn't part of a network
         if school_index['Network'].values[0] == 'None':
             table_title = 'Audited Financial Information'
@@ -139,34 +139,47 @@ def update_financial_information_page(data,year,radio_value):
 
         financial_data = pd.read_csv(finance_file)
 
-        # The first (most recent) column of the financial data file is a string that will
-        # either be in the format 'YYYY' or 'YYYY (QQ)', which QQ representing the 'quarter'
-        # of the financial data (Q1, Q2, Q3, Q4). If '(QQ)' is not in the string, it means
+        # The first (most recent) column of the financial data file is a
+        # string that will either be in the format 'YYYY' or 'YYYY (Q#)',
+        # where Q# represents the 'quarter' of the displayed financial data
+        # (Q1, Q2, Q3, Q4). If '(Q#)' is not in the string, it means
         # the data in the column is audited data.
 
-        # Set the financial_quarter variable to the (QQ) part of string
-        recent_financial_quarter = financial_data.columns[1][6:8] if len(financial_data.columns[1]) > 4 else 'Audited'
-
-        # remove the quarter string from the year header (note: index is not mutable, so cannot
-        # rename just one column, must 'replace' all column names) - this just replaces all
-        # column names with the first 4 letters of the string
-        financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != 'Category' else x)
-        
         # 'operating_years_by_finance' is equal to the total number of years a school
         # has been financially active,by counting the total number of years in the
         # financial df (subtracting 1 for category column). We do not currently use this,
-        # for dashboard purposes, we only care whether a school has five or fewer years of data
-        
+        # for dashboard purposes, we only care whether a school has five or fewer
+        # years of data.
         # NOTE: Not currently used
         # operating_years_by_finance = max_display_years if len(financial_data.columns) - 1 >= max_display_years else len(financial_data.columns) - 1
 
-## TODO: DISPLAY MOST RECENT FINANCIAL INFO
-        # drop any years that are later in time than the selected year
-        most_recent_finance_year = financial_data.columns[1]
-        excluded_finance_years = int(most_recent_finance_year) - int(year)
+        selected_year = int(year)
 
-        if excluded_finance_years > 0:
-            financial_data.drop(financial_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
+        # Financial data will almost always be more recent than academic
+        # data. If partial quarterly academic data exists, we want to
+        # display it even if the year is more recent than the most recent
+        # dropdown year
+
+        # drop any years that are later in time than the selected year
+        # slice to ensure that partial year information (Q#) is
+        # removed before converting to an int
+        most_recent_finance_year = int(financial_data.columns[1][:4])
+
+        # The current academic year (max dropdown value) is stored
+        # in dcc store as the 15th dictionary. this will always
+        # be the maximum allowed display year despite the selected
+        # year - can use it to determine if financial data that is
+        # more recent than the allowed display year exists
+        current_academic_year = int(data['15']['current_academic_year'])
+
+        # if the selected year is less than the most recent academic year,
+        # drop all financial years more recent than the selected year
+        # this has the effect of displaying any financial year more
+        # recent than the current academic year if it is present in the
+        # dataframe
+        if selected_year < current_academic_year:
+            years_to_exclude = most_recent_finance_year - selected_year
+            financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
 
         # financial file exists, but is empty
         if len(financial_data.columns) <= 1:
@@ -183,7 +196,7 @@ def update_financial_information_page(data,year,radio_value):
 
             # change all cols to numeric except for Category
             for col in financial_data.columns[1:]:
-                financial_data[col]=pd.to_numeric(financial_data[col], errors='coerce') #.fillna(financial_data[col]).tolist()
+                financial_data[col]=pd.to_numeric(financial_data[col], errors='coerce')
 
             # set Category as index (so we can use .loc). This assumes that the final
             # rows already exist in the dataframe. If they do not, then need to use
@@ -195,7 +208,7 @@ def update_financial_information_page(data,year,radio_value):
             financial_data = financial_data.set_index(['Category'])
             financial_data.loc['Total Grants'] = financial_data.loc['State Grants'] + financial_data.loc['Federal Grants']
             financial_data.loc['Net Asset Position'] = financial_data.loc['Total Assets'] - financial_data.loc['Total Liabilities']
-            financial_data.loc['Change in Net Assets'] = financial_data.loc['Operating Revenues'] - financial_data.loc['Operating Expenses']        
+            financial_data.loc['Change in Net Assets'] = financial_data.loc['Operating Revenues'] - financial_data.loc['Operating Expenses']
 
             # reset index, which shifts Category back to column one
             financial_data = financial_data.reset_index()
@@ -211,7 +224,7 @@ def update_financial_information_page(data,year,radio_value):
 
             # remove audit and other indicator data (it is displayed on the financial metrics page)
             financial_data = financial_data.drop(financial_data.index[41:])
-            
+
             # Each column in the financial_information df must have at least 12 values
             # to be valid. To avoid a situation where there is a column that only contains
             # financial ratio data (e.g., where a school existed prior to being required
@@ -234,15 +247,16 @@ def update_financial_information_page(data,year,radio_value):
             # but no financial information with ICSB
             financial_data = financial_data.dropna(axis=1, how='all')
             financial_data = financial_data.reset_index(drop=True)
-               
+
             # Force correct format for display of df in datatable (accounting, no '$')
             for year in years:
                 financial_data[year] = pd.Series(['{:,.2f}'.format(val) for val in financial_data[year]], index = financial_data.index)
-            
+
             # clean file for display, replacing nan and 0.00 with ''
-            financial_data.replace([0.0, '0.0',0.00,'0.00', np.nan], '', inplace=True)
+            financial_data.replace([0.0, '0.0',0.00,'0.00', 'nan', np.nan], '', inplace=True)
 
             year_headers = [i for i in financial_data.columns if i not in ['Category']]
+
             table_size = len(financial_data.columns)
 
             if table_size == 2:
@@ -333,7 +347,7 @@ def update_financial_information_page(data,year,radio_value):
                                                 'paddingLeft': '20px',
                                                 'width': str(category_width) + '%'
                                             },
-                                        ] + [                                    
+                                        ] + [
                                             {
                                                 'if': {
                                                     'column_id': year
@@ -397,11 +411,11 @@ def layout():
                     className = 'row',
                 ),
                 html.Div(
-                    [                    
+                    [
                         html.Div(id='financial-information-table', children=[]),
                     ],
                     id = 'financial-information-main-container',
-                ),                
+                ),
                 html.Div(
                     [
                         html.Div(id='financial-information-no-data'),

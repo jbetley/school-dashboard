@@ -134,11 +134,33 @@ def update_financial_metrics(data,year,radio_value):
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
 
-        most_recent_finance_year = financial_data.columns[1]
-        excluded_finance_years = int(most_recent_finance_year) - int(year)
+        # dataframe may contain partial years (e.q., 2023 (Q1)). 
+        # Option #1: Drop
+        # if 'Q' in financial_data.columns[1]:
+        #     financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
-        if excluded_finance_years > 0:
-            financial_data.drop(financial_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
+        # Option #2: Calculate partial metrics
+
+        # in order for metrics to be calculated properly, we need
+        # to temporarily store and remove the (Q#) part of string
+        #financial_quarter = financial_data.columns[1][6:8] if len(financial_data.columns[1]) > 4 else ''
+        financial_quarter = financial_data.columns[1][5:] if len(financial_data.columns[1]) > 4 else ''
+        
+        # remove the quarter string from the year header (note: index is not
+        # mutable, so cannot rename just one column, must 'replace' all
+        # column names) - this just replaces all column header strings with the
+        # first 4 letters of the string
+        financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != 'Category' else x)
+
+        # drop any years that are later in time than the selected year
+        most_recent_finance_year = int(financial_data.columns[1])
+
+        selected_year = int(year)
+        current_academic_year = int(data['15']['current_academic_year'])
+
+        if selected_year < current_academic_year:
+            years_to_exclude = most_recent_finance_year - selected_year
+            financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
 
         # create_empty_table() if file exists, but has no financial data, or
         # if file exists and has one year of data, but does not have
@@ -195,9 +217,11 @@ def update_financial_metrics(data,year,radio_value):
                 if financial_metrics.iat[10,x]:
                     financial_metrics.iat[10,x] = '{:,.2f}'.format(financial_metrics.iat[10,x])
 
+            # Add financial quarter back to financial header for display purposes
+            financial_metrics = financial_metrics.rename(columns={financial_metrics.columns[1]: financial_metrics.columns[1] + financial_quarter})
+
             headers = financial_metrics.columns.tolist()
 
-            print(financial_metrics.columns)
             clean_headers = []
             for i, x in enumerate (headers):
                 if 'Rating' in x:
@@ -206,7 +230,7 @@ def update_financial_metrics(data,year,radio_value):
                     clean_headers.append(x)
 
             year_headers = [i for i in financial_metrics.columns if i not in ['Metric','Rating']]
-            
+
             # Table formatting
             # determines the col_width class and width of the category
             # column based on the size on the dataframe
