@@ -1,6 +1,8 @@
 # import plotly.express as px
 # import pandas as pd
 import numpy as np
+import pandas as pd
+import pandera
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
@@ -19,8 +21,15 @@ label_style = {
 }
 color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
-# create empty table with custom label
-def no_data_table(label):
+def no_data_table(label: str) -> list:
+    """Creates single empty table with provided label
+
+    Args:
+        label (String): table label string
+
+    Returns:
+        list: dash DataTable
+    """
 
     table = [
                 html.Label(label, style=label_style),
@@ -43,9 +52,15 @@ def no_data_table(label):
 
     return table
 
-# create empty page with custom label
-def no_data_page(label):
+def no_data_page(label: str) -> list:
+    """Creates single empty table as page with provided label
 
+    Args:
+        label (String): string label
+
+    Returns:
+        list: dash DataTable
+    """
     table = [
                 html.Div(
                     [
@@ -77,8 +92,22 @@ def no_data_page(label):
 
     return table
 
+#! Testing
+from pandera.typing import DataFrame, Series
+
 # Display tables either side by side or on individual rows depending on # of columns
-def set_table_layout(table1, table2, cols):
+def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
+    """Determines table layout depending on the size of the tables (# of cols)
+
+    Args:
+        table1 (list): dash DataTable
+        table2 (list): dash DataTable
+        cols (pandas.core.indexes.Base.index): Pandas series of column headers
+
+    Returns:
+        list: html Div enclosing dash DataTables and formatting
+    """
+
     # Can force single table layout by passing same table twice
     if table1 == table2:
 
@@ -119,11 +148,17 @@ def set_table_layout(table1, table2, cols):
 # https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
 # https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
 # https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
-def get_svg_circle(val):
-
-    ''' Takes a dataframe and replaces text with svg circles coded
+def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
+    """Takes a Pandas Dataframe and replaces text with svg circles coded
         the correct colors based on rating text.
-    '''
+
+    Args:
+        val (pd.Dataframe): Pandas dataframe with metric Rating columns
+
+    Returns:
+        pd.Dataframe: returns the same dataframe with svg circles in place of text
+    """
+
     result = val.copy()
 
     rating_columns = val.loc[:, val.columns.str.contains('Rat')].columns
