@@ -79,7 +79,6 @@ def no_data_page(label):
 
 # Display tables either side by side or on individual rows depending on # of columns
 def set_table_layout(table1, table2, cols):
-
     # Can force single table layout by passing same table twice
     if table1 == table2:
 
@@ -121,13 +120,15 @@ def set_table_layout(table1, table2, cols):
 # https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
 # https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
 def get_svg_circle(val):
+
     ''' Takes a dataframe and replaces text with svg circles coded
         the correct colors based on rating text.
     '''
     result = val.copy()
-    rating_columns = val.loc[:, val.columns.str.contains('Rate')].columns
 
-    for col in rating_columns:        
+    rating_columns = val.loc[:, val.columns.str.contains('Rat')].columns
+
+    for col in rating_columns:
 
         conditions = [
         result[col].eq('DNMS'),
@@ -135,6 +136,7 @@ def get_svg_circle(val):
         result[col].eq('MS'),
         result[col].eq('ES'),
         result[col].eq('N/A'),
+        result[col].eq(np.nan),
         ]
 
         # NOTE: Using font-awesome circle icon. the commented out code uses svg circle, which also
@@ -144,14 +146,15 @@ def get_svg_circle(val):
         meets ='<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>'
         exceeds ='<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>'
         no_rating ='<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
+        empty_cell =''
         # did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ea5545" /></svg>'
         # approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ede15b" /></svg>'
         # meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#87bc45" /></svg>'
         # exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#b33dc6" /></svg>'
         # no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#a4a2a8" /></svg>'
 
-        rating = [did_not_meet,approaching,meets,exceeds,no_rating]
-        result[col] = np.select(conditions, rating, default=no_rating)
+        rating = [did_not_meet,approaching,meets,exceeds, no_rating, empty_cell]
+        result[col] = np.select(conditions, rating, default=empty_cell)
 
     return result
 
@@ -168,7 +171,7 @@ def create_metric_table(label, content):
     table_style = {
         'fontSize': '11px',
         'border': 'none',
-        'fontFamily': 'Open Sans, sans-serif',
+        'fontFamily': 'Roboto Sans, sans-serif',
     }
 
     table_cell = {
@@ -177,11 +180,11 @@ def create_metric_table(label, content):
         'textAlign': 'center',
         'color': '#6783a9',
         'boxShadow': '0 0',
-        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+        # 'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
     }
 
     data = content.copy()
-    
+
     cols = data.columns
     table_size = len(cols)
 
@@ -213,7 +216,7 @@ def create_metric_table(label, content):
 
         # NOTE: Testing a version of the table comparing school and corporation rates
         # that does not include the corp rate, only the difference. This is in order
-        # to decrease the number of columns. Eventually may want to remove the 
+        # to decrease the number of columns. Eventually may want to remove the
         # calculation from calculateMetrics(), but am leaving it in for now in case
         # we ultimately choose to display it
 
@@ -223,7 +226,7 @@ def create_metric_table(label, content):
 
         # rename '+/-' columns
         data.columns = data.columns.str.replace('\+/-', 'Diff', regex=True)
- 
+
         # Formatting on the fly - determines the col_width class and width
         # of the category column based on the size (# of cols) of the dataframe
         if table_size <= 3:
@@ -237,7 +240,7 @@ def create_metric_table(label, content):
             category_width = 30
         elif table_size == 9:
             col_width = 'seven'
-            category_width = 30            
+            category_width = 30
         elif table_size >= 10 and table_size <= 13:
             col_width = 'seven'
             category_width = 15
@@ -246,13 +249,13 @@ def create_metric_table(label, content):
             category_width = 15
         elif table_size > 17:
             col_width = 'ten'
-            category_width = 15            
-        
+            category_width = 15
+
         year_headers = [y for y in data.columns.tolist() if 'School' in y]
         rating_headers = [y for y in data.columns.tolist() if 'Rate' in y]
         difference_headers = [y for y in data.columns.tolist() if 'Diff' in y]
         average_headers = [y for y in data.columns.tolist() if 'Average' in y]
-        
+
         # splits column width evenly for all columns other than 'Category'
         # right now is even, but can finesse this by splitting data_width
         # into unequal values for each 'data' category, e.g.:
@@ -268,6 +271,7 @@ def create_metric_table(label, content):
         class_name = 'pretty_container ' + col_width + ' columns'
 
         headers = data.columns.tolist()
+        print(rating_headers)
 
         table_cell_conditional = [
             {
@@ -343,7 +347,7 @@ def create_metric_table(label, content):
             'color': '#6783a9',
             'textAlign': 'center',
             'fontWeight': 'bold',
-            'border': 'none'     
+            'border': 'none'
         }
 
         table_header_conditional = [
@@ -379,7 +383,7 @@ def create_metric_table(label, content):
             },
                 'borderTop': '.5px solid #b2bdd4',
                 'borderBottom': '.5px solid #b2bdd4',
-        } 
+        }
         ] + [
             # Use 'headers[-1]' and 'borderRight' for each subheader to have full border
             # Use 'headers[1]' and 'borderLeft' to leave first and last columns open on
@@ -427,32 +431,32 @@ def create_metric_table(label, content):
                     'column_id': 'Category',
                 },
                 'borderRight': '.5px solid #b2bdd4',
-                'borderBottom': 'none',                
+                'borderBottom': 'none',
             },
-        ] + [ 
+        ] + [
             {
                 'if': {
                     'column_id': rating,
                 },
                 'borderRight': '.5px solid #b2bdd4',
-            } for rating in rating_headers                
-        ] + [ 
+            } for rating in rating_headers
+        ] + [
             {
                 'if': {
                     'filter_query': '{{{col}}} < 0'.format(col=col),
                     'column_id': col
                 },
-                
+
                 'fontWeight': 'bold',
                 'color': '#b44655',
                 'fontSize': '10px',
             } for col in format_cols
-        ] + [ 
+        ] + [
             {
                 'if': {
                     'filter_query': '{{{col}}} = "-***"'.format(col=col),
                     'column_id': col
-                },                        
+                },
                 'fontWeight': 'bold',
                 'color': '#b44655',
                 'fontSize': '10px',
@@ -480,7 +484,7 @@ def create_metric_table(label, content):
                             # otherwise use second version
                             columns=[
                                 {'name': col, 'id': headers[idx], 'presentation': 'markdown'}
-                                if 'Rate' in col                                
+                                if 'Rate' in col
                                 else {'name': col, 'id': headers[idx], 'type':'numeric',
                                 'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
                                 }
@@ -501,7 +505,7 @@ def create_metric_table(label, content):
                             style_cell = table_cell,
                             style_cell_conditional = table_cell_conditional,
                             merge_duplicate_headers=True,
-                            markdown_options={"html": True},    
+                            markdown_options={"html": True},
                         )
                     )
                 ],
@@ -527,7 +531,7 @@ def create_comparison_table(data,school_name):
 
     # hide the header 'School Name'
     data = data.rename(columns = {'School Name' : ''})
-    
+
     table = dash_table.DataTable(
         data.to_dict('records'),
         columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.percentage(2)} for i in data.columns],
@@ -564,7 +568,7 @@ def create_comparison_table(data,school_name):
             'textAlign': 'center',
             'fontWeight': 'bold',
             'borderBottom': 'none',
-            'borderTop': 'none',    
+            'borderTop': 'none',
         },
         style_header_conditional=[
             {

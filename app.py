@@ -168,6 +168,12 @@ app = dash.Dash(
     use_pages=True,
     external_stylesheets=external_stylesheets,
     suppress_callback_exceptions=True,
+    meta_tags=[
+    {
+        "name": "viewport",
+        "content": "width=device-width, initial-scale=1, maximum-scale=1",
+    }
+],
 )
 
 # category variables

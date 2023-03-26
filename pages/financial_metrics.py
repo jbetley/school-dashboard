@@ -13,7 +13,7 @@ import pandas as pd
 import os.path
 # import itertools
 from .calculations import calculate_metrics
-from .table_helpers import no_data_page
+from .table_helpers import no_data_page, get_svg_circle
 
 # import subnav function
 from .subnav import subnav_finance
@@ -206,6 +206,9 @@ def update_financial_metrics(data,year,radio_value):
             # Release The Hounds!
             financial_metrics = calculate_metrics(financial_values)
             
+            # convert ratings to colored circles
+            financial_metrics = get_svg_circle(financial_metrics)
+
             financial_metrics = financial_metrics.fillna('')
 
             # Force correct format for display of df in datatable
@@ -225,11 +228,12 @@ def update_financial_metrics(data,year,radio_value):
             clean_headers = []
             for i, x in enumerate (headers):
                 if 'Rating' in x:
-                    clean_headers.append('Rating')
+                    clean_headers.append('Rate')
                 else:
                     clean_headers.append(x)
 
-            year_headers = [i for i in financial_metrics.columns if i not in ['Metric','Rating']]
+            year_headers = [i for i in headers if 'Rating' not in i and 'Metric' not in i]
+            rating_headers = [y for y in headers if 'Rating' in y]
 
             # Table formatting
             # determines the col_width class and width of the category
@@ -244,16 +248,38 @@ def update_financial_metrics(data,year,radio_value):
 
             if table_size <= 3:
                 col_width = 'four'
-                category_width = 55
-            if table_size > 3 and table_size <=8:
-                col_width = 'eight'
+                category_width = 70
+            if table_size > 3 and table_size <=4:
+                col_width = 'six'
                 category_width = 35
-            elif table_size >= 9:
-                col_width = 'ten'
+            elif table_size >= 5 and table_size <= 8:
+                col_width = 'six'
+                category_width = 30
+            elif table_size == 9:
+                col_width = 'seven'
+                category_width = 30
+            elif table_size >= 10 and table_size <= 13:
+                col_width = 'eight'
                 category_width = 25
-            elif table_size >= 10:
-                col_width = 'twelve'
+            elif table_size > 13 and table_size <=17:
+                col_width = 'nine'
                 category_width = 15
+            elif table_size > 17:
+                col_width = 'ten'
+                category_width = 15
+
+            # if table_size <= 3:
+            #     col_width = 'four'
+            #     category_width = 55
+            # if table_size > 3 and table_size <=8:
+            #     col_width = 'eight'
+            #     category_width = 35
+            # elif table_size >= 9:
+            #     col_width = 'ten'
+            #     category_width = 25
+            # elif table_size >= 10:
+            #     col_width = 'twelve'
+            #     category_width = 15
 
             # this splits column width evenly for all columns other than 'Category'
             # can split data_width into unequal values for each 'data' category
@@ -261,10 +287,11 @@ def update_financial_metrics(data,year,radio_value):
             #   rating_width = data_col_width + (data_col_width * .1)
             #   remaining_width = data_width - rating_width
             #   remaining_col_width = remaining_width / (table_size - 1)
+
             data_width = 100 - category_width
             data_col_width = data_width / (table_size - 1)
-            rating_width = data_col_width
-            year_width = data_col_width
+            rating_width = year_width = data_col_width
+            rating_width = rating_width / 2
 
             class_name = 'pretty_container ' + col_width + ' columns'
 
@@ -277,12 +304,14 @@ def update_financial_metrics(data,year,radio_value):
                                 html.Div(
                                     dash_table.DataTable(
                                         financial_metrics.to_dict('records'),
-                                        columns=[{
-                                            'name': col,
-                                            'id': headers[idx]
-                                            } for (idx, col) in enumerate(clean_headers)],
+                                        columns=[
+                                            {'name': col,'id': headers[idx], 'presentation': 'markdown'}
+                                            if 'Rate' in col
+                                            else {'name': col, 'id': headers[idx]}
+                                            for (idx, col) in enumerate(clean_headers)
+                                            ],                                            
                                         style_data={
-                                            'fontSize': '12px',
+                                            'fontSize': '11px',
                                             'border': 'none',
                                             'fontFamily': 'Roboto, sans-serif',
                                         },
@@ -302,31 +331,32 @@ def update_financial_metrics(data,year,radio_value):
                                                 'text-decoration': 'underline',
                                                 'fontWeight': 'bold'
                                             },
-                                        ] +
-                                        [
-                                            {
-                                                'if': {
-                                                    'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
-                                                    'column_id': col
-                                                },
-                                                'backgroundColor': '#ea5545',
-                                                'fontWeight': 'bold',
-                                                'color': 'white',
-                                                'borderBottom': 'solid 1px white',
-                                            } for col in financial_metrics.columns
-                                        ] +
-                                        [
-                                            {
-                                                'if': {
-                                                    'filter_query': "{{{col}}} = 'MS'".format(col=col),
-                                                    'column_id': col
-                                                },
-                                                'backgroundColor': '#87bc45',
-                                                'fontWeight': 'bold',
-                                                'color': 'white',
-                                                'borderBottom': 'solid 1px white',
-                                            } for col in financial_metrics.columns
                                         ],
+                                        # +
+                                        # [
+                                        #     {
+                                        #         'if': {
+                                        #             'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
+                                        #             'column_id': col
+                                        #         },
+                                        #         'backgroundColor': '#ea5545',
+                                        #         'fontWeight': 'bold',
+                                        #         'color': 'white',
+                                        #         'borderBottom': 'solid 1px white',
+                                        #     } for col in financial_metrics.columns
+                                        # ] +
+                                        # [
+                                        #     {
+                                        #         'if': {
+                                        #             'filter_query': "{{{col}}} = 'MS'".format(col=col),
+                                        #             'column_id': col
+                                        #         },
+                                        #         'backgroundColor': '#87bc45',
+                                        #         'fontWeight': 'bold',
+                                        #         'color': 'white',
+                                        #         'borderBottom': 'solid 1px white',
+                                        #     } for col in financial_metrics.columns
+                                        # ],
                                         style_header={
                                             'height': '20px',
                                             'backgroundColor': '#ffffff',
@@ -343,7 +373,8 @@ def update_financial_metrics(data,year,radio_value):
                                             'height': 'auto',
                                             'textAlign': 'center',
                                             'color': '#6783a9',
-                                            'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                                            'boxShadow': '0 0',                                            
+                                            # 'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
                                         },
                                         style_cell_conditional=[
                                             {
@@ -351,11 +382,11 @@ def update_financial_metrics(data,year,radio_value):
                                                     'column_id': 'Metric'
                                                 },
                                                 'textAlign': 'left',
+                                                'paddingLeft': '20px',                                                
                                                 'fontWeight': '500',
-                                                'paddingLeft': '20px',
                                                 'width': str(category_width) + '%'
                                             },
-                                        ] + [                                    
+                                        ] + [
                                             {
                                                 'if': {
                                                     'column_id': year
@@ -367,15 +398,19 @@ def update_financial_metrics(data,year,radio_value):
                                         ] + [  
                                             {
                                                 'if': {
-                                                    'column_id': ['Rating 1','Rating 2','Rating 3','Rating 4','Rating 5',
-                                                                'Rating 6','Rating 7','Rating 8','Rating 9','Rating 10',
-                                                                'Rating 11','Rating 12','Rating 13','Rating 14','Rating 15',
-                                                                'Rating 16','Rating 17','Rating 18','Rating 19','Rating 20',]
+                                                    'column_id': rating
+                                                    # 'column_id': ['Rating 1','Rating 2','Rating 3','Rating 4','Rating 5',
+                                                    #             'Rating 6','Rating 7','Rating 8','Rating 9','Rating 10',
+                                                    #             'Rating 11','Rating 12','Rating 13','Rating 14','Rating 15',
+                                                    #             'Rating 16','Rating 17','Rating 18','Rating 19','Rating 20',]
                                                 },
-                                                'width': str(rating_width) + '%'
-                                            },
+                                                'textAlign': 'center',
+                                                'fontWeight': '500',                                                
+                                                'width': str(rating_width) + '%',
+                                            } for rating in rating_headers
                                         ],
-                                        style_as_list_view=True
+                                        style_as_list_view=True,
+                                        markdown_options={"html": True},
                                     )
                                 )
                             ],
