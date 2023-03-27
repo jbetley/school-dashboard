@@ -10,6 +10,8 @@ from dash.exceptions import PreventUpdate
 import os.path
 import pandas as pd
 
+from .table_helpers import get_svg_circle,no_data_table
+
 dash.register_page(__name__, top_nav=True, order=7)
 
 @callback(
@@ -18,48 +20,35 @@ dash.register_page(__name__, top_nav=True, order=7)
     Input('dash-session', 'data'),
     Input('year-dropdown', 'value')
 )
-def update_about_page(data, year):
+def update_organizational_compliance(data, year):
     if not data:
         raise PreventUpdate
 
-    school_index = pd.DataFrame.from_dict(data['0'])
+    selected_year = int(year)
 
-    empty_table = [
-        dash_table.DataTable(
-            columns = [
-                {'id': 'emptytable', 'name': 'No Data Available'},
-            ],
-            style_header={
-                'fontSize': '16px',
-                'border': 'none',
-                'backgroundColor': '#ffffff',
-                'paddingTop': '15px',                    
-                'verticalAlign': 'center',
-                'textAlign': 'center',
-                'color': '#6783a9',
-                'fontFamily': 'Roboto, sans-serif',
-            },
-        )
-    ]
+    school_index = pd.DataFrame.from_dict(data['0'])
 
     finance_file = 'data\F-' + school_index['School Name'].values[0] + '.csv'
 
     if os.path.isfile(finance_file):
+        organizational_data = pd.read_csv(finance_file)
 
-        school_finance = pd.read_csv(finance_file)
+        # Ignore any partial years (e.q., 2023(Q3)) when displaying
+        # organizational indicators
+        if 'Q' in organizational_data.columns[1]:
+            organizational_data = organizational_data.drop(organizational_data.columns[[1]],axis = 1)
 
-        most_recent_finance_year = school_finance.columns[1]
-        excluded_finance_years = int(most_recent_finance_year) - int(year)
+        most_recent_finance_year = int(organizational_data.columns[1])
 
-        if excluded_finance_years > 0:
-            school_finance.drop(school_finance.columns[1:excluded_finance_years+1], axis=1, inplace=True)
+        years_to_exclude = most_recent_finance_year - selected_year
+        organizational_data = organizational_data.drop(organizational_data.columns[1:years_to_exclude+1], axis=1)
 
         # if a school doesn't have data for the selected year, df will only have 1 column (Category)
-        if len(school_finance.columns) <= 1:
-            org_compliance_table = empty_table
+        if len(organizational_data.columns) <= 1:
+            org_compliance_table = no_data_table('Organizational and Operational Accountability')
 
         else:
-            organizational_indicators = school_finance[school_finance['Category'].str.startswith('3.')].copy()
+            organizational_indicators = organizational_data[organizational_data['Category'].str.startswith('3.')].copy()
             organizational_indicators[['Standard','Description']] = organizational_indicators['Category'].str.split('|', expand=True)
 
             # reorder and clean up dataframe
@@ -70,49 +59,38 @@ def update_about_page(data, year):
             organizational_indicators.insert(loc=0, column='Description', value = description)
             organizational_indicators.insert(loc=0, column='Standard', value = standard)
 
+            # convert ratings to colored circles
+            organizational_indicators = get_svg_circle(organizational_indicators)
+
+            headers = organizational_indicators.columns.tolist()
+            year_headers = [x for x in headers if 'Description' not in x and 'Standard' not in x]
+
             org_compliance_table = [
                         dash_table.DataTable(
                             organizational_indicators.to_dict('records'),
-                            columns = [{'name': i, 'id': i} for i in organizational_indicators.columns],
+                            columns = [{'name': i, 'id': i,'presentation': 'markdown'} for i in headers],
                             style_data={
                                 'fontSize': '12px',
                                 'border': 'none',
                                 'fontFamily': 'Roboto, sans-serif',
                             },
                             style_data_conditional=
-                            [                                            
+                            [
                                 {
                                     'if': {
                                         'row_index': 'odd'
                                     },
                                     'backgroundColor': '#eeeeee',
                                 },
-                            ] +
-                            [
+                            ] + [
                                 {
                                     'if': {
-                                        'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
-                                        'column_id': col
+                                        'column_id': year
                                     },
-                                    'backgroundColor': '#ea5545',
-                                    'fontWeight': 'bold',
-                                    'color': 'white',
-                                    'borderBottom': 'solid 1px white',
-                                    'borderRight': 'solid 1px white',
-                                } for col in organizational_indicators.columns
-                            ] +
-                            [
-                                {
-                                    'if': {
-                                        'filter_query': "{{{col}}} = 'MS'".format(col=col),
-                                        'column_id': col
-                                    },
-                                    'backgroundColor': '#87bc45',
-                                    'fontWeight': 'bold',
-                                    'color': 'white',
-                                    'borderBottom': 'solid 1px white',
-                                    'borderRight': 'solid 1px white',
-                                } for col in organizational_indicators.columns
+                                    'textAlign': 'center',
+                                    'fontWeight': '500',
+                                    'width': '5%',
+                                } for year in year_headers
                             ],
                             style_header={
                                 'height': '20px',
@@ -146,11 +124,12 @@ def update_about_page(data, year):
                                         'fontWeight': '500',
                                 },
                             ],
+                            markdown_options={"html": True},
                         )
             ]
 
     else:
-        org_compliance_table = empty_table
+        org_compliance_table = no_data_table('Organizational and Operational Accountability')
     
     org_compliance_definitions_data = [
         ['3.1.','The school materially complied with admissions and enrollment requirements based on applicable laws, rules and regulations, and all \
@@ -206,59 +185,59 @@ def update_about_page(data, year):
     org_compliance_definitions_table_dict= [dict(zip(org_compliance_definitions_table_keys, l)) for l in org_compliance_definitions_data]
 
     org_compliance_definitions_table = [
-                    dash_table.DataTable(
-                        data = org_compliance_definitions_table_dict,
-                        columns = [{'name': i, 'id': i} for i in org_compliance_definitions_table_keys],
-                        style_data={
-                            'fontSize': '12px',
-                            'border': 'none',
-                            'fontFamily': 'Roboto, sans-serif',
-                        },
-                        style_data_conditional=[
-                            {
-                                'if': {
-                                    'row_index': 'odd'
-                                },
-                                'backgroundColor': '#eeeeee',
-                            },
-                            {   # NOTE: Kludget to ensure first col header has border
-                                'if': {
-                                    'row_index': 0,
-                                    'column_id': 'Standard'
-                                },
-                                'borderTop': '.5px solid #6783a9'
-                            },
-                        ],
-                        style_header={
-                            'height': '20px',
-                            'backgroundColor': '#ffffff',
-                            'border': 'none',
-                            'borderBottom': '.5px solid #6783a9',
-                            'fontSize': '12px',
-                            'fontFamily': 'Roboto, sans-serif',
-                            'color': '#6783a9',
-                            'textAlign': 'center',
-                            'fontWeight': 'bold'
-                        },
-                        style_cell={
-                            'whiteSpace': 'normal',
-                            'height': 'auto',
-                            'textAlign': 'left',
-                            'color': '#6783a9',
-                            'minWidth': '25px', 'width': '25px', 'maxWidth': '25px',
-                        },
-                        style_cell_conditional=[
-                            {
-                                'if': {
-                                    'column_id': 'Standard'
-                                },
-                                    'textAlign': 'Center',
-                                    'fontWeight': '500',
-                                    'width': '7%',
-                            },
-                        ],
-                    )
-                ]
+        dash_table.DataTable(
+            data = org_compliance_definitions_table_dict,
+            columns = [{'name': i, 'id': i} for i in org_compliance_definitions_table_keys],
+            style_data={
+                'fontSize': '12px',
+                'border': 'none',
+                'fontFamily': 'Roboto, sans-serif',
+            },
+            style_data_conditional=[
+                {
+                    'if': {
+                        'row_index': 'odd'
+                    },
+                    'backgroundColor': '#eeeeee',
+                },
+                {   # NOTE: Kludget to ensure first col header has border
+                    'if': {
+                        'row_index': 0,
+                        'column_id': 'Standard'
+                    },
+                    'borderTop': '.5px solid #6783a9'
+                },
+            ],
+            style_header={
+                'height': '20px',
+                'backgroundColor': '#ffffff',
+                'border': 'none',
+                'borderBottom': '.5px solid #6783a9',
+                'fontSize': '12px',
+                'fontFamily': 'Roboto, sans-serif',
+                'color': '#6783a9',
+                'textAlign': 'center',
+                'fontWeight': 'bold'
+            },
+            style_cell={
+                'whiteSpace': 'normal',
+                'height': 'auto',
+                'textAlign': 'left',
+                'color': '#6783a9',
+                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px',
+            },
+            style_cell_conditional=[
+                {
+                    'if': {
+                        'column_id': 'Standard'
+                    },
+                        'textAlign': 'Center',
+                        'fontWeight': '500',
+                        'width': '7%',
+                },
+            ],
+        )
+    ]
 
     return org_compliance_table, org_compliance_definitions_table
 

@@ -564,6 +564,7 @@ body {
 }
 
 .center-icon {
+  line-height: 1.6;
   text-align: center;
   width: 100%;
 }

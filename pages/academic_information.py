@@ -394,7 +394,7 @@ def update_abcademic_information_page(data, school, year):
 
                             # either way, drop the entire category from the chart data
                             all_colz = colz + [total_tested]
-                            all_proficiency_data.drop(all_colz, axis=1, inplace=True)
+                            all_proficiency_data = all_proficiency_data.drop(all_colz, axis=1)
 
                         else:
                             # calculate percentage

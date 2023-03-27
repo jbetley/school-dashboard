@@ -439,6 +439,13 @@ def update_financial_metrics(data,year,radio_value):
                 financial_indicators.insert(loc=0, column='Description', value = description)
                 financial_indicators.insert(loc=0, column='Standard', value = standard)
 
+                # convert ratings to colored circles
+                financial_indicators = get_svg_circle(financial_indicators)
+
+                print(financial_indicators.columns)
+                headers = financial_indicators.columns.tolist()
+                year_headers = [x for x in headers if 'Description' not in x and 'Standard' not in x]
+                print(year_headers)
                 financial_indicators_table = [
                         html.Div(
                             [             
@@ -448,7 +455,7 @@ def update_financial_metrics(data,year,radio_value):
                                         html.Div(
                                             dash_table.DataTable(
                                                 financial_indicators.to_dict('records'),
-                                                columns = [{'name': i, 'id': i} for i in financial_indicators.columns],
+                                                columns = [{'name': i, 'id': i,'presentation': 'markdown'} for i in headers],
                                                 style_data={
                                                     'fontSize': '12px',
                                                     'fontFamily': 'Roboto, sans-serif',
@@ -462,34 +469,43 @@ def update_financial_metrics(data,year,radio_value):
                                                         },
                                                         'backgroundColor': '#eeeeee',
                                                     },
-                                                ] +
-                                                [
+                                                ] + [
                                                     {
                                                         'if': {
-                                                            'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
-                                                            'column_id': col
+                                                            'column_id': year
                                                         },
-                                                        'backgroundColor': '#ea5545',
-                                                        'fontWeight': 'bold',
-                                                        'color': 'white',
-                                                        'borderBottom': 'solid 1px white',
-                                                        'borderRight': 'solid 1px white',
-                                                    } for col in financial_indicators.columns
-                                                ] +
-                                                [
-                                                    {
-                                                        'if': {
-                                                            'filter_query': "{{{col}}} = 'MS'".format(col=col),
-                                                            'column_id': col
-                                                        },
-                                                        'backgroundColor': '#87bc45',
-                                                        'fontWeight': 'bold',
-                                                        'color': 'white',
-                                                        'position': 'relative',
-                                                        'borderBottom': 'solid 1px white',
-                                                        'borderRight': 'solid 1px white',
-                                                    } for col in financial_indicators.columns
+                                                        'textAlign': 'center',
+                                                        'fontWeight': '500',
+                                                        'width': '8%',
+                                                    } for year in year_headers
                                                 ],
+                                                # + [
+                                                #     {
+                                                #         'if': {
+                                                #             'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
+                                                #             'column_id': col
+                                                #         },
+                                                #         'backgroundColor': '#ea5545',
+                                                #         'fontWeight': 'bold',
+                                                #         'color': 'white',
+                                                #         'borderBottom': 'solid 1px white',
+                                                #         'borderRight': 'solid 1px white',
+                                                #     } for col in financial_indicators.columns
+                                                # ] +
+                                                # [
+                                                #     {
+                                                #         'if': {
+                                                #             'filter_query': "{{{col}}} = 'MS'".format(col=col),
+                                                #             'column_id': col
+                                                #         },
+                                                #         'backgroundColor': '#87bc45',
+                                                #         'fontWeight': 'bold',
+                                                #         'color': 'white',
+                                                #         'position': 'relative',
+                                                #         'borderBottom': 'solid 1px white',
+                                                #         'borderRight': 'solid 1px white',
+                                                #     } for col in financial_indicators.columns
+                                                # ],
                                                 style_header={
                                                     'height': '20px',
                                                     'backgroundColor': '#ffffff',
@@ -527,6 +543,7 @@ def update_financial_metrics(data,year,radio_value):
                                                         'paddingLeft': '20px',
                                                     },
                                                 ],
+                                                markdown_options={"html": True},                                                
                                             ),
                                         ),
                                     ],

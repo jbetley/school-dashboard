@@ -1,8 +1,12 @@
-# import plotly.express as px
-# import pandas as pd
+"""
+Table Helper Functions
+"""
 import numpy as np
 import pandas as pd
+# Testing
 import pandera
+from pandera.typing import DataFrame, Series
+#
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
@@ -43,7 +47,7 @@ def no_data_table(label: str) -> list:
                             'border': 'none',
                             'textAlign': 'center',
                             'color': '#6783a9',
-                            'fontFamily': 'Open Sans, sans-serif',
+                            'fontFamily': 'Roboto, sans-serif',
                             'height': '30vh',
                         },
                     ),
@@ -77,7 +81,7 @@ def no_data_page(label: str) -> list:
                                             'border': 'none',
                                             'textAlign': 'center',
                                             'color': '#6783a9',
-                                            'fontFamily': 'Open Sans, sans-serif',
+                                            'fontFamily': 'Roboto, sans-serif',
                                             'height': '30vh',
                                         },
                                     ),
@@ -91,9 +95,6 @@ def no_data_page(label: str) -> list:
     ]
 
     return table
-
-#! Testing
-from pandera.typing import DataFrame, Series
 
 # Display tables either side by side or on individual rows depending on # of columns
 def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
@@ -159,9 +160,20 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
         pd.Dataframe: returns the same dataframe with svg circles in place of text
     """
 
+    print(val)
     result = val.copy()
 
-    rating_columns = val.loc[:, val.columns.str.contains('Rat')].columns
+    # two types of tables need converting, those with Rating in col
+    # and those with a 'Year' in the col
+
+    # This seems like an overly complicated way to determine if
+    # the substring 'Rat' appears in any column headers- but
+    # stackoverflow told me this is how to do it
+
+    if len(val.loc[:, val.columns.str.contains('Rat')].columns) != 0:
+        rating_columns = val.loc[:, val.columns.str.contains('Rat')].columns
+    else:
+        rating_columns = val.loc[:, ~val.columns.str.contains('Standard|Description',case=False, regex=True)].columns
 
     for col in rating_columns:
 
@@ -193,7 +205,17 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
 
     return result
 
-def create_metric_table(label, content):
+def create_metric_table(label: str, content: pd.DataFrame) -> list:
+    """Takes a dataframe consisting of Rating and Metric
+    Columns and returns a list dash DataTable object
+
+    Args:
+        label (String): Table title
+        content (pd.DataTable): dash dataTable
+
+    Returns:
+        list: Formatted dash DataTable
+    """""""""
 # Generate tables given data and label - could
 # possibly be less complicated than it is, or
 # maybe not - gonna leave it up to future me
@@ -215,7 +237,6 @@ def create_metric_table(label, content):
         'textAlign': 'center',
         'color': '#6783a9',
         'boxShadow': '0 0',
-        # 'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
     }
 
     data = content.copy()
@@ -306,7 +327,6 @@ def create_metric_table(label, content):
         class_name = 'pretty_container ' + col_width + ' columns'
 
         headers = data.columns.tolist()
-        print(rating_headers)
 
         table_cell_conditional = [
             {
@@ -474,6 +494,7 @@ def create_metric_table(label, content):
                     'column_id': rating,
                 },
                 'borderRight': '.5px solid #b2bdd4',
+                'textAlign': 'center',
             } for rating in rating_headers
         ] + [
             {
