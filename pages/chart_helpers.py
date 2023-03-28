@@ -2,6 +2,7 @@ import plotly.express as px
 import plotly.colors
 import pandas as pd
 import numpy as np
+import textwrap
 import plotly.graph_objects as go
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
@@ -30,7 +31,7 @@ color = ['#8d8741','#659dbd','#daad86','#bc986a','#fbeec1','#8d8741','#659dbd','
 ## Blank (Loading) Fig ##
 # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
 
-def loading_fig():
+def loading_fig() -> dict:
     fig = {
         'layout': {
             'xaxis': {
@@ -57,7 +58,7 @@ def loading_fig():
     return fig
 
 # Create an empty figure with the provided label and height.
-def no_data_fig(label,height):
+def no_data_fig(label: str = 'No Data to Display', height: int = 400) -> go.Figure:
 
     fig = go.Figure()
     
@@ -108,11 +109,11 @@ def no_data_fig(label,height):
 # NOTE: adding two spaces before <br> to ensure the words at
 # the end of each break have the same spacing as 'ticksuffix'
 # below
-import textwrap
-def customwrap(s,width=16):
+
+def customwrap(s: str,width: int = 16):
     return "  <br>".join(textwrap.wrap(s,width=width))
 
-def make_stacked_bar(values,fig_title):
+def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
     data = values.copy()
     # https://plotly.com/python/discrete-color/
 
@@ -237,7 +238,8 @@ def make_stacked_bar(values,fig_title):
     return fig
 
 # single line chart (input: dataframe)
-def make_line_chart(values):
+def make_line_chart(values: pd.DataFrame) -> px.line:
+
     data = values.copy()
 
     data.columns = data.columns.str.split('|').str[0]
@@ -344,9 +346,9 @@ def make_line_chart(values):
     return fig
 
 # single bar chart (input: dataframe and title string)
-def make_bar_chart(values, category, school_name):
+def make_bar_chart(values: pd.DataFrame, category: str, school_name: str) -> px.bar:
     data = values.copy()
-    
+
     schools = data['School Name'].tolist()
 
     # assign colors for each comparison school
@@ -399,8 +401,8 @@ def make_bar_chart(values, category, school_name):
 
     return fig
 
-# grouped bar chart (input: dataframe)
-def make_group_bar_chart(values, school_name):
+# grouped bar chart
+def make_group_bar_chart(values: pd.DataFrame, school_name: str) -> px.bar:
 
     data = values.copy()
 

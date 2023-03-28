@@ -316,7 +316,7 @@ def update_about_page(year, data):
         linecolor=['#d0743c','#a05d56']
 
         if len(school_adm.index) == 0:
-            adm_fig = no_data_fig()
+            adm_fig = no_data_fig('Average Daily Membership History',400)
 
         else:
 
@@ -553,8 +553,8 @@ def update_about_page(year, data):
                 )
 
         else:
-            status_fig = no_data_fig()
-            ethnicity_fig = no_data_fig()
+            status_fig = no_data_fig('Enrollment by Subgroup', 400)
+            ethnicity_fig = no_data_fig('Enrollment by Ethnicity', 400)
 
     return school_name, info_table, letter_grade_table, \
         enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, \

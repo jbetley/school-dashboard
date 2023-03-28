@@ -4,8 +4,8 @@ Table Helper Functions
 import numpy as np
 import pandas as pd
 # Testing
-import pandera
-from pandera.typing import DataFrame, Series
+# import pandera
+# from pandera.typing import DataFrame, Series
 #
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
@@ -25,7 +25,7 @@ label_style = {
 }
 color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
-def no_data_table(label: str) -> list:
+def no_data_table(label: str = 'No Data to Display') -> list:
     """Creates single empty table with provided label
 
     Args:
@@ -159,8 +159,6 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.Dataframe: returns the same dataframe with svg circles in place of text
     """
-
-    print(val)
     result = val.copy()
 
     # two types of tables need converting, those with Rating in col
@@ -570,6 +568,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         ]
     return table
 
+# TODO: Not sure how to type_hint: dash.dash_table.DataTable.DataTable'
 def create_comparison_table(data,school_name):
 
     # find the index of the row containing the school name
@@ -649,7 +648,7 @@ def create_comparison_table(data,school_name):
     )
     return table
 
-def create_academic_info_table(data,label):
+def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
     table = [
         html.Label(label, style=label_style),

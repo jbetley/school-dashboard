@@ -442,10 +442,9 @@ def update_financial_metrics(data,year,radio_value):
                 # convert ratings to colored circles
                 financial_indicators = get_svg_circle(financial_indicators)
 
-                print(financial_indicators.columns)
                 headers = financial_indicators.columns.tolist()
                 year_headers = [x for x in headers if 'Description' not in x and 'Standard' not in x]
-                print(year_headers)
+
                 financial_indicators_table = [
                         html.Div(
                             [             

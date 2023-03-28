@@ -43,7 +43,9 @@ from dotenv import load_dotenv # To access .env files in virtualenv
 from pages.calculations import set_academic_rating, calculate_percentage, \
     calculate_difference
 
+# font_awesome used only for svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
+
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Roboto:400", FONT_AWESOME]
 
 # Authentication with Flask-Login, Sqlite3, and Bcrypt

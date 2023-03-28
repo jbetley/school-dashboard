@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import scipy.spatial as spatial
 
-def calculate_percentage(numerator,denominator):
+def calculate_percentage(numerator: str, denominator: str) -> float:
     """
     Calculates a percentage taking into account a string representing insufficent n-size ('***') and
     special cases where a '0' result has a different meaning. The function does the following:
@@ -30,7 +30,7 @@ def calculate_percentage(numerator,denominator):
     )
 
 
-def calculate_difference(value1, value2):
+def calculate_difference(value1: str, value2: str) -> float:
     """
     Calculate difference between two dataframes with specific mixed datatypes
     and conditions.
@@ -46,7 +46,7 @@ def calculate_difference(value1, value2):
         ),
     )
 
-def set_academic_rating(data, threshold, flag):
+def set_academic_rating(data: str | float, threshold: list, flag: str) -> str:
     """
     Takes a value (string, numeric, nonetype), a list of the thresholds,
     which varies from type to type and a 'flag' integer that tells the
@@ -123,8 +123,7 @@ def set_academic_rating(data, threshold, flag):
 
     return indicator
 
-
-def round_percentages(percentages):
+def round_percentages(percentages: list) -> list:
     """
     https://github.com/simondo92/round-percentages
     Given an iterable of percentages that add up to 100 (or decimals that add up
@@ -168,7 +167,7 @@ def round_percentages(percentages):
     return [percentage[0] for percentage in result]
 
 # Find nearest schools in miles using a KDTree
-def find_nearest(school_idx,data):
+def find_nearest(school_idx: pd.Index,data: pd.DataFrame) -> np.ndarray | np.ndarray:
     """
     Based on https://stackoverflow.com/q/43020919/190597
     Uses scipy.spatial KDTree method to find the nearest schools to the
@@ -182,6 +181,7 @@ def find_nearest(school_idx,data):
     https://stackoverflow.com/questions/43020919/scipy-how-to-convert-kd-tree-distance-from-query-to-kilometers-python-pandas
     https://kanoki.org/2020/08/05/find-nearest-neighbor-using-kd-tree/
     """
+
     # the radius of earth in miles. For kilometers use 6372.8 km
     R = 3959.87433 
 
@@ -201,10 +201,10 @@ def find_nearest(school_idx,data):
     # gets a list of the indexes and distances in the data tree that
     # match the [num_hits] number of 'nearest neighbor' schools
     distance, index = tree.query(data.iloc[school_idx][['x', 'y','z']], k = num_hits)
-    
+
     return index, distance
 
-def filter_grades(row, compare):
+def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:
     """
     Takes two dataframes, of school and comparison school data that
     includes the Low and High Grades for each. Creates a boolean
@@ -233,7 +233,7 @@ def filter_grades(row, compare):
 #   IndexError: index -2 is out of bounds for axis 0 with size 1 (Many Schools - Early Years) Excel Elkhart
 #   ValueError: Must have equal len keys and value when setting with an ndarray (Excel-Lafayette 2021)
 
-def calculate_metrics(data):
+def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # Some schools have 'pre-opening' financial activity before the school
     # begins to operate and receive state/federal grants. The below code
     # ignores all columns (years) where the value in the State Grant column
@@ -452,7 +452,7 @@ def calculate_metrics(data):
 
     # A helper function in the helper function
     # Because this is for display, we need to manually reorder the columns
-    def sort_metrics(column):
+    def sort_metrics(column: pd.Series) -> pd.Series:
         reorder = [
             'Current Ratio','Current Ratio Metric',
             'Days Cash on Hand','Days Cash Metric',

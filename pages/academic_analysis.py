@@ -177,10 +177,13 @@ def set_dropdown_options(school, year, comparison_schools):
     Output('fig14c-table', 'children'),
     Output('fig14d', 'figure'),
     Output('fig14d-table', 'children'),
+    Output('fig-iread', 'figure'),
+    Output('fig-iread-table', 'children'),
     Output('fig16c1', 'figure'),
     Output('fig16d1', 'figure'),
     Output('fig16c2', 'figure'),
     Output('fig16d2', 'figure'),
+    Output('fig14g', 'figure'),
     Output('fig16a1', 'figure'),
     Output('fig16a1-table', 'children'),
     Output('fig16a1-category-string', 'children'),
@@ -241,8 +244,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
     if (school_info['School Type'].values[0] == 'K8' and not data['8']) or \
         school_info['School Type'].values[0] == 'HS' or school_info['School Type'].values[0] == 'AHS':
 
-        fig14a = fig14b = fig14c = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig16a1 = fig16b1 = fig16a2 = fig16b2 = {}
-        fig14c_table = fig14d_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = {}
+        fig14a = fig14b = fig14c = fig14d = fig_iread = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig14g = fig16a1 = fig16b1 = fig16a2 = fig16b2 = {}
+        fig14c_table = fig14d_table = fig_iread_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = {}
         fig16a1_category_string = fig16b1_category_string = fig16a2_category_string = fig16b2_category_string = ''
         fig16a1_school_string = fig16b1_school_string = fig16a2_school_string = fig16b2_school_string = ''
         fig16a1_table_container = {'display': 'none'}
@@ -268,8 +271,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
         if tested_header not in tested_academic_data.columns or \
             tested_academic_data[tested_header].isnull().all():
             
-            fig14a = fig14b = fig14c = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig16a1 = fig16b1 = fig16a2 = fig16b2 = {}
-            fig14c_table = fig14d_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = {}
+            fig14a = fig14b = fig14c = fig14d = fig_iread = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig14g = fig16a1 = fig16b1 = fig16a2 = fig16b2 = {}
+            fig14c_table = fig14d_table = fig_iread_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = {}
             fig16a1_category_string = fig16b1_category_string = fig16a2_category_string = fig16b2_category_string = ''
             fig16a1_school_string = fig16b1_school_string = fig16a2_school_string = fig16b2_school_string = ''
             fig16a1_table_container = {'display': 'none'}
@@ -299,7 +302,9 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             # add column for each year with the School's Name and add text to each category
             k8_academic_infoT['School Name'] = school_name
-            k8_academic_infoT = k8_academic_infoT.rename(columns={c: c + ' Proficient %' for c in k8_academic_infoT.columns if c not in ['Year', 'School Name']})
+            k8_academic_infoT = k8_academic_infoT.rename(columns={c: c + ' Proficient %' for c in k8_academic_infoT.columns if c not in ['Year', 'School Name','IREAD Proficiency (Grade 3 only)']})
+
+### TODO: MISSING IREAD KEY SOMEWHERE
 
             # are there at least two years of data (length of index gives number of rows)
             if len(k8_academic_infoT.index) >= 2:
@@ -369,9 +374,21 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16d2_data = k8_school_data_YoY.loc[:, (k8_school_data_YoY.columns.isin(categories)) | (k8_school_data_YoY.columns.isin(['School Name','Year']))]
                 fig16d2 = make_line_chart(fig16d2_data)
 
+                ## Chart 9 - IREAD Year over Year
+                category = 'IREAD Proficiency (Grade 3 only)'
+
+                fig14g_data = k8_school_data_YoY.loc[:, (k8_school_data_YoY.columns == category) | (k8_school_data_YoY.columns.isin(['School Name','Year']))]
+                fig14g = make_line_chart(fig14g_data)
+
             else:   # only one year of data (zero years would be empty dataframe)
 
-                fig14a = fig14b = fig14d = fig16c1 = fig16d1 = fig16c2 = fig16d2 = no_data_fig()
+                fig14a = no_data_fig('Year over Year ELA Proficiency by Grade', 200)
+                fig14b = no_data_fig('Year over Year Math Proficiency by Grade', 200)
+                fig16c1 = no_data_fig('Year over Year ELA Proficiency by Ethnicity')
+                fig16d1 = no_data_fig('Year over Year Math Proficiency by Ethnicity', 200)
+                fig16c2 = no_data_fig('Year over Year ELA Proficiency by Subgroup', 200)
+                fig16d2 = no_data_fig('Year over Year Math Proficiency by Subgroup', 200)
+                fig14g = no_data_fig('Year over Year IREAD Proficiency', 200)
 
         ## Charts (3 & 4)- Comparison Data
         # Uses: single [selected] year of data
@@ -380,7 +397,6 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # Get current year school data
             school_current_data = k8_academic_infoT.loc[k8_academic_infoT['Year'] == int(selected_year)]
 
-# TODO: Add IREAD
             # temporarily store and drop 'School Name' string column to simplify calculations
             info_categories = school_current_data[['School Name']]
             school_current_data = school_current_data.drop(columns=['School Name'], axis=1)
@@ -478,8 +494,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             comparison_schools['Total|ELA Proficient %'] = all_grades_ela_proficient_comp.sum(axis=1) / all_grades_ela_tested_comp.sum(axis=1)
 
             # calculate IREAD Pass %
-            if 'IREAD Proficiency (Grade 3 only) Proficient %' in school_current_data:
-                comparison_schools['IREAD Proficiency (Grade 3 only) Proficient %'] = comparison_schools['IREAD Pass N'] / comparison_schools['IREAD Test N']
+            if 'IREAD Proficiency (Grade 3 only)' in school_current_data:
+                comparison_schools['IREAD Proficiency (Grade 3 only)'] = comparison_schools['IREAD Pass N'] / comparison_schools['IREAD Test N']
 
             # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
             comparison_schools = comparison_schools.filter(regex = r'\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficiency|^Year$',axis=1)
@@ -503,7 +519,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # reset indecies
             comparison_schools = comparison_schools.reset_index(drop=True)
             
-### TODO: Do we add HS Data? ##
+            ### TODO: Add HS Data ###
             # hs_comparison_data = hs_all_data_included_years.loc[(hs_all_data_included_years['School ID'].isin(comparison_schools))]
             #     # filter comparable school data
             # hs_comparison_data = hs_comparison_data.filter(regex = r'Cohort Count$|Graduates$|Pass N|Test N|^Year$',axis=1)
@@ -517,10 +533,9 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             # # ensure columns headers are strings
             # hs_comparison_data.columns = hs_comparison_data.columns.astype(str)
-####
 
-### TODO: position of selected school trace - random?
-### TODO: Can probably refactor this to simplify as well
+            ### TODO: position of selected school trace - random?
+            ### TODO: Can probably refactor this to simplify as well
 
             # get name of school corporation
             school_corporation_name = filtered_academic_data_k8.loc[(all_academic_data_k8['Corp ID'] == school_info['GEO Corp'].values[0])]['Corp Name'].values[0]
@@ -560,8 +575,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14c_table = create_comparison_table(fig14c_table_data, school_name)
             else:
 
-                fig14c = no_data_fig()
-                fig14c_table = no_data_table() #empty_table
+                fig14c = no_data_fig('Comparison: Current Year ELA Proficiency',200)
+                fig14c_table = no_data_table('Proficiency')
 
         #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
             category = 'Total|Math Proficient %'
@@ -593,10 +608,43 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
                 fig14d_table = create_comparison_table(fig14d_table_data, school_name)
             else:
-                fig14d = no_data_fig()
-                fig14d_table = no_data_table()
+                fig14d = no_data_fig('Comparison: Current Year Math Proficiency',200)
+                fig14d_table = no_data_table('Proficiency')
 
-            # TODO: Add IREAD-3 chart (14g)
+            #### Current Year IREAD Proficiency Compared to Similar Schools #
+            category = 'IREAD Proficiency (Grade 3 only)'
+
+            if category in school_current_data.columns:
+
+                fig_iread_k8_school_data = school_current_data[['School Name','Low Grade','High Grade',category]].copy()
+
+                print(corp_current_data[category])
+                # add corp average for category to dataframe - the '','','N/A' are values for Low & High Grade and Distance columns
+                fig_iread_k8_school_data.loc[len(fig_iread_k8_school_data.index)] = [school_corporation_name, '3','8',corp_current_data[category].values[0]]
+
+                # Get comparable school values for the specific category
+                print(comparison_schools.columns)
+                fig_iread_comp_data = comparison_schools[['School Name','Low Grade','High Grade',category]]
+                # fig_iread_comp_data = comparison_schools[['School Name','Low Grade','High Grade','Distance',category]]
+
+                fig_iread_all_data = pd.concat([fig_iread_k8_school_data,fig_iread_comp_data])
+                print(fig_iread_all_data)
+                # save table data
+                fig_iread_table_data = fig_iread_all_data.copy()
+
+                fig_iread_all_data[category] = pd.to_numeric(fig_iread_all_data[category])
+
+                fig_iread = make_bar_chart(fig_iread_all_data,category, school_name)
+
+                # Math Proficiency table
+                fig_iread_table_data['School Name'] = fig_iread_table_data['School Name'] + " (" + fig_iread_table_data['Low Grade'] + "-" + fig_iread_table_data['High Grade'] + ")"
+                fig_iread_table_data = fig_iread_table_data[['School Name', category]]
+                fig_iread_table_data = fig_iread_table_data.reset_index(drop=True)
+
+                fig_iread_table = create_comparison_table(fig_iread_table_data, school_name)
+            else:
+                fig_iread = no_data_fig('Comparison: Current Year IREAD Proficiency',200)
+                fig_iread_table = no_data_table('Proficiency')
 
             #### Comparison Charts & Tables
             # NOTE: See backup data 01.23.23 for pre- full_chart() function code
@@ -703,7 +751,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16a1_table_container = {'display': 'block'}
             
             else:
-                fig16a1 = no_data_fig()
+                fig16a1 = no_data_fig('Comparison: ELA Proficiency by Ethnicity', 200)
                 fig16a1_table = {}
                 fig16a1_category_string = ''
                 fig16a1_school_string = ''                
@@ -726,7 +774,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16b1_table_container = {'display': 'block'}
             
             else:
-                fig16b1 = no_data_fig()
+                fig16b1 = no_data_fig('Comparison: Math Proficiency by Ethnicity', 200)
                 fig16b1_table = {}
                 fig16b1_category_string = ''
                 fig16b1_school_string = ''                
@@ -749,7 +797,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16a2_table_container = {'display': 'block'}
             
             else:
-                fig16a2 = no_data_fig()
+                fig16a2 = no_data_fig('Comparison: ELA Proficiency by Subgroup', 200)
                 fig16a2_table = {}
                 fig16a2_category_string = ''
                 fig16a2_school_string = ''                
@@ -772,7 +820,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16b2_table_container = {'display': 'block'}
             
             else:
-                fig16b2 = no_data_fig()
+                fig16b2 = no_data_fig('Comparison: Math Proficiency by Subgroup', 200)
                 fig16b2_table = {}
                 fig16b2_category_string = ''
                 fig16b2_school_string = ''                
@@ -784,11 +832,15 @@ def update_academic_analysis(school, year, data, comparison_school_list):
     ################
 
     # main_container = {'display': 'block'}
-    return fig14a, fig14b, fig14c, fig14c_table, fig14d, fig14d_table, fig16c1, fig16d1, fig16c2, fig16d2, \
-        fig16a1, fig16a1_table, fig16a1_category_string, fig16a1_school_string, fig16a1_table_container, fig16b1, \
-        fig16b1_table, fig16b1_category_string, fig16b1_school_string, fig16b1_table_container, fig16a2, fig16a2_table, \
-        fig16a2_category_string, fig16a2_school_string, fig16a2_table_container, fig16b2, fig16b2_table, \
-        fig16b2_category_string, fig16b2_school_string, fig16b2_table_container, main_container, empty_container, no_data_to_display
+    return fig14a, fig14b, fig14c, fig14c_table, fig14d, fig14d_table, fig_iread, \
+        fig_iread_table, fig16c1, fig16d1, fig16c2, fig16d2, fig14g, fig16a1, \
+        fig16a1_table, fig16a1_category_string, \
+        fig16a1_school_string, fig16a1_table_container, fig16b1, fig16b1_table, \
+        fig16b1_category_string, fig16b1_school_string, fig16b1_table_container, \
+        fig16a2, fig16a2_table, fig16a2_category_string, fig16a2_school_string, \
+        fig16a2_table_container, fig16b2, fig16b2_table, fig16b2_category_string, \
+        fig16b2_school_string, fig16b2_table_container, \
+        main_container, empty_container, no_data_to_display
 
 ## Layout ##
 label_style = {
@@ -841,6 +893,7 @@ school_string_style = {
     'fontWeight': 'normal'
 }
 
+#TODO: Move labels to chart/table functions
 def layout():
     return html.Div(
 # layout = html.Div(
@@ -920,7 +973,25 @@ def layout():
                             ],
                             className='row',
                         ),
-
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Label('Year over Year IREAD Proficiency', style=label_style),
+                                        dcc.Graph(id='fig14g', figure = loading_fig(),config={'displayModeBar': False})
+                                    ],
+                                    className = 'pretty_container six columns'
+                                ),
+                                # html.Div(
+                                #     [
+                                #         html.Label('Year over Year Math Proficiency by Subgroup', style=label_style),
+                                #         dcc.Graph(id='fig16d2', figure = loading_fig(),config={'displayModeBar': False})
+                                #     ],
+                                #     className = 'pretty_container six columns'
+                                # )
+                            ],
+                            className='row',
+                        ),
                         # Comparison Charts
                         html.Div(
                             [
@@ -981,6 +1052,25 @@ def layout():
                             ],
                             className='row'
                         ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Label('Comparison: Current Year IREAD Proficiency', style=label_style),
+                                        dcc.Graph(id='fig-iread', figure = loading_fig(),config={'displayModeBar': False})
+                                    ],
+                                    className = 'pretty_container nine columns',
+                                ),
+                                html.Div(
+                                    [
+                                        html.Label('Proficiency', style=label_style),
+                                        html.Div(id='fig-iread-table')
+                                    ],
+                                    className = 'pretty_container three columns'
+                                ),
+                            ],
+                            className='row'
+                        ),                        
                         html.Div(
                             [
                                 html.Div(
