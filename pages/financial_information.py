@@ -48,7 +48,10 @@ def update_financial_information_page(data,year,radio_value):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('Audited Financial Information')
 
+    selected_year = int(year)
+    
     max_display_years = 5
+
     school_index = pd.DataFrame.from_dict(data['0'])
 
     # Displays either School or Network level financials, if a school is not
@@ -139,31 +142,32 @@ def update_financial_information_page(data,year,radio_value):
 
         financial_data = pd.read_csv(finance_file)
 
-        # The first (most recent) column of the financial data file is a
-        # string that will either be in the format 'YYYY' or 'YYYY (Q#)',
-        # where Q# represents the 'quarter' of the displayed financial data
-        # (Q1, Q2, Q3, Q4). If '(Q#)' is not in the string, it means
-        # the data in the column is audited data.
-
+        # NOTE: Not currently used
         # 'operating_years_by_finance' is equal to the total number of years a school
         # has been financially active,by counting the total number of years in the
         # financial df (subtracting 1 for category column). We do not currently use this,
         # for dashboard purposes, we only care whether a school has five or fewer
         # years of data.
-        # NOTE: Not currently used
         # operating_years_by_finance = max_display_years if len(financial_data.columns) - 1 >= max_display_years else len(financial_data.columns) - 1
-
-        selected_year = int(year)
 
         # Financial data will almost always be more recent than academic
         # data. If partial quarterly academic data exists, we want to
         # display it even if the year is more recent than the most recent
         # dropdown year
 
-        # drop any years that are later in time than the selected year
-        # slice to ensure that partial year information (Q#) is
-        # removed before converting to an int
+        # The first (most recent) column of the financial data file is a
+        # string that will either be in the format 'YYYY' or 'YYYY (Q#)',
+        # where Q# represents the 'quarter' of the displayed financial data
+        # (Q1, Q2, Q3, Q4). If '(Q#)' is not in the string, it means
+        # the data in the column is audited data.
+
+        # get most recent finance year - slice to ensure that any partial year
+        # information (Q#) is removed before converting to an int (but we
+        # want to keep it for display purposes)
         most_recent_finance_year = int(financial_data.columns[1][:4])
+
+        # drop any years that are later in time than the selected year
+        years_to_exclude = most_recent_finance_year - selected_year
 
         # The current academic year (max dropdown value) is stored
         # in dcc store as the 15th dictionary. this will always
@@ -178,7 +182,6 @@ def update_financial_information_page(data,year,radio_value):
         # recent than the current academic year if it is present in the
         # dataframe
         if selected_year < current_academic_year:
-            years_to_exclude = most_recent_finance_year - selected_year
             financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
 
         # financial file exists, but is empty

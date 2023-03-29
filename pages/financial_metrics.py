@@ -54,10 +54,10 @@ def update_financial_metrics(data,year,radio_value):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('Financial Metrics')
 
-    # # test
-    # radio_value == 'school-metrics'
+    selected_year = int(year)
 
     max_display_years = 5
+
     school_index = pd.DataFrame.from_dict(data['0'])
 
     if school_index['Network'].values[0] != 'None':
@@ -134,32 +134,20 @@ def update_financial_metrics(data,year,radio_value):
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
 
-        # dataframe may contain partial years (e.q., 2023 (Q1)). 
-        # Option #1: Drop
-        # if 'Q' in financial_data.columns[1]:
-        #     financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
-
-        # Option #2: Calculate partial metrics
-
+        # see financial_information.py for comments
+        
         # in order for metrics to be calculated properly, we need
         # to temporarily store and remove the (Q#) part of string
-        #financial_quarter = financial_data.columns[1][6:8] if len(financial_data.columns[1]) > 4 else ''
         financial_quarter = financial_data.columns[1][5:] if len(financial_data.columns[1]) > 4 else ''
-        
-        # remove the quarter string from the year header (note: index is not
-        # mutable, so cannot rename just one column, must 'replace' all
-        # column names) - this just replaces all column header strings with the
-        # first 4 letters of the string
         financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != 'Category' else x)
 
-        # drop any years that are later in time than the selected year
         most_recent_finance_year = int(financial_data.columns[1])
 
-        selected_year = int(year)
+        years_to_exclude = most_recent_finance_year - selected_year
+        
         current_academic_year = int(data['15']['current_academic_year'])
 
         if selected_year < current_academic_year:
-            years_to_exclude = most_recent_finance_year - selected_year
             financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
 
         # create_empty_table() if file exists, but has no financial data, or

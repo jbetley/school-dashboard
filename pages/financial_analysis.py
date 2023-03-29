@@ -17,11 +17,9 @@ import plotly.graph_objects as go
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table
-from .chart_helpers import loading_fig, no_data_fig
+from .chart_helpers import loading_fig#, no_data_fig
 from .subnav import subnav_finance
 dash.register_page(__name__, path = '/financial_analysis', order=3)
-
-# NOTE: The "federal audit findings" table is not currently displayed
 
 @callback(
     Output('revenue-expenses-fig', 'figure'),
@@ -35,7 +33,7 @@ dash.register_page(__name__, path = '/financial_analysis', order=3)
     Output('finance-analysis-FP-title', 'children'),
     Output('finance-analysis-FA-title', 'children'),
     Output('financial-ratios-table', 'children'),
-#    Output('audit-findings-table', 'children'),
+#    Output('audit-findings-table', 'children'),    # not currently displayed
     Output('per-student-table', 'children'),
     Output('financial-analysis-main-container', 'style'),
     Output('financial-analysis-empty-container', 'style'),
@@ -52,51 +50,9 @@ def update_financial_analysis_page(data, year, radio_value):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('Financial Analysis')
 
-# TODO: REFACTOR LAYOUT - SEE FINANCIAL METRICS
-
-    # empty_table = [
-    #         dash_table.DataTable(
-    #             columns = [
-    #                 {'id': 'emptytable', 'name': 'No Data to Display'},
-    #             ],
-    #             style_header={
-    #                 'fontSize': '16px',
-    #                 'border': 'none',
-    #                 'backgroundColor': '#ffffff',
-    #                 'paddingTop': '15px',                    
-    #                 'verticalAlign': 'center',
-    #                 'textAlign': 'center',
-    #                 'color': '#6783a9',
-    #                 'fontFamily': 'Roboto, sans-serif',
-    #             },
-    #         )
-    #     ]
-
-    # blank_chart = {
-    #             'layout': {
-    #                 'xaxis': {
-    #                     'visible': False
-    #                 },
-    #                 'yaxis': {
-    #                     'visible': False
-    #                 },
-    #                 'annotations': [
-    #                     {
-    #                         'text': 'No Data to Display',
-    #                         'xref': 'paper',
-    #                         'yref': 'paper',
-    #                         'showarrow': False,
-    #                         'font': {
-    #                             'size': 16,
-    #                             'color': '#6783a9',
-    #                             'family': 'Roboto, sans-serif'
-    #                         }
-    #                     }
-    #                 ]
-    #             }
-    #         }
-
+    selected_year = int(year)
     max_display_years = 5
+    
     school_index = pd.DataFrame.from_dict(data['0'])
 
     # NOTE: See financial_information.py for comments
@@ -184,17 +140,22 @@ def update_financial_analysis_page(data, year, radio_value):
             FA_title = '2-Year Financial Activities (' + school_index['School Name'].values[0] + ')'
 
     if os.path.isfile(finance_file):
+        financial_data = pd.read_csv(finance_file)
+
+        # financial_quarter = financial_data.columns[1][5:] if len(financial_data.columns[1]) > 4 else ''
+        # financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != 'Category' else x)
+
+        most_recent_finance_year = int(financial_data.columns[1][:4])
+
+        years_to_exclude = most_recent_finance_year - selected_year        
+        
+        current_academic_year = int(data['15']['current_academic_year'])
+
+        if selected_year < current_academic_year:
+            financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
 
         # Network financial data is limited to the number of years of
         # school data, even if network has more years.
-        financial_data = pd.read_csv(finance_file)
-
-        most_recent_finance_year = financial_data.columns[1]
-        excluded_finance_years = int(most_recent_finance_year) - int(year)
-
-        if excluded_finance_years > 0:
-                        financial_data.drop(financial_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
-        
         # if radio_value == 'network-analysis':
         #     # drop columns (years) from the dataframe that are more recent than the selected year
         #     if excluded_finance_years > 0:
@@ -419,6 +380,8 @@ def update_financial_analysis_page(data, year, radio_value):
             assets_liabilities_fig['data'][0]['hovertemplate']='Net Asset Position<br>$ %{y:,.2f}<extra></extra>'
 
         ## Two Year Finance Tables (Financial Position and Financial Activities)
+
+# TODO: ENSURE 2023 is DISPLAYED
 
             # display for each table is ['Category'] + [year] + [year-1]
             table_years = [year] + [(str(int(year)-1))]
@@ -774,8 +737,8 @@ def update_financial_analysis_page(data, year, radio_value):
                 financial_ratios_data = financial_ratios_data.set_index('Year').T.rename_axis('Category').rename_axis(None, axis=1).reset_index()
 
                 # ensure data is adjusted to display from the selected year
-                if excluded_finance_years > 0:
-                    financial_ratios_data.drop(financial_ratios_data.columns[1:excluded_finance_years], axis=1, inplace=True)
+                if years_to_exclude > 0:
+                    financial_ratios_data.drop(financial_ratios_data.columns[1:years_to_exclude], axis=1, inplace=True)
 
                 # change all cols to numeric except for Category
                 for col in financial_ratios_data.columns[1:]:

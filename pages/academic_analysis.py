@@ -304,8 +304,6 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             k8_academic_infoT['School Name'] = school_name
             k8_academic_infoT = k8_academic_infoT.rename(columns={c: c + ' Proficient %' for c in k8_academic_infoT.columns if c not in ['Year', 'School Name','IREAD Proficiency (Grade 3 only)']})
 
-### TODO: MISSING IREAD KEY SOMEWHERE
-
             # are there at least two years of data (length of index gives number of rows)
             if len(k8_academic_infoT.index) >= 2:
 
@@ -338,7 +336,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14b_data = k8_school_data_YoY.filter(regex = r'^Grade \d\|Math|^School Name$|^Year$',axis=1)
                 fig14b = make_line_chart(fig14b_data)
 
-                # NOTE: Charts 3 & 4 (Comparisons) added below
+                # NOTE: Charts 3 & 4 (Comparisons) are below
 
                 ## Chart 5: Year over Year ELA Proficiency by Ethnicity (1.6.c)
                 categories = []
@@ -391,8 +389,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14g = no_data_fig('Year over Year IREAD Proficiency', 200)
 
         ## Charts (3 & 4)- Comparison Data
-        # Uses: single [selected] year of data
-        # Display: 1) school value; 2) similar school avg; and 3) all comparable schools with data
+        # Takes single year of data and displays for that year:
+        #   1) school value; 2) similar school avg; and 3) all comparable schools with data
 
             # Get current year school data
             school_current_data = k8_academic_infoT.loc[k8_academic_infoT['Year'] == int(selected_year)]
@@ -417,7 +415,9 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             school_current_data['Low Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == selected_year)]['Low Grade'].values[0]
             school_current_data['High Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == selected_year)]['High Grade'].values[0]
             
-            # get dataframe for traditional public schools located within school corporation that selected school resides
+            # get dataframe for traditional public schools located within the school
+            # corporation that selected school resides
+
             # academic_analysis_corp_dict
             k8_corp_data = pd.DataFrame.from_dict(data['7'])
 
@@ -426,12 +426,18 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # filter unnecessary columns
             corp_current_data = corp_current_data.filter(regex = r'\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$|^School Name$',axis=1)
 
+            # rename IREAD column
+            corp_current_data = corp_current_data.rename(
+                columns={"IREAD Pass %": "IREAD Proficiency (Grade 3 only)"}
+            )            
+      
             # coerce data types to numeric (except strings)
             for col in corp_current_data.columns:
                 corp_current_data[col]=pd.to_numeric(corp_current_data[col], errors='coerce').fillna(corp_current_data[col]).tolist()
 
             # get academic data for comparison schools
-            # filter full set by year and by the comparison schools selected in the dropdown
+            # filter full set by year and by the comparison schools
+            # selected in the dropdown
 
             eval_year = [str(school_current_data['Year'].values[0])]
 

@@ -897,10 +897,10 @@ def load_data(school, year):
 
             # reset indexes
             k8_school_data = k8_school_data.reset_index(drop=True)
-            k8_corp_rate_data = (
-                k8_corp_rate_data.reset_index()
-            )  # no drop because index was previous set to year
-
+            
+            # no drop because index was previous set to year
+            k8_corp_rate_data = k8_corp_rate_data.reset_index()
+            
             # ensure columns headers are strings
             k8_school_data.columns = k8_school_data.columns.astype(str)
             k8_corp_rate_data.columns = k8_corp_rate_data.columns.astype(str)

@@ -299,7 +299,7 @@ def update_about_page(year, data):
                         col: [
                             {
                                 'type': 'markdown',
-                                'value': hold_harmless_string #create_tooltip(df.loc[i, col])
+                                'value': hold_harmless_string  # create_tooltip(df.loc[i, col])
                             }
                         ]
                         for col in year_columns
@@ -320,6 +320,10 @@ def update_about_page(year, data):
 
         else:
 
+            # drop any columns with partial year data (e.g., 2023 (Q2)) because
+            # they generally do not have reliable adm data.
+            school_adm = school_adm[school_adm.columns.drop(list(school_adm.filter(regex='Q')))]
+            
             # turn single row dataframe into two lists (column headers and data)
             adm_data=school_adm.iloc[0].tolist()
             years=school_adm.columns.tolist()
