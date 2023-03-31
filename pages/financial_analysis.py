@@ -380,12 +380,21 @@ def update_financial_analysis_page(data, year, radio_value):
             assets_liabilities_fig['data'][0]['hovertemplate']='Net Asset Position<br>$ %{y:,.2f}<extra></extra>'
 
         ## Two Year Finance Tables (Financial Position and Financial Activities)
+            # NOTE: Displaying partial data screws this all up, so probably best
+            # to ignore partial data here
 
-# TODO: ENSURE 2023 is DISPLAYED
+            # if 'Q' in financial_data.columns[1]:
+            #     year = financial_data.columns[1][:4]
+            #     quarter = financial_data.columns[1][4:]
+            # else:
+            #     quarter = ''
 
-            # display for each table is ['Category'] + [year] + [year-1]
-            table_years = [year] + [(str(int(year)-1))]
-            display_years = ['Category'] + table_years
+            previous_year = int(year) - 1
+            previous_year_string = str(previous_year)
+
+            # Display Category and Two Years of Data
+            display_years = [year] + [previous_year_string]
+            table_headers = ['Category'] + display_years
 
             # there may be columns with no or partial data at beginning or ending of dataframe,
             # this deletes any column where more than 80% of the columns values are == 0
@@ -394,19 +403,19 @@ def update_financial_analysis_page(data, year, radio_value):
 
             # if all of the years to display (+ Category) exist in (are a subset of) the dataframe,
             # filter the dataframe by the display header
-            if set(display_years).issubset(set(financial_data.columns)):
-                financial_data = financial_data[display_years]
+            if set(table_headers).issubset(set(financial_data.columns)):
+                financial_data = financial_data[table_headers]
 
             else:
                 # identify the missing_year and the remaining_year and then add the missing_year as a blank
                 # column to the dataframe either before or after remaining_year depending on which year
                 # is less (earlier in time)
-                missing_year = list(set(display_years).difference(financial_data.columns))
-                remaining_year = [e for e in display_years if e not in ('Category', missing_year[0])]
+                missing_year = list(set(table_headers).difference(financial_data.columns))
+                remaining_year = [e for e in table_headers if e not in ('Category', missing_year[0])]
                 i = 1 if (int(missing_year[0]) < int(remaining_year[0])) else 0
 
                 financial_data.insert(loc = i, column = missing_year[0], value = 0)
-                financial_data = financial_data[display_years]
+                financial_data = financial_data[table_headers]
 
             # Table 1: 2-Year Financial Position
 
@@ -421,14 +430,14 @@ def update_financial_analysis_page(data, year, radio_value):
             # only calculate '% Change' if the number of columns with all zeros is
             # equal to 0 (e.g., all columns have nonzero values) force % formatting
             if financial_position_data.sum().eq(0).sum() == 0: 
-                financial_position_data['% Change'] = (financial_position_data[table_years[0]] - financial_position_data[table_years[1]]).div(abs(financial_position_data[table_years[1]]))
+                financial_position_data['% Change'] = (financial_position_data[display_years[0]] - financial_position_data[display_years[1]]).div(abs(financial_position_data[display_years[1]]))
                 financial_position_data['% Change'] = pd.Series(["{0:.2f}%".format(val * 100) for val in financial_position_data['% Change']], index = financial_position_data.index)
             else:
                 financial_position_data['% Change'] = 'N/A'
 
             # format numbers (since we are converting values to strings, we cannot vectorize,
             # need to iterate through each series)
-            for year in table_years:
+            for year in display_years:
                 financial_position_data[year] = pd.Series(['{:,.2f}'.format(val) for val in financial_position_data[year]], index = financial_position_data.index)
 
             # other clean-up for display purposes
@@ -517,7 +526,7 @@ def update_financial_analysis_page(data, year, radio_value):
             # maximum of two columns) only calculates change if the number
             # of columns with all zeros is equal to 0 (e.g., all columns have nonzero values)
             if financial_activity_data.sum().eq(0).sum() == 0:
-                financial_activity_data['% Change'] = (financial_activity_data[table_years[0]] - financial_activity_data[table_years[1]]).div(abs(financial_activity_data[table_years[1]]))
+                financial_activity_data['% Change'] = (financial_activity_data[display_years[0]] - financial_activity_data[display_years[1]]).div(abs(financial_activity_data[display_years[1]]))
             else:
                 financial_activity_data['% Change'] = 'N/A'
             
@@ -527,7 +536,7 @@ def update_financial_analysis_page(data, year, radio_value):
 
             # since we are converting values to strings, we need to iterate
             # through each series (cannot vectorize)
-            for year in table_years:
+            for year in display_years:
                 financial_activity_data[year] = pd.Series(['{:,.2f}'.format(val) for val in financial_activity_data[year]], index = financial_activity_data.index)
 
             # clean up for display
@@ -626,7 +635,7 @@ def update_financial_analysis_page(data, year, radio_value):
             
             # calculate '% Change' if both years have non-zero values
             if per_student_data.sum().eq(0).sum() == 0:
-                per_student_data['% Change'] = (per_student_data[table_years[0]] - per_student_data[table_years[1]]).div(abs(per_student_data[table_years[1]]))
+                per_student_data['% Change'] = (per_student_data[display_years[0]] - per_student_data[display_years[1]]).div(abs(per_student_data[display_years[1]]))
             else:
                 per_student_data['% Change'] = 'N/A'
 
@@ -637,7 +646,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 per_student_data['% Change'] = pd.Series(["{0:.2f}%".format(val * 100) for val in per_student_data['% Change']], index = per_student_data.index)
 
             # since we are converting values to strings, we need to iterate through each series (cannot vectorize)
-            for year in table_years:
+            for year in display_years:
                 per_student_data[year] = pd.Series(['{:,.2f}'.format(val) for val in per_student_data[year]], index = per_student_data.index)
 
             # clean up for display (this is lazy)
@@ -727,10 +736,13 @@ def update_financial_analysis_page(data, year, radio_value):
             # (empty df) OR where there are no years of data in the dataframe that
             # match the years being displayed (the last condition is True if the
             # two lists share at least one item (e.g., at least one of the
-            # display_years are in the Years dataframe column)).
-
+            # table_headers are in the Years dataframe column)).
+            # TODO: THIS IS INTERPRETING MISSING YEARS INCORRECTLY
+            print(financial_ratios_data)
+            print(table_headers)
+            print(display_years)
             if radio_value != 'network-finance' and (len(financial_ratios_data.index) != 0) and \
-                not set(financial_ratios_data['Year'].tolist()).isdisjoint(display_years):
+                not set(financial_ratios_data['Year'].tolist()).isdisjoint(table_headers):
 
                 # drop unused columns, transpose and rename
                 financial_ratios_data = financial_ratios_data.drop(columns=['Corporation Name','School Corporation'])
@@ -747,7 +759,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 # Form 9 data usually lags financial data by at least a year-
                 # so not uncommon if current year is missing from ratios dataframe.
                 # If missing, add a blank column with the missing year as header
-                ratio_display = ['Category'] + table_years
+                ratio_display = ['Category'] + display_years
                 missing_year = list(sorted(set(ratio_display) - set(financial_ratios_data.columns.tolist())))
                 if missing_year:
                     i = 1
@@ -759,7 +771,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 financial_ratios_data = financial_ratios_data[ratio_display]
 
                 # Force correct format for display of numeric (not N/A) columns in df
-                for year in table_years:
+                for year in display_years:
                     if (financial_ratios_data[year] != 'N/A').any():
                         financial_ratios_data[year] = pd.Series(['{0:.2f}%'.format(val * 100) for val in financial_ratios_data[year]], index = financial_ratios_data.index)
 
