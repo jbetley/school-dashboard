@@ -142,31 +142,18 @@ def update_financial_analysis_page(data, year, radio_value):
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
 
-        # financial_quarter = financial_data.columns[1][5:] if len(financial_data.columns[1]) > 4 else ''
-        # financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != 'Category' else x)
+        # NOTE: Drop partial year data - may eventually want to implement for Q4 data, but
+        # the display quickly gets too confusing.
+        if 'Q' in financial_data.columns[1]:
+            financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
-        most_recent_finance_year = int(financial_data.columns[1][:4])
+        most_recent_finance_year = int(financial_data.columns[1])
 
-        years_to_exclude = most_recent_finance_year - selected_year        
-        
-        current_academic_year = int(data['15']['current_academic_year'])
+        years_to_exclude = most_recent_finance_year - selected_year
 
-        if selected_year < current_academic_year:
-            financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
+        if years_to_exclude > 0:
+            financial_data = financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1)
 
-        # Network financial data is limited to the number of years of
-        # school data, even if network has more years.
-        # if radio_value == 'network-analysis':
-        #     # drop columns (years) from the dataframe that are more recent than the selected year
-        #     if excluded_finance_years > 0:
-        #         financial_data.drop(financial_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
-
-        # else:
-
-        #     # drop columns (years) from both dataframes that are more recent than the selected year
-        #     if excluded_finance_years > 0:
-        #         financial_data.drop(financial_data.columns[1:excluded_finance_years+1], axis=1, inplace=True)
- 
         # if there are no columns or only one column ('Category'), then all tables and figs are empty
         if len(financial_data.columns) <= 1:
             financial_position_table = {}
@@ -737,10 +724,7 @@ def update_financial_analysis_page(data, year, radio_value):
             # match the years being displayed (the last condition is True if the
             # two lists share at least one item (e.g., at least one of the
             # table_headers are in the Years dataframe column)).
-            # TODO: THIS IS INTERPRETING MISSING YEARS INCORRECTLY
-            print(financial_ratios_data)
-            print(table_headers)
-            print(display_years)
+
             if radio_value != 'network-finance' and (len(financial_ratios_data.index) != 0) and \
                 not set(financial_ratios_data['Year'].tolist()).isdisjoint(table_headers):
 
@@ -749,8 +733,8 @@ def update_financial_analysis_page(data, year, radio_value):
                 financial_ratios_data = financial_ratios_data.set_index('Year').T.rename_axis('Category').rename_axis(None, axis=1).reset_index()
 
                 # ensure data is adjusted to display from the selected year
-                if years_to_exclude > 0:
-                    financial_ratios_data.drop(financial_ratios_data.columns[1:years_to_exclude], axis=1, inplace=True)
+                # if years_to_exclude > 0:
+                #     financial_ratios_data = financial_ratios_data.drop(financial_ratios_data.columns[1:years_to_exclude], axis=1)
 
                 # change all cols to numeric except for Category
                 for col in financial_ratios_data.columns[1:]:
@@ -790,11 +774,14 @@ def update_financial_analysis_page(data, year, radio_value):
         #   Total Revenue: Form 9 Section Codes 1 and 3
         #   Total Expenditures: Form 9 Section Codes 2 and 4
         #   Instructional Expense: Form 9 Object Codes 311, 312, and 313
-        #   Instructional Staff Expense = Form 9 Object Codes between 110 & 290, excluding 115, 120, 121, 149, and 150  
-        #   Occupancy Expense = Form 9 Object Codes 411, 431, 441, 450, between 621 & 626, and between 710 & 720
+        #   Instructional Staff Expense = Form 9 Object Codes between 110
+        #   & 290, excluding 115, 120, 121, 149, and 150  
+        #   Occupancy Expense = Form 9 Object Codes 411, 431, 441, 450,
+        #   between 621 & 626, and between 710 & 720
         #   Personnel Expense = Form 9 Object Codes between 110 & 290
 
-                # markdown_table = """|**Occupancy Expense** (Object Codes 411, 431, 441, 450, between 621 & 626, and between 710 & 720)|
+                # markdown_table = """|**Occupancy Expense** (Object Codes 411, 431, 441, 450,
+                # between 621 & 626, and between 710 & 720)|
                 # |:-----------:|
                 # |divided by|
                 # |**Total Revenue** (Form 9 Section Codes 1 and 3) |

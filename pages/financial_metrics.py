@@ -138,6 +138,7 @@ def update_financial_metrics(data,year,radio_value):
         
         # in order for metrics to be calculated properly, we need
         # to temporarily store and remove the (Q#) part of string
+        financial_quarter = ''
         financial_quarter = financial_data.columns[1][5:] if len(financial_data.columns[1]) > 4 else ''
         financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != 'Category' else x)
 
@@ -208,8 +209,10 @@ def update_financial_metrics(data,year,radio_value):
                 if financial_metrics.iat[10,x]:
                     financial_metrics.iat[10,x] = '{:,.2f}'.format(financial_metrics.iat[10,x])
 
-            # Add financial quarter back to financial header for display purposes
-            financial_metrics = financial_metrics.rename(columns={financial_metrics.columns[1]: financial_metrics.columns[1] + financial_quarter})
+            # Add financial quarter back to financial header for display purposes (if partial
+            # year is being displayed)
+            if int(financial_metrics.columns[1]) > current_academic_year:
+                financial_metrics = financial_metrics.rename(columns={financial_metrics.columns[1]: financial_metrics.columns[1] + financial_quarter})
 
             headers = financial_metrics.columns.tolist()
 
