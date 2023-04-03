@@ -283,7 +283,7 @@ def set_dropdown_value(charter_options):
 # year options are the range of:
 #   max = current_academic_year
 #   min = the earliest year for which the school
-#         has adm (is open)
+#   has adm (is open)
 #   limit = typically a limit of 5 years (currently and 
 #   temporarily 4 years so that 2018 academic data is not shown)
 @callback(
@@ -432,7 +432,7 @@ app.layout = html.Div(
                                 style={
                                     "padding": "50px",
                                     "paddingBottom": "60px",
-                                    "marginTop": "40px",
+                                    "marginTop": "50px",
                                 }
                         ),
                     ],

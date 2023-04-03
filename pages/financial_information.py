@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Information #
 ##########################################
 # author:   jbetley
-# version:  .99.021323
+# version:  1.01.040223
 
 import dash
 from dash import html, dash_table, Input, Output, callback, ctx
@@ -17,17 +17,17 @@ from .subnav import subnav_finance
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
 
 ## Layout
-label_style = {
-    'height': '20px',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
+# label_style = {
+#     'height': '20px',
+#     'backgroundColor': '#6783a9',
+#     'fontSize': '12px',
+#     'fontFamily': 'Roboto, sans-serif',
+#     'color': '#ffffff',
+#     'textAlign': 'center',
+#     'fontWeight': 'bold',
+#     'paddingBottom': '5px',
+#     'paddingTop': '5px'
+# }
 
 @callback(
     Output('financial-information-table', 'children'),
@@ -142,38 +142,33 @@ def update_financial_information_page(data,year,radio_value):
 
         financial_data = pd.read_csv(finance_file)
 
-        # NOTE: Not currently used
-        # 'operating_years_by_finance' is equal to the total number of years a school
-        # has been financially active,by counting the total number of years in the
-        # financial df (subtracting 1 for category column). We do not currently use this,
-        # for dashboard purposes, we only care whether a school has five or fewer
-        # years of data.
+        # NOTE: 'operating_years_by_finance' is is equal to the total number
+        # of years a school has been financially active regardless of whether
+        # the school is open and instructing students. It is simply the
+        # total number of columns (-1 to account for Category). It is not
+        # currently used - because maximum display is five years
         # operating_years_by_finance = max_display_years if len(financial_data.columns) - 1 >= max_display_years else len(financial_data.columns) - 1
 
         # Financial data will almost always be more recent than academic
-        # data. If partial quarterly academic data exists, we want to
-        # display it even if the year is more recent than the most recent
-        # dropdown year
-
-        # The first (most recent) column of the financial data file is a
+        # data. This is the only time we want do display 'future' data,
+        # that is data from a year more recent than the maximum dropdown
+        # year. The first (most recent) column of the financial data file is a
         # string that will either be in the format 'YYYY' or 'YYYY (Q#)',
         # where Q# represents the 'quarter' of the displayed financial data
         # (Q1, Q2, Q3, Q4). If '(Q#)' is not in the string, it means
         # the data in the column is audited data.
 
-        # get most recent finance year - slice to ensure that any partial year
-        # information (Q#) is removed before converting to an int (but we
-        # want to keep it for display purposes)
+        # get most recent finance year - slicing to remove the quarter
+        # information (Q#).
         most_recent_finance_year = int(financial_data.columns[1][:4])
 
         # drop any years that are later in time than the selected year
         years_to_exclude = most_recent_finance_year - selected_year
 
-        # The current academic year (max dropdown value) is stored
-        # in dcc store as the 15th dictionary. this will always
-        # be the maximum allowed display year despite the selected
-        # year - can use it to determine if financial data that is
-        # more recent than the allowed display year exists
+        # The current academic year ( which will always be the max
+        # dropdown value) is stored in dcc store as the 15th dictionary.
+        # use it to determine if financial data that is more recent than
+        # the allowed display year exists
         current_academic_year = int(data['15']['current_academic_year'])
 
         # if the selected year is less than the most recent academic year,
@@ -191,7 +186,6 @@ def update_financial_information_page(data,year,radio_value):
             empty_container = {'display': 'block'}
 
         else:
-
             # We calculate all rows requiring a 'calculation': Total Grants'
             # (State Grants + Federal Grants), 'Net Asset Position' (Total Assets
             # - Total Liabilities), and 'Change in Net Assets' (Operating Revenues
@@ -289,14 +283,14 @@ def update_financial_information_page(data,year,radio_value):
                     [
                         html.Div(
                             [
-                                html.Label(table_title, style=label_style),
+                                html.Label(table_title, className = 'table_label'),
                                 html.Div(
                                     dash_table.DataTable(
                                         financial_data.to_dict('records'),
                                         columns = [{'name': i, 'id': i} for i in financial_data.columns],
                                         style_data={
                                             'fontSize': '12px',
-                                            'fontFamily': 'Roboto, sans-serif',
+                                            'fontFamily': 'Jost, sans-serif',
                                             'border': 'none'
                                         },
                                         style_data_conditional=[
@@ -328,7 +322,7 @@ def update_financial_information_page(data,year,radio_value):
                                             'border': 'none',
                                             'borderBottom': '.5px solid #6783a9',
                                             'fontSize': '12px',
-                                            'fontFamily': 'Roboto, sans-serif',
+                                            'fontFamily': 'Jost, sans-serif',
                                             'color': '#6783a9',
                                             'textAlign': 'center',
                                             'fontWeight': 'bold'

@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley
-# version:  .99.021323
+# version:  1.01.04.03.23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -435,69 +435,69 @@ def update_financial_analysis_page(data, year, radio_value):
             financial_position_data.insert(loc=0,column='Category',value = tmp_category)
 
             financial_position_table = [
-                        dash_table.DataTable(
-                            financial_position_data.to_dict('records'),
-                            columns = [{'name': i, 'id': i} for i in financial_position_data.columns],
-                            style_data={
-                                'fontSize': '12px',
-                                'border': 'none',
-                                'fontFamily': 'Roboto, sans-serif',
+                dash_table.DataTable(
+                    financial_position_data.to_dict('records'),
+                    columns = [{'name': i, 'id': i} for i in financial_position_data.columns],
+                    style_data={
+                        'fontSize': '12px',
+                        'border': 'none',
+                        'fontFamily': 'Roboto, sans-serif',
+                    },
+                    style_data_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category',
                             },
-                            style_data_conditional=[
-                                {
-                                    'if': {
-                                        'column_id': 'Category',
-                                    },
-                                    'borderRight': '.5px solid #4682b4',
-                                },
-                                { # Kludge to get bottom header border to show in first column
-                                    'if': {
-                                        'filter_query': "{Category} eq 'Total Assets'"
-                                    },
-                                    'borderTop': '.5px solid #4682b4',
-                                },
-                            ],
-                            style_header={
-                                'height': '20px',
-                                'backgroundColor': '#ffffff',
-                                'border': 'none',
-                                'borderBottom': '.5px solid #6783a9',
-                                'fontSize': '12px',
-                                'fontFamily': 'Roboto, sans-serif',
-                                'color': '#6783a9',
-                                'textAlign': 'center',
-                                'fontWeight': 'bold'
+                            'borderRight': '.5px solid #4682b4',
+                        },
+                        {
+                            'if': {
+                                'filter_query': "{Category} eq 'Total Assets'"
                             },
-                            style_header_conditional=[
-                                {
-                                    'if': {
-                                        'column_id': 'Category',
-                                    },
-                                    'borderRight': '.5px solid #6783a9',
-                                    'borderBottom': '.5px solid #6783a9',
-                                    'textAlign': 'left'
-                                },
-                            ],
-                            style_cell={
-                                'whiteSpace': 'normal',
-                                'height': 'auto',
-                                'textAlign': 'center',
-                                'color': '#6783a9',
-                                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                            'borderTop': '.5px solid #4682b4',
+                        },
+                    ],
+                    style_header={
+                        'height': '20px',
+                        'backgroundColor': '#ffffff',
+                        'border': 'none',
+                        'borderBottom': '.5px solid #6783a9',
+                        'fontSize': '12px',
+                        'fontFamily': 'Roboto, sans-serif',
+                        'color': '#6783a9',
+                        'textAlign': 'center',
+                        'fontWeight': 'bold'
+                    },
+                    style_header_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category',
                             },
-                            style_cell_conditional=[
-                                {
-                                    'if': {
-                                        'column_id': 'Category'
-                                    },
-                                    'textAlign': 'left',
-                                    'borderRight': '.5px solid #4682b4',
-                                    'borderBottom': '.5px solid #4682b4',
-                                    'paddingLeft': '20px',
-                                    'width': '40%'
+                            'borderRight': '.5px solid #6783a9',
+                            'borderBottom': '.5px solid #6783a9',
+                            'textAlign': 'left'
+                        },
+                    ],
+                    style_cell={
+                        'whiteSpace': 'normal',
+                        'height': 'auto',
+                        'textAlign': 'center',
+                        'color': '#6783a9',
+                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                    },
+                    style_cell_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category'
                             },
-                            ],
-                        )
+                            'textAlign': 'left',
+                            'borderRight': '.5px solid #4682b4',
+                            'borderBottom': '.5px solid #4682b4',
+                            'paddingLeft': '20px',
+                            'width': '40%'
+                        },
+                    ],
+                )
             ]
 
             # Table 2: 2-Year Financial Activities
@@ -534,70 +534,70 @@ def update_financial_analysis_page(data, year, radio_value):
             financial_activity_data.insert(loc=0,column='Category',value = tmp_category)
 
             financial_activities_table = [
-                            dash_table.DataTable(
-                                financial_activity_data.to_dict('records'),
-                                columns = [{'name': i, 'id': i} for i in financial_activity_data.columns],                                    
-                                style_data={
-                                    'fontSize': '12px',
-                                    'border': 'none',
-                                    'fontFamily': 'Roboto, sans-serif',
-                                },
-                                style_data_conditional=[
-                                    {
-                                        'if': {
-                                            'column_id': 'Category',
-                                        },
-                                        'borderRight': '.5px solid #6783a9',
-                                    },
-                                    { 
-                                        'if': {
-                                            'filter_query': "{Category} eq 'Operating Revenues'"
-                                        },
-                                        'borderTop': '.5px solid #6783a9',
-                                    },
-                                ],
-                                style_header={
-                                    'height': '20px',
-                                    'backgroundColor': '#ffffff',
-                                    'border': 'none',
-                                    'borderBottom': '.5px solid #6783a9',
-                                    'fontSize': '12px',
-                                    'fontFamily': 'Roboto, sans-serif',
-                                    'color': '#6783a9',
-                                    'textAlign': 'center',
-                                    'fontWeight': 'bold'
-                                },
-                                style_header_conditional=[
-                                    {
-                                        'if': {
-                                            'column_id': 'Category',
-                                        },
-                                        'borderRight': '.5px solid #6783a9',
-                                        'borderBottom': '.5px solid #6783a9',
-                                        'textAlign': 'left'
-                                    },
-                                ],
-                                style_cell={
-                                    'whiteSpace': 'normal',
-                                    'height': 'auto',
-                                    'textAlign': 'center',
-                                    'color': '#6783a9',
-                                    'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                                },
-                                style_cell_conditional=[
-                                    {
-                                        'if': {
-                                            'column_id': 'Category'
-                                        },
-                                        'textAlign': 'left',
-                                        'borderRight': '.5px solid #6783a9',
-                                        'borderBottom': '.5px solid #6783a9',
-                                        'paddingLeft': '20px',
-                                        'width': '40%'
-                                },
-                                ],
-                            )
-                ]
+                dash_table.DataTable(
+                    financial_activity_data.to_dict('records'),
+                    columns = [{'name': i, 'id': i} for i in financial_activity_data.columns],                                    
+                    style_data={
+                        'fontSize': '12px',
+                        'border': 'none',
+                        'fontFamily': 'Roboto, sans-serif',
+                    },
+                    style_data_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category',
+                            },
+                            'borderRight': '.5px solid #6783a9',
+                        },
+                        { 
+                            'if': {
+                                'filter_query': "{Category} eq 'Operating Revenues'"
+                            },
+                            'borderTop': '.5px solid #6783a9',
+                        },
+                    ],
+                    style_header={
+                        'height': '20px',
+                        'backgroundColor': '#ffffff',
+                        'border': 'none',
+                        'borderBottom': '.5px solid #6783a9',
+                        'fontSize': '12px',
+                        'fontFamily': 'Roboto, sans-serif',
+                        'color': '#6783a9',
+                        'textAlign': 'center',
+                        'fontWeight': 'bold'
+                    },
+                    style_header_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category',
+                            },
+                            'borderRight': '.5px solid #6783a9',
+                            'borderBottom': '.5px solid #6783a9',
+                            'textAlign': 'left'
+                        },
+                    ],
+                    style_cell={
+                        'whiteSpace': 'normal',
+                        'height': 'auto',
+                        'textAlign': 'center',
+                        'color': '#6783a9',
+                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                    },
+                    style_cell_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category'
+                            },
+                            'textAlign': 'left',
+                            'borderRight': '.5px solid #6783a9',
+                            'borderBottom': '.5px solid #6783a9',
+                            'paddingLeft': '20px',
+                            'width': '40%'
+                        },
+                    ],
+                )
+            ]
 
             # Table #3: Per-Student Expenditures
 
@@ -644,70 +644,70 @@ def update_financial_analysis_page(data, year, radio_value):
             per_student_data.insert(loc=0,column='Category',value = tmp_category)
 
             per_student_table = [
-                            dash_table.DataTable(
-                                per_student_data.to_dict('records'),
-                                columns = [{'name': i, 'id': i} for i in per_student_data.columns],
-                                style_data={
-                                    'fontSize': '12px',
-                                    'border': 'none',
-                                    'fontFamily': 'Roboto, sans-serif',
-                                },
-                                style_data_conditional=[
-                                    {
-                                        'if': {
-                                            'column_id': 'Category',
-                                        },
-                                        'borderRight': '.5px solid #6783a9',
-                                    },
-                                    { # Kludge to get bottom header border to show in first column
-                                        'if': {
-                                            'filter_query': "{Category} eq 'State Grants'"
-                                        },
-                                        'borderTop': '.5px solid #6783a9',
-                                    },
-                                ],
-                                style_header={
-                                    'height': '20px',
-                                    'backgroundColor': '#ffffff',
-                                    'borderBottom': '.5px solid #6783a9',
-                                    'fontSize': '12px',
-                                    'fontFamily': 'Roboto, sans-serif',
-                                    'color': '#6783a9',
-                                    'textAlign': 'center',
-                                    'fontWeight': '700',
-                                    'border': 'none'
-                                },
-                                style_header_conditional=[
-                                    {
-                                        'if': {
-                                            'column_id': 'Category',
-                                        },
-                                        'borderRight': '.5px solid #6783a9',
-                                        'borderBottom': '.5px solid #6783a9',
-                                        'textAlign': 'left'
-                                    },
-                                ],
-                                style_cell={
-                                    'whiteSpace': 'normal',
-                                    'height': 'auto',
-                                    'textAlign': 'center',
-                                    'color': '#6783a9',
-                                    'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                                },
-                                style_cell_conditional=[
-                                    {
-                                        'if': {
-                                            'column_id': 'Category'
-                                        },
-                                        'textAlign': 'left',
-                                        'borderRight': '.5px solid #6783a9',
-                                        'borderBottom': '.5px solid #6783a9',
-                                        'paddingLeft': '20px',
-                                        'width': '40%'
-                                },
-                                ],
-                            )        
-                ]
+                dash_table.DataTable(
+                    per_student_data.to_dict('records'),
+                    columns = [{'name': i, 'id': i} for i in per_student_data.columns],
+                    style_data={
+                        'fontSize': '12px',
+                        'border': 'none',
+                        'fontFamily': 'Roboto, sans-serif',
+                    },
+                    style_data_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category',
+                            },
+                            'borderRight': '.5px solid #6783a9',
+                        },
+                        {
+                            'if': {
+                                'filter_query': "{Category} eq 'State Grants'"
+                            },
+                            'borderTop': '.5px solid #6783a9',
+                        },
+                    ],
+                    style_header={
+                        'height': '20px',
+                        'backgroundColor': '#ffffff',
+                        'borderBottom': '.5px solid #6783a9',
+                        'fontSize': '12px',
+                        'fontFamily': 'Roboto, sans-serif',
+                        'color': '#6783a9',
+                        'textAlign': 'center',
+                        'fontWeight': '700',
+                        'border': 'none'
+                    },
+                    style_header_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category',
+                            },
+                            'borderRight': '.5px solid #6783a9',
+                            'borderBottom': '.5px solid #6783a9',
+                            'textAlign': 'left'
+                        },
+                    ],
+                    style_cell={
+                        'whiteSpace': 'normal',
+                        'height': 'auto',
+                        'textAlign': 'center',
+                        'color': '#6783a9',
+                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                    },
+                    style_cell_conditional=[
+                        {
+                            'if': {
+                                'column_id': 'Category'
+                            },
+                            'textAlign': 'left',
+                            'borderRight': '.5px solid #6783a9',
+                            'borderBottom': '.5px solid #6783a9',
+                            'paddingLeft': '20px',
+                            'width': '40%'
+                        },
+                    ],
+                )        
+            ]
 
             # Table 4: Financial Ratios
             # Get financial ratios
@@ -787,119 +787,113 @@ def update_financial_analysis_page(data, year, radio_value):
                 # |**Total Revenue** (Form 9 Section Codes 1 and 3) |
                 # """
                 financial_ratios_table = [
-                    # html.Div(
-                    #     [          
-                            html.Label('Financial Ratios', style=label_style),
-                            html.P(''),
-                            html.Div(
-                                dash_table.DataTable(
-                                    data = financial_ratios_data.to_dict('records'),
-                                    columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.percentage(2)} for i in financial_ratios_data.columns],
-                                    tooltip_data=[
-                                        {
-                                        'Category': {
-                    #                        'value': markdown_table,
-                                            'value': '**Occupancy Expense** (Form 9 Object Codes 411, 431, 441, 450, between 621 & 626, and between 710 & 720) \
-                                            divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
-                                            'type': 'markdown'},
-                                        },
-                                        {
-                                        'Category': {
-                                            'value': '**Personnel Expense** (Form 9 Object Codes between 110 & 290) divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
-                                            'type': 'markdown'},
-                                        },
-                                        {
-                                        'Category': {
-                                            'value': '**Instruction Expense** (Form 9 Object Codes between 110 & 290- excluding 115, 120, 121, 149, and 150- \
-                                            311, 312, and 313) divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
-                                            'type': 'markdown'},
-                                        },
-                                    ],
-                                    css=[
-                                        {
-                                            'selector': '.dash-table-tooltip',
-                                            'rule': 'background-color: grey; color: white; font-size: 10px'
-                                        }
-                                    ],
-                                    tooltip_duration=None,
-                                    style_data={
-                                        'fontSize': '12px',
-                                        'border': 'none',
-                                        'fontFamily': 'Roboto, sans-serif',
-                                    },
-                                    style_data_conditional=[
-                                        {
-                                            'if': {
-                                                'column_id': 'Category',
-                                            },
-                                            'borderRight': '.5px solid #6783a9',
-                                        },
-                                        { # Kludge to get bottom header border to show in first column
-                                            'if': {
-                                                'filter_query': "{Category} eq 'Occupancy Ratio'"
-                                            },
-                                            'borderTop': '.5px solid #6783a9',
-                                        },
-                                    ],
-                                    style_header={
-                                        'height': '20px',
-                                        'backgroundColor': '#ffffff',
-                                        'borderBottom': '.5px solid #6783a9',
-                                        'fontSize': '12px',
-                                        'fontFamily': 'Roboto, sans-serif',
-                                        'color': '#6783a9',
-                                        'textAlign': 'center',
-                                        'fontWeight': '700',
-                                        'border': 'none'
-                                    },
-                                    style_header_conditional=[
-                                        {
-                                            'if': {
-                                                'column_id': 'Category',
-                                            },
-                                            'borderRight': '.5px solid #6783a9',
-                                            'borderBottom': '.5px solid #6783a9',
-                                            'textAlign': 'left'
-                                        },
-                                    ],
-                                    style_cell={
-                                        'whiteSpace': 'normal',
-                                        'height': 'auto',
-                                        'textAlign': 'center',
-                                        'color': '#6783a9',
-                                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                                    },
-                                    style_cell_conditional=[
-                                        {
-                                            'if': {
-                                                'column_id': 'Category'
-                                            },
-                                            'textAlign': 'left',
-                                            'borderRight': '.5px solid #6783a9',
-                                            'borderBottom': '.5px solid #6783a9',
-                                            'paddingLeft': '20px',
-                                            'width': '40%'
-                                        },
-                                    ],
-                                ),
-                            ),
-                            html.P(''),
-                            html.P('Source: IDOE Form 9 (hover over category for details).',
-                            style={
-                                'color': '#6783a9',
-                                'fontSize': 10,
-                                'marginLeft': '10px',
-                                'marginRight': '10px',
-                                'marginTop': '20px',
-                                'paddingTop': '5px',
-                                'borderTop': '.5px solid #c9d3e0',
+                    html.Label('Financial Ratios', className = 'table_label'),
+                    html.P(''),
+                    html.Div(
+                        dash_table.DataTable(
+                            data = financial_ratios_data.to_dict('records'),
+                            columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.percentage(2)} for i in financial_ratios_data.columns],
+                            tooltip_data=[
+                                {
+                                'Category': {
+            #                        'value': markdown_table,
+                                    'value': '**Occupancy Expense** (Form 9 Object Codes 411, 431, 441, 450, between 621 & 626, and between 710 & 720) \
+                                    divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
+                                    'type': 'markdown'},
                                 },
-                            ),                            
-                    #     ],
-                    #     className = 'pretty_container six columns',
-                    # )
+                                {
+                                'Category': {
+                                    'value': '**Personnel Expense** (Form 9 Object Codes between 110 & 290) divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
+                                    'type': 'markdown'},
+                                },
+                                {
+                                'Category': {
+                                    'value': '**Instruction Expense** (Form 9 Object Codes between 110 & 290- excluding 115, 120, 121, 149, and 150- \
+                                    311, 312, and 313) divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
+                                    'type': 'markdown'},
+                                },
+                            ],
+                            css=[
+                                {
+                                    'selector': '.dash-table-tooltip',
+                                    'rule': 'background-color: grey; color: white; font-size: 10px'
+                                }
+                            ],
+                            tooltip_duration=None,
+                            style_data={
+                                'fontSize': '12px',
+                                'border': 'none',
+                                'fontFamily': 'Roboto, sans-serif',
+                            },
+                            style_data_conditional=[
+                                {
+                                    'if': {
+                                        'column_id': 'Category',
+                                    },
+                                    'borderRight': '.5px solid #6783a9',
+                                },
+                                {
+                                    'if': {
+                                        'filter_query': "{Category} eq 'Occupancy Ratio'"
+                                    },
+                                    'borderTop': '.5px solid #6783a9',
+                                },
+                            ],
+                            style_header={
+                                'height': '20px',
+                                'backgroundColor': '#ffffff',
+                                'borderBottom': '.5px solid #6783a9',
+                                'fontSize': '12px',
+                                'fontFamily': 'Roboto, sans-serif',
+                                'color': '#6783a9',
+                                'textAlign': 'center',
+                                'fontWeight': '700',
+                                'border': 'none'
+                            },
+                            style_header_conditional=[
+                                {
+                                    'if': {
+                                        'column_id': 'Category',
+                                    },
+                                    'borderRight': '.5px solid #6783a9',
+                                    'borderBottom': '.5px solid #6783a9',
+                                    'textAlign': 'left'
+                                },
+                            ],
+                            style_cell={
+                                'whiteSpace': 'normal',
+                                'height': 'auto',
+                                'textAlign': 'center',
+                                'color': '#6783a9',
+                                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                            },
+                            style_cell_conditional=[
+                                {
+                                    'if': {
+                                        'column_id': 'Category'
+                                    },
+                                    'textAlign': 'left',
+                                    'borderRight': '.5px solid #6783a9',
+                                    'borderBottom': '.5px solid #6783a9',
+                                    'paddingLeft': '20px',
+                                    'width': '40%'
+                                },
+                            ],
+                        ),
+                    ),
+                    html.P(''),
+                    html.P('Source: IDOE Form 9 (hover over category for details).',
+                    style={
+                        'color': '#6783a9',
+                        'fontSize': 10,
+                        'marginLeft': '10px',
+                        'marginRight': '10px',
+                        'marginTop': '20px',
+                        'paddingTop': '5px',
+                        'borderTop': '.5px solid #c9d3e0',
+                        },
+                    ),
                 ]
-
             else:
                 financial_ratios_table  = no_data_table('Financial Ratios')
 
@@ -1010,17 +1004,17 @@ def update_financial_analysis_page(data, year, radio_value):
 
 # Layout
 
-label_style = {
-    'height': '20px',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
+# label_style = {
+#     'height': '20px',
+#     'backgroundColor': '#6783a9',
+#     'fontSize': '12px',
+#     'fontFamily': 'Roboto, sans-serif',
+#     'color': '#ffffff',
+#     'textAlign': 'center',
+#     'fontWeight': 'bold',
+#     'paddingBottom': '5px',
+#     'paddingTop': '5px'
+# }
 
 def layout():
     return html.Div(
@@ -1054,14 +1048,14 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Label(id='finance-analysis-RandE-title', style=label_style),                                    
+                                            html.Label(id='finance-analysis-RandE-title', className = 'table_label'),                                    
                                             dcc.Graph(id='revenue-expenses-fig', figure = loading_fig(),config={'displayModeBar': False})
                                         ],
                                         className = 'pretty_container six columns'
                                     ),
                                     html.Div(
                                         [
-                                            html.Label(id='finance-analysis-AandL-title', style=label_style),                                       
+                                            html.Label(id='finance-analysis-AandL-title', className = 'table_label'),                                       
                                             dcc.Graph(id='assets-liabilities-fig', figure = loading_fig(),config={'displayModeBar': False})
                                         ],
                                         className = 'pretty_container six columns'
@@ -1073,7 +1067,7 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Label(id='finance-analysis-FP-title', style=label_style),                                      
+                                            html.Label(id='finance-analysis-FP-title', className = 'table_label'),                                      
                                             html.P(''),
                                             html.Div(id='financial-position-table')
                                         ],
@@ -1081,7 +1075,7 @@ def layout():
                                     ),
                                     html.Div(
                                         [
-                                            html.Label(id='finance-analysis-FA-title', style=label_style),                                        
+                                            html.Label(id='finance-analysis-FA-title', className = 'table_label'),                                        
                                             html.P(''),
                                             html.Div(id='financial-activities-table')
                                         ],
@@ -1090,37 +1084,14 @@ def layout():
                                 ],
                                 className = 'row',
                             ),
-                        # html.Div(
-                            #     [   
-                            #        
-                            #         html.Div(
-                            #             [
-                                            
-                            #                 html.P(''),
-                            #                 html.Div(id='financial-ratios-table'),
-                            #                 html.P(''),
-                            #                 html.P('Source: IDOE Form 9 (hover over category for details).',
-                            #                 style={
-                            #                     'color': '#6783a9',
-                            #                     'fontSize': 10,
-                            #                     'marginLeft': '10px',
-                            #                     'marginRight': '10px',
-                            #                     'marginTop': '20px',
-                            #                     'paddingTop': '5px',
-                            #                     'borderTop': '.5px solid #c9d3e0',
-                            #                     },
-                            #                 ),
-                            #             ],
-                            #             className = 'pretty_container six columns'
-                            #         ),
-                                    # html.Div(
-                                    #     [
-                                    #         html.Label('Federal Audit Findings', style=label_style),
-                                    #         html.P(''),
-                                    #         html.Div(id='audit-findings-table')
-                                    #     ],
-                                    #     className = 'pretty_container six columns'
-                                    # ),
+                            # html.Div(
+                            #     [
+                            #         html.Label('Federal Audit Findings', style=label_style),
+                            #         html.P(''),
+                            #         html.Div(id='audit-findings-table')
+                            #     ],
+                            #     className = 'pretty_container six columns'
+                            # ),
                             html.Div(
                                 [
                                     html.Div(
@@ -1131,7 +1102,7 @@ def layout():
                                     ),
                                     html.Div(
                                         [
-                                            html.Label('Per Student Revenues and Expenditures', style=label_style),
+                                            html.Label('Per Student Revenues and Expenditures', className = 'table_label'),
                                             html.P(''),
                                             html.Div(id='per-student-table')
                                         ],

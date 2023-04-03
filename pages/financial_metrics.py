@@ -20,17 +20,17 @@ from .subnav import subnav_finance
 dash.register_page(__name__, path='/financial_metrics', order=2)
 
 ## Layout
-label_style = {
-    'height': '20px',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
+# label_style = {
+#     'height': '20px',
+#     'backgroundColor': '#6783a9',
+#     'fontSize': '12px',
+#     'fontFamily': 'Roboto, sans-serif',
+#     'color': '#ffffff',
+#     'textAlign': 'center',
+#     'fontWeight': 'bold',
+#     'paddingBottom': '5px',
+#     'paddingTop': '5px'
+# }
 
 @callback(
     Output('financial-metrics-table', 'children'),
@@ -259,19 +259,6 @@ def update_financial_metrics(data,year,radio_value):
                 col_width = 'ten'
                 category_width = 15
 
-            # if table_size <= 3:
-            #     col_width = 'four'
-            #     category_width = 55
-            # if table_size > 3 and table_size <=8:
-            #     col_width = 'eight'
-            #     category_width = 35
-            # elif table_size >= 9:
-            #     col_width = 'ten'
-            #     category_width = 25
-            # elif table_size >= 10:
-            #     col_width = 'twelve'
-            #     category_width = 15
-
             # this splits column width evenly for all columns other than 'Category'
             # can split data_width into unequal values for each 'data' category
             # with something like:
@@ -291,7 +278,7 @@ def update_financial_metrics(data,year,radio_value):
                     [                
                         html.Div(
                             [
-                                html.Label(table_title, style=label_style),
+                                html.Label(table_title, className='table_label'),
                                 html.Div(
                                     dash_table.DataTable(
                                         financial_metrics.to_dict('records'),
@@ -323,31 +310,6 @@ def update_financial_metrics(data,year,radio_value):
                                                 'fontWeight': 'bold'
                                             },
                                         ],
-                                        # +
-                                        # [
-                                        #     {
-                                        #         'if': {
-                                        #             'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
-                                        #             'column_id': col
-                                        #         },
-                                        #         'backgroundColor': '#ea5545',
-                                        #         'fontWeight': 'bold',
-                                        #         'color': 'white',
-                                        #         'borderBottom': 'solid 1px white',
-                                        #     } for col in financial_metrics.columns
-                                        # ] +
-                                        # [
-                                        #     {
-                                        #         'if': {
-                                        #             'filter_query': "{{{col}}} = 'MS'".format(col=col),
-                                        #             'column_id': col
-                                        #         },
-                                        #         'backgroundColor': '#87bc45',
-                                        #         'fontWeight': 'bold',
-                                        #         'color': 'white',
-                                        #         'borderBottom': 'solid 1px white',
-                                        #     } for col in financial_metrics.columns
-                                        # ],
                                         style_header={
                                             'height': '20px',
                                             'backgroundColor': '#ffffff',
@@ -390,10 +352,6 @@ def update_financial_metrics(data,year,radio_value):
                                             {
                                                 'if': {
                                                     'column_id': rating
-                                                    # 'column_id': ['Rating 1','Rating 2','Rating 3','Rating 4','Rating 5',
-                                                    #             'Rating 6','Rating 7','Rating 8','Rating 9','Rating 10',
-                                                    #             'Rating 11','Rating 12','Rating 13','Rating 14','Rating 15',
-                                                    #             'Rating 16','Rating 17','Rating 18','Rating 19','Rating 20',]
                                                 },
                                                 'textAlign': 'center',
                                                 'fontWeight': '500',                                                
@@ -441,7 +399,7 @@ def update_financial_metrics(data,year,radio_value):
                             [             
                                 html.Div(
                                     [
-                                        html.Label('Other Financial Accountability Indicators', style=label_style),
+                                        html.Label('Other Financial Accountability Indicators', className='table_label'),
                                         html.Div(
                                             dash_table.DataTable(
                                                 financial_indicators.to_dict('records'),
@@ -469,33 +427,6 @@ def update_financial_metrics(data,year,radio_value):
                                                         'width': '8%',
                                                     } for year in year_headers
                                                 ],
-                                                # + [
-                                                #     {
-                                                #         'if': {
-                                                #             'filter_query': "{{{col}}} = 'DNMS'".format(col=col),
-                                                #             'column_id': col
-                                                #         },
-                                                #         'backgroundColor': '#ea5545',
-                                                #         'fontWeight': 'bold',
-                                                #         'color': 'white',
-                                                #         'borderBottom': 'solid 1px white',
-                                                #         'borderRight': 'solid 1px white',
-                                                #     } for col in financial_indicators.columns
-                                                # ] +
-                                                # [
-                                                #     {
-                                                #         'if': {
-                                                #             'filter_query': "{{{col}}} = 'MS'".format(col=col),
-                                                #             'column_id': col
-                                                #         },
-                                                #         'backgroundColor': '#87bc45',
-                                                #         'fontWeight': 'bold',
-                                                #         'color': 'white',
-                                                #         'position': 'relative',
-                                                #         'borderBottom': 'solid 1px white',
-                                                #         'borderRight': 'solid 1px white',
-                                                #     } for col in financial_indicators.columns
-                                                # ],
                                                 style_header={
                                                     'height': '20px',
                                                     'backgroundColor': '#ffffff',
@@ -545,8 +476,8 @@ def update_financial_metrics(data,year,radio_value):
                     ]
             
             # Financial Metric Definitions
-            # TODO: Possibly make this table easier to read either through Markdown or embedded images
-            # (neither works currently with dash 2.6 datatables)
+            # TODO: Possibly make this table easier to read either through Markdown
+            # TODO: or embedded images (neither works currently with dash 2.6 datatables)
             # http://www.latex2png.com/
             # https://stackoverflow.com/questions/70205486/clickable-hyperlinks-in-plotly-dash-datatable
             # https://stackoverflow.com/questions/66583063/how-to-add-hyperlink-in-column-field-of-dash-datatable
@@ -570,7 +501,7 @@ def update_financial_metrics(data,year,radio_value):
                     [             
                         html.Div(
                             [
-                            html.Label('Accountability Metrics Definitions & Requirements', style=label_style),
+                            html.Label('Accountability Metrics Definitions & Requirements', className='table_label'),
                             html.Div(
                                 dash_table.DataTable(
                                     data = financial_metrics_definitions_dict,
@@ -587,7 +518,7 @@ def update_financial_metrics(data,year,radio_value):
                                             },
                                             'backgroundColor': '#eeeeee',
                                         },
-                                        {   # Kludge to ensure first col header has border
+                                        {
                                             'if': {
                                                 'row_index': 0,
                                                 'column_id': 'Calculation'

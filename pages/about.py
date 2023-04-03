@@ -2,7 +2,7 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley
-# version:  .99.021323
+# version:  1.01.040323
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, State, callback
@@ -307,7 +307,7 @@ def update_about_page(year, data):
                     css=[{
                     'selector': '.dash-table-tooltip',
                     'rule': 'background-color: grey; font-family: Roboto, sans-serif; color: white'
-                }],
+                    }],
                     style_as_list_view=True
                 )
             ]
@@ -566,18 +566,17 @@ def update_about_page(year, data):
         info_table, no_data_to_display
 
 ## Layout ##
-
-label_style = {
-    'height': '20px',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
+# label_style = {
+#     'height': '20px',
+#     'backgroundColor': '#6783a9',
+#     'fontSize': '12px',
+#     'fontFamily': 'Roboto, sans-serif',
+#     'color': '#ffffff',
+#     'textAlign': 'center',
+#     'fontWeight': 'bold',
+#     'paddingBottom': '5px',
+#     'paddingTop': '5px'
+# }
 
 layout = \
     html.Div(
@@ -590,14 +589,14 @@ layout = \
                                 [     
                                     html.Div(
                                         [
-                                            html.Label(id='school-name', style=label_style),
+                                            html.Label(id='school-name', className = 'table_label'),
                                             html.Div(id='info-table'),
                                         ],
                                         className='pretty_container six columns'
                                     ),
                                     html.Div(
                                         [
-                                            html.Label('State and Federal Ratings', style=label_style),
+                                            html.Label('State and Federal Ratings', className = 'table_label'),
                                             html.Div(id='letter-grade-table'),
                                         ],
                                         className='pretty_container six columns'
@@ -614,14 +613,14 @@ layout = \
                                 [
                                     html.Div(
                                         [
-                                            html.Label(id='enroll-title', style=label_style),
+                                            html.Label(id='enroll-title', className = 'table_label'),
                                             html.Div(id='enroll-table')
                                         ],
                                         className='pretty_container six columns'
                                     ),
                                     html.Div(
                                         [
-                                            html.Label('Average Daily Membership History', style=label_style),
+                                            html.Label('Average Daily Membership History', className = 'table_label'),
                                             dcc.Graph(id='adm_fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
                                         ],
                                         className = 'pretty_container six columns'
@@ -636,14 +635,14 @@ layout = \
                         [
                             html.Div(
                                 [
-                                    html.Label(id='subgroup-title', style=label_style),
+                                    html.Label(id='subgroup-title', className = 'table_label'),
                                     dcc.Graph(id='status-fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
                                 ],
                                 className = 'pretty_container six columns'
                             ),
                             html.Div(
                                 [
-                                    html.Label(id='ethnicity-title', style=label_style),
+                                    html.Label(id='ethnicity-title', className = 'table_label'),
                                     dcc.Graph(id='ethnicity-fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
                                 ],
                                 className = 'pretty_container six columns'
@@ -660,7 +659,7 @@ layout = \
                         [    
                             html.Div(
                                 [
-                                    html.Label(id='school-name-no-data', style=label_style),
+                                    html.Label(id='school-name-no-data', className = 'table_label'),
                                     html.Div(id='info-table-no-data'),
                                 ],
                                 className='pretty_container eight columns'
