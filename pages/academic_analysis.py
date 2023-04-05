@@ -2,12 +2,12 @@
 # ICSB Dashboard - Academic Analysis #
 ######################################
 # author:   jbetley
-# version:  .99.021323
+# version:  1.01.040323
 
 # TODO: Add AHS/HS Analysis
 
 import dash
-from dash import ctx, dcc, dash_table, html, Input, Output, callback
+from dash import ctx, dcc, html, Input, Output, callback #dash_table, 
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
@@ -389,8 +389,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14g = no_data_fig('Year over Year IREAD Proficiency', 200)
 
         ## Charts (3 & 4)- Comparison Data
-        # Takes single year of data and displays for that year:
-        #   1) school value; 2) similar school avg; and 3) all comparable schools with data
+        # Takes single year of data and displays: 1) school value;
+        # 2) similar school avg; and 3) all comparable schools with data
 
             # Get current year school data
             school_current_data = k8_academic_infoT.loc[k8_academic_infoT['Year'] == int(selected_year)]
@@ -446,7 +446,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             comparison_schools_filtered = filtered_academic_data_k8[filtered_academic_data_k8['School ID'].isin(comparison_school_list)]
 
             # NOTE: this would add the 'Distance' value to dataframe using the
-            # gc_distance function [not currently implemented due to SLOWness]
+            # gc_distance function [not currently implemented because slow]
             # def get_distance(row):
             #     return gc_distance(school_info['Lon'].values[0],school_info['Lat'].values[0],row['Lon'],row['Lat'])
             # comparison_schools['Distance'] = comparison_schools.apply(get_distance, axis=1)
@@ -624,17 +624,14 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
                 fig_iread_k8_school_data = school_current_data[['School Name','Low Grade','High Grade',category]].copy()
 
-                print(corp_current_data[category])
                 # add corp average for category to dataframe - the '','','N/A' are values for Low & High Grade and Distance columns
                 fig_iread_k8_school_data.loc[len(fig_iread_k8_school_data.index)] = [school_corporation_name, '3','8',corp_current_data[category].values[0]]
 
                 # Get comparable school values for the specific category
-                print(comparison_schools.columns)
                 fig_iread_comp_data = comparison_schools[['School Name','Low Grade','High Grade',category]]
                 # fig_iread_comp_data = comparison_schools[['School Name','Low Grade','High Grade','Distance',category]]
 
                 fig_iread_all_data = pd.concat([fig_iread_k8_school_data,fig_iread_comp_data])
-                print(fig_iread_all_data)
                 # save table data
                 fig_iread_table_data = fig_iread_all_data.copy()
 
@@ -658,11 +655,13 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # info col headers is the same for all dataframes
             info_categories = ['School Name','Low Grade','High Grade']
 
-            # NOTE: This is messy. Uses functions from both helper files.
-            # Could move to chart-helpers and call table_helpers there
-            # but does that cause any circular references?
+            # TODO: This is messy. Uses functions from both helper files.
+            # TODO: Could move to chart-helpers and call table_helpers there
+            # TODO: but does that cause any circular references?
 
             # A function that returns a fig, a table, and two strings
+
+
             def create_full_chart(school_data, categories, corp_name):
                 info_categories = ['School Name','Low Grade','High Grade']
                 all_categories = categories + info_categories
@@ -709,9 +708,6 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 # blanks with NaN
                 final_data = final_data.replace(r'^\s*$', np.nan, regex=True)
 
-                #  send to chart function
-                chart = make_group_bar_chart(final_data, school_name)
-
                 # get the names of the schools that have no data by comparing the column sets before and
                 # after the drop
                 missing_schools = list(set(combined_data['School Name']) - set(final_data['School Name']))
@@ -728,14 +724,19 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 else:
                     school_string = 'None.'
 
+                #  create chart
+                chart = make_group_bar_chart(final_data, school_name)
+
                 # shift column 'School Name' to first position
-                # replace values in 'School Name' column with the series we created earlier
+                # replace values in 'School Name' column with the
+                # series we created earlier
                 final_data = final_data.drop('School Name', axis = 1)
                 final_data['School Name'] = school_names
 
                 first_column = final_data.pop('School Name')
                 final_data.insert(0, 'School Name', first_column)
 
+                # create table
                 table = create_comparison_table(final_data, school_name)
 
                 return chart, table, category_string, school_string

@@ -16,19 +16,6 @@ from .table_helpers import no_data_page
 from .subnav import subnav_finance
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
 
-## Layout
-# label_style = {
-#     'height': '20px',
-#     'backgroundColor': '#6783a9',
-#     'fontSize': '12px',
-#     'fontFamily': 'Roboto, sans-serif',
-#     'color': '#ffffff',
-#     'textAlign': 'center',
-#     'fontWeight': 'bold',
-#     'paddingBottom': '5px',
-#     'paddingTop': '5px'
-# }
-
 @callback(
     Output('financial-information-table', 'children'),
     Output('radio-finance-info-display', 'style'),
@@ -147,7 +134,8 @@ def update_financial_information_page(data,year,radio_value):
         # the school is open and instructing students. It is simply the
         # total number of columns (-1 to account for Category). It is not
         # currently used - because maximum display is five years
-        # operating_years_by_finance = max_display_years if len(financial_data.columns) - 1 >= max_display_years else len(financial_data.columns) - 1
+        # operating_years_by_finance = max_display_years if len(financial_data.columns) \
+        #  - 1 >= max_display_years else len(financial_data.columns) - 1
 
         # Financial data will almost always be more recent than academic
         # data. This is the only time we want do display 'future' data,

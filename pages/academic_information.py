@@ -2,13 +2,13 @@
 # ICSB Dashboard - Academic Information #
 #########################################
 # author:   jbetley
-# version:  .99.021323
+# version:  1.01.040323
 
 import dash
-from dash import html, dcc, dash_table, Input, Output, callback
+from dash import html, dcc, Input, Output, callback #dash_table
 from dash.exceptions import PreventUpdate
-from dash.dash_table import FormatTemplate
-from dash.dash_table.Format import Format, Scheme, Sign
+# from dash.dash_table import FormatTemplate
+# from dash.dash_table.Format import Format, Scheme, Sign
 import numpy as np
 import json
 import pandas as pd
@@ -294,13 +294,6 @@ def update_abcademic_information_page(data, school, year):
             school_k8_all_data["Year"] == year
             ]
 
-            # Clean up dataframe (this is not needed)
-            # k8_all_data.columns = [
-            #     x.replace("\nProficient \n%", "") for x in k8_all_data.columns.to_list()
-            # ]
-            # k8_all_data.columns = [x.replace(" \n", " ") for x in k8_all_data.columns.to_list()]
-            # k8_all_data.columns = [x.replace("\n", " ") for x in k8_all_data.columns.to_list()]
-
             # drop columns with no values and reset index
             school_k8_proficiency_data = school_k8_proficiency_data.dropna(axis=1)
             school_k8_proficiency_data = school_k8_proficiency_data.reset_index()
@@ -574,6 +567,7 @@ def update_abcademic_information_page(data, school, year):
 
         else:
 
+            # NOTE: Strength of Diploma only data point not used
             # Gradution Rate
             grad_overview_categories = [
                 "Total",
@@ -597,8 +591,6 @@ def update_abcademic_information_page(data, school, year):
             hs_academic_info.columns = hs_academic_info.columns.str.replace(
                 r"School$", "", regex=True
             )
-
-            # NOTE: Strength of Diploma only data point not used
 
             eca_data = hs_academic_info[
                 hs_academic_info["Category"].str.contains('Grade 10')
@@ -725,31 +717,31 @@ def update_abcademic_information_page(data, school, year):
     )
 
 #### Layout
-label_style = {
-    "height": "20px",
-    "backgroundColor": "#6783a9",
-    "fontSize": "12px",
-    "fontFamily": "Roboto, sans-serif",
-    "color": "#ffffff",
-    "border": "none",
-    "textAlign": "center",
-    "fontWeight": "bold",
-    "paddingBottom": "5px",
-    "paddingTop": "5px",
-}
+# label_style = {
+#     "height": "20px",
+#     "backgroundColor": "#6783a9",
+#     "fontSize": "12px",
+#     "fontFamily": "Roboto, sans-serif",
+#     "color": "#ffffff",
+#     "border": "none",
+#     "textAlign": "center",
+#     "fontWeight": "bold",
+#     "paddingBottom": "5px",
+#     "paddingTop": "5px",
+# }
 
-fig_label_style = {
-    "height": "14px",
-    "backgroundColor": "#6783a9",
-    "fontSize": "8px",
-    "fontFamily": "Roboto, sans-serif",
-    "color": "#ffffff",
-    "border": "none",
-    "textAlign": "center",
-    "fontWeight": "bold",
-    "paddingBottom": "5px",
-    "paddingTop": "5px",
-}
+# fig_label_style = {
+#     "height": "14px",
+#     "backgroundColor": "#6783a9",
+#     "fontSize": "8px",
+#     "fontFamily": "Roboto, sans-serif",
+#     "color": "#ffffff",
+#     "border": "none",
+#     "textAlign": "center",
+#     "fontWeight": "bold",
+#     "paddingBottom": "5px",
+#     "paddingTop": "5px",
+# }
 
 key_label_style = {
     'height': 'auto',

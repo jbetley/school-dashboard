@@ -2,11 +2,11 @@
 # ICSB Dashboard - Academic Metrics #
 #####################################
 # author:   jbetley
-# version:  .99.021323
+# version:  1.01.040323
 
 import dash
 from dash import html, dash_table, Input, Output, callback
-from dash.dash_table.Format import Format, Scheme, Sign
+# from dash.dash_table.Format import Format, Scheme, Sign
 from dash.exceptions import PreventUpdate
 import json
 import pandas as pd
@@ -408,7 +408,7 @@ def update_academic_metrics(data,year):
     else:
 
         table_container_11ab = {}
-        table_container_11ab = no_data_table(metric_11ab_label) # TODO
+        table_container_11ab = no_data_table(metric_11ab_label)
         display_attendance = {'display': 'none'}
 
     # Create placeholders (Acountability Metrics 1.1.c & 1.1.d)
