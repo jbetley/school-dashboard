@@ -237,6 +237,7 @@ def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
 
     return fig
 
+# TODO: Add label
 # single line chart (input: dataframe)
 def make_line_chart(values: pd.DataFrame) -> px.line:
 
