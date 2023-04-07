@@ -4,13 +4,15 @@
 # author:   jbetley
 # version:  1.01.040323
 
+# TODO: BLANK CHARTS RENDERING INCORRECTLY FOR YEARS WITHOUT DATA
+
 import dash
 from dash import html, dash_table, Input, Output, callback
-# from dash.dash_table.Format import Format, Scheme, Sign
 from dash.exceptions import PreventUpdate
 import json
 import pandas as pd
 
+# import local functions
 from .table_helpers import no_data_page, no_data_table, create_metric_table, \
     set_table_layout, get_svg_circle
 from .subnav import subnav_academic
@@ -191,6 +193,7 @@ def update_academic_metrics(data,year):
                 table_container_17ab = {}
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
+
                 # no_data_to_display = no_data_page('Academic Accountability Metrics')
                 main_container = {'display': 'none'}
                 empty_container = {'display': 'block'}
@@ -215,6 +218,7 @@ def update_academic_metrics(data,year):
                 json_data = json.loads(data['11'])
                 combined_years = pd.DataFrame.from_dict(json_data)
                 
+                # TODO: Need to test whether its okay to add American Indian back to all ethnicity strings
                 ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
                 status = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
                 grades = ['Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Total','IREAD Pass %']
@@ -534,7 +538,20 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Key', style=key_label_style),
+                                        html.Label('Key',
+                                            style = {
+                                                'height': 'auto',
+                                                'lineHeight': '1.5em',
+                                                'backgroundColor': '#6783a9',
+                                                'fontSize': '12px',
+                                                'fontFamily': 'Roboto, sans-serif',
+                                                'color': '#ffffff',
+                                                'textAlign': 'center',
+                                                'fontWeight': 'bold',
+                                                'paddingBottom': '5px',
+                                                'paddingTop': '5px'
+                                            }
+                                    ),
                                         dash_table.DataTable(
                                             # css=[dict(selector="p", rule="margin: 0px;")],
                                             css=[dict(selector="tr:first-child", rule="display: none")],
@@ -645,8 +662,8 @@ def layout():
                             ],
                             className = "bare_container twelve columns"
                         ),
-                        # Display attendance separately: 1) because new schools will have attendance data even if they
-                        # have no academic data, and 2) we measure it for HS (and AHS (?)) 
+                        # Display attendance separately because new schools will have attendance
+                        # data even if they have no academic data
                         html.Div(
                             [
                                 html.Div(id='table-container-11ab', children=[]),
@@ -690,9 +707,5 @@ def layout():
                     id = 'academic-metrics-empty-container',
                 ),   
         ],
-        id='mainContainer',
-        style={
-            'display': 'flex',
-            'flexDirection': 'column'
-        }
+        id='mainContainer'
     )

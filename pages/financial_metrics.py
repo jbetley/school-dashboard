@@ -9,34 +9,19 @@ from dash import html, dash_table, Input, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
-# import numpy as np
 import os.path
-# import itertools
+
+# import local functions
 from .calculations import calculate_metrics
 from .table_helpers import no_data_page, get_svg_circle
-
-# import subnav function
 from .subnav import subnav_finance
-dash.register_page(__name__, path='/financial_metrics', order=2)
 
-## Layout
-# label_style = {
-#     'height': '20px',
-#     'backgroundColor': '#6783a9',
-#     'fontSize': '12px',
-#     'fontFamily': 'Roboto, sans-serif',
-#     'color': '#ffffff',
-#     'textAlign': 'center',
-#     'fontWeight': 'bold',
-#     'paddingBottom': '5px',
-#     'paddingTop': '5px'
-# }
+dash.register_page(__name__, path='/financial_metrics', order=2)
 
 @callback(
     Output('financial-metrics-table', 'children'),
     Output('radio-finance-metrics-content', 'children'),
     Output('radio-finance-metrics-display', 'style'),
-    # Output('finance-metrics-table-title', 'children'),
     Output('financial-indicators-table', 'children'),
     Output('financial-metrics-definitions-table', 'children'),
     Output('financial-metrics-main-container', 'style'),
@@ -133,8 +118,6 @@ def update_financial_metrics(data,year,radio_value):
 
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
-
-        # see financial_information.py for comments
         
         # in order for metrics to be calculated properly, we need
         # to temporarily store and remove the (Q#) part of string
@@ -154,6 +137,7 @@ def update_financial_metrics(data,year,radio_value):
         # create_empty_table() if file exists, but has no financial data, or
         # if file exists and has one year of data, but does not have
         # a value for any State Grants (the school is in Pre-Opening)
+
         # NOTE: To show schools in Pre-Opening year, remove the 'or' condition
         # (also need to modify the financial metric calculation function)
         if (len(financial_data.columns) <= 1) | \
@@ -278,7 +262,7 @@ def update_financial_metrics(data,year,radio_value):
                     [                
                         html.Div(
                             [
-                                html.Label(table_title, className='table_label'),
+                                html.Label(table_title, className='header_label'),
                                 html.Div(
                                     dash_table.DataTable(
                                         financial_metrics.to_dict('records'),
@@ -326,8 +310,7 @@ def update_financial_metrics(data,year,radio_value):
                                             'height': 'auto',
                                             'textAlign': 'center',
                                             'color': '#6783a9',
-                                            'boxShadow': '0 0',                                            
-                                            # 'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                                            'boxShadow': '0 0',
                                         },
                                         style_cell_conditional=[
                                             {
@@ -399,7 +382,7 @@ def update_financial_metrics(data,year,radio_value):
                             [             
                                 html.Div(
                                     [
-                                        html.Label('Other Financial Accountability Indicators', className='table_label'),
+                                        html.Label('Other Financial Accountability Indicators', className='header_label'),
                                         html.Div(
                                             dash_table.DataTable(
                                                 financial_indicators.to_dict('records'),
@@ -501,7 +484,7 @@ def update_financial_metrics(data,year,radio_value):
                     [             
                         html.Div(
                             [
-                            html.Label('Accountability Metrics Definitions & Requirements', className='table_label'),
+                            html.Label('Accountability Metrics Definitions & Requirements', className='header_label'),
                             html.Div(
                                 dash_table.DataTable(
                                     data = financial_metrics_definitions_dict,
@@ -570,7 +553,7 @@ def update_financial_metrics(data,year,radio_value):
 
     return financial_metrics_table, radio_content, display_radio, \
         financial_indicators_table, financial_metrics_definitions_table, \
-        main_container, empty_container, no_data_to_display#  table_title,
+        main_container, empty_container, no_data_to_display
 
 def layout():
     return html.Div(
@@ -623,8 +606,4 @@ def layout():
                 ),                            
             ],
             id='mainContainer',
-            style={
-                'display': 'flex',
-                'flexDirection': 'column'
-            }
         )

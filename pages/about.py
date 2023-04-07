@@ -299,7 +299,7 @@ def update_about_page(year, data):
                         col: [
                             {
                                 'type': 'markdown',
-                                'value': hold_harmless_string  # create_tooltip(df.loc[i, col])
+                                'value': hold_harmless_string
                             }
                         ]
                         for col in year_columns
@@ -377,7 +377,8 @@ def update_about_page(year, data):
 
             ethnicity_data_t = ethnicity_data.set_index('Corporation Name').T
 
-            for i in range(0, 2): # Calculate Percentage
+            # Calculate Percentage
+            for i in range(0, 2): 
                 ethnicity_data_t.iloc[:,i] = ethnicity_data_t.iloc[:,i] / total_enrollment[i]
 
             # Find rows where percentage is < .005 (1% after rounding) - and create string for annotation purposes
@@ -479,7 +480,6 @@ def update_about_page(year, data):
             # Use this function to create wrapped text using
             # html tags based on the specified width
             import textwrap
-
             def customwrap(s,width=16):
                 return "<br>".join(textwrap.wrap(s,width=width))
 
@@ -576,14 +576,14 @@ layout = \
                                 [     
                                     html.Div(
                                         [
-                                            html.Label(id='school-name', className = 'table_label'),
+                                            html.Label(id='school-name', className = 'header_label'),
                                             html.Div(id='info-table'),
                                         ],
                                         className='pretty_container six columns'
                                     ),
                                     html.Div(
                                         [
-                                            html.Label('State and Federal Ratings', className = 'table_label'),
+                                            html.Label('State and Federal Ratings', className = 'header_label'),
                                             html.Div(id='letter-grade-table'),
                                         ],
                                         className='pretty_container six columns'
@@ -600,15 +600,15 @@ layout = \
                                 [
                                     html.Div(
                                         [
-                                            html.Label(id='enroll-title', className = 'table_label'),
+                                            html.Label(id='enroll-title', className = 'header_label'),
                                             html.Div(id='enroll-table')
                                         ],
                                         className='pretty_container six columns'
                                     ),
                                     html.Div(
                                         [
-                                            html.Label('Average Daily Membership History', className = 'table_label'),
-                                            dcc.Graph(id='adm_fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
+                                            html.Label('Average Daily Membership History', className = 'header_label'),
+                                            dcc.Graph(id='adm_fig', figure = loading_fig(),config={'displayModeBar': False})
                                         ],
                                         className = 'pretty_container six columns'
                                     ),
@@ -622,15 +622,15 @@ layout = \
                         [
                             html.Div(
                                 [
-                                    html.Label(id='subgroup-title', className = 'table_label'),
-                                    dcc.Graph(id='status-fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
+                                    html.Label(id='subgroup-title', className = 'header_label'),
+                                    dcc.Graph(id='status-fig', figure = loading_fig(),config={'displayModeBar': False})
                                 ],
                                 className = 'pretty_container six columns'
                             ),
                             html.Div(
                                 [
-                                    html.Label(id='ethnicity-title', className = 'table_label'),
-                                    dcc.Graph(id='ethnicity-fig', figure = loading_fig(),config={'displayModeBar': False}) # figure={}
+                                    html.Label(id='ethnicity-title', className = 'header_label'),
+                                    dcc.Graph(id='ethnicity-fig', figure = loading_fig(),config={'displayModeBar': False})
                                 ],
                                 className = 'pretty_container six columns'
                             ),
@@ -646,7 +646,7 @@ layout = \
                         [    
                             html.Div(
                                 [
-                                    html.Label(id='school-name-no-data', className = 'table_label'),
+                                    html.Label(id='school-name-no-data', className = 'header_label'),
                                     html.Div(id='info-table-no-data'),
                                 ],
                                 className='pretty_container eight columns'
@@ -659,9 +659,5 @@ layout = \
                 id = 'about-empty-container',
             ),
         ],
-        id='mainContainer',
-        style={
-            'display': 'flex',
-            'flexDirection': 'column'
-        }
+        id='mainContainer'
     )

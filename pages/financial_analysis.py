@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley
-# version:  1.01.04.03.23
+# version:  1.01.040323
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -17,8 +17,9 @@ import plotly.graph_objects as go
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table
-from .chart_helpers import loading_fig#, no_data_fig
+from .chart_helpers import loading_fig
 from .subnav import subnav_finance
+
 dash.register_page(__name__, path = '/financial_analysis', order=3)
 
 @callback(
@@ -278,7 +279,7 @@ def update_financial_analysis_page(data, year, radio_value):
 
             cols=[i for i in revenue_expenses_line_data.columns if i not in ['Category']]
             for col in cols:
-                revenue_expenses_line_data[col]=pd.to_numeric(revenue_expenses_line_data[col], errors='coerce')#.fillna(assets_liabilities_data[col]).tolist()
+                revenue_expenses_line_data[col]=pd.to_numeric(revenue_expenses_line_data[col], errors='coerce')
 
             revenue_expenses_line_data = revenue_expenses_line_data.iloc[:, ::-1]
             revenue_expenses_line_data.pop('Category')
@@ -320,9 +321,11 @@ def update_financial_analysis_page(data, year, radio_value):
                 color_discrete_sequence=color,
                 barmode='group',
             )
+            
+            # Get the highest value in the entire df
+            max_val = assets_liabilities_data.melt().value.max()
 
-            max_val = assets_liabilities_data.melt().value.max()  # Gets highest value in df
-            # divides value by step value (6) and rounds to nearest 50000/500000
+            # divides value by a step value (6) and rounds to nearest 50000/500000
             tick_val = round_nearest(max_val / step)
 
             assets_liabilities_bar_fig.update_xaxes(showline=False, linecolor='#a9a9a9',ticks='outside', tickcolor='#a9a9a9', title='')
@@ -787,7 +790,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 # |**Total Revenue** (Form 9 Section Codes 1 and 3) |
                 # """
                 financial_ratios_table = [
-                    html.Label('Financial Ratios', className = 'table_label'),
+                    html.Label('Financial Ratios', className = 'header_label'),
                     html.P(''),
                     html.Div(
                         dash_table.DataTable(
@@ -1002,20 +1005,6 @@ def update_financial_analysis_page(data, year, radio_value):
         AandL_title, FP_title, FA_title, financial_ratios_table, per_student_table, \
         main_container, empty_container, no_data_to_display # audit_findings_table,
 
-# Layout
-
-# label_style = {
-#     'height': '20px',
-#     'backgroundColor': '#6783a9',
-#     'fontSize': '12px',
-#     'fontFamily': 'Roboto, sans-serif',
-#     'color': '#ffffff',
-#     'textAlign': 'center',
-#     'fontWeight': 'bold',
-#     'paddingBottom': '5px',
-#     'paddingTop': '5px'
-# }
-
 def layout():
     return html.Div(
                 [
@@ -1048,14 +1037,14 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Label(id='finance-analysis-RandE-title', className = 'table_label'),                                    
+                                            html.Label(id='finance-analysis-RandE-title', className = 'header_label'),                                    
                                             dcc.Graph(id='revenue-expenses-fig', figure = loading_fig(),config={'displayModeBar': False})
                                         ],
                                         className = 'pretty_container six columns'
                                     ),
                                     html.Div(
                                         [
-                                            html.Label(id='finance-analysis-AandL-title', className = 'table_label'),                                       
+                                            html.Label(id='finance-analysis-AandL-title', className = 'header_label'),                                       
                                             dcc.Graph(id='assets-liabilities-fig', figure = loading_fig(),config={'displayModeBar': False})
                                         ],
                                         className = 'pretty_container six columns'
@@ -1067,7 +1056,7 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Label(id='finance-analysis-FP-title', className = 'table_label'),                                      
+                                            html.Label(id='finance-analysis-FP-title', className = 'header_label'),                                      
                                             html.P(''),
                                             html.Div(id='financial-position-table')
                                         ],
@@ -1075,7 +1064,7 @@ def layout():
                                     ),
                                     html.Div(
                                         [
-                                            html.Label(id='finance-analysis-FA-title', className = 'table_label'),                                        
+                                            html.Label(id='finance-analysis-FA-title', className = 'header_label'),                                        
                                             html.P(''),
                                             html.Div(id='financial-activities-table')
                                         ],
@@ -1102,7 +1091,7 @@ def layout():
                                     ),
                                     html.Div(
                                         [
-                                            html.Label('Per Student Revenues and Expenditures', className = 'table_label'),
+                                            html.Label('Per Student Revenues and Expenditures', className = 'header_label'),
                                             html.P(''),
                                             html.Div(id='per-student-table')
                                         ],
@@ -1122,8 +1111,4 @@ def layout():
                     ),
                 ],
                 id='mainContainer',
-                style={
-                    'display': 'flex',
-                    'flexDirection': 'column'
-                }
             )

@@ -585,6 +585,7 @@ body {
 
 /* Font Awesome Override */
 /* fixes issue with Font Awesome Icon pseudo :before tag */
+/* TODO: Causes issue with all other cells */
 .cell-markdown > p {
   display: flex;
   height: 100%;
@@ -775,11 +776,11 @@ label > .label-body {
   font-weight: normal;
 }
 
-.table_label {
+.header_label {
   height: 20px;
   background-color: #6783a9;
   font-size: 12px;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Roboto', sans-serif;
   color: #ffffff;
   text-align: center;
   font-weight: bold;

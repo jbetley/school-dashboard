@@ -184,14 +184,16 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
         result[col].eq(np.nan),
         ]
 
-        # NOTE: Using font-awesome circle icon. the commented out code uses svg circle, which also
-        # works, but is harder to keep consistent in different sized tables.
+        # NOTE: Using font-awesome circle icon. 
         did_not_meet ='<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>'
         approaching ='<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>'
         meets ='<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>'
         exceeds ='<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>'
         no_rating ='<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
         empty_cell =''
+
+        # NOTE: this commented out code uses svg circle, which also works, but is
+        # harder to keep consistent in different sized tables.
         # did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ea5545" /></svg>'
         # approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ede15b" /></svg>'
         # meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#87bc45" /></svg>'
@@ -543,15 +545,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                                 'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
                                 }
                                 for (idx, col) in enumerate(name_cols)
-                                ],
-                            # columns=[
-                            #         {
-                            #             'name': col,
-                            #             'id': headers[idx],
-                            #             'type':'numeric',
-                            #             'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
-                            #         } for (idx, col) in enumerate(name_cols)
-                            #     ],
+                            ],
                             style_data = table_style,
                             style_data_conditional = table_data_conditional,
                             style_header = table_header,
@@ -716,7 +710,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
                         "textAlign": "left",
                         "fontWeight": "500",
                         "paddingLeft": "10px",
-                        "width": "40%", #conditional_width ?,
+                        "width": "40%"
                     }
                 ],
                 merge_duplicate_headers=True,

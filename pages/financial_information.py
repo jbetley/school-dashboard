@@ -5,7 +5,7 @@
 # version:  1.01.040223
 
 import dash
-from dash import html, dash_table, Input, Output, callback, ctx
+from dash import html, dash_table, Input, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
@@ -271,7 +271,7 @@ def update_financial_information_page(data,year,radio_value):
                     [
                         html.Div(
                             [
-                                html.Label(table_title, className = 'table_label'),
+                                html.Label(table_title, className = 'header_label'),
                                 html.Div(
                                     dash_table.DataTable(
                                         financial_data.to_dict('records'),
@@ -305,7 +305,6 @@ def update_financial_information_page(data,year,radio_value):
                                             },
                                         ],
                                         style_header={
-                                            # 'height': '20px',
                                             'backgroundColor': '#ffffff',
                                             'border': 'none',
                                             'borderBottom': '.5px solid #6783a9',
@@ -409,8 +408,4 @@ def layout():
                 ),
             ],
             id='mainContainer',
-            style={
-                'display': 'flex',
-                'flexDirection': 'column'
-            }
         )

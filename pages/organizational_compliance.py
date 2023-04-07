@@ -65,10 +65,18 @@ def update_organizational_compliance(data, year):
             headers = organizational_indicators.columns.tolist()
             year_headers = [x for x in headers if 'Description' not in x and 'Standard' not in x]
 
+            # Only want Year headers to be treated as markdown (ensures that svg circles are
+            # formatted correctly in each cell). See ".cell-markdown > p" in stylesheet.css)
             org_compliance_table = [
                         dash_table.DataTable(
                             organizational_indicators.to_dict('records'),
-                            columns = [{'name': i, 'id': i,'presentation': 'markdown'} for i in headers],
+                                columns=[
+                                    {'name': i, 'id': i, 'presentation': 'markdown'}
+                                    if i in year_headers
+                                    else {'name': i, 'id': i,
+                                }
+                                for i in headers
+                            ],
                             style_data={
                                 'fontSize': '12px',
                                 'border': 'none',

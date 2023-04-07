@@ -234,6 +234,18 @@ def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:
 #   ValueError: Must have equal len keys and value when setting with an ndarray (Excel-Lafayette 2021)
 
 def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
+    """Takes a dataframe of float values and returns the same dataframe with one
+    extra 'Rating' column for each year of data. Ratings are calculated based
+    on specific thresholds and return either: MS, DNMS, or N/A (or null) 
+
+    Args:
+        data (pd.DataFrame): a DataFrame object with a Category column and a variable
+        number of year columns.
+
+    Returns:
+        pd.DataFrame: a DataFrame object with additional columns
+    """
+
     # Some schools have 'pre-opening' financial activity before the school
     # begins to operate and receive state/federal grants. The below code
     # ignores all columns (years) where the value in the State Grant column
@@ -387,7 +399,7 @@ def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # Cash Flow (for purposes of calculating Cash Flow, the school's Year 0 balance is
     # assumed to be zero).
 
-    # NOTE: I am positive there is a more pythonic way to do this, but I'm to tired
+    # NOTE: I am positive there is a more pythonic way to do this, but I'm too tired
     # to figure it out, maybe later
     for i in range(len(metric_grid['Cash Flow'])-2):
         
