@@ -565,19 +565,6 @@ def update_about_page(year, data):
         subgroup_title, status_fig, main_container, empty_container, school_name,\
         info_table, no_data_to_display
 
-## Layout ##
-# label_style = {
-#     'height': '20px',
-#     'backgroundColor': '#6783a9',
-#     'fontSize': '12px',
-#     'fontFamily': 'Roboto, sans-serif',
-#     'color': '#ffffff',
-#     'textAlign': 'center',
-#     'fontWeight': 'bold',
-#     'paddingBottom': '5px',
-#     'paddingTop': '5px'
-# }
-
 layout = \
     html.Div(
         [

@@ -850,17 +850,17 @@ def update_academic_analysis(school, year, data, comparison_school_list):
         main_container, empty_container, no_data_to_display
 
 ## Layout ##
-label_style = {
-    'height': '20px',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
+# label_style = {
+#     'height': '20px',
+#     'backgroundColor': '#6783a9',
+#     'fontSize': '12px',
+#     'fontFamily': 'Roboto, sans-serif',
+#     'color': '#ffffff',
+#     'textAlign': 'center',
+#     'fontWeight': 'bold',
+#     'paddingBottom': '5px',
+#     'paddingTop': '5px'
+# }
 
 # The difference between regular and label style is label style is bolded.
 # school_string styles also has no top margin or top border
@@ -927,14 +927,14 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Year over Year ELA Proficiency by Grade', style=label_style),
+                                        html.Label('Year over Year ELA Proficiency by Grade', className = 'table_label'),
                                         dcc.Graph(id='fig14a', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
                                 ),
                                 html.Div(
                                     [
-                                        html.Label('Year over Year Math Proficiency by Grade', style=label_style),
+                                        html.Label('Year over Year Math Proficiency by Grade', className = 'table_label'),
                                         dcc.Graph(id='fig14b', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
@@ -946,14 +946,14 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Year over Year ELA Proficiency by Ethnicity', style=label_style),
+                                        html.Label('Year over Year ELA Proficiency by Ethnicity', className = 'table_label'),
                                         dcc.Graph(id='fig16c1', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
                                 ),
                                 html.Div(
                                     [
-                                        html.Label('Year over Year Math Proficiency by Ethnicity', style=label_style),
+                                        html.Label('Year over Year Math Proficiency by Ethnicity', className = 'table_label'),
                                         dcc.Graph(id='fig16d1', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
@@ -965,14 +965,14 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Year over Year ELA Proficiency by Subgroup', style=label_style),
+                                        html.Label('Year over Year ELA Proficiency by Subgroup', className = 'table_label'),
                                         dcc.Graph(id='fig16c2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
                                 ),
                                 html.Div(
                                     [
-                                        html.Label('Year over Year Math Proficiency by Subgroup', style=label_style),
+                                        html.Label('Year over Year Math Proficiency by Subgroup', className = 'table_label'),
                                         dcc.Graph(id='fig16d2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
@@ -984,7 +984,7 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Year over Year IREAD Proficiency', style=label_style),
+                                        html.Label('Year over Year IREAD Proficiency', className = 'table_label'),
                                         dcc.Graph(id='fig14g', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container six columns'
@@ -1025,14 +1025,14 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Comparison: Current Year ELA Proficiency', style=label_style),
+                                        html.Label('Comparison: Current Year ELA Proficiency', className = 'table_label'),
                                         dcc.Graph(id='fig14c', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container nine columns',
                                 ),
                                 html.Div(
                                     [
-                                        html.Label('Proficiency', style=label_style),
+                                        html.Label('Proficiency', className = 'table_label'),
                                         html.Div(id='fig14c-table')
                                     ],
                                     className = 'pretty_container three columns'
@@ -1044,14 +1044,14 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Comparison: Current Year Math Proficiency', style=label_style),
+                                        html.Label('Comparison: Current Year Math Proficiency', className = 'table_label'),
                                         dcc.Graph(id='fig14d', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container nine columns',
                                 ),
                                 html.Div(
                                     [
-                                        html.Label('Proficiency', style=label_style),
+                                        html.Label('Proficiency', className = 'table_label'),
                                         html.Div(id='fig14d-table')
                                     ],
                                     className = 'pretty_container three columns'
@@ -1063,14 +1063,14 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Comparison: Current Year IREAD Proficiency', style=label_style),
+                                        html.Label('Comparison: Current Year IREAD Proficiency', className = 'table_label'),
                                         dcc.Graph(id='fig-iread', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_container nine columns',
                                 ),
                                 html.Div(
                                     [
-                                        html.Label('Proficiency', style=label_style),
+                                        html.Label('Proficiency', className = 'table_label'),
                                         html.Div(id='fig-iread-table')
                                     ],
                                     className = 'pretty_container three columns'
@@ -1082,7 +1082,7 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Comparison: ELA Proficiency by Ethnicity', style=label_style),
+                                        html.Label('Comparison: ELA Proficiency by Ethnicity', className = 'table_label'),
                                         dcc.Graph(id='fig16a1', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_close_container twelve columns',
@@ -1101,18 +1101,18 @@ def layout():
                                                     id='fig16a1-category-string',
                                                     children=[
                                                     'Categories with insufficient n-size or no data:',
-                                                    html.Span(id='fig16a1-category-string', children='',style = category_string_style),
+                                                    html.Span(id='fig16a1-category-string', children='', className = 'category_string'),
                                                     ],
-                                                    style = category_string_label_style,
+                                                    className = 'category_string_label',
                                                 ),
                                                 html.P(
                                                     id='fig16a1-school-string',
                                                     children=[
                                                     'Schools with insufficient n-size or no data:',
-                                                    html.Span(id='fig16a1-school-string', children='',style = school_string_style),
+                                                    html.Span(id='fig16a1-school-string', children='', className = 'school_string'),
                                                     ],
-                                                    style = school_string_label_style,
-                                                ),                                                  
+                                                    className = 'school_string_label',
+                                                ),
                                             ],
                                             className = 'close_container twelve columns'
                                         )
@@ -1129,7 +1129,7 @@ def layout():
 
                                         # TODO: Margin-bottom makes for better graph display, but it breaks empty
                                         # chart display.. Need to figure out how to change margin in fig creation itself
-                                        html.Label('Comparison: Math Proficiency by Ethnicity', style=label_style),
+                                        html.Label('Comparison: Math Proficiency by Ethnicity', className = 'table_label'),
                                         dcc.Graph(id='fig16b1', figure = loading_fig(),config={'displayModeBar': False}) #, style={'margin-bottom': -20}),
                                     ],
                                     className = 'pretty_close_container twelve columns',
@@ -1148,18 +1148,18 @@ def layout():
                                                     id='fig16b1-category-string',
                                                     children=[
                                                     'Categories with insufficient n-size or no data:',
-                                                    html.Span(id='fig16b1-category-string', children='',style = category_string_style),
+                                                    html.Span(id='fig16b1-category-string', children='', className = 'category_string'),
                                                     ],
-                                                    style = category_string_label_style,
+                                                    className = 'category_string_label',
                                                 ),
                                                 html.P(
                                                     id='fig16b1-school-string',
                                                     children=[
                                                     'Schools with insufficient n-size or no data:',
-                                                    html.Span(id='fig16b1-school-string', children='',style = school_string_style),
+                                                    html.Span(id='fig16b1-school-string', children='', className = 'school_string'),
                                                     ],
-                                                    style = school_string_label_style,
-                                                ),                                                   
+                                                    className = 'school_string_label',
+                                                ),               
                                             ],
                                             className = 'close_container twelve columns'
                                         )
@@ -1173,7 +1173,7 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Comparison: ELA Proficiency by Subgroup', style=label_style),
+                                        html.Label('Comparison: ELA Proficiency by Subgroup', className = 'table_label'),
                                         dcc.Graph(id='fig16a2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_close_container twelve columns',
@@ -1192,17 +1192,17 @@ def layout():
                                                     id='fig16a2-category-string',
                                                     children=[
                                                     'Categories with insufficient n-size or no data:',
-                                                    html.Span(id='fig16a2-category-string', children='',style = category_string_style),
+                                                    html.Span(id='fig16a2-category-string', children='', className = 'category_string'),
                                                     ],
-                                                    style = category_string_label_style,
+                                                    className = 'category_string_label',
                                                 ),
                                                 html.P(
                                                     id='fig16a2-school-string',
                                                     children=[
                                                     'Schools with insufficient n-size or no data:',
-                                                    html.Span(id='fig16a2-school-string', children='',style = school_string_style),
+                                                    html.Span(id='fig16a2-school-string', children='', className = 'school_string'),
                                                     ],
-                                                    style = school_string_label_style,
+                                                    className = 'school_string_label',
                                                 ),                                                                                 
                                             ],
                                             className = 'close_container twelve columns'
@@ -1217,7 +1217,7 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Comparison: Math Proficiency by Subgroup', style=label_style),
+                                        html.Label('Comparison: Math Proficiency by Subgroup', className = 'table_label'),
                                         dcc.Graph(id='fig16b2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_close_container twelve columns',
@@ -1236,17 +1236,17 @@ def layout():
                                                     id='fig16b2-category-string',
                                                     children=[
                                                     'Categories with insufficient n-size or no data:',
-                                                    html.Span(id='fig16b2-category-string', children='',style = category_string_style),
+                                                    html.Span(id='fig16b2-category-string', children='', className = 'category_string'),
                                                     ],
-                                                    style = category_string_label_style,
+                                                    className = 'category_string_label',
                                                 ),
                                                 html.P(
                                                     id='fig16b2-school-string',
                                                     children=[
                                                     'Schools with insufficient n-size or no data:',
-                                                    html.Span(id='fig16b2-school-string', children='',style = school_string_style),
+                                                    html.Span(id='fig16b2-school-string', children='', className = 'school_string'),
                                                     ],
-                                                    style = school_string_label_style,
+                                                    className = 'school_string_label',
                                                 ),                        
                                             ],
                                             className = 'close_container twelve columns'

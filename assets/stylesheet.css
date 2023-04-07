@@ -787,6 +787,42 @@ label > .label-body {
   padding-top: 5px;
 }
 
+.category_string_label {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 10px;
+  margin-right: 10px;
+  margin-top: 10px;
+  border-top: .5px solid rgb(201,211,224);
+  font-weight: bold;
+}
+
+.category_string {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 10px;
+  margin-right: 10px;
+  margin-top: 10px;
+  border-top: .5px solid rgb(201,211,224);
+  font-weight: normal;
+}
+
+.school_string_label {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 10px;
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.school_string {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 10px;
+  margin-right: 10px;
+  font-weight: normal;
+}
+
 .logout-button {
   text-transform: uppercase;
   font-family: 'Jost', sans-serif;
