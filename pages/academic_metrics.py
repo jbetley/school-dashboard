@@ -4,8 +4,6 @@
 # author:   jbetley
 # version:  1.01.040323
 
-# TODO: BLANK CHARTS RENDERING INCORRECTLY FOR YEARS WITHOUT DATA
-
 import dash
 from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
@@ -217,7 +215,7 @@ def update_academic_metrics(data,year):
                 # year_over_year_values_json
                 json_data = json.loads(data['11'])
                 combined_years = pd.DataFrame.from_dict(json_data)
-                
+
                 # TODO: Need to test whether its okay to add American Indian back to all ethnicity strings
                 ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
                 status = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']

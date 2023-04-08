@@ -161,47 +161,47 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     """
     result = val.copy()
 
-    # two types of tables need converting, those with Rating in col
-    # and those with a 'Year' in the col
-
-    # This seems like an overly complicated way to determine if
-    # the substring 'Rat' appears in any column headers- but
-    # stackoverflow told me this is how to do it
-
-    if len(val.loc[:, val.columns.str.contains('Rat')].columns) != 0:
+    # Academic/Financial metric dataframes contain 'Rate' substring in columns if there
+    # is sufficient data. Organizational metric dataframe contains 'Standard' column
+    # the else ocurrs when a dataframe is passed that doesn't contain either
+    if val.columns.str.contains('Rat').any() == True:
         rating_columns = val.loc[:, val.columns.str.contains('Rat')].columns
-    else:
+    elif val.columns.str.contains('Standard').any() == True:
         rating_columns = val.loc[:, ~val.columns.str.contains('Standard|Description',case=False, regex=True)].columns
+    else:
+        rating_columns = pd.Index([])
 
-    for col in rating_columns:
+    # only process dataframes satisfying either condition above
+    if ~rating_columns.empty:
+        for col in rating_columns:
 
-        conditions = [
-        result[col].eq('DNMS'),
-        result[col].eq('AS'),
-        result[col].eq('MS'),
-        result[col].eq('ES'),
-        result[col].eq('N/A'),
-        result[col].eq(np.nan),
-        ]
+            conditions = [
+            result[col].eq('DNMS'),
+            result[col].eq('AS'),
+            result[col].eq('MS'),
+            result[col].eq('ES'),
+            result[col].eq('N/A'),
+            result[col].eq(np.nan),
+            ]
 
-        # NOTE: Using font-awesome circle icon. 
-        did_not_meet ='<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>'
-        approaching ='<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>'
-        meets ='<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>'
-        exceeds ='<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>'
-        no_rating ='<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
-        empty_cell =''
+            # NOTE: Using font-awesome circle icon. 
+            did_not_meet ='<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>'
+            approaching ='<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>'
+            meets ='<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>'
+            exceeds ='<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>'
+            no_rating ='<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
+            empty_cell =''
 
-        # NOTE: this commented out code uses svg circle, which also works, but is
-        # harder to keep consistent in different sized tables.
-        # did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ea5545" /></svg>'
-        # approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ede15b" /></svg>'
-        # meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#87bc45" /></svg>'
-        # exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#b33dc6" /></svg>'
-        # no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#a4a2a8" /></svg>'
+            # NOTE: this commented out code uses svg circle, which also works, but is
+            # harder to keep consistent in different sized tables.
+            # did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ea5545" /></svg>'
+            # approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ede15b" /></svg>'
+            # meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#87bc45" /></svg>'
+            # exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#b33dc6" /></svg>'
+            # no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#a4a2a8" /></svg>'
 
-        rating = [did_not_meet,approaching,meets,exceeds, no_rating, empty_cell]
-        result[col] = np.select(conditions, rating, default=empty_cell)
+            rating = [did_not_meet,approaching,meets,exceeds, no_rating, empty_cell]
+            result[col] = np.select(conditions, rating, default=empty_cell)
 
     return result
 
