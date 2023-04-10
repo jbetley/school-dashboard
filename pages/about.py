@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 import json
 
-from .chart_helpers import loading_fig, no_data_fig
+from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
@@ -316,7 +316,7 @@ def update_about_page(year, data):
         linecolor=['#d0743c','#a05d56']
 
         if len(school_adm.index) == 0:
-            adm_fig = no_data_fig('Average Daily Membership History',400)
+            adm_fig = no_data_fig_label('Average Daily Membership History',400)
 
         else:
 
@@ -557,8 +557,8 @@ def update_about_page(year, data):
                 )
 
         else:
-            status_fig = no_data_fig('Enrollment by Subgroup', 400)
-            ethnicity_fig = no_data_fig('Enrollment by Ethnicity', 400)
+            status_fig = no_data_fig_label('Enrollment by Subgroup', 400)
+            ethnicity_fig = no_data_fig_label('Enrollment by Ethnicity', 400)
 
     return school_name, info_table, letter_grade_table, \
         enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, \

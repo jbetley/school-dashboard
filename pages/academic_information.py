@@ -14,7 +14,7 @@ import re
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, create_academic_info_table
-from .chart_helpers import loading_fig, no_data_fig, make_stacked_bar
+from .chart_helpers import loading_fig, no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages
 from .subnav import subnav_academic
 
@@ -467,7 +467,7 @@ def update_abcademic_information_page(data, school, year):
             if not grade_ela_fig_data.empty:
                 k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data,ela_title)
             else:
-                k8_grade_ela_fig = no_data_fig(ela_title, 100)
+                k8_grade_ela_fig = no_data_fig_label(ela_title, 100)
 
             # Math by Grade
             grade_math_fig_data = all_proficiency_data[
@@ -478,7 +478,7 @@ def update_abcademic_information_page(data, school, year):
             if not grade_math_fig_data.empty:
                 k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,math_title)
             else:
-                k8_grade_math_fig = no_data_fig(math_title, 100)
+                k8_grade_math_fig = no_data_fig_label(math_title, 100)
 
             # ELA by Ethnicity
             ethnicity_annotations = annotations.loc[annotations['Category'].str.contains("Ethnicity")]
@@ -490,7 +490,7 @@ def update_abcademic_information_page(data, school, year):
             if not ethnicity_ela_fig_data.empty:
                 k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,ela_title)
             else:
-                k8_ethnicity_ela_fig = no_data_fig(ela_title, 100)
+                k8_ethnicity_ela_fig = no_data_fig_label(ela_title, 100)
 
             # Math by Ethnicity
             ethnicity_math_fig_data = all_proficiency_data[
@@ -501,7 +501,7 @@ def update_abcademic_information_page(data, school, year):
             if not ethnicity_math_fig_data.empty:
                 k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,math_title)
             else:
-                k8_ethnicity_math_fig = no_data_fig(math_title, 100)
+                k8_ethnicity_math_fig = no_data_fig_label(math_title, 100)
 
             # ELA by Subgroup
             subgroup_annotations = annotations.loc[annotations['Category'].str.contains("Subgroup")]
@@ -513,7 +513,7 @@ def update_abcademic_information_page(data, school, year):
             if not subgroup_ela_fig_data.empty:
                 k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data,ela_title)
             else:
-                k8_subgroup_ela_fig = no_data_fig(ela_title, 100)
+                k8_subgroup_ela_fig = no_data_fig_label(ela_title, 100)
 
             # Math by Subgroup
             subgroup_math_fig_data = all_proficiency_data[
@@ -525,7 +525,7 @@ def update_abcademic_information_page(data, school, year):
                 k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,math_title)
             else:
 
-                k8_subgroup_math_fig = no_data_fig(math_title, 100)
+                k8_subgroup_math_fig = no_data_fig_label(math_title, 100)
 
     ## HS academic information
     if (

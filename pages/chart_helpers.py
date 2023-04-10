@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import textwrap
 import plotly.graph_objects as go
-from dash import dash_table, html
+from dash import dash_table, html, dcc
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 
@@ -57,8 +57,8 @@ def loading_fig() -> dict:
     }
     return fig
 
-# Create an empty figure with the provided label and height.
-def no_data_fig(label: str = 'No Data to Display', height: int = 400) -> go.Figure:
+# blank fig with label and height.
+def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> go.Figure:
 
     fig = go.Figure()
     
@@ -104,9 +104,55 @@ def no_data_fig(label: str = 'No Data to Display', height: int = 400) -> go.Figu
 
     return fig
 
-# Use this function to create wrapped text using
-# html tags based on the specified width
-# NOTE: adding two spaces before <br> to ensure the words at
+# Blank fig with no label
+def no_data_fig_blank() -> go.Figure:
+
+    fig = go.Figure()
+    
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=20, b=0),
+        height = 400,
+        title={
+            'y':0.975,
+            'x':0.5,
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'font_family': 'Roboto, sans-serif',
+            'font_color': 'steelblue',
+            'font_size': 10
+        },
+        xaxis =  {
+            "visible": False,
+            'fixedrange': True
+        },
+        yaxis =  {
+            "visible": False,
+            'fixedrange': True
+        },
+        annotations = [
+            {
+                'text': 'No Data to Display . . .',
+                'y': 0.5,
+                'xref': 'paper',
+                'yref': 'paper',
+                'showarrow': False,
+                'font': {
+                    'size': 16,
+                    'color': '#6783a9',
+                    'family': 'Roboto, sans-serif'
+                }
+            }
+        ],
+        dragmode = False,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+
+    return fig
+
+# Use this function to create wrapped text using html tags
+# based on the specified width.
+# NOTE: add two spaces before <br> to ensure the words at
 # the end of each break have the same spacing as 'ticksuffix'
 # below
 
@@ -116,7 +162,6 @@ def customwrap(s: str,width: int = 16):
 def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
     data = values.copy()
     # https://plotly.com/python/discrete-color/
-
     # colors = plotly.colors.qualitative.T10
 
     # In order to get the total_tested value into hovertemplate
@@ -239,112 +284,128 @@ def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
 
 # TODO: Add label
 # single line chart (input: dataframe)
-def make_line_chart(values: pd.DataFrame) -> px.line:
+def make_line_chart(values: pd.DataFrame, label: str) -> list: #px.line:
 
     data = values.copy()
 
     data.columns = data.columns.str.split('|').str[0]
 
     cols=[i for i in data.columns if i not in ['School Name','Year']]
-    for col in cols:
-        data[col]=pd.to_numeric(data[col], errors='coerce')
 
-    data.sort_values('Year', inplace=True)
+    # create chart only if data exists
+    if (len(cols)) > 0:
+        for col in cols:
+            data[col]=pd.to_numeric(data[col], errors='coerce')
 
-    marks = [v for v in list(data.columns) if v not in ['School Name','Year']]
+        data.sort_values('Year', inplace=True)
 
-    # determine tick range [Not currently using/skews graph too much]
-    # # get max value in dataframe
-    # max_val = data[cols].select_dtypes(include=[np.number]).max().max()
+        marks = [v for v in list(data.columns) if v not in ['School Name','Year']]
+
+        # determine tick range [Not currently using/skews graph too much]
+        # # get max value in dataframe
+        # max_val = data[cols].select_dtypes(include=[np.number]).max().max()
+        
+        # # round to nearest .1
+        # tick_val = np.round(max_val,1)
+
+        # # if it rounded down, add .1
+        # if tick_val < max_val:
+        #     tick_val = tick_val + .1
+
+        fig = px.line(
+            data,
+            x='Year',
+            y=marks,
+            markers=True,
+            color_discrete_sequence=color,
+        )
+
+        fig.update_traces(mode='markers+lines', hovertemplate=None)
+        fig.update_layout(
+            margin=dict(l=40, r=40, t=40, b=60),
+            title_x=0.5,
+            font = dict(
+                family = 'Open Sans, sans-serif',
+                color = 'steelblue',
+                size = 10
+                ),
+            plot_bgcolor='white',
+            # xaxis = dict(
+            #     # title='',
+            #     # type='category',
+            #     # mirror=True,
+            #     # showline=True,
+            #     # # tickmode = 'linear',
+            #     # # tick0 = data['Year'][0],
+            #     # # dtick = 1,
+            #     # # tickmode = 'array',
+            #     # # tickvals = data['Year'],
+            #     # # ticktext = data['Year'],
+            #     # linecolor='#b0c4de',
+            #     # linewidth=.5,
+            #     # gridwidth=.5,
+            #     # showgrid=True,
+            #     # gridcolor='#b0c4de',
+            #     # zeroline=False,
+            #     ),   
+            legend=dict(orientation="h"),         
+            hovermode='x unified',
+            height=400,
+            legend_title='',
+        )
+
+    # TODO: default tick behavior is quite ugly for small number of points. How to fix?
+    # May not be able to fix easily- at least find a way to space small number of ticks
+    # equally within chart space
+
+        fig.update_xaxes(
+            title='',
+            # type='category',
+            mirror=True,
+            showline=True,
+            # tickmode = 'linear',
+            # tick0 = data['Year'].min() - 2,
+            # dtick = 1,
+            tickmode = 'array',
+            tickvals = data['Year'],
+            ticktext = data['Year'],
+            linecolor='#b0c4de',
+            linewidth=.5,
+            gridwidth=.5,
+            showgrid=True,
+            gridcolor='#b0c4de',
+            zeroline=False,     
+        )
+
+        fig.update_yaxes(
+            title='',
+            mirror=True,
+            showline=True,
+            linecolor='#b0c4de',
+            linewidth=.5,
+            gridwidth=.5,
+            showgrid=True,
+            gridcolor='#b0c4de',
+            zeroline=False,
+            range=[0, 1], #tick_val],  # adjusting tick value skews graph too much
+            dtick=.2,
+            tickformat=',.0%',
+        )
+
+    else:
+        # create blank chart
+        fig = no_data_fig_blank()
+
+    fig_layout = [
+        html.Div(
+            [
+            html.Label(label, className = 'header_label'),
+            dcc.Graph(figure = fig, config={'displayModeBar': False})
+            ]
+        )
+    ]
     
-    # # round to nearest .1
-    # tick_val = np.round(max_val,1)
-
-    # # if it rounded down, add .1
-    # if tick_val < max_val:
-    #     tick_val = tick_val + .1
-
-    fig = px.line(
-        data,
-        x='Year',
-        y=marks,
-        markers=True,
-        color_discrete_sequence=color,
-    )
-
-    fig.update_traces(mode='markers+lines', hovertemplate=None)
-    fig.update_layout(
-        margin=dict(l=40, r=40, t=40, b=60),
-        title_x=0.5,
-        font = dict(
-            family = 'Open Sans, sans-serif',
-            color = 'steelblue',
-            size = 10
-            ),
-        plot_bgcolor='white',
-        # xaxis = dict(
-        #     # title='',
-        #     # type='category',
-        #     # mirror=True,
-        #     # showline=True,
-        #     # # tickmode = 'linear',
-        #     # # tick0 = data['Year'][0],
-        #     # # dtick = 1,
-        #     # # tickmode = 'array',
-        #     # # tickvals = data['Year'],
-        #     # # ticktext = data['Year'],
-        #     # linecolor='#b0c4de',
-        #     # linewidth=.5,
-        #     # gridwidth=.5,
-        #     # showgrid=True,
-        #     # gridcolor='#b0c4de',
-        #     # zeroline=False,
-        #     ),   
-        legend=dict(orientation="h"),         
-        hovermode='x unified',
-        height=400,
-        legend_title='',
-    )
-
-# TODO: default tick behavior is quite ugly for small number of points. How to fix?
-# May not be able to fix easily- at least find a way to space small number of ticks
-# equally within chart space
-
-    fig.update_xaxes(
-        title='',
-        # type='category',
-        mirror=True,
-        showline=True,
-        # tickmode = 'linear',
-        # tick0 = data['Year'].min() - 2,
-        # dtick = 1,
-        tickmode = 'array',
-        tickvals = data['Year'],
-        ticktext = data['Year'],
-        linecolor='#b0c4de',
-        linewidth=.5,
-        gridwidth=.5,
-        showgrid=True,
-        gridcolor='#b0c4de',
-        zeroline=False,     
-    )
-
-    fig.update_yaxes(
-        title='',
-        mirror=True,
-        showline=True,
-        linecolor='#b0c4de',
-        linewidth=.5,
-        gridwidth=.5,
-        showgrid=True,
-        gridcolor='#b0c4de',
-        zeroline=False,
-        range=[0, 1], #tick_val],  # adjusting tick value skews graph too much
-        dtick=.2,
-        tickformat=',.0%',
-    )
-
-    return fig
+    return fig_layout
 
 # single bar chart (input: dataframe and title string)
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str) -> px.bar:
