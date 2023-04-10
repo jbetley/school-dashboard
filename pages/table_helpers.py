@@ -572,6 +572,7 @@ def create_comparison_table(data,school_name):
     data = data.loc[:, ~data.iloc[school_name_idx].isna()]
 
     # sort dataframe by the 'first' proficiency column and reset index
+    # print(data.T)
     data = data.sort_values(data.columns[1], ascending=False)
     data = data.reset_index(drop=True)
 

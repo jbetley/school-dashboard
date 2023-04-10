@@ -201,7 +201,6 @@ def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
     )
 
     #TODO: Remove trace name. Show Total Tested only once. Remove legend colors.
-    
     #customize the hovertemplate for each segment of each bar
     fig['data'][0]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
     fig['data'][1]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
@@ -282,9 +281,8 @@ def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
 
     return fig
 
-# TODO: Add label
-# single line chart (input: dataframe)
-def make_line_chart(values: pd.DataFrame, label: str) -> list: #px.line:
+# single line chart
+def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
     data = values.copy()
 
@@ -407,10 +405,11 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list: #px.line:
     
     return fig_layout
 
-# single bar chart (input: dataframe and title string)
-def make_bar_chart(values: pd.DataFrame, category: str, school_name: str) -> px.bar:
+# single bar chart
+def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
     data = values.copy()
 
+    # TODO: DETERMINE IF CAN BE NO DATA - IF SO COPY make_line_chart form
     schools = data['School Name'].tolist()
 
     # assign colors for each comparison school
@@ -455,13 +454,22 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str) -> px.
         plot_bgcolor='rgba(0,0,0,0)'
     )
 
-    # TODO: Make prettier?
+    # TODO: Make traces prettier
     fig.update_traces(
         # hovertemplate = '<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br>Distance in miles: %{customdata[2]}<br>Proficiency: %{y}<br><extra></extra>'
         hovertemplate = '<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br>Proficiency: %{y}<br><extra></extra>'
     )
 
-    return fig
+    fig_layout = [
+        html.Div(
+            [
+            html.Label(label, className = 'header_label'),
+            dcc.Graph(figure = fig, config={'displayModeBar': False})
+            ]
+        )
+    ]
+
+    return fig_layout
 
 # grouped bar chart
 def make_group_bar_chart(values: pd.DataFrame, school_name: str) -> px.bar:

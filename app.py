@@ -23,11 +23,7 @@ from flask import Flask, url_for, redirect, request, render_template, session, j
 from flask_login import login_user, LoginManager, UserMixin, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-# from flask_migrate import Migrate
-# from sqlalchemy import create_engine, text, select
-# from sqlalchemy.orm import sessionmaker, Session
 
-# dash #
 import dash
 from dash import dcc, html, Input, Output, State, callback
 from dash.exceptions import PreventUpdate
@@ -179,6 +175,7 @@ app = dash.Dash(
 )
 
 # category variables
+# TODO: Decide re: American Indian
 # NOTE: 'American Indian' has been removed from ethnicity
 # variable as it seems to break some functionality due to
 # inconsistent use as a category in data
@@ -287,10 +284,11 @@ def set_dropdown_value(charter_options):
 #   limit = typically a limit of 5 years (currently and 
 #   temporarily 4 years so that 2018 academic data is not shown)
 @callback(
-    Output("year-dropdown", "options"),
-    Output("year-dropdown", "value"),
+    Output("year-dropdown", "options"), # , allow_duplicate=True)
+    Output("year-dropdown", "value"), #, allow_duplicate=True)
     Input("charter-dropdown", "value"),
-    State("year-dropdown", "value"),
+    State("year-dropdown", "value"),        # TODO: MULTIPLE CALLBACK USING NEW DASH?? OR IS THIS DIFF ISSUE
+    # https://community.plotly.com/t/duplicate-callback-outputs-solution-api-discussion/55909/20
 )
 def set_year_dropdown_options(school,year):
 
@@ -301,6 +299,7 @@ def set_year_dropdown_options(school,year):
     # count the number of years that a school has ADM data, ignoring
     # any most recent years with a 'Q#' prefix (incomplete)
     finance_file = 'data/F-' + school_index.loc[school_index["School ID"] == school]['School Name'].values[0] + '.csv'
+
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
 
@@ -322,14 +321,15 @@ def set_year_dropdown_options(school,year):
     # opened); current_year state (if the school has available
     # data for that year), or to the next earliest year of academic
     # data that is available for the school
+
     if year is None:
         year_value = current_academic_year
     
     elif int(year) < first_available_year:
         year_value = first_available_year
-    
     else:
         year_value = year
+
 
     year_options=[
         {"label": str(y), "value": str(y)}
@@ -454,11 +454,17 @@ def load_data(school, year):
     if not school:
         raise PreventUpdate
 
+
+    # 'year' is selected year, year will be None when user selects
+    # a year and then switches to a school that has no data for 
+    # that year
+    if year is None:
+        year = current_academic_year
+
     ### School Information
     school_info = school_index.loc[school_index["School ID"] == school]
     school_info_dict = school_info.to_dict()
 
-    # 'year' is selected year
     excluded_academic_years = int(current_academic_year) - int(year)
 
     # 'excluded years' is a list of YYYY strings (all years more
