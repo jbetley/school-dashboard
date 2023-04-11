@@ -3,10 +3,6 @@ Table Helper Functions
 """
 import numpy as np
 import pandas as pd
-# Testing
-# import pandera
-# from pandera.typing import DataFrame, Series
-#
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
@@ -35,7 +31,7 @@ def no_data_table(label: str = 'No Data to Display') -> list:
         list: dash DataTable
     """
 
-    table = [
+    table_layout = [
                 html.Label(label, style=label_style),
                 html.Div(
                     dash_table.DataTable(
@@ -54,7 +50,7 @@ def no_data_table(label: str = 'No Data to Display') -> list:
                 ),
             ]
 
-    return table
+    return table_layout
 
 def no_data_page(label: str) -> list:
     """Creates single empty table as page with provided label
@@ -65,7 +61,7 @@ def no_data_page(label: str) -> list:
     Returns:
         list: dash DataTable
     """
-    table = [
+    table_layout = [
                 html.Div(
                     [
                         html.Div(
@@ -94,11 +90,11 @@ def no_data_page(label: str) -> list:
                 )
     ]
 
-    return table
+    return table_layout
 
 # Display tables either side by side or on individual rows depending on # of columns
 def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
-    """Determines table layout depending on the size of the tables (# of cols)
+    """Determines table layout depending on the size (# of cols) of the tables 
 
     Args:
         table1 (list): dash DataTable
@@ -111,16 +107,16 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
 
     # Can force single table layout by passing same table twice
     if table1 == table2:
-
         table_layout = [
                 html.Div(
                     table1,
                     className = 'bare_container twelve columns',
                 )
         ]
-    else:
-        if len(cols) >= 4:
 
+    else:
+
+        if len(cols) >= 4:
             table_layout = [
                     html.Div(
                         table1,
@@ -146,12 +142,12 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
 
     return table_layout
 
-# https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
-# https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
-# https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
 def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     """Takes a Pandas Dataframe and replaces text with svg circles coded
         the correct colors based on rating text.
+        https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
+        https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
+        https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
 
     Args:
         val (pd.Dataframe): Pandas dataframe with metric Rating columns
@@ -208,6 +204,8 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
 def create_metric_table(label: str, content: pd.DataFrame) -> list:
     """Takes a dataframe consisting of Rating and Metric
     Columns and returns a list dash DataTable object
+    NOTE: could possibly be less complicated than it is, or
+    maybe not - gonna leave it up to future me
 
     Args:
         label (String): Table title
@@ -216,14 +214,11 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
     Returns:
         list: Formatted dash DataTable
     """""""""
-# Generate tables given data and label - could
-# possibly be less complicated than it is, or
-# maybe not - gonna leave it up to future me
-## Global table styles
 
+## Global table styles
 # TODO: dont want global font size, but need to change numbers font sized
-# to 10 to align with the difference columns
-# JUST WANT NUMBERS (?) <- what does this mean?
+# TODO: to 10 to align with the difference columns
+# NOTE: JUST WANT NUMBERS (?) <- what does this mean?
 
     table_style = {
         'fontSize': '11px',
@@ -277,6 +272,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # we ultimately choose to display it
 
         # NOTE: Order of these operations matters
+
         # remove all Corp Rate / Corp Avg columns
         data = data.loc[:, ~data.columns.str.contains('Corp')]
 
@@ -562,8 +558,8 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         ]
     return table
 
-# TODO: Not sure how to type_hint: dash.dash_table.DataTable.DataTable'
-def create_comparison_table(data,school_name):
+
+def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) -> list:
 
     # find the index of the row containing the school name
     school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
@@ -641,11 +637,33 @@ def create_comparison_table(data,school_name):
             'paddingLeft': '30px'}
         ],
     )
-    return table
+
+    # bar-chart tables (Math, ELA, & IREAD) should have a label
+    # multi-bar chart tables (by Subgroup, by Ethnicity) should not have a label
+    # this is for formatting reasons
+    if data.columns.str.contains('Total').any() == True or data.columns.str.contains('IREAD').any() == True:
+        table_layout = [
+            html.Div(
+                [
+                html.Label(label, className = 'header_label'),
+                table
+                ]
+            )
+        ]
+    else:
+        table_layout = [
+            html.Div(
+                [
+                table
+                ]
+            )
+        ]
+
+    return table_layout
 
 def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
-    table = [
+    table_layout = [
         html.Label(label, style=label_style),
         html.Div(
             dash_table.DataTable(
@@ -722,4 +740,5 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
             ),
         )
     ]
-    return table
+    
+    return table_layout

@@ -1,12 +1,16 @@
+"""
+Charting Functions
+"""
+
 import plotly.express as px
-import plotly.colors
+# import plotly.colors
 import pandas as pd
 import numpy as np
 import textwrap
 import plotly.graph_objects as go
-from dash import dash_table, html, dcc
-from dash.dash_table import FormatTemplate
-from dash.dash_table.Format import Format, Scheme, Sign
+from dash import html, dcc #, dash_table
+# from dash.dash_table import FormatTemplate
+# from dash.dash_table.Format import Format, Scheme, Sign
 
 # Steelblue
 #color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
@@ -31,6 +35,8 @@ color = ['#8d8741','#659dbd','#daad86','#bc986a','#fbeec1','#8d8741','#659dbd','
 ## Blank (Loading) Fig ##
 # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
 
+# loading_fig is a blank chart with no title and no data other than
+# the 'Loading . . .' string
 def loading_fig() -> dict:
     fig = {
         'layout': {
@@ -55,6 +61,7 @@ def loading_fig() -> dict:
             ]
         }
     }
+
     return fig
 
 # blank fig with label and height.
@@ -65,16 +72,16 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> g
     fig.update_layout(
         margin=dict(l=10, r=10, t=20, b=0),
         height = height,
-        title={
-            'text': label,
-            'y':0.975,
-            'x':0.5,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font_family': 'Roboto, sans-serif',
-            'font_color': 'steelblue',
-            'font_size': 10
-        },
+        # title={
+        #     'text': label,
+        #     'y':0.975,
+        #     'x':0.5,
+        #     'xanchor': 'center',
+        #     'yanchor': 'top',
+        #     'font_family': 'Roboto, sans-serif',
+        #     'font_color': 'steelblue',
+        #     'font_size': 10
+        # },
         xaxis =  {
             "visible": False,
             'fixedrange': True
@@ -102,7 +109,16 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> g
         plot_bgcolor='rgba(0,0,0,0)'
     )
 
-    return fig
+    fig_layout = [
+        html.Div(
+            [
+                html.Label(label, className = 'header_label'),
+                dcc.Graph(figure = fig),
+            ]
+        )
+    ]
+
+    return fig_layout
 
 # Blank fig with no label
 def no_data_fig_blank() -> go.Figure:
@@ -151,15 +167,14 @@ def no_data_fig_blank() -> go.Figure:
     return fig
 
 # Use this function to create wrapped text using html tags
-# based on the specified width.
-# NOTE: add two spaces before <br> to ensure the words at
-# the end of each break have the same spacing as 'ticksuffix'
-# below
+# based on the specified width. add two spaces before <br>
+# to ensure the words at the end of each break have the same
+# spacing as 'ticksuffix' in make_stacked_bar()
 
 def customwrap(s: str,width: int = 16):
     return "  <br>".join(textwrap.wrap(s,width=width))
 
-def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
+def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     data = values.copy()
     # https://plotly.com/python/discrete-color/
     # colors = plotly.colors.qualitative.T10
@@ -197,7 +212,7 @@ def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
         orientation="h",
         color_discrete_sequence=color,
         height=200,
-        title = fig_title
+        # title = fig_title
     )
 
     #TODO: Remove trace name. Show Total Tested only once. Remove legend colors.
@@ -237,14 +252,8 @@ def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
         font_family="Roboto, sans-serif",
         font_color="steelblue",
         font_size=8,
-        # legend=dict(
-        #     orientation="h",
-        #     title="",
-        #     x=0,
-        #     font=dict(
-        #         family="Open Sans, sans-serif", color="steelblue", size=8
-        #     ),
-        # ),
+        bargroupgap = 0,
+        showlegend = False,
         plot_bgcolor="white",
         hovermode='y unified',
         hoverlabel=dict(
@@ -256,13 +265,42 @@ def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
         yaxis=dict(autorange="reversed"),
         uniformtext_minsize=8,
         uniformtext_mode='hide',
-        title={
-            'y':0.975,
-            'x':0.5,
-            'xanchor': 'center',
-            'yanchor': 'top'},
-        bargroupgap = 0,
-        showlegend = False,
+
+        # NOTE: Currently not able to add a background color to
+        # title = dict(
+        #     text='<b>' + fig_title + '</b>',
+        #     font=dict(
+        #         size=12,
+        #         color="#6783a9", #"#ffffff",
+        #         family="Roboto, sans-serif",
+        #     ),
+        #     pad=dict(
+        #         b=5,
+        #         t=0,
+        #     ),
+        #     x=0.5,
+        #     y=0.975,
+        #     xanchor='center',
+        #     yanchor='top',
+        #     # bgcolor='#6783a9' #TODO: Currently not possible
+        # ),
+
+        # NOTE: This would be a somewhat ugly replacement for Title, 
+        # it has the correct background, but not as flexible
+
+        # annotations=[dict(
+        #     x=.5,
+        #     xref='paper',
+        #     yref='paper',
+        #     y=1.15,
+        #     height=16,
+        #     width=180,
+        #     text='<b>' + fig_title + '</b>',
+        #     bgcolor = "#6783a9",
+        #     font_color = "#ffffff",
+        #     font_family="Roboto, sans-serif",
+        #     showarrow=False
+        #     )],
     )
 
     fig.update_traces(
@@ -279,7 +317,26 @@ def make_stacked_bar(values: pd.DataFrame, fig_title: str) -> px.bar:
     # ticksuffix increases the space between the end of the tick label and the chart
     fig.update_yaxes(title="",ticksuffix = "  ")
 
-    return fig
+    fig_layout = [
+        html.Div(
+            [
+                html.Label(label, className = 'header_label'),
+                dcc.Graph(
+                    figure = fig,
+                    config={
+                        'displayModeBar': False,
+                        'showAxisDragHandles': False,
+                        'showAxisRangeEntryBoxes': False,
+                        'scrollZoom': False
+                    }
+                )
+            ]
+        )
+    ]
+
+    # return fig
+    
+    return fig_layout
 
 # single line chart
 def make_line_chart(values: pd.DataFrame, label: str) -> list:
@@ -472,7 +529,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
     return fig_layout
 
 # grouped bar chart
-def make_group_bar_chart(values: pd.DataFrame, school_name: str) -> px.bar:
+def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> list: #px.bar:
 
     data = values.copy()
 
@@ -538,9 +595,8 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str) -> px.bar:
     fig.update_xaxes(title='',showline=True,linewidth=.5,linecolor='#b0c4de')
 
     # TODO: Issue with the relationship between the chart and the table.
-    # Cannot figure out a way to reduce the bottom margin of a chart to
-    # reduce the amount of empty space
-
+    # TODO: Cannot figure out a way to reduce the bottom margin of a chart to
+    # TODO: reduce the amount of empty space
     # Cannot seem to shrink bottom margin here - had to add negative margin
     # to each fig layout. Try this maybe:
     # it takes maximum value and multiplies it by three for max range (eg., less than 100)
@@ -620,4 +676,13 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str) -> px.bar:
         )
     )
 
-    return fig
+    fig_layout = [
+        html.Div(
+            [
+            html.Label(label, className = 'header_label'),
+            dcc.Graph(figure = fig, config={'displayModeBar': False})
+            ]
+        )
+    ]
+
+    return fig_layout

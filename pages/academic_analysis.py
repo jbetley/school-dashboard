@@ -12,6 +12,7 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
 import json
+import re
 
 # import local functions
 from .calculations import find_nearest, filter_grades
@@ -187,22 +188,22 @@ def set_dropdown_options(school, year, comparison_schools):
     Output('fig16c2', 'children'),
     Output('fig16d2', 'children'),
     Output('fig14g', 'children'),
-    Output('fig16a1', 'figure'),
+    Output('fig16a1', 'children'),
     Output('fig16a1-table', 'children'),
     Output('fig16a1-category-string', 'children'),
     Output('fig16a1-school-string', 'children'),
     Output('fig16a1-table-container', 'style'),    
-    Output('fig16b1', 'figure'),
+    Output('fig16b1', 'children'),
     Output('fig16b1-table', 'children'),
     Output('fig16b1-category-string', 'children'),
     Output('fig16b1-school-string', 'children'),
     Output('fig16b1-table-container', 'style'),
-    Output('fig16a2', 'figure'),
+    Output('fig16a2', 'children'),
     Output('fig16a2-table', 'children'),    
     Output('fig16a2-category-string', 'children'),
     Output('fig16a2-school-string', 'children'),
     Output('fig16a2-table-container', 'style'),
-    Output('fig16b2', 'figure'),
+    Output('fig16b2', 'children'),
     Output('fig16b2-table', 'children'),
     Output('fig16b2-category-string', 'children'),
     Output('fig16b2-school-string', 'children'),
@@ -555,7 +556,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14c_table_data = fig14c_table_data[['School Name', category]]
                 fig14c_table_data = fig14c_table_data.reset_index(drop=True)
 
-                fig14c_table = create_comparison_table(fig14c_table_data, school_name)
+                fig14c_table = create_comparison_table(fig14c_table_data, school_name,'Proficiency')
 
             else:
 
@@ -592,7 +593,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14d_table_data = fig14d_table_data[['School Name', category]]
                 fig14d_table_data = fig14d_table_data.reset_index(drop=True)
 
-                fig14d_table = create_comparison_table(fig14d_table_data, school_name)
+                fig14d_table = create_comparison_table(fig14d_table_data, school_name, 'Proficiency')
             else:
                 fig14d = no_data_fig_label('Comparison: Current Year Math Proficiency',200)
                 fig14d_table = no_data_table('Proficiency')
@@ -624,7 +625,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig_iread_table_data = fig_iread_table_data[['School Name', category]]
                 fig_iread_table_data = fig_iread_table_data.reset_index(drop=True)
 
-                fig_iread_table = create_comparison_table(fig_iread_table_data, school_name)
+                fig_iread_table = create_comparison_table(fig_iread_table_data, school_name, 'Proficiency')
             else:
                 fig_iread = no_data_fig_label('Comparison: Current Year IREAD Proficiency',200)
                 fig_iread_table = no_data_table('Proficiency')
@@ -639,9 +640,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # TODO: This is messy. Uses functions from both helper files.
             # TODO: Could move to chart-helpers and call table_helpers there
             # TODO: but does that cause any circular references?
-
             # A function that returns a fig, a table, and two strings
-
 
             def create_full_chart(school_data, categories, corp_name):
                 info_categories = ['School Name','Low Grade','High Grade']
@@ -650,7 +649,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 # get a list of the categories that exist in school data
                 academic_columns = [i for i in categories if i in school_data.columns]
 
-                # get a list of the categories that are missing from school data and strip everything following '|' delimeter
+                # get a list of the categories that are missing from school data and
+                # strip everything following '|' delimeter
                 missing_categories = [i for i in categories if i not in school_data.columns]
                 missing_categories = [s.split('|')[0] for s in missing_categories]
 
@@ -705,8 +705,25 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 else:
                     school_string = 'None.'
 
+                final_data_columns = final_data.columns.tolist()
+
+                # Create the chart label
+
+                # the list returns any strings in final_data_columns that are in the
+                # ethnicity list or subgroup list. Label is based on whichever test
+                # is > 0
+                if len([i for e in ethnicity for i in final_data_columns if e in i]) > 0:
+                    label_category= ' Proficiency by Ethnicity'
+                elif len([i for e in subgroup for i in final_data_columns if e in i]) > 0:
+                    label_category= ' Proficiency by Subgroup'                      
+
+                # get the subject using regex
+                label_subject = re.search(r'(?<=\|)(.*?)(?=\s)',final_data_columns[0]).group()
+                
+                label = 'Comparison: ' + label_subject + label_category
+                
                 #  create chart
-                chart = make_group_bar_chart(final_data, school_name)
+                chart = make_group_bar_chart(final_data, school_name, label)
 
                 # shift column 'School Name' to first position
                 # replace values in 'School Name' column with the
@@ -718,7 +735,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 final_data.insert(0, 'School Name', first_column)
 
                 # create table
-                table = create_comparison_table(final_data, school_name)
+                table = create_comparison_table(final_data, school_name,'')
 
                 return chart, table, category_string, school_string
 
@@ -962,8 +979,9 @@ def layout():
                                 ),
                                 html.Div(
                                     [
-                                        html.Label('Proficiency', className = 'header_label'),
-                                        html.Div(id='fig14c-table')
+                                        html.Div(id='fig14c-table', children=[])           
+                                        # html.Label('Proficiency', className = 'header_label'),
+                                        # html.Div(id='fig14c-table')
                                     ],
                                     className = 'pretty_container three columns'
                                 ),
@@ -981,9 +999,11 @@ def layout():
                                     className = 'pretty_container nine columns',
                                 ),
                                 html.Div(
+          
                                     [
-                                        html.Label('Proficiency', className = 'header_label'),
-                                        html.Div(id='fig14d-table')
+                                        html.Div(id='fig14d-table', children=[])          
+                                        # html.Label('Proficiency', className = 'header_label'),
+                                        # html.Div(id='fig14d-table')
                                     ],
                                     className = 'pretty_container three columns'
                                 )
@@ -1002,20 +1022,23 @@ def layout():
                                 ),
                                 html.Div(
                                     [
-                                        html.Label('Proficiency', className = 'header_label'),
-                                        html.Div(id='fig-iread-table')
+                                        html.Div(id='fig-iread-table', children=[])          
+                                        # html.Label('Proficiency', className = 'header_label'),
+                                        # html.Div(id='fig-iread-table')
                                     ],
                                     className = 'pretty_container three columns'
                                 ),
                             ],
                             className='row'
-                        ),                        
+                        ),  
+                        # TODO: MOVE LABELS TO FUNCTION FROM HERE DONWN -
                         html.Div(
                             [
                                 html.Div(
                                     [
-                                        html.Label('Comparison: ELA Proficiency by Ethnicity', className = 'header_label'),
-                                        dcc.Graph(id='fig16a1', figure = loading_fig(),config={'displayModeBar': False})
+                                        html.Div(id='fig16a1', children=[])           
+                                        # html.Label('Comparison: ELA Proficiency by Ethnicity', className = 'header_label'),
+                                        # dcc.Graph(id='fig16a1', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1058,11 +1081,11 @@ def layout():
                             [
                                 html.Div(
                                     [
-
-                                        # TODO: Margin-bottom makes for better graph display, but it breaks empty
-                                        # chart display.. Need to figure out how to change margin in fig creation itself
-                                        html.Label('Comparison: Math Proficiency by Ethnicity', className = 'header_label'),
-                                        dcc.Graph(id='fig16b1', figure = loading_fig(),config={'displayModeBar': False}) #, style={'margin-bottom': -20}),
+                                        html.Div(id='fig16b1', children=[])
+                                        # # TODO: Margin-bottom makes for better graph display, but it breaks empty
+                                        # # TODO: chart display.. Need to figure out how to change margin in fig creation itself
+                                        # html.Label('Comparison: Math Proficiency by Ethnicity', className = 'header_label'),
+                                        # dcc.Graph(id='fig16b1', figure = loading_fig(),config={'displayModeBar': False}) #, style={'margin-bottom': -20}),
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1105,8 +1128,9 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Comparison: ELA Proficiency by Subgroup', className = 'header_label'),
-                                        dcc.Graph(id='fig16a2', figure = loading_fig(),config={'displayModeBar': False})
+                                        html.Div(id='fig16a2', children=[])        
+                                        # html.Label('Comparison: ELA Proficiency by Subgroup', className = 'header_label'),
+                                        # dcc.Graph(id='fig16a2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1149,8 +1173,9 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Comparison: Math Proficiency by Subgroup', className = 'header_label'),
-                                        dcc.Graph(id='fig16b2', figure = loading_fig(),config={'displayModeBar': False})
+                                        html.Div(id='fig16b2', children=[])          
+                                        # html.Label('Comparison: Math Proficiency by Subgroup', className = 'header_label'),
+                                        # dcc.Graph(id='fig16b2', figure = loading_fig(),config={'displayModeBar': False})
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1195,28 +1220,6 @@ def layout():
                 html.Div(
                     [
                     html.Div(id='academic-analysis-no-data'),
-                        # html.Div(
-                        #     [
-                                # html.Div(
-                                #     [
-                                #         # TODO: TRY REPLACING WITH BLANK TABLE?
-                                #         html.Div(
-                                #             [
-                                #                 # html.Label('Academic Analysis', style=label_style),
-                                #                 # dcc.Graph(
-                                #                 #     id='academic-analysis-no-data',
-                                #                 #     config={'displayModeBar': False}
-                                #                 # ),
-
-                                #             ],
-                                #             className = 'pretty_close_container six columns',
-                                #         ),
-                                #     ],
-                                #     className = 'bare-container twelve columns',
-                                # ),                                
-                        #     ],
-                        #     className='row'
-                        # ),
                     ],
                     id = 'academic-analysis-empty-container',
                 ),
