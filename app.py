@@ -288,10 +288,10 @@ def set_dropdown_value(charter_options):
     Output("year-dropdown", "options"), # , allow_duplicate=True)
     Output("year-dropdown", "value"), #, allow_duplicate=True)
     Input("charter-dropdown", "value"),
-    State("year-dropdown", "value"),        # TODO: MULTIPLE CALLBACK USING NEW DASH?? OR IS THIS DIFF ISSUE
+    Input("year-dropdown", "value"),        # TODO: MULTIPLE CALLBACK USING NEW DASH?? OR IS THIS DIFF ISSUE
     # https://community.plotly.com/t/duplicate-callback-outputs-solution-api-discussion/55909/20
 )
-def set_year_dropdown_options(school,year):
+def set_year_dropdown_options(school, year):
 
     # Year Dropdown Options
     # TODO: Change to 5 years in 2023
@@ -325,11 +325,10 @@ def set_year_dropdown_options(school,year):
 
     if year is None:
         year_value = current_academic_year
-    
     elif int(year) < first_available_year:
-        year_value = first_available_year
+        year_value = str(first_available_year)
     else:
-        year_value = year
+        year_value = str(year)
 
 
     year_options=[
@@ -339,7 +338,7 @@ def set_year_dropdown_options(school,year):
             int(current_academic_year) + 1,
         )
     ]
-    
+
     return year_options, year_value
 
 app.layout = html.Div(
@@ -459,9 +458,12 @@ def load_data(school, year):
     # 'year' is selected year, year will be None when user selects
     # a year and then switches to a school that has no data for 
     # that year
+    print('IN CALLBACK:')
+    print(year)
+    # TODO: MAY NOT NEED IF INPUT IS USED INSTEAD OF STATE
     if year is None:
         year = current_academic_year
-
+    print(year)
     ### School Information
     school_info = school_index.loc[school_index["School ID"] == school]
     school_info_dict = school_info.to_dict()
@@ -627,7 +629,7 @@ def load_data(school, year):
     # of the need to load either school or network financial information.
     # It is accessed here to provide adm data to 'about.py' because the
     # adm data uses variables not currently available in about.py
-    
+
     ## Average Daily Membership
     finance_file = 'data/F-' + school_info['School Name'].values[0] + '.csv'
 

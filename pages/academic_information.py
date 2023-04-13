@@ -288,17 +288,21 @@ def update_abcademic_information_page(data, school, year):
             # Get selected school data for all categories
             school_k8_all_data = k8_all_data_all_years.loc[k8_all_data_all_years["School ID"] == school]
 
+            school_k8_all_data =  school_k8_all_data.reset_index(drop=True)
+
             # Skip 2020 as there is no academic data
             year = '2019' if year == '2020' else year
 
             school_k8_proficiency_data = school_k8_all_data.loc[
-            school_k8_all_data["Year"] == year
+            school_k8_all_data["Year"] == str(year)
             ]
-
+            # print('BEFORE')
+            # print(school_k8_proficiency_data.T)
             # drop columns with no values and reset index
             school_k8_proficiency_data = school_k8_proficiency_data.dropna(axis=1)
             school_k8_proficiency_data = school_k8_proficiency_data.reset_index()
 
+            # print(school_k8_proficiency_data.T)
             # TODO: May need this if we want to differentiate those categories
             # NOTE: Leaving this line commented out means that pd.to_numeric
             # converts all '***' (e.g., where there were tested students, but
@@ -322,6 +326,8 @@ def update_abcademic_information_page(data, school, year):
                 ),
                 axis=1,
             )
+
+            print(school_k8_proficiency_data)
 
             all_proficiency_data = school_k8_proficiency_data.copy()
 
@@ -412,6 +418,9 @@ def update_abcademic_information_page(data, school, year):
                         # drop it from each category
                         all_proficiency_data.drop(category_subject, axis=1, inplace=True)
 
+
+            print('HEEERE')
+            print(all_proficiency_data)
             # drop all remaining columns used for calculation that we
             # dont want to chart
             all_proficiency_data.drop(
