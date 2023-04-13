@@ -216,6 +216,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     )
 
     #TODO: Remove trace name. Show Total Tested only once. Remove legend colors.
+
     #customize the hovertemplate for each segment of each bar
     fig['data'][0]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'
     fig['data'][1]['hovertemplate']='Total Tested: %{customdata[1]}<br><br>' + '%{text}: %{customdata[0]}<extra></extra>'

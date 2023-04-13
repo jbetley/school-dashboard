@@ -3,6 +3,7 @@
 #########################
 # author:    jbetley
 # version:  1.0.02.01.23
+# using: Dash version 2.9.2
 
 ## NOTE: Need to manually determine certain data points at the
 # school level if it is stored at the Corp Level
