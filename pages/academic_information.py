@@ -5,7 +5,7 @@
 # version:  1.01.040323
 
 import dash
-from dash import html, dcc, Input, Output, callback
+from dash import html, Input, Output, callback # , dcc
 from dash.exceptions import PreventUpdate
 import numpy as np
 import json
@@ -14,7 +14,7 @@ import re
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, create_academic_info_table
-from .chart_helpers import loading_fig, no_data_fig_label, make_stacked_bar
+from .chart_helpers import no_data_fig_label, make_stacked_bar #,loading_fig
 from .calculations import round_percentages
 from .subnav import subnav_academic
 
@@ -56,10 +56,8 @@ def update_abcademic_information_page(data, school, year):
     if not data:
         raise PreventUpdate
 
-    # NOTE: removed 'American Indian' because the category doesn't 
-    # appear in all data sets
-    # ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial',
-    # 'Native Hawaiian or Other Pacific Islander','White']
+    # NOTE: removed 'American Indian' because the category doesn't appear in all data sets
+    # ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial', 'Native Hawaiian or Other Pacific Islander','White']
     ethnicity = [
         "Asian",
         "Black",
@@ -172,8 +170,7 @@ def update_abcademic_information_page(data, school, year):
             school_index["School Type"].values[0] == "K8"
             or school_index["School Type"].values[0] == "K12"
         ):
-            # if K8, hide HS table (except for CHS prior to 2021 when it
-            # was a K12)
+            # if K8, hide HS table (except for CHS prior to 2021 when it was a K12)
             if school_index["School Type"].values[0] == "K8" and not (
                 school_index["School ID"].values[0] == "5874" and int(year) < 2021
             ):
@@ -281,8 +278,8 @@ def update_abcademic_information_page(data, school, year):
 
             # Proficiency Breakdown stacked bar charts #
             
-            # NOTE: The proficency data is annoyingly inconsistent. In some cases missing
-            # data is blank, but in other cases, it is represented by a '0.'
+            # The raw proficency data from IDOE is annoyingly inconsistent. In some cases missing
+            # data is blank and in other cases it is represented by '0.'
             k8_all_data_all_years = pd.read_csv(r"data/ilearnAll.csv", dtype=str)
             
             # Get selected school data for all categories
@@ -290,24 +287,22 @@ def update_abcademic_information_page(data, school, year):
 
             school_k8_all_data =  school_k8_all_data.reset_index(drop=True)
 
-            # Skip 2020 as there is no academic data
+            # show 2019 instead of 2020 as 2020 has no academic data
             year = '2019' if year == '2020' else year
 
             school_k8_proficiency_data = school_k8_all_data.loc[
             school_k8_all_data["Year"] == str(year)
             ]
-            # print('BEFORE')
-            # print(school_k8_proficiency_data.T)
+
             # drop columns with no values and reset index
             school_k8_proficiency_data = school_k8_proficiency_data.dropna(axis=1)
             school_k8_proficiency_data = school_k8_proficiency_data.reset_index()
 
-            # print(school_k8_proficiency_data.T)
-            # TODO: May need this if we want to differentiate those categories
             # NOTE: Leaving this line commented out means that pd.to_numeric
             # converts all '***' (e.g., where there were tested students, but
             # the proficiency value does not meet n-size requirements) values to NaN.
             # If we want to track those values, uncomment this line:
+
             # school_k8_proficiency_data =  school_k8_proficiency_data.replace({'***': float(-99)})
 
             for col in school_k8_proficiency_data.columns:
@@ -339,9 +334,11 @@ def update_abcademic_information_page(data, school, year):
             ]
 
             # for each category, create a list of columns using the strings in
-            #  'proficiency_rating' and then divide each column by 'Total Tested'
+            # 'proficiency_rating' and then divide each column by 'Total Tested'
             categories = grades + ethnicity + subgroup
 
+            # create dataframe to hold annotations (Categories missing data)
+            # NOTE: Currently, annotations are stored but not used
             annotations = pd.DataFrame(columns= ['Category','Total Tested','Status'])
 
             for c in categories:
@@ -351,7 +348,7 @@ def update_abcademic_information_page(data, school, year):
                     total_tested = category_subject + " " + "Total Tested"
 
                     # We do not want categories that do not appear in the dataframe
-                    # NOTE: at this point in the code there are three possible data 
+                    # At this point in the code there are three possible data 
                     # configurations for each column:
                     # 1) Total Tested > 0 and all proficiency_rating(s) are > 0
                     #   (School has tested category and there is publicly available data)
@@ -367,8 +364,8 @@ def update_abcademic_information_page(data, school, year):
                     # sum of a series of '0' values is 0 (a numpy.int64). The sum of a
                     # series of 'NaN' values is also 0.0 (but the value is a float because
                     # numpy treats NaN as a numpy.float64). While either value returns True
-                    # when tested if it == 0, we can test the 'type' of the result (using
-                    # np.integer and np.floating) to distinuish between them.
+                    # when tested if the value is 0, we can test the 'type' of the result (using
+                    # np.integer and np.floating) to distinguish between them.
 
                     if total_tested in all_proficiency_data.columns:
 
@@ -379,19 +376,19 @@ def update_abcademic_information_page(data, school, year):
                             if isinstance(all_proficiency_data[colz].iloc[0].sum(), np.floating):
                                 annotations.loc[len(annotations.index)] = [colz[0],all_proficiency_data[total_tested].values[0],'Insufficient']
 
-                            # if the value is an integer, the measured values were '0'. which
+                            # if the value is an integer, the measured values were 0, which
                             # means missing data
                             elif isinstance(all_proficiency_data[colz].iloc[0].sum(), np.integer):
+
                                 # Only add to annotations if it is a non 'Grade' category.
                                 # this is to account for IDOE's shitty data practices- sometimes
-                                # they treat missing grades, e.g., a school does not offer that
-                                # grade level, as blank (the correct way) and sometimes with '0's
-                                # (the dumbass way). So if everything is 0 AND it is a Grade
+                                # missing grades are blank (the correct way) and sometimes the
+                                # columns are filled with 0. So if everything is 0 AND it is a Grade
                                 # category, we assume it is just IDOE's fucked up data entry
                                 if ~all_proficiency_data[colz].columns.str.contains('Grade').any():
                                     annotations.loc[len(annotations.index)] = [colz[0],all_proficiency_data[total_tested].values[0],'Missing']
 
-                            # either way, drop the entire category from the chart data
+                            # either way, drop all columns related to the category from the df
                             all_colz = colz + [total_tested]
 
                             all_proficiency_data = all_proficiency_data.drop(all_colz, axis=1)
@@ -418,9 +415,6 @@ def update_abcademic_information_page(data, school, year):
                         # drop it from each category
                         all_proficiency_data.drop(category_subject, axis=1, inplace=True)
 
-
-            print('HEEERE')
-            print(all_proficiency_data)
             # drop all remaining columns used for calculation that we
             # dont want to chart
             all_proficiency_data.drop(
@@ -433,7 +427,7 @@ def update_abcademic_information_page(data, school, year):
                 inplace=True,
             )
 
-            # Replace Grade X with ordinal number (e.g., Grade 3 = 3rd)
+            # Replace Grade X with ordinal number (e.g., Grade 4 = 4th)
             all_proficiency_data = all_proficiency_data.rename(
                 columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
             )
@@ -461,12 +455,12 @@ def update_abcademic_information_page(data, school, year):
                 all_proficiency_data["Category"] != "index"
             ]
 
-            # NOTE: Currently, annotations are collected but not used
             ela_title = year + ' ELA Proficiency Breakdown'
             math_title = year + ' Math Proficiency Breakdown'
             
             # ELA by Grade
             grade_annotations = annotations.loc[annotations['Category'].str.contains("Grade")]
+
             grade_ela_fig_data = all_proficiency_data[
                 all_proficiency_data["Category"].isin(grades_ordinal)
                 & all_proficiency_data["Proficiency"].str.contains("ELA")
@@ -490,6 +484,7 @@ def update_abcademic_information_page(data, school, year):
 
             # ELA by Ethnicity
             ethnicity_annotations = annotations.loc[annotations['Category'].str.contains("Ethnicity")]
+
             ethnicity_ela_fig_data = all_proficiency_data[
                 all_proficiency_data["Category"].isin(ethnicity)
                 & all_proficiency_data["Proficiency"].str.contains("ELA")
@@ -513,6 +508,7 @@ def update_abcademic_information_page(data, school, year):
 
             # ELA by Subgroup
             subgroup_annotations = annotations.loc[annotations['Category'].str.contains("Subgroup")]
+
             subgroup_ela_fig_data = all_proficiency_data[
                 all_proficiency_data["Category"].isin(subgroup)
                 & all_proficiency_data["Proficiency"].str.contains("ELA")
@@ -809,30 +805,12 @@ def layout():
                                     html.Div(
                                         [
                                             html.Div(id="k8-grade-ela-fig"),
-                                            # dcc.Graph(id="k8-grade-ela-fig",
-                                            #     figure=loading_fig(),
-                                            #     config={
-                                            #         'displayModeBar': False,
-                                            #         'showAxisDragHandles': False,
-                                            #         'showAxisRangeEntryBoxes': False,
-                                            #         'scrollZoom': False
-                                            #     }
-                                            # ),
                                         ],
                                         className="pretty_container four columns",
                                     ),
                                     html.Div(
                                         [
-                                            html.Div(id="k8-grade-math-fig"),        
-                                            # dcc.Graph(id="k8-grade-math-fig",
-                                            #     figure=loading_fig(),
-                                            #     config={
-                                            #         'displayModeBar': False,
-                                            #         'showAxisDragHandles': False,
-                                            #         'showAxisRangeEntryBoxes': False,
-                                            #         'scrollZoom': False
-                                            #     }
-                                            # ),
+                                            html.Div(id="k8-grade-math-fig"),
                                         ],
                                         className="pretty_container four columns",
                                     ),
@@ -854,31 +832,13 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-ethnicity-ela-fig"),        
-                                            # dcc.Graph(id="k8-ethnicity-ela-fig",
-                                            #     figure=loading_fig(),
-                                            #     config={
-                                            #         'displayModeBar': False,
-                                            #         'showAxisDragHandles': False,
-                                            #         'showAxisRangeEntryBoxes': False,
-                                            #         'scrollZoom': False
-                                            #     }
-                                            # ),
+                                            html.Div(id="k8-ethnicity-ela-fig"),
                                         ],
                                         className="pretty_container four columns",
                                     ),
                                     html.Div(
                                         [
-                                            html.Div(id="k8-ethnicity-math-fig"),          
-                                            # dcc.Graph(id="k8-ethnicity-math-fig",
-                                            #     figure=loading_fig(),
-                                            #     config={
-                                            #         'displayModeBar': False,
-                                            #         'showAxisDragHandles': False,
-                                            #         'showAxisRangeEntryBoxes': False,
-                                            #         'scrollZoom': False
-                                            #     }
-                                            # ),
+                                            html.Div(id="k8-ethnicity-math-fig"),
                                         ],
                                         className="pretty_container four columns",
                                     ),
@@ -900,31 +860,13 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-subgroup-ela-fig"),          
-                                            # dcc.Graph(id="k8-subgroup-ela-fig",
-                                            #     figure=loading_fig(),
-                                            #     config={
-                                            #         'displayModeBar': False,
-                                            #         'showAxisDragHandles': False,
-                                            #         'showAxisRangeEntryBoxes': False,
-                                            #         'scrollZoom': False
-                                            #     }
-                                            # ),
+                                            html.Div(id="k8-subgroup-ela-fig"),
                                         ],
                                         className="pretty_container four columns",
                                     ),
                                     html.Div(
                                         [
-                                            html.Div(id="k8-subgroup-math-fig"),        
-                                            # dcc.Graph(id="k8-subgroup-math-fig",
-                                            #     figure=loading_fig(),
-                                            #     config={
-                                            #         'displayModeBar': False,
-                                            #         'showAxisDragHandles': False,
-                                            #         'showAxisRangeEntryBoxes': False,
-                                            #         'scrollZoom': False
-                                            #     }
-                                            # ),
+                                            html.Div(id="k8-subgroup-math-fig"),
                                         ],
                                         className="pretty_container four columns",
                                     ),

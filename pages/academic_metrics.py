@@ -168,7 +168,10 @@ def update_academic_metrics(data,year):
                 grad_metrics_empty = pd.DataFrame(columns = simple_cols)
 
                 grad_metrics_dict = {
-                    'Category': ['1.7.c. The percentage of students entering Grade 12 at beginning of year who graduated', '1.7.d. The percentage of graduating students planning to pursue collge or career.']
+                    'Category': [
+                        '1.7.c. The percentage of students entering Grade 12 at beginning of year who graduated',
+                        '1.7.d. The percentage of graduating students planning to pursue collge or career.'
+                    ]
                 }
                 grad_metrics = pd.DataFrame(grad_metrics_dict)
 
@@ -358,7 +361,8 @@ def update_academic_metrics(data,year):
                 main_container = {'display': 'none'}
                 empty_container = {'display': 'block'}
 
-    # If no matching school_type - display empty table (catch-all)
+    # If no matching school_type - display empty table (shouldn't ever happen,
+    # but that means it probably will happen at least once)
     if school_index['School Type'].values[0] != 'K8' and school_index['School Type'].values[0] != 'K12' and school_index['School Type'].values[0] != 'HS' and school_index['School Type'].values[0] != 'AHS':
         
         table_container_11ab = {}
@@ -414,7 +418,6 @@ def update_academic_metrics(data,year):
         display_attendance = {'display': 'none'}
 
     # Create placeholders (Acountability Metrics 1.1.c & 1.1.d)
-    # if school has academic data
     metric_11cd_label = 'End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate.'
     
     # Test to see if year_over_year_values_json exists
@@ -452,22 +455,7 @@ def update_academic_metrics(data,year):
         table_container_ahs_113, table_container_ahs_1214, display_ahs_metrics, \
         main_container, empty_container, no_data_to_display
 
-#### ALL teh layouts
-
 # Key Table
-key_label_style = {
-    'height': 'auto',
-    'lineHeight': '1.5em',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
-
 rating_icon = '<span style="font-size: 1em;"><i class="fa fa-circle"></i></span>'
 
 proficiency_key = pd.DataFrame(
@@ -551,7 +539,6 @@ def layout():
                                             }
                                     ),
                                         dash_table.DataTable(
-                                            # css=[dict(selector="p", rule="margin: 0px;")],
                                             css=[dict(selector="tr:first-child", rule="display: none")],
                                             data=proficiency_key.to_dict("records"),
                                             cell_selectable=False,
@@ -588,7 +575,6 @@ def layout():
                                                         'column_id': rating
                                                     },
                                                     'textAlign': 'right',
-                                                    # 'width': '18%',
                                                 } for rating in rating_cols        
                                             ] + [
                                                 {

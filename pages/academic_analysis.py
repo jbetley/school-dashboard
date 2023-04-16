@@ -16,33 +16,18 @@ import re
 
 # import local functions
 from .calculations import find_nearest, filter_grades
-from .chart_helpers import loading_fig, no_data_fig_label, \
-    make_line_chart,make_bar_chart, make_group_bar_chart
+from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, make_group_bar_chart # ,loading_fig
 from .table_helpers import create_comparison_table, no_data_page, no_data_table
 from .subnav import subnav_academic
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
-# Debuggging #
-# pd.set_option('display.max_rows', None)
-# pd.set_option('display.max_columns', None)
-# pd.set_option('display.max_colwidth', None)
-# import timeit
-# #
-
-### START TIME ###
-# initial_load_start = timeit.default_timer()
-##################
-
 # TODO: CHOOSE A FREAKING COLOR!
 #color_short=['#98abc5','#8a89a6','#7b6888','#6b486b','#a05d56','#d0743c','#ff8c00']
 #color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 # color=["fbf8cc","fde4cf","ffcfd2","f1c0e8","cfbaf0","a3c4f3","90dbf4","8eecf5","98f5e1","b9fbc0"]
-# NOTE: removed 'American Indian' because the category doesn't appear
-# in all data sets
-# TODO: CONFIRM American Indian
-# ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial',
-# 'Native Hawaiian or Other Pacific Islander','White']
+# NOTE: removed 'American Indian' because the category doesn't appear in all data sets
+# ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial', 'Native Hawaiian or Other Pacific Islander','White']
 ethnicity = ['Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
 subgroup = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
 grades = ['Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8']
@@ -53,11 +38,6 @@ all_schools_k8_academic_data = pd.read_csv(r'data/academic_data_k8.csv', dtype=s
 
 # get school information
 school_index= pd.read_csv(r'data/school_index.csv', dtype=str)
-
-### END TIME ###
-# initial_load_time = timeit.default_timer() - initial_load_start
-# print ('initial load time (Academic Analysis):', initial_load_time)
-################
 
 # Set options for comparison schools (multi-select dropdown)
 # NOTE: See 01.10.22 backup for original code
@@ -71,9 +51,9 @@ school_index= pd.read_csv(r'data/school_index.csv', dtype=str)
 )
 def set_dropdown_options(school, year, comparison_schools):
 
-    # clear the list of comparison_schools only when 'charter-dropdown'
-    # is triggered (a new school is selected). otherwise comparison_schools
-    # will carry over from school to school
+    # clear the list of comparison_schools when a new school is
+    # selected (e.g., 'charter-dropdown' Input). otherwise
+    # comparison_schools will carry over from school to school
     input_trigger = ctx.triggered_id
     if input_trigger == 'charter-dropdown':
         comparison_schools = []
@@ -108,13 +88,14 @@ def set_dropdown_options(school, year, comparison_schools):
     # filter comparison set by matching indexes
     closest_schools = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data.index.isin(index_list)]
 
-    # add 'Distance' column to comparison_set
+    # add 'Distance' column to comparison_set (NOTE: Not currently used)
     comparison_set = pd.merge(closest_schools,distances,left_index=True, right_index=True)
     comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
 
     # Drop the selected school from the list of available selections,
     # so selected school cannot be removed from dropdown. Comment this
-    # line out to permit selected school to be cleared from chart
+    # line out to permit selected school to be cleared from chart (NOTE:
+    # this may cause unexpected behavior)
     comparison_set = comparison_set.drop(comparison_set[comparison_set['School ID'] == school].index)
 
     # drop schools with no grade overlap with selected school by getting school grade span and filtering
@@ -126,7 +107,8 @@ def set_dropdown_options(school, year, comparison_schools):
     # PK and KG are not tested grades
     comparison_set = comparison_set.replace({'Low Grade' : { 'PK' : '0', 'KG' : '0'}})
 
-    # drop schools with no grades (NOTE: Not sure why dropna doesn't work here, but it doesn't)
+    # drop schools with no grades (NOTE: Not sure why dropna doesn't work here,
+    # but it doesn't - maybe because its 'nan' instead of 'NaN'?)
     comparison_set = comparison_set[comparison_set['Low Grade'].str.contains('nan')==False]
 
     grade_mask = comparison_set.apply(filter_grades, compare=school_grade_range, axis=1)
@@ -147,8 +129,13 @@ def set_dropdown_options(school, year, comparison_schools):
     # Set default display selections to all schools in the list and
     # the number of options to be pre-selected to 4
     default_options = [{'label':name,'value':id} for name, id in comparison_list.items()]
-    default_num = 4 # value for number of default selections
     options = default_options
+
+    # value for number of default display selections and maximum
+    # display selections (because of zero indexing, max should be
+    # 1 less than actual desired number)
+    default_num_to_display = 4
+    max_num_to_display = 7
 
     # the following tracks the number of selections and disables all remaining
     # selections once 8 schools have been selected
@@ -156,13 +143,14 @@ def set_dropdown_options(school, year, comparison_schools):
 
     # if list is None or empty ([]), use the default options
     if not comparison_schools:
-        comparison_schools = [d['value'] for d in options[:default_num]]
+        comparison_schools = [d['value'] for d in options[:default_num_to_display]]
 
     else:
-        if len(comparison_schools) > 7:
+
+        if len(comparison_schools) > max_num_to_display:
             input_warning = html.P(
                 id='input-warning',
-                children='Limit reached (Maximum of 8 schools).',
+                children='Limit reached (Maximum of ' + str(max_num_to_display+1) + ' schools).',
             )
             options = [
                 {"label": option["label"], "value": option["value"], "disabled": True}
@@ -171,9 +159,6 @@ def set_dropdown_options(school, year, comparison_schools):
     
     return options, input_warning, comparison_schools
 
-##### TODO: Currently no charts for AHS or HS
-
-# Graphs and Tables
 @callback(
     Output('fig14a', 'children'),
     Output('fig14b', 'children'),
@@ -227,15 +212,11 @@ def update_academic_analysis(school, year, data, comparison_school_list):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('Academic Analysis')
 
-    ### START TIME ###
-    # main_load_start = timeit.default_timer()
-    ##################
-
     # school_index.json
     school_info = pd.DataFrame.from_dict(data['0'])
     school_name = school_info['School Name'].values[0]
 
-    # Test if data exists - there are 4 possibilities:
+    # Test if data exists - there are 4 cases where we end up with an empty page:
     #   1) the dataframe itself does not exist because there is no academic data for the school at all
     #   2) the school is of a type (AHS/HS) that doesn't yet have any charted data
     #   3) the dataframe exists, but the tested_header (YEARSchool) does not exist in the dataframe-
@@ -243,6 +224,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
     #       dataframe
     #   4) the tested header does exist, but all data in the column is NaN- this catches any year where
     #       the school has no data or insufficient n-size ('***')
+    
+    #   Only get to tests (3) and (4) if dataframe passes tests (1) & (2)
 
     # Testing (1) and (2)
     if (school_info['School Type'].values[0] == 'K8' and not data['8']) or \
@@ -266,6 +249,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
         school_academic_matrix = pd.DataFrame.from_dict(json_data)
         
         tested_academic_data = school_academic_matrix.copy()
+        
         for col in tested_academic_data.columns:
             tested_academic_data[col] = pd.to_numeric(tested_academic_data[col], errors='coerce')
         
@@ -423,8 +407,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 corp_current_data[col]=pd.to_numeric(corp_current_data[col], errors='coerce').fillna(corp_current_data[col]).tolist()
 
             # get academic data for comparison schools
-            # filter full set by year and by the comparison schools
-            # selected in the dropdown
+            # filter full set by year and the schools selected in the dropdown
 
             eval_year = [str(current_school_data['Year'].values[0])]
 
@@ -436,8 +419,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             comparison_schools_filtered = comparison_schools_filtered.filter(regex = r'Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year|School Name|School ID|Distance|Low Grade|High Grade',axis=1)
 
             # create list of columns with no date (used in loop below)
-            # missing_mask returns boolean series of columns where column is true
-            # if all elements in the column are equal to null
+            # missing_mask returns boolean series of columns where all elements in the column
+            # are equal to null 
             missing_mask = pd.isnull(current_school_data[current_school_data.columns]).all()
             missing_cols = current_school_data.columns[missing_mask].to_list()
 
@@ -466,9 +449,9 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # dataframe that are not also in the school dataframe (e.g., if
             # school only has data for grades 3, 4, & 5, only those grades
             # will remain in comparison df). However, the 'School Total' for
-            # proficiency in a subject is calculated using ALL grades. So we
-            # need to recalculate the 'School Total' rate manually to ensure
-            # it includes only the included grades.
+            # proficiency in a subject that is in the raw data was calculated
+            # using ALL grades. So we need to recalculate the 'School Total' rate
+            # manually to ensure it includes only the included grades.
             all_grades_math_proficient_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Proficient")
             all_grades_math_tested_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Tested")
             comparison_schools['Total|Math Proficient %'] = all_grades_math_proficient_comp.sum(axis=1) / all_grades_math_tested_comp.sum(axis=1)
@@ -518,10 +501,10 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # # ensure columns headers are strings
             # hs_comparison_data.columns = hs_comparison_data.columns.astype(str)
 
-### TODO: position of selected school trace - random?
+### TODO: how id the position of the position of the selected school trace determined? Can
+### TODO: we place it manually?
 
-### TODO: Can probably refactor this to simplify as well
-
+            ### TODO: Refactor?
             # get name of school corporation
             school_corporation_name = current_year_all_schools_k8_academic_data.loc[(all_schools_k8_academic_data['Corp ID'] == school_info['GEO Corp'].values[0])]['Corp Name'].values[0]
 
@@ -562,6 +545,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
                 # TODO: TEST - WILL THIS EVER BE BLANK? IF SO, DISCOVER BLANK CONDITION AND
                 # TODO: MOVE TO THE make_bar_chart function (similar to make_line_chart)
+
                 fig14c = no_data_fig_label('Comparison: Current Year ELA Proficiency',200)
                 fig14c_table = no_data_table('Proficiency')
 
@@ -630,19 +614,19 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig_iread = no_data_fig_label('Comparison: Current Year IREAD Proficiency',200)
                 fig_iread_table = no_data_table('Proficiency')
 
-### TODO: HERE ---> [ ADD LABEL TO CHART FUNCTION]
-            #### Comparison Charts & Tables
-            # NOTE: See backup data 01.23.23 for pre- full_chart() function code
+            # create comparison charts/tables
+            # NOTE: See backup data 01.23.23 for pre- create_full_chart() function code
 
             # info col headers is the same for all dataframes
             info_categories = ['School Name','Low Grade','High Grade']
-
-            # TODO: This is messy. Uses functions from both helper files.
-            # TODO: Could move to chart-helpers and call table_helpers there
-            # TODO: but does that cause any circular references?
-            # A function that returns a fig, a table, and two strings
-
+            
             def create_full_chart(school_data, categories, corp_name):
+                # A fig, a table, and two strings walk into a bar . . .
+
+                # TODO: This is messy. Uses functions from both helper files.
+                # TODO: Could move to chart-helpers and call table_helpers there
+                # TODO: but does that cause any circular references?
+
                 info_categories = ['School Name','Low Grade','High Grade']
                 all_categories = categories + info_categories
 
@@ -682,7 +666,9 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
                 # Create a series that merges school name and grade spans and drop the grade span columns 
                 # from the dataframe (they are not charted)
-                school_names = final_data['School Name'] + " (" + final_data['Low Grade'] + "-" + final_data['High Grade'] + ")"      
+                school_names = final_data['School Name'] + " (" + final_data['Low Grade'] + "-" \
+                + final_data['High Grade'] + ")"      
+                
                 final_data = final_data.drop(['Low Grade', 'High Grade'], axis = 1)
 
                 # In some cases, cell data is '' or ' ', so we need to replace any
@@ -712,6 +698,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 # the list returns any strings in final_data_columns that are in the
                 # ethnicity list or subgroup list. Label is based on whichever test
                 # is > 0
+                
                 if len([i for e in ethnicity for i in final_data_columns if e in i]) > 0:
                     label_category= ' Proficiency by Ethnicity'
                 elif len([i for e in subgroup for i in final_data_columns if e in i]) > 0:
