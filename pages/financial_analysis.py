@@ -18,6 +18,7 @@ import plotly.graph_objects as go
 # import local functions
 from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig
+from .calculations import round_nearest
 from .subnav import subnav_finance
 
 dash.register_page(__name__, path = '/financial_analysis', order=3)
@@ -144,7 +145,7 @@ def update_financial_analysis_page(data, year, radio_value):
         financial_data = pd.read_csv(finance_file)
 
         # NOTE: Drop partial year data - may eventually want to implement for Q4 data, but
-        # the display quickly gets too confusing.
+        # the display quickly gets too confusing with incomplete data.
         if 'Q' in financial_data.columns[1]:
             financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
@@ -183,13 +184,13 @@ def update_financial_analysis_page(data, year, radio_value):
 
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
-            # Duplicate data for figs - figs do not display missing years and
-            # tables display missing years as blank
+            # Copy the dataframe to use for figs - tables display missing years as blank,
+            # but figs do not display them at all.
             financial_data_fig = financial_data.copy()
 
             # Network financial data typically lags behind school data by at
             # least a year. So we need to drop any column that doesn't have
-            # at least 12 values not equal to 0 (the min to be valid).
+            # at least 31 values not equal to 0 (the min to be valid).
             for c in financial_data_fig.columns:
                 if len(financial_data_fig[financial_data_fig[c] == 0].index) > 31:
                     financial_data_fig.drop([c], inplace=True, axis=1)
@@ -224,27 +225,13 @@ def update_financial_analysis_page(data, year, radio_value):
                 barmode='group',
             )
 
-            # adjust the # of ticks based on max value
-            # 1) gets the max value in the dataframe
-            # 2) divides the max value by a 'step' value (adjust to increase/decrease of ticks)
-            # 3) sends the proportionate value to 'round_nearest' function that:
-            #   a. sets a baseline tick amount (50,000 or 500,000) based on the proportionate value
-            #   b. and then calculates a multipler that is the result of proportionate value
-            #   divided by the baseline tick amount
-            max_val = revenue_expenses_data.melt().value.max()
+            # revenue and expense data can vary widely (from 5 to 7 digits) from school to
+            # school and from year to year. Use round_nearest() to determine tick value
+            # based on the max value in a dataframe.
+
+            # NOTE: change step value to increase/decrease the total number of ticks
             step = 6
-
-            def round_nearest(x):
-                if x > 1000000:
-                    num=500000
-                else:
-                    num=50000
-                rnd = round(float(x)/num)
-                multiplier = 1 if rnd < 1 else rnd
-                tick = int(multiplier*num)            
-                return tick
-
-            tick_val = round_nearest(max_val / step)
+            tick_val = round_nearest(revenue_expenses_data, step)
 
             revenue_expenses_bar_fig.update_xaxes(showline=False, linecolor='#a9a9a9',ticks='outside', tickcolor='#a9a9a9', title='')
             revenue_expenses_bar_fig.update_yaxes(showgrid=True, gridcolor='#a9a9a9',title='', tickmode = 'linear', tick0 = 0,dtick = tick_val)
@@ -322,11 +309,9 @@ def update_financial_analysis_page(data, year, radio_value):
                 barmode='group',
             )
             
-            # Get the highest value in the entire df
-            max_val = assets_liabilities_data.melt().value.max()
-
-            # divides value by a step value (6) and rounds to nearest 50000/500000
-            tick_val = round_nearest(max_val / step)
+            # NOTE: change step value to increase/decrease the total number of ticks
+            step = 6
+            tick_val = round_nearest(assets_liabilities_data, step)
 
             assets_liabilities_bar_fig.update_xaxes(showline=False, linecolor='#a9a9a9',ticks='outside', tickcolor='#a9a9a9', title='')
             assets_liabilities_bar_fig.update_yaxes(showgrid=True, gridcolor='#a9a9a9',title='', tickmode = 'linear', tick0 = 0,dtick = tick_val)
@@ -370,14 +355,58 @@ def update_financial_analysis_page(data, year, radio_value):
             assets_liabilities_fig['data'][0]['hovertemplate']='Net Asset Position<br>$ %{y:,.2f}<extra></extra>'
 
         ## Two Year Finance Tables (Financial Position and Financial Activities)
-            # NOTE: Displaying partial data screws this all up, so probably best
-            # to ignore partial data here
 
-            # if 'Q' in financial_data.columns[1]:
-            #     year = financial_data.columns[1][:4]
-            #     quarter = financial_data.columns[1][4:]
-            # else:
-            #     quarter = ''
+            # default table styles
+
+            table_data = {
+                'fontSize': '12px',
+                'border': 'none',
+                'fontFamily': 'Roboto, sans-serif',
+            }
+
+            table_header = {
+                'height': '20px',
+                'backgroundColor': '#ffffff',
+                'border': 'none',
+                'borderBottom': '.5px solid #6783a9',
+                'fontSize': '12px',
+                'fontFamily': 'Roboto, sans-serif',
+                'color': '#6783a9',
+                'textAlign': 'center',
+                'fontWeight': 'bold'
+            }
+
+            table_header_conditional = [
+                {
+                    'if': {
+                        'column_id': 'Category',
+                    },
+                    'borderRight': '.5px solid #6783a9',
+                    'borderBottom': '.5px solid #6783a9',
+                    'textAlign': 'left'
+                },
+            ]
+
+            table_cell = {
+                'whiteSpace': 'normal',
+                'height': 'auto',
+                'textAlign': 'center',
+                'color': '#6783a9',
+                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+            }
+
+            table_cell_conditional = [
+                {
+                    'if': {
+                        'column_id': 'Category'
+                    },
+                    'textAlign': 'left',
+                    'borderRight': '.5px solid #4682b4',
+                    'borderBottom': '.5px solid #4682b4',
+                    'paddingLeft': '20px',
+                    'width': '40%'
+                },
+            ]            
 
             previous_year = int(year) - 1
             previous_year_string = str(previous_year)
@@ -441,11 +470,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 dash_table.DataTable(
                     financial_position_data.to_dict('records'),
                     columns = [{'name': i, 'id': i} for i in financial_position_data.columns],
-                    style_data={
-                        'fontSize': '12px',
-                        'border': 'none',
-                        'fontFamily': 'Roboto, sans-serif',
-                    },
+                    style_data = table_data,
                     style_data_conditional=[
                         {
                             'if': {
@@ -460,46 +485,10 @@ def update_financial_analysis_page(data, year, radio_value):
                             'borderTop': '.5px solid #4682b4',
                         },
                     ],
-                    style_header={
-                        'height': '20px',
-                        'backgroundColor': '#ffffff',
-                        'border': 'none',
-                        'borderBottom': '.5px solid #6783a9',
-                        'fontSize': '12px',
-                        'fontFamily': 'Roboto, sans-serif',
-                        'color': '#6783a9',
-                        'textAlign': 'center',
-                        'fontWeight': 'bold'
-                    },
-                    style_header_conditional=[
-                        {
-                            'if': {
-                                'column_id': 'Category',
-                            },
-                            'borderRight': '.5px solid #6783a9',
-                            'borderBottom': '.5px solid #6783a9',
-                            'textAlign': 'left'
-                        },
-                    ],
-                    style_cell={
-                        'whiteSpace': 'normal',
-                        'height': 'auto',
-                        'textAlign': 'center',
-                        'color': '#6783a9',
-                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                    },
-                    style_cell_conditional=[
-                        {
-                            'if': {
-                                'column_id': 'Category'
-                            },
-                            'textAlign': 'left',
-                            'borderRight': '.5px solid #4682b4',
-                            'borderBottom': '.5px solid #4682b4',
-                            'paddingLeft': '20px',
-                            'width': '40%'
-                        },
-                    ],
+                    style_header = table_header,
+                    style_header_conditional = table_header_conditional,
+                    style_cell = table_cell,
+                    style_cell_conditional = table_cell_conditional
                 )
             ]
 
@@ -540,11 +529,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 dash_table.DataTable(
                     financial_activity_data.to_dict('records'),
                     columns = [{'name': i, 'id': i} for i in financial_activity_data.columns],                                    
-                    style_data={
-                        'fontSize': '12px',
-                        'border': 'none',
-                        'fontFamily': 'Roboto, sans-serif',
-                    },
+                    style_data = table_data,
                     style_data_conditional=[
                         {
                             'if': {
@@ -559,46 +544,10 @@ def update_financial_analysis_page(data, year, radio_value):
                             'borderTop': '.5px solid #6783a9',
                         },
                     ],
-                    style_header={
-                        'height': '20px',
-                        'backgroundColor': '#ffffff',
-                        'border': 'none',
-                        'borderBottom': '.5px solid #6783a9',
-                        'fontSize': '12px',
-                        'fontFamily': 'Roboto, sans-serif',
-                        'color': '#6783a9',
-                        'textAlign': 'center',
-                        'fontWeight': 'bold'
-                    },
-                    style_header_conditional=[
-                        {
-                            'if': {
-                                'column_id': 'Category',
-                            },
-                            'borderRight': '.5px solid #6783a9',
-                            'borderBottom': '.5px solid #6783a9',
-                            'textAlign': 'left'
-                        },
-                    ],
-                    style_cell={
-                        'whiteSpace': 'normal',
-                        'height': 'auto',
-                        'textAlign': 'center',
-                        'color': '#6783a9',
-                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                    },
-                    style_cell_conditional=[
-                        {
-                            'if': {
-                                'column_id': 'Category'
-                            },
-                            'textAlign': 'left',
-                            'borderRight': '.5px solid #6783a9',
-                            'borderBottom': '.5px solid #6783a9',
-                            'paddingLeft': '20px',
-                            'width': '40%'
-                        },
-                    ],
+                    style_header = table_header,
+                    style_header_conditional = table_header_conditional,
+                    style_cell = table_cell,
+                    style_cell_conditional = table_cell_conditional
                 )
             ]
 
@@ -650,11 +599,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 dash_table.DataTable(
                     per_student_data.to_dict('records'),
                     columns = [{'name': i, 'id': i} for i in per_student_data.columns],
-                    style_data={
-                        'fontSize': '12px',
-                        'border': 'none',
-                        'fontFamily': 'Roboto, sans-serif',
-                    },
+                    style_data = table_data,
                     style_data_conditional=[
                         {
                             'if': {
@@ -669,46 +614,10 @@ def update_financial_analysis_page(data, year, radio_value):
                             'borderTop': '.5px solid #6783a9',
                         },
                     ],
-                    style_header={
-                        'height': '20px',
-                        'backgroundColor': '#ffffff',
-                        'borderBottom': '.5px solid #6783a9',
-                        'fontSize': '12px',
-                        'fontFamily': 'Roboto, sans-serif',
-                        'color': '#6783a9',
-                        'textAlign': 'center',
-                        'fontWeight': '700',
-                        'border': 'none'
-                    },
-                    style_header_conditional=[
-                        {
-                            'if': {
-                                'column_id': 'Category',
-                            },
-                            'borderRight': '.5px solid #6783a9',
-                            'borderBottom': '.5px solid #6783a9',
-                            'textAlign': 'left'
-                        },
-                    ],
-                    style_cell={
-                        'whiteSpace': 'normal',
-                        'height': 'auto',
-                        'textAlign': 'center',
-                        'color': '#6783a9',
-                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                    },
-                    style_cell_conditional=[
-                        {
-                            'if': {
-                                'column_id': 'Category'
-                            },
-                            'textAlign': 'left',
-                            'borderRight': '.5px solid #6783a9',
-                            'borderBottom': '.5px solid #6783a9',
-                            'paddingLeft': '20px',
-                            'width': '40%'
-                        },
-                    ],
+                    style_header = table_header,
+                    style_header_conditional = table_header_conditional,
+                    style_cell = table_cell,
+                    style_cell_conditional = table_cell_conditional
                 )        
             ]
 
@@ -823,11 +732,7 @@ def update_financial_analysis_page(data, year, radio_value):
                                 }
                             ],
                             tooltip_duration=None,
-                            style_data={
-                                'fontSize': '12px',
-                                'border': 'none',
-                                'fontFamily': 'Roboto, sans-serif',
-                            },
+                            style_data = table_data,
                             style_data_conditional=[
                                 {
                                     'if': {
@@ -842,46 +747,10 @@ def update_financial_analysis_page(data, year, radio_value):
                                     'borderTop': '.5px solid #6783a9',
                                 },
                             ],
-                            style_header={
-                                'height': '20px',
-                                'backgroundColor': '#ffffff',
-                                'borderBottom': '.5px solid #6783a9',
-                                'fontSize': '12px',
-                                'fontFamily': 'Roboto, sans-serif',
-                                'color': '#6783a9',
-                                'textAlign': 'center',
-                                'fontWeight': '700',
-                                'border': 'none'
-                            },
-                            style_header_conditional=[
-                                {
-                                    'if': {
-                                        'column_id': 'Category',
-                                    },
-                                    'borderRight': '.5px solid #6783a9',
-                                    'borderBottom': '.5px solid #6783a9',
-                                    'textAlign': 'left'
-                                },
-                            ],
-                            style_cell={
-                                'whiteSpace': 'normal',
-                                'height': 'auto',
-                                'textAlign': 'center',
-                                'color': '#6783a9',
-                                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                            },
-                            style_cell_conditional=[
-                                {
-                                    'if': {
-                                        'column_id': 'Category'
-                                    },
-                                    'textAlign': 'left',
-                                    'borderRight': '.5px solid #6783a9',
-                                    'borderBottom': '.5px solid #6783a9',
-                                    'paddingLeft': '20px',
-                                    'width': '40%'
-                                },
-                            ],
+                            style_header = table_header,
+                            style_header_conditional = table_header_conditional,
+                            style_cell = table_cell,
+                            style_cell_conditional = table_cell_conditional
                         ),
                     ),
                     html.P(''),
@@ -927,11 +796,7 @@ def update_financial_analysis_page(data, year, radio_value):
             #                     dash_table.DataTable(
             #                         data = audit_findings.to_dict('records'),
             #                         columns = [{'name': i, 'id': i} for i in audit_findings.columns],
-            #                         style_data={
-            #                             'fontSize': '12px',
-            #                             'border': 'none',
-            #                             'fontFamily': 'Roboto, sans-serif',
-            #                         },
+            #                         style_data = table_data,
             #                         style_data_conditional=[
             #                             {
             #                                 'if': {
@@ -946,17 +811,7 @@ def update_financial_analysis_page(data, year, radio_value):
             #                                 'borderTop': '.5px solid #6783a9',
             #                             },
             #                         ],
-            #                         style_header={
-            #                             'height': '20px',
-            #                             'backgroundColor': '#ffffff',
-            #                             'borderBottom': '.5px solid #6783a9',
-            #                             'fontSize': '12px',
-            #                             'fontFamily': 'Roboto, sans-serif',
-            #                             'color': '#6783a9',
-            #                             'textAlign': 'center',
-            #                             'fontWeight': '700',
-            #                             'border': 'none'
-            #                         },
+            #                         style_header = table_header,
             #                         style_header_conditional=[
             #                             {
             #                                 'if': {
@@ -967,13 +822,7 @@ def update_financial_analysis_page(data, year, radio_value):
             #                                 'textAlign': 'left'
             #                             },
             #                         ],
-            #                         style_cell={
-            #                             'whiteSpace': 'normal',
-            #                             'height': 'auto',
-            #                             'textAlign': 'center',
-            #                             'color': '#6783a9',
-            #                             'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-            #                         },
+            #                         style_cell = table_cell,
             #                         style_cell_conditional=[
             #                             {
             #                                 'if': {
@@ -1013,7 +862,7 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    html.Div(subnav_finance(),className='tabs'),
+                                    html.Div(subnav_finance(), className='tabs'),
                                 ],
                                 className='bare_container twelve columns'
                             ),

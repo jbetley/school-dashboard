@@ -3,18 +3,20 @@ Charting Functions
 """
 
 import plotly.express as px
-# import plotly.colors
 import pandas as pd
 import numpy as np
 import textwrap
 import plotly.graph_objects as go
-from dash import html, dcc #, dash_table
-# from dash.dash_table import FormatTemplate
-# from dash.dash_table.Format import Format, Scheme, Sign
+from dash import html, dcc
 
 # Steelblue
 #color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
+# Instagram
+#color=["#405de6", "#5851db", "#833ab4", "#c13584", "#e1306c", "#fd1d1d","#f56040", "#f77737", "#fcaf45", "#ffdc80"]
+
+# Linkedin
+color=["#0a66c2","#83941f","#e7a33e","#f5987e","#56687a","#004182","#44712e","#915907","#b24020","#38434f"]
 # Easter at Grandmas
 #color=["#fbf8cc","#fde4cf","#ffcfd2","#f1c0e8","#cfbaf0","#a3c4f3","#90dbf4","#8eecf5","#98f5e1","#b9fbc0"]
 
@@ -22,7 +24,7 @@ from dash import html, dcc #, dash_table
 #color = ['#e27d60','#85cdca','#e8a87c','#c38d9e','#41b3a3','#e27d60','#85cdca','#e8a87c','#c38d9e','#41b3a3']
 
 # Earthy Kitt
-color = ['#8d8741','#659dbd','#daad86','#bc986a','#fbeec1','#8d8741','#659dbd','#daad86','#bc986a','#fbeec1']
+#color = ['#8d8741','#659dbd','#daad86','#bc986a','#fbeec1','#8d8741','#659dbd','#daad86','#bc986a','#fbeec1']
 
 # Russian Green
 #color = ['#8ee4af','#edf5e1','#5cdb95','#907163','#379683','#8ee4af','#edf5e1','#5cdb95','#907163','#379683',]
@@ -32,6 +34,7 @@ color = ['#8d8741','#659dbd','#daad86','#bc986a','#fbeec1','#8d8741','#659dbd','
 
 # Clown Car
 #color = ['#d79922','#efe2ba','#f13c20','#4056a1','#c5cbe3','#d79922','#efe2ba','#f13c20','#4056a1','#c5cbe3']
+
 ## Blank (Loading) Fig ##
 # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
 

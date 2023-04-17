@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley
-# version:  .99.021323
+# version:  1.01.040323
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -45,6 +45,7 @@ def update_financial_metrics(data,year,radio_value):
 
     school_index = pd.DataFrame.from_dict(data['0'])
 
+    # NOTE: See financial_information.py for comments
     if school_index['Network'].values[0] != 'None':
         if radio_value == 'network-metrics':
             radio_content = html.Div(
@@ -140,8 +141,8 @@ def update_financial_metrics(data,year,radio_value):
 
         # NOTE: To show schools in Pre-Opening year, remove the 'or' condition
         # (also need to modify the financial metric calculation function)
-        if (len(financial_data.columns) <= 1) | \
-            ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == '0')):
+        
+        if (len(financial_data.columns) <= 1) | ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == '0')):
                 financial_metrics_table = {}
                 financial_indicators_table = {}
                 financial_metrics_definitions_table = {}
@@ -200,6 +201,12 @@ def update_financial_metrics(data,year,radio_value):
 
             headers = financial_metrics.columns.tolist()
 
+            # TODO: Can this be put into a function? Messy
+            # input: table_size
+            # output: col_width, category_width, rating_width, and year_width, (difference_width, corporation_width)
+            # Problem: variable number of return items. table_size adjustments are differente between financial
+            # metrics table and academic metrics table
+
             clean_headers = []
             for i, x in enumerate (headers):
                 if 'Rating' in x:
@@ -210,16 +217,9 @@ def update_financial_metrics(data,year,radio_value):
             year_headers = [i for i in headers if 'Rating' not in i and 'Metric' not in i]
             rating_headers = [y for y in headers if 'Rating' in y]
 
-            # Table formatting
             # determines the col_width class and width of the category
             # column based on the size on the dataframe
             table_size = len(financial_metrics.columns)
-
-# TODO: Can this be put into a function? Messy
-# input: table_size
-# output: col_width, category_width, rating_width, and year_width, (difference_width, corporation_width)
-# Problem: variable number of return items. table_size adjustments are differente between financial
-# metrics table and academic metrics table
 
             if table_size <= 3:
                 col_width = 'four'
@@ -460,7 +460,8 @@ def update_financial_metrics(data,year,radio_value):
             
             # Financial Metric Definitions
             # TODO: Possibly make this table easier to read either through Markdown
-            # TODO: or embedded images (neither works currently with dash 2.6 datatables)
+            # TODO: or embedded images (neither works currently with dash datatables)
+            # TODO: Use AG Grid?
             # http://www.latex2png.com/
             # https://stackoverflow.com/questions/70205486/clickable-hyperlinks-in-plotly-dash-datatable
             # https://stackoverflow.com/questions/66583063/how-to-add-hyperlink-in-column-field-of-dash-datatable

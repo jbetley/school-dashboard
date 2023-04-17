@@ -131,9 +131,10 @@ def update_financial_information_page(data,year,radio_value):
 
         # NOTE: 'operating_years_by_finance' is is equal to the total number
         # of years a school has been financially active regardless of whether
-        # the school is open and instructing students. It is simply the
-        # total number of columns (-1 to account for Category). It is not
-        # currently used - because maximum display is five years
+        # the school is open and instructing students. It is the total number
+        # of columns (-1 to account for Category). It is not currently used
+        # because maximum display is five years
+        # 
         # operating_years_by_finance = max_display_years if len(financial_data.columns) \
         #  - 1 >= max_display_years else len(financial_data.columns) - 1
 

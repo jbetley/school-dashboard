@@ -568,7 +568,6 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     data = data.loc[:, ~data.iloc[school_name_idx].isna()]
 
     # sort dataframe by the 'first' proficiency column and reset index
-    # print(data.T)
     data = data.sort_values(data.columns[1], ascending=False)
     data = data.reset_index(drop=True)
 
@@ -578,9 +577,19 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     # hide the header 'School Name'
     data = data.rename(columns = {'School Name' : ''})
 
+### TODO: Sort Native is limited - cannot easily limit which columns are sortable and cannot
+### TODO: sort by clicking header (ugly arrows instead). In addition it breaks the conditional
+### TODO: formatting that highlights the school row (because the row index does not reset when
+### TODO: the school changes rows as a result of the sort). Perhaps try Dash AG Grid?
+
+# AG Grid Install - Alpha
+# pip install dash-ag-grid==v2.0.0a5
+# import dash_ag_grid as dag
+
     table = dash_table.DataTable(
         data.to_dict('records'),
         columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.percentage(2)} for i in data.columns],
+        # sort_action='native',
         merge_duplicate_headers=True,
         style_as_list_view=True,
         id='tst-table',
@@ -632,10 +641,14 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
             'border': 'none',
         },
         style_cell_conditional=[
-            {'if': {'column_id': ''},
-            'textAlign': 'left',
-            'paddingLeft': '30px'}
-        ],
+            {
+                'if': {
+                    'column_id': ''
+                },
+                'textAlign': 'left',
+                'paddingLeft': '30px'
+            }
+        ]
     )
 
     # bar-chart tables (Math, ELA, & IREAD) should have a label

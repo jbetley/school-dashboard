@@ -2,7 +2,7 @@
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
 # author:   jbetley
-# version:  .99.021323
+# version:  version:  1.01.040323
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -33,7 +33,7 @@ def update_organizational_compliance(data, year):
     if os.path.isfile(finance_file):
         organizational_data = pd.read_csv(finance_file)
 
-        # Ignore any partial years (e.q., 2023(Q3)) when displaying
+        # Ignore any partial years- e.g., 2023(Q3- when displaying
         # organizational indicators
         if 'Q' in organizational_data.columns[1]:
             organizational_data = organizational_data.drop(organizational_data.columns[[1]],axis = 1)
@@ -208,7 +208,7 @@ def update_organizational_compliance(data, year):
                     },
                     'backgroundColor': '#eeeeee',
                 },
-                {   # NOTE: Kludget to ensure first col header has border
+                {
                     'if': {
                         'row_index': 0,
                         'column_id': 'Standard'
@@ -249,20 +249,6 @@ def update_organizational_compliance(data, year):
 
     return org_compliance_table, org_compliance_definitions_table
 
-#### Layout
-
-label_style = {
-    'height': '20px',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
-
 layout = html.Div(
                 [
                     html.Div(
@@ -271,7 +257,7 @@ layout = html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Label('Organizational and Operational Accountability', style=label_style),
+                                            html.Label('Organizational and Operational Accountability', className = 'header_label'),
                                             html.Div(id='org-compliance-table')
 
                                         ],
@@ -289,7 +275,7 @@ layout = html.Div(
                                 [
                                     html.Div(
                                         [
-                                        html.Label('Organizational and Operational Accountability Definitions', style=label_style),
+                                        html.Label('Organizational and Operational Accountability Definitions', className = 'header_label'),
                                         html.Div(id='org-compliance-definitions-table')
                                         ],
                                         className = 'pretty_container ten columns'
@@ -301,9 +287,5 @@ layout = html.Div(
                         className = 'row'
                     ),
             ],
-            id='mainContainer',
-            style={
-                'display': 'flex',
-                'flexDirection': 'column'
-            }
+            id='mainContainer'
         )

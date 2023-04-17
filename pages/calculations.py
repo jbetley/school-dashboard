@@ -1,18 +1,26 @@
-'''
-Calculation Functions for ICSB Dashboard
-'''
+"""
+Functions that perform various calculations for ICSB Dashboard
+"""
+
 import pandas as pd
 import numpy as np
 import scipy.spatial as spatial
 
-def calculate_percentage(numerator: str, denominator: str) -> float:
+def calculate_percentage(numerator: str, denominator: str) -> float|None|str:
     """
-    Calculates a percentage taking into account a string representing insufficent n-size ('***') and
-    special cases where a '0' result has a different meaning. The function does the following:
+    Calculates a percentage given a numerator and a denominator, while account for two
+    special case: a string representing insufficent n-size ('***') and certain conditions
+    where a '0' value result has a different result. The function does the following:
         1) When either the numerator or the denominator is equal to '***', the function returns '****'
         2) When either the numerator or the denominator is null/nan, the function returns 'None'
         3) When the numerator is null/nan, but the denominatir is not, the function returns '0'
         4) if none of the above are true, the function divides the numerator by the denominator.
+    Args:
+        numerator (str): numerator (is a str to account for special cases)
+        denominator (str): denominator (is a str to account for special cases)
+
+    Returns:
+        float|None|str: see conditions
     """
     return np.where(
         (numerator == "***") | (denominator == "***"),
@@ -29,12 +37,19 @@ def calculate_percentage(numerator: str, denominator: str) -> float:
         ),
     )
 
-
-def calculate_difference(value1: str, value2: str) -> float:
+def calculate_difference(value1: str, value2: str) -> float|None|str:
     """
-    Calculate difference between two dataframes with specific mixed datatypes
+    Calculate the difference between two dataframes with specific mixed datatypes
     and conditions.
+
+    Args:
+        value1 (str): first value (is a str to account for special cases)
+        value2 (str): second value (is a str to account for special cases)
+
+    Returns:
+        float|None|str: see conditions
     """
+
     return np.where(
         (value1 == "***") | (value2 == "***"),
         "***",
@@ -46,14 +61,25 @@ def calculate_difference(value1: str, value2: str) -> float:
         ),
     )
 
-def set_academic_rating(data: str | float, threshold: list, flag: str) -> str:
+def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str:
     """
+    Takes a value (which may be of type str, float, or None), a list (consisting of
+    floats defining the thresholds of the ratings, and an integer 'flag,' that tells the
+    function which switch to use.
+
+    Args:
+        data (str|float|None): a Rating value
+        threshold (list): a list of floats
+        flag (int): a integer
+
+    Returns:
+        str: _description_
+    """    """
     Takes a value (string, numeric, nonetype), a list of the thresholds,
     which varies from type to type and a 'flag' integer that tells the
     function which switch to use.
     Returns a string.
     """
-
     # if data is a string
     if data == "***" or data == "No Grade":
         indicator = "NA"
@@ -69,7 +95,7 @@ def set_academic_rating(data: str | float, threshold: list, flag: str) -> str:
         return indicator
 
     # letter_grade ratings (type string)
-    if flag == 4:  # lettergrade ratings
+    if flag == 4:
         if data == threshold[0]:
             indicator = "ES"
         elif data == threshold[1]:
@@ -116,13 +142,40 @@ def set_academic_rating(data: str | float, threshold: list, flag: str) -> str:
             indicator = "ES"
         elif data < threshold[0] and data >= threshold[1]:
             indicator = "MS"
-        # elif data < threshold[1]:
-        #     indicator = 'AS'
         else:
             indicator = "DNMS"
 
     return indicator
 
+def round_nearest(df: pd.DataFrame, step: int) -> int:
+    """ Determine a tick value for a plotly chart based on the maximum value in a
+    dataframe. The function divides the max valus by an arbitrarily determined 'step' value
+    (which can be adjusted to increase/decrease of ticks). It then:
+        a. sets a baseline tick amount (50,000 or 500,000) based on the proportionate value
+        b. and then calculates a multipler that is the result of proportionate value
+            divided by the baseline tick amount
+
+    Args:
+        x (pd.DataFrame): takes a pandas dataframe
+
+    Returns:
+        _type_: an integer
+    """
+    
+    max_val = df.melt().value.max()
+    
+    x = max_val / step
+    if x > 1000000:
+        num=500000
+    else:
+        num=50000
+
+    rnd = round(float(x)/num)
+    multiplier = 1 if rnd < 1 else rnd
+    tick = int(multiplier*num)
+
+    return tick
+    
 def round_percentages(percentages: list) -> list:
     """
     https://github.com/simondo92/round-percentages

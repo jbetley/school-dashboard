@@ -458,12 +458,9 @@ def load_data(school, year):
     # 'year' is selected year, year will be None when user selects
     # a year and then switches to a school that has no data for 
     # that year
-    print('IN CALLBACK:')
-    print(year)
-    # TODO: MAY NOT NEED IF INPUT IS USED INSTEAD OF STATE
     if year is None:
         year = current_academic_year
-    print(year)
+
     ### School Information
     school_info = school_index.loc[school_index["School ID"] == school]
     school_info_dict = school_info.to_dict()
@@ -1539,15 +1536,6 @@ def load_data(school, year):
             sat_categories = ethnicity + status + ["School Total"]
             sat_subject = ['EBRW','Math','Both']
 
-            # TODO: FIGURE OUT HOW TO DO STACKED BAR CHART AT, BELOW, APPROACHING SAT Proficiency
-            
-            # BETTER?
-            # categories = []
-            # for e in ethnicity:
-            #     categories.append(e + '|' + 'Math Proficient %')
-
-            # fig16d1_data = k8_school_data_YoY.loc[:, (k8_school_data_YoY.columns.isin(categories)) | (k8_school_data_YoY.columns.isin(['School Name','Year']))]
-            
             # NOTE: Do not currently use SAT hs_corp_data for anything as SAT is not an official
             # metrics, but keeping in in the even we want to run comparisons later
             for ss in sat_subject:
@@ -1576,12 +1564,15 @@ def load_data(school, year):
                             )
 
             # add 'non-waiver grad rate' ('Non-Waiver|Cohort Count' / 'Total|Cohort Count')
-            # and 'strength of diploma' (Non-Waiver|Cohort Count` * 1.08) / `Total|Cohort Count`) calculation and average to both dataframes
+            # and 'strength of diploma' (Non-Waiver|Cohort Count` * 1.08) / `Total|Cohort Count`)
+            # calculation and average to both dataframes
 
-            # if missing_cols includes 'Non-Waiver' - there is no data available for the school for the selected Years
+            # if missing_cols includes 'Non-Waiver' - there is no data available for the school
+            # for the selected Years
             if "Non-Waiver" not in "\t".join(missing_cols):
-                # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the 2020 cohort who where otherwise
-                # on schedule to graduate, so, for the 2020 cohort, there were no 'waiver' graduates (which means no non-waiver data).
+                # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
+                # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
+                # cohort, there were no 'waiver' graduates (which means no non-waiver data).
                 # so we replace 0 with NaN (to ensure a NaN result rather than 0)
                 hs_corp_data["Non-Waiver|Cohort Count"] = hs_corp_data[
                     "Non-Waiver|Cohort Count"
@@ -1595,9 +1586,9 @@ def load_data(school, year):
                     hs_corp_data["Non-Waiver|Cohort Count"] * 1.08
                 ) / hs_corp_data["Total|Cohort Count"]
 
-                # TODO: forcing conversion causes '***' values to be NaN. We are
-                # unlikely to have a '***' value here, but it is possible and we
-                # may want to eventually account for this
+                # TODO: forcing conversion causes all '***' values to be NaN. We are
+                # TODO: unlikely to have a '***' value here, but it is possible and we
+                # TODO: may want to eventually account for this
                 hs_school_data["Non-Waiver|Cohort Count"] = pd.to_numeric(
                     hs_school_data["Non-Waiver|Cohort Count"], errors="coerce"
                 )
@@ -1614,8 +1605,8 @@ def load_data(school, year):
                 ) / hs_school_data["Total|Cohort Count"]
 
             # Calculate CCR Rate (AHS Only), add Year column and store in temporary dataframe
-            # NOTE: ALl other values pulled from HS dataframe required for AHS calculations
-            # should happen here
+            # NOTE: All other values pulled from HS dataframe required for AHS calculations
+            # should go here
             if school_info["School Type"].values[0] == "AHS":
                 ahs_school_data = pd.DataFrame()
                 ahs_school_data["Year"] = hs_school_data["Year"]
@@ -1636,17 +1627,17 @@ def load_data(school, year):
                 ahs_metric_data = ahs_metric_data.reset_index(drop=True)
 
             # filter all columns keeping only the relevant ones (NOTE: comment this out to retain all columns)
-            # ^Strength of Diploma
+
             hs_school_data = hs_school_data.filter(
-                regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|Total Tested|^Year$",
+                regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|Total Tested|^Year$", # ^Strength of Diploma
                 axis=1,
             )
             hs_corp_data = hs_corp_data.filter(
-                regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|Total Tested|^Year$",
+                regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|Total Tested|^Year$", # ^Strength of Diploma
                 axis=1,
             )
 
-            ## State Average Graduation Rate
+            """State Average Graduation Rate"""
 
             filtered_academic_data_hs["Total|Graduates"] = pd.to_numeric(
                 filtered_academic_data_hs["Total|Graduates"], errors="coerce"
@@ -1677,8 +1668,9 @@ def load_data(school, year):
             state_grad_average = state_grad_average[["Year", "State_Grad_Average"]]
             state_grad_average = state_grad_average.loc[::-1].reset_index(drop=True)
 
-            # merge applicable years of grad_avg dataframe into hs_school df using an inner merge and rename the column
-            # this merges data only where both dataframes share a common key, in this case 'Year')
+            # merge applicable years of grad_avg dataframe into hs_school df using an inner merge
+            # and rename the column this merges data only where both dataframes share a common key,
+            # in this case 'Year')
             state_grad_average["Year"] = state_grad_average["Year"].astype(int)
             hs_corp_data = hs_corp_data.merge(
                 state_grad_average, on="Year", how="inner"
@@ -1703,7 +1695,7 @@ def load_data(school, year):
             hs_school_data.columns = hs_school_data.columns.astype(str)
             hs_corp_data.columns = hs_corp_data.columns.astype(str)
 
-            ### Calculate difference (+/-) between school and corp grad rates
+            """Calculate difference (+/-) between school and corp grad rates"""
 
             hs_num_years = len(hs_school_data.index)
 
@@ -1714,9 +1706,11 @@ def load_data(school, year):
                 .rename_axis(None, axis=1)
                 .reset_index()
             )
+
+            # Keep category and all available years of data
             hs_school_data = hs_school_data.iloc[
                 :, : (hs_num_years + 1)
-            ]  # Keep category and all available years of data
+            ]
 
             hs_corp_data = (
                 hs_corp_data.set_index("Year")
@@ -1797,6 +1791,7 @@ def load_data(school, year):
             hs_school_data = hs_school_data.fillna(value=np.nan)
             hs_corp_data = hs_corp_data.fillna(value=np.nan)
 
+            # TODO: DONT THINK THIS IS NECESSARY
             # calculate graduation rate differences
             # def calculate_graduation_rate_difference(school_col, corp_col):
             #     return np.where(
@@ -1828,33 +1823,19 @@ def load_data(school, year):
             )
             final_hs_academic_data = final_hs_academic_data[final_cols]
 
-            # TODO: Refactor same as k8
-
-            # # Clean up for display for each category:
-            # # 1) replace negative values in School column with '***';
-            # # 2) replace either '1' or '1.08' in School column with '***';
-            # # 3) change '+/-' to '***' if school column is '***'; and
-            # # 4) change 'Corp Average' & '+/-' columns to NaN if School column is NaN
-            # # NOTE: we test for 1.08 because of diploma strength calculation (-99 * 1.08 / -99)
-
-            # # for y in hs_year_cols:
-            # #     final_hs_academic_data[str(y) + 'School'] = np.where(final_hs_academic_data[str(y) + 'School'] < 0,'***', final_hs_academic_data[str(y) + 'School'])
-            # #     final_hs_academic_data[str(y) + 'School'] = np.where(final_hs_academic_data[str(y) + 'School'] == 1,'***', final_hs_academic_data[str(y) + 'School'])
-            # #     final_hs_academic_data[str(y) + 'School'] = np.where(final_hs_academic_data[str(y) + 'School'] == 1.08,'***', final_hs_academic_data[str(y) + 'School'])
-            # #     final_hs_academic_data[str(y) + '+/-'] = np.where(final_hs_academic_data[str(y) + 'School'] == '***','***', final_hs_academic_data[str(y) + '+/-'])
-            # #     final_hs_academic_data[str(y) + 'Corp Average'] = np.where(final_hs_academic_data[str(y) + 'School'].isnull(), final_hs_academic_data[str(y) + '+/-'], final_hs_academic_data[str(y) + 'Corp Average'])
+#### TODO: Refactor same as k8 [WAS THIS DONE?]
 
             # If AHS - add CCR data to hs_data file
             if school_info["School Type"].values[0] == "AHS":
                 final_hs_academic_data = pd.concat(
                     [final_hs_academic_data, ahs_school_data], sort=False
-                )  # .fillna(0)
+                )
                 final_hs_academic_data = final_hs_academic_data.reset_index(drop=True)
 
             hs_academic_data_dict = final_hs_academic_data.to_dict(into=OrderedDict)
             hs_academic_data_json = json.dumps(hs_academic_data_dict)
 
-            ##### AHS/HS Academic Metrics
+            """Calculate AHS/HS Academic Metrics"""
 
             if school_info["School Type"].values[0] == "AHS":
                 combined_grad_metrics_json = {}
@@ -1866,9 +1847,11 @@ def load_data(school, year):
                     .rename_axis(None, axis=1)
                     .reset_index()
                 )
+
+                # Keep category and all available years of data
                 ahs_metric_data = ahs_metric_data.iloc[
                     :, : (hs_num_years + 1)
-                ]  # Keep category and all available years of data
+                ]
                 ahs_metric_data.columns = ahs_metric_data.columns.astype(str)
 
                 # format for multi-header display
@@ -2010,7 +1993,7 @@ def load_data(school, year):
                     ]
                 ]
 
-                ## TODO: NOT CURRENTLY DISPLAYED
+                # NOTE: Strength of Diploma is not currently displayed
                 strength_diploma.loc[
                     strength_diploma["Category"] == "Strength of Diploma", "Category"
                 ] = "1.7.e The school's strength of diploma indicator."
@@ -2038,8 +2021,7 @@ def load_data(school, year):
                 )
                 combined_grad_metrics_json = json.dumps(combined_grad_metrics_dict)
 
-    # Store the current_academic_year in dcc.store so other
-    # pages can use it
+    # Store the current_academic_year in dcc.store so other pages can use it
     current_academic_year_dict = {'current_academic_year': current_academic_year}
 	
     # combine into dictionary of dictionarys for dcc.store
