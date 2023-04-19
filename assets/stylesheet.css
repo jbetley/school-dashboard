@@ -777,7 +777,8 @@ label > .label-body {
 }
 
 .header_label {
-  height: 20px;
+  /* height: 20px; */
+  height: auto;  
   background-color: #6783a9;
   font-size: 12px;
   font-family: 'Roboto', sans-serif;

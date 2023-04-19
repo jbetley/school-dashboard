@@ -13,7 +13,7 @@ import os.path
 
 # import local functions
 from .calculations import calculate_metrics
-from .table_helpers import no_data_page, get_svg_circle
+from .table_helpers import no_data_page, get_svg_circle, create_key
 from .subnav import subnav_finance
 
 dash.register_page(__name__, path='/financial_metrics', order=2)
@@ -572,6 +572,23 @@ def layout():
                 ),          
                 html.Div(
                     [
+                       html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Label('Key', className = 'header_label'),
+                                        html.Div(create_key()),
+                                    ],
+                                    className = "pretty_container six columns"
+                                ),
+                            ],
+                            className = "bare_container twelve columns"
+                        ),
+                    ],
+                    className = 'row',
+                ),
+                html.Div(
+                    [                
                         html.Div(
                             [
                                 html.Div(

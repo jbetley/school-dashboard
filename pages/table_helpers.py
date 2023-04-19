@@ -7,18 +7,6 @@ from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 
-label_style = {
-    'height': 'auto',
-    'lineHeight': '1.5em',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
-}
 color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
 def no_data_table(label: str = 'No Data to Display') -> list:
@@ -32,7 +20,7 @@ def no_data_table(label: str = 'No Data to Display') -> list:
     """
 
     table_layout = [
-                html.Label(label, style=label_style),
+                html.Label(label, className='header_label'),
                 html.Div(
                     dash_table.DataTable(
                         columns = [
@@ -66,7 +54,7 @@ def no_data_page(label: str) -> list:
                     [
                         html.Div(
                             [
-                                html.Label(label, style=label_style),
+                                html.Label(label, className='header_label'),
                                 html.Div(
                                     dash_table.DataTable(
                                         columns = [
@@ -243,7 +231,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         table = [
             html.Div(
                 [
-                    html.Label(label, style=label_style),
+                    html.Label(label, className='header_label'),
                     html.Div(
                         dash_table.DataTable(
                             columns = [
@@ -525,15 +513,24 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             } for col in format_cols
         ]
 
+        # tooltip_note = [
+        #     html.Span('A'),
+        #     html.Span('-***', style={'color': '#b44655'}),
+        #     html.Span(' value indicates a reduction from a measurable, but not reportable, value to 0).')
+        # ]
+        # css=[{
+        #     'selector': '.dash-table-tooltip',
+        #     'rule': 'font-size: .75em; color: steelblue'
+        # }],
+
+
         table = [
             html.Div(
                 [
-                    html.Label(label, style=label_style),
+                    html.Label(label, className='header_label'),
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict('records'),
-                            # Use this version for colored shapes in lieu of Rate text,
-                            # otherwise use second version
                             columns=[
                                 {'name': col, 'id': headers[idx], 'presentation': 'markdown'}
                                 if 'Rate' in col
@@ -550,6 +547,29 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                             style_cell_conditional = table_cell_conditional,
                             merge_duplicate_headers=True,
                             markdown_options={"html": True},
+## TODO: Tooltip styling not working
+##TODO: Also want to limit to certain value in cell                            
+                            tooltip_conditional=[
+                                {
+                                    'if': {
+                                        'filter_query': '{{{year}}} contains "-***"',
+                                        'column_id': year,
+                                    },
+                                    'type': 'markdown',
+                                    'value': 'This row is significant.'
+                                } for year in year_headers
+                            ],
+
+                            # tooltip_data=[
+                            #     {
+                            #         "Category": {
+                            #             "value": "A <span style='color:blue'>-***</span> value indicates a reduction from a measurable, but not reportable, value to a 0 value.",
+                            #             "type": "markdown",
+                            #             "delay": None,
+                            #             "duration": None,
+                            #         }
+                            #     }
+                            # ],
                         )
                     )
                 ],
@@ -677,7 +697,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
 def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
     table_layout = [
-        html.Label(label, style=label_style),
+        html.Label(label, className='header_label'),
         html.Div(
             dash_table.DataTable(
                 data.to_dict("records"),
@@ -755,3 +775,146 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
     ]
     
     return table_layout
+
+def create_key() -> dash_table.DataTable:
+    """Creates a dash datatable 'key' using proficiency ratings and
+    the Font Awesome circle icon
+
+    Returns:
+        _type_: a dash DataTable
+    """
+    rating_icon = '<span style="font-size: 1em;"><i class="fa fa-circle"></i></span>'
+
+    proficiency_key = pd.DataFrame(
+        dict(
+            [
+                (
+                    'Rate',
+                    [
+                        "Exceeds Standard",
+                    ],
+                ),
+                ('icon', [rating_icon]),
+                (
+                    'Rate2',
+                    [
+                        "Meets Standard",
+                    ],
+                ),
+                ('icon2', [rating_icon]),
+                (
+                    'Rate3',
+                    [
+                        "Approaches Standard",
+                    ],
+                ),
+                ('icon3', [rating_icon]),
+                (
+                    'Rate4',
+                    [
+                        "Does Not Meet Standard",
+                    ],
+                ),
+                ('icon4', [rating_icon]),
+                (
+                    'Rate5',
+                    [
+                        "No Rating",
+                    ],
+                ),
+                ('icon5', [rating_icon]),
+            ]
+        )
+    )
+
+    rating_headers = proficiency_key.columns.tolist()
+    rating_cols = list(col for col in proficiency_key.columns if "Rate" in col)
+    icon_cols = list(col for col in proficiency_key.columns if "icon" in col)
+
+    return  dash_table.DataTable(
+                css=[dict(selector="tr:first-child", rule="display: none")],
+                data=proficiency_key.to_dict("records"),
+                cell_selectable=False,
+                columns=[
+                    {"id": "icon", "name": "", "presentation": "markdown"},
+                    {"id": "Rate", "name": "", "presentation": "markdown"},
+                    {"id": "icon2", "name": "", "presentation": "markdown"},
+                    {"id": "Rate2", "name": "", "presentation": "markdown"},
+                    {"id": "icon3", "name": "", "presentation": "markdown"},
+                    {"id": "Rate3", "name": "", "presentation": "markdown"},
+                    {"id": "icon4", "name": "", "presentation": "markdown"},
+                    {"id": "Rate4", "name": "", "presentation": "markdown"},
+                    {"id": "icon5", "name": "", "presentation": "markdown"},
+                    {"id": "Rate5", "name": "", "presentation": "markdown"},
+                ],
+                markdown_options={"html": True},
+                style_table={
+                    'paddingTop': '15px',
+                    'fontSize': '.75em',
+                    'border': 'none',
+                    'fontFamily': 'Roboto, sans-serif',
+                },
+                style_cell = {
+                    'whiteSpace': 'normal',
+                    'height': 'auto',
+                    'border': 'none',                                        
+                    'textAlign': 'right',
+                    'color': '#6783a9',
+                    'boxShadow': '0 0',
+                },
+                style_cell_conditional = [
+                    {
+                        'if': {
+                            'column_id': rating
+                        },
+                        'textAlign': 'right',
+                    } for rating in rating_cols        
+                ] + [
+                    {
+                        'if': {
+                            'column_id': icon
+                        },
+                        'textAlign': 'left',
+                        'width': '2%',
+                    } for icon in icon_cols             
+                ],                                   
+                style_data_conditional=[
+                    {
+                        "if": {
+                            "filter_query": '{Rate} = "Exceeds Standard"',
+                            "column_id": "icon",
+                        },
+                        "color": "#b33dc6",
+                    },
+                    {
+                        "if": {"filter_query": '{Rate2} = "Meets Standard"',
+                            "column_id": "icon2"
+                        },
+                        "color": "#87bc45",
+                    },
+                    {
+                        "if": {"filter_query": '{Rate3} = "Approaches Standard"',
+                            "column_id": "icon3"
+                        },
+                        "color": "#ede15b",
+                    },
+                    {
+                        "if": {"filter_query": '{Rate4} = "Does Not Meet Standard"',
+                            "column_id": "icon4"
+                        },
+                        "color": "#ea5545",
+                    },
+                    {
+                        "if": {"filter_query": '{Rate5} = "No Rating"',
+                            "column_id": "icon5"
+                        },
+                        "color": "#a4a2a8",
+                    },
+                    {
+                    'if': {
+                        'column_id': rating_headers[1],
+                    },
+                    'marginLeft':'10px',
+                },
+            ],
+        )

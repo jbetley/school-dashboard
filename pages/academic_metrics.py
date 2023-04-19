@@ -12,7 +12,7 @@ import pandas as pd
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, create_metric_table, \
-    set_table_layout, get_svg_circle
+    set_table_layout, get_svg_circle, create_key
 from .subnav import subnav_academic
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
@@ -455,55 +455,6 @@ def update_academic_metrics(data,year):
         table_container_ahs_113, table_container_ahs_1214, display_ahs_metrics, \
         main_container, empty_container, no_data_to_display
 
-# Key Table
-rating_icon = '<span style="font-size: 1em;"><i class="fa fa-circle"></i></span>'
-
-proficiency_key = pd.DataFrame(
-    dict(
-        [
-            (
-                'Rate',
-                [
-                    "Exceeds Standard",
-                ],
-            ),
-            ('icon', [rating_icon]),
-            (
-                'Rate2',
-                [
-                    "Meets Standard",
-                ],
-            ),
-            ('icon2', [rating_icon]),
-            (
-                'Rate3',
-                [
-                    "Approaches Standard",
-                ],
-            ),
-            ('icon3', [rating_icon]),
-            (
-                'Rate4',
-                [
-                    "Does Not Meet Standard",
-                ],
-            ),
-            ('icon4', [rating_icon]),
-            (
-                'Rate5',
-                [
-                    "No Rating",
-                ],
-            ),
-            ('icon5', [rating_icon]),
-        ]
-    )
-)
-
-rating_headers = proficiency_key.columns.tolist()
-rating_cols = list(col for col in proficiency_key.columns if "Rate" in col)
-icon_cols = list(col for col in proficiency_key.columns if "icon" in col)
-
 def layout():
     return html.Div(
             [
@@ -524,128 +475,30 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label('Key',
-                                            style = {
-                                                'height': 'auto',
-                                                'lineHeight': '1.5em',
-                                                'backgroundColor': '#6783a9',
-                                                'fontSize': '12px',
-                                                'fontFamily': 'Roboto, sans-serif',
-                                                'color': '#ffffff',
-                                                'textAlign': 'center',
-                                                'fontWeight': 'bold',
-                                                'paddingBottom': '5px',
-                                                'paddingTop': '5px'
-                                            }
-                                    ),
-                                        dash_table.DataTable(
-                                            css=[dict(selector="tr:first-child", rule="display: none")],
-                                            data=proficiency_key.to_dict("records"),
-                                            cell_selectable=False,
-                                            columns=[
-                                                {"id": "icon", "name": "", "presentation": "markdown"},
-                                                {"id": "Rate", "name": "", "presentation": "markdown"},
-                                                {"id": "icon2", "name": "", "presentation": "markdown"},
-                                                {"id": "Rate2", "name": "", "presentation": "markdown"},
-                                                {"id": "icon3", "name": "", "presentation": "markdown"},
-                                                {"id": "Rate3", "name": "", "presentation": "markdown"},
-                                                {"id": "icon4", "name": "", "presentation": "markdown"},
-                                                {"id": "Rate4", "name": "", "presentation": "markdown"},
-                                                {"id": "icon5", "name": "", "presentation": "markdown"},
-                                                {"id": "Rate5", "name": "", "presentation": "markdown"},
-                                            ],
-                                            markdown_options={"html": True},
-                                            style_table={
-                                                'paddingTop': '15px',
-                                                'fontSize': '.75em',
-                                                'border': 'none',
-                                                'fontFamily': 'Roboto, sans-serif',
-                                            },
-                                            style_cell = {
-                                                'whiteSpace': 'normal',
-                                                'height': 'auto',
-                                                'border': 'none',                                        
-                                                'textAlign': 'right',
-                                                'color': '#6783a9',
-                                                'boxShadow': '0 0',
-                                            },
-                                            style_cell_conditional = [
-                                                {
-                                                    'if': {
-                                                        'column_id': rating
-                                                    },
-                                                    'textAlign': 'right',
-                                                } for rating in rating_cols        
-                                            ] + [
-                                                {
-                                                    'if': {
-                                                        'column_id': icon
-                                                    },
-                                                    'textAlign': 'left',
-                                                    'width': '2%',
-                                                } for icon in icon_cols             
-                                            ],                                   
-                                            style_data_conditional=[
-                                                {
-                                                    "if": {
-                                                        "filter_query": '{Rate} = "Exceeds Standard"',
-                                                        "column_id": "icon",
-                                                    },
-                                                    "color": "#b33dc6",
-                                                },
-                                                {
-                                                    "if": {"filter_query": '{Rate2} = "Meets Standard"',
-                                                        "column_id": "icon2"
-                                                    },
-                                                    "color": "#87bc45",
-                                                },
-                                                {
-                                                    "if": {"filter_query": '{Rate3} = "Approaches Standard"',
-                                                        "column_id": "icon3"
-                                                    },
-                                                    "color": "#ede15b",
-                                                },
-                                                {
-                                                    "if": {"filter_query": '{Rate4} = "Does Not Meet Standard"',
-                                                        "column_id": "icon4"
-                                                    },
-                                                    "color": "#ea5545",
-                                                },
-                                                {
-                                                    "if": {"filter_query": '{Rate5} = "No Rating"',
-                                                        "column_id": "icon5"
-                                                    },
-                                                    "color": "#a4a2a8",
-                                                },
-                                                {
-                                                'if': {
-                                                    'column_id': rating_headers[1],
-                                                },
-                                                'marginLeft':'10px',
-                                            },
-                                        ],
-                                    ),
-                                    html.P(""),
-                                    html.Table(className='md_table',
-                                        children = 
-                                            [
-                                            html.Tr( [html.Td('***'), html.Td(
-                                                [html.Span('Insufficient n-size (a '),
-                                                html.Span('-***', style={'color': '#b44655'}),
-                                                html.Span(' value indicates a reduction from a measurable, but not reportable, value to 0).')]
-                                            ) ] ),
-                                            ], 
-                                            style={
-                                                'color': 'steelblue',
-                                                'fontSize': '.75em',
-                                            },
-                                        ),
+                                        html.Label('Key', className = 'header_label'),        
+                                        html.Div(create_key()),
+                                        # html.P(""),
+                                        # html.Table(className='md_table',
+                                        #     children = 
+                                        #         [
+                                        #         html.Tr( [html.Td('***'), html.Td(
+                                        #             [html.Span('Insufficient n-size (a '),
+                                        #             html.Span('-***', style={'color': '#b44655'}),
+                                        #             html.Span(' value indicates a reduction from a measurable, but not reportable, value to 0).')]
+                                        #         ) ] ),
+                                        #         ], 
+                                        #         style={
+                                        #             'color': 'steelblue',
+                                        #             'fontSize': '.75em',
+                                        #         },
+                                        # ),
                                     ],
                                     className = "pretty_container six columns"
                                 ),
                             ],
                             className = "bare_container twelve columns"
                         ),
+
                         # Display attendance separately because new schools will have attendance
                         # data even if they have no academic data
                         html.Div(
