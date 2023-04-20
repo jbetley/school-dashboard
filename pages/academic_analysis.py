@@ -5,7 +5,6 @@
 # version:  1.01.040323
 
 # TODO: Add AHS/HS Analysis
-# TODO: CHOOSE A FREAKING COLOR!
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -23,10 +22,6 @@ from .subnav import subnav_academic
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
-
-#color_short=['#98abc5','#8a89a6','#7b6888','#6b486b','#a05d56','#d0743c','#ff8c00']
-#color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
-# color=['fbf8cc','fde4cf','ffcfd2','f1c0e8','cfbaf0','a3c4f3','90dbf4','8eecf5','98f5e1','b9fbc0']
 # NOTE: removed 'American Indian' because the category doesn't appear in all data sets
 # ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial', 'Native Hawaiian or Other Pacific Islander','White']
 ethnicity = ['Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']

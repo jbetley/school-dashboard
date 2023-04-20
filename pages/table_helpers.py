@@ -548,7 +548,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                                         'filter_query': f'{{{col}}} = "-***"',
                                     },
                                     'type': 'markdown',
-                                    'value': 'This value indicates a reduction from a measurable, but not reportable, value to a value of 0)'
+                                    'value': 'This indicates a reduction from "***" (a measurable, but not reportable, value) in one year to "0" in the following year.'
                                 } for col in data.columns
                             ],
                             tooltip_delay=0,
@@ -591,7 +591,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     table = dash_table.DataTable(
         data.to_dict('records'),
         columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.percentage(2)} for i in data.columns],
-        sort_action='native',
+        # sort_action='native',
         merge_duplicate_headers=True,
         style_as_list_view=True,
         id='tst-table',

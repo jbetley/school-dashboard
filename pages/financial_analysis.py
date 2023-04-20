@@ -170,7 +170,10 @@ def update_financial_analysis_page(data, year, radio_value):
 
         else:
 
-            color=['#98abc5','#7b6888','#6b486b','#a05d56','#d0743c','#ff8c00','#8a89a6']
+            # NOTE: Use same color list as the list in chart_helpers.py
+
+#            color=['#98abc5','#7b6888','#6b486b','#a05d56','#d0743c','#ff8c00','#8a89a6']
+            color=['#0a66c2','#83941f','#e7a33e','#f5987e','#56687a','#004182','#44712e','#915907','#b24020','#38434f']
 
             for col in financial_data.columns:
                 financial_data[col]=pd.to_numeric(financial_data[col], errors='coerce').fillna(financial_data[col]).tolist()
@@ -276,7 +279,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 x=fig_years,
                 y=revenue_expenses_line_data,
                 markers=True,
-                color_discrete_sequence=['#d0743c']
+                color_discrete_sequence = ['#e7a33e'] #['#d0743c']
             )
 
             revenue_expenses_fig = go.Figure(data=revenue_expenses_line_fig.data + revenue_expenses_bar_fig.data,layout=revenue_expenses_bar_fig.layout)
@@ -345,7 +348,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 x=fig_years,
                 y=assets_liabilities_line_data,
                 markers=True,
-                color_discrete_sequence=['#d0743c']
+                color_discrete_sequence = ['#e7a33e'] #['#d0743c']
             )
 
             assets_liabilities_fig = go.Figure(data=assets_liabilities_line_fig.data + assets_liabilities_bar_fig.data,layout=assets_liabilities_bar_fig.layout)

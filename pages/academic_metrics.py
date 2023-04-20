@@ -476,21 +476,6 @@ def layout():
                                     [
                                         html.Label('Key', className = 'header_label'),        
                                         html.Div(create_key()),
-                                        # html.P(''),
-                                        # html.Table(className='md_table',
-                                        #     children = 
-                                        #         [
-                                        #         html.Tr( [html.Td('***'), html.Td(
-                                        #             [html.Span('Insufficient n-size (a '),
-                                        #             html.Span('-***', style={'color': '#b44655'}),
-                                        #             html.Span(' value indicates a reduction from a measurable, but not reportable, value to 0).')]
-                                        #         ) ] ),
-                                        #         ], 
-                                        #         style={
-                                        #             'color': 'steelblue',
-                                        #             'fontSize': '.75em',
-                                        #         },
-                                        # ),
                                     ],
                                     className = 'pretty_container six columns'
                                 ),
