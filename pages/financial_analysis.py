@@ -120,14 +120,14 @@ def update_financial_analysis_page(data, year, radio_value):
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-analysis':
-        finance_file = "data/F-" + school_index['Network'].values[0] + ".csv"
+        finance_file = 'data/F-' + school_index['Network'].values[0] + '.csv'
         RandE_title = 'Revenue and Expenses (' + school_index['Network'].values[0] + ')'
         AandL_title = 'Assets and Liabilities (' + school_index['Network'].values[0] + ')'
         FP_title = '2-Year Financial Position (' + school_index['Network'].values[0] + ')'
         FA_title = '2-Year Financial Activities (' + school_index['Network'].values[0] + ')'
 
     else:
-        finance_file = "data/F-" + school_index['School Name'].values[0] + ".csv"
+        finance_file = 'data/F-' + school_index['School Name'].values[0] + '.csv'
 
         # don't display school name in title if the school isn't part of a network
         if school_index['Network'].values[0] == 'None':
@@ -247,7 +247,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 showlegend=True,
                 height=400,
                 legend=dict(
-                    orientation="h",
+                    orientation='h',
                     title='',
                     traceorder='reversed'
                     ),
@@ -325,7 +325,7 @@ def update_financial_analysis_page(data, year, radio_value):
                     ),
                 hovermode='x unified',
                 legend=dict(
-                    orientation="h",
+                    orientation='h',
                     title='',
                     traceorder='reversed'
                     ),  
@@ -450,7 +450,7 @@ def update_financial_analysis_page(data, year, radio_value):
             # equal to 0 (e.g., all columns have nonzero values) force % formatting
             if financial_position_data.sum().eq(0).sum() == 0: 
                 financial_position_data['% Change'] = (financial_position_data[display_years[0]] - financial_position_data[display_years[1]]).div(abs(financial_position_data[display_years[1]]))
-                financial_position_data['% Change'] = pd.Series(["{0:.2f}%".format(val * 100) for val in financial_position_data['% Change']], index = financial_position_data.index)
+                financial_position_data['% Change'] = pd.Series(['{0:.2f}%'.format(val * 100) for val in financial_position_data['% Change']], index = financial_position_data.index)
             else:
                 financial_position_data['% Change'] = 'N/A'
 
@@ -511,7 +511,7 @@ def update_financial_analysis_page(data, year, radio_value):
             
             # Force correct formats for display of df in datatable
             if financial_activity_data.sum().eq(0).sum() == 0:
-                financial_activity_data['% Change'] = pd.Series(["{0:.2f}%".format(val * 100) for val in financial_activity_data['% Change']], index = financial_activity_data.index)
+                financial_activity_data['% Change'] = pd.Series(['{0:.2f}%'.format(val * 100) for val in financial_activity_data['% Change']], index = financial_activity_data.index)
 
             # since we are converting values to strings, we need to iterate
             # through each series (cannot vectorize)
@@ -582,7 +582,7 @@ def update_financial_analysis_page(data, year, radio_value):
 
             # Force correct format for display of df in datatable
             if per_student_data.sum().eq(0).sum() == 0:
-                per_student_data['% Change'] = pd.Series(["{0:.2f}%".format(val * 100) for val in per_student_data['% Change']], index = per_student_data.index)
+                per_student_data['% Change'] = pd.Series(['{0:.2f}%'.format(val * 100) for val in per_student_data['% Change']], index = per_student_data.index)
 
             # since we are converting values to strings, we need to iterate through each series (cannot vectorize)
             for year in display_years:
@@ -940,7 +940,7 @@ def layout():
                                     ),
                                     html.Div(
                                         [
-                                            html.Label('Per Student Revenues and Expenditures', className = 'header_label'),
+                                            html.Label('Revenues and Expenditures Per Student', className = 'header_label'),
                                             html.P(''),
                                             html.Div(id='per-student-table')
                                         ],

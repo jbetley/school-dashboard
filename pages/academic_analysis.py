@@ -5,6 +5,7 @@
 # version:  1.01.040323
 
 # TODO: Add AHS/HS Analysis
+# TODO: CHOOSE A FREAKING COLOR!
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -22,10 +23,10 @@ from .subnav import subnav_academic
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
-# TODO: CHOOSE A FREAKING COLOR!
+
 #color_short=['#98abc5','#8a89a6','#7b6888','#6b486b','#a05d56','#d0743c','#ff8c00']
 #color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
-# color=["fbf8cc","fde4cf","ffcfd2","f1c0e8","cfbaf0","a3c4f3","90dbf4","8eecf5","98f5e1","b9fbc0"]
+# color=['fbf8cc','fde4cf','ffcfd2','f1c0e8','cfbaf0','a3c4f3','90dbf4','8eecf5','98f5e1','b9fbc0']
 # NOTE: removed 'American Indian' because the category doesn't appear in all data sets
 # ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial', 'Native Hawaiian or Other Pacific Islander','White']
 ethnicity = ['Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
@@ -153,7 +154,7 @@ def set_dropdown_options(school, year, comparison_schools):
                 children='Limit reached (Maximum of ' + str(max_num_to_display+1) + ' schools).',
             )
             options = [
-                {"label": option["label"], "value": option["value"], "disabled": True}
+                {'label': option['label'], 'value': option['value'], 'disabled': True}
                 for option in default_options
             ]
     
@@ -367,8 +368,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             else:   
                 
                 # As long as we are rendering 1 year of data, this should never happen. If
-                # the dataframe has no data, the entire page would be blank.
-                # TODO: TEST AND REMOVE IF UNNECESSARY
+                # the dataframe has no data, the entire page would be blank. But never say
+                # never.
 
                 fig14a = no_data_fig_label('Year over Year ELA Proficiency by Grade', 200)
                 fig14b = no_data_fig_label('Year over Year Math Proficiency by Grade', 200)
@@ -406,7 +407,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             # rename IREAD column
             corp_current_data = corp_current_data.rename(
-                columns={"IREAD Pass %": "IREAD Proficiency (Grade 3 only)"}
+                columns={'IREAD Pass %': 'IREAD Proficiency (Grade 3 only)'}
             )            
       
             # coerce data types to numeric (except strings)
@@ -459,12 +460,12 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # proficiency in a subject that is in the raw data was calculated
             # using ALL grades. So we need to recalculate the 'School Total' rate
             # manually to ensure it includes only the included grades.
-            all_grades_math_proficient_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Proficient")
-            all_grades_math_tested_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Tested")
+            all_grades_math_proficient_comp = comparison_schools.filter(regex=r'Grade.+?Math Total Proficient')
+            all_grades_math_tested_comp = comparison_schools.filter(regex=r'Grade.+?Math Total Tested')
             comparison_schools['Total|Math Proficient %'] = all_grades_math_proficient_comp.sum(axis=1) / all_grades_math_tested_comp.sum(axis=1)
 
-            all_grades_ela_proficient_comp = comparison_schools.filter(regex=r"Grade.+?ELA Total Proficient")
-            all_grades_ela_tested_comp = comparison_schools.filter(regex=r"Grade.+?ELA Total Tested")
+            all_grades_ela_proficient_comp = comparison_schools.filter(regex=r'Grade.+?ELA Total Proficient')
+            all_grades_ela_tested_comp = comparison_schools.filter(regex=r'Grade.+?ELA Total Tested')
             comparison_schools['Total|ELA Proficient %'] = all_grades_ela_proficient_comp.sum(axis=1) / all_grades_ela_tested_comp.sum(axis=1)
 
             # calculate IREAD Pass %
@@ -493,7 +494,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # reset indicies
             comparison_schools = comparison_schools.reset_index(drop=True)
             
-### TODO: Add HS Data ###
+### TODO: Add HS Data Here ###
             # hs_comparison_data = hs_all_data_included_years.loc[(hs_all_data_included_years['School ID'].isin(comparison_schools))]
             #     # filter comparable school data
             # hs_comparison_data = hs_comparison_data.filter(regex = r'Cohort Count$|Graduates$|Pass N|Test N|^Year$',axis=1)
@@ -542,16 +543,15 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14c = make_bar_chart(fig14c_all_data, category, school_name, 'Comparison: Current Year ELA Proficiency')
 
                 # merge column names and make ELA Proficiency table
-                fig14c_table_data['School Name'] = fig14c_table_data['School Name'] + " (" + fig14c_table_data['Low Grade'] + "-" + fig14c_table_data['High Grade'] + ")"
+                fig14c_table_data['School Name'] = fig14c_table_data['School Name'] + ' (' + fig14c_table_data['Low Grade'] + '-' + fig14c_table_data['High Grade'] + ')'
                 fig14c_table_data = fig14c_table_data[['School Name', category]]
                 fig14c_table_data = fig14c_table_data.reset_index(drop=True)
 
                 fig14c_table = create_comparison_table(fig14c_table_data, school_name,'Proficiency')
 
             else:
-
-                # TODO: TEST - WILL THIS EVER BE BLANK? IF SO, DISCOVER BLANK CONDITION AND
-                # TODO: MOVE TO THE make_bar_chart function (similar to make_line_chart)
+                # NOTE: This should never be blank. However, that means, at some point,
+                # it will be. So catch error here.
 
                 fig14c = no_data_fig_label('Comparison: Current Year ELA Proficiency',200)
                 fig14c_table = no_data_table('Proficiency')
@@ -580,7 +580,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14d = make_bar_chart(fig14d_all_data,category, school_name, 'Comparison: Current Year Math Proficiency')
 
                 # Math Proficiency table
-                fig14d_table_data['School Name'] = fig14d_table_data['School Name'] + " (" + fig14d_table_data['Low Grade'] + "-" + fig14d_table_data['High Grade'] + ")"
+                fig14d_table_data['School Name'] = fig14d_table_data['School Name'] + ' (' + fig14d_table_data['Low Grade'] + '-' + fig14d_table_data['High Grade'] + ')'
                 fig14d_table_data = fig14d_table_data[['School Name', category]]
                 fig14d_table_data = fig14d_table_data.reset_index(drop=True)
 
@@ -612,7 +612,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig_iread = make_bar_chart(fig_iread_all_data,category, school_name, 'Comparison: Current Year IREAD Proficiency')
 
                 # Math Proficiency table
-                fig_iread_table_data['School Name'] = fig_iread_table_data['School Name'] + " (" + fig_iread_table_data['Low Grade'] + "-" + fig_iread_table_data['High Grade'] + ")"
+                fig_iread_table_data['School Name'] = fig_iread_table_data['School Name'] + ' (' + fig_iread_table_data['Low Grade'] + '-' + fig_iread_table_data['High Grade'] + ')'
                 fig_iread_table_data = fig_iread_table_data[['School Name', category]]
                 fig_iread_table_data = fig_iread_table_data.reset_index(drop=True)
 
@@ -673,8 +673,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
                 # Create a series that merges school name and grade spans and drop the grade span columns 
                 # from the dataframe (they are not charted)
-                school_names = final_data['School Name'] + " (" + final_data['Low Grade'] + "-" \
-                + final_data['High Grade'] + ")"      
+                school_names = final_data['School Name'] + ' (' + final_data['Low Grade'] + '-' \
+                + final_data['High Grade'] + ')'      
                 
                 final_data = final_data.drop(['Low Grade', 'High Grade'], axis = 1)
 
@@ -843,7 +843,7 @@ def layout():
             [
  # NOTE: Could not figure out how to add loading block due
  # to number of charts - instead we are using a blank_fig with 
- # "Loading ..." text as a placeholder until graph loads
+ # 'Loading ...' text as a placeholder until graph loads
  # https://stackoverflow.com/questions/63811550/plotly-how-to-display-graph-after-clicking-a-button
 
                 html.Div(

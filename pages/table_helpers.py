@@ -82,7 +82,7 @@ def no_data_page(label: str) -> list:
 
 # Display tables either side by side or on individual rows depending on # of columns
 def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
-    """Determines table layout depending on the size (# of cols) of the tables 
+    """Determines table layout depending on the size (# of cols) of the tables
 
     Args:
         table1 (list): dash DataTable
@@ -168,21 +168,15 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
             result[col].eq(np.nan),
             ]
 
-            # NOTE: Using font-awesome circle icon. 
+            # NOTE: Using font-awesome circle icon.
             did_not_meet ='<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>'
             approaching ='<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>'
             meets ='<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>'
             exceeds ='<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>'
-            no_rating ='<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
-            empty_cell =''
 
-            # NOTE: this commented out code uses svg circle, which also works, but is
-            # harder to keep consistent in different sized tables.
-            # did_not_meet = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ea5545" /></svg>'
-            # approaching = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#ede15b" /></svg>'
-            # meets = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#87bc45" /></svg>'
-            # exceeds = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#b33dc6" /></svg>'
-            # no_rating = f'<svg width="100%" height="100%" viewBox="-1 -1 2 2" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="0" cy="0" r=".3" fill="#a4a2a8" /></svg>'
+            # NOTE: Testing empty display instead of grey circle for N/A
+            no_rating ='' #<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
+            empty_cell =''
 
             rating = [did_not_meet,approaching,meets,exceeds, no_rating, empty_cell]
             result[col] = np.select(conditions, rating, default=empty_cell)
@@ -201,13 +195,9 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
 
     Returns:
         list: Formatted dash DataTable
-    """""""""
+    """
 
 ## Global table styles
-# TODO: dont want global font size, but need to change numbers font sized
-# TODO: to 10 to align with the difference columns
-# NOTE: JUST WANT NUMBERS (?) <- what does this mean?
-
     table_style = {
         'fontSize': '11px',
         'border': 'none',
@@ -354,7 +344,14 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                     'row_index': 'odd'
                 },
                 'backgroundColor': '#eeeeee',
-            }
+            },
+            {
+                'if': {
+                    'state': 'selected'
+                },
+                'backgroundColor': 'rgba(0, 116, 217, 0.3)',
+                'border': 'none',
+            }     
         ]
 
         data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
@@ -436,7 +433,15 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             }
         ]
         # formatting logic is different for multi-header table
+
         table_data_conditional = [
+            {
+                'if': {
+                    'state': 'selected'
+                },
+                'backgroundColor': 'rgba(0, 116, 217, 0.3)',
+                'border': 'none',
+            },            
             {
                 'if': {
                     'row_index': 'odd'
@@ -513,17 +518,6 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             } for col in format_cols
         ]
 
-        # tooltip_note = [
-        #     html.Span('A'),
-        #     html.Span('-***', style={'color': '#b44655'}),
-        #     html.Span(' value indicates a reduction from a measurable, but not reportable, value to 0).')
-        # ]
-        # css=[{
-        #     'selector': '.dash-table-tooltip',
-        #     'rule': 'font-size: .75em; color: steelblue'
-        # }],
-
-
         table = [
             html.Div(
                 [
@@ -546,30 +540,19 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                             style_cell = table_cell,
                             style_cell_conditional = table_cell_conditional,
                             merge_duplicate_headers=True,
-                            markdown_options={"html": True},
-## TODO: Tooltip styling not working
-##TODO: Also want to limit to certain value in cell                            
+                            markdown_options={'html': True},
                             tooltip_conditional=[
                                 {
                                     'if': {
-                                        'filter_query': '{{{year}}} contains "-***"',
-                                        'column_id': year,
+                                        'column_id': col,
+                                        'filter_query': f'{{{col}}} = "-***"',
                                     },
                                     'type': 'markdown',
-                                    'value': 'This row is significant.'
-                                } for year in year_headers
+                                    'value': 'This value indicates a reduction from a measurable, but not reportable, value to a value of 0)'
+                                } for col in data.columns
                             ],
-
-                            # tooltip_data=[
-                            #     {
-                            #         "Category": {
-                            #             "value": "A <span style='color:blue'>-***</span> value indicates a reduction from a measurable, but not reportable, value to a 0 value.",
-                            #             "type": "markdown",
-                            #             "delay": None,
-                            #             "duration": None,
-                            #         }
-                            #     }
-                            # ],
+                            tooltip_delay=0,
+                            tooltip_duration=None
                         )
                     )
                 ],
@@ -577,7 +560,6 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             )
         ]
     return table
-
 
 def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) -> list:
 
@@ -609,7 +591,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     table = dash_table.DataTable(
         data.to_dict('records'),
         columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.percentage(2)} for i in data.columns],
-        # sort_action='native',
+        sort_action='native',
         merge_duplicate_headers=True,
         style_as_list_view=True,
         id='tst-table',
@@ -633,6 +615,13 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
                 'fontWeight': 'bold',
                 'color': '#b86949',
             },
+            {
+                'if': {
+                    'state': 'selected'
+                },
+                'backgroundColor': 'rgba(0, 116, 217, 0.3)',
+                'border': 'none',
+            }
         ],
         style_header={
             'height': '10px',
@@ -700,69 +689,83 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
         html.Label(label, className='header_label'),
         html.Div(
             dash_table.DataTable(
-                data.to_dict("records"),
+                data.to_dict('records'),
                 columns = [
                     {
-                        "name": col,
-                        "id": col,
-                        "type": "numeric",
-                        "format": Format(
+                        'name': col,
+                        'id': col,
+                        'type': 'numeric',
+                        'format': Format(
                             scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
                         ),
                     }
                     for (col) in data.columns
                 ],
                 style_data = {
-                    "fontSize": "11px",
-                    "fontFamily": "Roboto,sans-serif",
-                    "border": "none"
+                    'fontSize': '11px',
+                    'fontFamily': 'Roboto,sans-serif',
+                    'border': 'none'
                 },
                 style_data_conditional = [
-                    {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
                     {
-                        "if": {"row_index": 0, "column_id": "Category"},
-                        "borderTop": ".5px solid #6783a9",
+                        'if': {
+                            'row_index': 'odd'
+                        },
+                        'backgroundColor': '#eeeeee'},
+                    {
+                        'if': {
+                            'row_index': 0,
+                            'column_id': 'Category'
+                        },
+                        'borderTop': '.5px solid #6783a9',
                     },
+                    {
+                        'if': {
+                            'state': 'selected'
+                        },
+                        'backgroundColor': 'rgba(0, 116, 217, 0.3)',
+                        'border': 'none',
+                    }
                 ],
                 style_header =  {
-                    "height": "20px",
-                    "backgroundColor": "#ffffff",
-                    "border": "none",
-                    "borderBottom": ".5px solid #6783a9",
-                    "fontSize": "12px",
-                    "fontFamily": "Roboto, sans-serif",
-                    "color": "#6783a9",
-                    "textAlign": "center",
-                    "fontWeight": "bold",
+                    'height': '20px',
+                    'backgroundColor': '#ffffff',
+                    'border': 'none',
+                    'borderBottom': '.5px solid #6783a9',
+                    'fontSize': '12px',
+                    'fontFamily': 'Roboto, sans-serif',
+                    'color': '#6783a9',
+                    'textAlign': 'center',
+                    'fontWeight': 'bold',
                 },
                 style_cell = {
-                    "whiteSpace": "normal",
-                    "height": "auto",
-                    "textAlign": "center",
-                    "color": "#6783a9",
-                    "minWidth": "25px",
-                    "width": "25px",
-                    "maxWidth": "25px",
+                    'whiteSpace': 'normal',
+                    'height': 'auto',
+                    'textAlign': 'center',
+                    'color': '#6783a9',
+                    'minWidth': '25px',
+                    'width': '25px',
+                    'maxWidth': '25px',
                 },
                 style_header_conditional = [
                     {
-                        "if": {"column_id": "Category"},
-                        "textAlign": "left",
-                        "paddingLeft": "10px",
-                        "width": "35%",
-                        "fontSize": "11px",
-                        "fontFamily": "Roboto, sans-serif",
-                        "color": "#6783a9",
-                        "fontWeight": "bold",
+                        'if': {'column_id': 'Category'},
+                        'textAlign': 'left',
+                        'paddingLeft': '10px',
+                        'width': '35%',
+                        'fontSize': '11px',
+                        'fontFamily': 'Roboto, sans-serif',
+                        'color': '#6783a9',
+                        'fontWeight': 'bold',
                     }
                 ],
                 style_cell_conditional = [
                     {
-                        "if": {"column_id": "Category"},
-                        "textAlign": "left",
-                        "fontWeight": "500",
-                        "paddingLeft": "10px",
-                        "width": "40%"
+                        'if': {'column_id': 'Category'},
+                        'textAlign': 'left',
+                        'fontWeight': '500',
+                        'paddingLeft': '10px',
+                        'width': '40%'
                     }
                 ],
                 merge_duplicate_headers=True,
@@ -773,7 +776,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
             ),
         )
     ]
-    
+
     return table_layout
 
 def create_key() -> dash_table.DataTable:
@@ -791,35 +794,35 @@ def create_key() -> dash_table.DataTable:
                 (
                     'Rate',
                     [
-                        "Exceeds Standard",
+                        'Exceeds Standard',
                     ],
                 ),
                 ('icon', [rating_icon]),
                 (
                     'Rate2',
                     [
-                        "Meets Standard",
+                        'Meets Standard',
                     ],
                 ),
                 ('icon2', [rating_icon]),
                 (
                     'Rate3',
                     [
-                        "Approaches Standard",
+                        'Approaches Standard',
                     ],
                 ),
                 ('icon3', [rating_icon]),
                 (
                     'Rate4',
                     [
-                        "Does Not Meet Standard",
+                        'Does Not Meet Standard',
                     ],
                 ),
                 ('icon4', [rating_icon]),
                 (
                     'Rate5',
                     [
-                        "No Rating",
+                        'No Rating',
                     ],
                 ),
                 ('icon5', [rating_icon]),
@@ -828,26 +831,26 @@ def create_key() -> dash_table.DataTable:
     )
 
     rating_headers = proficiency_key.columns.tolist()
-    rating_cols = list(col for col in proficiency_key.columns if "Rate" in col)
-    icon_cols = list(col for col in proficiency_key.columns if "icon" in col)
+    rating_cols = list(col for col in proficiency_key.columns if 'Rate' in col)
+    icon_cols = list(col for col in proficiency_key.columns if 'icon' in col)
 
     return  dash_table.DataTable(
-                css=[dict(selector="tr:first-child", rule="display: none")],
-                data=proficiency_key.to_dict("records"),
+                css=[dict(selector='tr:first-child', rule='display: none')],
+                data=proficiency_key.to_dict('records'),
                 cell_selectable=False,
                 columns=[
-                    {"id": "icon", "name": "", "presentation": "markdown"},
-                    {"id": "Rate", "name": "", "presentation": "markdown"},
-                    {"id": "icon2", "name": "", "presentation": "markdown"},
-                    {"id": "Rate2", "name": "", "presentation": "markdown"},
-                    {"id": "icon3", "name": "", "presentation": "markdown"},
-                    {"id": "Rate3", "name": "", "presentation": "markdown"},
-                    {"id": "icon4", "name": "", "presentation": "markdown"},
-                    {"id": "Rate4", "name": "", "presentation": "markdown"},
-                    {"id": "icon5", "name": "", "presentation": "markdown"},
-                    {"id": "Rate5", "name": "", "presentation": "markdown"},
+                    {'id': 'icon', 'name': '', 'presentation': 'markdown'},
+                    {'id': 'Rate', 'name': '', 'presentation': 'markdown'},
+                    {'id': 'icon2', 'name': '', 'presentation': 'markdown'},
+                    {'id': 'Rate2', 'name': '', 'presentation': 'markdown'},
+                    {'id': 'icon3', 'name': '', 'presentation': 'markdown'},
+                    {'id': 'Rate3', 'name': '', 'presentation': 'markdown'},
+                    {'id': 'icon4', 'name': '', 'presentation': 'markdown'},
+                    {'id': 'Rate4', 'name': '', 'presentation': 'markdown'},
+                    {'id': 'icon5', 'name': '', 'presentation': 'markdown'},
+                    {'id': 'Rate5', 'name': '', 'presentation': 'markdown'},
                 ],
-                markdown_options={"html": True},
+                markdown_options={'html': True},
                 style_table={
                     'paddingTop': '15px',
                     'fontSize': '.75em',
@@ -857,7 +860,7 @@ def create_key() -> dash_table.DataTable:
                 style_cell = {
                     'whiteSpace': 'normal',
                     'height': 'auto',
-                    'border': 'none',                                        
+                    'border': 'none',
                     'textAlign': 'right',
                     'color': '#6783a9',
                     'boxShadow': '0 0',
@@ -868,7 +871,7 @@ def create_key() -> dash_table.DataTable:
                             'column_id': rating
                         },
                         'textAlign': 'right',
-                    } for rating in rating_cols        
+                    } for rating in rating_cols
                 ] + [
                     {
                         'if': {
@@ -876,39 +879,39 @@ def create_key() -> dash_table.DataTable:
                         },
                         'textAlign': 'left',
                         'width': '2%',
-                    } for icon in icon_cols             
-                ],                                   
+                    } for icon in icon_cols
+                ],
                 style_data_conditional=[
                     {
-                        "if": {
-                            "filter_query": '{Rate} = "Exceeds Standard"',
-                            "column_id": "icon",
+                        'if': {
+                            'filter_query': '{Rate} = "Exceeds Standard"',
+                            'column_id': 'icon',
                         },
-                        "color": "#b33dc6",
+                        'color': '#b33dc6',
                     },
                     {
-                        "if": {"filter_query": '{Rate2} = "Meets Standard"',
-                            "column_id": "icon2"
+                        'if': {'filter_query': '{Rate2} = "Meets Standard"',
+                            'column_id': 'icon2'
                         },
-                        "color": "#87bc45",
+                        'color': '#87bc45',
                     },
                     {
-                        "if": {"filter_query": '{Rate3} = "Approaches Standard"',
-                            "column_id": "icon3"
+                        'if': {'filter_query': '{Rate3} = "Approaches Standard"',
+                            'column_id': 'icon3'
                         },
-                        "color": "#ede15b",
+                        'color': '#ede15b',
                     },
                     {
-                        "if": {"filter_query": '{Rate4} = "Does Not Meet Standard"',
-                            "column_id": "icon4"
+                        'if': {'filter_query': '{Rate4} = "Does Not Meet Standard"',
+                            'column_id': 'icon4'
                         },
-                        "color": "#ea5545",
+                        'color': '#ea5545',
                     },
                     {
-                        "if": {"filter_query": '{Rate5} = "No Rating"',
-                            "column_id": "icon5"
+                        'if': {'filter_query': '{Rate5} = "No Rating"',
+                            'column_id': 'icon5'
                         },
-                        "color": "#a4a2a8",
+                        'color': '#a4a2a8',
                     },
                     {
                     'if': {

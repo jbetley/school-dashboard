@@ -9,6 +9,7 @@ import textwrap
 import plotly.graph_objects as go
 from dash import html, dcc
 
+# TODO: PICK A DAMN COLOR ALREADY
 # Steelblue
 #color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
@@ -623,7 +624,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     )
 
 # TODO: In progress - The purpose of all this is to get '0' values in
-# a bar chart to show up as a thin line (as opposed to no line for no data)
+# TODO: a bar chart to show up as a thin line (as opposed to no line for no data)
 
 # TODO: Add thin marker_line_color (border) to each bar - This will cause '0' vals to show up as a thin line
 # Currently cannot figure out how to make the marker_line_color match the bar color
@@ -667,13 +668,12 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     #         line=dict(color="#FED241",dash="dash",width=3)
     # )
 
-    #TODO: Make prettier?
     fig.update_traces(
         hovertemplate="<br>".join(
             [
                 s.replace(" ", "&nbsp;")
                 for s in [
-                    '%{customdata[0]}',
+                    '<b>%{customdata[0]}</b>',
                     'Proficiency: %{y}<br><extra></extra>',
                 ]
             ]

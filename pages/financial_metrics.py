@@ -106,10 +106,10 @@ def update_financial_metrics(data,year,radio_value):
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-metrics':
-        finance_file = "data/F-" + school_index['Network'].values[0] + ".csv"
+        finance_file = 'data/F-' + school_index['Network'].values[0] + '.csv'
         table_title = 'Financial Accountability Metrics (' + school_index['Network'].values[0] + ')'
     else:
-        finance_file = "data/F-" + school_index['School Name'].values[0] + ".csv"
+        finance_file = 'data/F-' + school_index['School Name'].values[0] + '.csv'
         
         # don't display school name in title if the school isn't part of a network
         if school_index['Network'].values[0] == 'None':
@@ -342,7 +342,7 @@ def update_financial_metrics(data,year,radio_value):
                                             } for rating in rating_headers
                                         ],
                                         style_as_list_view=True,
-                                        markdown_options={"html": True},
+                                        markdown_options={'html': True},
                                     )
                                 )
                             ],
@@ -447,7 +447,7 @@ def update_financial_metrics(data,year,radio_value):
                                                         'paddingLeft': '20px',
                                                     },
                                                 ],
-                                                markdown_options={"html": True},                                                
+                                                markdown_options={'html': True},                                                
                                             ),
                                         ),
                                     ],
@@ -459,9 +459,7 @@ def update_financial_metrics(data,year,radio_value):
                     ]
             
             # Financial Metric Definitions
-            # TODO: Possibly make this table easier to read either through Markdown
-            # TODO: or embedded images (neither works currently with dash datatables)
-            # TODO: Use AG Grid?
+            # NOTE: Explore better styling- Markdown or Images
             # http://www.latex2png.com/
             # https://stackoverflow.com/questions/70205486/clickable-hyperlinks-in-plotly-dash-datatable
             # https://stackoverflow.com/questions/66583063/how-to-add-hyperlink-in-column-field-of-dash-datatable
@@ -579,10 +577,10 @@ def layout():
                                         html.Label('Key', className = 'header_label'),
                                         html.Div(create_key()),
                                     ],
-                                    className = "pretty_container six columns"
+                                    className = 'pretty_container six columns'
                                 ),
                             ],
-                            className = "bare_container twelve columns"
+                            className = 'bare_container twelve columns'
                         ),
                     ],
                     className = 'row',

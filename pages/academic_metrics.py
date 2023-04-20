@@ -219,7 +219,6 @@ def update_academic_metrics(data,year):
                 json_data = json.loads(data['11'])
                 combined_years = pd.DataFrame.from_dict(json_data)
 
-                # TODO: Need to test whether its okay to add American Indian back to all ethnicity strings
                 ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
                 status = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
                 grades = ['Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Total','IREAD Pass %']
@@ -477,7 +476,7 @@ def layout():
                                     [
                                         html.Label('Key', className = 'header_label'),        
                                         html.Div(create_key()),
-                                        # html.P(""),
+                                        # html.P(''),
                                         # html.Table(className='md_table',
                                         #     children = 
                                         #         [
@@ -493,10 +492,10 @@ def layout():
                                         #         },
                                         # ),
                                     ],
-                                    className = "pretty_container six columns"
+                                    className = 'pretty_container six columns'
                                 ),
                             ],
-                            className = "bare_container twelve columns"
+                            className = 'bare_container twelve columns'
                         ),
 
                         # Display attendance separately because new schools will have attendance

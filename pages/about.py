@@ -15,7 +15,7 @@ import json
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
 
-dash.register_page(__name__, path="/", order=0, top_nav=True)
+dash.register_page(__name__, path='/', order=0, top_nav=True)
 
 ## Callback ##
 @callback(
@@ -481,7 +481,7 @@ def update_about_page(year, data):
             # html tags based on the specified width
             import textwrap
             def customwrap(s,width=16):
-                return "<br>".join(textwrap.wrap(s,width=width))
+                return '<br>'.join(textwrap.wrap(s,width=width))
 
             categories_wrap=['English<br>Language<br>Learners', 'Special<br>Education', 'Free/Reduced<br>Price Meals', 'Paid Meals']
 

@@ -5,7 +5,7 @@
 # version:  1.01.040323
 
 import dash
-from dash import html, Input, Output, callback # , dcc
+from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import numpy as np
 import json
@@ -14,43 +14,44 @@ import re
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, create_academic_info_table
-from .chart_helpers import no_data_fig_label, make_stacked_bar #,loading_fig
+from .chart_helpers import no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages
 from .subnav import subnav_academic
 
 ### Testing ###
-pd.set_option("display.max_rows", 400)
+# pd.set_option('display.max_rows', 400)
 
-dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
+dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
 
 @callback(
-    Output("k8-grade-table", "children"),
-    Output("k8-grade-ela-fig", "children"),
-    Output("k8-grade-math-fig", "children"),
-    Output("k8-ethnicity-table", "children"),
-    Output("k8-ethnicity-ela-fig", "children"),
-    Output("k8-ethnicity-math-fig", "children"),
-    Output("k8-subgroup-table", "children"),
-    Output("k8-subgroup-ela-fig", "children"),
-    Output("k8-subgroup-math-fig", "children"),
-    Output("k8-other-table", "children"),
-    Output("k8-not-calculated-table", "children"),
-    Output("k8-table-container", "style"),
-    Output("hs-grad-overview-table", "children"),
-    Output("hs-grad-ethnicity-table", "children"),
-    Output("hs-grad-subgroup-table", "children"),
-    Output("sat-overview-table", "children"),
-    Output("sat-ethnicity-table", "children"),
-    Output("sat-subgroup-table", "children"),
-    Output("hs-eca-table", "children"),
-    Output("hs-not-calculated-table", "children"),
-    Output("hs-table-container", "style"),
+    Output('k8-grade-table', 'children'),
+    Output('k8-grade-ela-fig', 'children'),
+    Output('k8-grade-math-fig', 'children'),
+    Output('k8-ethnicity-table', 'children'),
+    Output('k8-ethnicity-ela-fig', 'children'),
+    Output('k8-ethnicity-math-fig', 'children'),
+    Output('k8-subgroup-table', 'children'),
+    Output('k8-subgroup-ela-fig', 'children'),
+    Output('k8-subgroup-math-fig', 'children'),
+    Output('k8-other-table', 'children'),
+    Output('k8-not-calculated-table', 'children'),
+    Output('k8-table-container', 'style'),
+    Output('hs-grad-overview-table', 'children'),
+    Output('hs-grad-ethnicity-table', 'children'),
+    Output('hs-grad-subgroup-table', 'children'),
+    Output('sat-overview-table', 'children'),
+    Output('sat-ethnicity-table', 'children'),
+    Output('sat-subgroup-table', 'children'),
+    Output('hs-eca-table', 'children'),
+    Output('hs-not-calculated-table', 'children'),
+    Output('hs-table-container', 'style'),
     Output('academic-information-main-container', 'style'),
     Output('academic-information-empty-container', 'style'),
-    Output('academic-information-no-data', 'children'),  
-    Input("dash-session", "data"),
-    Input("charter-dropdown", "value"),
-    Input("year-dropdown", "value"),
+    Output('academic-information-no-data', 'children'),
+    Output('notes-string', 'children'),
+    Input('dash-session', 'data'),
+    Input('charter-dropdown', 'value'),
+    Input('year-dropdown', 'value'),
 )
 def update_abcademic_information_page(data, school, year):
     if not data:
@@ -59,41 +60,41 @@ def update_abcademic_information_page(data, school, year):
     # NOTE: removed 'American Indian' because the category doesn't appear in all data sets
     # ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial', 'Native Hawaiian or Other Pacific Islander','White']
     ethnicity = [
-        "Asian",
-        "Black",
-        "Hispanic",
-        "Multiracial",
-        "Native Hawaiian or Other Pacific Islander",
-        "White"
+        'Asian',
+        'Black',
+        'Hispanic',
+        'Multiracial',
+        'Native Hawaiian or Other Pacific Islander',
+        'White'
     ]
     subgroup = [
-        "Special Education",
-        "General Education",
-        "Paid Meals",
-        "Free/Reduced Price Meals",
-        "English Language Learners",
-        "Non-English Language Learners"
+        'Special Education',
+        'General Education',
+        'Paid Meals',
+        'Free/Reduced Price Meals',
+        'English Language Learners',
+        'Non-English Language Learners'
     ]
     grades = [
-        "Grade 3",
-        "Grade 4",
-        "Grade 5",
-        "Grade 6",
-        "Grade 7",
-        "Grade 8",
-        "Total",
-        "IREAD Pass %"
+        'Grade 3',
+        'Grade 4',
+        'Grade 5',
+        'Grade 6',
+        'Grade 7',
+        'Grade 8',
+        'Total',
+        'IREAD Pass %'
     ]
 
     grades_ordinal = [
-        "3rd",
-        "4th",
-        "5th",
-        "6th",
-        "7th",
-        "8th"
+        '3rd',
+        '4th',
+        '5th',
+        '6th',
+        '7th',
+        '8th'
     ]
-    subject = ["ELA", "Math"]
+    subject = ['ELA', 'Math']
 
     # default styles
     main_container = {'display': 'block'}
@@ -102,15 +103,15 @@ def update_abcademic_information_page(data, school, year):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('Academic Information')
 
-    school_index = pd.DataFrame.from_dict(data["0"])
+    school_index = pd.DataFrame.from_dict(data['0'])
 
     if (
-        school_index["School Type"].values[0] == "K8"
-        or school_index["School Type"].values[0] == "K12"
+        school_index['School Type'].values[0] == 'K8'
+        or school_index['School Type'].values[0] == 'K12'
     ):
         # load K8 academic_data
-        if data["10"]:
-            json_data = json.loads(data["10"])
+        if data['10']:
+            json_data = json.loads(data['10'])
             academic_data_k8 = pd.DataFrame.from_dict(json_data)
         else:
             academic_data_k8 = pd.DataFrame()
@@ -120,20 +121,20 @@ def update_abcademic_information_page(data, school, year):
     # CHS is a K8, with the high school moving to Christel House
     # Watanabe Manual HS
     if (
-        school_index["School Type"].values[0] == "HS"
-        or school_index["School Type"].values[0] == "AHS"
-        or school_index["School Type"].values[0] == "K12"
-        or (school_index["School ID"].values[0] == "5874" and int(year) < 2021)
+        school_index['School Type'].values[0] == 'HS'
+        or school_index['School Type'].values[0] == 'AHS'
+        or school_index['School Type'].values[0] == 'K12'
+        or (school_index['School ID'].values[0] == '5874' and int(year) < 2021)
     ):
         # load HS academic data
-        if data["12"]:
-            json_data = json.loads(data["12"])
+        if data['12']:
+            json_data = json.loads(data['12'])
             academic_data_hs = pd.DataFrame.from_dict(json_data)
         else:
             academic_data_hs = pd.DataFrame()
 
     if (
-        school_index["School Type"].values[0] == "K8"
+        school_index['School Type'].values[0] == 'K8'
         and len(academic_data_k8.index) == 0
     ):
         hs_grad_overview_table = {}
@@ -144,14 +145,14 @@ def update_abcademic_information_page(data, school, year):
         sat_subgroup_table = {}        
         hs_eca_table = {}
         hs_not_calculated_table = {}
-        hs_table_container = {"display": "none"}
+        hs_table_container = {'display': 'none'}
 
         k8_grade_table = {}
         k8_ethnicity_table = {}
         k8_subgroup_table = {}
         k8_other_table = {}
         k8_not_calculated_table = {}
-        k8_table_container = {"display": "none"}
+        k8_table_container = {'display': 'none'}
 
         k8_grade_ela_fig = {}
         k8_grade_math_fig = {}
@@ -167,12 +168,12 @@ def update_abcademic_information_page(data, school, year):
 
         ## K8 Academic Information
         if (
-            school_index["School Type"].values[0] == "K8"
-            or school_index["School Type"].values[0] == "K12"
+            school_index['School Type'].values[0] == 'K8'
+            or school_index['School Type'].values[0] == 'K12'
         ):
             # if K8, hide HS table (except for CHS prior to 2021 when it was a K12)
-            if school_index["School Type"].values[0] == "K8" and not (
-                school_index["School ID"].values[0] == "5874" and int(year) < 2021
+            if school_index['School Type'].values[0] == 'K8' and not (
+                school_index['School ID'].values[0] == '5874' and int(year) < 2021
             ):
                 hs_grad_overview_table = {}
                 hs_grad_ethnicity_table = {}
@@ -182,22 +183,22 @@ def update_abcademic_information_page(data, school, year):
                 sat_subgroup_table = {}                  
                 hs_eca_table = {}
                 hs_not_calculated_table = {}
-                hs_table_container = {"display": "none"}
+                hs_table_container = {'display': 'none'}
 
             # for academic information, strip out all comparative data and clean headers
             k8_academic_info = academic_data_k8[
                 [
                     col
                     for col in academic_data_k8.columns
-                    if "School" in col or "Category" in col
+                    if 'School' in col or 'Category' in col
                 ]
             ]
             k8_academic_info.columns = k8_academic_info.columns.str.replace(
-                r"School$", "", regex=True
+                r'School$', '', regex=True
             )
 
             years_by_grade = k8_academic_info[
-                k8_academic_info["Category"].str.contains("|".join(grades))
+                k8_academic_info['Category'].str.contains('|'.join(grades))
             ]
             if not years_by_grade.empty:
                 k8_grade_table = create_academic_info_table(years_by_grade,'Proficiency by Grade')
@@ -205,7 +206,7 @@ def update_abcademic_information_page(data, school, year):
                 k8_grade_table = no_data_table('Proficiency by Grade')
 
             years_by_subgroup = k8_academic_info[
-                k8_academic_info["Category"].str.contains("|".join(subgroup))
+                k8_academic_info['Category'].str.contains('|'.join(subgroup))
             ]
             if not years_by_subgroup.empty:            
                 k8_subgroup_table = create_academic_info_table(years_by_subgroup,'Proficiency by Subgroup')
@@ -213,7 +214,7 @@ def update_abcademic_information_page(data, school, year):
                 k8_subgroup_table = no_data_table('Proficiency by Subgroup')
 
             years_by_ethnicity = k8_academic_info[
-                k8_academic_info["Category"].str.contains("|".join(ethnicity))
+                k8_academic_info['Category'].str.contains('|'.join(ethnicity))
             ]
             if not years_by_ethnicity.empty:            
                 k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,'Proficiency by Ethnicity')
@@ -221,31 +222,31 @@ def update_abcademic_information_page(data, school, year):
                 k8_ethnicity_table = no_data_table('Proficiency by Ethnicity')
 
             # attendance_rate_data_json
-            if data["4"]:
-                json_data = json.loads(data["4"])
+            if data['4']:
+                json_data = json.loads(data['4'])
                 final_attendance_data = pd.DataFrame.from_dict(json_data)
                 final_attendance_data = final_attendance_data[
                     [
                         col
                         for col in final_attendance_data.columns
-                        if "School" in col or "Category" in col
+                        if 'School' in col or 'Category' in col
                     ]
                 ]
                 final_attendance_data.columns = (
                     final_attendance_data.columns.str.replace(
-                        r"School$", "", regex=True
+                        r'School$', '', regex=True
                     )
                 )
 
                 # replace 'metric' title with more generic name
-                final_attendance_data["Category"] = "Attendance Rate"
+                final_attendance_data['Category'] = 'Attendance Rate'
             else:
                 final_attendance_data = pd.DataFrame()
 
-            final_attendance_data = final_attendance_data.fillna("No Data")
+            final_attendance_data = final_attendance_data.fillna('No Data')
 
             for col in final_attendance_data.columns:
-                final_attendance_data[col] = pd.to_numeric(final_attendance_data[col], errors="coerce").fillna(final_attendance_data[col]).tolist()
+                final_attendance_data[col] = pd.to_numeric(final_attendance_data[col], errors='coerce').fillna(final_attendance_data[col]).tolist()
 
             if not final_attendance_data.empty:
                 k8_other_table = create_academic_info_table(final_attendance_data,'Attendance Data')
@@ -254,16 +255,16 @@ def update_abcademic_information_page(data, school, year):
 
             k8_not_calculated = [
                 {
-                    "Category": "The school’s teacher retention rate."
+                    'Category': "The school’s teacher retention rate."
                 },
                 {
-                    "Category": "The school’s student re-enrollment rate."
+                    'Category': "The school’s student re-enrollment rate."
                 },
                 {
-                    "Category": "Proficiency in ELA and Math of students who have been enrolled in school for at least two (2) full years."
+                    'Category': 'Proficiency in ELA and Math of students who have been enrolled in school for at least two (2) full years.'
                 },
                 {
-                    "Category": "Student growth on the state assessment in ELA and Math according to Indiana's Growth Model."
+                    'Category': "Student growth on the state assessment in ELA and Math according to Indiana's Growth Model."
                 },
             ]
 
@@ -271,7 +272,7 @@ def update_abcademic_information_page(data, school, year):
             k8_not_calculated_data = k8_not_calculated_data.reindex(
                 columns=k8_academic_info.columns
             )
-            k8_not_calculated_data = k8_not_calculated_data.fillna("N/A")
+            k8_not_calculated_data = k8_not_calculated_data.fillna('N/A')
 
             # as this is generated by the script, it will always have data
             k8_not_calculated_table = create_academic_info_table(k8_not_calculated_data,'Not Currently Calculated')
@@ -280,10 +281,10 @@ def update_abcademic_information_page(data, school, year):
             
             # The raw proficency data from IDOE is annoyingly inconsistent. In some cases missing
             # data is blank and in other cases it is represented by '0.'
-            k8_all_data_all_years = pd.read_csv(r"data/ilearnAll.csv", dtype=str)
+            k8_all_data_all_years = pd.read_csv(r'data/ilearnAll.csv', dtype=str)
             
             # Get selected school data for all categories
-            school_k8_all_data = k8_all_data_all_years.loc[k8_all_data_all_years["School ID"] == school]
+            school_k8_all_data = k8_all_data_all_years.loc[k8_all_data_all_years['School ID'] == school]
 
             school_k8_all_data =  school_k8_all_data.reset_index(drop=True)
 
@@ -291,7 +292,7 @@ def update_abcademic_information_page(data, school, year):
             year = '2019' if year == '2020' else year
 
             school_k8_proficiency_data = school_k8_all_data.loc[
-            school_k8_all_data["Year"] == str(year)
+            school_k8_all_data['Year'] == str(year)
             ]
 
             # drop columns with no values and reset index
@@ -307,7 +308,7 @@ def update_abcademic_information_page(data, school, year):
 
             for col in school_k8_proficiency_data.columns:
                 school_k8_proficiency_data[col] = pd.to_numeric(
-                    school_k8_proficiency_data[col], errors="coerce"
+                    school_k8_proficiency_data[col], errors='coerce'
                 )
 
             # Drop columns: 'Year','School ID', 'School Name', 'Corp ID','Corp Name'
@@ -316,21 +317,19 @@ def update_abcademic_information_page(data, school, year):
             school_k8_proficiency_data = school_k8_proficiency_data.drop(
                 list(
                     school_k8_proficiency_data.filter(
-                        regex="ELA & Math|Year|Corp ID|Corp Name|School ID|School Name"
+                        regex='ELA & Math|Year|Corp ID|Corp Name|School ID|School Name'
                     )
                 ),
                 axis=1,
             )
 
-            print(school_k8_proficiency_data)
-
             all_proficiency_data = school_k8_proficiency_data.copy()
 
             proficiency_rating = [
-                "Below Proficiency",
-                "Approaching Proficiency",
-                "At Proficiency",
-                "Above Proficiency"
+                'Below Proficiency',
+                'Approaching Proficiency',
+                'At Proficiency',
+                'Above Proficiency'
             ]
 
             # for each category, create a list of columns using the strings in
@@ -343,9 +342,9 @@ def update_abcademic_information_page(data, school, year):
 
             for c in categories:
                 for s in subject:
-                    category_subject = c + "|" + s
-                    colz = [category_subject + " " + x for x in proficiency_rating]
-                    total_tested = category_subject + " " + "Total Tested"
+                    category_subject = c + '|' + s
+                    colz = [category_subject + ' ' + x for x in proficiency_rating]
+                    total_tested = category_subject + ' ' + 'Total Tested'
 
                     # We do not want categories that do not appear in the dataframe
                     # At this point in the code there are three possible data 
@@ -396,7 +395,7 @@ def update_abcademic_information_page(data, school, year):
                         else:
                             # calculate percentage
                             all_proficiency_data[colz] = all_proficiency_data[colz].divide(
-                                all_proficiency_data[total_tested], axis="index"
+                                all_proficiency_data[total_tested], axis='index'
                             )
 
                             # get a list of all values
@@ -420,7 +419,7 @@ def update_abcademic_information_page(data, school, year):
             all_proficiency_data.drop(
                 list(
                     all_proficiency_data.filter(
-                        regex="School Total|Total Proficient"
+                        regex='School Total|Total Proficient'
                     )
                 ),
                 axis=1,
@@ -429,41 +428,41 @@ def update_abcademic_information_page(data, school, year):
 
             # Replace Grade X with ordinal number (e.g., Grade 4 = 4th)
             all_proficiency_data = all_proficiency_data.rename(
-                columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
+                columns=lambda x: re.sub('(Grade )(\d)', '\\2th', x)
             )
             # all use 'th' suffix except for 3rd - so we need to specially treat '3''
             all_proficiency_data.columns = [
-                x.replace("3th", "3rd") for x in all_proficiency_data.columns.to_list()
+                x.replace('3th', '3rd') for x in all_proficiency_data.columns.to_list()
             ]
 
             # transpose df
             all_proficiency_data = (
-                all_proficiency_data.T.rename_axis("Category")
+                all_proficiency_data.T.rename_axis('Category')
                 .rename_axis(None, axis=1)
                 .reset_index()
             )
 
             # split Grade column into two columns and rename what used to be the index
-            all_proficiency_data[["Category", "Proficiency"]] = all_proficiency_data[
-                "Category"
-            ].str.split("|", expand=True)
+            all_proficiency_data[['Category', 'Proficiency']] = all_proficiency_data[
+                'Category'
+            ].str.split('|', expand=True)
 
-            all_proficiency_data.rename(columns={0: "Percentage"}, inplace=True)
+            all_proficiency_data.rename(columns={0: 'Percentage'}, inplace=True)
 
             # Drop 'index' row (created during transpose)
             all_proficiency_data = all_proficiency_data[
-                all_proficiency_data["Category"] != "index"
+                all_proficiency_data['Category'] != 'index'
             ]
 
             ela_title = year + ' ELA Proficiency Breakdown'
             math_title = year + ' Math Proficiency Breakdown'
             
             # ELA by Grade
-            grade_annotations = annotations.loc[annotations['Category'].str.contains("Grade")]
+            grade_annotations = annotations.loc[annotations['Category'].str.contains('Grade')]
 
             grade_ela_fig_data = all_proficiency_data[
-                all_proficiency_data["Category"].isin(grades_ordinal)
-                & all_proficiency_data["Proficiency"].str.contains("ELA")
+                all_proficiency_data['Category'].isin(grades_ordinal)
+                & all_proficiency_data['Proficiency'].str.contains('ELA')
             ]
 
             if not grade_ela_fig_data.empty:
@@ -473,8 +472,8 @@ def update_abcademic_information_page(data, school, year):
 
             # Math by Grade
             grade_math_fig_data = all_proficiency_data[
-                all_proficiency_data["Category"].isin(grades_ordinal)
-                & all_proficiency_data["Proficiency"].str.contains("Math")
+                all_proficiency_data['Category'].isin(grades_ordinal)
+                & all_proficiency_data['Proficiency'].str.contains('Math')
             ]
 
             if not grade_math_fig_data.empty:
@@ -483,11 +482,11 @@ def update_abcademic_information_page(data, school, year):
                 k8_grade_math_fig = no_data_fig_label(math_title, 100)
 
             # ELA by Ethnicity
-            ethnicity_annotations = annotations.loc[annotations['Category'].str.contains("Ethnicity")]
+            ethnicity_annotations = annotations.loc[annotations['Category'].str.contains('Ethnicity')]
 
             ethnicity_ela_fig_data = all_proficiency_data[
-                all_proficiency_data["Category"].isin(ethnicity)
-                & all_proficiency_data["Proficiency"].str.contains("ELA")
+                all_proficiency_data['Category'].isin(ethnicity)
+                & all_proficiency_data['Proficiency'].str.contains('ELA')
             ]
 
             if not ethnicity_ela_fig_data.empty:
@@ -497,8 +496,8 @@ def update_abcademic_information_page(data, school, year):
 
             # Math by Ethnicity
             ethnicity_math_fig_data = all_proficiency_data[
-                all_proficiency_data["Category"].isin(ethnicity)
-                & all_proficiency_data["Proficiency"].str.contains("Math")
+                all_proficiency_data['Category'].isin(ethnicity)
+                & all_proficiency_data['Proficiency'].str.contains('Math')
             ]
 
             if not ethnicity_math_fig_data.empty:
@@ -507,11 +506,11 @@ def update_abcademic_information_page(data, school, year):
                 k8_ethnicity_math_fig = no_data_fig_label(math_title, 100)
 
             # ELA by Subgroup
-            subgroup_annotations = annotations.loc[annotations['Category'].str.contains("Subgroup")]
+            subgroup_annotations = annotations.loc[annotations['Category'].str.contains('Subgroup')]
 
             subgroup_ela_fig_data = all_proficiency_data[
-                all_proficiency_data["Category"].isin(subgroup)
-                & all_proficiency_data["Proficiency"].str.contains("ELA")
+                all_proficiency_data['Category'].isin(subgroup)
+                & all_proficiency_data['Proficiency'].str.contains('ELA')
             ]
 
             if not subgroup_ela_fig_data.empty:
@@ -521,8 +520,8 @@ def update_abcademic_information_page(data, school, year):
 
             # Math by Subgroup
             subgroup_math_fig_data = all_proficiency_data[
-                all_proficiency_data["Category"].isin(subgroup)
-                & all_proficiency_data["Proficiency"].str.contains("Math")
+                all_proficiency_data['Category'].isin(subgroup)
+                & all_proficiency_data['Proficiency'].str.contains('Math')
             ]
 
             if not subgroup_math_fig_data.empty:
@@ -533,15 +532,15 @@ def update_abcademic_information_page(data, school, year):
 
     ## HS academic information
     if (
-        school_index["School Type"].values[0] == "HS"
-        or school_index["School Type"].values[0] == "AHS"
-        or school_index["School Type"].values[0] == "K12"
-        or (school_index["School ID"].values[0] == "5874" and int(year) < 2021)
+        school_index['School Type'].values[0] == 'HS'
+        or school_index['School Type'].values[0] == 'AHS'
+        or school_index['School Type'].values[0] == 'K12'
+        or (school_index['School ID'].values[0] == '5874' and int(year) < 2021)
     ):
         # if HS or AHS, hide K8 table
         if (
-            school_index["School Type"].values[0] == "HS"
-            or school_index["School Type"].values[0] == "AHS"
+            school_index['School Type'].values[0] == 'HS'
+            or school_index['School Type'].values[0] == 'AHS'
         ):
             k8_grade_table = {}
             k8_ethnicity_table = {}
@@ -555,7 +554,7 @@ def update_abcademic_information_page(data, school, year):
             k8_ethnicity_math_fig = {}
             k8_subgroup_ela_fig = {}
             k8_subgroup_math_fig = {}
-            k8_table_container = {"display": "none"}
+            k8_table_container = {'display': 'none'}
 
         if len(academic_data_hs.index) == 0:
             hs_grad_overview_table = {}
@@ -566,7 +565,7 @@ def update_abcademic_information_page(data, school, year):
             sat_subgroup_table = {}              
             hs_eca_table = {}
             hs_not_calculated_table = {}
-            hs_table_container = {"display": "none"}
+            hs_table_container = {'display': 'none'}
 
             main_container = {'display': 'none'}
             empty_container = {'display': 'block'}
@@ -577,30 +576,30 @@ def update_abcademic_information_page(data, school, year):
 
             # Gradution Rate
             grad_overview_categories = [
-                "Total",
-                "Non-Waiver",
-                "State Average"
-                # "Strength of Diploma",
+                'Total',
+                'Non-Waiver',
+                'State Average'
+                # 'Strength of Diploma',
             ]
 
-            if school_index["School Type"].values[0] == "AHS":
-                grad_overview_categories.append("CCR Percentage")
+            if school_index['School Type'].values[0] == 'AHS':
+                grad_overview_categories.append('CCR Percentage')
 
             # strip out all comparative data and clean headers
             hs_academic_info = academic_data_hs[
                 [
                     col
                     for col in academic_data_hs.columns
-                    if "School" in col or "Category" in col
+                    if 'School' in col or 'Category' in col
                 ]
             ]
 
             hs_academic_info.columns = hs_academic_info.columns.str.replace(
-                r"School$", "", regex=True
+                r'School$', '', regex=True
             )
 
             eca_data = hs_academic_info[
-                hs_academic_info["Category"].str.contains('Grade 10')
+                hs_academic_info['Category'].str.contains('Grade 10')
             ].copy()
             if not eca_data.empty:            
                 hs_eca_table = create_academic_info_table(eca_data,'End of Course Assessments')            
@@ -609,18 +608,18 @@ def update_abcademic_information_page(data, school, year):
 
             # Graduation Rate Tables
             graduation_data = hs_academic_info[
-                hs_academic_info["Category"].str.contains('Graduation')
+                hs_academic_info['Category'].str.contains('Graduation')
             ].copy()
 
             # drop 'Graduation Rate' from all 'Category' rows and remove whitespace
-            graduation_data["Category"] = (
-                graduation_data["Category"]
-                .str.replace("Graduation Rate", "")
+            graduation_data['Category'] = (
+                graduation_data['Category']
+                .str.replace('Graduation Rate', '')
                 .str.strip()
             )
 
             grad_overview = graduation_data[
-                graduation_data["Category"].str.contains("|".join(grad_overview_categories))
+                graduation_data['Category'].str.contains('|'.join(grad_overview_categories))
             ]
             if not grad_overview.empty:
                 hs_grad_overview_table = create_academic_info_table(grad_overview,'Graduation Rate Overview')
@@ -628,7 +627,7 @@ def update_abcademic_information_page(data, school, year):
                 hs_grad_overview_table = no_data_table('Graduation Rate Overview')
 
             grad_ethnicity = graduation_data[
-                graduation_data["Category"].str.contains("|".join(ethnicity))
+                graduation_data['Category'].str.contains('|'.join(ethnicity))
             ]
             if not grad_ethnicity.empty:                 
                 hs_grad_ethnicity_table = create_academic_info_table(grad_ethnicity,'Graduation Rate by Ethnicity')
@@ -636,7 +635,7 @@ def update_abcademic_information_page(data, school, year):
                 hs_grad_ethnicity_table = no_data_table('Graduation Rate by Ethnicity')
 
             grad_subgroup = graduation_data[
-                graduation_data["Category"].str.contains("|".join(subgroup))
+                graduation_data['Category'].str.contains('|'.join(subgroup))
             ]
             if not grad_subgroup.empty:                
                 hs_grad_subgroup_table = create_academic_info_table(grad_subgroup,'Graduation Rate by Subgroup')
@@ -645,18 +644,18 @@ def update_abcademic_information_page(data, school, year):
 
             # SAT Benchmark Tables
             sat_table_data = hs_academic_info[
-                hs_academic_info["Category"].str.contains('Benchmark %')
+                hs_academic_info['Category'].str.contains('Benchmark %')
             ].copy()
 
             # drop 'Graduation Rate' from all 'Category' rows and remove whitespace
-            sat_table_data["Category"] = (
-                sat_table_data["Category"]
-                .str.replace("Benchmark %", "")
+            sat_table_data['Category'] = (
+                sat_table_data['Category']
+                .str.replace('Benchmark %', '')
                 .str.strip()
             )
 
             sat_overview = sat_table_data[
-                sat_table_data["Category"].str.contains('School Total')
+                sat_table_data['Category'].str.contains('School Total')
             ]
             if not sat_overview.empty:          
                 sat_overview_table = create_academic_info_table(sat_overview,'SAT Overview')
@@ -664,7 +663,7 @@ def update_abcademic_information_page(data, school, year):
                 sat_overview_table = no_data_table('SAT Overview')
 
             sat_ethnicity = sat_table_data[
-                sat_table_data["Category"].str.contains("|".join(ethnicity))
+                sat_table_data['Category'].str.contains('|'.join(ethnicity))
             ]
             if not sat_ethnicity.empty:                 
                 sat_ethnicity_table = create_academic_info_table(sat_ethnicity,'SAT Benchmarks by Ethnicity')
@@ -672,7 +671,7 @@ def update_abcademic_information_page(data, school, year):
                 sat_ethnicity_table = no_data_table('SAT Benchmarks by Ethnicity')
 
             sat_subgroup = sat_table_data[
-                sat_table_data["Category"].str.contains("|".join(subgroup))
+                sat_table_data['Category'].str.contains('|'.join(subgroup))
             ]
             if not sat_subgroup.empty:                
                 sat_subgroup_table = create_academic_info_table(sat_subgroup,'SAT Benchmarks by Subgroup')
@@ -681,10 +680,10 @@ def update_abcademic_information_page(data, school, year):
 
             hs_not_calculated = [
                 {
-                    "Category": "The percentage of students entering grade 12 at the beginning of the school year who graduated from high school"
+                    'Category': 'The percentage of students entering grade 12 at the beginning of the school year who graduated from high school'
                 },
                 {
-                    "Category": "The percentage of graduating students planning to pursue college or career (as defined by IDOE)."
+                    'Category': 'The percentage of graduating students planning to pursue college or career (as defined by IDOE).'
                 },
             ]
 
@@ -692,10 +691,27 @@ def update_abcademic_information_page(data, school, year):
             hs_not_calculated_data = hs_not_calculated_data.reindex(
                 columns=hs_academic_info.columns
             )
-            hs_not_calculated_data = hs_not_calculated_data.fillna("NA")
+            hs_not_calculated_data = hs_not_calculated_data.fillna('NA')
 
             hs_not_calculated_table = create_academic_info_table(hs_not_calculated_data,'Not Currently Calculated')
 
+    # Add relevant notes string
+    if school_index['School Type'].values[0] == 'AHS':
+        notes_string = 'Adult High Schools enroll students who are over the age of 18, under credited, \
+            dropped out of high school for a variety of reasons, and are typically out of cohort from \
+            their original graduation year. Because graduation rate is calculated at the end of the school \
+            year regardless of the length of time a student is enrolled at a school, it is not comparable to \
+            the graduation rate of a traditional high school.'
+    
+    else:
+        notes_string = 'There are a number of factors that make it difficult to make valid and reliable \
+            comparisons between test scores from 2019 to 2022. For example, ILEARN was administered for \
+            the first time during the 2018-19 SY and represented an entirely new type and mode of \
+            assessment (adaptive and online-only). No State assessment was administered  in 2020 because \
+            of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
+            testing school for 162 days, while the 2021 and 2022 data sets included all tested students. \
+            Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/).'
+        
     return (
         k8_grade_table,
         k8_grade_ela_fig,
@@ -720,8 +736,9 @@ def update_abcademic_information_page(data, school, year):
         hs_table_container,
         main_container,
         empty_container,
-        no_data_to_display
-    )
+        no_data_to_display,
+        notes_string
+)
 
 def layout():
     return html.Div(
@@ -730,12 +747,12 @@ def layout():
                 [
                     html.Div(
                         [
-                            html.Div(subnav_academic(), className="tabs"),
+                            html.Div(subnav_academic(), className='tabs'),
                         ],
-                        className="bare_container twelve columns",
+                        className='bare_container twelve columns',
                     ),
                 ],
-                className="row",
+                className='row',
             ),
             html.Div(
                 [
@@ -743,27 +760,9 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    html.Label('Notes:',
-                                        style = {
-                                            'height': 'auto',
-                                            'lineHeight': '1.5em',
-                                            'backgroundColor': '#6783a9',
-                                            'fontSize': '12px',
-                                            'fontFamily': 'Roboto, sans-serif',
-                                            'color': '#ffffff',
-                                            'textAlign': 'center',
-                                            'fontWeight': 'bold',
-                                            'paddingBottom': '5px',
-                                            'paddingTop': '5px'
-                                        }
-                                    ),
-                                    html.P(""),
-                                        html.P("There are a number of factors that make it difficult to make valid and reliable comparisons between \
-                                               test scores from 2019 to 2022. For example, ILEARN was administered for the first \
-                                               time during the 2018-19 SY and represented an entirely new type and mode of assessment (adaptive \
-                                               and online-only). No State assessment was administered in 2020 because of the Covid-19 pandemic. Finally, \
-                                               the 2019 data set includes only students who attended the testing school for 162 days, while \
-                                               the 2021 and 2022 data sets included all tested students.",
+                                    html.Label('Notes:', className='header_label'),
+                                    html.P(''),
+                                        html.P(id='notes-string',
                                             style={
                                                     'textAlign': 'Left',
                                                     'color': '#6783a9',
@@ -771,21 +770,13 @@ def layout():
                                                     'marginLeft': '10px',
                                                     'marginRight': '10px',
                                                     'marginTop': '10px',
-                                                }
-                                            ),
-                                            html.P("Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)",
-                                            style={
-                                                'color': '#6783a9',
-                                                'fontSize': 10,
-                                                'marginLeft': '10px',
-                                                'marginRight': '10px',
-                                                'marginTop': '10px',
-                                            }),
+                                            }
+                                        ),
                                 ],
-                                className = "pretty_container seven columns"
+                                className = 'pretty_container seven columns'
                             ),
                         ],
-                        className = "bare_container twelve columns"
+                        className = 'bare_container twelve columns'
                     ),        
                     html.Div(
                         [
@@ -793,110 +784,110 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-grade-table"),
+                                            html.Div(id='k8-grade-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-grade-ela-fig"),
+                                            html.Div(id='k8-grade-ela-fig'),
                                         ],
-                                        className="pretty_container four columns",
+                                        className='pretty_container four columns',
                                     ),
                                     html.Div(
                                         [
-                                            html.Div(id="k8-grade-math-fig"),
+                                            html.Div(id='k8-grade-math-fig'),
                                         ],
-                                        className="pretty_container four columns",
+                                        className='pretty_container four columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-ethnicity-table"),
+                                            html.Div(id='k8-ethnicity-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-ethnicity-ela-fig"),
+                                            html.Div(id='k8-ethnicity-ela-fig'),
                                         ],
-                                        className="pretty_container four columns",
+                                        className='pretty_container four columns',
                                     ),
                                     html.Div(
                                         [
-                                            html.Div(id="k8-ethnicity-math-fig"),
+                                            html.Div(id='k8-ethnicity-math-fig'),
                                         ],
-                                        className="pretty_container four columns",
+                                        className='pretty_container four columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-subgroup-table"),
+                                            html.Div(id='k8-subgroup-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-subgroup-ela-fig"),
+                                            html.Div(id='k8-subgroup-ela-fig'),
                                         ],
-                                        className="pretty_container four columns",
+                                        className='pretty_container four columns',
                                     ),
                                     html.Div(
                                         [
-                                            html.Div(id="k8-subgroup-math-fig"),
+                                            html.Div(id='k8-subgroup-math-fig'),
                                         ],
-                                        className="pretty_container four columns",
+                                        className='pretty_container four columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-other-table"),
+                                            html.Div(id='k8-other-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="k8-not-calculated-table"),
+                                            html.Div(id='k8-not-calculated-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                         ],
-                        id="k8-table-container",
+                        id='k8-table-container',
                     ),
                     html.Div(
                         [
@@ -904,92 +895,92 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="hs-grad-overview-table"),
+                                            html.Div(id='hs-grad-overview-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="hs-grad-ethnicity-table"),
+                                            html.Div(id='hs-grad-ethnicity-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="hs-grad-subgroup-table"),
+                                            html.Div(id='hs-grad-subgroup-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="sat-overview-table"),
+                                            html.Div(id='sat-overview-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="sat-ethnicity-table"),
+                                            html.Div(id='sat-ethnicity-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="sat-subgroup-table"),
+                                            html.Div(id='sat-subgroup-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),                            
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="hs-eca-table"),
+                                            html.Div(id='hs-eca-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(id="hs-not-calculated-table"),
+                                            html.Div(id='hs-not-calculated-table'),
                                         ],
-                                        className="pretty_container six columns",
+                                        className='pretty_container six columns',
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className='bare_container twelve columns',
                             ),
                         ],
-                        id="hs-table-container",
+                        id='hs-table-container',
                     ),
                 ],
                 id = 'academic-information-main-container',
@@ -1001,5 +992,5 @@ def layout():
                 id = 'academic-information-empty-container',
             ),
         ],
-        id="mainContainer",
+        id='mainContainer',
     )

@@ -417,6 +417,7 @@ body {
   position: relative;
   box-shadow: 2px 2px 2px lightgrey;
 }
+
 .map_container {
   border-radius: 5px;
   background-color: #ffffff;
@@ -562,12 +563,6 @@ body {
   display: flex;
 }
 
-/* .center-icon {
-  line-height: 1.6;
-  text-align: center;
-  width: 100%;
-} */
-
 .center-row {
   display: flex;
   margin: auto;
@@ -602,18 +597,22 @@ body {
 }
 
 /* modify table styling */
-  /* This doesn't work 
-.dash-spreadsheet-container .dash-spreadsheet-inner table {
-  --accent: #1EAEDB !important;
+/* This doesn't work */
+/* .dash-spreadsheet-container .dash-spreadsheet-inner table {
+  --accent: grey !important;
+  --border: grey !important;
   --selected-background: grey !important;
   --selected-color: #3C3C3C !important;
-}*/
+  --border-color: grey !important;
+  --border-bottom:1px solid grey !important;
+  --border-top:1px solid grey !important;  
+} */
 
 /* This does */
-td.dash-cell.cell--selected.focused {
+/* td.dash-cell.cell--selected.focused {
   background-color: #d6d6d6 !important;
   border-color: #d8d8d8 !important;
-}
+} */
 
 /* override header */
 /* NEED TO WORK ON THIS FOR INFO TABLES */
@@ -878,6 +877,7 @@ a.logout-button:hover {
   text-align: center;
   box-sizing: border-box;
 }
+
 .tabs {
   z-index: 99;
   margin: 0;
@@ -936,21 +936,6 @@ ul,
 ol {
   margin-bottom: 0.75rem;
 }
-
-/* Utilities
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
-/*
-.u-full-width {
-  width: 100%;
-  box-sizing: border-box; }
-.u-max-full-width {
-  max-width: 100%;
-  box-sizing: border-box; }
-.u-pull-right {
-  float: right; }
-.u-pull-left {
-  float: left; }
-*/
 
 /* Misc
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -1015,75 +1000,7 @@ there.
 }
 
 }
-/* TEST! 
 
-/* Larger than tablet 
-@media (min-width: 750px) {
-	.flex-display {
-    display: block !important;
-}
-.pretty_container {
-    margin: 0 !important;
-    margin-bottom: 25px !important;
-}
-#individual_graph,
-#count_graph,
-#aggregate_graph {
-    position: static !important;
-}
-.container-display {
-    display: flex;
-}
-#wells,
-#gas,
-#oil {
-    margin-right: 10px;
-}
-#wells {
-    margin-left: 0;
-}
-#water {
-    margin-right: 0;
-}
-.mini_container {
-    margin-bottom: 25px !important;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-    padding: 15px;
-    position: relative;
-    box-shadow: 2px 2px 2px lightgrey;
-}
-#plotly-image {
-    margin-bottom: 0 !important;
-    height: 45px !important;
-}
-#learn-more-button {
-    margin-top: 0 !important;
-    padding: 0 10px !important;
-    font-size: 12px !important;
-}
-#button {
-    display: flex;
-    justify-content: center;
-}
-#title {
-    margin-bottom: 10px;
-}
-h3 {
-    font-size: 2.5rem;
-}
-h5 {
-    font-size: 2rem;
-}
-h6 {
-    font-size: 1.25rem;
-}
-p {
-    font-size: 11px;
-}
-	
-}
-*/
 /* Larger than desktop */
 @media (min-width: 1000px) {}
 
