@@ -201,7 +201,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     # column
 
     # Copy all of the Total Tested Values
-    # total_tested = data.loc[data['Proficiency'] == 'Total Tested']
     total_tested = data[data['Proficiency'].str.contains('Total Tested')]
 
     # Merge the total tested values with the existing dataframe
@@ -213,33 +212,30 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     data.columns = ['Category','Percentage','Proficiency','Total Tested']
 
     # drop the Total Tested Rows
-    # data = data[(data['Proficiency'] != 'Total Tested')]
     data = data[data['Proficiency'].str.contains('Total Tested') == False]
-    
+
+    # Remove subject substring ('ELA/Math') from Proficiency column
+    data['Proficiency'] = data['Proficiency'].str.split().str[1:].str.join(' ')
+
     fig = px.bar(
         data,
-        x= data['Percentage'],
+        x = data['Percentage'],
         y = data['Category'].map(customwrap),
         color=data['Proficiency'],
         barmode='stack',
         text=[f'{i}%' for i in data['Percentage']],
-        custom_data = [data['Total Tested']],
         orientation="h",
         color_discrete_sequence=color,
         height=200,
-        hover_name='Total Tested'
     )
 
     # Add hoverdata
-    # TODO: Remove Subject substring (Math, ELA) leaving only proficiency level
     # TODO: Remove hover 'title' which is currently y-axis name
     # TODO: Add new label title that is equal to: "Total Tested: {z}"
     # https://stackoverflow.com/questions/59057881/how-to-customize-hover-template-on-with-what-information-to-show
     # fig.update_layout(hovermode="x unified")
     fig.update_traces(hovertemplate="%{text}")
 
-
-    # layout.xaxis.hoverformat
     # the uniformtext_minsize and uniformtext_mode settings hide bar chart
     # text (Percentage) if the size of the chart causes the text of the font
     # to decrease below 8px. The text is required to be positioned 'inside'
@@ -255,11 +251,11 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
         plot_bgcolor="white",
         hovermode='y unified',
         hoverlabel=dict(
-            bgcolor = 'grey',
-            font=dict(
-                family="Open Sans, sans-serif", color="white", size=8
-            ),
-        ),
+            bgcolor="white",
+            font_color='steelblue',
+            font_size=10,
+            font_family='Roboto Sans, sans-serif',
+        ),        
         yaxis=dict(autorange="reversed"),
         uniformtext_minsize=8,
         uniformtext_mode='hide'
@@ -298,38 +294,28 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     return fig_layout
 
 # single line chart
+### TODO: default tick behavior is ugly for small number of points. For example, if only
+### TODO: two points, the 2 x-ticks are really far apart towards edges, same with 3 ticks
 def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
     data = values.copy()
 
     data.columns = data.columns.str.split('|').str[0]
-
     cols=[i for i in data.columns if i not in ['School Name','Year']]
 
     # create chart only if data exists
     if (len(cols)) > 0:
+
         for col in cols:
             data[col]=pd.to_numeric(data[col], errors='coerce')
 
         data.sort_values('Year', inplace=True)
-
-        marks = [v for v in list(data.columns) if v not in ['School Name','Year']]
-
-        # determine tick range [Not currently using/skews graph too much]
-        # # get max value in dataframe
-        # max_val = data[cols].select_dtypes(include=[np.number]).max().max()
-        
-        # # round to nearest .1
-        # tick_val = np.round(max_val,1)
-
-        # # if it rounded down, add .1
-        # if tick_val < max_val:
-        #     tick_val = tick_val + .1
+        data = data.reset_index(drop=True)
 
         fig = px.line(
             data,
             x='Year',
-            y=marks,
+            y=cols,
             markers=True,
             color_discrete_sequence=color,
         )
@@ -339,56 +325,35 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             margin=dict(l=40, r=40, t=40, b=60),
             title_x=0.5,
             font = dict(
-                family = 'Open Sans, sans-serif',
+                family = 'Roboto, sans-serif',
                 color = 'steelblue',
                 size = 10
                 ),
             plot_bgcolor='white',
-            # xaxis = dict(
-            #     # title='',
-            #     # type='category',
-            #     # mirror=True,
-            #     # showline=True,
-            #     # # tickmode = 'linear',
-            #     # # tick0 = data['Year'][0],
-            #     # # dtick = 1,
-            #     # # tickmode = 'array',
-            #     # # tickvals = data['Year'],
-            #     # # ticktext = data['Year'],
-            #     # linecolor='#b0c4de',
-            #     # linewidth=.5,
-            #     # gridwidth=.5,
-            #     # showgrid=True,
-            #     # gridcolor='#b0c4de',
-            #     # zeroline=False,
-            #     ),   
+            xaxis = dict(
+                title='',
+                # type='date',
+                tickmode = 'array',
+                # tickmode = 'linear',
+                tickvals = data['Year'],
+                tickformat="%Y",
+                # tick0 = data['Year'][0] - 1,
+                # dtick ='M6',
+                categoryorder = 'array',
+                categoryarray = data['Year'],
+                mirror=True,
+                showline=True,
+                linecolor='#b0c4de',
+                linewidth=.5,
+                gridwidth=.5,
+                showgrid=True,
+                gridcolor='#b0c4de',
+                zeroline=False,
+                ),   
             legend=dict(orientation="h"),         
             hovermode='x unified',
             height=400,
             legend_title='',
-        )
-
-    # TODO: default tick behavior is quite ugly for small number of points. How to fix?
-    # May not be able to fix easily- at least find a way to space small number of ticks
-    # equally within chart space
-
-        fig.update_xaxes(
-            title='',
-            # type='category',
-            mirror=True,
-            showline=True,
-            # tickmode = 'linear',
-            # tick0 = data['Year'].min() - 2,
-            # dtick = 1,
-            tickmode = 'array',
-            tickvals = data['Year'],
-            ticktext = data['Year'],
-            linecolor='#b0c4de',
-            linewidth=.5,
-            gridwidth=.5,
-            showgrid=True,
-            gridcolor='#b0c4de',
-            zeroline=False,     
         )
 
         fig.update_yaxes(
@@ -401,13 +366,13 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             showgrid=True,
             gridcolor='#b0c4de',
             zeroline=False,
-            range=[0, 1], #tick_val],  # adjusting tick value skews graph too much
+            range=[0, 1],
             dtick=.2,
             tickformat=',.0%',
         )
 
     else:
-        # create blank chart
+
         fig = no_data_fig_blank()
 
     fig_layout = [
@@ -425,56 +390,71 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
     data = values.copy()
 
-    # TODO: DETERMINE IF CAN BE NO DATA - IF SO COPY make_line_chart form
-    schools = data['School Name'].tolist()
+    # NOTE: Unless the entire page is blank, e.g., no data at all, the
+    # dataframe for this chart should never be blank due to error
+    # handling in the calling script. However, we know that 'should never'
+    # is code for 'almost with certainty' so we test here too.
 
-    # assign colors for each comparison school
-    trace_color = {schools[i]: color[i] for i in range(len(schools))}
+    # the dataframe should always have at least 4 columns
+    if (len(data.columns)) > 3:
+        schools = data['School Name'].tolist()
 
-    # use specific color for selected school
-    for key, value in trace_color.items():
-        if key == school_name:
-            trace_color[key] = '#b86949'
+        # assign colors for each comparison school
+        trace_color = {schools[i]: color[i] for i in range(len(schools))}
 
-    # format distance data (not displayed)
-    # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
+        # use specific color for selected school
+        for key, value in trace_color.items():
+            if key == school_name:
+                trace_color[key] = '#b86949'
 
-    fig = px.bar(
-        data,
-        x='School Name',
-        y=category,
-        color_discrete_map=trace_color,
-        color='School Name',
-        custom_data  = ['Low Grade','High Grade'] #,'Distance']
-    )
+        # format distance data (not displayed)
+        # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
 
-    fig.update_yaxes(range=[0, 1], dtick=0.2, tickformat=',.0%',title='',showgrid=True, gridcolor='#b0c4de')
-    fig.update_xaxes(type='category', showticklabels=False, title='',showline=True,linewidth=1,linecolor='#b0c4de')
+        fig = px.bar(
+            data,
+            x='School Name',
+            y=category,
+            color_discrete_map=trace_color,
+            color='School Name',
+            custom_data  = ['Low Grade','High Grade'] #,'Distance']
+        )
 
-    fig.update_layout(
-        title_x=0.5,
-        margin=dict(l=40, r=40, t=40, b=60),
-        font = dict(
-            family='Open Sans, sans-serif',
-            color='steelblue',
-            size=10
+        fig.update_yaxes(range=[0, 1], dtick=0.2, tickformat=',.0%',title='',showgrid=True, gridcolor='#b0c4de')
+        fig.update_xaxes(type='category', showticklabels=False, title='',showline=True,linewidth=1,linecolor='#b0c4de')
+
+        fig.update_layout(
+            title_x=0.5,
+            margin=dict(l=40, r=40, t=40, b=60),
+            font = dict(
+                family='Roboto Sans, sans-serif',
+                color='steelblue',
+                size=10
+                ),
+            legend=dict(
+                orientation='h',
+                title='',
+                xanchor= 'center',
+                x=0.45
             ),
-        legend=dict(
-            orientation='h',
-            title='',
-            xanchor= 'center',
-            x=0.45
-        ),
-        height=350,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
+            height=350,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            hoverlabel=dict(
+                bgcolor="white",
+                font_color='steelblue',
+                font_size=10,
+                font_family='Roboto Sans, sans-serif',
+            ),
+            hoverlabel_align = 'left'
+        )
 
-    # TODO: Make traces prettier
-    fig.update_traces(
-        # hovertemplate = '<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br>Distance in miles: %{customdata[2]}<br>Proficiency: %{y}<br><extra></extra>'
-        hovertemplate = '<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br>Proficiency: %{y}<br><extra></extra>'
-    )
+        fig.update_traces(
+            hovertemplate = '<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br><b>Proficiency: </b>%{y}<br><extra></extra>'
+        )
+
+    else:
+
+        fig = no_data_fig_blank()
 
     fig_layout = [
         html.Div(
@@ -487,7 +467,6 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
 
     return fig_layout
 
-# grouped bar chart
 def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> list: #px.bar:
 
     data = values.copy()
@@ -512,10 +491,9 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
 
     # force non-string columns to numeric
     cols=[i for i in data.columns if i not in ['School Name','Year']]
+
     for col in cols:
         data[col]=pd.to_numeric(data[col], errors='coerce')
-
-    # num_schools = len(data['School Name'])
 
     categories = data.columns.tolist()
     categories.remove('School Name')
@@ -550,15 +528,25 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         custom_data = ['School Name']
     )
 
-    fig.update_yaxes(range=[0, 1], dtick=0.2, tickformat=',.0%', title='',showgrid=True, gridcolor='#b0c4de')
-    fig.update_xaxes(title='',showline=True,linewidth=.5,linecolor='#b0c4de')
+    fig.update_yaxes(
+        range=[0, 1],
+        dtick=0.2,
+        tickformat=',.0%',
+        title='',
+        showgrid=True,
+        gridcolor='#b0c4de'
+    )
 
-    # TODO: Issue with the relationship between the chart and the table.
-    # TODO: Cannot figure out a way to reduce the bottom margin of a chart to
-    # TODO: reduce the amount of empty space
-    # Cannot seem to shrink bottom margin here - had to add negative margin
-    # to each fig layout. Try this maybe:
-    # it takes maximum value and multiplies it by three for max range (eg., less than 100)
+    fig.update_xaxes(
+        title='',
+        showline=True,
+        linewidth=.5,
+        linecolor='#b0c4de'
+    )
+
+    # TODO: Better way to reduce the bottom margin of a chart to reduce empty space between chart and table
+    # Currently adding negative margin - must be better way
+    # Does this work? it takes maximum value and multiplies it by three for max range (eg., less than 100)
     #fig.update_layout(yaxis=dict(range=[0, ymax*3]))
 
     fig.update_layout(
@@ -568,59 +556,52 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
             family='Open Sans, sans-serif',
             color='steelblue',
             size=10
-            ),
+        ),
         bargap=.15,
-        bargroupgap=0,
+        bargroupgap=.1,
         height=400,
         legend_title='',
         paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
-    )
+        plot_bgcolor='rgba(0,0,0,0)',
+        hoverlabel=dict(
+            bgcolor="white",
+            font_color='steelblue',
+            font_size=10,
+            font_family='Roboto Sans, sans-serif',
+        ),
+        hoverlabel_align = 'left'
+    )        
 
-# TODO: In progress - The purpose of all this is to get '0' values in
-# TODO: a bar chart to show up as a thin line (as opposed to no line for no data)
-
-# TODO: Add thin marker_line_color (border) to each bar - This will cause '0' vals to show up as a thin line
-# Currently cannot figure out how to make the marker_line_color match the bar color
-# May be able to use Go to add each trace separately and just flag the zero value bar for a markerline, but
-# that would require a complete rewrite which I'd like to avoid.
-# Surely there is a way to get this to work with plotly express
-# https://plotly.com/python/marker-style/
-#
-    # {'ACE Preparatory Academy': '#98abc5', 'Indianapolis Public Schools': '#919ab6', 'Center for Inquiry School 70': '#8a89a6', 'IPS/Butler Lab at Eliza Blaker 55': '#837997', 'Merle Sidener Gifted Academy': '#7b6888', 'Rousseau McClellan School 91': '#73587a'}
-    # for i in range(num_schools):
-    #     print(i)
-    # colorlist = [[0, '#98abc5'], [.2, '#919ab6'], [.4, '#8a89a6'], [.6, '#837997'], [.8, '#7b6888'], [1, '#73587a']]
-    # #colorlist = [[0, 'rgb(152, 171, 197)'], [1, 'rgb(145, 154, 182)'], [2, 'rgb(138, 137, 166)'], [3, 'rgb(131, 121, 151)'], [4, 'rgb(123, 104, 136)'], [5, 'rgb(115, 88, 122)']]
-
-    # fig.update_traces(marker_line_width = 2, marker_line_color = colorlist) #marker_line_color = dict(trace_color),
-    # fig.update_traces(
-    #     marker_size=2,
-    #     marker_line=dict(width=12, colorscale = colorlist), #color['hex']),
-    #     selector=dict(mode='markers')
-    # )
-
-# https://stackoverflow.com/questions/69000770/plotly-bar-chart-with-dotted-or-dashed-border-how-to-implement
-    # data2={"years":[2019,2020,2021,2022],
-    #     "total_value":[100000000000,220000000000,350000000000,410000000000]}
-    # print(data2)
-    # print(data)
-    # x_location = data["years"].index(2022)
-    # print(x_location)
-    # def get_plotly_xcoordinates(category, width=0.8):
-    #     x_location = data_set['Categories'].index(category)
-    #     print(x_location)
-    #     return x_location - width/2, x_location + width/2
+    # TODO: Add ability to click on 0?
+    # Display '0' values visually on the chart.
+    # NOTE: marker_line_color controls the color of the border around a trace. The border is
+    # visible even when a value is 0, so it can be used as a visible representation of 0. Was
+    # not able to get this to work using update traces (it applied the colors in the list to
+    # each group rather than to each trace in a group): 
+    # fig.update_traces(marker_line_width = 2, marker_line_color = list(trace_color.values()))
     
-    # for cat in data_set['Categories']:
-    #     print(cat)
-    #     x0,x1 = get_plotly_xcoordinates(cat)
+    # This seems extremely janky, but works by manually looping through the fig object using nested
+    # loops. The top level loop iterates through each school. The internal loop loops through each
+    # data point in the 'y' array. If the value is zero, the marker_array list appends the color 
+    # black. If the value is not zero, the list appends the marker color. This has the effect of
+    # creating a black marker_line border color for a zero value and otherwise creating a border
+    # color that is the same as the marker.
+    
+    # TODO: Remove Black marker border from legend
+    # if black exists in the array, plotly uses it as a border for the 'legend' marker. Fix This.
 
-    #     fig.add_shape(type="rect", xref="x", yref="y",
-    #         x0=x0, y0=0,
-    #         x1=x1, y1=410000000000,
-    #         line=dict(color="#FED241",dash="dash",width=3)
-    # )
+    for i in range(0,len(data['School Name'])):
+
+        marker_array = []
+        for j in range(0,len(fig['data'][i]['y'])):
+
+            if fig['data'][i]['y'][j] == 0:
+                marker_array.append('#000000')
+            else:
+                marker_array.append(fig['data'][i]['marker']['color'])
+
+        fig['data'][i]['marker']['line']['color'] = marker_array
+        fig['data'][i]['marker']['line']['width'] = 3
 
     fig.update_traces(
         hovertemplate="<br>".join(
@@ -628,7 +609,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
                 s.replace(" ", "&nbsp;")
                 for s in [
                     '<b>%{customdata[0]}</b>',
-                    'Proficiency: %{y}<br><extra></extra>',
+                    '<b>Proficiency: </b>%{y}<br><extra></extra>',
                 ]
             ]
         )
