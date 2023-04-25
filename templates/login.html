@@ -79,8 +79,8 @@ header a img{
 }
 </style>
 </head>
-<!-- <header><img src="../login/logo.jpg" alt="WTF"/></header> -->
-<header><div style="text-align: center"><img src="{{url_for('static', filename='ilogo.jpg')}}" ></div></header>
+<!-- <header><center><img src="/static/logo.jpg" alt="WTFA"/></center></header> -->
+<header><div style="text-align: center"><img src="{{ url_for('static', filename='logo.jpg') }}" alt="WTFA"/></div></header>
 <body class = 'login-body'>
 <form method="POST" action="/login">
     <div class="login-page">

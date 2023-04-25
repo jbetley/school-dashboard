@@ -6,16 +6,11 @@
 # using: Dash version 2.9.2
 
 ## NOTE: Need to manually determine certain data points at the
-# school level if it is stored at the Corp Level
+# school level when the data is stored at the Corp Level
 # E.g., Split Grade K8 and 912 enrollment / Proportionate split
 # of demographic enrollment (subgroups, etc.):
 # Christel House South (CHS/CHWMHS)
 # Circle City Prep (Ele/Mid)
-
-## NOTE: Using pandas dataframes (not typically used for display)
-# to build lots of dash datatables to be used for display, so there
-# is quite a bit of funky ass fiddly dataframe manipulation shit
-# required to get everything aligned and in the order that we want it.
 
 # flask and flask-login #
 # https://levelup.gitconnected.com/how-to-setup-user-authentication-for-dash-apps-using-python-and-flask-6c2e430cdb51
@@ -26,7 +21,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 
 import dash
-from dash import dcc, html, Input, Output, State, callback
+from dash import dcc, html, Input, Output, callback #, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from collections import OrderedDict
@@ -48,9 +43,8 @@ external_stylesheets = ["https://fonts.googleapis.com/css2?family=Roboto:400", F
 # Authentication with Flask-Login, Sqlite3, and Bcrypt
 # https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/38
 # https://stackoverflow.com/questions/52286507/how-to-merge-flask-login-with-a-dash-application
-server = Flask(__name__, static_folder="./static")
+server = Flask(__name__, static_folder="static") # static_url_path="", # Causes static crashes
 
-# dotenv_path = join(dirname(__file__), '.env')
 # load_dotenv(dotenv_path)
 load_dotenv()
 
@@ -81,7 +75,6 @@ class User(UserMixin, db.Model):
     username = db.Column(db.Text, unique=True)
     password = db.Column(db.Text, unique=True)
 
-
 # load_user is used by login_user, passes the user_id
 # and gets the User object that matches that id
 # The 'User.query.get(int(id))' method has been deprecated
@@ -103,6 +96,7 @@ def check_login():
                 for pg in dash.page_registry:
                     if request.path == dash.page_registry[pg]["path"]:
                         session["url"] = request.url
+
         return redirect(url_for("login"))
     else:
         if current_user:
@@ -110,12 +104,10 @@ def check_login():
                 return
         return jsonify({"status": "401", "statusText": "unauthorized access"})
 
-
 # Login logic
 message = "Invalid username and/or password."
 
 @server.route("/login", methods=["GET", "POST"])
-
 def login():
     if request.method == "GET":
         # if user is authenticated - redirect to dash app
@@ -138,6 +130,7 @@ def login():
                 # check a hash of the provided password against the hashed password stored in the
                 # User object
                 if bcrypt.check_password_hash(user_data.password, password):
+
                     # if True, login the user using the User object
                     login_user(user_data)
 
@@ -159,8 +152,6 @@ def logout():
             logout_user()
     return render_template("login.html", message="You have been logged out.")
 
-# Latest version was refactors to use new dash pages functionality (added dash 2.5)
-# https://github.com/AnnMarieW/dash-multi-page-app-demos/tree/main/multi_page_layout_functions
 app = dash.Dash(
     __name__,
     server=server,
@@ -176,7 +167,7 @@ app = dash.Dash(
 )
 
 # category variables
-# TODO: Decide re: American Indian
+# TODO: Should American Indian be added back?
 # NOTE: 'American Indian' has been removed from ethnicity
 # variable as it seems to break some functionality due to
 # inconsistent use as a category in data
@@ -245,7 +236,6 @@ current_academic_year = school_academic_data_k8["Year"].unique().max()
     [Input("application-state", "children")]
 )
 def set_dropdown_options(app_state):
-
     # Charter Dropdown Options    
     # Get the current user id using the current_user proxy,
     # use the ._get_current_object() method to return the
@@ -285,10 +275,10 @@ def set_dropdown_value(charter_options):
 #   limit = typically a limit of 5 years (currently and 
 #   temporarily 4 years so that 2018 academic data is not shown)
 @callback(
-    Output("year-dropdown", "options"), # , allow_duplicate=True)
-    Output("year-dropdown", "value"), #, allow_duplicate=True)
+    Output("year-dropdown", "options"),
+    Output("year-dropdown", "value"),
     Input("charter-dropdown", "value"),
-    Input("year-dropdown", "value"),        # TODO: MULTIPLE CALLBACK USING NEW DASH?? OR IS THIS DIFF ISSUE
+    Input("year-dropdown", "value"),
     # https://community.plotly.com/t/duplicate-callback-outputs-solution-api-discussion/55909/20
 )
 def set_year_dropdown_options(school, year):

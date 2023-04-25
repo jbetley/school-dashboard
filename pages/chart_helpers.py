@@ -9,44 +9,13 @@ import textwrap
 import plotly.graph_objects as go
 from dash import html, dcc
 
-# TODO: Pick a Damn Color Already
-# http://brandcolors.net/
+# Colors
+# https://codepen.io/ctf0/pen/BwLezW
 
 # Steelblue
 #color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
-# Instagram
-#color=["#405de6", "#5851db", "#833ab4", "#c13584", "#e1306c", "#fd1d1d","#f56040", "#f77737", "#fcaf45", "#ffdc80"]
-
-# Easter at Grandmas
-#color=["#fbf8cc","#fde4cf","#ffcfd2","#f1c0e8","#cfbaf0","#a3c4f3","#90dbf4","#8eecf5","#98f5e1","#b9fbc0"]
-
-# Squid Game
-#color = ['#e27d60','#85cdca','#e8a87c','#c38d9e','#41b3a3','#e27d60','#85cdca','#e8a87c','#c38d9e','#41b3a3']
-
-# Earthy Kitt
-#color = ['#8d8741','#659dbd','#daad86','#bc986a','#fbeec1','#8d8741','#659dbd','#daad86','#bc986a','#fbeec1']
-
-# Russian Green
-#color = ['#8ee4af','#edf5e1','#5cdb95','#907163','#379683','#8ee4af','#edf5e1','#5cdb95','#907163','#379683',]
-
-# Bridgett's Favorite
-#color = ['#5d5c61','#379683','#7395ae','#557a95','#b1a296','#5d5c61','#379683','#7395ae','#557a95','#b1a296',]
-
-# Clown Car
-#color = ['#d79922','#efe2ba','#f13c20','#4056a1','#c5cbe3','#d79922','#efe2ba','#f13c20','#4056a1','#c5cbe3']
-
-# Mapbox
-#color = ['#3bb2d0','#3887be','#8a8acb','#56b881','#50667f','#41afa5','#f9886c','#e55e5e','#ed6498','#fbb03b']
-
-## Royal Drama
-#color=['#9fc54d','#f0c33b','#74a2d7','#de8a3d','#999999','#43a756','#c32128','#1b5692']
-
-## Linkedin
-#color=["#0a66c2","#83941f","#e7a33e","#f5987e","#56687a","#004182","#44712e","#915907","#b24020","#38434f"]
-
-## Sonny
-color=['#f4979c','#df8f2d','#a4dbdb','#165b65','#b1b134','#f58268','#dc9018','#96b8db','#bbd634','#b24f3f','#96b8db','#dbe3b6']
+color= ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#999999']
 
 ## Blank (Loading) Fig ##
 # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
@@ -144,15 +113,15 @@ def no_data_fig_blank() -> go.Figure:
     fig.update_layout(
         margin=dict(l=10, r=10, t=20, b=0),
         height = 400,
-        title={
-            'y':0.975,
-            'x':0.5,
-            'xanchor': 'center',
-            'yanchor': 'top',
-            'font_family': 'Roboto, sans-serif',
-            'font_color': 'steelblue',
-            'font_size': 10
-        },
+        # title={
+        #     'y':0.975,
+        #     'x':0.5,
+        #     'xanchor': 'center',
+        #     'yanchor': 'top',
+        #     'font_family': 'Roboto, sans-serif',
+        #     'font_color': 'steelblue',
+        #     'font_size': 10
+        # },
         xaxis =  {
             "visible": False,
             'fixedrange': True
@@ -192,8 +161,6 @@ def customwrap(s: str,width: int = 16):
 
 def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     data = values.copy()
-    # https://plotly.com/python/discrete-color/
-    # colors = plotly.colors.qualitative.T10
 
     # In order to get the total_tested value into hovertemplate
     # without displaying it on the chart, we need to pull the
@@ -234,6 +201,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     # TODO: Add new label title that is equal to: "Total Tested: {z}"
     # https://stackoverflow.com/questions/59057881/how-to-customize-hover-template-on-with-what-information-to-show
     # fig.update_layout(hovermode="x unified")
+    
     fig.update_traces(hovertemplate="%{text}")
 
     # the uniformtext_minsize and uniformtext_mode settings hide bar chart
@@ -405,7 +373,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
         # use specific color for selected school
         for key, value in trace_color.items():
             if key == school_name:
-                trace_color[key] = '#b86949'
+                trace_color[key] = '#0a66c2'
 
         # format distance data (not displayed)
         # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
@@ -416,7 +384,8 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
             y=category,
             color_discrete_map=trace_color,
             color='School Name',
-            custom_data  = ['Low Grade','High Grade'] #,'Distance']
+            custom_data  = ['Low Grade','High Grade'], #,'Distance']
+            text_auto=True
         )
 
         fig.update_yaxes(range=[0, 1], dtick=0.2, tickformat=',.0%',title='',showgrid=True, gridcolor='#b0c4de')
@@ -449,6 +418,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
         )
 
         fig.update_traces(
+            textposition='outside',
             hovertemplate = '<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br><b>Proficiency: </b>%{y}<br><extra></extra>'
         )
 
@@ -495,6 +465,10 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     for col in cols:
         data[col]=pd.to_numeric(data[col], errors='coerce')
 
+    print(data)
+
+# TODO: CUrrently treating NaN values like zero values. Need to fix that
+
     categories = data.columns.tolist()
     categories.remove('School Name')
     schools = data['School Name'].tolist()
@@ -506,8 +480,9 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
 
     data_set.reset_index(drop=True, inplace=True)
 
+# TODO: NaN is shown in bar text. Remove
     # replace any remaining NaN with 0
-    data_set = data_set.fillna(0)
+    # data_set = data_set.fillna(0)
 
     # assign colors for each comparison
     trace_color = {schools[i]: color[i] for i in range(len(schools))}
@@ -515,7 +490,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     # replace color for selected school
     for key, value in trace_color.items():
         if key == school_name:
-            trace_color[key] = '#b86949'
+            trace_color[key] = '#0a66c2'
 
     fig = px.bar(
         data_frame = data_set,
@@ -525,8 +500,11 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         color_discrete_map = trace_color,
         orientation = 'v',
         barmode = 'group',
-        custom_data = ['School Name']
+        custom_data = ['School Name'],
+        # text = [x if x is not None else '' for x in 'value'],
+        text_auto=True
     )
+    print(data_set['value'])
 
     fig.update_yaxes(
         range=[0, 1],
@@ -572,6 +550,10 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         hoverlabel_align = 'left'
     )        
 
+## TODO: This adds lines for zero. Useful if text is not used.
+## TODO: Outside text shows 0%. But also shows 0% for NaN and we don't want that
+## TODO: Inside text doesn't show anything for 0% - Need to Figure out best solution
+
     # TODO: Add ability to click on 0?
     # Display '0' values visually on the chart.
     # NOTE: marker_line_color controls the color of the border around a trace. The border is
@@ -587,8 +569,11 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     # creating a black marker_line border color for a zero value and otherwise creating a border
     # color that is the same as the marker.
     
-    # TODO: Remove Black marker border from legend
-    # if black exists in the array, plotly uses it as a border for the 'legend' marker. Fix This.
+    # TODO: Remove Black marker border from legend on zero value
+    # if black exists in the array, plotly uses it as a border for the 'legend' marker. From
+    # testing, it appears that the border uses the marker_line_color for the [0] item in
+    # the 'data' array. So if there is a 0 value in the first chart, it causes the legend
+    # outline to also be black.
 
     for i in range(0,len(data['School Name'])):
 
@@ -604,6 +589,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         fig['data'][i]['marker']['line']['width'] = 3
 
     fig.update_traces(
+        textposition='outside',
         hovertemplate="<br>".join(
             [
                 s.replace(" ", "&nbsp;")

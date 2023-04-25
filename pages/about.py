@@ -43,7 +43,9 @@ def update_about_page(year, data):
 
     ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
     status = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
-    bar_colors=['#98abc5','#c5b298']
+
+    linecolor = ['#0a66c2']
+    bar_colors = ['#74a2d7', '#df8f2d']
 
     # default is to display main container
     main_container = {'display': 'block'}
@@ -313,7 +315,6 @@ def update_about_page(year, data):
             ]
 
         # ADM chart
-        linecolor=['#d0743c','#a05d56']
 
         if len(school_adm.index) == 0:
             adm_fig = no_data_fig_label('Average Daily Membership History',400)

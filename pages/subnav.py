@@ -17,7 +17,6 @@ def subnav_finance():
             ],
             className='sub-tabs',
             style={
-                # "padding": "-10px",
                 "marginTop": "-40px",
     }
         )
@@ -38,7 +37,6 @@ def subnav_academic():
             ],
             className='sub-tabs',
                         style={
-                # "padding": "-10px",
                 "marginTop": "-40px",
     }
         )
