@@ -81,7 +81,7 @@ button:not(:disabled) {
 .btn {
   --bs-btn-padding-x: 0.75rem;
   --bs-btn-padding-y: 0.375rem;
-  --bs-btn-font-family: 'Jost', sans-serif; /*"Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;*/
+  --bs-btn-font-family: 'Roboto', sans-serif; /*"Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;*/
   --bs-btn-font-size: 1.25rem;
   --bs-btn-font-weight: 400;
   --bs-btn-line-height: 1.5;
@@ -426,16 +426,14 @@ body {
   position: relative;
   width: 100%;
   box-shadow: 2px 2px 2px lightgrey;
-
 }
+
 .bare_container_no_center {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
-  /* justify-content: center; */
-  /* text-align: center;
-  align-items: center; */
   display: flex;
 }
+
 .bare_container {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
@@ -457,16 +455,19 @@ body {
 .layout_div {
   display: flex;
 }
+
 /* Base color of all dropdown menu options */
 .VirtualizedSelectOption {
   background-color: white;
   color: steelblue;
 }
+
 /* Color for selected item in dropdown list */
 .VirtualizedSelectFocusedOption {
   background-color: lightgrey;
   color: steelblue;
 }
+
 /* Colors the selected item once selected*/
 .Select-value-label {
   color: steelblue !important;
@@ -476,6 +477,7 @@ body {
     margin: 0;
     padding: 5px;
 }
+
 .control_label {
   margin: 0;
   padding: 10px;
@@ -519,7 +521,6 @@ body {
   padding: 0;
   float: left;
   width: 70%;
-  /* height: 100%; */  
 }
 
 .year_dash_control {
@@ -527,13 +528,13 @@ body {
   padding: 0;
   float: left;
   width: 50%;
-  /* height: 100%; */
 }
 
 .msg {
   padding-top: 5px;
   color: blue;
 }
+
 /* datatables export button */
 .export {
   font-size: 10px;
@@ -549,6 +550,7 @@ body {
   margin-bottom: 5px;
   margin-top: 5px;
 }
+
 .table-title {
   font-size: 18px;
   font-family: 'Jost', sans-serif;
@@ -614,26 +616,6 @@ body {
   border-color: #d8d8d8 !important;
 } */
 
-/* override header */
-/* NEED TO WORK ON THIS FOR INFO TABLES */
-/* Not included:  #info-table .dash-header, */
-
-/* #letter-grade-table .dash-header, #enroll-table .dash-header, #financial-information-table .dash-header,
-#financial-metrics-table .dash-header, #financial-indicators-table .dash-header, #financial-metrics-definitions-table .dash-header,
-#k8-grade-table .dash-header, #k8-ethnicity-table .dash-header, #k8-status-table .dash-header, #k8-other-table .dash-header,
-#k8-not-calculated-table .dash-header, #hs-grad-overview-table .dash-header, #hs-grad-ethnicity-table .dash-header,
-#hs-grad-status-table .dash-header,  #hs-eca-table .dash-header, #hs-not-calculated-table .dash-header,
-#hs-metrics-table .dash-header, #ahs-metrics-table .dash-header,
-#org-compliance-table .dash-header, #org-compliance-definitions-table .dash-header,
-#ptable-financial-information .dash-header, #ptable-financial-metrics .dash-header, #ptable-financial-indicators .dash-header,
-#display-k8-table .dash-header, #display-hs-table .dash-header
-
-{
-  border-color: #d8d8d8 !important;
-  border-bottom: .75px solid rgb(103,131,169) !important;
-  border-top: .75px solid rgb(103,131,169) !important;
-} */
-
 /* TODO: ADD IDS TO DIVS */
 /* ADAPT THIS TO FIT EXISTING ELEMENTS TO EXIST IN FLEX-LAND */
 
@@ -657,7 +639,6 @@ body {
   display: flex;
   flex-direction: column;
 }
-
 
 #countGraphContainer {
   flex: 5;
@@ -723,6 +704,7 @@ h6 { font-size: 2.0rem; line-height: 1.6;  letter-spacing: 0; margin-bottom: 0.7
 a:link { 
   text-decoration: none;
 }
+
 a.nav-link:hover { 
   text-transform: uppercase;
   font-family: 'Jost', sans-serif;
@@ -740,6 +722,7 @@ a.nav-link:hover {
   text-align: center;
   box-sizing: border-box;
 }
+
 .nav-link.active {
   text-transform: uppercase;
   font-family: 'Jost', sans-serif;
@@ -757,8 +740,8 @@ a.nav-link:hover {
   text-align: center;
   box-sizing: border-box;
 }
-/* Labels */
 
+/* Labels */
 label,
 legend {
   display: block;
@@ -886,6 +869,7 @@ a.logout-button:hover {
   /* height: 6vh; */
   position: relative;
   }
+
 .sub-tabs {
   z-index: 99;
   margin: 0;

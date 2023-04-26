@@ -15,7 +15,7 @@ from dash import html, dcc
 # Steelblue
 #color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
-color= ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#999999']
+color= ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
 
 ## Blank (Loading) Fig ##
 # https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
@@ -197,8 +197,8 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     )
 
     # Add hoverdata
-    # TODO: Remove hover 'title' which is currently y-axis name
-    # TODO: Add new label title that is equal to: "Total Tested: {z}"
+    # TODO: Hoverdata close but still need to: remove hover 'title' which is currently
+    # TODO: y-axis name and, if possible, replace with: "Total Tested: {z}"
     # https://stackoverflow.com/questions/59057881/how-to-customize-hover-template-on-with-what-information-to-show
     # fig.update_layout(hovermode="x unified")
     
@@ -376,7 +376,8 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
                 trace_color[key] = '#0a66c2'
 
         # format distance data (not displayed)
-        # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
+        # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], \
+        # index = data.index)
 
         fig = px.bar(
             data,
@@ -465,25 +466,23 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     for col in cols:
         data[col]=pd.to_numeric(data[col], errors='coerce')
 
-    print(data)
-
-# TODO: CUrrently treating NaN values like zero values. Need to fix that
-
     categories = data.columns.tolist()
     categories.remove('School Name')
     schools = data['School Name'].tolist()
 
     # melt dataframe from 'wide' format to 'long' format (plotly express
-    # can handle either, but long format makes hovertemplate easier
-    #  - trust me)
+    # can handle either, but long format makes hovertemplate easier - trust me)
     data_set = pd.melt(data, id_vars='School Name',value_vars = categories, var_name='Categories', ignore_index=False)
 
     data_set.reset_index(drop=True, inplace=True)
 
-# TODO: NaN is shown in bar text. Remove
-    # replace any remaining NaN with 0
-    # data_set = data_set.fillna(0)
-
+    # Create text values for display. NOTE: This can be 99.9% done by setting 'text_auto=True'
+    # in 'fig' without setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
+    # that is displayed for ''. This converts the series to a string in the proper format
+    # and replaces nan with ''    
+    text_values = data_set['value'].map("{:.0%}".format)
+    text_values = text_values.str.replace('nan%','')
+    
     # assign colors for each comparison
     trace_color = {schools[i]: color[i] for i in range(len(schools))}
 
@@ -501,10 +500,8 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         orientation = 'v',
         barmode = 'group',
         custom_data = ['School Name'],
-        # text = [x if x is not None else '' for x in 'value'],
-        text_auto=True
+        text = text_values,
     )
-    print(data_set['value'])
 
     fig.update_yaxes(
         range=[0, 1],
@@ -522,10 +519,10 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         linecolor='#b0c4de'
     )
 
-    # TODO: Better way to reduce the bottom margin of a chart to reduce empty space between chart and table
-    # Currently adding negative margin - must be better way
-    # Does this work? it takes maximum value and multiplies it by three for max range (eg., less than 100)
-    #fig.update_layout(yaxis=dict(range=[0, ymax*3]))
+    # TODO:Reduce the bottom margin of chart to reduce empty space between chart and table
+    # Currently adding negative margin in layout - is there a layout? For example, does this
+    # work? it takes maximum value and multiplies it by three for max range (eg., less than 100)
+    # fig.update_layout(yaxis=dict(range=[0, ymax*3]))
 
     fig.update_layout(
         title_x=0.5,
@@ -550,46 +547,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         hoverlabel_align = 'left'
     )        
 
-## TODO: This adds lines for zero. Useful if text is not used.
-## TODO: Outside text shows 0%. But also shows 0% for NaN and we don't want that
-## TODO: Inside text doesn't show anything for 0% - Need to Figure out best solution
-
-    # TODO: Add ability to click on 0?
-    # Display '0' values visually on the chart.
-    # NOTE: marker_line_color controls the color of the border around a trace. The border is
-    # visible even when a value is 0, so it can be used as a visible representation of 0. Was
-    # not able to get this to work using update traces (it applied the colors in the list to
-    # each group rather than to each trace in a group): 
-    # fig.update_traces(marker_line_width = 2, marker_line_color = list(trace_color.values()))
-    
-    # This seems extremely janky, but works by manually looping through the fig object using nested
-    # loops. The top level loop iterates through each school. The internal loop loops through each
-    # data point in the 'y' array. If the value is zero, the marker_array list appends the color 
-    # black. If the value is not zero, the list appends the marker color. This has the effect of
-    # creating a black marker_line border color for a zero value and otherwise creating a border
-    # color that is the same as the marker.
-    
-    # TODO: Remove Black marker border from legend on zero value
-    # if black exists in the array, plotly uses it as a border for the 'legend' marker. From
-    # testing, it appears that the border uses the marker_line_color for the [0] item in
-    # the 'data' array. So if there is a 0 value in the first chart, it causes the legend
-    # outline to also be black.
-
-    for i in range(0,len(data['School Name'])):
-
-        marker_array = []
-        for j in range(0,len(fig['data'][i]['y'])):
-
-            if fig['data'][i]['y'][j] == 0:
-                marker_array.append('#000000')
-            else:
-                marker_array.append(fig['data'][i]['marker']['color'])
-
-        fig['data'][i]['marker']['line']['color'] = marker_array
-        fig['data'][i]['marker']['line']['width'] = 3
-
     fig.update_traces(
-        textposition='outside',
         hovertemplate="<br>".join(
             [
                 s.replace(" ", "&nbsp;")
@@ -600,6 +558,44 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
             ]
         )
     )
+
+    # NOTE: Some dict manipulation to address two issues: 1) display values between 0 and 4% as text
+    # outside of the trace, and all other values inside; and 2) display a 'marker' for '0' values.
+    # Both have relatively simple solutions for single bar charts- neither of which work for
+    # grouped bar charts, because both solutions end up applying 'per group' of bars rather than
+    # to the individual bars in the group. See, e.g.:
+    # https://stackoverflow.com/questions/70658955/how-do-i-display-bar-plot-for-values-that-are-zero-in-plotly
+    # https://stackoverflow.com/questions/73905861/fully-display-the-amount-in-horizontal-bar-chart
+    
+    #  This uses a loop (ick) to directly manipulate each fig data object.
+    
+    for i in range(0,len(data_set['School Name'].unique())):
+
+        marker_array = []
+        position_array = []
+
+        for j in range(0,len(fig['data'][i]['y'])):
+
+            if fig['data'][i]['y'][j] < .05:
+                position_array.append('outside')
+            else:
+                position_array.append('inside')
+
+            if fig['data'][i]['y'][j] == 0:
+                marker_array.append('#999999')
+            else:
+                marker_array.append(fig['data'][i]['marker']['color'])
+
+        fig['data'][i]['marker']['line']['color'] = marker_array
+        fig['data'][i]['marker']['line']['width'] = 2
+
+        fig['data'][i]['textposition'] = position_array
+
+    # TODO: Remove Grey marker border from legend on zero value
+    # if black exists in the array, plotly uses it as a border for the 'legend' marker. From
+    # testing, it appears that the border uses the marker_line_color for the [0] item in
+    # the 'data' array. So if there is a 0 value in the first chart, it causes the legend
+    # outline to also be black.
 
     fig_layout = [
         html.Div(
