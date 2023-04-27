@@ -196,14 +196,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
         height=200,
     )
 
-    # Add hoverdata
-    # TODO: Hoverdata close but still need to: remove hover 'title' which is currently
-    # TODO: y-axis name and, if possible, replace with: "Total Tested: {z}"
-    # https://stackoverflow.com/questions/59057881/how-to-customize-hover-template-on-with-what-information-to-show
-    # fig.update_layout(hovermode="x unified")
-    
-    fig.update_traces(hovertemplate="%{text}")
-
     # the uniformtext_minsize and uniformtext_mode settings hide bar chart
     # text (Percentage) if the size of the chart causes the text of the font
     # to decrease below 8px. The text is required to be positioned 'inside'
@@ -218,23 +210,28 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
         showlegend = False,
         plot_bgcolor="white",
         hovermode='y unified',
-        hoverlabel=dict(
-            bgcolor="white",
-            font_color='steelblue',
-            font_size=10,
-            font_family='Roboto Sans, sans-serif',
-        ),        
+        # hoverlabel=dict(
+        #     bgcolor="white",
+        #     font_color='steelblue',
+        #     font_size=10,
+        #     font_family='Roboto Sans, sans-serif',
+        # ),
         yaxis=dict(autorange="reversed"),
         uniformtext_minsize=8,
         uniformtext_mode='hide'
     )
+
+    # TODO: remove hover 'title' and, if possible, replace with: "Total Tested: {z}"
+    # https://stackoverflow.com/questions/59057881/how-to-customize-hover-template-on-with-what-information-to-show
+    # fig.update_layout(hovermode="x unified")
 
     fig.update_traces(
         textfont_size=8,
         insidetextanchor = 'middle',
         textposition='inside',
         marker_line=dict(width=0),
-        showlegend = False, # Trying to get rid of legend in hoverlabel
+        hovertemplate="%{text}",
+        hoverinfo='none',
     )
 
     fig.update_xaxes(title="")
@@ -262,7 +259,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     return fig_layout
 
 # single line chart
-### TODO: default tick behavior is ugly for small number of points. For example, if only
+### TODO: default display behavior is ugly for small number of points. For example, if only
 ### TODO: two points, the 2 x-ticks are really far apart towards edges, same with 3 ticks
 def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
@@ -519,10 +516,9 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         linecolor='#b0c4de'
     )
 
-    # TODO:Reduce the bottom margin of chart to reduce empty space between chart and table
-    # Currently adding negative margin in layout - is there a layout? For example, does this
-    # work? it takes maximum value and multiplies it by three for max range (eg., less than 100)
-    # fig.update_layout(yaxis=dict(range=[0, ymax*3]))
+    # NOTE: right now, we are adding a negative bottomMargin to each fig in the layout to
+    # reduce the distance between the fig and the table. Is there a way to reduce the 
+    # margin within the fig itself? (fig.update_layout(yaxis=dict(range=[0, ymax*3])))
 
     fig.update_layout(
         title_x=0.5,
@@ -591,11 +587,11 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
 
         fig['data'][i]['textposition'] = position_array
 
-    # TODO: Remove Grey marker border from legend on zero value
-    # if black exists in the array, plotly uses it as a border for the 'legend' marker. From
-    # testing, it appears that the border uses the marker_line_color for the [0] item in
-    # the 'data' array. So if there is a 0 value in the first chart, it causes the legend
-    # outline to also be black.
+    # NOTE: From testing, it appears that the legend marker uses the first item in the
+    # marker_line_color array ([0]) as the border for the legend marker. So if the
+    # marker_line_color is set to grey for a specific trace (e.g., the value of the trace
+    # is '0'), that color is used for the legend marker. We do not want a grey border
+    # around a legend marker. We fix this in stylesheet.css (See: .legendundefined))
 
     fig_layout = [
         html.Div(

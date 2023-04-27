@@ -16,7 +16,7 @@ import re
 
 # import local functions
 from .calculations import find_nearest, filter_grades
-from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, make_group_bar_chart # ,loading_fig
+from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, make_group_bar_chart
 from .table_helpers import create_comparison_table, no_data_page, no_data_table
 from .subnav import subnav_academic
 
@@ -995,7 +995,7 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Div(id='fig16a1', children=[])           
+                                        html.Div(id='fig16a1', children=[], style={'marginBottom': '-20px'})
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1038,7 +1038,7 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Div(id='fig16b1', children=[])
+                                        html.Div(id='fig16b1', children=[], style={'marginBottom': '-20px'})
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1081,7 +1081,7 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Div(id='fig16a2', children=[])        
+                                        html.Div(id='fig16a2', children=[], style={'marginBottom': '-20px'})        
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),
@@ -1124,7 +1124,7 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Div(id='fig16b2', children=[])
+                                        html.Div(id='fig16b2', children=[], style={'marginBottom': '-20px'})
                                     ],
                                     className = 'pretty_close_container twelve columns',
                                 ),

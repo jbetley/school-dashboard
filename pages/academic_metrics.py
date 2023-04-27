@@ -5,7 +5,7 @@
 # version:  1.01.040323
 
 import dash
-from dash import html, dash_table, Input, Output, callback
+from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import json
 import pandas as pd

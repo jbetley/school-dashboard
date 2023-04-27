@@ -592,6 +592,19 @@ body {
 
 /* Plotly Dash Overrides */
 
+/* removes legendpoint borders */
+/*  This is a kludge to remove grey marker border from legend markers when
+    the marker_line_color is set to grey in order to show a bar in a fig
+    where there is a 0 value */
+
+/* .legendpoints > .legendundefined {
+  stroke-opacity: 0 !important;
+} */
+
+.legendundefined {
+  stroke-opacity: 0 !important;
+}
+
 /* increase datatable header height */
 .dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner tr:first-of-type{
     min-height: 30px;
@@ -722,6 +735,14 @@ a.nav-link:hover {
   text-align: center;
   box-sizing: border-box;
 }
+
+/* Not working consistently across pages */
+/*
+See: https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
+You're only ever setting/removig the active class when the button is clicked. 
+You'll also need javascript code that runs on page load, checks the current url,
+removes the 'active' class from all nav links, then adds the 'active' class to
+the nav link that matches the current url. (or you could do that in php, either way */
 
 .nav-link.active {
   text-transform: uppercase;

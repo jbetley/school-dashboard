@@ -41,7 +41,7 @@ def no_data_table(label: str = 'No Data to Display') -> list:
     return table_layout
 
 def no_data_page(label: str) -> list:
-    """Creates single empty table as page with provided label
+    """Creates single empty table to be used as a full empty page with provided label
 
     Args:
         label (String): string label
@@ -579,11 +579,15 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     # hide the header 'School Name'
     data = data.rename(columns = {'School Name' : ''})
 
-### TODO: Sort Native is limited - cannot easily limit which columns are sortable and cannot
+    # simplify and clarify column names (remove everything between | & %)
+    data.columns = data.columns.str.replace(r'\|(.*?)\%', '', regex=True)
+    data.columns = data.columns.str.replace('Total', 'School', regex=True)
+    data.columns = data.columns.str.replace(r'IREAD.*', 'School', regex=True)
+
+### TODO: Native Sort is limited - cannot easily limit which columns are sortable and cannot
 ### TODO: sort by clicking header (ugly arrows instead). In addition it breaks the conditional
 ### TODO: formatting that highlights the school row (because the row index does not reset when
 ### TODO: the school changes rows as a result of the sort). Perhaps try Dash AG Grid?
-
 # AG Grid Install - Alpha
 # pip install dash-ag-grid==v2.0.0a5
 # import dash_ag_grid as dag
@@ -770,9 +774,6 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
                 ],
                 merge_duplicate_headers=True,
                 style_as_list_view=True,
-                # add this to each table if we want to be able to export
-                # export_format='xlsx',
-                # export_headers='display'
             ),
         )
     ]

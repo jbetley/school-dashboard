@@ -1,7 +1,6 @@
 """
 Functions that perform various calculations for ICSB Dashboard
 """
-
 import pandas as pd
 import numpy as np
 import scipy.spatial as spatial
@@ -282,10 +281,6 @@ def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:
 # that the refactored version is easier to comprehend than the previous
 # loop version. it is also longer.
 
-## TODO: TEST FOR ALL YEARS - ERRORS:
-#   IndexError: index -2 is out of bounds for axis 0 with size 1 (Many Schools - Early Years) Excel Elkhart
-#   ValueError: Must have equal len keys and value when setting with an ndarray (Excel-Lafayette 2021)
-
 def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
     """Takes a dataframe of float values and returns the same dataframe with one
     extra 'Rating' column for each year of data. Ratings are calculated based
@@ -306,8 +301,8 @@ def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
     operating_data = data.loc[:,~(data.iloc[1]==0)].copy()
 
     # TODO: A more precise fix would be to keep all columns (including those with
-    # no value in grant columns), but ignore/except (N/A) any calculation that requires
-    # either grant revenue or adm. Need to test
+    # TODO: no value in grant columns), but ignore/except (N/A) any calculation that requires
+    # TODO: either grant revenue or adm. Need to test
 
 # https://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas
 
