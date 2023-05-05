@@ -1,0 +1,76 @@
+Indicator,Points,Rating,Weight,Weighted Points
+ELA Academic Achievement,32.54,Does Not Meet Expectations,2.00,65.080
+Math Academic Achievement,24.98,Does Not Meet Expectations,2.00,49.960
+ELA Academic Progress,68.11,Approaches Expectations,2.00,136.220
+Math Academic Progress,24.22,Does Not Meet Expectations,2.00,48.440
+ELA Closing Achievement Gaps,104.58,Exceeds Expectations,0.50,52.290
+Math Closing Achievement Gaps,28.22,Approaches Expectations,0.50,14.110
+Progress in Achieving English Language Proficiency,0.00,No Rating,0.00,0.000
+Addressing Chronic Absenteeism,52.88,Does Not Meet Expectations,1.00,52.880
+Elementary/Middle School Overall Weight and Points:,,,10.00,41.90
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+,Enrollment,Enrollment Percent
+Grades 03-08,61,100.00 %
+Grades 09-12,0,0.00 %
+Sugroup,Points,Rating,Subgroup,Points,Rating
+American Indian/Alaskan Native,0,No Rating,Asian,0,No Rating
+Black,33.9,Does Not Meet Expectations,Hispanic Ethnicity,0,No Rating
+Multiracial,0,No Rating,Native Hawaiian or Other Pacific Islander,0,No Rating
+White,0,No Rating,English Language Learner,0,No Rating
+Free/Reduced Lunch,39.99,Does Not Meet Expectations,Special Education,56.14,Does Not Meet Expectations
+,Grades 03-08,,,,
+Subject Area,Pass Rate,Participation,Perf. Points,Goal Factor,Overall Points
+English/Lang. Arts,"24.1 %
+( 13 /  54)","100.0 %
+( 54 /  54)",24.1,1.35,32.54
+Mathematics,"18.5 %
+( 10 /  54)","100.0 %
+( 54 /  54)",18.5,1.35,24.98
+,Grade 11,,,,
+Subject Area,Pass Rate,Participation,Perf. Points,Goal Factor,Overall Points
+English/Lang. Arts,,,,,
+Mathematics,,,,,
+,Grades 4-8,,
+Subject Area,Adequate Growth Rate,Goal Factor,Overall Points
+English/Lang. Arts,"51.6 %
+( 16 /  31)",1.32,68.11
+Mathematics,"16.7 %
+( 5 /  30)",1.45,24.22
+,Grade 112,,
+Subject Area,Adequate Growth Rate,Goal Factor,Overall Points
+English/Lang. Arts,,,
+Mathematics,,,
+,Grades 4-8,,,,
+Subject Area,Bottom 25% Adequate Growth Rate,Top 75% Adequate Growth Rate,Weighted Adequate Growth Rate,Goal Factor,Overall Points
+English/Lang. Arts,"71.4 %
+( 5 /  7)","45.8 %
+( 11 /  24)",68.8 %,1.52,104.58
+Mathematics,"16.7 %
+( 1 /  6)","16.7 %
+( 4 /  24)",16.7 %,1.69,28.22
+,,,,,
+,,,,,
+,,,,,
+,,,,,
+Grade Span,"Met Goal or Achieved Proficiency
+Rate",Goal Factor,Points
+Grades K-8,,,
+,,,
+Grade Span,"Model Attendee
+Rate",Goal Factor,Overall Points
+Grades K-8,"43.7 %
+( 55 /  126)",1.21,52.88
+,,,

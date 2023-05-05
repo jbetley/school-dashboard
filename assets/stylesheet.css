@@ -235,10 +235,12 @@ fieldset:disabled .btn {
   padding-left: 0;
   padding-top: 5px;
 }
+
 .radio-group .btn-group > .form-check:not(:last-child) > .btn {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
+
 .radio-group .btn-group > .form-check:not(:first-child) > .btn {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;

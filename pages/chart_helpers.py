@@ -258,7 +258,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     
     return fig_layout
 
-# single line chart
+# create a basic line (scatter) plot
 ### TODO: default display behavior is ugly for small number of points. For example, if only
 ### TODO: two points, the 2 x-ticks are really far apart towards edges, same with 3 ticks
 def make_line_chart(values: pd.DataFrame, label: str) -> list:
@@ -276,6 +276,29 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
         data.sort_values('Year', inplace=True)
         data = data.reset_index(drop=True)
+
+        data_years = data['Year'].astype(int).tolist()
+        add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
+        
+        ## TODO: Uncomment this to squeeze
+        ## TODO: Add half months instead?
+        # NOTE: Plotly displays two years of data with the year axis near the edges, which is ugly
+        # so when we only have 2 years of data, we add two additiona blank years on either side
+        # of the range
+        # if len(data_years) == 2:
+        #     for y in add_years:
+        #         data = pd.concat(
+        #             [
+        #                 data,
+        #                 pd.DataFrame(
+        #                     np.nan,
+        #                     columns=data.columns,
+        #                     index=range(1),
+        #                 ),
+        #             ],
+        #             ignore_index=True,
+        #         )
+        #         data.at[data.index[-1], "Year"] = y
 
         fig = px.line(
             data,
@@ -297,15 +320,15 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             plot_bgcolor='white',
             xaxis = dict(
                 title='',
-                # type='date',
-                tickmode = 'array',
+                type='date',
+                # tickmode = 'array',
                 # tickmode = 'linear',
                 tickvals = data['Year'],
                 tickformat="%Y",
                 # tick0 = data['Year'][0] - 1,
                 # dtick ='M6',
-                categoryorder = 'array',
-                categoryarray = data['Year'],
+                # categoryorder = 'array',
+                # categoryarray = data['Year'],
                 mirror=True,
                 showline=True,
                 linecolor='#b0c4de',
@@ -314,12 +337,20 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 showgrid=True,
                 gridcolor='#b0c4de',
                 zeroline=False,
+                # range = add_years
                 ),   
             legend=dict(orientation="h"),         
             hovermode='x unified',
             height=400,
             legend_title='',
         )
+        
+        # fig.update_xaxes(constrain='domain')
+        # fig.update_xaxes(autorange='reversed')
+        # fig.update_xaxes(range=[2021, 2022])
+        # fig.update_xaxes(constraintoward='center')
+        # fig.update_xaxes(anchor='free')
+        # fig.update_yaxes(position=.5)
 
         fig.update_yaxes(
             title='',
