@@ -33,45 +33,31 @@ White,22.93,Does Not Meet Expectations,English Language Learner,21.64,Does Not M
 Free/Reduced Lunch,24.2,Does Not Meet Expectations,Special Education,10.52,Does Not Meet Expectations
 ,Grades 03-08,,,,
 Subject Area,Pass Rate,Participation,Perf. Points,Goal Factor,Overall Points
-English/Lang. Arts,"17.1 %
-( 50 /  293)","100.0 %
-( 295 /  295)",17.1,1.35,23.09
-Mathematics,"9.2 %
-( 27 /  295)","100.0 %
-( 295 /  295)",9.2,1.35,12.42
+English/Lang. Arts,17.1 % ( 50 /  293),100.0 % ( 295 /  295),17.1,1.35,23.09
+Mathematics,9.2 % ( 27 /  295),100.0 % ( 295 /  295),9.2,1.35,12.42
 ,Grade 11,,,,
 Subject Area,Pass Rate,Participation,Perf. Points,Goal Factor,Overall Points
 English/Lang. Arts,,,,,
 Mathematics,,,,,
 ,Grades 4-8,,
 Subject Area,Adequate Growth Rate,Goal Factor,Overall Points
-English/Lang. Arts,"26.1 %
-( 63 /  241)",1.32,34.45
-Mathematics,"9.5 %
-( 23 /  241)",1.45,13.78
+English/Lang. Arts,26.1 % ( 63 /  241),1.32,34.45
+Mathematics,9.5 % ( 23 /  241),1.45,13.78
 ,Grade 112,,
 Subject Area,Adequate Growth Rate,Goal Factor,Overall Points
 English/Lang. Arts,,,
 Mathematics,,,
 ,Grades 4-8,,,,
 Subject Area,Bottom 25% Adequate Growth Rate,Top 75% Adequate Growth Rate,Weighted Adequate Growth Rate,Goal Factor,Overall Points
-English/Lang. Arts,"11.9 %
-( 7 /  59)","30.8 %
-( 56 /  182)",13.8 %,1.52,20.98
-Mathematics,"0.0 %
-( 0 /  58)","12.6 %
-( 23 /  183)",1.3 %,1.69,2.20
+English/Lang. Arts,11.9 % ( 7 /  59),30.8 % ( 56 /  182),13.8 %,1.52,20.98
+Mathematics,0.0 % ( 0 /  58),12.6 % ( 23 /  183),1.3 %,1.69,2.20
 ,,,,,
 ,,,,,
 ,,,,,
 ,,,,,
-Grade Span,"Met Goal or Achieved Proficiency
-Rate",Goal Factor,Points
-Grades K-8,"19.0 %
-( 29 /  153)",1.49,28.31
+Grade Span,Met Goal or Achieved Proficiency Rate,Goal Factor,Points
+Grades K-8,19.0 % ( 29 /  153),1.49,28.31
 Grades 9-12,,,
-Grade Span,"Model Attendee
-Rate",Goal Factor,Overall Points
-Grades K-8,"54.8 %
-( 244 /  445)",1.21,66.31
+Grade Span,Model Attendee Rate,Goal Factor,Overall Points
+Grades K-8,54.8 % ( 244 /  445),1.21,66.31
 Grades 9-12,,,

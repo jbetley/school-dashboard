@@ -687,14 +687,13 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
 
     return table_layout
 
-def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
+## TODO: Can you do this better with OOP?
+## TODO: multiple versions of same table with little differences?
 
-    table_layout = [
-        html.Label(label, className='header_label'),
-        html.Div(
-            dash_table.DataTable(
-                data.to_dict('records'),
-                columns = [
+def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) -> list:
+
+    if table_type == 'proficiency':
+        table_cols = [
                     {
                         'name': col,
                         'id': col,
@@ -704,7 +703,37 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
                         ),
                     }
                     for (col) in data.columns
-                ],
+                ]
+    elif table_type == 'growth':
+        table_cols = [
+                    {
+                        'name': col,
+                        'id': col,
+                        'type': 'numeric',
+                        'format': Format(
+                            scheme=Scheme.fixed, precision=2
+                        ),
+                    }
+                    for (col) in data.columns
+                ]
+        
+    table_layout = [
+        html.Label(label, className='header_label'),
+        html.Div(
+            dash_table.DataTable(
+                data.to_dict('records'),
+                columns = table_cols,
+                # [
+                #     {
+                #         'name': col,
+                #         'id': col,
+                #         'type': 'numeric',
+                #         'format': Format(
+                #             scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
+                #         ),
+                #     }
+                #     for (col) in data.columns
+                # ],
                 style_data = {
                     'fontSize': '11px',
                     'fontFamily': 'Roboto,sans-serif',
@@ -761,8 +790,8 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
                         'fontFamily': 'Roboto, sans-serif',
                         'color': '#6783a9',
                         'fontWeight': 'bold',
-                    }
-                ],
+                    },
+                ],                
                 style_cell_conditional = [
                     {
                         'if': {'column_id': 'Category'},
@@ -770,7 +799,35 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
                         'fontWeight': '500',
                         'paddingLeft': '10px',
                         'width': '40%'
-                    }
+                    },
+                    {
+                        'if': {'column_id': 'Subject Area'},
+                        'textAlign': 'left',
+                        'fontWeight': '500',
+                        'paddingLeft': '10px',
+                        'width': '25%'
+                    },
+                    {
+                        'if': {'column_id': 'Indicator'},
+                        'textAlign': 'left',
+                        'fontWeight': '500',
+                        'paddingLeft': '10px',
+                        'width': '30%'
+                    },
+                                    {
+                        'if': {'column_id': 'Subgroup'},
+                        'textAlign': 'left',
+                        'fontWeight': '500',
+                        'paddingLeft': '10px',
+                        'width': '30%'
+                    } ,
+                                    {
+                        'if': {'column_id': 'Grade Span'},
+                        'textAlign': 'left',
+                        'fontWeight': '500',
+                        'paddingLeft': '10px',
+                        'width': '20%'
+                    }                                    
                 ],
                 merge_duplicate_headers=True,
                 style_as_list_view=True,
