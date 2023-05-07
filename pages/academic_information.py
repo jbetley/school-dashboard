@@ -15,7 +15,7 @@ import re
 import os
 
 # import local functions
-from .table_helpers import no_data_page, no_data_table, create_academic_info_table
+from .table_helpers import no_data_page, no_data_table, create_academic_info_table, get_svg_circle
 from .chart_helpers import no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages
 from .subnav import subnav_academic
@@ -766,6 +766,7 @@ def update_academic_information_page(data, school, year, radio_value):
         # Adult high schools and new charter schools do not have growth data.
         if os.path.isfile(growth_file):
 
+            
             k8_overall_indicators_data = pd.read_csv(growth_file, nrows=9)
             hs_overall_indicators_data = pd.read_csv(growth_file, skiprows=10, nrows=9)
             combined_indicators_data = pd.read_csv(growth_file, skiprows=20, nrows=3)
@@ -786,37 +787,62 @@ def update_academic_information_page(data, school, year, radio_value):
             # These two df have two rows, Grades 3-8 and Grades 9-12 regardless of
             # whether the school in question has data for all grades. This checks the
             # second row (index 1) and removes it if all of the data columns are null.
-            if ela_progress_indicator_data.loc[[1]].isna().sum().sum() >=3:
-                ela_progress_indicator_data = ela_progress_indicator_data.iloc[:1]
+            # if ela_progress_indicator_data.loc[[1]].isna().sum().sum() >=3:
+            #     ela_progress_indicator_data = ela_progress_indicator_data.iloc[:1]
 
-            if absenteeism_indicator_data.loc[[1]].isna().sum().sum() >=3:
-                absenteeism_indicator_data = absenteeism_indicator_data.iloc[:1]
+            # if absenteeism_indicator_data.loc[[1]].isna().sum().sum() >=3:
+            #     absenteeism_indicator_data = absenteeism_indicator_data.iloc[:1]
             
             # Same as above, except intead of null, empty rows are filled with 0
-            if enrollment_indicators_data.iloc[1,1] == 0:
-                enrollment_indicators_data = enrollment_indicators_data.iloc[:1]
+            # if enrollment_indicators_data.iloc[1,1] == 0:
+            #     enrollment_indicators_data = enrollment_indicators_data.iloc[:1]
 
-            # fix stupid headers
-            subgroup_grades_data.columns = subgroup_grades_data.columns.str.replace(r'.1', '')
-            subgroup_grades_data.columns = subgroup_grades_data.columns.str.replace('Sugroup', 'Subgroup')
+            # # subgroup grades data header is a mess, so easier to just replace the entire thing
+            # subgroup_grades_data.columns = ['Subgroup1', 'Points1', 'Rating1', 'Subgroup2', 'Points2', 'Rating2']
+            # subgroup_grades_data.columns = subgroup_grades_data.columns.str.replace(r'.1', '')
+            # subgroup_grades_data.columns = subgroup_grades_data.columns.str.replace('Sugroup', 'Subgroup')
 
-            # rename first column of enrollment indicators
-            enrollment_indicators_data = enrollment_indicators_data.rename(columns={enrollment_indicators_data.columns[0]: 'Grade Span'})
+            # # rename first column of enrollment indicators data
+            # enrollment_indicators_data = enrollment_indicators_data.rename(columns={enrollment_indicators_data.columns[0]: 'Grade Span'})
             
+            # # replace tables with rating metrics with svg circles
+            # k8_overall_indicators_data = get_svg_circle(k8_overall_indicators_data)
+            # hs_overall_indicators_data = get_svg_circle(hs_overall_indicators_data)
+            # subgroup_grades_data = get_svg_circle(subgroup_grades_data)
+            
+            # # remove the numbers we added above for display purposes
+            # subgroup_grades_data.columns = subgroup_grades_data.columns.str.replace(r'1|2', '')
+
+            # remove extra columns in combined_indicators data
             ## TODO: Do not display is information does not exist (one for each table)
-            # TODO: Fix Combined Indicators (extra columns)
-            # TODO: Replace metrics with svg circles
-            # TODO: align and arrange tables in a pleasing fashion. 
+
+            # TODO: Replace combined school single metric with svg circle
+            # TODO: fix the spaces in the values with a parenthetical
+            # https://stackoverflow.com/questions/61063685/conditional-replace-comma-or-spaces-in-number-string-in-pandas-dataframe-column
+            # TODO: align and arrange tables in a pleasing fashion
+
+            pd.set_option('display.max_columns', None)
+            pd.set_option('display.max_rows', None)
 
             if not k8_overall_indicators_data.isnull().all().all():
+
+                # replace metrics with svg circles
+                k8_overall_indicators_data = get_svg_circle(k8_overall_indicators_data)
+               
                 k8_overall_indicators = create_academic_info_table(k8_overall_indicators_data,'Elementary/Middle Growth Indicators','growth')
                 k8_growth_container = {'display': 'block'}
             else:
                 k8_overall_indicators = {}
                 k8_growth_container = {'display': 'none'}
 
-
             if not hs_overall_indicators_data.isnull().all().all():
+
+                # drop null columns
+                hs_overall_indicators_data = hs_overall_indicators_data.dropna(axis=1, how='all')
+
+                # replace metrics with svg circles
+                hs_overall_indicators_data = get_svg_circle(hs_overall_indicators_data)
+
                 hs_overall_indicators = create_academic_info_table(hs_overall_indicators_data,'High School Growth Indicators','growth')
                 hs_growth_container = {'display': 'block'}
             else:
@@ -824,6 +850,17 @@ def update_academic_information_page(data, school, year, radio_value):
                 hs_growth_container = {'display': 'none'} 
 
             if not combined_indicators_data.isnull().all().all():
+
+                # combined indicators data has several null columns and no headers
+
+                # drop empty columns
+                combined_indicators_data = combined_indicators_data.dropna(axis=1, how='all')
+                # in order to add a header without replacing the current header (which we want to
+                # be the first row), we have to use some transpose shenanigans to add a dummy header
+                # index to replace
+                combined_indicators_data = combined_indicators_data.T.reset_index().T.reset_index(drop=True)
+                combined_indicators_data.columns = ['Category','Weighted Points']
+                         
                 combined_indicators = create_academic_info_table(combined_indicators_data,'Combined Growth Indicators','growth')
                 hs_growth_container = {'display': 'block'}            
             else:
@@ -831,12 +868,34 @@ def update_academic_information_page(data, school, year, radio_value):
                 hs_growth_container = {'display': 'none'} 
 
             if not enrollment_indicators_data.isnull().all().all():
+                
+                # enrollment_indicators_data has two rows, Grades 3-8 and Grades 9-12, 
+                # regardless of whether the school has data for both. In thus case
+                # no data is represented by a '0'. This checks the second row (index 1)
+                # and removes it if it is equal to '0'.
+                if enrollment_indicators_data.iloc[1,1] == 0:
+                    enrollment_indicators_data = enrollment_indicators_data.iloc[:1]        
+
+                # rename first column
+                enrollment_indicators_data = enrollment_indicators_data.rename(columns={enrollment_indicators_data.columns[0]: 'Grade Span'})
+                
                 enrollment_indicators = create_academic_info_table(enrollment_indicators_data,'Enrollment Indicators','growth')
             else:
                 enrollment_indicators = no_data_table('TST')
 
             if not subgroup_grades_data.isnull().all().all():
-                subgroup_grades = create_academic_info_table(subgroup_grades_data,'Subgroup Gradess','growth')
+
+                # subgroup grades data header is a mess, so easier to just replace the entire thing
+                # need to account for duplicate headers for svg circle function
+                subgroup_grades_data.columns = ['Subgroup1', 'Points1', 'Rating1', 'Subgroup2', 'Points2', 'Rating2']
+                
+                # replace rating metrics with svg circles
+                subgroup_grades_data = get_svg_circle(subgroup_grades_data)
+                
+                # remove the numbers we added above for display purposes
+                subgroup_grades_data.columns = subgroup_grades_data.columns.str.replace(r'1|2', '')
+
+                subgroup_grades = create_academic_info_table(subgroup_grades_data,'Subgroup Grades','growth')
             else:
                 subgroup_grades = no_data_table('TST')
 
@@ -889,11 +948,22 @@ def update_academic_information_page(data, school, year, radio_value):
                 grad_indicator_container = {'display': 'none'}
 
             if not ela_progress_indicator_data.iloc[:,1:].isna().all().all():
+
+                # See comment for enrollment_indicators_data except it removes the row
+                # if all the data columns are null.
+                if ela_progress_indicator_data.loc[[1]].isna().sum().sum() >=3:
+                    ela_progress_indicator_data = ela_progress_indicator_data.iloc[:1]
+                    
                 ela_progress_indicator = create_academic_info_table(ela_progress_indicator_data,'Progress in Achieving English Language Proficiency Indicator','growth')
             else:
                 ela_progress_indicator = no_data_table('TST')
 
             if not absenteeism_indicator_data.iloc[:,1:].isna().all().all():
+
+                # see comment for ela_progress_indicator_data
+                if absenteeism_indicator_data.loc[[1]].isna().sum().sum() >=3:
+                    absenteeism_indicator_data = absenteeism_indicator_data.iloc[:1]
+
                 absenteeism_indicator = create_academic_info_table(absenteeism_indicator_data,'Addressing Chronic Absenteeism Indicator','growth')
             else:
                 absenteeism_indicator = no_data_table('TST')

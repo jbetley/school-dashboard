@@ -58,7 +58,7 @@ def update_organizational_compliance(data, year):
             organizational_indicators = organizational_indicators.drop(columns=['Standard','Description'])
             organizational_indicators.insert(loc=0, column='Description', value = description)
             organizational_indicators.insert(loc=0, column='Standard', value = standard)
-
+            print(organizational_indicators)
             # convert ratings to colored circles
             organizational_indicators = get_svg_circle(organizational_indicators)
 

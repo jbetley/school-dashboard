@@ -148,6 +148,7 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     # Academic/Financial metric dataframes contain 'Rate' substring in columns if there
     # is sufficient data. Organizational metric dataframe contains 'Standard' column
     # the else ocurrs when a dataframe is passed that doesn't contain either
+
     if val.columns.str.contains('Rat').any() == True:
         rating_columns = val.loc[:, val.columns.str.contains('Rat')].columns
     elif val.columns.str.contains('Standard').any() == True:
@@ -158,13 +159,12 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     # only process dataframes satisfying either condition above
     if ~rating_columns.empty:
         for col in rating_columns:
-
             conditions = [
-            result[col].eq('DNMS'),
-            result[col].eq('AS'),
-            result[col].eq('MS'),
-            result[col].eq('ES'),
-            result[col].eq('N/A'),
+            result[col].eq('DNMS') | result[col].eq('Does Not Meet Expectations'),
+            result[col].eq('AS') | result[col].eq('Approaches Expectations'),
+            result[col].eq('MS') | result[col].eq('Meets Expectations'),
+            result[col].eq('ES') | result[col].eq('Exceeds Expectations'),
+            result[col].eq('N/A') | result[col].eq('NA') | result[col].eq('No Rating'),
             result[col].eq(np.nan),
             ]
 
@@ -178,7 +178,7 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
             no_rating ='' #<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
             empty_cell =''
 
-            rating = [did_not_meet,approaching,meets,exceeds, no_rating, empty_cell]
+            rating = [did_not_meet, approaching, meets, exceeds, no_rating, empty_cell]
             result[col] = np.select(conditions, rating, default=empty_cell)
 
     return result
@@ -703,19 +703,17 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                         ),
                     }
                     for (col) in data.columns
-                ]
+        ]
+
     elif table_type == 'growth':
         table_cols = [
-                    {
-                        'name': col,
-                        'id': col,
-                        'type': 'numeric',
-                        'format': Format(
-                            scheme=Scheme.fixed, precision=2
-                        ),
+                    {'name': col, 'id': col, 'presentation': 'markdown'}
+                    if 'Rat' in col
+                    else {'name': col, 'id': col, 'type':'numeric',
+                    'format': Format(scheme=Scheme.fixed, precision=2)
                     }
                     for (col) in data.columns
-                ]
+        ]   
         
     table_layout = [
         html.Label(label, className='header_label'),
@@ -723,17 +721,6 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
             dash_table.DataTable(
                 data.to_dict('records'),
                 columns = table_cols,
-                # [
-                #     {
-                #         'name': col,
-                #         'id': col,
-                #         'type': 'numeric',
-                #         'format': Format(
-                #             scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
-                #         ),
-                #     }
-                #     for (col) in data.columns
-                # ],
                 style_data = {
                     'fontSize': '11px',
                     'fontFamily': 'Roboto,sans-serif',
@@ -830,6 +817,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                     }                                    
                 ],
                 merge_duplicate_headers=True,
+                markdown_options={'html': True},
                 style_as_list_view=True,
             ),
         )
