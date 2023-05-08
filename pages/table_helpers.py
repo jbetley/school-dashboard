@@ -144,42 +144,52 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
         pd.Dataframe: returns the same dataframe with svg circles in place of text
     """
     result = val.copy()
+    
+    # NOTE: Using font-awesome circle icon.
+    result = result.replace(['DNMS','Does Not Meet Expectations'],'<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(['AS','Approaches Expectations'],'<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(['MS','Meets Expectations'],'<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(['ES','Exceeds Expectations'],'<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(['N/A','NA','No Rating',np.nan],'', regex=True)
 
+    # NOTE: Waaay overthinking it below. The above code replaces regardless of where the item is in a df
+     
+    
     # Academic/Financial metric dataframes contain 'Rate' substring in columns if there
     # is sufficient data. Organizational metric dataframe contains 'Standard' column
     # the else ocurrs when a dataframe is passed that doesn't contain either
 
-    if val.columns.str.contains('Rat').any() == True:
-        rating_columns = val.loc[:, val.columns.str.contains('Rat')].columns
-    elif val.columns.str.contains('Standard').any() == True:
-        rating_columns = val.loc[:, ~val.columns.str.contains('Standard|Description',case=False, regex=True)].columns
-    else:
-        rating_columns = pd.Index([])
+    # if val.columns.str.contains('Rat').any() == True:
+    #     rating_columns = val.loc[:, val.columns.str.contains('Rat')].columns
+    # elif val.columns.str.contains('Standard').any() == True:
+    #     rating_columns = val.loc[:, ~val.columns.str.contains('Standard|Description',case=False, regex=True)].columns
+    # else:
+    #     rating_columns = pd.Index([])
 
-    # only process dataframes satisfying either condition above
-    if ~rating_columns.empty:
-        for col in rating_columns:
-            conditions = [
-            result[col].eq('DNMS') | result[col].eq('Does Not Meet Expectations'),
-            result[col].eq('AS') | result[col].eq('Approaches Expectations'),
-            result[col].eq('MS') | result[col].eq('Meets Expectations'),
-            result[col].eq('ES') | result[col].eq('Exceeds Expectations'),
-            result[col].eq('N/A') | result[col].eq('NA') | result[col].eq('No Rating'),
-            result[col].eq(np.nan),
-            ]
+    # # only process dataframes satisfying either condition above
+    # if ~rating_columns.empty:
+    #     for col in rating_columns:
+    #         conditions = [
+    #         result[col].eq('DNMS') | result[col].eq('Does Not Meet Expectations'),
+    #         result[col].eq('AS') | result[col].eq('Approaches Expectations'),
+    #         result[col].eq('MS') | result[col].eq('Meets Expectations'),
+    #         result[col].eq('ES') | result[col].eq('Exceeds Expectations'),
+    #         result[col].eq('N/A') | result[col].eq('NA') | result[col].eq('No Rating'),
+    #         result[col].eq(np.nan),
+    #         ]
 
-            # NOTE: Using font-awesome circle icon.
-            did_not_meet ='<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>'
-            approaching ='<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>'
-            meets ='<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>'
-            exceeds ='<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>'
+    #         # NOTE: Using font-awesome circle icon.
+    #         did_not_meet ='<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>'
+    #         approaching ='<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>'
+    #         meets ='<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>'
+    #         exceeds ='<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>'
 
-            # NOTE: Testing empty display instead of grey circle for N/A
-            no_rating ='' #<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
-            empty_cell =''
+    #         # NOTE: Uses empty display instead of grey circle for N/A
+    #         no_rating ='' #<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
+    #         empty_cell =''
 
-            rating = [did_not_meet, approaching, meets, exceeds, no_rating, empty_cell]
-            result[col] = np.select(conditions, rating, default=empty_cell)
+    #         rating = [did_not_meet, approaching, meets, exceeds, no_rating, empty_cell]
+    #         result[col] = np.select(conditions, rating, default=empty_cell)
 
     return result
 
@@ -708,7 +718,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
     elif table_type == 'growth':
         table_cols = [
                     {'name': col, 'id': col, 'presentation': 'markdown'}
-                    if 'Rat' in col
+                    if 'Rat' in col or 'Weighted Points' in col # the second condition matches exactly one cell in entire site
                     else {'name': col, 'id': col, 'type':'numeric',
                     'format': Format(scheme=Scheme.fixed, precision=2)
                     }
