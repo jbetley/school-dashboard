@@ -5,7 +5,7 @@
 # version:  1.01.040323
 
 import dash
-from dash import html, Input, Output, callback, dash_table
+from dash import html, Input, Output, callback #, dash_table
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import numpy as np
@@ -15,7 +15,8 @@ import re
 import os
 
 # import local functions
-from .table_helpers import no_data_page, no_data_table, create_academic_info_table, get_svg_circle
+from .table_helpers import no_data_page, no_data_table, hidden_table, \
+    create_academic_info_table, get_svg_circle
 from .chart_helpers import no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages
 from .subnav import subnav_academic
@@ -50,37 +51,35 @@ dash.register_page(__name__, top_nav=True, path='/academic_information', order=4
     Output('academic-information-main-container', 'style'),
     Output('academic-information-empty-container', 'style'),
     Output('academic-information-no-data', 'children'),
-##
     Output('k8-overall-indicators', 'children'),
-    Output('k8-growth-container', 'style'),        
+    # Output('k8-growth-container', 'style'),        
     Output('hs-overall-indicators', 'children'),
     Output('combined-indicators', 'children'),
-    Output('hs-growth-container', 'style'),    
+    # Output('hs-growth-container', 'style'),    
     Output('enrollment-indicators', 'children'),
-    Output('enrollment-container', 'style'),      
+    # Output('enrollment-container', 'style'),      
     Output('subgroup-grades', 'children'),
-    Output('subgroup-grades-container', 'style'),      
+    # Output('subgroup-grades-container', 'style'),      
     Output('k8-academic-achievement', 'children'),
-    Output('k8-achievement-container', 'style'),        
+    # Output('k8-achievement-container', 'style'),        
     Output('hs-academic-achievement', 'children'),
-    Output('hs-achievement-container', 'style'),        
+    # Output('hs-achievement-container', 'style'),        
     Output('k8-academic-progress', 'children'),
-    Output('k8-progress-container', 'style'),       
+    # Output('k8-progress-container', 'style'),       
     Output('hs-academic-progress', 'children'),
-    Output('hs-progress-container', 'style'),       
+    # Output('hs-progress-container', 'style'),       
     Output('closing-achievement-gap', 'children'),
-    Output('closing-achievement-gap-container', 'style'),      
+    # Output('closing-achievement-gap-container', 'style'),      
     Output('graduation-rate-indicator', 'children'),
     Output('strength-of-diploma-indicator', 'children'),
-    Output('grad-indicator-container', 'style'),    
+    # Output('grad-indicator-container', 'style'),    
     Output('ela-progress-indicator', 'children'),
-    Output('ela-progress-container', 'style'),       
+    # Output('ela-progress-container', 'style'),       
     Output('absenteeism-indicator', 'children'),
-    Output('absenteeism-container', 'style'),      
+    # Output('absenteeism-container', 'style'),      
     Output('academic-growth-main-container', 'style'),
     Output('academic-growth-empty-container', 'style'),
     Output('academic-growth-no-data', 'children'),    
-##
     Output('notes-string', 'children'),
     Input('dash-session', 'data'),
     Input('charter-dropdown', 'value'),
@@ -138,10 +137,10 @@ def update_academic_information_page(data, school, year, radio_value):
     no_data_to_display = no_data_page('Academic Proficiency')
     
     main_growth_container = {'display': 'block'}
-    k8_growth_container = hs_growth_container = enrollment_container = subgroup_grades_container = \
-        k8_achievement_container = hs_achievement_container = k8_progress_container = \
-        hs_progress_container = grad_indicator_container = closing_achievement_gap_container = \
-        ela_progress_container = absenteeism_container = {'display': 'none'}
+    # k8_growth_container = hs_growth_container = enrollment_container = subgroup_grades_container = \
+    #     k8_achievement_container = hs_achievement_container = k8_progress_container = \
+    #     hs_progress_container = grad_indicator_container = closing_achievement_gap_container = \
+    #    ela_progress_container = absenteeism_container = {'display': 'none'}
     
     empty_growth_container = {'display': 'none'}
     no_growth_data_to_display = no_data_page('Academic Growth')
@@ -758,276 +757,355 @@ def update_academic_information_page(data, school, year, radio_value):
                 hs_not_calculated_table = create_academic_info_table(hs_not_calculated_data,'Not Currently Calculated','proficiency')
 
     else:
-        ## GROWTH TABLES ##
+        ## Growth Tables ##
 
-        # TODO: THIS IS HORRENDOUS - NOT SURE HOW TO DO CLEANLY WITHOUT EITHER DB
-        # TODO: OR Multiplying csv's x 14
+        # NOTE: Currently have a single year of growth data (2022). Therefore unless
+        # the selected year is 2022, we show an empty table.
+        if year == '2022':
+
+            # NOTE: This data sucks ass. It originates from an excel file that has a mishmash of small
+            # tables with different headers and varying columns and rows. Data is different for different
+            # grade configurations, and, to add insult to injury, sometimes tables are present with null
+            # values and other times the tables are just missing. So we pull the data out by specific rows
+            # in order to avoid column index errors when pandas tries to read it in all at once.
+
+            growth_file = 'data/growth_data' + school + '.csv'
+
+            # NOTE: Used for testing
+            # pd.set_option('display.max_columns', None)
+            # pd.set_option('display.max_rows', None)
         
-        # NOTE: This data sucks ass. It originates from an excel file that has a mishmash of small
-        # tables with different headers and varying columns and rows. Data is different for different
-        # grade configurations, and, to add insult to injury, sometimes tables are present with null
-        # values and other times the tables are just missing. So we pull the data out by specific rows
-        # in order to avoid column index errors when pandas tries to read it in all at once.
-
-        growth_file = 'data/growth_data' + school + '.csv'
-
-        # Adult high schools and new charter schools do not have growth data.
-        if os.path.isfile(growth_file):
-
-            # NOTE: This whole thing is terrible, because it means you cannot use
-            # any global data-cleaning techniques. So there is much repitition. Must
-            # figure out how to fix.
-
-            k8_overall_indicators_data = pd.read_csv(growth_file, nrows=9)
-            hs_overall_indicators_data = pd.read_csv(growth_file, skiprows=10, nrows=9)
-            combined_indicators_data = pd.read_csv(growth_file, skiprows=20, nrows=3)
-            enrollment_indicators_data = pd.read_csv(growth_file, skiprows=24, nrows=2)
-            subgroup_grades_data = pd.read_csv(growth_file, skiprows=27, nrows=5)
-            k8_academic_achievement_data = pd.read_csv(growth_file, skiprows=34, nrows=2)
-            hs_academic_achievement_data = pd.read_csv(growth_file, skiprows=38, nrows=2)
-            k8_academic_progress_data = pd.read_csv(growth_file, skiprows=42, nrows=2)
-            hs_academic_progress_data = pd.read_csv(growth_file, skiprows=46, nrows=2)
-            closing_achievement_gap_data = pd.read_csv(growth_file, skiprows=50, nrows=2)
-            graduation_rate_indicator_data = pd.read_csv(growth_file, skiprows=53, nrows=1)
-            strength_of_diploma_indicator_data = pd.read_csv(growth_file, skiprows=55, nrows=1)
-            ela_progress_indicator_data = pd.read_csv(growth_file, skiprows=57, nrows=2)
-            absenteeism_indicator_data = pd.read_csv(growth_file, skiprows=60, nrows=2)
-
-            ## TODO: Do not display is information does not exist (one for each table)
-           # TODO: align and arrange tables in a pleasing fashion
-
-            pd.set_option('display.max_columns', None)
-            pd.set_option('display.max_rows', None)
-
-            if not k8_overall_indicators_data.isnull().all().all():
-
-                # replace metrics with svg circles
-                k8_overall_indicators_data = get_svg_circle(k8_overall_indicators_data)
-               
-                k8_overall_indicators = create_academic_info_table(k8_overall_indicators_data,'Elementary/Middle Growth Summary','growth')
-                k8_growth_container = {'display': 'block'}
-            else:
-                k8_overall_indicators = {}
-                k8_growth_container = {'display': 'none'}
-
-            if not hs_overall_indicators_data.isnull().all().all():
-
+            def replace_header(data):
+                
+                # set first row as header
+                data.columns = data.iloc[0].tolist()
+                
+                # remove first row
+                data = data[1:]
+                
                 # drop null columns
-                hs_overall_indicators_data = hs_overall_indicators_data.dropna(axis=1, how='all')
+                data = data.dropna(axis=1, how='all')
 
-                # replace metrics with svg circles
-                hs_overall_indicators_data = get_svg_circle(hs_overall_indicators_data)
+                return data
+            
+            # Adult high schools and new charter schools do not have growth data.
+            if os.path.isfile(growth_file):
 
-                hs_overall_indicators = create_academic_info_table(hs_overall_indicators_data,'High School Growth Summary','growth')
-                hs_growth_container = {'display': 'block'}
+                # get all tables. Because there are variable columns, we set a fixed
+                # range equal to the maximum number of columns
+                growth_data = pd.read_csv(growth_file,header = None,names=range(8))
+
+                # data cleaning - global
+                growth_data = growth_data.replace({
+                    'English/Lang. Arts': 'ELA',
+                    'Mathematics': 'Math',
+                    'Sugroup': 'Subgroup',
+                    'Hispanic Ethnicity': 'Hispanic'
+                    })
+
+                # remove excess spaces between '(' and ')'
+                growth_data = growth_data.replace(r'\s+(?=[^(\)]*\))','', regex=True)
+
+                # remove extra space between number and '%'
+                growth_data = growth_data.replace(r'(?<=\d) +(?=%)','', regex=True)                
+
+                # k8_overall_indicators_data = pd.read_csv(growth_file, nrows=9)
+                # hs_overall_indicators_data = pd.read_csv(growth_file, skiprows=10, nrows=9)
+                # combined_indicators_data = pd.read_csv(growth_file, skiprows=20, nrows=3)
+                # enrollment_indicators_data = pd.read_csv(growth_file, skiprows=24, nrows=2)
+                # subgroup_grades_data = pd.read_csv(growth_file, skiprows=27, nrows=5)
+                # k8_academic_achievement_data = pd.read_csv(growth_file, skiprows=34, nrows=2)
+                # hs_academic_achievement_data = pd.read_csv(growth_file, skiprows=38, nrows=2)
+                # k8_academic_progress_data = pd.read_csv(growth_file, skiprows=42, nrows=2)
+                # hs_academic_progress_data = pd.read_csv(growth_file, skiprows=46, nrows=2)
+                # closing_achievement_gap_data = pd.read_csv(growth_file, skiprows=50, nrows=2)
+                # graduation_rate_indicator_data = pd.read_csv(growth_file, skiprows=53, nrows=1)
+                # strength_of_diploma_indicator_data = pd.read_csv(growth_file, skiprows=55, nrows=1)
+                # ela_progress_indicator_data = pd.read_csv(growth_file, skiprows=57, nrows=2)
+                # absenteeism_indicator_data = pd.read_csv(growth_file, skiprows=60, nrows=2)
+
+                ## k8 growth indicators ##
+                k8_overall_indicators_data = growth_data.iloc[0:10].copy()
+
+                if not k8_overall_indicators_data.isnull().all().all():
+                    
+                    k8_overall_indicators_data = replace_header(k8_overall_indicators_data)
+
+                    # Drop rows where there are zero points and No Rating
+                    k8_overall_indicators_data = k8_overall_indicators_data.loc[~((k8_overall_indicators_data['Points'] == '0.00') & \
+                        (k8_overall_indicators_data['Rating'] == 'No Rating'))]
+                    
+                    # replace metrics with svg circles
+                    k8_overall_indicators_data = get_svg_circle(k8_overall_indicators_data)
+                
+                    k8_overall_indicators = create_academic_info_table(k8_overall_indicators_data,'Elementary/Middle Growth Summary','growth')
+                else:
+                    k8_overall_indicators = hidden_table()
+
+                ## hs growth indicators ##
+                hs_overall_indicators_data = growth_data.iloc[10:20].copy()
+
+                if not hs_overall_indicators_data.isnull().all().all():
+
+                    hs_overall_indicators_data = replace_header(hs_overall_indicators_data)
+
+                    hs_overall_indicators_data = hs_overall_indicators_data.loc[~((hs_overall_indicators_data['Points'] == '0.00') & \
+                        (hs_overall_indicators_data['Rating'] == 'No Rating'))]
+                    
+                    hs_overall_indicators_data = get_svg_circle(hs_overall_indicators_data)
+
+                    hs_overall_indicators = create_academic_info_table(hs_overall_indicators_data,'High School Growth Summary','growth')
+                else:
+                    hs_overall_indicators = hidden_table()
+
+                ## combined growth indicators ##
+                combined_indicators_data = growth_data.iloc[20:24].copy()
+
+                if not combined_indicators_data.isnull().all().all():
+
+                    # drop empty columns and add headers
+                    combined_indicators_data = combined_indicators_data.dropna(axis=1, how='all')
+                    combined_indicators_data.columns = ['Category','Weighted Points']
+                    
+                    combined_indicators_data = get_svg_circle(combined_indicators_data)
+
+                    combined_indicators = create_academic_info_table(combined_indicators_data,'Combined Growth Summary','growth')
+                else:
+                    combined_indicators = hidden_table()
+
+                ## enrollment indicators ##
+                enrollment_indicators_data = growth_data.iloc[24:27].copy()
+
+                if not enrollment_indicators_data.isnull().all().all():
+                    
+                    enrollment_indicators_data = replace_header(enrollment_indicators_data)
+
+                    # enrollment_indicators_data has two rows, Grades 3-8 and Grades 9-12, 
+                    # regardless of whether the school has data for both. In thus case
+                    # no data is represented by a '0'. This checks the second row (index 1)
+                    # and removes it if it is equal to '0'.
+                    if enrollment_indicators_data.iloc[1,1] == 0:
+                        enrollment_indicators_data = enrollment_indicators_data.iloc[:1]        
+
+                    # rename first column
+                    enrollment_indicators_data = enrollment_indicators_data.rename(columns={enrollment_indicators_data.columns[0]: 'Grade Span'})
+                    
+                    enrollment_indicators = create_academic_info_table(enrollment_indicators_data,'Enrollment Indicators','growth')
+                else:
+                    enrollment_indicators = hidden_table()
+
+                ## subgroup grades indicators ##
+                subgroup_grades_data = growth_data.iloc[27:33].copy()
+
+                if not subgroup_grades_data.isnull().all().all():
+                    
+                    subgroup_grades_data = replace_header(subgroup_grades_data)
+
+                    # this table is actually two tables side by side with the same column headers
+                    # We use groupby() to unpivot & combine the duplicate columns, and then reorder
+                    # the columns
+                    subgroup_grades_data = subgroup_grades_data.groupby(subgroup_grades_data.columns.values, axis=1).agg(lambda x: x.values.tolist()).sum().apply(pd.Series).T
+                    subgroup_grades_data = subgroup_grades_data[['Subgroup', 'Points', 'Rating']]
+
+                    # Drop rows where there are zero points and No Rating
+                    subgroup_grades_data = subgroup_grades_data.loc[~((subgroup_grades_data['Points'] == '0') & \
+                        (subgroup_grades_data['Rating'] == 'No Rating'))]
+                                    
+                    # replace rating metrics with svg circles
+                    subgroup_grades_data = get_svg_circle(subgroup_grades_data)
+                    
+                    subgroup_grades = create_academic_info_table(subgroup_grades_data,'Subgroup Grades','growth')
+                else:
+                    subgroup_grades = hidden_table()
+
+                ## k8 academic achievement indicators ##
+                k8_academic_achievement_data = growth_data.iloc[34:37].copy()
+
+                if not k8_academic_achievement_data.iloc[1:,1:].isnull().all().all():
+
+                    k8_academic_achievement_data = replace_header(k8_academic_achievement_data)
+
+                    k8_academic_achievement = create_academic_info_table(k8_academic_achievement_data,'Elementary/Middle Academic Achievement','growth')
+                else:
+                    k8_academic_achievement = hidden_table()
+
+                ## hs academic achievement indicators ##
+                hs_academic_achievement_data = growth_data.iloc[38:41].copy()
+
+                # skip 1st column and 1st row in determining whether all cols are null
+                if not hs_academic_achievement_data.iloc[1:,1:].isna().all().all():
+
+                    hs_academic_achievement_data = replace_header(hs_academic_achievement_data)
+
+                    hs_academic_achievement = create_academic_info_table(hs_academic_achievement_data,'High School Academic Achievement','growth')
+            
+                else:
+                    hs_academic_achievement = hidden_table()
+
+                ## k8 academic progress indicators ##
+                k8_academic_progress_data = growth_data.iloc[42:45].copy()
+
+                if not k8_academic_progress_data.iloc[1:,1:].isna().all().all():
+
+                    k8_academic_progress_data = replace_header(k8_academic_progress_data)
+
+                    k8_academic_progress = create_academic_info_table(k8_academic_progress_data,'Elementary/Middle Progress Indicators','growth')
+                else:
+                    k8_academic_progress = hidden_table()
+
+                ## hs academic progress indicators ##
+                hs_academic_progress_data = growth_data.iloc[46:49].copy()
+
+                if not hs_academic_progress_data.iloc[1:,1:].isna().all().all():
+
+                    hs_academic_progress_data = replace_header(hs_academic_progress_data)
+
+                    hs_academic_progress = create_academic_info_table(hs_academic_progress_data,'High School Progress Indicators','growth')
+                else:
+                    hs_academic_progress = hidden_table()
+
+                ## closing achievement gap indicators ##
+                closing_achievement_gap_data = growth_data.iloc[50:53].copy()
+
+                if not closing_achievement_gap_data.iloc[1:,1:].isna().all().all():
+
+                    closing_achievement_gap_data = replace_header(closing_achievement_gap_data)
+
+                    closing_achievement_gap = create_academic_info_table(closing_achievement_gap_data,'Closing the Achievement Gap','growth')
+        
+                else:
+                    closing_achievement_gap = hidden_table()
+
+                ## graduation rate indicator ##
+                graduation_rate_indicator_data = growth_data.iloc[53:55].copy()
+
+                if not graduation_rate_indicator_data.isnull().all().all():
+
+                    graduation_rate_indicator_data = replace_header(graduation_rate_indicator_data)
+
+                    graduation_rate_indicator = create_academic_info_table(graduation_rate_indicator_data,'Graduation Rate Indicator','growth')
+                else:
+                    graduation_rate_indicator = hidden_table()
+
+                ## strength of diploma indicator ##
+                strength_of_diploma_indicator_data = growth_data.iloc[55:57].copy()
+
+                if not strength_of_diploma_indicator_data.isnull().all().all():
+
+                    strength_of_diploma_indicator_data = replace_header(strength_of_diploma_indicator_data)
+                    
+                    strength_of_diploma_indicator = create_academic_info_table(strength_of_diploma_indicator_data,'Strength of Diploma Indicator','growth')
+                else:
+                    strength_of_diploma_indicator = hidden_table()
+
+                ## ela progress indicators ##
+                ela_progress_indicator_data = growth_data.iloc[57:60].copy()
+
+                if not ela_progress_indicator_data.iloc[1:,1:].isna().all().all():
+
+                    ela_progress_indicator_data = replace_header(ela_progress_indicator_data)
+
+                    # Checks the second (Grade 9-12) row by index and drops it if all of the
+                    # value columns are NaN
+                    if ela_progress_indicator_data.loc[[59]].isna().sum().sum() >=3:
+                        ela_progress_indicator_data = ela_progress_indicator_data.iloc[:1]
+
+                    ela_progress_indicator = create_academic_info_table(ela_progress_indicator_data,'Progress in Achieving English Language Proficiency Indicator','growth')
+                else:
+                    ela_progress_indicator = hidden_table()
+
+                ## chronic absenteeism indicators ##
+                absenteeism_indicator_data = growth_data.iloc[60:64].copy()
+
+                if not absenteeism_indicator_data.iloc[1:,1:].isna().all().all():
+
+                    absenteeism_indicator_data = replace_header(absenteeism_indicator_data)
+
+                    if absenteeism_indicator_data.loc[[62]].isna().sum().sum() >=3:
+                        absenteeism_indicator_data = absenteeism_indicator_data.iloc[:1]
+
+                    absenteeism_indicator = create_academic_info_table(absenteeism_indicator_data,'Addressing Chronic Absenteeism Indicator','growth')
+                else:
+                    absenteeism_indicator = hidden_table()
+
+                hs_grad_overview_table = {}
+                hs_grad_ethnicity_table = {}
+                hs_grad_subgroup_table = {}
+                sat_overview_table = {}
+                sat_ethnicity_table = {}
+                sat_subgroup_table = {}        
+                hs_eca_table = {}
+                hs_not_calculated_table = {}
+                hs_table_container = {'display': 'none'}
+
+                k8_grade_table = {}
+                k8_ethnicity_table = {}
+                k8_subgroup_table = {}
+                k8_other_table = {}
+                k8_not_calculated_table = {}
+                k8_table_container = {'display': 'none'}
+
+                k8_grade_ela_fig = {}
+                k8_grade_math_fig = {}
+                k8_ethnicity_ela_fig = {}
+                k8_ethnicity_math_fig = {}
+                k8_subgroup_ela_fig = {}
+                k8_subgroup_math_fig = {}
+
+                main_container = {'display': 'none'}
+                empty_container = {'display': 'none'}
+
             else:
+
+                hs_grad_overview_table = {}
+                hs_grad_ethnicity_table = {}
+                hs_grad_subgroup_table = {}
+                sat_overview_table = {}
+                sat_ethnicity_table = {}
+                sat_subgroup_table = {}        
+                hs_eca_table = {}
+                hs_not_calculated_table = {}
+                hs_table_container = {'display': 'none'}
+
+                k8_grade_table = {}
+                k8_ethnicity_table = {}
+                k8_subgroup_table = {}
+                k8_other_table = {}
+                k8_not_calculated_table = {}
+                k8_table_container = {'display': 'none'}
+
+                k8_grade_ela_fig = {}
+                k8_grade_math_fig = {}
+                k8_ethnicity_ela_fig = {}
+                k8_ethnicity_math_fig = {}
+                k8_subgroup_ela_fig = {}
+                k8_subgroup_math_fig = {}
+
+                main_container = {'display': 'none'}
+                empty_container = {'display': 'none'}
+                k8_overall_indicators = {}
                 hs_overall_indicators = {}
-                hs_growth_container = {'display': 'none'} 
-
-            if not combined_indicators_data.isnull().all().all():
-
-                # combined indicators data has several null columns and no headers
-
-                # drop empty columns
-                combined_indicators_data = combined_indicators_data.dropna(axis=1, how='all')
-                # in order to add a header without replacing the current header (which we want to
-                # be the first row), we have to use some transpose shenanigans to add a dummy header
-                # index to replace
-                combined_indicators_data = combined_indicators_data.T.reset_index().T.reset_index(drop=True)
-                combined_indicators_data.columns = ['Category','Weighted Points']
-
-                # replace rating metrics with svg circles
-                combined_indicators_data = get_svg_circle(combined_indicators_data)
-
-                combined_indicators = create_academic_info_table(combined_indicators_data,'Combined Growth Summary','growth')
-                hs_growth_container = {'display': 'block'}            
-            else:
                 combined_indicators = {}
-                hs_growth_container = {'display': 'none'} 
-
-            if not enrollment_indicators_data.isnull().all().all():
-                
-                # enrollment_indicators_data has two rows, Grades 3-8 and Grades 9-12, 
-                # regardless of whether the school has data for both. In thus case
-                # no data is represented by a '0'. This checks the second row (index 1)
-                # and removes it if it is equal to '0'.
-                if enrollment_indicators_data.iloc[1,1] == 0:
-                    enrollment_indicators_data = enrollment_indicators_data.iloc[:1]        
-
-                # rename first column
-                enrollment_indicators_data = enrollment_indicators_data.rename(columns={enrollment_indicators_data.columns[0]: 'Grade Span'})
-                
-                enrollment_indicators = create_academic_info_table(enrollment_indicators_data,'Enrollment Indicators','growth')
-                enrollment_container = {'display': 'block'}  
-            else:
                 enrollment_indicators = {}
-                enrollment_container = {'display': 'none'}                 
-
-            if not subgroup_grades_data.isnull().all().all():
-
-                # subgroup grades data header is a mess, so easier to just replace the entire thing
-                # need to account for duplicate headers for svg circle function
-                subgroup_grades_data.columns = ['Subgroup1', 'Points1', 'Rating1', 'Subgroup2', 'Points2', 'Rating2']
-                
-                # replace rating metrics with svg circles
-                subgroup_grades_data = get_svg_circle(subgroup_grades_data)
-                
-                # remove the numbers we added above for display purposes
-                subgroup_grades_data.columns = subgroup_grades_data.columns.str.replace(r'1|2', '')
-
-                subgroup_grades = create_academic_info_table(subgroup_grades_data,'Subgroup Grades','growth')
-                subgroup_grades_container = {'display': 'block'}                
-            else:
                 subgroup_grades = {}
-                subgroup_grades_container = {'display': 'none'}
-
-            if not k8_academic_achievement_data.isnull().all().all():
-
-                # remove excess spaces
-                k8_academic_achievement_data = k8_academic_achievement_data.replace(r'\s+(?=[^(\)]*\))','', regex=True)
-                k8_academic_achievement_data = k8_academic_achievement_data.replace(r'(?<=\d) +(?=%)','', regex=True)                
-
-                k8_academic_achievement = create_academic_info_table(k8_academic_achievement_data,'Elementary/Middle Academic Achievement','growth')
-                k8_achievement_container = {'display': 'block'}             
-            else:
                 k8_academic_achievement = {}
-                k8_achievement_container = {'display': 'none'}  
-
-            # skip category row in determining whether all cols are null
-            if not hs_academic_achievement_data.iloc[:,1:].isna().all().all():
-                
-                # remove excess spaces
-                hs_academic_achievement_data = hs_academic_achievement_data.replace(r'\s+(?=[^(\)]*\))','', regex=True) 
-                hs_academic_achievement_data = hs_academic_achievement_data.replace(r'(?<=\d) +(?=%)','', regex=True) 
-                
-                hs_academic_achievement = create_academic_info_table(hs_academic_achievement_data,'High School Academic Achievement','growth')
-                hs_achievement_container = {'display': 'block'}              
-            else:
                 hs_academic_achievement = {}
-                hs_achievement_container = {'display': 'none'}              
-
-            if not k8_academic_progress_data.iloc[:,1:].isna().all().all():
-
-                # remove excess spaces
-                k8_academic_progress_data = k8_academic_progress_data.replace(r'\s+(?=[^(\)]*\))','', regex=True)
-                k8_academic_progress_data = k8_academic_progress_data.replace(r'(?<=\d) +(?=%)','', regex=True) 
-                
-                k8_academic_progress = create_academic_info_table(k8_academic_progress_data,'Elementary/Middle Progress Indicators','growth')
-                k8_progress_container = {'display': 'block'}            
-            else:
                 k8_academic_progress = {}
-                k8_progress_container = {'display': 'none'}
-
-            if not hs_academic_progress_data.iloc[:,1:].isna().all().all():
-
-                # remove excess spaces
-                hs_academic_progress_data = hs_academic_progress_data.replace(r'\s+(?=[^(\)]*\))','', regex=True) 
-                hs_academic_progress_data = hs_academic_progress_data.replace(r'(?<=\d) +(?=%)','', regex=True) 
-
-                hs_academic_progress = create_academic_info_table(hs_academic_progress_data,'High School Progress Indicators','growth')
-                hs_progress_container = {'display': 'block'}            
-            else:
                 hs_academic_progress = {}
-                hs_progress_container = {'display': 'none'}
-
-            if not closing_achievement_gap_data.iloc[:,1:].isna().all().all():
-
-                # remove excess spaces
-                closing_achievement_gap_data = closing_achievement_gap_data.replace(r'\s+(?=[^(\)]*\))','', regex=True) 
-                closing_achievement_gap_data = closing_achievement_gap_data.replace(r'(?<=\d) +(?=%)','', regex=True) 
-
-                closing_achievement_gap = create_academic_info_table(closing_achievement_gap_data,'Closing the Achievement Gap','growth')
-                closing_achievement_gap_container = {'display': 'block'}            
-            else:
                 closing_achievement_gap = {}
-                closing_achievement_gap_container = {'display': 'none'}
-
-            if not graduation_rate_indicator_data.isnull().all().all():
-
-                # remove excess spaces
-                graduation_rate_indicator_data = graduation_rate_indicator_data.replace(r'\s+(?=[^(\)]*\))','', regex=True) 
-                graduation_rate_indicator_data = graduation_rate_indicator_data.replace(r'(?<=\d) +(?=%)','', regex=True) 
-
-                graduation_rate_indicator = create_academic_info_table(graduation_rate_indicator_data,'Graduation Rate Indicator','growth')
-                grad_indicator_container = {'display': 'block'}            
-            else:
                 graduation_rate_indicator = {}
-                grad_indicator_container = {'display': 'none'}
-
-            if not strength_of_diploma_indicator_data.isnull().all().all():
-
-                # remove excess spaces
-                strength_of_diploma_indicator_data = strength_of_diploma_indicator_data.replace(r'\s+(?=[^(\)]*\))','', regex=True) 
-                strength_of_diploma_indicator_data = strength_of_diploma_indicator_data.replace(r'(?<=\d) +(?=%)','', regex=True) 
-
-                strength_of_diploma_indicator = create_academic_info_table(strength_of_diploma_indicator_data,'Strength of Diploma Indicator','growth')
-                grad_indicator_container = {'display': 'block'}
-            else:
                 strength_of_diploma_indicator = {}
-                grad_indicator_container = {'display': 'none'}
-
-            if not ela_progress_indicator_data.iloc[:,1:].isna().all().all():
-
-                # See comment for enrollment_indicators_data except it removes the row
-                # if all the data columns are null.
-                if ela_progress_indicator_data.loc[[1]].isna().sum().sum() >=3:
-                    ela_progress_indicator_data = ela_progress_indicator_data.iloc[:1]
-
-                # remove excess spaces
-                ela_progress_indicator_data = ela_progress_indicator_data.replace(r'\s+(?=[^(\)]*\))','', regex=True) 
-                ela_progress_indicator_data = ela_progress_indicator_data.replace(r'(?<=\d) +(?=%)','', regex=True) 
-
-                ela_progress_indicator = create_academic_info_table(ela_progress_indicator_data,'Progress in Achieving English Language Proficiency Indicator','growth')
-                ela_progress_container = {'display': 'block'}
-            else:
                 ela_progress_indicator = {}
-                ela_progress_container = {'display': 'none'}
-
-            if not absenteeism_indicator_data.iloc[:,1:].isna().all().all():
-
-                # see comment for ela_progress_indicator_data
-                if absenteeism_indicator_data.loc[[1]].isna().sum().sum() >=3:
-                    absenteeism_indicator_data = absenteeism_indicator_data.iloc[:1]
-
-                # remove excess spaces
-                absenteeism_indicator_data = absenteeism_indicator_data.replace(r'\s+(?=[^(\)]*\))','', regex=True) 
-                absenteeism_indicator_data = absenteeism_indicator_data.replace(r'(?<=\d) +(?=%)','', regex=True) 
-
-                absenteeism_indicator = create_academic_info_table(absenteeism_indicator_data,'Addressing Chronic Absenteeism Indicator','growth')
-                absenteeism_container = {'display': 'block'}
-            else:
                 absenteeism_indicator = {}
-                absenteeism_container = {'display': 'none'}
-
-            hs_grad_overview_table = {}
-            hs_grad_ethnicity_table = {}
-            hs_grad_subgroup_table = {}
-            sat_overview_table = {}
-            sat_ethnicity_table = {}
-            sat_subgroup_table = {}        
-            hs_eca_table = {}
-            hs_not_calculated_table = {}
-            hs_table_container = {'display': 'none'}
-
-            k8_grade_table = {}
-            k8_ethnicity_table = {}
-            k8_subgroup_table = {}
-            k8_other_table = {}
-            k8_not_calculated_table = {}
-            k8_table_container = {'display': 'none'}
-
-            k8_grade_ela_fig = {}
-            k8_grade_math_fig = {}
-            k8_ethnicity_ela_fig = {}
-            k8_ethnicity_math_fig = {}
-            k8_subgroup_ela_fig = {}
-            k8_subgroup_math_fig = {}
-
-            main_container = {'display': 'none'}
-            empty_container = {'display': 'none'}
-
+                main_growth_container = {'display': 'none'}
+                empty_growth_container = {'display': 'block'}
+                # k8_growth_container = hs_growth_container = enrollment_container = subgroup_grades_container = \
+                #     k8_achievement_container = hs_achievement_container = k8_progress_container = \
+                #     hs_progress_container = grad_indicator_container = closing_achievement_gap_container = \
+                #    ela_progress_container = absenteeism_container = {'display': 'none'}
+                
+        # TODO: Refactor this shit show
         else:
-
             hs_grad_overview_table = {}
             hs_grad_ethnicity_table = {}
             hs_grad_subgroup_table = {}
@@ -1070,10 +1148,10 @@ def update_academic_information_page(data, school, year, radio_value):
             absenteeism_indicator = {}
             main_growth_container = {'display': 'none'}
             empty_growth_container = {'display': 'block'}
-            k8_growth_container = hs_growth_container = enrollment_container = subgroup_grades_container = \
-                k8_achievement_container = hs_achievement_container = k8_progress_container = \
-                hs_progress_container = grad_indicator_container = closing_achievement_gap_container = \
-                ela_progress_container = absenteeism_container = {'display': 'none'}            
+            # k8_growth_container = hs_growth_container = enrollment_container = subgroup_grades_container = \
+            #     k8_achievement_container = hs_achievement_container = k8_progress_container = \
+            #     hs_progress_container = grad_indicator_container = closing_achievement_gap_container = \
+            #    ela_progress_container = absenteeism_container = {'display': 'none'}
 
     # back to main #
 
@@ -1133,36 +1211,40 @@ def update_academic_information_page(data, school, year, radio_value):
         no_data_to_display,
 ##
         k8_overall_indicators,
-        k8_growth_container,        
+        # k8_growth_container,        
         hs_overall_indicators,
         combined_indicators,
-        hs_growth_container,          
+        # hs_growth_container,          
         enrollment_indicators,
-        enrollment_container,
+        # enrollment_container,
         subgroup_grades,
-        subgroup_grades_container,
+        # subgroup_grades_container,
         k8_academic_achievement,
-        k8_achievement_container,          
+        # k8_achievement_container,          
         hs_academic_achievement,
-        hs_achievement_container,          
+        # hs_achievement_container,          
         k8_academic_progress,
-        k8_progress_container,           
+        # k8_progress_container,           
         hs_academic_progress,
-        hs_progress_container,         
+        # hs_progress_container,         
         closing_achievement_gap,
-        closing_achievement_gap_container,
+        # closing_achievement_gap_container,
         graduation_rate_indicator,
         strength_of_diploma_indicator,
-        grad_indicator_container,
+        # grad_indicator_container,
         ela_progress_indicator,
-        ela_progress_container,
+        # ela_progress_container,
         absenteeism_indicator,
-        absenteeism_container,
+        # absenteeism_container,
         main_growth_container,
         empty_growth_container,
         no_growth_data_to_display,
         notes_string
 )
+
+# TODO: Fix table sizing for Growth tables
+# TODO: Consider consolidation of Growth sub tables into tooltips
+# TODO: Styling of Growth Tables
 
 def layout():
     return html.Div(
@@ -1449,13 +1531,12 @@ def layout():
                 ],
                 id = 'academic-information-empty-container',
             ),            
-########################################
             html.Div(
                 [
                     # html.Div(
                     #     [
-                            html.Div(
-                                [                        
+                            # html.Div(
+                            #     [                        
                                     html.Div(
                                         [
                                             html.Div(
@@ -1467,11 +1548,11 @@ def layout():
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='k8-growth-container',
-                            ),                               
-                            html.Div(
-                                [                            
+                            #     ],
+                            #     id='k8-growth-container',
+                            # ),
+                            # html.Div(
+                            #     [                        
                                     html.Div(
                                         [
                                             html.Div(
@@ -1480,36 +1561,46 @@ def layout():
                                                 ],
                                                 className='pretty_container six columns',
                                             ),
+                                        ],
+                                        className='bare_container twelve columns',
+                                    ),
+                            #     ],
+                            #     id='hs-growth-container',
+                            # ),
+                            # html.Div(
+                            #     [                        
+                                    html.Div(
+                                        [
                                             html.Div(
                                                 [
                                                     html.Div(id='combined-indicators'),
                                                 ],
-                                                className='pretty_container six columns',
+                                                className='pretty_container four columns',
                                             ),
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='hs-growth-container',
-                            ),
-                            html.Div(
-                                [                            
+                            #     ],
+                            #     id='hs-growth-container',
+                            # ),
+                            # html.Div(
+                            #     [                            
                                     html.Div(
                                         [
                                             html.Div(
                                                 [
                                                     html.Div(id='enrollment-indicators'),
                                                 ],
-                                                className='pretty_container six columns',
+                                                className='pretty_container four columns',
                                             ),
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='enrollment-container',
-                            ),       
-                            html.Div(
-                                [                                                    
+                            #     ],
+                            #     id='enrollment-container',
+                            # ),       
+                            # html.Div(
+                            #     [                                                    
                                     html.Div(
                                         [
                                             html.Div(
@@ -1521,11 +1612,11 @@ def layout():
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='subgroup-grades-container',
-                            ),                               
-                            html.Div(
-                                [  
+                            #     ],
+                            #     id='subgroup-grades-container',
+                            # ),                               
+                            # html.Div(
+                            #     [  
                                     html.Div(
                                         [                                  
                                             html.Div(
@@ -1537,11 +1628,11 @@ def layout():
                                         ],
                                         className='bare_container twelve columns',
                                     ),                                      
-                                ],
-                                id='k8-achievement-container',
-                            ),
-                                html.Div(
-                                    [                                                             
+                            #     ],
+                            #     id='k8-achievement-container',
+                            # ),
+                                # html.Div(
+                                #     [                                                             
                                         html.Div(
                                             [
                                                 html.Div(
@@ -1553,11 +1644,11 @@ def layout():
                                             ],
                                             className='bare_container twelve columns',
                                         ),
-                                ],
-                                id='hs-achievement-container',
-                            ), 
-                            html.Div(
-                                [                             
+                            #     ],
+                            #     id='hs-achievement-container',
+                            # ), 
+                            # html.Div(
+                            #     [                             
                                     html.Div(
                                         [
                                             html.Div(
@@ -1569,11 +1660,11 @@ def layout():
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='k8-progress-container',
-                            ),                             
-                            html.Div(
-                                [                                 
+                            #     ],
+                            #     id='k8-progress-container',
+                            # ),                             
+                            # html.Div(
+                            #     [                                 
                                     html.Div(
                                         [                                                                
                                             html.Div(
@@ -1585,11 +1676,11 @@ def layout():
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='hs-progress-container',
-                            ),                                
-                            html.Div(
-                                [
+                            #     ],
+                            #     id='hs-progress-container',
+                            # ),                                
+                            # html.Div(
+                            #     [
                                     html.Div(
                                         [        
                                             html.Div(
@@ -1601,11 +1692,11 @@ def layout():
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='closing-achievement-gap-container',
-                            ),                              
-                            html.Div(
-                                [                            
+                            #     ],
+                            #     id='closing-achievement-gap-container',
+                            # ),                              
+                            # html.Div(
+                            #     [                            
                                     html.Div(
                                         [
                                             html.Div(
@@ -1628,11 +1719,11 @@ def layout():
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='grad-indicator-container',
-                            ),
-                            html.Div(
-                                [                            
+                            #     ],
+                            #     id='grad-indicator-container',
+                            # ),
+                            # html.Div(
+                            #     [                            
                                     html.Div(
                                         [
                                             html.Div(
@@ -1644,11 +1735,11 @@ def layout():
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='ela-progress-container',
-                            ),
-                            html.Div(
-                                [                            
+                            #     ],
+                            #     id='ela-progress-container',
+                            # ),
+                            # html.Div(
+                            #     [                            
                                     html.Div(
                                         [
                                             html.Div(
@@ -1660,28 +1751,9 @@ def layout():
                                         ],
                                         className='bare_container twelve columns',
                                     ),
-                                ],
-                                id='absenteeism-container',
-                            ),
-                            # TODO: Alternative to using style props to hide tables. Using this
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            dash_table.DataTable(id="hidden-table",
-                                                columns=[
-                                                    {'id': "foo", 'name': "bar"},
-                                                ],
-                                            ),
-                                        ],
-                                        className='pretty_container',# six columns',
-                                    ),
-                                ],
-                                className='bare_container',# twelve columns',
-                            ),
-                    #     ],
-                    #     id='k8-table-container',
-                    # ),
+                            #     ],
+                            #     id='absenteeism-container',
+                            # ),
                 ],
                 id = 'academic-growth-main-container',
             ),
@@ -1691,7 +1763,6 @@ def layout():
                 ],
                 id = 'academic-growth-empty-container',
             ),
-############################################                 
         ],
         id='mainContainer',
     )

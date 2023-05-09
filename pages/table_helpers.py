@@ -38,6 +38,7 @@ def no_data_table(label: str = 'No Data to Display') -> list:
                 ),
             ]
 
+    print(table_layout)
     return table_layout
 
 def no_data_page(label: str) -> list:
@@ -49,7 +50,10 @@ def no_data_page(label: str) -> list:
     Returns:
         list: dash DataTable
     """
+    empty_dict = [{"": ""}]
     table_layout = [
+        html.Div(
+            [        
                 html.Div(
                     [
                         html.Div(
@@ -57,6 +61,7 @@ def no_data_page(label: str) -> list:
                                 html.Label(label, className='header_label'),
                                 html.Div(
                                     dash_table.DataTable(
+                                        data=empty_dict,
                                         columns = [
                                             {'id': 'emptytable', 'name': 'No Data to Display'},
                                         ],
@@ -68,6 +73,9 @@ def no_data_page(label: str) -> list:
                                             'fontFamily': 'Roboto, sans-serif',
                                             'height': '30vh',
                                         },
+                                        style_data={
+                                            'display': 'none',
+                                        },
                                     ),
                                 ),
                             ],
@@ -75,9 +83,28 @@ def no_data_page(label: str) -> list:
                         ),
                     ],
                     className = 'bare_container twelve columns',
-                )
+                ),
+            ],
+            className = 'empty_table',
+        )
     ]
 
+    return table_layout
+
+# Produces a table without any cells. Is automatically hidden using
+# css selector chaining for pretty_container
+def hidden_table():
+
+    table_layout = [
+                html.Div(
+                    dash_table.DataTable(
+                        columns = [
+                            {'id': 'hidden-table', 'name': 'hidden-table'},
+                        ],
+                    ),
+                ),
+            ]
+    
     return table_layout
 
 # Display tables either side by side or on individual rows depending on # of columns

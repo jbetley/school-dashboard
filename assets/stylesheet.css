@@ -372,11 +372,10 @@ body {
   /* margin: 3%; */
 }
 
-/* TODO: will hide a table if it has no cells - currently doesn't work because of the
-   TODO: nested container structure */
-.dash-table-container:not(:has(td)) {
+/* TODO: Test to see if this is needed to hide empty tables - IT is not*/
+/* .dash-table-container:not(:has(td)) {
     display: none;
-  }
+  } */
 
 .pretty_container {
   border-radius: 5px;
@@ -387,9 +386,23 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-/* tODO */
-.pretty_container:has(.dash-table-container:not(:has(td))) {
+/*  This little bit of sorcery overrides the display of any pretty_container
+    that doesn't contain: 1) a dash datatable that has cells (not counting
+    the header); 2) a plotly fig; or 3) a dash dropdown component. Any
+    other components in a div without one of these three things that
+    we WANT to display must be added to the chained selector
+*/
+.pretty_container:not(:has(div.dash-table-container td,div.js-plotly-plot,div.dash-dropdown)) {
   display: none;
+}
+
+/* Default and min row height for all datatables is 30px. In order for an
+  empty_table ('No Data to Display') to be displayed per the above rule,
+  it needs to have a cell. The blank cell shows up as a 30px empty space
+  unless we use the following rule. It sets the height of the second row
+  of an empty_table to 0 */
+.empty_table tr:nth-of-type(2) {
+  height: 0px !important;
 }
 
 .pretty_close_container {
@@ -458,10 +471,10 @@ body {
   display: flex;
 }
 
-/* tODO */
-.bare_container:has(.dash-table-container:not(:has(td))) {
+/* TODO: TEST to determine if this is needed */
+/* .bare_container:not(:has(div.dash-table-container td)) {
   display: none;
-}
+} */
 
 .mini_container {
   border-radius: 5px;
