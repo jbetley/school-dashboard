@@ -93,11 +93,7 @@ def set_dropdown_options(school, year, comparison_schools):
     # line out to permit selected school to be cleared from chart (NOTE:
     # this may cause unexpected behavior)
     comparison_set = comparison_set.drop(comparison_set[comparison_set['School ID'] == school].index)
-    # TODO DELETE
-    comparison_set = comparison_set.sort_values(by=['Distance'], ascending=True)
-    tst = comparison_set[['School Name','High Grade','Distance']]
-    print(tst)
-    # TODO DELETE
+
     # drop schools with no grade overlap with selected school by getting school grade span and filtering
     school_grade_span = current_year_all_schools_k8_academic_data.loc[current_year_all_schools_k8_academic_data['School ID'] == school][['Low Grade','High Grade']].values[0].tolist()
     school_grade_span = [s.replace('KG', '0').replace('PK', '0') for s in school_grade_span]
@@ -1012,6 +1008,8 @@ def layout():
                             [  
                                 html.Div(
                                     [
+        ## TODO: Use Container Styles to hide the string_labels (display: none) on default (on load)
+        ## TODO: Or some other way to hide this data on load
                                         html.Div(
                                             [
                                                 html.Div(id='fig16a1-table'),

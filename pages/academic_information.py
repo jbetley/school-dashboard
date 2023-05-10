@@ -5,7 +5,7 @@
 # version:  1.01.040323
 
 import dash
-from dash import html, Input, Output, callback #, dash_table
+from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import numpy as np
@@ -52,31 +52,19 @@ dash.register_page(__name__, top_nav=True, path='/academic_information', order=4
     Output('academic-information-empty-container', 'style'),
     Output('academic-information-no-data', 'children'),
     Output('k8-overall-indicators', 'children'),
-    # Output('k8-growth-container', 'style'),        
     Output('hs-overall-indicators', 'children'),
     Output('combined-indicators', 'children'),
-    # Output('hs-growth-container', 'style'),    
     Output('enrollment-indicators', 'children'),
-    # Output('enrollment-container', 'style'),      
     Output('subgroup-grades', 'children'),
-    # Output('subgroup-grades-container', 'style'),      
     Output('k8-academic-achievement', 'children'),
-    # Output('k8-achievement-container', 'style'),        
     Output('hs-academic-achievement', 'children'),
-    # Output('hs-achievement-container', 'style'),        
     Output('k8-academic-progress', 'children'),
-    # Output('k8-progress-container', 'style'),       
     Output('hs-academic-progress', 'children'),
-    # Output('hs-progress-container', 'style'),       
     Output('closing-achievement-gap', 'children'),
-    # Output('closing-achievement-gap-container', 'style'),      
     Output('graduation-rate-indicator', 'children'),
     Output('strength-of-diploma-indicator', 'children'),
-    # Output('grad-indicator-container', 'style'),    
     Output('ela-progress-indicator', 'children'),
-    # Output('ela-progress-container', 'style'),       
     Output('absenteeism-indicator', 'children'),
-    # Output('absenteeism-container', 'style'),      
     Output('academic-growth-main-container', 'style'),
     Output('academic-growth-empty-container', 'style'),
     Output('academic-growth-no-data', 'children'),    
@@ -137,11 +125,6 @@ def update_academic_information_page(data, school, year, radio_value):
     no_data_to_display = no_data_page('Academic Proficiency')
     
     main_growth_container = {'display': 'block'}
-    # k8_growth_container = hs_growth_container = enrollment_container = subgroup_grades_container = \
-    #     k8_achievement_container = hs_achievement_container = k8_progress_container = \
-    #     hs_progress_container = grad_indicator_container = closing_achievement_gap_container = \
-    #    ela_progress_container = absenteeism_container = {'display': 'none'}
-    
     empty_growth_container = {'display': 'none'}
     no_growth_data_to_display = no_data_page('Academic Growth')
 
@@ -770,23 +753,6 @@ def update_academic_information_page(data, school, year, radio_value):
             # in order to avoid column index errors when pandas tries to read it in all at once.
 
             growth_file = 'data/growth_data' + school + '.csv'
-
-            # NOTE: Used for testing
-            # pd.set_option('display.max_columns', None)
-            # pd.set_option('display.max_rows', None)
-        
-            def replace_header(data):
-                
-                # set first row as header
-                data.columns = data.iloc[0].tolist()
-                
-                # remove first row
-                data = data[1:]
-                
-                # drop null columns
-                data = data.dropna(axis=1, how='all')
-
-                return data
             
             # Adult high schools and new charter schools do not have growth data.
             if os.path.isfile(growth_file):
@@ -795,12 +761,14 @@ def update_academic_information_page(data, school, year, radio_value):
                 # range equal to the maximum number of columns
                 growth_data = pd.read_csv(growth_file,header = None,names=range(8))
 
-                # data cleaning - global
+                # Global cleaning of growth data
                 growth_data = growth_data.replace({
                     'English/Lang. Arts': 'ELA',
                     'Mathematics': 'Math',
                     'Sugroup': 'Subgroup',
-                    'Hispanic Ethnicity': 'Hispanic'
+                    'Hispanic Ethnicity': 'Hispanic',
+                    'Elementary/Middle School Overall Weight and Points:': 'Overall',
+                    'High School Overall Weight and Points:': 'Overall'
                     })
 
                 # remove excess spaces between '(' and ')'
@@ -809,21 +777,30 @@ def update_academic_information_page(data, school, year, radio_value):
                 # remove extra space between number and '%'
                 growth_data = growth_data.replace(r'(?<=\d) +(?=%)','', regex=True)                
 
-                # k8_overall_indicators_data = pd.read_csv(growth_file, nrows=9)
-                # hs_overall_indicators_data = pd.read_csv(growth_file, skiprows=10, nrows=9)
-                # combined_indicators_data = pd.read_csv(growth_file, skiprows=20, nrows=3)
-                # enrollment_indicators_data = pd.read_csv(growth_file, skiprows=24, nrows=2)
-                # subgroup_grades_data = pd.read_csv(growth_file, skiprows=27, nrows=5)
-                # k8_academic_achievement_data = pd.read_csv(growth_file, skiprows=34, nrows=2)
-                # hs_academic_achievement_data = pd.read_csv(growth_file, skiprows=38, nrows=2)
-                # k8_academic_progress_data = pd.read_csv(growth_file, skiprows=42, nrows=2)
-                # hs_academic_progress_data = pd.read_csv(growth_file, skiprows=46, nrows=2)
-                # closing_achievement_gap_data = pd.read_csv(growth_file, skiprows=50, nrows=2)
-                # graduation_rate_indicator_data = pd.read_csv(growth_file, skiprows=53, nrows=1)
-                # strength_of_diploma_indicator_data = pd.read_csv(growth_file, skiprows=55, nrows=1)
-                # ela_progress_indicator_data = pd.read_csv(growth_file, skiprows=57, nrows=2)
-                # absenteeism_indicator_data = pd.read_csv(growth_file, skiprows=60, nrows=2)
+                # Get individual tables one by one because tables have variable
+                # number of columns
 
+                def replace_header(data: pd.DataFrame) -> pd.DataFrame:
+                    """ Takes a Pandas Dataframe, replaces header with first row, and
+                        drops all nan columns
+                    Args:
+                        data (pd.Dataframe): Pandas dataframe
+
+                    Returns:
+                        pd.Dataframe: returns the same dataframe first row headers and
+                        no NaN columns
+                    """
+                    # set first row as header
+                    data.columns = data.iloc[0].tolist()
+                    
+                    # remove first row
+                    data = data[1:]
+                    
+                    # drop null columns
+                    data = data.dropna(axis=1, how='all')
+
+                    return data
+        
                 ## k8 growth indicators ##
                 k8_overall_indicators_data = growth_data.iloc[0:10].copy()
 
@@ -880,11 +857,10 @@ def update_academic_information_page(data, school, year, radio_value):
                     
                     enrollment_indicators_data = replace_header(enrollment_indicators_data)
 
-                    # enrollment_indicators_data has two rows, Grades 3-8 and Grades 9-12, 
-                    # regardless of whether the school has data for both. In thus case
-                    # no data is represented by a '0'. This checks the second row (index 1)
-                    # and removes it if it is equal to '0'.
-                    if enrollment_indicators_data.iloc[1,1] == 0:
+                    # some tables, including enrollment_indicators_data, have a Grades 3-8 row
+                    # and a Grades 9-12 row regardless of whether the school has data for both.
+                    # So either check second row for '0' (as in this case) or NaN and remove if true.
+                    if enrollment_indicators_data.iloc[1,1] == '0':
                         enrollment_indicators_data = enrollment_indicators_data.iloc[:1]        
 
                     # rename first column
@@ -901,17 +877,15 @@ def update_academic_information_page(data, school, year, radio_value):
                     
                     subgroup_grades_data = replace_header(subgroup_grades_data)
 
-                    # this table is actually two tables side by side with the same column headers
+                    # subgroup_grades_data is two tables side by side with the same column headers.
                     # We use groupby() to unpivot & combine the duplicate columns, and then reorder
                     # the columns
                     subgroup_grades_data = subgroup_grades_data.groupby(subgroup_grades_data.columns.values, axis=1).agg(lambda x: x.values.tolist()).sum().apply(pd.Series).T
                     subgroup_grades_data = subgroup_grades_data[['Subgroup', 'Points', 'Rating']]
 
-                    # Drop rows where there are zero points and No Rating
                     subgroup_grades_data = subgroup_grades_data.loc[~((subgroup_grades_data['Points'] == '0') & \
                         (subgroup_grades_data['Rating'] == 'No Rating'))]
-                                    
-                    # replace rating metrics with svg circles
+
                     subgroup_grades_data = get_svg_circle(subgroup_grades_data)
                     
                     subgroup_grades = create_academic_info_table(subgroup_grades_data,'Subgroup Grades','growth')
@@ -1005,8 +979,7 @@ def update_academic_information_page(data, school, year, radio_value):
 
                     ela_progress_indicator_data = replace_header(ela_progress_indicator_data)
 
-                    # Checks the second (Grade 9-12) row by index and drops it if all of the
-                    # value columns are NaN
+                    # drops second row by index (Grade 9-12) if all value columns are NaN
                     if ela_progress_indicator_data.loc[[59]].isna().sum().sum() >=3:
                         ela_progress_indicator_data = ela_progress_indicator_data.iloc[:1]
 
@@ -1099,12 +1072,8 @@ def update_academic_information_page(data, school, year, radio_value):
                 absenteeism_indicator = {}
                 main_growth_container = {'display': 'none'}
                 empty_growth_container = {'display': 'block'}
-                # k8_growth_container = hs_growth_container = enrollment_container = subgroup_grades_container = \
-                #     k8_achievement_container = hs_achievement_container = k8_progress_container = \
-                #     hs_progress_container = grad_indicator_container = closing_achievement_gap_container = \
-                #    ela_progress_container = absenteeism_container = {'display': 'none'}
                 
-        # TODO: Refactor this shit show
+        # TODO: Refactor this shit show [duplicative]
         else:
             hs_grad_overview_table = {}
             hs_grad_ethnicity_table = {}
@@ -1148,42 +1117,39 @@ def update_academic_information_page(data, school, year, radio_value):
             absenteeism_indicator = {}
             main_growth_container = {'display': 'none'}
             empty_growth_container = {'display': 'block'}
-            # k8_growth_container = hs_growth_container = enrollment_container = subgroup_grades_container = \
-            #     k8_achievement_container = hs_achievement_container = k8_progress_container = \
-            #     hs_progress_container = grad_indicator_container = closing_achievement_gap_container = \
-            #    ela_progress_container = absenteeism_container = {'display': 'none'}
 
     # back to main #
 
     # Add relevant notes string
-    if school_index['School Type'].values[0] == 'AHS':
-        notes_string = 'Adult High Schools enroll students who are over the age of 18, under credited, \
-            dropped out of high school for a variety of reasons, and are typically out of cohort from \
-            their original graduation year. Because graduation rate is calculated at the end of the school \
-            year regardless of the length of time a student is enrolled at a school, it is not comparable to \
-            the graduation rate of a traditional high school.'
-        
-    elif (
-            school_index['School Type'].values[0] == 'K8'
-            or school_index['School Type'].values[0] == 'K12'
-            or school_index['School Type'].values[0] == 'HS'
-            ):
-        notes_string = 'There are a number of factors that make it difficult to make valid and reliable \
-            comparisons between test scores from 2019 to 2022. For example, ILEARN was administered for \
-            the first time during the 2018-19 SY and represented an entirely new type and mode of \
-            assessment (adaptive and online-only). No State assessment was administered  in 2020 because \
-            of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
-            testing school for 162 days, while the 2021 and 2022 data sets included all tested students. \
-            Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/).'
-    else:
-        notes_string = ''
+    if radio_value == 'proficiency':
+        if school_index['School Type'].values[0] == 'AHS':
+            notes_string = 'Adult High Schools enroll students who are over the age of 18, under credited, \
+                dropped out of high school for a variety of reasons, and are typically out of cohort from \
+                their original graduation year. Because graduation rate is calculated at the end of the school \
+                year regardless of the length of time a student is enrolled at a school, it is not comparable to \
+                the graduation rate of a traditional high school.'
+            
+        elif (
+                school_index['School Type'].values[0] == 'K8'
+                or school_index['School Type'].values[0] == 'K12'
+                or school_index['School Type'].values[0] == 'HS'
+                ):
+            notes_string = 'There are a number of factors that make it difficult to make valid and reliable \
+                comparisons between test scores from 2019 to 2022. For example, ILEARN was administered for \
+                the first time during the 2018-19 SY and represented an entirely new type and mode of \
+                assessment (adaptive and online-only). No State assessment was administered  in 2020 because \
+                of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
+                testing school for 162 days, while the 2021 and 2022 data sets included all tested students. \
+                Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/).'
+        else:
+            notes_string = ''
 
     if radio_value == 'growth':
         notes_string = 'Growth Data comes from IDOE\'s School Report Card Summaries. While the data represented \
             here is an accurate representation of the data present in the Summaries, it has not been otherwise \
             reconciled with the raw data used to produce the Summaries. It is presented here in beta format and \
             should be used for informational purposes only.'
-            
+
     return (
         k8_grade_table,
         k8_grade_ela_fig,
@@ -1209,33 +1175,20 @@ def update_academic_information_page(data, school, year, radio_value):
         main_container,
         empty_container,
         no_data_to_display,
-##
         k8_overall_indicators,
-        # k8_growth_container,        
         hs_overall_indicators,
         combined_indicators,
-        # hs_growth_container,          
         enrollment_indicators,
-        # enrollment_container,
         subgroup_grades,
-        # subgroup_grades_container,
         k8_academic_achievement,
-        # k8_achievement_container,          
         hs_academic_achievement,
-        # hs_achievement_container,          
         k8_academic_progress,
-        # k8_progress_container,           
         hs_academic_progress,
-        # hs_progress_container,         
         closing_achievement_gap,
-        # closing_achievement_gap_container,
         graduation_rate_indicator,
         strength_of_diploma_indicator,
-        # grad_indicator_container,
         ela_progress_indicator,
-        # ela_progress_container,
         absenteeism_indicator,
-        # absenteeism_container,
         main_growth_container,
         empty_growth_container,
         no_growth_data_to_display,
@@ -1533,227 +1486,160 @@ def layout():
             ),            
             html.Div(
                 [
-                    # html.Div(
-                    #     [
-                            # html.Div(
-                            #     [                        
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='k8-overall-indicators'),
-                                                ],
-                                                className='pretty_container six columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='k8-growth-container',
-                            # ),
-                            # html.Div(
-                            #     [                        
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='hs-overall-indicators'),
-                                                ],
-                                                className='pretty_container six columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='hs-growth-container',
-                            # ),
-                            # html.Div(
-                            #     [                        
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='combined-indicators'),
-                                                ],
-                                                className='pretty_container four columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='hs-growth-container',
-                            # ),
-                            # html.Div(
-                            #     [                            
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='enrollment-indicators'),
-                                                ],
-                                                className='pretty_container four columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='enrollment-container',
-                            # ),       
-                            # html.Div(
-                            #     [                                                    
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='subgroup-grades'),
-                                                ],
-                                                className='pretty_container six columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='subgroup-grades-container',
-                            # ),                               
-                            # html.Div(
-                            #     [  
-                                    html.Div(
-                                        [                                  
-                                            html.Div(
-                                                [
-                                                    html.Div(id='k8-academic-achievement'),
-                                                ],
-                                                className='pretty_container six columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),                                      
-                            #     ],
-                            #     id='k8-achievement-container',
-                            # ),
-                                # html.Div(
-                                #     [                                                             
-                                        html.Div(
-                                            [
-                                                html.Div(
-                                                    [
-                                                        html.Div(id='hs-academic-achievement'),
-                                                    ],
-                                                    className='pretty_container six columns',
-                                                ),
-                                            ],
-                                            className='bare_container twelve columns',
-                                        ),
-                            #     ],
-                            #     id='hs-achievement-container',
-                            # ), 
-                            # html.Div(
-                            #     [                             
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='k8-academic-progress'),
-                                                ],
-                                                className='pretty_container four columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='k8-progress-container',
-                            # ),                             
-                            # html.Div(
-                            #     [                                 
-                                    html.Div(
-                                        [                                                                
-                                            html.Div(
-                                                [
-                                                    html.Div(id='hs-academic-progress'),
-                                                ],
-                                                className='pretty_container four columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='hs-progress-container',
-                            # ),                                
-                            # html.Div(
-                            #     [
-                                    html.Div(
-                                        [        
-                                            html.Div(
-                                                [
-                                                    html.Div(id='closing-achievement-gap'),
-                                                ],
-                                                className='pretty_container six columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='closing-achievement-gap-container',
-                            # ),                              
-                            # html.Div(
-                            #     [                            
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='graduation-rate-indicator'),
-                                                ],
-                                                className='pretty_container six columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='strength-of-diploma-indicator'),
-                                                ],
-                                                className='pretty_container six columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='grad-indicator-container',
-                            # ),
-                            # html.Div(
-                            #     [                            
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='ela-progress-indicator'),
-                                                ],
-                                                className='pretty_container six columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='ela-progress-container',
-                            # ),
-                            # html.Div(
-                            #     [                            
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Div(id='absenteeism-indicator'),
-                                                ],
-                                                className='pretty_container six columns',
-                                            ),
-                                        ],
-                                        className='bare_container twelve columns',
-                                    ),
-                            #     ],
-                            #     id='absenteeism-container',
-                            # ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='k8-overall-indicators'),
+                                ],
+                                className='pretty_container five columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='hs-overall-indicators'),
+                                ],
+                                className='pretty_container five columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='combined-indicators'),
+                                ],
+                                className='pretty_container four columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='enrollment-indicators'),
+                                ],
+                                className='pretty_container four columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='subgroup-grades'),
+                                ],
+                                className='pretty_container four columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [                                  
+                            html.Div(
+                                [
+                                    html.Div(id='k8-academic-achievement'),
+                                ],
+                                className='pretty_container six columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),                                      
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='hs-academic-achievement'),
+                                ],
+                                className='pretty_container six columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='k8-academic-progress'),
+                                ],
+                                className='pretty_container five columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [                                                                
+                            html.Div(
+                                [
+                                    html.Div(id='hs-academic-progress'),
+                                ],
+                                className='pretty_container four columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [        
+                            html.Div(
+                                [
+                                    html.Div(id='closing-achievement-gap'),
+                                ],
+                                className='pretty_container six columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='graduation-rate-indicator'),
+                                ],
+                                className='pretty_container four columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='strength-of-diploma-indicator'),
+                                ],
+                                className='pretty_container four columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='ela-progress-indicator'),
+                                ],
+                                className='pretty_container five columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id='absenteeism-indicator'),
+                                ],
+                                className='pretty_container five columns',
+                            ),
+                        ],
+                        className='bare_container twelve columns',
+                    ),
                 ],
                 id = 'academic-growth-main-container',
             ),

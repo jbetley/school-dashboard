@@ -388,11 +388,15 @@ body {
 
 /*  This little bit of sorcery overrides the display of any pretty_container
     that doesn't contain: 1) a dash datatable that has cells (not counting
-    the header); 2) a plotly fig; or 3) a dash dropdown component. Any
-    other components in a div without one of these three things that
+    the header); 2) a plotly fig; 3) a dash dropdown component; or 4) notes-string
+    element. Any other components in a div without one of these three things that
     we WANT to display must be added to the chained selector
 */
-.pretty_container:not(:has(div.dash-table-container td,div.js-plotly-plot,div.dash-dropdown)) {
+.pretty_container:not(:has(
+  div.dash-table-container td,
+  div.js-plotly-plot,
+  div.dash-dropdown,
+  p#notes-string)) {
   display: none;
 }
 
@@ -615,8 +619,7 @@ body {
 
 /* Font Awesome Override */
 /* fixes issue with Font Awesome Icon pseudo :before tag */
-/* TODO: Causes issue with all other cells */
-.cell-markdown > p {
+.cell-markdown > p:has(i.fa.fa-circle.center-icon) {
   display: flex;
   height: 100%;
   justify-content: center;

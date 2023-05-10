@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley
-# version:  1.01.040323
+# version:  1.02.051023
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -57,7 +57,7 @@ def update_financial_analysis_page(data, year, radio_value):
     
     school_index = pd.DataFrame.from_dict(data['0'])
 
-    # NOTE: See financial_information.py for comments
+    # See financial_information.py for comments
     if school_index['Network'].values[0] != 'None':
         if radio_value == 'network-analysis':
 
@@ -144,8 +144,9 @@ def update_financial_analysis_page(data, year, radio_value):
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
 
-        # NOTE: Drop partial year data - may eventually want to implement for Q4 data, but
-        # the display quickly gets too confusing with incomplete data.
+        # NOTE: Drop partial year data (financial data with a 'Q#' in column header).
+        # may eventually want to implement for Q4 data, but the display quickly gets
+        # too confusing with incomplete data.
         if 'Q' in financial_data.columns[1]:
             financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
@@ -170,21 +171,17 @@ def update_financial_analysis_page(data, year, radio_value):
 
         else:
 
-            # NOTE: Use same color list as the list in chart_helpers.py
-            #color=['#f4979c','#b1b134','#df8f2d','#a4dbdb','#165b65','#b1b134','#f58268','#dc9018','#96b8db','#bbd634','#b24f3f','#96b8db','#dbe3b6']
-            # color=['#96b8db','#b1b134','#df8f2d','#a4dbdb','#165b65','#b1b134','#f58268','#dc9018','#bbd634','#b24f3f','#dbe3b6','#f4979c']
-            
-           # color=['#96b8db', '#bc986a']
-            color=['#74a2d7', '#df8f2d'] #'#dc9018']
+            # NOTE: see color list in chart_helpers.py
+            color=['#74a2d7', '#df8f2d']
             
             for col in financial_data.columns:
                 financial_data[col]=pd.to_numeric(financial_data[col], errors='coerce').fillna(financial_data[col]).tolist()
 
+            # see financial_information.py
             financial_data = financial_data.set_index(['Category'])
             financial_data.loc['Total Grants'] = financial_data.loc['State Grants'] + financial_data.loc['Federal Grants']
             financial_data.loc['Net Asset Position'] = financial_data.loc['Total Assets'] - financial_data.loc['Total Liabilities']
             financial_data.loc['Change in Net Assets'] = financial_data.loc['Operating Revenues'] - financial_data.loc['Operating Expenses']        
-
             financial_data = financial_data.reset_index()
 
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
@@ -194,8 +191,8 @@ def update_financial_analysis_page(data, year, radio_value):
             financial_data_fig = financial_data.copy()
 
             # Network financial data typically lags behind school data by at
-            # least a year. So we need to drop any column that doesn't have
-            # at least 31 values not equal to 0 (the min to be valid).
+            # least a year. So drop any column that doesn't have at least 31
+            # values not equal to 0 (the min to be valid).
             for c in financial_data_fig.columns:
                 if len(financial_data_fig[financial_data_fig[c] == 0].index) > 31:
                     financial_data_fig.drop([c], inplace=True, axis=1)
@@ -244,7 +241,7 @@ def update_financial_analysis_page(data, year, radio_value):
             revenue_expenses_bar_fig.update_layout(
                 margin=dict(l=40, r=40, t=40, b=60),
                 font=dict(
-                    family='Roboto, sans-serif',
+                    family='Jost, sans-serif',
                     color='#6783a9',
                     size=12
                     ),
@@ -263,13 +260,13 @@ def update_financial_analysis_page(data, year, radio_value):
             revenue_expenses_bar_fig['data'][1]['hovertemplate']='Operating Expenses<br>$ %{y:,.2f}<extra></extra>'
 
             # Get Change in Net Assets Value
-
             revenue_expenses_line_data = financial_data_fig[financial_data_fig['Category'].isin(['Change in Net Assets'])]
             revenue_expenses_line_data = revenue_expenses_line_data.reset_index(drop=True)
 
             revenue_expenses_line_data = revenue_expenses_line_data.replace('', 0,regex=True)
 
             cols=[i for i in revenue_expenses_line_data.columns if i not in ['Category']]
+
             for col in cols:
                 revenue_expenses_line_data[col]=pd.to_numeric(revenue_expenses_line_data[col], errors='coerce')
 
@@ -296,6 +293,7 @@ def update_financial_analysis_page(data, year, radio_value):
             assets_liabilities_data = assets_liabilities_data.replace('', 0,regex=True)
 
             cols=[i for i in assets_liabilities_data.columns if i not in ['Category']]
+
             for col in cols:
                 assets_liabilities_data[col]=pd.to_numeric(assets_liabilities_data[col], errors='coerce')
             
@@ -314,7 +312,6 @@ def update_financial_analysis_page(data, year, radio_value):
                 barmode='group',
             )
             
-            # NOTE: change step value to increase/decrease the total number of ticks
             step = 6
             tick_val = round_nearest(assets_liabilities_data, step)
 
@@ -324,7 +321,7 @@ def update_financial_analysis_page(data, year, radio_value):
             assets_liabilities_bar_fig.update_layout(
                 margin=dict(l=40, r=40, t=40, b=60),
                 font = dict(
-                    family='Roboto, sans-serif',
+                    family='Jost, sans-serif',
                     color='#6783a9',
                     size=12
                     ),
@@ -362,11 +359,10 @@ def update_financial_analysis_page(data, year, radio_value):
         ## Two Year Finance Tables (Financial Position and Financial Activities)
 
             # default table styles
-
             table_data = {
                 'fontSize': '12px',
                 'border': 'none',
-                'fontFamily': 'Roboto, sans-serif',
+                'fontFamily': 'Jost, sans-serif',
             }
 
             table_header = {
@@ -375,7 +371,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 'border': 'none',
                 'borderBottom': '.5px solid #6783a9',
                 'fontSize': '12px',
-                'fontFamily': 'Roboto, sans-serif',
+                'fontFamily': 'Jost, sans-serif',
                 'color': '#6783a9',
                 'textAlign': 'center',
                 'fontWeight': 'bold'
@@ -570,10 +566,6 @@ def update_financial_analysis_page(data, year, radio_value):
             tmp_category = per_student_data['Category']
             per_student_data = per_student_data.drop('Category', axis=1)
 
-            # Financial information that includes State Grants but not ADM is
-            # an indication of an error. If there is financial information that
-            # does not include State Grants or ADM, it is likely Year 0
-
             # divide each row by the last row in the df (which should be ADM Average)
             per_student_data = per_student_data.div(per_student_data.iloc[len(per_student_data)-1])
             
@@ -583,7 +575,8 @@ def update_financial_analysis_page(data, year, radio_value):
             else:
                 per_student_data['% Change'] = 'N/A'
 
-            per_student_data = per_student_data.iloc[:-1] # drop last row (ADM Average) for display
+            # drop last row (ADM Average) for display
+            per_student_data = per_student_data.iloc[:-1]
 
             # Force correct format for display of df in datatable
             if per_student_data.sum().eq(0).sum() == 0:
@@ -662,6 +655,7 @@ def update_financial_analysis_page(data, year, radio_value):
                 # If missing, add a blank column with the missing year as header
                 ratio_display = ['Category'] + display_years
                 missing_year = list(sorted(set(ratio_display) - set(financial_ratios_data.columns.tolist())))
+
                 if missing_year:
                     i = 1
                     for m in missing_year:
@@ -774,6 +768,7 @@ def update_financial_analysis_page(data, year, radio_value):
             else:
                 financial_ratios_table  = no_data_table('Financial Ratios')
 
+            # NOTE: Uncomment to add federal audit findings
             # # federal_audit_findings_json
             # if not data['9']:
             #     audit_findings_table = [
@@ -964,5 +959,5 @@ def layout():
                         id = 'financial-analysis-empty-container',
                     ),
                 ],
-                id='mainContainer',
+                id='mainContainer'
             )

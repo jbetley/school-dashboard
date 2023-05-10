@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Information #
 ##########################################
 # author:   jbetley
-# version:  1.01.040223
+# version:  1.02.051023
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -129,23 +129,14 @@ def update_financial_information_page(data,year,radio_value):
 
         financial_data = pd.read_csv(finance_file)
 
-        # NOTE: 'operating_years_by_finance' is is equal to the total number
-        # of years a school has been financially active regardless of whether
-        # the school is open and instructing students. It is the total number
-        # of columns (-1 to account for Category). It is not currently used
-        # because maximum display is five years
-        # 
-        # operating_years_by_finance = max_display_years if len(financial_data.columns) \
-        #  - 1 >= max_display_years else len(financial_data.columns) - 1
-
         # Financial data will almost always be more recent than academic
         # data. This is the only time we want do display 'future' data,
         # that is data from a year more recent than the maximum dropdown
-        # year. The first (most recent) column of the financial data file is a
-        # string that will either be in the format 'YYYY' or 'YYYY (Q#)',
-        # where Q# represents the 'quarter' of the displayed financial data
-        # (Q1, Q2, Q3, Q4). If '(Q#)' is not in the string, it means
-        # the data in the column is audited data.
+        # (academic) year. The first (most recent) column of the financial
+        # data file is a string that will either be in the format 'YYYY' or
+        # 'YYYY (Q#)', where Q# represents the quarter of the displayed
+        # financial data (Q1, Q2, Q3, Q4). If '(Q#)' is not in the string,
+        # it means the data in the column is audited data.
 
         # get most recent finance year - slicing to remove the quarter
         # information (Q#).
@@ -175,21 +166,20 @@ def update_financial_information_page(data,year,radio_value):
             empty_container = {'display': 'block'}
 
         else:
-            # We calculate all rows requiring a 'calculation': Total Grants'
-            # (State Grants + Federal Grants), 'Net Asset Position' (Total Assets
-            # - Total Liabilities), and 'Change in Net Assets' (Operating Revenues
-            # - Operating Expenses)
 
             # change all cols to numeric except for Category
             for col in financial_data.columns[1:]:
                 financial_data[col]=pd.to_numeric(financial_data[col], errors='coerce')
 
-            # set Category as index (so we can use .loc). This assumes that the final
-            # rows already exist in the dataframe. If they do not, then need to use
-            # the following pattern:
-            # new_row = financial_data.loc['State Grants'] + financial_data.loc['Federal Grants']
-            # new_row.name = 'Total Grants'
-            # financial_data.append([new_row])
+            # NOTE: certain categories in dataframe are pre-calculated ('Total Grants',
+            # 'Net Asset Position', and 'Change in Net Assets'). However, rather than
+            # rely on these pre-calculated categories, we calculate them from the 
+            # underlying data: 1) 'Total Grants' = 'State Grants' + 'Federal Grants';
+            # 2) 'Net Asset Position' = 'Total Assets' - 'Total Liabilities'; and
+            # 3) 'Change in Net Assets' = 'Operating Revenues' - 'Operating Expenses'
+
+            # Because the rows already exist in the dataframe, we set Category as index
+            # (so we can use .loc):
 
             financial_data = financial_data.set_index(['Category'])
             financial_data.loc['Total Grants'] = financial_data.loc['State Grants'] + financial_data.loc['Federal Grants']
@@ -220,7 +210,7 @@ def update_financial_information_page(data,year,radio_value):
                 if len(financial_data[financial_data[c] == ''].index) > 31:
                     financial_data.drop([c], inplace=True, axis=1)
 
-            # the following rows (categories) are not used and should be removed
+            # the following rows (financial categories) are not used and should be removed
             remove_categories = ['Administrative Staff', 'Instructional Staff','Instructional and Support Staff','Non-Instructional Staff','Total Personnel Expenses',
                 'Instructional & Support Staff', 'Instructional Supplies','Management Fee','Insurance (Facility)','Electric and Gas',
                 'Water and Sewer','Waste Disposal','Security Services','Repair and Maintenance','Occupancy Ratio','Human Capital Ratio',
@@ -245,6 +235,7 @@ def update_financial_information_page(data,year,radio_value):
 
             table_size = len(financial_data.columns)
 
+            # force css column size depending on # of columns in dataframe
             if table_size == 2:
                 col_width = 'five'
                 category_width = 55

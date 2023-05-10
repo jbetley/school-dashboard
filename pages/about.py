@@ -2,7 +2,7 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley
-# version:  1.01.040323
+# version:  1.02.051023
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, State, callback
@@ -17,7 +17,6 @@ from .table_helpers import no_data_table, no_data_page
 
 dash.register_page(__name__, path='/', order=0, top_nav=True)
 
-## Callback ##
 @callback(
     Output('school-name', 'children'),
     Output('info-table', 'children'),
@@ -44,6 +43,7 @@ def update_about_page(year, data):
     ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
     status = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
 
+    # see color list in chart_helpers.py
     linecolor = ['#0a66c2']
     bar_colors = ['#74a2d7', '#df8f2d']
 
@@ -52,14 +52,12 @@ def update_about_page(year, data):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('School Enrollment & Demographics')
 
-    # school_index will never be empty and will be displayed
-    # even if there is no other data
     school_index = pd.DataFrame.from_dict(data['0'])
 
     school_name = school_index['School Name'].values[0]
     headers = ['Category','Description']
 
-    # school index df has additional values that can be added to this list
+    # school index df has additional values that can be added to this list (see school_index.csv)
     info = school_index[['City','Principal','Opening Year']]
 
     school_info = info.T
@@ -75,7 +73,7 @@ def update_about_page(year, data):
             },            
             style_data={
                 'fontSize': '12px',
-                'fontFamily': 'Roboto, sans-serif',
+                'fontFamily': 'Jost, sans-serif',
                 'border': 'none'
             },
             style_data_conditional=[
@@ -100,17 +98,13 @@ def update_about_page(year, data):
         )
     ]
 
-    # get enrollment data (overall and by category)
+    # get enrollment and demographic data
     school_demographics = pd.DataFrame.from_dict(data['1'])
-
-    # get adm dict
+    
+    # get adm data
     school_adm = pd.DataFrame.from_dict(data['6'])
 
-    # data['3'] is a json file (School Letter Grades). There is
-    # no data if the file does not exist. For dicts, we check the
-    # length of the index. It will be [] if there is no data 
-    # if all empty/not exist then we show info table + no_data_page
-
+    # data['3'] is a json file containing school letter grade information
     if not data['3'] and (len(school_demographics.index) == 0 & \
           len(school_adm.index) == 0):
         
@@ -127,16 +121,10 @@ def update_about_page(year, data):
         empty_container = {'display': 'block'}
 
     else:
-    # if one or more of the data files exist, we show info table
-    # and individual data or empty tables/figs
-    # school_letter_grades_dict (check to make sure json
-    # exists before loading or else it will error)
-
         # Enrollment table
         selected_year = str(year)
 
-        # school_demographics_selected_year_dict & corp_demographics_selected_year_dict
-        # school_demographics = pd.DataFrame.from_dict(data['1'])
+        # get demographic data for the relevant school corporation
         corp_demographics = pd.DataFrame.from_dict(data['2'])
 
         current_year = selected_year
@@ -149,6 +137,7 @@ def update_about_page(year, data):
         subgroup_title = 'Enrollment by Subgroup ' + '(' + year_string + ')'
 
         if len(school_demographics.index) == 0:
+
             enroll_table = no_data_table(enroll_title)
 
         else:
@@ -168,7 +157,7 @@ def update_about_page(year, data):
                     columns = [{'name': i, 'id': i} for i in school_enrollment.columns],
                     style_data={
                         'fontSize': '12px',
-                        'fontFamily': 'Roboto, sans-serif',
+                        'fontFamily': 'Jost, sans-serif',
                         'border': 'none'
                     },
                     style_data_conditional=[
@@ -205,9 +194,9 @@ def update_about_page(year, data):
                 )
             ]
 
-        # State and Federal ratings table (test json file to see if
-        # it exists before loading)
+        # create State and Federal ratings table
         if not data['3']:
+
             letter_grade_table = no_data_table('State and Federal Ratings')
 
         else:
@@ -249,7 +238,7 @@ def update_about_page(year, data):
                     },
                     style_data={
                         'fontSize': '12px',
-                        'fontFamily': 'Roboto, sans-serif',
+                        'fontFamily': 'Jost, sans-serif',
                         'border': 'none',
                     },
                     style_data_conditional=[
@@ -273,7 +262,7 @@ def update_about_page(year, data):
                         'border': 'none',
                         'borderBottom': '.5px solid #6783a9',
                         'fontSize': '12px',
-                        'fontFamily': 'Roboto, sans-serif',
+                        'fontFamily': 'Jost, sans-serif',
                         'color': '#6783a9',
                         'textAlign': 'center',
                         'fontWeight': 'bold'
@@ -282,7 +271,7 @@ def update_about_page(year, data):
                         'whiteSpace': 'normal',
                         'textAlign': 'center',
                         'color': '#6783a9',
-                        'fontFamily': 'Roboto, sans-serif',
+                        'fontFamily': 'Jost, sans-serif',
                         'boxShadow': '0 0',
                         'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
                     },
@@ -315,8 +304,8 @@ def update_about_page(year, data):
             ]
 
         # ADM chart
-
         if len(school_adm.index) == 0:
+
             adm_fig = no_data_fig_label('Average Daily Membership History',400)
 
         else:
@@ -472,18 +461,11 @@ def update_about_page(year, data):
 
             status_data_t = status_data.set_index('Corporation Name').T
 
-            for i in range(0, 2): # Calculate Percentage
+            # Calculate Percentage
+            for i in range(0, 2):
                 status_data_t.iloc[:,i] = status_data_t.iloc[:,i] / total_enrollment[i]
 
-            # this forces the categories to wrap (use 'categories' for no wrap)
-            # categories = status_data_t.index.tolist()
-
-            # Use this function to create wrapped text using
-            # html tags based on the specified width
-            import textwrap
-            def customwrap(s,width=16):
-                return '<br>'.join(textwrap.wrap(s,width=width))
-
+            # force categories to wrap
             categories_wrap=['English<br>Language<br>Learners', 'Special<br>Education', 'Free/Reduced<br>Price Meals', 'Paid Meals']
 
             elements = status_data_t.columns.tolist()
@@ -513,7 +495,7 @@ def update_about_page(year, data):
 
             status_fig.update_traces(hovertemplate = None, hoverinfo='skip')
 
-            # Uncomment below to add hover
+            # Uncomment to add hover
             #status_fig['data'][0]['hovertemplate'] = status_fig['data'][0]['name'] + ': %{x}<extra></extra>'
             #status_fig['data'][1]['hovertemplate'] = status_fig['data'][1]['name'] + ': %{x}<extra></extra>'
 

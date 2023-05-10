@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley
-# version:  1.01.040323
+# version:  1.02.051023
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -153,19 +153,11 @@ def update_financial_metrics(data,year,radio_value):
             for col in financial_data.columns:
                 financial_data[col]=pd.to_numeric(financial_data[col], errors='coerce').fillna(financial_data[col]).tolist()
 
-            # in this case we are replacing the value of an existing category, so
-            # we set Category as index (so we can use .loc). If the category does
-            # not already exist, use the following code for each category:
-            # new_row = financial_data.loc['State Grants'] + financial_data.loc['Federal Grants']
-            # new_row.name = 'Total Grants'
-            # financial_data.append([new_row])
-
+            # see financial_information.py
             financial_data = financial_data.set_index(['Category'])
             financial_data.loc['Total Grants'] = financial_data.loc['State Grants'] + financial_data.loc['Federal Grants']
             financial_data.loc['Net Asset Position'] = financial_data.loc['Total Assets'] - financial_data.loc['Total Liabilities']
             financial_data.loc['Change in Net Assets'] = financial_data.loc['Operating Revenues'] - financial_data.loc['Operating Expenses']        
-
-            # reset index, which shifts Category back to column one
             financial_data = financial_data.reset_index()
 
             # Ensure only 'max_display_years' (currently 5) of financial data
@@ -201,7 +193,8 @@ def update_financial_metrics(data,year,radio_value):
 
             headers = financial_metrics.columns.tolist()
 
-            # TODO: Can this be put into a function? Messy
+            # TODO: Can this be put into a function? Messy (Check all instances and see if can make master layout)
+            # TODO: Financial Info, Financial Metrics, Table Helpers
             # input: table_size
             # output: col_width, category_width, rating_width, and year_width, (difference_width, corporation_width)
             # Problem: variable number of return items. table_size adjustments are differente between financial
@@ -244,12 +237,6 @@ def update_financial_metrics(data,year,radio_value):
                 category_width = 15
 
             # this splits column width evenly for all columns other than 'Category'
-            # can split data_width into unequal values for each 'data' category
-            # with something like:
-            #   rating_width = data_col_width + (data_col_width * .1)
-            #   remaining_width = data_width - rating_width
-            #   remaining_col_width = remaining_width / (table_size - 1)
-
             data_width = 100 - category_width
             data_col_width = data_width / (table_size - 1)
             rating_width = year_width = data_col_width
@@ -271,11 +258,11 @@ def update_financial_metrics(data,year,radio_value):
                                             if 'Rate' in col
                                             else {'name': col, 'id': headers[idx]}
                                             for (idx, col) in enumerate(clean_headers)
-                                            ],                                            
+                                        ],                                            
                                         style_data={
                                             'fontSize': '11px',
                                             'border': 'none',
-                                            'fontFamily': 'Roboto, sans-serif',
+                                            'fontFamily': 'Jost, sans-serif',
                                         },
                                         style_data_conditional=
                                         [
@@ -300,7 +287,7 @@ def update_financial_metrics(data,year,radio_value):
                                             'border': 'none',
                                             'borderBottom': '.5px solid #6783a9',
                                             'fontSize': '12px',
-                                            'fontFamily': 'Roboto, sans-serif',
+                                            'fontFamily': 'Jost, sans-serif',
                                             'color': '#6783a9',
                                             'textAlign': 'center',
                                             'fontWeight': 'bold'
@@ -386,10 +373,15 @@ def update_financial_metrics(data,year,radio_value):
                                         html.Div(
                                             dash_table.DataTable(
                                                 financial_indicators.to_dict('records'),
-                                                columns = [{'name': i, 'id': i,'presentation': 'markdown'} for i in headers],
+                                                columns=[
+                                                    {'name': col,'id': headers[idx], 'presentation': 'markdown'}
+                                                    if col in year_headers
+                                                    else {'name': col, 'id': headers[idx]}
+                                                    for (idx, col) in enumerate(headers)
+                                                ],                                                   
                                                 style_data={
                                                     'fontSize': '12px',
-                                                    'fontFamily': 'Roboto, sans-serif',
+                                                    'fontFamily': 'Jost, sans-serif',
                                                     'border': 'none'
                                                 },
                                                 style_data_conditional=
@@ -416,7 +408,7 @@ def update_financial_metrics(data,year,radio_value):
                                                     'border': 'none',
                                                     'borderBottom': '.5px solid #6783a9',
                                                     'fontSize': '12px',
-                                                    'fontFamily': 'Roboto, sans-serif',
+                                                    'fontFamily': 'Jost, sans-serif',
                                                     'color': '#6783a9',
                                                     'textAlign': 'center',
                                                     'fontWeight': 'bold'
@@ -426,7 +418,7 @@ def update_financial_metrics(data,year,radio_value):
                                                     'height': 'auto',
                                                     'textAlign': 'center',
                                                     'color': '#6783a9',
-                                                    'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                                                    # 'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
                                                 },
                                                 style_cell_conditional=[
                                                     {
@@ -435,7 +427,7 @@ def update_financial_metrics(data,year,radio_value):
                                                         },
                                                         'textAlign': 'center',
                                                         'fontWeight': '500',
-                                                        'width': '7%'
+                                                        'width': '7%',
                                                     },
                                                     {
                                                         'if': {
@@ -487,11 +479,11 @@ def update_financial_metrics(data,year,radio_value):
                             html.Div(
                                 dash_table.DataTable(
                                     data = financial_metrics_definitions_dict,
-                                    columns = [{'name': i, 'id': i, 'presentation': 'markdown'} for i in financial_metrics_definitions_keys],
+                                    columns = [{'name': i, 'id': i} for i in financial_metrics_definitions_keys],
                                     style_data={
                                         'fontSize': '12px',
                                         'border': 'none',
-                                        'fontFamily': 'Roboto, sans-serif',
+                                        'fontFamily': 'Jost, sans-serif',
                                     },
                                     style_data_conditional=[
                                         {
@@ -511,7 +503,7 @@ def update_financial_metrics(data,year,radio_value):
                                     style_header={
                                         'backgroundColor': '#ffffff',
                                         'fontSize': '12px',
-                                        'fontFamily': 'Roboto, sans-serif',
+                                        'fontFamily': 'Jost, sans-serif',
                                         'color': '#6783a9',
                                         'textAlign': 'center',
                                         'fontWeight': 'bold',
@@ -621,5 +613,5 @@ def layout():
                     id = 'financial-metrics-empty-container',
                 ),                            
             ],
-            id='mainContainer',
+            id='mainContainer'
         )
