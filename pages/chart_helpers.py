@@ -469,6 +469,9 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
 def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> list: #px.bar:
 
     data = values.copy()
+    print(data)
+    if 'Low Grade' in data:
+        data = data.drop(['Low Grade', 'High Grade'], axis = 1)
 
     # find the index of the row containing the school name,
     # use this to filter data (next line) and also with

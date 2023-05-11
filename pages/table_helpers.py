@@ -722,6 +722,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
             )
         ]
 
+    print(type(table_layout))
     return table_layout
 
 ## TODO: Can you do this better with OOP?

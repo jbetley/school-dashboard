@@ -7,7 +7,8 @@
 # TODO: Add AHS/HS Analysis
 
 import dash
-from dash import ctx, dcc, html, Input, Output, callback
+import dash_loading_spinners
+from dash import ctx, dcc, html, Input, Output, State, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
@@ -157,38 +158,50 @@ def set_dropdown_options(school, year, comparison_schools):
     return options, input_warning, comparison_schools
 
 @callback(
+    Output("div-loading", "children"),
+    [Input("div-app", "loading_state")],
+    [State("div-loading", "children")]
+)
+def hide_loading_after_startup(loading_state, children):
+    if children:
+        print("remove loading spinner!")
+        return None
+    print("spinner already gone!")
+    raise PreventUpdate
+
+@callback(
     Output('fig14a', 'children'),
     Output('fig14b', 'children'),
     Output('fig14c', 'children'),
-    Output('fig14c-table', 'children'),
+    # Output('fig14c-table', 'children'),
     Output('fig14d', 'children'),
-    Output('fig14d-table', 'children'),
+    # Output('fig14d-table', 'children'),
     Output('fig-iread', 'children'),
-    Output('fig-iread-table', 'children'),
+    # Output('fig-iread-table', 'children'),
     Output('fig16c1', 'children'),
     Output('fig16d1', 'children'),
     Output('fig16c2', 'children'),
     Output('fig16d2', 'children'),
     Output('fig14g', 'children'),
     Output('fig16a1', 'children'),
-    Output('fig16a1-table', 'children'),
-    Output('fig16a1-category-string', 'children'),
-    Output('fig16a1-school-string', 'children'),
+    # Output('fig16a1-table', 'children'),
+    # Output('fig16a1-category-string', 'children'),
+    # Output('fig16a1-school-string', 'children'),
     Output('fig16a1-table-container', 'style'),    
     Output('fig16b1', 'children'),
-    Output('fig16b1-table', 'children'),
-    Output('fig16b1-category-string', 'children'),
-    Output('fig16b1-school-string', 'children'),
+    # Output('fig16b1-table', 'children'),
+    # Output('fig16b1-category-string', 'children'),
+    # Output('fig16b1-school-string', 'children'),
     Output('fig16b1-table-container', 'style'),
     Output('fig16a2', 'children'),
-    Output('fig16a2-table', 'children'),    
-    Output('fig16a2-category-string', 'children'),
-    Output('fig16a2-school-string', 'children'),
+    # Output('fig16a2-table', 'children'),    
+    # Output('fig16a2-category-string', 'children'),
+    # Output('fig16a2-school-string', 'children'),
     Output('fig16a2-table-container', 'style'),
     Output('fig16b2', 'children'),
-    Output('fig16b2-table', 'children'),
-    Output('fig16b2-category-string', 'children'),
-    Output('fig16b2-school-string', 'children'),
+    # Output('fig16b2-table', 'children'),
+    # Output('fig16b2-category-string', 'children'),
+    # Output('fig16b2-school-string', 'children'),
     Output('fig16b2-table-container', 'style'),
     Output('academic-analysis-main-container', 'style'),
     Output('academic-analysis-empty-container', 'style'),
@@ -201,8 +214,7 @@ def set_dropdown_options(school, year, comparison_schools):
 def update_academic_analysis(school, year, data, comparison_school_list):
     if not school:
         raise PreventUpdate
-
-    print(school)
+    
     selected_year = str(year)
 
     # default styles
@@ -231,8 +243,6 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
         fig14a = fig14b = fig14c = fig14d = fig_iread = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig14g = fig16a1 = fig16b1 = fig16a2 = fig16b2 = {}
         fig14c_table = fig14d_table = fig_iread_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = {}
-        fig16a1_category_string = fig16b1_category_string = fig16a2_category_string = fig16b2_category_string = ''
-        fig16a1_school_string = fig16b1_school_string = fig16a2_school_string = fig16b2_school_string = ''
         fig16a1_table_container = {'display': 'none'}
         fig16b1_table_container = {'display': 'none'}
         fig16a2_table_container = {'display': 'none'}
@@ -259,8 +269,6 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             
             fig14a = fig14b = fig14c = fig14d = fig_iread = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig14g = fig16a1 = fig16b1 = fig16a2 = fig16b2 = {}
             fig14c_table = fig14d_table = fig_iread_table = fig16a1_table = fig16b1_table = fig16a2_table = fig16b2_table = {}
-            fig16a1_category_string = fig16b1_category_string = fig16a2_category_string = fig16b2_category_string = ''
-            fig16a1_school_string = fig16b1_school_string = fig16a2_school_string = fig16b2_school_string = ''
             fig16a1_table_container = {'display': 'none'}
             fig16b1_table_container = {'display': 'none'}
             fig16a2_table_container = {'display': 'none'}
@@ -365,8 +373,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             else:   
                 
                 # As long as we are rendering 1 year of data, this should never happen. If
-                # the dataframe has no data, the entire page would be blank. But never say
-                # never.
+                # the dataframe has no data, the entire page would be blank. This means it
+                # will happen at some point.
 
                 fig14a = no_data_fig_label('Year over Year ELA Proficiency by Grade', 200)
                 fig14b = no_data_fig_label('Year over Year Math Proficiency by Grade', 200)
@@ -553,6 +561,29 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14c = no_data_fig_label('Comparison: Current Year ELA Proficiency',200)
                 fig14c_table = no_data_table('Proficiency')
 
+            def make_bar_table_chart_thing(fig,table):
+                layout = [
+                            html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(fig)           
+                                    ],
+                                    className = 'pretty_container nine columns',
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(table)           
+                                    ],
+                                    className = 'pretty_container three columns'
+                                ),
+                            ],
+                            className='row'
+                        )
+                ]
+
+            fig14c_combined = make_bar_table_chart_thing(fig14c,fig14c_table)
+
         #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
             category = 'Total|Math Proficient %'
 
@@ -586,6 +617,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14d = no_data_fig_label('Comparison: Current Year Math Proficiency',200)
                 fig14d_table = no_data_table('Proficiency')
 
+            fig14d_combined = make_bar_table_chart_thing(fig14d,fig14d_table)
+
             #### Current Year IREAD Proficiency Compared to Similar Schools #
             category = 'IREAD Proficiency (Grade 3 only)'
 
@@ -618,19 +651,18 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig_iread = no_data_fig_label('Comparison: Current Year IREAD Proficiency',200)
                 fig_iread_table = no_data_table('Proficiency')
 
+            iread_combined = make_bar_table_chart_thing(fig_iread,fig_iread_table)
+
             # create comparison charts/tables
             # NOTE: See backup data 01.23.23 for pre- create_full_chart() function code
 
             # info col headers is the same for all dataframes
-            info_categories = ['School Name','Low Grade','High Grade']
+            info_categories = ['School Name','Low Grade','High Grade'] # NEED?
             
-            def create_full_chart(school_data, categories, corp_name):
-                # A fig, a table, and two strings walk into a bar . . .
+            from typing import Tuple
 
-                # TODO: This is messy. Uses functions from both helper files.
-                # TODO: Could move to chart-helpers and call table_helpers there
-                # TODO: but does that cause any circular references?
-
+            def process_chart_data(school_data: pd.DataFrame, categories: str, corp_name: str):
+                
                 info_categories = ['School Name','Low Grade','High Grade']
                 all_categories = categories + info_categories
 
@@ -670,10 +702,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
                 # Create a series that merges school name and grade spans and drop the grade span columns 
                 # from the dataframe (they are not charted)
-                school_names = final_data['School Name'] + ' (' + final_data['Low Grade'] + '-' \
-                + final_data['High Grade'] + ')'      
-                
-                final_data = final_data.drop(['Low Grade', 'High Grade'], axis = 1)
+                # school_names = final_data['School Name'] + ' (' + final_data['Low Grade'] + '-' \
+                # + final_data['High Grade'] + ')'      
 
                 # In some cases, cell data is '' or ' ', so we need to replace any
                 # blanks with NaN
@@ -695,14 +725,15 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 else:
                     school_string = 'None.'
 
-                final_data_columns = final_data.columns.tolist()
-
+                return final_data, category_string, school_string
+            
+            def create_chart_label(final_data):
                 # Create the chart label
+                final_data_columns = final_data.columns.tolist()
 
                 # the list returns any strings in final_data_columns that are in the
                 # ethnicity list or subgroup list. Label is based on whichever list
                 # of substrings matches the column list
-
                 if len([i for e in ethnicity for i in final_data_columns if e in i]) > 0:
                     label_category= ' Proficiency by Ethnicity'
                 elif len([i for e in subgroup for i in final_data_columns if e in i]) > 0:
@@ -712,25 +743,69 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 label_subject = re.search(r'(?<=\|)(.*?)(?=\s)',final_data_columns[0]).group()
                 
                 label = 'Comparison: ' + label_subject + label_category
-                
-                #  create chart
-                chart = make_group_bar_chart(final_data, school_name, label)
+            
+                return label
+
+            def process_table_data(data):
+                # Create a series that merges school name and grade spans and drop the grade span columns 
+                # from the dataframe (they are not charted)
+                school_names = data['School Name'] + ' (' + data['Low Grade'].fillna('') + '-' \
+                + data['High Grade'].fillna('') + ')'
+
+                data = data.drop(['Low Grade', 'High Grade'], axis = 1)
 
                 # shift the 'School Name' column to the first position and replace
                 # the values in 'School Name' column with the series we created earlier
-                final_data = final_data.drop('School Name', axis = 1)
-                final_data['School Name'] = school_names
+                data = data.drop('School Name', axis = 1)
+                data['School Name'] = school_names
 
-                first_column = final_data.pop('School Name')
-                final_data.insert(0, 'School Name', first_column)
+                first_column = data.pop('School Name')
+                data.insert(0, 'School Name', first_column)
+                
+                return data
 
-                # create table
-                table = create_comparison_table(final_data, school_name,'')
+            def make_group_bar_chart_table_thing(chart,table,category_string,school_string):
+                layout = [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(chart, style={'marginBottom': '-20px'})
+                                ],
+                                className = 'pretty_close_container twelve columns',
+                            ),
+                        ],
+                        className='row'
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(table),
+                                    html.P(
+                                        children=[
+                                        'Categories with insufficient n-size or no data:',
+                                        html.Span(category_string, className = 'category_string'),
+                                        ],
+                                        className = 'category_string_label',
+                                    ),
+                                    html.P(
+                                        children=[
+                                        'Schools with insufficient n-size or no data:',
+                                        html.Span(school_string, className = 'school_string'),
+                                        ],
+                                        className = 'school_string_label',
+                                    ),
+                                ],
+                                className = 'close_container twelve columns'
+                            )
+                            ],
+                            className='row'
+                        )
+                ]
 
-                return chart, table, category_string, school_string
-
-            # TODO: Turn this into function?
-            # TODO: See above, need to account for '***'
+                return layout
+ 
             # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
             headers_16a1 = []
             for e in ethnicity:
@@ -742,9 +817,13 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             fig16a1_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16a1))]
             
             if len(fig16a1_k8_school_data.columns) > 3:
-                fig16a1, fig16a1_table, fig16a1_category_string, fig16a1_school_string = \
-                    create_full_chart(fig16a1_k8_school_data, headers_16a1, school_corporation_name)
-
+                fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = process_chart_data(fig16a1_k8_school_data, headers_16a1, school_corporation_name)
+                fig16a1_label = create_chart_label(fig16a1_final_data)
+                fig16a1_chart = make_group_bar_chart(fig16a1_final_data, school_name, fig16a1_label)
+                fig16a1_table_data = process_table_data(fig16a1_final_data)
+                fig16a1_table = create_comparison_table(fig16a1_table_data, school_name,'')
+    
+                fig16a1 = make_group_bar_chart_table_thing(fig16a1_chart, fig16a1_table,fig16a1_category_string,fig16a1_school_string)
                 fig16a1_table_container = {'display': 'block'}
             
             else:
@@ -765,9 +844,14 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             fig16b1_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16b1))]
 
             if len(fig16b1_k8_school_data.columns) > 3:
-                fig16b1, fig16b1_table, fig16b1_category_string, fig16b1_school_string = \
-                    create_full_chart(fig16b1_k8_school_data, headers_16b1, school_corporation_name)
+                fig16b1_final_data, fig16b1_category_string, fig16b1_school_string = process_chart_data(fig16b1_k8_school_data, headers_16b1, school_corporation_name)
+                fig16b1_label = create_chart_label(fig16b1_final_data)
+                fig16b1_chart = make_group_bar_chart(fig16b1_final_data, school_name, fig16b1_label)
+                fig16b1_table_data = process_table_data(fig16b1_final_data)
+                fig16b1_table = create_comparison_table(fig16b1_table_data, school_name,'')
 
+                fig16b1 = make_group_bar_chart_table_thing(fig16b1_chart, fig16b1_table,fig16a1_category_string,fig16b1_school_string)
+                
                 fig16b1_table_container = {'display': 'block'}
             
             else:
@@ -788,9 +872,14 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             fig16a2_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16a2))]
 
             if len(fig16a2_k8_school_data.columns) > 3:
-                fig16a2, fig16a2_table, fig16a2_category_string, fig16a2_school_string = \
-                    create_full_chart(fig16a2_k8_school_data, headers_16a2, school_corporation_name)
+                fig16a2_final_data, fig16a2_category_string, fig16a2_school_string = process_chart_data(fig16a2_k8_school_data, headers_16a2, school_corporation_name)
+                fig16a2_label = create_chart_label(fig16a2_final_data)
+                fig16a2_chart = make_group_bar_chart(fig16a2_final_data, school_name, fig16a2_label)
+                fig16a2_table_data = process_table_data(fig16a2_final_data)
+                fig16a2_table = create_comparison_table(fig16a2_table_data, school_name,'')
 
+                fig16a2 = make_group_bar_chart_table_thing(fig16a2_chart, fig16a2_table,fig16a2_category_string,fig16a2_school_string)
+                
                 fig16a2_table_container = {'display': 'block'}
             
             else:
@@ -811,9 +900,14 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             fig16b2_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16b2))]
 
             if len(fig16b2_k8_school_data.columns) > 3:
-                fig16b2, fig16b2_table, fig16b2_category_string,fig16b2_school_string = \
-                    create_full_chart(fig16b2_k8_school_data, headers_16b2, school_corporation_name)
+                fig16b2_final_data, fig16b2_category_string, fig16b2_school_string = process_chart_data(fig16b2_k8_school_data, headers_16b2, school_corporation_name)
+                fig16b2_label = create_chart_label(fig16b2_final_data)
+                fig16b2_chart = make_group_bar_chart(fig16b2_final_data, school_name, fig16b2_label)
+                fig16b2_table_data = process_table_data(fig16b2_final_data)
+                fig16b2_table = create_comparison_table(fig16b2_table_data, school_name,'')
 
+                fig16b2 = make_group_bar_chart_table_thing(fig16b2_chart, fig16b2_table,fig16b2_category_string,fig16b2_school_string)
+                
                 fig16b2_table_container = {'display': 'block'}
             
             else:
@@ -824,358 +918,186 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16b2_table_container = {'display': 'none'}
 
     # main_container = {'display': 'block'}
-    return fig14a, fig14b, fig14c, fig14c_table, fig14d, fig14d_table, fig_iread, \
-        fig_iread_table, fig16c1, fig16d1, fig16c2, fig16d2, fig14g, fig16a1, \
-        fig16a1_table, fig16a1_category_string, \
-        fig16a1_school_string, fig16a1_table_container, fig16b1, fig16b1_table, \
-        fig16b1_category_string, fig16b1_school_string, fig16b1_table_container, \
-        fig16a2, fig16a2_table, fig16a2_category_string, fig16a2_school_string, \
-        fig16a2_table_container, fig16b2, fig16b2_table, fig16b2_category_string, \
-        fig16b2_school_string, fig16b2_table_container, \
+
+    # return fig14a, fig14b, fig14c, fig14c_table, fig14d, fig14d_table, fig_iread, \
+    #     fig_iread_table, fig16c1, fig16d1, fig16c2, fig16d2, fig14g, fig16a1, \
+    #     fig16a1_table, fig16a1_category_string, \
+    #     fig16a1_school_string, fig16a1_table_container, fig16b1, fig16b1_table, \
+    #     fig16b1_category_string, fig16b1_school_string, fig16b1_table_container, \
+    #     fig16a2, fig16a2_table, fig16a2_category_string, fig16a2_school_string, \
+    #     fig16a2_table_container, fig16b2, fig16b2_table, fig16b2_category_string, \
+    #     fig16b2_school_string, fig16b2_table_container, \
+    #     main_container, empty_container, no_data_to_display
+
+    # return fig14a, fig14b, fig14c, fig14c_table, fig14d, fig14d_table, fig_iread, \
+    #     fig_iread_table, fig16c1, fig16d1, fig16c2, fig16d2, fig14g, fig16a1, \
+    #     fig16a1_table, fig16a1_table_container, fig16b1, fig16b1_table, fig16b1_table_container, \
+    #     fig16a2, fig16a2_table, fig16a2_table_container, fig16b2, fig16b2_table, fig16b2_table_container, \
+    #     main_container, empty_container, no_data_to_display
+
+    return fig14a, fig14b, fig14c_combined, fig14d_combined, iread_combined, \
+        fig16c1, fig16d1, fig16c2, fig16d2, fig14g, fig16a1, \
+        fig16a1_table_container, fig16b1, fig16b1_table_container, \
+        fig16a2, fig16a2_table_container, fig16b2, fig16b2_table_container, \
         main_container, empty_container, no_data_to_display
 
 def layout():
-    return html.Div(
-# layout = html.Div(
-            [
- # NOTE: Could not figure out how to add loading block due
- # to number of charts - instead we are using a blank_fig with 
- # 'Loading ...' text as a placeholder until graph loads
- # https://stackoverflow.com/questions/63811550/plotly-how-to-display-graph-after-clicking-a-button
-
+    layout = html.Div(
+             children=[
                 html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Div(subnav_academic(),className='tabs'),
-                            ],
-                            className='bare_container twelve columns'
-                        ),
-                    ],
-                    className='row'
+                    id="div-loading",
+                    children=[
+                        dash_loading_spinners.Rotate(
+                            fullscreen=True, 
+                            id="loading-whole-app"
+                        )
+                    ]
                 ),
                 html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig14a', children=[])
-                                    ],
-                                    className = 'pretty_container six columns'
-                                ),
-                                html.Div(
-                                    [
-                                        html.Div(id='fig14b', children=[])
-                                    ],
-                                    className = 'pretty_container six columns'
-                                )
-                            ],
-                            className='row'
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig16c1', children=[])
-                                    ],
-                                    className = 'pretty_container six columns'
-                                ),
-                                html.Div(
-                                    [
-                                        html.Div(id='fig16d1', children=[])
-                                    ],
-                                    className = 'pretty_container six columns'
-                                )
-                            ],
-                            className='row'
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig16c2', children=[])        
-                                    ],
-                                    className = 'pretty_container six columns'
-                                ),
-                                html.Div(
-                                    [
-                                        html.Div(id='fig16d2', children=[])
-                                    ],
-                                    className = 'pretty_container six columns'
-                                )
-                            ],
-                            className='row',
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig14g', children=[])
-                                    ],
-                                    className = 'pretty_container six columns'
-                                ),
-                            ],
-                            className='row',
-                        ),
-
-                        # Comparison Charts
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.P(
-                                            'Add or Remove Schools: ',
-                                            className='control_label'
-                                        ),
-                                        dcc.Dropdown(
-                                            id='comparison-dropdown',
-                                            style={'fontSize': '85%'},
-                                            multi = True,
-                                            clearable = False,
-                                            className='dcc_control'
-                                        ),
-                                        html.Div(id='input-warning'),
-                                    ],
-                                ),
-                            ],
-                            className='row'
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig14c', children=[])           
-                                    ],
-                                    className = 'pretty_container nine columns',
-                                ),
-                                html.Div(
-                                    [
-                                        html.Div(id='fig14c-table', children=[])           
-                                    ],
-                                    className = 'pretty_container three columns'
-                                ),
-                            ],
-                            className='row'
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig14d', children=[])         
-                                    ],
-                                    className = 'pretty_container nine columns',
-                                ),
-                                html.Div(
-          
-                                    [
-                                        html.Div(id='fig14d-table', children=[])          
-                                    ],
-                                    className = 'pretty_container three columns'
-                                )
-                            ],
-                            className='row'
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig-iread', children=[])         
-                                    ],
-                                    className = 'pretty_container nine columns',
-                                ),
-                                html.Div(
-                                    [
-                                        html.Div(id='fig-iread-table', children=[])          
-                                    ],
-                                    className = 'pretty_container three columns'
-                                ),
-                            ],
-                            className='row'
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig16a1', children=[], style={'marginBottom': '-20px'})
-                                    ],
-                                    className = 'pretty_close_container twelve columns',
-                                ),
-                            ],
-                            className='row'
-                        ),
-                        html.Div(
-                            [  
-                                html.Div(
-                                    [
-        ## TODO: Use Container Styles to hide the string_labels (display: none) on default (on load)
-        ## TODO: Or some other way to hide this data on load
-                                        html.Div(
-                                            [
-                                                html.Div(id='fig16a1-table'),
-                                                html.P(
-                                                    id='fig16a1-category-string',
-                                                    children=[
-                                                    'Categories with insufficient n-size or no data:',
-                                                    html.Span(id='fig16a1-category-string', children='', className = 'category_string'),
-                                                    ],
-                                                    className = 'category_string_label',
-                                                ),
-                                                html.P(
-                                                    id='fig16a1-school-string',
-                                                    children=[
-                                                    'Schools with insufficient n-size or no data:',
-                                                    html.Span(id='fig16a1-school-string', children='', className = 'school_string'),
-                                                    ],
-                                                    className = 'school_string_label',
-                                                ),
-                                            ],
-                                            className = 'close_container twelve columns'
-                                        )
-                                    ],
-                                    className='row'
-                                ),
-                            ],
-                            id = 'fig16a1-table-container',
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig16b1', children=[], style={'marginBottom': '-20px'})
-                                    ],
-                                    className = 'pretty_close_container twelve columns',
-                                ),
-                            ],
-                            className='row'
-                        ),
-                        html.Div(
-                            [  
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [
-                                                html.Div(id='fig16b1-table'),
-                                                html.P(
-                                                    id='fig16b1-category-string',
-                                                    children=[
-                                                    'Categories with insufficient n-size or no data:',
-                                                    html.Span(id='fig16b1-category-string', children='', className = 'category_string'),
-                                                    ],
-                                                    className = 'category_string_label',
-                                                ),
-                                                html.P(
-                                                    id='fig16b1-school-string',
-                                                    children=[
-                                                    'Schools with insufficient n-size or no data:',
-                                                    html.Span(id='fig16b1-school-string', children='', className = 'school_string'),
-                                                    ],
-                                                    className = 'school_string_label',
-                                                ),               
-                                            ],
-                                            className = 'close_container twelve columns'
-                                        )
-                                    ],
-                                    className='row'
-                                ),
-                            ],
-                            id = 'fig16b1-table-container',
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig16a2', children=[], style={'marginBottom': '-20px'})        
-                                    ],
-                                    className = 'pretty_close_container twelve columns',
-                                ),
-                            ],
-                            className='row'
-                        ),
-                        html.Div(
-                            [                
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [
-                                                html.Div(id='fig16a2-table'),
-                                                html.P(
-                                                    id='fig16a2-category-string',
-                                                    children=[
-                                                    'Categories with insufficient n-size or no data:',
-                                                    html.Span(id='fig16a2-category-string', children='', className = 'category_string'),
-                                                    ],
-                                                    className = 'category_string_label',
-                                                ),
-                                                html.P(
-                                                    id='fig16a2-school-string',
-                                                    children=[
-                                                    'Schools with insufficient n-size or no data:',
-                                                    html.Span(id='fig16a2-school-string', children='', className = 'school_string'),
-                                                    ],
-                                                    className = 'school_string_label',
-                                                ),                                                                                 
-                                            ],
-                                            className = 'close_container twelve columns'
-                                        )
-                                    ],
-                                    className='row'
-                                ),
-                            ],
-                            id = 'fig16a2-table-container',
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(id='fig16b2', children=[], style={'marginBottom': '-20px'})
-                                    ],
-                                    className = 'pretty_close_container twelve columns',
-                                ),
-                            ],
-                            className='row'
-                        ),
+                    className="div-app",
+                    id="div-app",
+                    children = [ # app layout starts here
                         html.Div(
                             [
                                 html.Div(
                                     [
                                         html.Div(
                                             [
-                                                html.Div(id='fig16b2-table'),
-                                                html.P(
-                                                    id='fig16b2-category-string',
-                                                    children=[
-                                                    'Categories with insufficient n-size or no data:',
-                                                    html.Span(id='fig16b2-category-string', children='', className = 'category_string'),
-                                                    ],
-                                                    className = 'category_string_label',
-                                                ),
-                                                html.P(
-                                                    id='fig16b2-school-string',
-                                                    children=[
-                                                    'Schools with insufficient n-size or no data:',
-                                                    html.Span(id='fig16b2-school-string', children='', className = 'school_string'),
-                                                    ],
-                                                    className = 'school_string_label',
-                                                ),                        
+                                                html.Div(subnav_academic(),className='tabs'),
                                             ],
-                                            className = 'close_container twelve columns'
+                                            className='bare_container twelve columns'
                                         ),
                                     ],
                                     className='row'
                                 ),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Div(id='fig14a', children=[])
+                                                    ],
+                                                    className = 'pretty_container six columns'
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Div(id='fig14b', children=[])
+                                                    ],
+                                                    className = 'pretty_container six columns'
+                                                )
+                                            ],
+                                            className='row'
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Div(id='fig16c1', children=[])
+                                                    ],
+                                                    className = 'pretty_container six columns'
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Div(id='fig16d1', children=[])
+                                                    ],
+                                                    className = 'pretty_container six columns'
+                                                )
+                                            ],
+                                            className='row'
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Div(id='fig16c2', children=[])        
+                                                    ],
+                                                    className = 'pretty_container six columns'
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Div(id='fig16d2', children=[])
+                                                    ],
+                                                    className = 'pretty_container six columns'
+                                                )
+                                            ],
+                                            className='row',
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Div(id='fig14g', children=[])
+                                                    ],
+                                                    className = 'pretty_container six columns'
+                                                ),
+                                            ],
+                                            className='row',
+                                        ),
+                                        # Comparison Charts
+                                        ## TODO: DELAY SPINNER?
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.P(
+                                                            'Add or Remove Schools: ',
+                                                            className='control_label'
+                                                        ),
+                                                        dcc.Dropdown(
+                                                            id='comparison-dropdown',
+                                                            style={'fontSize': '85%'},
+                                                            multi = True,
+                                                            clearable = False,
+                                                            className='dcc_control'
+                                                        ),
+                                                        html.Div(id='input-warning'),
+                                                    ],
+                                                ),
+                                            ],
+                                            className='row'
+                                        ),
+                                        html.Div(id='fig14c'),
+                                        html.Div(id='fig14d'),
+                                        html.Div(id='fig-iread'),
+                                        html.Div(
+                                            [                        
+                                                html.Div(id='fig16a1'),
+                                            ],
+                                            id = 'fig16a1-table-container',
+                                        ),
+                                        html.Div(
+                                            [                         
+                                                html.Div(id='fig16b1'),
+                                            ],
+                                            id = 'fig16b1-table-container',
+                                        ),
+                                        html.Div(
+                                            [                        
+                                                html.Div(id='fig16a2'),
+                                            ],
+                                            id = 'fig16a2-table-container',
+                                        ),
+                                        html.Div(
+                                            [                        
+                                                html.Div(id='fig16b2'),
+                                            ],
+                                            id = 'fig16b2-table-container',
+                                        ),
+                                    ],
+                                    id = 'academic-analysis-main-container',
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(id='academic-analysis-no-data'),
+                                    ],
+                                    id = 'academic-analysis-empty-container',
+                                ),          
                             ],
-                            id = 'fig16b2-table-container',
+                            id='mainContainer'
                         ),
                     ],
-                    id = 'academic-analysis-main-container',
-                ),
-                html.Div(
-                    [
-                    html.Div(id='academic-analysis-no-data'),
-                    ],
-                    id = 'academic-analysis-empty-container',
                 ),
             ],
-            id='mainContainer'
-        )
+    )
+    return layout             
