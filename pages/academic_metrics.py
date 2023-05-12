@@ -2,7 +2,7 @@
 # ICSB Dashboard - Academic Metrics #
 #####################################
 # author:   jbetley
-# version:  1.01.040323
+# version:  1.02.051023
 
 import dash
 from dash import html, Input, Output, callback
@@ -126,7 +126,7 @@ def update_academic_metrics(data,year):
             main_container = {'display': 'none'}
             empty_container = {'display': 'block'}
 
-    # K8, K12, & High School Accountability Metrics
+    # K8, K12, & HS Accountability Metrics
     else:   
         
         # hide AHS metrics
@@ -347,7 +347,7 @@ def update_academic_metrics(data,year):
 
             else:
 
-                # school is K8 only and has no data
+                #if school type is K8 only but dataframes are empty
                 table_container_11cd = {}
                 table_container_14ab = {}
                 table_container_14cd = {}
@@ -360,9 +360,10 @@ def update_academic_metrics(data,year):
                 main_container = {'display': 'none'}
                 empty_container = {'display': 'block'}
 
-    # If no matching school_type - display empty table (shouldn't ever happen,
-    # but that means it probably will happen at least once)
-    if school_index['School Type'].values[0] != 'K8' and school_index['School Type'].values[0] != 'K12' and school_index['School Type'].values[0] != 'HS' and school_index['School Type'].values[0] != 'AHS':
+    #If there is no matching school_type - display empty table. this should never
+    # happen. which is why this code is here.
+    if school_index['School Type'].values[0] != 'K8' and school_index['School Type'].values[0] != 'K12' \
+        and school_index['School Type'].values[0] != 'HS' and school_index['School Type'].values[0] != 'AHS':
         
         table_container_11ab = {}
         table_container_11cd = {}
@@ -390,6 +391,7 @@ def update_academic_metrics(data,year):
     metric_11ab_label = 'Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation.'
     
     # attendance_data_metrics_json
+    # all school types can have attendence data
     if data['5']:
 
         json_data = json.loads(data['5'])
@@ -444,8 +446,6 @@ def update_academic_metrics(data,year):
     else:
 
         table_container_11cd = no_data_table(metric_11cd_label)
-
-#### ALL teh tables
  
     return table_container_11ab, display_attendance, table_container_11cd, table_container_14ab, \
         table_container_14cd, table_container_14ef, table_container_14g, \
@@ -482,9 +482,8 @@ def layout():
                             ],
                             className = 'bare_container twelve columns'
                         ),
-
-                        # Display attendance separately because new schools will have attendance
-                        # data even if they have no academic data
+                        # Display attendance data in div outside of the metrics containers, because
+                        # individual schools may have attendance data even if they have no academic data
                         html.Div(
                             [
                                 html.Div(id='table-container-11ab', children=[]),

@@ -1,13 +1,17 @@
 """
-Table Helper Functions
+ICSB Dashboard - Table Functions
+version:  1.02.051023
+author:   jbetley
 """
+
 import numpy as np
 import pandas as pd
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 
-color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
+# not used
+# color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
 def no_data_table(label: str = 'No Data to Display') -> list:
     """Creates single empty table with provided label
@@ -38,7 +42,6 @@ def no_data_table(label: str = 'No Data to Display') -> list:
                 ),
             ]
 
-    print(table_layout)
     return table_layout
 
 def no_data_page(label: str) -> list:
@@ -91,10 +94,17 @@ def no_data_page(label: str) -> list:
 
     return table_layout
 
-# Produces a table without any cells. Is automatically hidden using
-# css selector chaining for pretty_container
-def hidden_table():
+def hidden_table() -> list:
+    """ Creates empty table with no cells. Will be automatically hidden
+        ('display': 'none') by css selector chaining for pretty_container.
+        see stylesheet.css
 
+    Args:
+        None
+
+    Returns:
+        list: dash DataTable
+    """
     table_layout = [
                 html.Div(
                     dash_table.DataTable(
@@ -107,9 +117,9 @@ def hidden_table():
     
     return table_layout
 
-# Display tables either side by side or on individual rows depending on # of columns
 def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
-    """Determines table layout depending on the size (# of cols) of the tables
+    """ Determines table layout depending on the size (# of cols) of the tables,
+        either side by side or on an individual row
 
     Args:
         table1 (list): dash DataTable
@@ -120,7 +130,7 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
         list: html Div enclosing dash DataTables and formatting
     """
 
-    # Can force single table layout by passing same table twice
+    # if same table is passed twice, we force single table layout
     if table1 == table2:
         table_layout = [
                 html.Div(
@@ -180,8 +190,6 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     result = result.replace(['N/A','NA','No Rating',np.nan],'', regex=True)
 
     # NOTE: Waaay overthinking it below. The above code replaces regardless of where the item is in a df
-     
-    
     # Academic/Financial metric dataframes contain 'Rate' substring in columns if there
     # is sufficient data. Organizational metric dataframe contains 'Standard' column
     # the else ocurrs when a dataframe is passed that doesn't contain either
@@ -618,15 +626,17 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
 
     # simplify and clarify column names (remove everything between | & %)
     data.columns = data.columns.str.replace(r'\|(.*?)\%', '', regex=True)
-    data.columns = data.columns.str.replace('Total', 'School', regex=True)
-    data.columns = data.columns.str.replace(r'IREAD.*', 'School', regex=True)
+
+    # Not sure why these are here- they break the table selection logic below
+    # data.columns = data.columns.str.replace('Total', 'School', regex=True)
+    # data.columns = data.columns.str.replace(r'IREAD.*', 'School', regex=True)
 
 ### TODO: Native Sort is limited - cannot easily limit which columns are sortable and cannot
 ### TODO: sort by clicking header (ugly arrows instead). In addition it breaks the conditional
 ### TODO: formatting that highlights the school row (because the row index does not reset when
 ### TODO: the school changes rows as a result of the sort). Perhaps try Dash AG Grid?
-# AG Grid Install - Alpha
-# pip install dash-ag-grid==v2.0.0a5
+# AG Grid Install
+# pip install dash-ag-grid==2.0.0
 # import dash_ag_grid as dag
 
     table = dash_table.DataTable(
@@ -709,7 +719,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
             html.Div(
                 [
                 html.Label(label, className = 'header_label'),
-                table
+                html.Div(table)
                 ]
             )
         ]
@@ -717,12 +727,11 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         table_layout = [
             html.Div(
                 [
-                table
+                html.Div(table)
                 ]
             )
         ]
 
-    print(type(table_layout))
     return table_layout
 
 ## TODO: Can you do this better with OOP?

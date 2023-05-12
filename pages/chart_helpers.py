@@ -469,7 +469,6 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
 def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> list: #px.bar:
 
     data = values.copy()
-    print(data)
     if 'Low Grade' in data:
         data = data.drop(['Low Grade', 'High Grade'], axis = 1)
 
@@ -532,6 +531,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         barmode = 'group',
         custom_data = ['School Name'],
         text = text_values,
+        # title=label,    # ADD BACKGROUND (style like header_label)
     )
 
     fig.update_yaxes(

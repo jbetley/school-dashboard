@@ -2,7 +2,7 @@
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
 # author:   jbetley
-# version:  version:  1.01.040323
+# version:  1.02.051023
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -80,7 +80,7 @@ def update_organizational_compliance(data, year):
                             style_data={
                                 'fontSize': '12px',
                                 'border': 'none',
-                                'fontFamily': 'Roboto, sans-serif',
+                                'fontFamily': 'Jost, sans-serif',
                             },
                             style_data_conditional=
                             [
@@ -106,7 +106,7 @@ def update_organizational_compliance(data, year):
                                 'border': 'none',
                                 'borderBottom': '.5px solid #6783a9',
                                 'fontSize': '12px',
-                                'fontFamily': 'Roboto, sans-serif',
+                                'fontFamily': 'Jost, sans-serif',
                                 'color': '#6783a9',
                                 'textAlign': 'center',
                                 'fontWeight': 'bold'
@@ -199,7 +199,7 @@ def update_organizational_compliance(data, year):
             style_data={
                 'fontSize': '12px',
                 'border': 'none',
-                'fontFamily': 'Roboto, sans-serif',
+                'fontFamily': 'Jost, sans-serif',
             },
             style_data_conditional=[
                 {
@@ -222,7 +222,7 @@ def update_organizational_compliance(data, year):
                 'border': 'none',
                 'borderBottom': '.5px solid #6783a9',
                 'fontSize': '12px',
-                'fontFamily': 'Roboto, sans-serif',
+                'fontFamily': 'Jost, sans-serif',
                 'color': '#6783a9',
                 'textAlign': 'center',
                 'fontWeight': 'bold'

@@ -2,15 +2,15 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley
-# version:  1.0.02.01.23
-# using: Dash version 2.9.2
+# version:  1.02.051023
+# using: Dash version 2.9.3
 
 ## NOTE: Need to manually determine certain data points at the
 # school level when the data is stored at the Corp Level
 # E.g., Split Grade K8 and 912 enrollment / Proportionate split
 # of demographic enrollment (subgroups, etc.):
-# Christel House South (CHS/CHWMHS)
-# Circle City Prep (Ele/Mid)
+#   Christel House South (CHS/CHWMHS)
+#   Circle City Prep (Ele/Mid)
 
 # flask and flask-login #
 # https://levelup.gitconnected.com/how-to-setup-user-authentication-for-dash-apps-using-python-and-flask-6c2e430cdb51
@@ -38,8 +38,9 @@ from pages.calculations import set_academic_rating, calculate_percentage, \
 # font_awesome used only for svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 
-external_stylesheets = ["https://fonts.googleapis.com/css2?family=Roboto:400", FONT_AWESOME]
+external_stylesheets = ["https://fonts.googleapis.com/css2?family=Jost:400", FONT_AWESOME]
 
+# "https://fonts.googleapis.com/css2?family=Roboto:400"
 # Authentication with Flask-Login, Sqlite3, and Bcrypt
 # https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/38
 # https://stackoverflow.com/questions/52286507/how-to-merge-flask-login-with-a-dash-application

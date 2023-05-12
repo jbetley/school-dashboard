@@ -297,7 +297,7 @@ def update_about_page(year, data):
                     },
                     css=[{
                     'selector': '.dash-table-tooltip',
-                    'rule': 'background-color: grey; font-family: Roboto, sans-serif; color: white'
+                    'rule': 'background-color: grey; font-family: Jost, sans-serif; color: white'
                     }],
                     style_as_list_view=True
                 )
@@ -334,7 +334,7 @@ def update_about_page(year, data):
             adm_fig.update_layout(
                 margin=dict(l=40, r=40, t=40, b=40),
                 font = dict(
-                    family='Roboto, sans-serif',
+                    family='Jost, sans-serif',
                     color='#6783a9',
                     size=12
                     ),
@@ -409,7 +409,7 @@ def update_about_page(year, data):
             ethnicity_fig.update_layout(
                 margin=dict(l=10, r=40, t=60, b=70,pad=0),
                 font = dict(
-                    family='Roboto, sans-serif',
+                    family='Jost, sans-serif',
                     color='#6783a9',
                     size=11
                     ),
@@ -502,7 +502,7 @@ def update_about_page(year, data):
             status_fig.update_layout(
                 margin=dict(l=10, r=40, t=60, b=70,pad=0),
                 font = dict(
-                    family='Roboto, sans-serif',
+                    family='Jost, sans-serif',
                     color='#6783a9',
                     size=11
                     ),

@@ -101,7 +101,6 @@ def update_financial_analysis_page(data, year, radio_value):
         display_radio = {}
 
     else:
-
         radio_content = html.Div(
                 [
                     dbc.RadioItems(

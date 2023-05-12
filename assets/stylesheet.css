@@ -33,7 +33,7 @@ src: local(''),
 }
 
 /* roboto-regular - latin */
-@font-face {
+/* @font-face {
   font-family: 'Roboto';
   font-style: normal;
   font-weight: 400;
@@ -44,7 +44,7 @@ src: local(''),
         url('../fonts/roboto-v29-latin-regular.woff') format('woff'),
         url('../fonts/roboto-v29-latin-regular.ttf') format('truetype'),
         url('../fonts/roboto-v29-latin-regular.svg#Roboto') format('svg');
-}
+} */
 
 /* Buttons (Bootstrap) */
 
@@ -81,7 +81,7 @@ button:not(:disabled) {
 .btn {
   --bs-btn-padding-x: 0.75rem;
   --bs-btn-padding-y: 0.375rem;
-  --bs-btn-font-family: 'Roboto', sans-serif; /*"Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;*/
+  --bs-btn-font-family: 'Jost', sans-serif; /*"Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;*/
   --bs-btn-font-size: 1.25rem;
   --bs-btn-font-weight: 400;
   --bs-btn-line-height: 1.5;
@@ -628,6 +628,19 @@ body {
 
 /* Plotly Dash Overrides */
 
+/* This doesn't work to hide tables on reload- plus it triggers the text for each
+object. Still trying to figure out how to show empty page on reload */
+
+/* *[data-dash-is-loading="true"]{
+  visibility: hidden;
+}
+*[data-dash-is-loading="true"]::before{
+  content: "Loading...";
+  display: inline-block;
+  color: magenta;
+  visibility: visible;
+} */
+
 /* removes legendpoint borders */
 /*  This is a kludge to remove grey marker border from legend markers when
     the marker_line_color is set to grey in order to show a bar in a fig
@@ -815,7 +828,7 @@ label > .label-body {
   height: auto;  
   background-color: #6783a9;
   font-size: 12px;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Jost', sans-serif;
   color: #ffffff;
   text-align: center;
   font-weight: bold;
@@ -879,7 +892,7 @@ label > .label-body {
 }
 a.logout-button:hover { 
   text-transform: uppercase;
-  font-family: 'Jost', sans-serif; /*'Roboto, sans-serif';*/
+  font-family: 'Jost', sans-serif;
   color: white;
   background-color: #c0c1c7;
   font-size: 12px;
