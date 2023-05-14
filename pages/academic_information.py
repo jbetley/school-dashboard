@@ -1218,9 +1218,7 @@ def update_academic_information_page(data, school, year, radio_value):
         notes_string
 )
 
-# TODO: Fix table sizing for Growth tables
 # TODO: Consider consolidation of Growth sub tables into tooltips
-# TODO: Styling of Growth Tables
 
 def layout():
     return html.Div(

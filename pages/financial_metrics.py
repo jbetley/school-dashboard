@@ -193,8 +193,6 @@ def update_financial_metrics(data,year,radio_value):
 
             headers = financial_metrics.columns.tolist()
 
-            # TODO: Can this be put into a function? Messy (Check all instances and see if can make master layout)
-            # TODO: Financial Info, Financial Metrics, Table Helpers
             # input: table_size
             # output: col_width, category_width, rating_width, and year_width, (difference_width, corporation_width)
             # Problem: variable number of return items. table_size adjustments are differente between financial

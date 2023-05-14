@@ -1,5 +1,7 @@
-"""color
-Charting Functions
+"""
+ICSB Dashboard - Chart Functions
+version:  1.02.051023
+author:   jbetley
 """
 
 import plotly.express as px
@@ -40,7 +42,7 @@ def loading_fig() -> dict:
                     'font': {
                         'size': 16,
                         'color': '#6783a9',
-                        'family': 'Roboto, sans-serif'
+                        'family': 'Jost, sans-serif'
                     }
                 }
             ]
@@ -63,16 +65,16 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> g
         #     'x':0.5,
         #     'xanchor': 'center',
         #     'yanchor': 'top',
-        #     'font_family': 'Roboto, sans-serif',
+        #     'font_family': 'Jost, sans-serif',
         #     'font_color': 'steelblue',
         #     'font_size': 10
         # },
         xaxis =  {
-            "visible": False,
+            'visible': False,
             'fixedrange': True
         },
         yaxis =  {
-            "visible": False,
+            'visible': False,
             'fixedrange': True
         },
         annotations = [
@@ -85,7 +87,7 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> g
                 'font': {
                     'size': 16,
                     'color': '#6783a9',
-                    'family': 'Roboto, sans-serif'
+                    'family': 'Jost, sans-serif'
                 }
             }
         ],
@@ -118,16 +120,16 @@ def no_data_fig_blank() -> go.Figure:
         #     'x':0.5,
         #     'xanchor': 'center',
         #     'yanchor': 'top',
-        #     'font_family': 'Roboto, sans-serif',
+        #     'font_family': 'Jost, sans-serif',
         #     'font_color': 'steelblue',
         #     'font_size': 10
         # },
         xaxis =  {
-            "visible": False,
+            'visible': False,
             'fixedrange': True
         },
         yaxis =  {
-            "visible": False,
+            'visible': False,
             'fixedrange': True
         },
         annotations = [
@@ -140,7 +142,7 @@ def no_data_fig_blank() -> go.Figure:
                 'font': {
                     'size': 16,
                     'color': '#6783a9',
-                    'family': 'Roboto, sans-serif'
+                    'family': 'Jost, sans-serif'
                 }
             }
         ],
@@ -155,19 +157,16 @@ def no_data_fig_blank() -> go.Figure:
 # based on the specified width. add two spaces before <br>
 # to ensure the words at the end of each break have the same
 # spacing as 'ticksuffix' in make_stacked_bar()
-
 def customwrap(s: str,width: int = 16):
-    return "  <br>".join(textwrap.wrap(s,width=width))
+    return '  <br>'.join(textwrap.wrap(s,width=width))
 
-def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
+def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     data = values.copy()
 
     # In order to get the total_tested value into hovertemplate
     # without displaying it on the chart, we need to pull the
     # Total Tested values out of the dataframe and into a new
-    # column
-
-    # Copy all of the Total Tested Values
+    # column.
     total_tested = data[data['Proficiency'].str.contains('Total Tested')]
 
     # Merge the total tested values with the existing dataframe
@@ -181,7 +180,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     # drop the Total Tested Rows
     data = data[data['Proficiency'].str.contains('Total Tested') == False]
 
-    # Remove subject substring ('ELA/Math') from Proficiency column
+    # Remove subject substring ('ELA' or 'Math') from Proficiency column
     data['Proficiency'] = data['Proficiency'].str.split().str[1:].str.join(' ')
 
     fig = px.bar(
@@ -191,7 +190,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
         color=data['Proficiency'],
         barmode='stack',
         text=[f'{i}%' for i in data['Percentage']],
-        orientation="h",
+        orientation='h',
         color_discrete_sequence=color,
         height=200,
     )
@@ -203,41 +202,41 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
 
     fig.update_layout(
         margin=dict(l=10, r=10, t=20, b=0),
-        font_family="Roboto, sans-serif",
-        font_color="steelblue",
+        font_family='Jost, sans-serif',
+        font_color='steelblue',
         font_size=8,
         bargroupgap = 0,
         showlegend = False,
-        plot_bgcolor="white",
+        plot_bgcolor='white',
         hovermode='y unified',
         # hoverlabel=dict(
-        #     bgcolor="white",
+        #     bgcolor='white',
         #     font_color='steelblue',
         #     font_size=10,
-        #     font_family='Roboto Sans, sans-serif',
+        #     font_family='Jost, sans-serif',
         # ),
-        yaxis=dict(autorange="reversed"),
+        yaxis=dict(autorange='reversed'),
         uniformtext_minsize=8,
         uniformtext_mode='hide'
     )
 
-    # TODO: remove hover 'title' and, if possible, replace with: "Total Tested: {z}"
+    # TODO: remove hover 'title' and, if possible, replace with: 'Total Tested: {z}'
     # https://stackoverflow.com/questions/59057881/how-to-customize-hover-template-on-with-what-information-to-show
-    # fig.update_layout(hovermode="x unified")
+    # fig.update_layout(hovermode='x unified')
 
     fig.update_traces(
         textfont_size=8,
         insidetextanchor = 'middle',
         textposition='inside',
         marker_line=dict(width=0),
-        hovertemplate="%{text}",
+        hovertemplate='%{text}',
         hoverinfo='none',
     )
 
-    fig.update_xaxes(title="")
+    fig.update_xaxes(title='')
 
     # ticksuffix increases the space between the end of the tick label and the chart
-    fig.update_yaxes(title="",ticksuffix = "  ")
+    fig.update_yaxes(title='',ticksuffix = '  ')
 
     fig_layout = [
         html.Div(
@@ -259,8 +258,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list: #px.bar:
     return fig_layout
 
 # create a basic line (scatter) plot
-### TODO: default display behavior is ugly for small number of points. For example, if only
-### TODO: two points, the 2 x-ticks are really far apart towards edges, same with 3 ticks
 def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
     data = values.copy()
@@ -280,11 +277,10 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         data_years = data['Year'].astype(int).tolist()
         add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
         
-        ## TODO: Uncomment this to squeeze
-        ## TODO: Add half months instead?
         # NOTE: Plotly displays two years of data with the year axis near the edges, which is ugly
         # so when we only have 2 years of data, we add two additiona blank years on either side
-        # of the range
+        # of the range. Doesn't look that great either
+
         # if len(data_years) == 2:
         #     for y in add_years:
         #         data = pd.concat(
@@ -298,7 +294,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         #             ],
         #             ignore_index=True,
         #         )
-        #         data.at[data.index[-1], "Year"] = y
+        #         data.at[data.index[-1], 'Year'] = y
 
         fig = px.line(
             data,
@@ -313,7 +309,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             margin=dict(l=40, r=40, t=40, b=60),
             title_x=0.5,
             font = dict(
-                family = 'Roboto, sans-serif',
+                family = 'Jost, sans-serif',
                 color = 'steelblue',
                 size = 10
                 ),
@@ -324,7 +320,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 # tickmode = 'array',
                 # tickmode = 'linear',
                 tickvals = data['Year'],
-                tickformat="%Y",
+                tickformat='%Y',
                 # tick0 = data['Year'][0] - 1,
                 # dtick ='M6',
                 # categoryorder = 'array',
@@ -339,12 +335,13 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 zeroline=False,
                 # range = add_years
                 ),   
-            legend=dict(orientation="h"),         
+            legend=dict(orientation='h'),         
             hovermode='x unified',
             height=400,
             legend_title='',
         )
         
+        # NOTE: More experiments
         # fig.update_xaxes(constrain='domain')
         # fig.update_xaxes(autorange='reversed')
         # fig.update_xaxes(range=[2021, 2022])
@@ -382,8 +379,8 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     
     return fig_layout
 
-# single bar chart
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
+
     data = values.copy()
 
     # NOTE: Unless the entire page is blank, e.g., no data at all, the
@@ -391,7 +388,8 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
     # handling in the calling script. However, we know that 'should never'
     # is code for 'almost with certainty' so we test here too.
 
-    # the dataframe should always have at least 4 columns
+    # the dataframe should always have at least 4 columns ('School Name',
+    # 'Low Grade', 'High Grade' & one data column)
     if (len(data.columns)) > 3:
         schools = data['School Name'].tolist()
 
@@ -403,9 +401,8 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
             if key == school_name:
                 trace_color[key] = '#0a66c2'
 
-        # format distance data (not displayed)
-        # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], \
-        # index = data.index)
+        # Uncomment this and below to display distance from selected school
+        # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
 
         fig = px.bar(
             data,
@@ -424,7 +421,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
             title_x=0.5,
             margin=dict(l=40, r=40, t=40, b=60),
             font = dict(
-                family='Roboto Sans, sans-serif',
+                family='Jost, sans-serif',
                 color='steelblue',
                 size=10
                 ),
@@ -438,10 +435,10 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             hoverlabel=dict(
-                bgcolor="white",
+                bgcolor='white',
                 font_color='steelblue',
                 font_size=10,
-                font_family='Roboto Sans, sans-serif',
+                font_family='Jost, sans-serif',
             ),
             hoverlabel_align = 'left'
         )
@@ -510,7 +507,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     # in 'fig' without setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
     # that is displayed for ''. This converts the series to a string in the proper format
     # and replaces nan with ''    
-    text_values = data_set['value'].map("{:.0%}".format)
+    text_values = data_set['value'].map('{:.0%}'.format)
     text_values = text_values.str.replace('nan%','')
     
     # assign colors for each comparison
@@ -569,18 +566,18 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         hoverlabel=dict(
-            bgcolor="white",
+            bgcolor='white',
             font_color='steelblue',
             font_size=10,
-            font_family='Roboto Sans, sans-serif',
+            font_family='Jost, sans-serif',
         ),
         hoverlabel_align = 'left'
     )        
 
     fig.update_traces(
-        hovertemplate="<br>".join(
+        hovertemplate='<br>'.join(
             [
-                s.replace(" ", "&nbsp;")
+                s.replace(' ', '&nbsp;')
                 for s in [
                     '<b>%{customdata[0]}</b>',
                     '<b>Proficiency: </b>%{y}<br><extra></extra>',
@@ -635,5 +632,4 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
             ]
         )
     ]
-
     return fig_layout

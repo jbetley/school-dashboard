@@ -14,6 +14,7 @@
 
 # flask and flask-login #
 # https://levelup.gitconnected.com/how-to-setup-user-authentication-for-dash-apps-using-python-and-flask-6c2e430cdb51
+
 import os
 from flask import Flask, url_for, redirect, request, render_template, session, jsonify
 from flask_login import login_user, LoginManager, UserMixin, current_user, logout_user
@@ -135,7 +136,6 @@ def login():
                     # if True, login the user using the User object
                     login_user(user_data)
 
-                    # TODO: NOT ENTIRELY SURE WHAT IS GOING ON HERE
                     if "url" in session:
                         if session["url"]:
                             url = session["url"]
@@ -168,11 +168,8 @@ app = dash.Dash(
 )
 
 # category variables
-# TODO: Should American Indian be added back?
-# NOTE: 'American Indian' has been removed from ethnicity
-# variable as it seems to break some functionality due to
-# inconsistent use as a category in data
 ethnicity = [
+    "American Indian",
     "Asian",
     "Black",
     "Hispanic",

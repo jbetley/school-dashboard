@@ -2,12 +2,10 @@
 # ICSB Dashboard - Academic Analysis #
 ######################################
 # author:   jbetley
-# version:  1.01.040323
-
-# TODO: Add AHS/HS Analysis
+# version:  1.02.051023
 
 import dash
-import dash_loading_spinners
+# import dash_loading_spinners
 from dash import ctx, dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
@@ -277,13 +275,6 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # remove 'School' from column headers (leaving the Year)
             school_academic_data.columns = school_academic_data.columns.str.replace(r'School$', '', regex=True)
 
-            # TODO: Need to come up with a way to display when a school has insufficient n-size,
-            # TODO: because it implies that there is no data- makes it hard to measure trends, e.g.,
-            # TODO: when a school shows a percentage for a year and the no data for the subsequent year
-            # TODO: for example Allegiant for subgroup in 2021 (data) vs 2022 (no data because ***)
-            # TODO: perhaps determine which categories are *** and store them in separate list and show
-            # TODO: them as annotations
-
             # drop any column (Year) where all values are either None or ***
             # '***' represents data, but is unchartable. Do this by converting all
             # columns other than 'Category' to numeric. This turns all None
@@ -497,7 +488,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # reset indicies
             comparison_schools = comparison_schools.reset_index(drop=True)
             
-            ### TODO: Add HS Data ###
+            ### TODO: Add AHS/HS Data ###
             # hs_comparison_data = hs_all_data_included_years.loc[(hs_all_data_included_years['School ID'].isin(comparison_schools))]
             #     # filter comparable school data
             # hs_comparison_data = hs_comparison_data.filter(regex = r'Cohort Count$|Graduates$|Pass N|Test N|^Year$',axis=1)
@@ -511,7 +502,6 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             # # ensure columns headers are strings
             # hs_comparison_data.columns = hs_comparison_data.columns.astype(str)
-            ### TODO: Add HS Data ###
 
             school_corporation_name = current_year_all_schools_k8_academic_data.loc[(all_schools_k8_academic_data['Corp ID'] == school_info['GEO Corp'].values[0])]['Corp Name'].values[0]
 
@@ -985,7 +975,6 @@ def layout():
                                             className='row',
                                         ),
                                         # Comparison Charts
-                                        ## TODO: DELAY SPINNER?
                                         html.Div(
                                             [                                        
                                                 html.Div(

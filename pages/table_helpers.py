@@ -35,7 +35,7 @@ def no_data_table(label: str = 'No Data to Display') -> list:
                             'border': 'none',
                             'textAlign': 'center',
                             'color': '#6783a9',
-                            'fontFamily': 'Roboto, sans-serif',
+                            'fontFamily': 'Jost, sans-serif',
                             'height': '30vh',
                         },
                     ),
@@ -73,7 +73,7 @@ def no_data_page(label: str) -> list:
                                             'border': 'none',
                                             'textAlign': 'center',
                                             'color': '#6783a9',
-                                            'fontFamily': 'Roboto, sans-serif',
+                                            'fontFamily': 'Jost, sans-serif',
                                             'height': '30vh',
                                         },
                                         style_data={
@@ -189,43 +189,6 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     result = result.replace(['ES','Exceeds Expectations'],'<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
     result = result.replace(['N/A','NA','No Rating',np.nan],'', regex=True)
 
-    # NOTE: Waaay overthinking it below. The above code replaces regardless of where the item is in a df
-    # Academic/Financial metric dataframes contain 'Rate' substring in columns if there
-    # is sufficient data. Organizational metric dataframe contains 'Standard' column
-    # the else ocurrs when a dataframe is passed that doesn't contain either
-
-    # if val.columns.str.contains('Rat').any() == True:
-    #     rating_columns = val.loc[:, val.columns.str.contains('Rat')].columns
-    # elif val.columns.str.contains('Standard').any() == True:
-    #     rating_columns = val.loc[:, ~val.columns.str.contains('Standard|Description',case=False, regex=True)].columns
-    # else:
-    #     rating_columns = pd.Index([])
-
-    # # only process dataframes satisfying either condition above
-    # if ~rating_columns.empty:
-    #     for col in rating_columns:
-    #         conditions = [
-    #         result[col].eq('DNMS') | result[col].eq('Does Not Meet Expectations'),
-    #         result[col].eq('AS') | result[col].eq('Approaches Expectations'),
-    #         result[col].eq('MS') | result[col].eq('Meets Expectations'),
-    #         result[col].eq('ES') | result[col].eq('Exceeds Expectations'),
-    #         result[col].eq('N/A') | result[col].eq('NA') | result[col].eq('No Rating'),
-    #         result[col].eq(np.nan),
-    #         ]
-
-    #         # NOTE: Using font-awesome circle icon.
-    #         did_not_meet ='<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>'
-    #         approaching ='<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>'
-    #         meets ='<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>'
-    #         exceeds ='<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>'
-
-    #         # NOTE: Uses empty display instead of grey circle for N/A
-    #         no_rating ='' #<span style="font-size: 1em; color: #a4a2a8;"><i class="fa fa-circle center-icon"></i></span>'
-    #         empty_cell =''
-
-    #         rating = [did_not_meet, approaching, meets, exceeds, no_rating, empty_cell]
-    #         result[col] = np.select(conditions, rating, default=empty_cell)
-
     return result
 
 def create_metric_table(label: str, content: pd.DataFrame) -> list:
@@ -246,7 +209,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
     table_style = {
         'fontSize': '11px',
         'border': 'none',
-        'fontFamily': 'Roboto Sans, sans-serif',
+        'fontFamily': 'Jost, sans-serif',
     }
 
     table_cell = {
@@ -302,8 +265,8 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # rename '+/-' columns
         data.columns = data.columns.str.replace('\+/-', 'Diff', regex=True)
 
-        # Formatting on the fly - determines the col_width class and width
-        # of the category column based on the size (# of cols) of the dataframe
+        # determines the col_width class and width of the category column based
+        # on the size (# of cols) of the dataframe
         if table_size <= 3:
             col_width = 'four'
             category_width = 70
@@ -340,7 +303,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
 
         data_width = 100 - category_width
         data_col_width = data_width / (table_size - 1)
-        rating_width = year_width = difference_width = data_col_width # corporation_width =
+        rating_width = year_width = difference_width = data_col_width
         rating_width=rating_width/2
 
         class_name = 'pretty_container ' + col_width + ' columns'
@@ -420,11 +383,10 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
         # and uncomment style_as_list in table declaration
-
         table_header = {
             'backgroundColor': '#ffffff',
             'fontSize': '11px',
-            'fontFamily': 'Roboto, sans-serif',
+            'fontFamily': 'Jost, sans-serif',
             'color': '#6783a9',
             'textAlign': 'center',
             'fontWeight': 'bold',
@@ -477,8 +439,8 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             'borderRight': '.5px solid #b2bdd4',
             }
         ]
-        # formatting logic is different for multi-header table
 
+        # formatting logic is different for multi-header table
         table_data_conditional = [
             {
                 'if': {
@@ -607,7 +569,17 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
     return table
 
 def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) -> list:
+    """ Takes a dataframe that is a column of schools and one or more columns
+        of data, school name, and table label. Uses the school name to find
+        the index of the selected school to highlight it in table
 
+    Args:
+        label (String): Table title
+        content (pd.DataTable): dash dataTable
+
+    Returns:
+        list: Formatted dash DataTable
+    """
     # find the index of the row containing the school name
     school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
 
@@ -631,11 +603,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     # data.columns = data.columns.str.replace('Total', 'School', regex=True)
     # data.columns = data.columns.str.replace(r'IREAD.*', 'School', regex=True)
 
-### TODO: Native Sort is limited - cannot easily limit which columns are sortable and cannot
-### TODO: sort by clicking header (ugly arrows instead). In addition it breaks the conditional
-### TODO: formatting that highlights the school row (because the row index does not reset when
-### TODO: the school changes rows as a result of the sort). Perhaps try Dash AG Grid?
-# AG Grid Install
+# NOTE: Try AG Grid ?
 # pip install dash-ag-grid==2.0.0
 # import dash_ag_grid as dag
 
@@ -734,10 +702,19 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
 
     return table_layout
 
-## TODO: Can you do this better with OOP?
-## TODO: multiple versions of same table with little differences?
-
 def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) -> list:
+    """ Generic table builder. Takes a dataframe of two or more columns, a label, and
+        a 'table_type' (either 'proficiency' or 'growth') and creates a basic table.
+        Proficiency type tables have a Category (string) column and one or more columns
+        of years of data. Growth tables are variable.
+    Args:
+        label (String): Table title
+        data (pd.DataTable): dash dataTable
+        table_type (String): type of table.
+
+    Returns:
+        list: Formatted dash DataTable
+    """
 
     if table_type == 'proficiency':
         table_cols = [
@@ -770,7 +747,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                 columns = table_cols,
                 style_data = {
                     'fontSize': '11px',
-                    'fontFamily': 'Roboto,sans-serif',
+                    'fontFamily': 'Jost, sans-serif',
                     'border': 'none'
                 },
                 style_data_conditional = [
@@ -800,7 +777,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                     'border': 'none',
                     'borderBottom': '.5px solid #6783a9',
                     'fontSize': '12px',
-                    'fontFamily': 'Roboto, sans-serif',
+                    'fontFamily': 'Jost, sans-serif',
                     'color': '#6783a9',
                     'textAlign': 'center',
                     'fontWeight': 'bold',
@@ -821,7 +798,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                         'paddingLeft': '10px',
                         'width': '35%',
                         'fontSize': '11px',
-                        'fontFamily': 'Roboto, sans-serif',
+                        'fontFamily': 'Jost, sans-serif',
                         'color': '#6783a9',
                         'fontWeight': 'bold',
                     },
@@ -927,90 +904,93 @@ def create_key() -> dash_table.DataTable:
     rating_cols = list(col for col in proficiency_key.columns if 'Rate' in col)
     icon_cols = list(col for col in proficiency_key.columns if 'icon' in col)
 
-    return  dash_table.DataTable(
-                css=[dict(selector='tr:first-child', rule='display: none')],
-                data=proficiency_key.to_dict('records'),
-                cell_selectable=False,
-                columns=[
-                    {'id': 'icon', 'name': '', 'presentation': 'markdown'},
-                    {'id': 'Rate', 'name': '', 'presentation': 'markdown'},
-                    {'id': 'icon2', 'name': '', 'presentation': 'markdown'},
-                    {'id': 'Rate2', 'name': '', 'presentation': 'markdown'},
-                    {'id': 'icon3', 'name': '', 'presentation': 'markdown'},
-                    {'id': 'Rate3', 'name': '', 'presentation': 'markdown'},
-                    {'id': 'icon4', 'name': '', 'presentation': 'markdown'},
-                    {'id': 'Rate4', 'name': '', 'presentation': 'markdown'},
-                    {'id': 'icon5', 'name': '', 'presentation': 'markdown'},
-                    {'id': 'Rate5', 'name': '', 'presentation': 'markdown'},
-                ],
-                markdown_options={'html': True},
-                style_table={
-                    'paddingTop': '15px',
-                    'fontSize': '.75em',
-                    'border': 'none',
-                    'fontFamily': 'Roboto, sans-serif',
-                },
-                style_cell = {
-                    'whiteSpace': 'normal',
-                    'height': 'auto',
-                    'border': 'none',
-                    'textAlign': 'right',
-                    'color': '#6783a9',
-                    'boxShadow': '0 0',
-                },
-                style_cell_conditional = [
-                    {
-                        'if': {
-                            'column_id': rating
-                        },
-                        'textAlign': 'right',
-                    } for rating in rating_cols
-                ] + [
-                    {
-                        'if': {
-                            'column_id': icon
-                        },
-                        'textAlign': 'left',
-                        'width': '2%',
-                    } for icon in icon_cols
-                ],
-                style_data_conditional=[
-                    {
-                        'if': {
-                            'filter_query': '{Rate} = "Exceeds Standard"',
-                            'column_id': 'icon',
-                        },
-                        'color': '#b33dc6',
-                    },
-                    {
-                        'if': {'filter_query': '{Rate2} = "Meets Standard"',
-                            'column_id': 'icon2'
-                        },
-                        'color': '#87bc45',
-                    },
-                    {
-                        'if': {'filter_query': '{Rate3} = "Approaches Standard"',
-                            'column_id': 'icon3'
-                        },
-                        'color': '#ede15b',
-                    },
-                    {
-                        'if': {'filter_query': '{Rate4} = "Does Not Meet Standard"',
-                            'column_id': 'icon4'
-                        },
-                        'color': '#ea5545',
-                    },
-                    {
-                        'if': {'filter_query': '{Rate5} = "No Rating"',
-                            'column_id': 'icon5'
-                        },
-                        'color': '#a4a2a8',
-                    },
-                    {
+    key_table = [ 
+        dash_table.DataTable(
+            css=[dict(selector='tr:first-child', rule='display: none')],
+            data=proficiency_key.to_dict('records'),
+            cell_selectable=False,
+            columns=[
+                {'id': 'icon', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate', 'name': '', 'presentation': 'markdown'},
+                {'id': 'icon2', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate2', 'name': '', 'presentation': 'markdown'},
+                {'id': 'icon3', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate3', 'name': '', 'presentation': 'markdown'},
+                {'id': 'icon4', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate4', 'name': '', 'presentation': 'markdown'},
+                {'id': 'icon5', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate5', 'name': '', 'presentation': 'markdown'},
+            ],
+            markdown_options={'html': True},
+            style_table={
+                'paddingTop': '15px',
+                'fontSize': '.75em',
+                'border': 'none',
+                'fontFamily': 'Jost, sans-serif',
+            },
+            style_cell = {
+                'whiteSpace': 'normal',
+                'height': 'auto',
+                'border': 'none',
+                'textAlign': 'right',
+                'color': '#6783a9',
+                'boxShadow': '0 0',
+            },
+            style_cell_conditional = [
+                {
                     'if': {
-                        'column_id': rating_headers[1],
+                        'column_id': rating
                     },
-                    'marginLeft':'10px',
+                    'textAlign': 'right',
+                } for rating in rating_cols
+            ] + [
+                {
+                    'if': {
+                        'column_id': icon
+                    },
+                    'textAlign': 'left',
+                    'width': '2%',
+                } for icon in icon_cols
+            ],
+            style_data_conditional=[
+                {
+                    'if': {
+                        'filter_query': '{Rate} = "Exceeds Standard"',
+                        'column_id': 'icon',
+                    },
+                    'color': '#b33dc6',
+                },
+                {
+                    'if': {'filter_query': '{Rate2} = "Meets Standard"',
+                        'column_id': 'icon2'
+                    },
+                    'color': '#87bc45',
+                },
+                {
+                    'if': {'filter_query': '{Rate3} = "Approaches Standard"',
+                        'column_id': 'icon3'
+                    },
+                    'color': '#ede15b',
+                },
+                {
+                    'if': {'filter_query': '{Rate4} = "Does Not Meet Standard"',
+                        'column_id': 'icon4'
+                    },
+                    'color': '#ea5545',
+                },
+                {
+                    'if': {'filter_query': '{Rate5} = "No Rating"',
+                        'column_id': 'icon5'
+                    },
+                    'color': '#a4a2a8',
+                },
+                {
+                'if': {
+                    'column_id': rating_headers[1],
+                },
+                'marginLeft':'10px',
                 },
             ],
         )
+    ]
+    return key_table

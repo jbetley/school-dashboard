@@ -1,6 +1,9 @@
 """
-Functions that perform various calculations for ICSB Dashboard
+ICSB Dashboard - Calculation Functions
+version:  1.02.051023
+author:   jbetley
 """
+
 import pandas as pd
 import numpy as np
 import scipy.spatial as spatial
@@ -63,7 +66,7 @@ def calculate_difference(value1: str, value2: str) -> float|None|str:
 def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str:
     """
     Takes a value (which may be of type str, float, or None), a list (consisting of
-    floats defining the thresholds of the ratings, and an integer 'flag,' that tells the
+    floats defining the thresholds of the ratings), and an integer 'flag,' that tells the
     function which switch to use.
 
     Args:
@@ -73,12 +76,10 @@ def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str
 
     Returns:
         str: _description_
-    """    """
-    Takes a value (string, numeric, nonetype), a list of the thresholds,
-    which varies from type to type and a 'flag' integer that tells the
-    function which switch to use.
-    Returns a string.
     """
+
+    # NOTE: The order of these operations matters
+
     # if data is a string
     if data == "***" or data == "No Grade":
         indicator = "NA"
@@ -155,8 +156,8 @@ def round_nearest(df: pd.DataFrame, step: int) -> int:
             divided by the baseline tick amount
 
     Args:
-        x (pd.DataFrame): takes a pandas dataframe
-
+        df (pd.DataFrame): pandas dataframe
+        step (int): an integer
     Returns:
         _type_: an integer
     """
@@ -178,16 +179,23 @@ def round_nearest(df: pd.DataFrame, step: int) -> int:
 def round_percentages(percentages: list) -> list:
     """
     https://github.com/simondo92/round-percentages
-    Given an iterable of percentages that add up to 100 (or decimals that add up
-    to 1), round them to the nearest integer such that the rounded percentages
-    also add up to 100. Uses the largest remainder method. 
+    Given an iterable of float percentages that add up to 100 (or decimals that add up
+    to 1), round them to the nearest integer such that the integers
+    also add up to 100. Uses the largest remainder method.
+
     E.g. round_percentages([13.626332, 47.989636, 9.596008, 28.788024])
     -> [14, 48, 9, 29]
+
+    Args:
+        percentages (list): a list of floats
+
+    Returns:
+        _type_: a list of integers
     """
 
     # if numbers are in decimal format (e.g. .57, .90) then the sum
     # of the numbers should bet at or near (1). To be safe we test
-    # to see if sum is less than 2. If it is, we multiple all of
+    # to see if sum is less than 2. If it is, we multiply all of
     # the numbers in the list by 100 (e.g., 57, 90)
     if sum(percentages) < 2:
         percentages = [x * 100 for x in percentages]
@@ -218,20 +226,27 @@ def round_percentages(percentages: list) -> list:
     # return just the percentage
     return [percentage[0] for percentage in result]
 
-# Find nearest schools in miles using a KDTree
-def find_nearest(school_idx: pd.Index,data: pd.DataFrame) -> np.ndarray | np.ndarray:
+def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.ndarray:
     """
     Based on https://stackoverflow.com/q/43020919/190597
-    Uses scipy.spatial KDTree method to find the nearest schools to the
-    selected school
- 
-    Takes Lat and Lon for selected school (school_idx) and Lat and Lon
-    for comparison schools (data).
-    Returns an index list of the schools and the distances
-
     https://stackoverflow.com/questions/45127141/find-the-nearest-point-in-distance-for-all-the-points-in-the-dataset-python
     https://stackoverflow.com/questions/43020919/scipy-how-to-convert-kd-tree-distance-from-query-to-kilometers-python-pandas
     https://kanoki.org/2020/08/05/find-nearest-neighbor-using-kd-tree/
+
+        Uses  to find the nearest schools to the
+    selected school
+ 
+    Takes a dataframe of schools and their Lat and Lon coordinates and the index of the
+    selected school within that list. Calculates the distances of all schools in the
+    dataframe from the lat/lon coordinates of the selected schoo using the scipy.spatial
+    KDTree method, which is reasonably quick.
+
+    Args:
+        school_idx (pd.Index): the dataFrame index of the selected school
+        data (pd.DataFrame): a dataframe of schools and their lat/lon coordinates
+
+    Returns:
+        np.ndarray: an array of dataframe indexes and an array of distances (in miles)
     """
 
     # the radius of earth in miles. For kilometers use 6372.8 km
@@ -258,7 +273,8 @@ def find_nearest(school_idx: pd.Index,data: pd.DataFrame) -> np.ndarray | np.nda
 
 def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:
     """
-    Takes two dataframes, of school and comparison school data that
+    Takes two dataframes, one, a single row of data for the selected
+    school, and another multiple rows of comparison school data that
     includes the Low and High Grades for each. Creates a boolean
     mask of the comparison schools where there is a grade overlap
     based on an integer list created from the Low Grade and High
@@ -266,6 +282,13 @@ def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:
     
     If there is a grade range overlap, the function returns True,
     If there is no grade range overlap, the function returns False.
+    
+    Args:
+        row (pd.DataFrame): a dataFrame with data of the selected school
+        comparison (pd.DataFrame): a dataframe with data from one or more other schools
+
+    Returns:
+        boolean: True|False
     """
 
     row[['Low Grade', 'High Grade']] = row[['Low Grade', 'High Grade']].astype(int)
@@ -303,8 +326,6 @@ def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # TODO: A more precise fix would be to keep all columns (including those with
     # TODO: no value in grant columns), but ignore/except (N/A) any calculation that requires
     # TODO: either grant revenue or adm. Need to test
-
-# https://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas
 
     cols = [i for i in operating_data.columns if i not in ['Category']]
 
@@ -510,7 +531,7 @@ def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
 
-    # A helper function in the helper function
+    # A very specific sort function
     # Because this is for display, we need to manually reorder the columns
     def sort_metrics(column: pd.Series) -> pd.Series:
         reorder = [
@@ -525,7 +546,9 @@ def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
             'Multi-Year Cash Flow', 'Multi-Year Cash Flow Metric',
             'Debt Service Coverage Ratio', 'Debt Service Coverage Ratio Metric',
         ]
+        
         cat = pd.Categorical(column, categories=reorder, ordered=True)
+        
         return pd.Series(cat)
 
     metric_grid_sorted = metric_grid.sort_values(by='Category', key=sort_metrics)
@@ -552,7 +575,7 @@ def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
     final_grid.columns = final_grid.columns.str.replace(r'\d{4}Rating', 'Rating', regex=True)
 
     # Add new rows for 'Near Term|Long Term' titles
-    # it baffles me why this is so difficult
+    # NOTE: it baffles me why this is so difficult
     
     # add row between existing indexes, sort and then reset
     final_grid.loc[3.5,'Category'] = 'Long Term'
@@ -567,8 +590,7 @@ def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # convert all values to numeric
     year_cols = [i for i in final_grid.columns if i not in ['Metric','Rating']]
 
-    # Add integer to Rating columns (needed for dash data_table in order to
-    # distinguish columns)
+    # Add integer to Rating columns (needed for dash data_table in order to distinguish columns)
     final_grid.columns = [f'{x} {i}' if x in 'Rating' else f'{x}' for i, x in enumerate(final_grid.columns, 1)]
    
     # force year columns to numeric and round
