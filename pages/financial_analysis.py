@@ -20,6 +20,7 @@ from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
+from .load_data import financial_ratios
 
 dash.register_page(__name__, path = '/financial_analysis', order=3)
 
@@ -622,8 +623,8 @@ def update_financial_analysis_page(data, year, radio_value):
             # Get financial ratios
             school_corp = school_index['Corporation ID'].values[0]
             
-            financial_ratios_data = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
-            financial_ratios_data = financial_ratios_data.loc[financial_ratios_data['School Corporation'] == school_corp]
+            # financial_ratios_data = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
+            financial_ratios_data = financial_ratios.loc[financial_ratios['School Corporation'] == school_corp].copy()
 
             # Networks do not have ratios- only way to tell if network finances
             # are being displayed is if the radio_value is equal to 'network-finance.'

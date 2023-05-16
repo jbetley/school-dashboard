@@ -2,20 +2,7 @@
 https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css
 */
 
-/* Table of contents
-––––––––––––––––––––––––––––––––––––––––––––––––––
-- Grid
-- Base Styles
-- Typography
-- Links
-- Lists
-- Code
-- Tables
-- Spacing
-- Utilities
-- Clearing
-- Media Queries
-*/
+/* Fonts */
 
 /* Google Font */
 /* jost-regular - latin */
@@ -46,8 +33,362 @@ src: local(''),
         url('../fonts/roboto-v29-latin-regular.svg#Roboto') format('svg');
 } */
 
-/* Buttons (Bootstrap) */
+/* Grid  */
+.container {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+.column,
+.columns {
+  width: 100%;
+  float: left;
+  box-sizing: border-box;
+}
 
+/* For devices larger than 400px */
+@media (min-width: 400px) {
+  .container {
+    width: 85%;
+    padding: 0;
+  }
+}
+
+/* For devices larger than 550px (default) */
+@media (min-width: 550px) {
+  .container {
+	width: 80%;
+	}
+  .column,
+  .columns {
+    margin-left: 0.5%;
+	}
+  .one.column,
+  .one.columns                    { width: 8%;             }
+  .two.columns                    { width: 16.25%;         }
+  .three.columns                  { width: 22%;            }
+  .four.columns                   { width: 33%;            }
+  .five.columns                   { width: 39.3333333333%; }
+  .six.columns                    { width: 49.75%;          }
+  .seven.columns                  { width: 56.6666666667%; }
+  .eight.columns                  { width: 66.5%;          }
+  .nine.columns                   { width: 74.0%;          }
+  .ten.columns                    { width: 82.6666666667%; }
+  .eleven.columns                 { width: 91.5%; }
+  .twelve.columns                 { width: 100%; margin-left: 0; }
+
+  .one-third.column               { width: 30.6666666667%; }
+  .two-thirds.column              { width: 65.3333333333%; }
+  .one-half.column                { width: 48%; }
+
+  /* Offsets */
+  .offset-by-one.column,
+  .offset-by-one.columns          { margin-left: 8.66666666667%; }
+  .offset-by-two.column,
+  .offset-by-two.columns          { margin-left: 17.3333333333%; }
+  .offset-by-three.column,
+  .offset-by-three.columns        { margin-left: 26%;            }
+  .offset-by-four.column,
+  .offset-by-four.columns         { margin-left: 34.6666666667%; }
+  .offset-by-five.column,
+  .offset-by-five.columns         { margin-left: 43.3333333333%; }
+  .offset-by-six.column,
+  .offset-by-six.columns          { margin-left: 52%;            }
+  .offset-by-seven.column,
+  .offset-by-seven.columns        { margin-left: 60.6666666667%; }
+  .offset-by-eight.column,
+  .offset-by-eight.columns        { margin-left: 69.3333333333%; }
+  .offset-by-nine.column,
+  .offset-by-nine.columns         { margin-left: 78.0%;          }
+  .offset-by-ten.column,
+  .offset-by-ten.columns          { margin-left: 86.6666666667%; }
+  .offset-by-eleven.column,
+  .offset-by-eleven.columns       { margin-left: 95.3333333333%; }
+
+  .offset-by-one-third.column,
+  .offset-by-one-third.columns    { margin-left: 34.6666666667%; }
+  .offset-by-two-thirds.column,
+  .offset-by-two-thirds.columns   { margin-left: 69.3333333333%; }
+
+  .offset-by-one-half.column,
+  .offset-by-one-half.columns     { margin-left: 52%; }
+
+}
+
+/* Hide Divs on Print */
+@media print {
+  .no-print { 
+    display: none;
+  }
+  .pagebreak {
+    page-break-before: always; /* page-break-after works, as well */
+  }
+}
+
+/** Base Styles **/
+/* NOTE
+html is set to 62.5% so that all the REM measurements
+are based on 10px sizing. So basically 1.5rem = 15px */
+html {
+  font-size: 62.5%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-weight: 300; }
+h1 { font-size: 4.5rem; line-height: 1.2;  letter-spacing: -.1rem; margin-bottom: 2rem; }
+h2 { font-size: 3.6rem; line-height: 1.25; letter-spacing: -.1rem; margin-bottom: 0px; margin-top: 1rem;}
+h3 { font-size: 3.0rem; line-height: 1.3;  letter-spacing: -.1rem; margin-bottom: 1.5rem; margin-top: 1.5rem;}
+h4 { font-size: 2.6rem; line-height: 1.35; letter-spacing: -.08rem; margin-bottom: 1.5rem; margin-top: -10px; margin-left: 1rem}
+h5 { font-size: 2.2rem; line-height: 1.5;  letter-spacing: -.05rem; margin-bottom: 0.6rem; margin-top: -0.6rem;}
+h6 { font-size: 2.0rem; line-height: 1.6;  letter-spacing: 0; margin-bottom: 0.75rem; margin-top: 0.75rem;}
+
+pre,
+dl,
+figure,
+table,
+form {
+  margin-bottom: 0rem;
+}
+
+p,
+ul,
+ol {
+  margin-bottom: 0.75rem;
+}
+
+body {
+  font-size: 1em; /* currently ems cause chrome bug misinterpreting rems on body element */
+  line-height: 1.6;
+  font-weight: 400;
+  font-family: 'Jost', sans-serif;
+  color: steelblue;
+  background-color: #F2F2F2;
+  margin: 0 8px 8px 8px;
+}
+
+/** Containers **/
+.row {
+  display: flex;
+}
+
+.pretty_container {
+  border-radius: 5px;
+  background-color: #ffffff;
+  margin: 10px;
+  padding: 15px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
+/*  This little bit of sorcery overrides the display of any pretty_container
+    that doesn't contain: 1) a dash datatable that has cells (not counting
+    the header); 2) a plotly fig; 3) a dash dropdown component; or 4) notes-string
+    element. Any other components in a div without one of these three things that
+    we WANT to display must be added to the chained selector
+*/
+.pretty_container:not(:has(
+  div.dash-table-container td,
+  div.js-plotly-plot,
+  div.dash-dropdown,
+  p#notes-string)) {
+  display: none;
+}
+
+/* Default and min row height for all datatables is 30px. In order for an
+  empty_table ('No Data to Display') to be displayed per the above rule,
+  it needs to have a cell. The blank cell shows up as a 30px empty space
+  unless we use the following rule. It sets the height of the second row
+  of an empty_table to 0 */
+.empty_table tr:nth-of-type(2) {
+  height: 0px !important;
+}
+
+.pretty_close_container {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;  
+  background-color: #ffffff;
+  margin-top: 10px;
+  padding-top: 15px;
+  padding-right: 15px;
+  padding-left: 15px;
+  padding-bottom: 0px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
+.close_container {
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;    
+  background-color: #ffffff;
+  padding-top: 0px;
+  padding-right: 15px;
+  padding-left: 15px;
+  padding-bottom: 15px;  
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
+.no_data_container {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;  
+  background-color: #ffffff;
+  margin-top: 10px;
+  padding-top: 15px;
+  padding-right: 15px;
+  padding-left: 15px;
+  padding-bottom: 0px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* .map_container {
+  border-radius: 5px;
+  background-color: #ffffff;
+  margin: 10px;
+  padding: 15px;
+  position: relative;
+  width: 100%;
+  box-shadow: 2px 2px 2px lightgrey;
+} */
+
+.bare_container {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
+  display: flex;
+}
+
+.bare_container_no_center {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+  display: flex;
+}
+
+.mini_container {
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  margin: 10px;
+  padding: 15px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
+/* main page navigation */
+.dash_label {
+  margin-right: 0;
+  padding-top: 10px;
+  color: steelblue;
+  display: inline-block;
+  vertical-align: middle;
+  float: left;
+}
+
+#year_dash_label {
+  width: 45%;
+}
+
+#school_dash_label {
+  width: 25%;
+}
+
+.school_dash_control {
+  margin: 0;
+  padding: 0;
+  float: left;
+  width: 70%;
+}
+
+.year_dash_control {
+  margin: 0;
+  padding: 0;
+  float: left;
+  width: 50%;
+}
+
+.fixed-row {
+  display: flex;
+  width: 100%;
+  position: fixed;
+  z-index: 999;
+  background-color: #F2F2F2;
+}
+
+/* login failure message */
+.msg {
+  padding-top: 5px;
+  color: blue;
+}
+
+/* datatables export button (not currently used*/
+/* .export {
+  font-size: 10px;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+  padding: 0px;
+  line-height: 0px;
+  vertical-align: middle;
+  font-weight: bold;
+  color: steelblue;
+  height: 30px;
+  width: 100px;
+  margin-bottom: 5px;
+  margin-top: 5px;
+} */
+
+/** Font Awesome Override **/
+
+/* fixes issue with Font Awesome Icon pseudo :before tag */
+.cell-markdown > p:has(i.fa.fa-circle.center-icon) {
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+/** Plotly Dash Overrides **/
+
+/* Overides base color of all dropdown menu options */
+.VirtualizedSelectOption {
+  background-color: white;
+  color: steelblue;
+}
+
+/* Overides color for selected item in dropdown list */
+.VirtualizedSelectFocusedOption {
+  background-color: lightgrey;
+  color: steelblue;
+}
+
+/* Overides color of the selected item once selected */
+.Select-value-label {
+  color: steelblue !important;
+}
+
+/* removes legendpoint borders */
+/*  This is a kludge to remove grey marker border from legend markers when
+    the marker_line_color is set to grey in order to show a bar in a fig
+    where there is a 0 value */
+.legendundefined {
+  stroke-opacity: 0 !important;
+}
+
+/* increase datatable header height */
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner tr:first-of-type{
+    min-height: 30px;
+    height: 30px;
+}
+
+/** Buttons (Bootstrap.css) **/
 button {
   border-radius: 0;
 }
@@ -81,7 +422,7 @@ button:not(:disabled) {
 .btn {
   --bs-btn-padding-x: 0.75rem;
   --bs-btn-padding-y: 0.375rem;
-  --bs-btn-font-family: 'Jost', sans-serif; /*"Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;*/
+  --bs-btn-font-family: 'Jost', sans-serif;
   --bs-btn-font-size: 1.25rem;
   --bs-btn-font-weight: 400;
   --bs-btn-line-height: 1.5;
@@ -230,7 +571,7 @@ fieldset:disabled .btn {
   opacity: 0.65;
 }
 
-/* Radio Buttons */
+/** Radio Buttons **/
 .radio-group .form-check {
   padding-left: 0;
   padding-top: 5px;
@@ -247,441 +588,14 @@ fieldset:disabled .btn {
   margin-left: -1px;
 }
 
-/* Grid  */
-.container {
-  position: relative;
-  width: 100%;
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 20px;
-  box-sizing: border-box;
-}
-.column,
-.columns {
-  width: 100%;
-  float: left;
-  box-sizing: border-box;
-}
-
-/* hide certain divs on print */
-@media print {
-  .no-print { 
-    display: none;
-  }
-  .pagebreak {
-    page-break-before: always; 
-  } /* page-break-after works, as well */
-}
-
-/* For devices larger than 400px */
-@media (min-width: 400px) {
-  .container {
-    width: 85%;
-    padding: 0; }
-}
-
-/* For devices larger than 550px */
-@media (min-width: 550px) {
-  .container {
-	width: 80%;
-	}
-  .column,
-  .columns {
-    margin-left: 0.5%;
-	}
-
-  .one.column,
-  .one.columns                    { width: 8%;             }
-  .two.columns                    { width: 16.25%;         }
-  .three.columns                  { width: 22%;            }
-  .four.columns                   { width: 33%;            }
-  .five.columns                   { width: 39.3333333333%; }
-/*  .four.columns                   { width: calc(100% / 3); }
-  .five.columns                   { width: calc(100% * 5/12); }*/
-  .six.columns                    { width: 49.75%;          }
-  .seven.columns                  { width: 56.6666666667%; }
-/*  .seven.columns                  { width: calc(100% * 7/12); }*/
-  .eight.columns                  { width: 66.5%;          }
-  .nine.columns                   { width: 74.0%;          }
-  .ten.columns                    { width: 82.6666666667%; }
-  .eleven.columns                 { width: 91.5%; }
-  .twelve.columns                 { width: 100%; margin-left: 0; }
-
-  .one-third.column               { width: 30.6666666667%; }
-  .two-thirds.column              { width: 65.3333333333%; }
-  .one-half.column                { width: 48%; }
-
-  /* Offsets */
-  .offset-by-one.column,
-  .offset-by-one.columns          { margin-left: 8.66666666667%; }
-  .offset-by-two.column,
-  .offset-by-two.columns          { margin-left: 17.3333333333%; }
-  .offset-by-three.column,
-  .offset-by-three.columns        { margin-left: 26%;            }
-  .offset-by-four.column,
-  .offset-by-four.columns         { margin-left: 34.6666666667%; }
-  .offset-by-five.column,
-  .offset-by-five.columns         { margin-left: 43.3333333333%; }
-  .offset-by-six.column,
-  .offset-by-six.columns          { margin-left: 52%;            }
-  .offset-by-seven.column,
-  .offset-by-seven.columns        { margin-left: 60.6666666667%; }
-  .offset-by-eight.column,
-  .offset-by-eight.columns        { margin-left: 69.3333333333%; }
-  .offset-by-nine.column,
-  .offset-by-nine.columns         { margin-left: 78.0%;          }
-  .offset-by-ten.column,
-  .offset-by-ten.columns          { margin-left: 86.6666666667%; }
-  .offset-by-eleven.column,
-  .offset-by-eleven.columns       { margin-left: 95.3333333333%; }
-
-  .offset-by-one-third.column,
-  .offset-by-one-third.columns    { margin-left: 34.6666666667%; }
-  .offset-by-two-thirds.column,
-  .offset-by-two-thirds.columns   { margin-left: 69.3333333333%; }
-
-  .offset-by-one-half.column,
-  .offset-by-one-half.columns     { margin-left: 52%; }
-
-}
-
-/* Test (??) */
-@media (min-width: 800px) {
-  .container {
-    width: calc(100% / 5);
-    }
-}
-
-/* Base Styles
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
-/* NOTE
-html is set to 62.5% so that all the REM measurements throughout Skeleton
-are based on 10px sizing. So basically 1.5rem = 15px */
-html {
-  font-size: 62.5%;
-}
-
-body {
-  font-size: 1em; /* currently ems cause chrome bug misinterpreting rems on body element */
-  line-height: 1.6;
-  font-weight: 400;
-  font-family: 'Jost', sans-serif; /*"Open Sans", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;*/
-  color: steelblue; /*color: rgb(50, 50, 50);*/
-  background-color: #F2F2F2;
-  margin: 0 8px 8px 8px;
-  /* margin: 3%; */
-}
-
-/* TODO: Test to see if this is needed to hide empty tables - IT is not*/
-/* .dash-table-container:not(:has(td)) {
-    display: none;
-  } */
-
-.pretty_container {
-  border-radius: 5px;
-  background-color: #ffffff;
-  margin: 10px;
-  padding: 15px;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-}
-
-/*  This little bit of sorcery overrides the display of any pretty_container
-    that doesn't contain: 1) a dash datatable that has cells (not counting
-    the header); 2) a plotly fig; 3) a dash dropdown component; or 4) notes-string
-    element. Any other components in a div without one of these three things that
-    we WANT to display must be added to the chained selector
-*/
-.pretty_container:not(:has(
-  div.dash-table-container td,
-  div.js-plotly-plot,
-  div.dash-dropdown,
-  p#notes-string)) {
-  display: none;
-}
-
-/* Default and min row height for all datatables is 30px. In order for an
-  empty_table ('No Data to Display') to be displayed per the above rule,
-  it needs to have a cell. The blank cell shows up as a 30px empty space
-  unless we use the following rule. It sets the height of the second row
-  of an empty_table to 0 */
-.empty_table tr:nth-of-type(2) {
-  height: 0px !important;
-}
-
-.pretty_close_container {
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;  
-  background-color: #ffffff;
-  margin-top: 10px;
-  padding-top: 15px;
-  padding-right: 15px;
-  padding-left: 15px;
-  padding-bottom: 0px;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-}
-
-.no_data_container {
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;  
-  background-color: #ffffff;
-  margin-top: 10px;
-  padding-top: 15px;
-  padding-right: 15px;
-  padding-left: 15px;
-  padding-bottom: 0px;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.close_container {
-  border-bottom-left-radius: 5px;
-  border-bottom-right-radius: 5px;    
-  background-color: #ffffff;
-  padding-top: 0px;
-  padding-right: 15px;
-  padding-left: 15px;
-  padding-bottom: 15px;  
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-}
-
-.map_container {
-  border-radius: 5px;
-  background-color: #ffffff;
-  margin: 10px;
-  padding: 15px;
-  position: relative;
-  width: 100%;
-  box-shadow: 2px 2px 2px lightgrey;
-}
-
-.bare_container_no_center {
-  margin: 0 0 0 0;
-  padding: 0 0 0 0;
-  display: flex;
-}
-
-.bare_container {
-  margin: 0 0 0 0;
-  padding: 0 0 0 0;
-  justify-content: center;
-  text-align: center;
-  align-items: center;
-  display: flex;
-}
-
-/* TODO: TEST to determine if this is needed */
-/* .bare_container:not(:has(div.dash-table-container td)) {
-  display: none;
-} */
-
-.mini_container {
-  border-radius: 5px;
-  background-color: #f9f9f9;
-  margin: 10px;
-  padding: 15px;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-}
-
-.layout_div {
-  display: flex;
-}
-
-/* Base color of all dropdown menu options */
-.VirtualizedSelectOption {
-  background-color: white;
-  color: steelblue;
-}
-
-/* Color for selected item in dropdown list */
-.VirtualizedSelectFocusedOption {
-  background-color: lightgrey;
-  color: steelblue;
-}
-
-/* Colors the selected item once selected*/
-.Select-value-label {
-  color: steelblue !important;
-}
-
-.dcc_control {
-    margin: 0;
-    padding: 5px;
-}
-
-.control_label {
-  margin: 0;
-  padding: 10px;
-  padding-bottom: 0;
-  margin-bottom: 0;
-  color: steelblue;
-}
-
-.md_table {
-  color: steelblue;
-  font-size: .75em;
-}
-
-.md_table tr td:first-child {
-  width: 15%;
-  min-width: 15%;
-  max-width: 15%;
-  font-weight: bold;
-  word-break: break-all;
-}
-
-.dash_label {
-  margin-right: 0;
-  padding-top: 10px;
-  color: steelblue;
-  display: inline-block;
-  vertical-align: middle;
-  float: left;
-}
-
-#year_dash_label {
-  width: 45%;
-}
-
-#school_dash_label {
-  width: 25%;
-}
-
-.school_dash_control {
-  margin: 0;
-  padding: 0;
-  float: left;
-  width: 70%;
-}
-
-.year_dash_control {
-  margin: 0;
-  padding: 0;
-  float: left;
-  width: 50%;
-}
-
-.msg {
-  padding-top: 5px;
-  color: blue;
-}
-
-/* datatables export button */
-.export {
-  font-size: 10px;
-  font-family: Arial, Helvetica, sans-serif;
-  text-align: center;
-  padding: 0px;
-  line-height: 0px;
-  vertical-align: middle;
-  font-weight: bold;
-  color: steelblue;
-  height: 30px;
-  width: 100px;
-  margin-bottom: 5px;
-  margin-top: 5px;
-}
-
-.table-title {
-  font-size: 18px;
-  font-family: 'Jost', sans-serif;
-  font-weight: bold;
-  color: steelblue;
-  text-align: center;
-  padding: 0px;
-  margin: 0px;
-}
-
-.row {
-  display: flex;
-}
-
-.center-row {
-  display: flex;
-  margin: auto;
-  width: 50%
-}
-
-.fixed-row {
-  display: flex;
-  width: 100%;
-  /* height: 80px; */
-  position: fixed;
-  z-index: 999;
-  background-color: #F2F2F2; /* #d6d6d6 !important;*/
-}
-
-/* Font Awesome Override */
-/* fixes issue with Font Awesome Icon pseudo :before tag */
-.cell-markdown > p:has(i.fa.fa-circle.center-icon) {
-  display: flex;
-  height: 100%;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Plotly Dash Overrides */
-
-/* This doesn't work to hide tables on reload- plus it triggers the text for each
-object. Still trying to figure out how to show empty page on reload */
-
-/* *[data-dash-is-loading="true"]{
-  visibility: hidden;
-}
-*[data-dash-is-loading="true"]::before{
-  content: "Loading...";
-  display: inline-block;
-  color: magenta;
-  visibility: visible;
-} */
-
-/* removes legendpoint borders */
-/*  This is a kludge to remove grey marker border from legend markers when
-    the marker_line_color is set to grey in order to show a bar in a fig
-    where there is a 0 value */
-.legendundefined {
-  stroke-opacity: 0 !important;
-}
-
-/* increase datatable header height */
-.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner tr:first-of-type{
-    min-height: 30px;
-    height: 30px;
-}
-
-/* modify table styling */
-/* This doesn't work */
-/* .dash-spreadsheet-container .dash-spreadsheet-inner table {
-  --accent: grey !important;
-  --border: grey !important;
-  --selected-background: grey !important;
-  --selected-color: #3C3C3C !important;
-  --border-color: grey !important;
-  --border-bottom:1px solid grey !important;
-  --border-top:1px solid grey !important;  
-} */
-
-/* This does */
-/* td.dash-cell.cell--selected.focused {
-  background-color: #d6d6d6 !important;
-  border-color: #d8d8d8 !important;
-} */
-
-/* TODO: ADD IDS TO DIVS */
-/* ADAPT THIS TO FIT EXISTING ELEMENTS TO EXIST IN FLEX-LAND */
-
+/** ADAPT THIS TO FIT EXISTING ELEMENTS TO EXIST IN FLEX-LAND **/
+/* TODO: Think this is about positioning */
 #individual_graph,
 #aggregate_graph {
   width: calc(100% - 30px);
   position: absolute;
 }
-/* USE? */
+
 #count_graph {
   position: absolute;
   height: calc(100% - 30px);
@@ -741,23 +655,8 @@ object. Still trying to figure out how to show empty page on reload */
 }
 /*****************/
 
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-  margin-top: 0;
-  margin-bottom: 0;
-  font-weight: 300; }
-h1 { font-size: 4.5rem; line-height: 1.2;  letter-spacing: -.1rem; margin-bottom: 2rem; }
-h2 { font-size: 3.6rem; line-height: 1.25; letter-spacing: -.1rem; margin-bottom: 0px; margin-top: 1rem;}
-h3 { font-size: 3.0rem; line-height: 1.3;  letter-spacing: -.1rem; margin-bottom: 1.5rem; margin-top: 1.5rem;}
-h4 { font-size: 2.6rem; line-height: 1.35; letter-spacing: -.08rem; margin-bottom: 1.5rem; margin-top: -10px; margin-left: 1rem}
-h5 { font-size: 2.2rem; line-height: 1.5;  letter-spacing: -.05rem; margin-bottom: 0.6rem; margin-top: -0.6rem;}
-h6 { font-size: 2.0rem; line-height: 1.6;  letter-spacing: 0; margin-bottom: 0.75rem; margin-top: 0.75rem;}
 
-/* p {
-  margin-top: 0;
-} */
-
-/* Links */
+/** Links **/
 a:link { 
   text-decoration: none;
 }
@@ -780,9 +679,10 @@ a.nav-link:hover {
   box-sizing: border-box;
 }
 
-/* Not working consistently across pages */
-/*
-See: https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
+/** Nav and SubNav Links **/
+/* TODO: Not working consistently across pages - doesn't stay active when selected */
+/* See:
+https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
 You're only ever setting/removig the active class when the button is clicked. 
 You'll also need javascript code that runs on page load, checks the current url,
 removes the 'active' class from all nav links, then adds the 'active' class to
@@ -806,7 +706,43 @@ the nav link that matches the current url. (or you could do that in php, either 
   box-sizing: border-box;
 }
 
-/* Labels */
+.tab {
+  text-transform: uppercase;
+  font-family: 'Jost', sans-serif;
+  color: steelblue;
+  background-color: #ffffff;
+  font-size: 14px;
+  font-weight: 400;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(192,193,199, .5);
+  border-radius: .5rem;
+  padding:8px;
+  transition: background-color,color 200ms;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.tabs {
+  z-index: 99;
+  margin: 0;
+  padding: 0;
+  float: left;
+  /* height: 6vh; */
+  position: relative;
+  }
+
+.sub-tabs {
+  z-index: 99;
+  margin: 0;
+  padding: 0;
+  float: left;
+  /* height: 4vh; */
+  position: relative;
+}
+
+/** Labels **/
 label,
 legend {
   display: block;
@@ -824,7 +760,6 @@ label > .label-body {
 }
 
 .header_label {
-  /* height: 20px; */
   height: auto;  
   background-color: #6783a9;
   font-size: 12px;
@@ -890,6 +825,7 @@ label > .label-body {
   box-sizing: border-box;
   height: 20px;
 }
+
 a.logout-button:hover { 
   text-transform: uppercase;
   font-family: 'Jost', sans-serif;
@@ -907,42 +843,6 @@ a.logout-button:hover {
   text-align: center;
   box-sizing: border-box;
 }
-/* Tabs * */
-.tab {
-  text-transform: uppercase;
-  font-family: 'Jost', sans-serif;
-  color: steelblue;
-  background-color: #ffffff;
-  font-size: 14px;
-  font-weight: 400;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(192,193,199, .5);
-  border-radius: .5rem;
-  padding:8px;
-  transition: background-color,color 200ms;
-  width: 100%;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.tabs {
-  z-index: 99;
-  margin: 0;
-  padding: 0;
-  float: left;
-  /* height: 6vh; */
-  position: relative;
-  }
-
-.sub-tabs {
-  z-index: 99;
-  margin: 0;
-  padding: 0;
-  float: left;
-  /* height: 4vh; */
-  position: relative;
-}
 
 /* Tables */
 table {
@@ -958,50 +858,8 @@ td:last-child {
   padding-right: 0;
 }
 
-/* Spacing
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
-/* button,
-.button {
-  margin-bottom: 0rem;
-} */
- 
-/* input,
-textarea,
-select,
-fieldset {
-  margin-bottom: 0rem;
-} */
 
-pre,
-dl,
-figure,
-table,
-form {
-  margin-bottom: 0rem;
-}
-
-p,
-ul,
-ol {
-  margin-bottom: 0.75rem;
-}
-
-/* Misc
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
-/*
-hr {
-  margin-top: 3rem;
-  margin-bottom: 3.5rem;
-  border-width: 0;
-  border-top: 1px solid #E1E1E1;
-}
-*/
-
-
-/* Clearing
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
-
-/* Self Clearing Goodness */
+/** Self Clearing **/
 .container:after,
 .row:after,
 .u-cf {
@@ -1010,8 +868,8 @@ hr {
   clear: both;
 }
 
-/* Media Queries
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
+/** Media Queries **/
+
 /*
 Note: The best way to structure the use of media queries is to create the queries
 near the relevant code. For example, if you wanted to change the styles for buttons
@@ -1019,11 +877,10 @@ on small devices, paste the mobile query code up in the buttons section and styl
 there.
 */
 
-
 /* Larger than mobile */
 @media (min-width: 400px) {}
 
-/* Larger than phablet (also point when grid becomes active) */
+/* Larger than tablet (also point when grid becomes active) */
 @media (min-width: 550px) {
 .one.column,
 .one.columns {
