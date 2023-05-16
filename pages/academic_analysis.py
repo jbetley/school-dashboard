@@ -20,7 +20,7 @@ from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, ma
 from .table_helpers import create_comparison_table, no_data_page, no_data_table
 from .subnav import subnav_academic
 
-from .load_data import all_academic_data_k8
+# from .load_data import all_academic_data_k8
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
@@ -30,7 +30,8 @@ grades = ['Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8']
 subject = ['Math','ELA'] # 'ELA & Math'
 
 # load data files
-# school_index= pd.read_csv(r'data/school_index.csv', dtype=str)
+school_index= pd.read_csv(r'data/school_index.csv', dtype=str)
+all_academic_data_k8 = pd.read_csv(r'data/academic_data_k8.csv', dtype=str)
 
 # Set options for comparison schools (multi-select dropdown)
 # NOTE: See 01.10.22 backup for original code
@@ -703,34 +704,70 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
                 # get the names of the schools that have no data by comparing the
                 # column sets before and after the drop
-
                 missing_schools = list(set(combined_data['School Name']) - set(final_data['School Name']))
-                pd.set_option('display.max_rows', 1000)
-                pd.set_option('display.max_columns', 1000)
-                
-                # TODO: Track missing categories for schools that otherwise have data
+
+                # Now comes the hard part. Get the names and categories of schools that
+                # have data for some categories and not others. In the end we want
+                # to build a list of schools that is made up of schools that are missing
+                # all data + schools that are missing some data + what data they are
+                # missing
+                # create temp df that is a copy without unnecessary columns
                 check_data = final_data.copy()
                 check_data = check_data.drop(['Low Grade','High Grade'], axis = 1)
                 check_data = check_data.reset_index(drop=True)
 
-                # find indicies where is NaN and stack row (by index) and columns
+                # get index and columns where there are null values (numpy array)
                 idx, idy = np.where(pd.isnull(check_data))
 
-                # result = np.column_stack([check_data.index[idx], check_data.columns[idy]])
-                result = np.column_stack([check_data.iloc[idx]['School Name'], check_data.columns[idy]])
-                print(result)
+                # np.where returns an index for each column, resulting in duplicate
+                #  indexes for schools missing multiple categories. But we only need one
+                # unique value for each school that is missing data
+                schoolz = np.unique(idx, axis=0)
 
-                # Create missing category string
+                schoolz_list = []
+                if schoolz.size != 0:
+                    for i in schoolz:
+
+                        sch_name = check_data.iloc[i]['School Name']
+
+                        # get missing categories as a list, remove everything
+                        # after the '|', and filter down to unique categories
+                        miss_cat = list(check_data.columns[idy])
+                        miss_cat = [s.split('|')[0] for s in miss_cat]
+                        unique_categories = list(set(miss_cat))
+
+                        # create a list of ['School Name (Cat 1, Cat2)']
+                        schoolz_list.append(sch_name + ' (' + ', '.join(unique_categories) + ')')
+                else:
+                    schoolz_list = []
+
+                # create the string. Yes this is ugly, and i will probably fix it later, but
+                # we need to make sure that the punctuation makes sense.
+                if len(schoolz_list) != 0:
+                    if len(schoolz_list) > 1:
+                        schoolz_list = ', '.join(schoolz_list)
+                    else:
+                        schoolz_list = schoolz_list[0]
+
+                    if missing_schools:
+                        missing_schools = [i + ' (All)' for i in missing_schools]
+                        school_string = ', '.join(list(map(str, missing_schools))) + '.'
+                        school_string = schoolz_list + ', ' + school_string
+                    else:
+                        school_string = schoolz_list + '.'
+                else:
+                    if missing_schools:
+                        missing_schools = [i + ' (All)' for i in missing_schools]
+                        school_string = ', '.join(list(map(str, missing_schools))) + '.'
+                    else:
+                        school_string = 'None.'
+
+                # Create string for categories for which the selected school has
+                # no data. These categories are not shown at all.
                 if missing_categories:
                     category_string = ', '.join(list(map(str, missing_categories))) + '.'
                 else:
                     category_string = 'None.'                  
-
-                # Create missing schools string
-                if missing_schools:
-                    school_string = ', '.join(list(map(str, missing_schools))) + '.'
-                else:
-                    school_string = 'None.'
 
                 return final_data, category_string, school_string
             

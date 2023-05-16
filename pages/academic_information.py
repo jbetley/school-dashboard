@@ -124,7 +124,7 @@ def update_academic_information_page(data, school, year, radio_value):
     no_growth_data_to_display = no_data_page('Academic Growth')
 
     school_index = pd.DataFrame.from_dict(data['0'])
-    
+
     ## Proficiency Tables ##
     if radio_value == 'proficiency':
 
@@ -571,6 +571,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 else:
 
                     k8_subgroup_math_fig = no_data_fig_label(math_title, 100)
+
         ## End of K8 table proficiency block
 
         ## HS academic information
@@ -1090,7 +1091,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 main_growth_container = {'display': 'none'}
                 empty_growth_container = {'display': 'block'}
         ## End all school type Academic Growth Information Block        
-       
+
         else:
         # If the selected school year is anything other than 2022, there
         # will not be any growth data- set all growth tables to null and

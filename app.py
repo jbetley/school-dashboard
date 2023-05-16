@@ -35,8 +35,8 @@ from dotenv import load_dotenv # To access .env files in virtualenv
 # local functions
 from pages.calculations import set_academic_rating, calculate_percentage, \
     calculate_difference
-from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
-     corporation_rates, all_demographic_data
+# from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
+#      corporation_rates, all_demographic_data
 
 # font_awesome used for svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
@@ -205,13 +205,12 @@ subject = ["Math", "ELA"]
 print("#### Loading Data. . . . . ####")
 
 # NOTE: No K8 academic data exists for 2020
-# school_index = pd.read_csv(r"data/school_index.csv", dtype=str)
-# school_academic_data_k8 = pd.read_csv(r"data/school_data_k8.csv", dtype=str)
-# all_academic_data_hs = pd.read_csv(r"data/academic_data_hs.csv", dtype=str)
-# corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
-# all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
+school_index = pd.read_csv(r"data/school_index.csv", dtype=str)
+school_academic_data_k8 = pd.read_csv(r"data/school_data_k8.csv", dtype=str)
+all_academic_data_hs = pd.read_csv(r"data/academic_data_hs.csv", dtype=str)
+corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
+all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
 
-# print(all_academic_data_k8)
 # Fixes issue where converting string to int adds trailing '.0'
 # school_academic_data_k8["Low Grade"] = (
 #     school_academic_data_k8["Low Grade"].astype(str).str.replace(".0", "", regex=False)
@@ -1888,7 +1887,7 @@ def load_data(school, year):
 
     # Store the current_academic_year in dcc.store so other pages can use it
     current_academic_year_dict = {'current_academic_year': current_academic_year}
-	
+
     # combine into dictionary of dictionarys for dcc.store
     dict_of_df = {}
 
