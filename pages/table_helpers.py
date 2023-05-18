@@ -1,6 +1,6 @@
 """
 ICSB Dashboard - Table Functions
-version:  1.02.051023
+version:  1.02.051823
 author:   jbetley
 """
 
@@ -9,9 +9,6 @@ import pandas as pd
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
-
-# not used
-# color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
 def no_data_table(label: str = 'No Data to Display') -> list:
     """Creates single empty table with provided label

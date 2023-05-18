@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley
-# version:  1.02.051023
+# version:  1.02.051823
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -623,7 +623,7 @@ def update_financial_analysis_page(data, year, radio_value):
             # Get financial ratios
             school_corp = school_index['Corporation ID'].values[0]
             
-            financial_ratios_data = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
+            financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
             financial_ratios_data = financial_ratios.loc[financial_ratios['School Corporation'] == school_corp].copy()
 
             # Networks do not have ratios- only way to tell if network finances

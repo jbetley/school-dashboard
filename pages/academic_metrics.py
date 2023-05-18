@@ -2,7 +2,7 @@
 # ICSB Dashboard - Academic Metrics #
 #####################################
 # author:   jbetley
-# version:  1.02.051023
+# version:  1.02.051823
 
 import dash
 from dash import html, Input, Output, callback

@@ -5,15 +5,18 @@
     <title>ICSB Dashboard Login</title>
     <link rel="shortcut icon" href="https://s3.amazonaws.com/django-blog/ico/favicon_v2.ico">
 <style>
-@import url(https://fonts.googleapis.com/css?family=Roboto:300);
-header .header{
+@import url(https://fonts.googleapis.com/css2?family=Jost:400);
+
+.login-header{
+  font-family: "Jost", sans-serif;
   background-color: #fff;
-  height: 45px;
+  font-weight: 600;
+  color:#4682b4;
 }
-header a img{
+/* header a img{
   width: 134px;
   margin-top: 4px;
-}
+} */ */
 .login-page {
   width: 360px;
   padding: 8% 0 0;
@@ -27,14 +30,14 @@ header a img{
   position: relative;
   z-index: 1;
   background: #FFFFFF;
-  max-width: 360px;
-  margin: 0 auto 100px;
-  padding: 45px;
+  max-width: 300px;
+  margin: 0 auto 50px;
+  padding: 35px;
   text-align: center;
   box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
 }
 .form input {
-  font-family: "Roboto", sans-serif;
+  font-family: "Jost", sans-serif;
   outline: 0;
   background: #f2f2f2;
   width: 100%;
@@ -45,10 +48,10 @@ header a img{
   font-size: 14px;
 }
 .form button {
-  font-family: "Roboto", sans-serif;
+  font-family: "Jost", sans-serif;
   text-transform: uppercase;
   outline: 0;
-  background-color: #4682b4;
+  background-color: #FFFFFF;/* #4682b4;*/
   background-image: linear-gradient(45deg,#4682b4,#6397c2);
   width: 100%;
   border: 0;
@@ -72,29 +75,39 @@ header a img{
 }
 .login-body {
   background-color: #4682b4;
-  background-image: linear-gradient(45deg,#4682b4,#86aed0);
-  font-family: "Roboto", sans-serif;
+  /* background-image: linear-gradient(45deg,#4682b4,#86aed0); */
+  font-family: "Jost", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+/* .login-image {
+  padding: -30px;
+
+} */
 </style>
 </head>
-<!-- <header><center><img src="/static/logo.jpg" alt="WTFA"/></center></header> -->
-<header><div style="text-align: center"><img src="{{ url_for('static', filename='logo.jpg') }}" alt="WTFA"/></div></header>
+<!-- <header>
+  <div class="login-image" style="text-align: center">
+    <img src="https://jbetley.github.io/argosy/sm-logo2.jpg", height= "100px" width="400px">
+  </div>
+</header> -->
+<!-- <header><div style="text-align: center"><img src="{{url_for('static', filename='logo.jpg')}}" alt="WTFA"/></div></header> -->
 <body class = 'login-body'>
 <form method="POST" action="/login">
     <div class="login-page">
         <div class="form">
             <div class="login">
                 <div class="login-header">
-                <p>ICSB School Dashboard</p>
-                <p>Please login to continue:</p>
-                </div>
+                  <br>Indiana Charter School Board
+                  <br>School Dashboard</br>
+              </div>
+                <p style="font-family: Jost, sans-serif; color: #4682b4">Please login to continue:</p>
+
             </div>
             <input placeholder="Enter your username" type="text" id="uname-box" name='username'>
             <input placeholder="Enter your password" type="password" id="pwd-box" name='password'>
             <Button type="submit" id="login-button">Login</Button>
-            <div class="msg"><span style="color:red">{{message}}</span></div>
+            <!-- <div class="msg"><span style="color:red">{{message}}</span></div> -->
         </div>
     </div>
 </form>

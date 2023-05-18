@@ -2,7 +2,7 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley
-# version:  1.02.051023
+# version:  1.02.051823
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, State, callback
@@ -44,7 +44,7 @@ def update_about_page(year, data):
     status = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
 
     # see color list in chart_helpers.py
-    linecolor = ['#0a66c2']
+    linecolor = ['#df8f2d']
     bar_colors = ['#74a2d7', '#df8f2d']
 
     # default is to display main container

@@ -1,3 +1,9 @@
+##################################
+# ICSB Dashboard - Subnavigation #
+##################################
+# author:   jbetley
+# version:  1.02.051823
+
 import dash
 from dash import html
 import dash_bootstrap_components as dbc

@@ -656,7 +656,15 @@ fieldset:disabled .btn {
 /*****************/
 
 
-/** Links **/
+/** Nav and SubNav Links **/
+/* TODO: Not working consistently across pages - doesn't stay active when selected */
+/* See:
+https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
+You're only ever setting/removig the active class when the button is clicked. 
+You'll also need javascript code that runs on page load, checks the current url,
+removes the 'active' class from all nav links, then adds the 'active' class to
+the nav link that matches the current url. (or you could do that in php, either way */
+
 a:link { 
   text-decoration: none;
 }
@@ -678,15 +686,6 @@ a.nav-link:hover {
   text-align: center;
   box-sizing: border-box;
 }
-
-/** Nav and SubNav Links **/
-/* TODO: Not working consistently across pages - doesn't stay active when selected */
-/* See:
-https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
-You're only ever setting/removig the active class when the button is clicked. 
-You'll also need javascript code that runs on page load, checks the current url,
-removes the 'active' class from all nav links, then adds the 'active' class to
-the nav link that matches the current url. (or you could do that in php, either way */
 
 .nav-link.active {
   text-transform: uppercase;
@@ -717,7 +716,7 @@ the nav link that matches the current url. (or you could do that in php, either 
   justify-content: center;
   border: 1px solid rgba(192,193,199, .5);
   border-radius: .5rem;
-  padding:8px;
+  padding:6px;
   transition: background-color,color 200ms;
   width: 100%;
   text-align: center;

@@ -2,10 +2,9 @@
 # ICSB Dashboard - Academic Analysis #
 ######################################
 # author:   jbetley
-# version:  1.02.051023
+# version:  1.02.051823
 
 import dash
-# import dash_loading_spinners
 from dash import ctx, dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
@@ -34,7 +33,6 @@ school_index= pd.read_csv(r'data/school_index.csv', dtype=str)
 all_academic_data_k8 = pd.read_csv(r'data/academic_data_k8.csv', dtype=str)
 
 # Set options for comparison schools (multi-select dropdown)
-# NOTE: See 01.10.22 backup for original code
 @callback(
     Output('comparison-dropdown', 'options'),
     Output('input-warning','children'),
@@ -150,7 +148,7 @@ def set_dropdown_options(school, year, comparison_schools):
                 {'label': option['label'], 'value': option['value'], 'disabled': True}
                 for option in default_options
             ]
-    
+
     return options, input_warning, comparison_schools
 
 @callback(
@@ -198,13 +196,14 @@ def update_academic_analysis(school, year, data, comparison_school_list):
     school_name = school_info['School Name'].values[0]
 
     # Test if data exists - there are 4 cases where we end up with an empty page:
-    #   1) the dataframe itself does not exist because there is no academic data for the school at all
-    #   2) the school is of a type (AHS/HS) that doesn't yet have any charted data
-    #   3) the dataframe exists, but the tested_header (YEARSchool) does not exist in the dataframe-
-    #       this catches any year with no data (e.g., 2020School because there is no 2020 data in the
-    #       dataframe
-    #   4) the tested header does exist, but all data in the column is NaN- this catches any year where
-    #       the school has no data or insufficient n-size ('***')
+    #   1)  the dataframe itself does not exist because there is no academic
+    #       data for the school at all
+    #   2)  the school is of a type (AHS/HS) that doesn't yet have any charted data
+    #   3)  the dataframe exists, but the tested_header (YEARSchool) does not exist
+    #       in the dataframe- this catches any year with no data (e.g., 2020School
+    #       because there is no 2020 data in the dataframe
+    #   4)  the tested header does exist, but all data in the column is NaN- this
+    #       catches any year where the school has no data or insufficient n-size ('***')
     
     #   Only get to tests (3) and (4) if dataframe passes tests (1) & (2)
 
@@ -659,16 +658,11 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 all_categories = categories + info_categories
 
                 # get a list of the categories that exist in school data
-                academic_columns = [i for i in categories if i in school_data.columns]
+                school_columns = [i for i in categories if i in school_data.columns]
 
-                # get a list of the categories that are missing from selected school data and
-                # strip everything following '|' delimeter. Use this to list the categories
-                # in an annotation
-                missing_categories = [i for i in categories if i not in school_data.columns]
-                missing_categories = [s.split('|')[0] for s in missing_categories]
-
-                # sort corp data by the academic columns
-                corp_data = corp_current_data.loc[:, (corp_current_data.columns.isin(academic_columns))].copy()
+                # sort corp data by the school columns (this excludes any categories
+                # not in the school data)
+                corp_data = corp_current_data.loc[:, (corp_current_data.columns.isin(school_columns))].copy()
 
                 # add the school corporation name
                 corp_data['School Name'] = corp_name
@@ -686,20 +680,13 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 # make a copy (used for comparison purposes)
                 final_data = combined_data.copy()
 
-                # get a list of all of the schools (each one a column)
-                category_columns = final_data.columns.tolist()
-                category_columns = [ele for ele in category_columns if ele not in info_categories]
+                # get a list of all of the Categories (each one a column)
+                school_categories = [ele for ele in school_columns if ele not in info_categories]
 
                 # test all school columns and drop any where all columns (proficiency data) is nan/null
-                final_data = final_data.dropna(subset=category_columns, how='all')
+                final_data = final_data.dropna(subset=school_categories, how='all')  
 
-                # Create a series that merges school name and grade spans and drop the grade span columns 
-                # from the dataframe (they are not charted)
-                # school_names = final_data['School Name'] + ' (' + final_data['Low Grade'] + '-' \
-                # + final_data['High Grade'] + ')'      
-
-                # In some cases, cell data is '' or ' ', so we need to replace any
-                # blanks with NaN
+                # replace any blanks with NaN
                 final_data = final_data.replace(r'^\s*$', np.nan, regex=True)
 
                 # get the names of the schools that have no data by comparing the
@@ -711,10 +698,17 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 # to build a list of schools that is made up of schools that are missing
                 # all data + schools that are missing some data + what data they are
                 # missing
-                # create temp df that is a copy without unnecessary columns
+
                 check_data = final_data.copy()
                 check_data = check_data.drop(['Low Grade','High Grade'], axis = 1)
                 check_data = check_data.reset_index(drop=True)
+
+                # get a list of the categories that are missing from selected school data and
+                # strip everything following '|' delimeter. Use this to list the categories
+                # in an annotation
+
+                missing_categories = [i for i in categories if i not in check_data.columns]                
+                missing_categories = [s.split('|')[0] for s in missing_categories]
 
                 # get index and columns where there are null values (numpy array)
                 idx, idy = np.where(pd.isnull(check_data))
@@ -722,39 +716,39 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 # np.where returns an index for each column, resulting in duplicate
                 #  indexes for schools missing multiple categories. But we only need one
                 # unique value for each school that is missing data
-                schoolz = np.unique(idx, axis=0)
+                schools_with_missing = np.unique(idx, axis=0)
 
-                schoolz_list = []
-                if schoolz.size != 0:
-                    for i in schoolz:
+                schools_with_missing_list = []
+                if schools_with_missing.size != 0:
+                    for i in schools_with_missing:
 
-                        sch_name = check_data.iloc[i]['School Name']
+                        schools_with_missing_name = check_data.iloc[i]['School Name']
 
                         # get missing categories as a list, remove everything
                         # after the '|', and filter down to unique categories
-                        miss_cat = list(check_data.columns[idy])
-                        miss_cat = [s.split('|')[0] for s in miss_cat]
-                        unique_categories = list(set(miss_cat))
+                        with_missing_categories = list(check_data.columns[idy])
+                        with_missing_categories = [s.split('|')[0] for s in with_missing_categories]
+                        unique__missing_categories = list(set(with_missing_categories))
 
                         # create a list of ['School Name (Cat 1, Cat2)']
-                        schoolz_list.append(sch_name + ' (' + ', '.join(unique_categories) + ')')
+                        schools_with_missing_list.append(schools_with_missing_name + ' (' + ', '.join(unique__missing_categories) + ')')
                 else:
-                    schoolz_list = []
+                    schools_with_missing_list = []
 
                 # create the string. Yes this is ugly, and i will probably fix it later, but
                 # we need to make sure that the punctuation makes sense.
-                if len(schoolz_list) != 0:
-                    if len(schoolz_list) > 1:
-                        schoolz_list = ', '.join(schoolz_list)
+                if len(schools_with_missing_list) != 0:
+                    if len(schools_with_missing_list) > 1:
+                        schools_with_missing_list = ', '.join(schools_with_missing_list)
                     else:
-                        schoolz_list = schoolz_list[0]
+                        schools_with_missing_list = schools_with_missing_list[0]
 
                     if missing_schools:
                         missing_schools = [i + ' (All)' for i in missing_schools]
                         school_string = ', '.join(list(map(str, missing_schools))) + '.'
-                        school_string = schoolz_list + ', ' + school_string
+                        school_string = schools_with_missing_list + ', ' + school_string
                     else:
-                        school_string = schoolz_list + '.'
+                        school_string = schools_with_missing_list + '.'
                 else:
                     if missing_schools:
                         missing_schools = [i + ' (All)' for i in missing_schools]
@@ -767,7 +761,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 if missing_categories:
                     category_string = ', '.join(list(map(str, missing_categories))) + '.'
                 else:
-                    category_string = 'None.'                  
+                    category_string = 'None.'
 
                 return final_data, category_string, school_string
             
@@ -828,14 +822,14 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                                     html.Div(table),
                                     html.P(
                                         children=[
-                                        'Categories with insufficient n-size or no data:',
+                                        'Categories with no data to display:',
                                         html.Span(category_string, className = 'category_string'),
                                         ],
                                         className = 'category_string_label',
                                     ),
                                     html.P(
                                         children=[
-                                        'Schools with insufficient n-size or no data:',
+                                        'School Categories with insufficient n-size or no data:',
                                         html.Span(school_string, className = 'school_string'),
                                         ],
                                         className = 'school_string_label',
@@ -949,7 +943,6 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig16b2_container = {'display': 'none'}
     
     academic_analysis_main_container = {'display': 'block'}
-
 
     return fig14a, fig14b, fig14c, fig14d, fig_iread, \
         fig16c1, fig16d1, fig16c2, fig16d2, fig14g, dropdown_container, fig16a1, fig16a1_container, \
@@ -1107,6 +1100,5 @@ def layout():
                             ],
                             id='mainContainer'
                         )
-
 
     return layout             

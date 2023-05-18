@@ -19,11 +19,7 @@ from dash import html, dcc
 
 color= ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
 
-## Blank (Loading) Fig ##
-# https://stackoverflow.com/questions/66637861/how-to-not-show-default-dcc-graph-template-in-dash
-
-# loading_fig is a blank chart with no title and no data other than
-# the 'Loading . . .' string
+# blank fig with no title and 'Loading . . .' string only
 def loading_fig() -> dict:
     fig = {
         'layout': {
@@ -52,23 +48,13 @@ def loading_fig() -> dict:
     return fig
 
 # blank fig with label and height.
-def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> go.Figure:
+def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> dict:
 
     fig = go.Figure()
     
     fig.update_layout(
         margin=dict(l=10, r=10, t=20, b=0),
         height = height,
-        # title={
-        #     'text': label,
-        #     'y':0.975,
-        #     'x':0.5,
-        #     'xanchor': 'center',
-        #     'yanchor': 'top',
-        #     'font_family': 'Jost, sans-serif',
-        #     'font_color': 'steelblue',
-        #     'font_size': 10
-        # },
         xaxis =  {
             'visible': False,
             'fixedrange': True
@@ -108,22 +94,13 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> g
     return fig_layout
 
 # Blank fig with no label
-def no_data_fig_blank() -> go.Figure:
+def no_data_fig_blank() -> dict:
 
     fig = go.Figure()
     
     fig.update_layout(
         margin=dict(l=10, r=10, t=20, b=0),
         height = 400,
-        # title={
-        #     'y':0.975,
-        #     'x':0.5,
-        #     'xanchor': 'center',
-        #     'yanchor': 'top',
-        #     'font_family': 'Jost, sans-serif',
-        #     'font_color': 'steelblue',
-        #     'font_size': 10
-        # },
         xaxis =  {
             'visible': False,
             'fixedrange': True
@@ -153,10 +130,9 @@ def no_data_fig_blank() -> go.Figure:
 
     return fig
 
-# Use this function to create wrapped text using html tags
-# based on the specified width. add two spaces before <br>
-# to ensure the words at the end of each break have the same
-# spacing as 'ticksuffix' in make_stacked_bar()
+# create wrapped text using html tags based on the specified width.
+# add two spaces before <br> to ensure the words at the end of each
+# break have the same spacing as 'ticksuffix' in make_stacked_bar()
 def customwrap(s: str,width: int = 16):
     return '  <br>'.join(textwrap.wrap(s,width=width))
 
@@ -209,12 +185,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
         showlegend = False,
         plot_bgcolor='white',
         hovermode='y unified',
-        # hoverlabel=dict(
-        #     bgcolor='white',
-        #     font_color='steelblue',
-        #     font_size=10,
-        #     font_family='Jost, sans-serif',
-        # ),
         yaxis=dict(autorange='reversed'),
         uniformtext_minsize=8,
         uniformtext_mode='hide'
@@ -270,13 +240,14 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
         for col in cols:
             data[col]=pd.to_numeric(data[col], errors='coerce')
-
+        
         data.sort_values('Year', inplace=True)
         data = data.reset_index(drop=True)
 
         data_years = data['Year'].astype(int).tolist()
-        add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
         
+        #add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
+    
         # NOTE: Plotly displays two years of data with the year axis near the edges, which is ugly
         # so when we only have 2 years of data, we add two additiona blank years on either side
         # of the range. Doesn't look that great either
@@ -340,7 +311,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             height=400,
             legend_title='',
         )
-        
+
         # NOTE: More experiments
         # fig.update_xaxes(constrain='domain')
         # fig.update_xaxes(autorange='reversed')
@@ -376,7 +347,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             ]
         )
     ]
-    
+
     return fig_layout
 
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:

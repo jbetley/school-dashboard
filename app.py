@@ -2,8 +2,7 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley
-# version:  1.02.051023
-# using: Dash version 2.9.3
+# version:  1.02.051823
 
 ## NOTE: Need to manually determine certain data points at the
 # school level when the data is stored at the Corp Level

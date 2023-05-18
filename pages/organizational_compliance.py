@@ -2,7 +2,7 @@
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
 # author:   jbetley
-# version:  1.02.051023
+# version:  1.02.051823
 
 import dash
 from dash import html, dash_table, Input, Output, callback

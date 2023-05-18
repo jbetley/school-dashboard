@@ -1,4 +1,4 @@
-# school-dashboard (using Dash 2.9.2)
+# school-dashboard (this version has updated from Dash 2.5.1 to Dash 2.9.2)
 Dashboard created in Plotly Dash (python) to measure School Performance
 
 The dashboard was created to provide academic and financial information for selected schools using both school provided
