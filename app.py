@@ -4,15 +4,20 @@
 # author:    jbetley
 # version:  1.02.051823
 
-## NOTE: Need to manually determine certain data points at the
-# school level when the data is stored at the Corp Level
-# E.g., Split Grade K8 and 912 enrollment / Proportionate split
-# of demographic enrollment (subgroups, etc.):
+## NOTE: Because of the way data is store and presented by IDOE, there are
+# cases in which data points need to be manually calculated that the school
+# level for data that is stored at the corporation level. Specifically, this
+# is an issue for calculating demographic enrollment when there is a school
+# that crosses natural grade span splits, e.g., Split Grade K8 and 912 enrollment using
+# proportionate split for:
 #   Christel House South (CHS/CHWMHS)
 #   Circle City Prep (Ele/Mid)
 
 # flask and flask-login #
 # https://levelup.gitconnected.com/how-to-setup-user-authentication-for-dash-apps-using-python-and-flask-6c2e430cdb51
+# https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/38
+# https://stackoverflow.com/questions/52286507/how-to-merge-flask-login-with-a-dash-application
+# https://python-adv-web-apps.readthedocs.io/en/latest/flask_db2.html
 
 import os
 from flask import Flask, url_for, redirect, request, render_template, session, jsonify
@@ -29,23 +34,26 @@ import pandas as pd
 import json
 import numpy as np
 import itertools
-from dotenv import load_dotenv # To access .env files in virtualenv
+from dotenv import load_dotenv
 
 # local functions
 from pages.calculations import set_academic_rating, calculate_percentage, \
     calculate_difference
-# from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
-#      corporation_rates, all_demographic_data
 
-# font_awesome used for svg circles
+# load data and global variables
+from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
+    corporation_rates, all_demographic_data, ethnicity, status, grades, subject, \
+    current_academic_year, eca_categories
+    #academic_info_grades, info, 
+
+# This is used solely to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Jost:400", FONT_AWESOME]
 
-# Authentication with Flask-Login, Sqlite3, and Bcrypt
-# https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/38
-# https://stackoverflow.com/questions/52286507/how-to-merge-flask-login-with-a-dash-application
-server = Flask(__name__, static_folder="static") # static_url_path="", # Causes static crashes
+# NOTE: Cannot get static folder to work (images do not load and give 302 Found error)
+
+server = Flask(__name__, static_folder="static")
 
 load_dotenv()
 
@@ -77,8 +85,6 @@ class User(UserMixin, db.Model):
 
 # load_user is used by login_user, passes the user_id
 # and gets the User object that matches that id
-# The 'User.query.get(int(id))' method has been deprecated
-# https://stackoverflow.com/questions/75365194/sqlalchemy-2-0-version-of-user-query-get1-in-flask-sqlalchemy
 @login_manager.user_loader
 def load_user(id):
     return db.session.get(User, int(id))
@@ -123,7 +129,6 @@ def login():
             password = request.form["password"]
 
             # Get user_data from the User object matching the provided username
-            # https://python-adv-web-apps.readthedocs.io/en/latest/flask_db2.html
             user_data = User.query.filter_by(username=user).first()
 
             if user_data:
@@ -165,65 +170,60 @@ app = dash.Dash(
 ],
 )
 
-# category variables
-ethnicity = [
-    "American Indian",
-    "Asian",
-    "Black",
-    "Hispanic",
-    "Multiracial",
-    "Native Hawaiian or Other Pacific Islander",
-    "White",
-]
-status = [
-    "Special Education",
-    "General Education",
-    "Paid Meals",
-    "Free/Reduced Price Meals",
-    "English Language Learners",
-    "Non-English Language Learners",
-]
-subgroups = ethnicity + status
+# TODO: Explore serverside disk caching
+#https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
 
-grades = ["Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8"]
-academic_info_grades = [
-    "Grade 3",
-    "Grade 4",
-    "Grade 5",
-    "Grade 6",
-    "Grade 7",
-    "Grade 8",
-    "Total",
-    "IREAD Pass %",
-]
-eca = ["Grade 10|ELA", "Grade 10|Math"]
-info = ["Year", "School Type"]
-subject = ["Math", "ELA"]
+# TODO: Can these globals be used across all pages?
+# global category variables
+# ethnicity = [
+#     "American Indian",
+#     "Asian",
+#     "Black",
+#     "Hispanic",
+#     "Multiracial",
+#     "Native Hawaiian or Other Pacific Islander",
+#     "White",
+# ]
+# status = [
+#     "Special Education",
+#     "General Education",
+#     "Paid Meals",
+#     "Free/Reduced Price Meals",
+#     "English Language Learners",
+#     "Non-English Language Learners",
+# ]
+# subgroups = ethnicity + status
+
+# grades = ["Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8"]
+# academic_info_grades = [
+#     "Grade 3",
+#     "Grade 4",
+#     "Grade 5",
+#     "Grade 6",
+#     "Grade 7",
+#     "Grade 8",
+#     "Total",
+#     "IREAD Pass %",
+# ]
+# eca = ["Grade 10|ELA", "Grade 10|Math"]
+# info = ["Year", "School Type"]
+# subject = ["Math", "ELA"]
 
 ## Load Data Files ##
-print("#### Loading Data. . . . . ####")
+# print("#### Loading Data. . . . . ####")
 
 # NOTE: No K8 academic data exists for 2020
-school_index = pd.read_csv(r"data/school_index.csv", dtype=str)
-school_academic_data_k8 = pd.read_csv(r"data/school_data_k8.csv", dtype=str)
-all_academic_data_hs = pd.read_csv(r"data/academic_data_hs.csv", dtype=str)
-corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
-all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
-
-# Fixes issue where converting string to int adds trailing '.0'
-# school_academic_data_k8["Low Grade"] = (
-#     school_academic_data_k8["Low Grade"].astype(str).str.replace(".0", "", regex=False)
-# )
-
-# school_academic_data_k8["High Grade"] = (
-#     school_academic_data_k8["High Grade"].astype(str).str.replace(".0", "", regex=False)
-# )
+# school_index = pd.read_csv(r"data/school_index.csv", dtype=str)
+# school_academic_data_k8 = pd.read_csv(r"data/school_data_k8.csv", dtype=str)
+# all_academic_data_hs = pd.read_csv(r"data/academic_data_hs.csv", dtype=str)
+# corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
+# all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
 
 # Get the most recent year of academic data.
 # NOTE: Both demographic and financial data will almost always be
 # more current than academic data due to IDOE release cadence and ICSB
-# reporting schedule
-current_academic_year = school_academic_data_k8["Year"].unique().max()
+# # reporting schedule
+# current_academic_year = school_academic_data_k8["Year"].unique().max()
 
 # Dropdown shows single school if school login is used
 # It shows all schools if admin login is used.
@@ -256,8 +256,7 @@ def set_dropdown_options(app_state):
 
     return dropdown_options
 
-# Set default charter dropdown option to the first
-# school in the list (alphanumeric)
+# Set default charter dropdown option to the first school in the list (alphanumeric)
 @callback(
     Output("charter-dropdown", "value"),
     Input("charter-dropdown", "options")
@@ -267,8 +266,7 @@ def set_dropdown_value(charter_options):
 
 # year options are the range of:
 #   max = current_academic_year
-#   min = the earliest year for which the school
-#   has adm (is open)
+#   min = the earliest year for which the school has adm (is open)
 #   limit = typically a limit of 5 years (currently and 
 #   temporarily 4 years so that 2018 academic data is not shown)
 @callback(
@@ -285,7 +283,8 @@ def set_year_dropdown_options(school, year):
     max_dropdown_years = 4
   
     # count the number of years that a school has ADM data, ignoring
-    # any most recent years with a 'Q#' prefix (incomplete)
+    # any most recent years with a 'Q#' prefix (indicating quarterly
+    # data)
     finance_file = 'data/F-' + school_index.loc[school_index["School ID"] == school]['School Name'].values[0] + '.csv'
 
     if os.path.isfile(finance_file):
@@ -303,12 +302,11 @@ def set_year_dropdown_options(school, year):
     # subtract 1 total to account for current year in display
     first_available_year = int(current_academic_year) - (num_dropdown_years-1)
     
-    # 'year' represents the State of the year-dropdown when a
-    # school is selected. This sets the current year_value
-    # equal to: current_academic_year (when app is first
-    # opened); current_year state (if the school has available
-    # data for that year), or to the next earliest year of academic
-    # data that is available for the school
+    # 'year' represents the State of the year-dropdown when a school is selected.
+    # This sets the current year_value equal to: current_academic_year (when app
+    # is first opened); current_year state (if the school has available data for
+    # that year), or to the next earliest year of academic data that is available
+    # for the school
 
     if year is None:
         year_value = current_academic_year
@@ -316,7 +314,6 @@ def set_year_dropdown_options(school, year):
         year_value = str(first_available_year)
     else:
         year_value = str(year)
-
 
     year_options=[
         {"label": str(y), "value": str(y)}
@@ -441,9 +438,9 @@ def load_data(school, year):
     if not school:
         raise PreventUpdate
 
-    # 'year' is selected year, year will be None when user selects
-    # a year and then switches to a school that has no data for 
-    # that year
+    # 'year' is the selected year, it will be equal to None whenever 
+    # the user selects a year and then switches to a school that has
+    # no data for that year - at which point we reset it to the current_year
     if year is None:
         year = current_academic_year
 
@@ -608,16 +605,33 @@ def load_data(school, year):
         attendance_data_metrics_dict = attendance_data_metrics.to_dict(into=OrderedDict)
         attendance_data_metrics_json = json.dumps(attendance_data_metrics_dict)
 
-    # NOTE: school finances are accessed in each financial page because
-    # of the need to load either school or network financial information.
+    # NOTE: school finances are currently accessed separately both because of
+    # the way the financial data is processed and stored (still needs to be
+    # human readable) and because there may be both school and network information.
+
+    # TODO: Load and Pass finance file as dict. move adm_values calc to about.py
+
     # It is accessed here to provide adm data to 'about.py' because the
     # adm data uses variables not currently available in about.py
 
     ## Average Daily Membership
-    finance_file = 'data/F-' + school_info['School Name'].values[0] + '.csv'
 
+    ## Financial Information
+    # All schools will have a school finance file
+    # Network schools (not 'None' in Network column) will also have network finance file
+
+    if school_info['Network'].values[0] != 'None':
+        network_finance_file = 'data/F-' + school_info['Network'].values[0] + '.csv'
+        network_financial_data = pd.read_csv(network_finance_file)
+        network_finance_dict = network_financial_data.to_dict()
+    else:
+        network_finance_dict = {}
+
+    finance_file = 'data/F-' + school_info['School Name'].values[0] + '.csv'
+    
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
+        school_finance_dict = financial_data.to_dict()
 
         adm_values = financial_data[financial_data['Category'].str.contains('ADM Average')]
         adm_values = adm_values.drop('Category', axis=1)
@@ -691,11 +705,15 @@ def load_data(school, year):
             academic_analysis_corp_dict = {}
 
         else:
-            # get corporation proficiency rates (keyed to the GEO Corp
-            # value in index). NOTE: corporation_rate values are calculated
-            # differently than school level values (when combined), so we
-            # need to use corporation_rate values whenever we compare a
-            # charter (school corporation) to a traditional school corporation.
+            # School Corp proficiency rates are keyed to the selected school's GEO Corp
+            # value in index).
+            # NOTE: corporation_rate values will not always be the same as aggregated
+            # individual school values (e.g., School A, School B, and School C are in
+            # School Corporation 1- but the value for Category Z for School Corporation
+            # 1 will not necessarily be equal to the combined values (or average value) of
+            # Schools A-C). This is because certain inclusion metrics are calculated 
+            # differently at the Corporation Level. All things being equal, the corporation_rate
+            # values will always be more accurate for Corporation level data.
             k8_corp_rates_filtered = corporation_rates[
                 ~corporation_rates["Year"].isin(excluded_years)
             ]
@@ -816,18 +834,17 @@ def load_data(school, year):
                     k8_school_data["IREAD Pass N"], errors="coerce"
                 ) / pd.to_numeric(k8_school_data["IREAD Test N"], errors="coerce")
 
-                # Need this in case where IREAD Test or Pass has '***' value (which results in Nan when divided)
+                # If either Test or Pass category had a '***' value, the resulting value will be 
+                # NaN - we want it to display '***', so we just fillna
                 k8_school_data["IREAD Pass %"] = k8_school_data["IREAD Pass %"].fillna("***")
 
             # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
             k8_school_data = k8_school_data.filter(
-                regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",                
-                # regex=r"\|ELA$|\|Math$|^IREAD Pass %|^Year$",
+                regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",
                 axis=1,
             )
             k8_corp_rate_data = k8_corp_rate_data.filter(
                 regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",                
-                # regex=r"\|ELA$|\|Math$|^IREAD Pass %|^Year$",
                 axis=1,
             )
 
@@ -874,7 +891,6 @@ def load_data(school, year):
             # Keep category and all available years of data
             k8_corp_data = k8_corp_data.iloc[:, : (k8_num_years + 1)]  
 
-            # Drop 'School Name'
             k8_school_data = k8_school_data[
                 k8_school_data["Category"].str.contains("School Name") == False
             ]
@@ -886,7 +902,6 @@ def load_data(school, year):
             k8_year_cols = list(k8_school_data.columns[:0:-1])
             k8_year_cols.reverse()
 
-            # Create copy of school dataframe to use later for metric calculations
             k8_school_metric_data = k8_school_data.copy()
 
             # add_suffix is applied to entire df. To hide columns we dont want\
@@ -902,7 +917,6 @@ def load_data(school, year):
                 .reset_index()
             )
 
-            # Create list of alternating columns by year (School Value/Similar School Value)
             school_cols = list(k8_school_data.columns[:0:-1])
             school_cols.reverse()
 
@@ -921,9 +935,7 @@ def load_data(school, year):
             merged_data = k8_school_data.merge(k8_corp_data, on="Category", how="left")
             merged_data = merged_data[merged_cols]
 
-            # temporarily drop 'Category' column to simplify calculating difference
             tmp_category = k8_school_data["Category"]
-
             k8_school_data = k8_school_data.drop("Category", axis=1)
             k8_corp_data = k8_corp_data.drop("Category", axis=1)
 
@@ -939,17 +951,16 @@ def load_data(school, year):
             k8_result = k8_result.set_axis(result_cols, axis=1)
             k8_result.insert(loc=0, column="Category", value=tmp_category)
 
-            # combined merged (school and corp) and result dataframes and reorder (according to result columns)
-            final_k8_academic_data = merged_data.merge(
-                k8_result, on="Category", how="left"
-            )
+            # combined merged (school and corp) and result dataframes and reorder
+            # (according to result columns)
+            final_k8_academic_data = merged_data.merge(k8_result, on="Category", how="left")
 
             final_k8_academic_data = final_k8_academic_data[final_cols]
 
-            # TODO: This IS redundant. We add Proficient % to all totals, then remove
-            # TODO: here, then pass to Academic Analysis and add back. But I tried
-            # TODO: to fix it once and broke everything. So I'm just gonna leave it
-            # TODO: here for now.
+            # NOTE: Pretty sure this is redundant as we add 'Proficient %; suffix to totals
+            # above, then remove it here, then pass to academic_analysis page, and add it
+            # back. But I tried to fix it once and broke everything. So I'm just gonna
+            # leave it alone for now.
             final_k8_academic_data["Category"] = (
                 final_k8_academic_data["Category"]
                 .str.replace(" Proficient %", "")
@@ -965,13 +976,13 @@ def load_data(school, year):
             k8_academic_data_dict = final_k8_academic_data.to_dict(into=OrderedDict)
             k8_academic_data_json = json.dumps(k8_academic_data_dict)
 
-            ## Academic Metrics (k8)
+        ## Academic Metrics (k8)
 
             # Non-comparative indicators
 
-            # NOTE: Any new data point that is not calculated year-over-year or as
-            # difference-from-school-corp should be removed from the dataframe and
-            # dealt with here.
+            # NOTE: As comparative indicators (year-over-year or difference-from-school-corp)
+            # are vectorized operations, we need to pull out any indicators requiring special
+            # treatment and calculate them separately.
 
             # IREAD Data
             iread_data = k8_school_metric_data[
@@ -983,7 +994,8 @@ def load_data(school, year):
                 ].index
             )
 
-            # IREAD Metrics
+        ## IREAD 
+
             # NOTE: See code explanation in discussion of 'attendance_data_metrics'above.
             if not iread_data.empty:
                 
@@ -1017,9 +1029,8 @@ def load_data(school, year):
             iread_data_dict = iread_data.to_dict(into=OrderedDict)
             iread_data_json = json.dumps(iread_data_dict)
 
-            # Comparative indicators (year-over-year and difference-from-corporation)
+        ## Comparative indicators (year-over-year and difference-from-corporation)
 
-            # Store category column and drop from dataframe to simplify calculation
             category_header = k8_school_metric_data["Category"]
             k8_school_metric_data = k8_school_metric_data.drop("Category", axis=1)
 
@@ -1031,16 +1042,14 @@ def load_data(school, year):
             ]
 
             # NOTE: Calculating year-over-year values is complicated by the fact that we need
-            # to track a non-numeric value- insufficent n-size ('***'). This is used when there
-            # is available data, but not enough of it to show under privacy laws.
+            # to track, not ignore, insufficent n-size ('***'), a non-numeric value- . This is
+            # used when there is available data, but not enough of it to show under privacy laws.
 
-            # 1) Generally, the year_over_year value is the difference between current_year and
-            #    previous_year expressed as a percentage (or zero, if the numbers are the same).
-            # 2) If both the current_year and previous_year values are '***' -> the result is '***'
-            # 3) If the previous year is either NaN or '***' and the current_year is 0 (that is 0% of students
+            # 1) If both the current_year and previous_year values are '***' -> the result is '***'
+            # 2) If the previous year is either NaN or '***' and the current_year is 0 (that is 0% of students
             #    were proficient) -> the result is '-***", which is a special flag used for accountability
             #    purposes (a '-***' is generally treated as a Did Not Meet Standard rather than a No Rating).
-            # Flow:
+            #   Thus:
             #   if None in Either Column -> None
             #   if *** in either column -> ***
             #   if # -> subtract
@@ -1080,10 +1089,9 @@ def load_data(school, year):
             year_over_year_values_values = year_over_year_values_values.set_axis(k8_year_cols, axis=1)
             year_over_year_values_values.insert(loc=0, column="Category", value=category_header)
 
-            # duplicate final academic data in preparation for adding year_over_year data and calculating Ratings
             year_over_year_values = final_k8_academic_data.copy()
 
-            # delete 'Corp Proficiency' and '+/-' columns as they aren't used in year over year calculation
+            # 'Corp Proficiency' and '+/-' columns aren't used in year over year calculation
             year_over_year_values = year_over_year_values.drop(
                 [
                     col
@@ -1129,7 +1137,7 @@ def load_data(school, year):
             delta_limits = [0.1, 0.02, 0, 0]
             years_limits = [0.05, 0.02, 0, 0]
             
-            # NOTE: See code explanation in discussion of 'attendance_data_metrics' above.
+            # NOTE: See comment in discussion of 'attendance_data_metrics' above.
             [
                 diff_to_corp.insert(
                     i,
@@ -1143,6 +1151,7 @@ def load_data(school, year):
                 )
                 for i in range(diff_to_corp.shape[1], 1, -3)
             ]
+
             [
                 year_over_year_values.insert(
                     i,
@@ -1179,12 +1188,11 @@ def load_data(school, year):
             # function assigns a rating based on the '+/-' difference value (either year over year
             # or as compared to corp). For the year over year comparison it is possible to get a
             # rating of 'Approaches Standard' for a '+/-' value of '0.00%' when the yearly ratings
-            # are both '0'. E.g., both 2022 and 2021 proficiency are both 0% and there is no case
-            # where we want a school to receive anything other than a 'DNMS' for a 0% proficiency.
-            # However, the set_academic_rating() function does not have access to the values used
-            # to calculate the difference value (so it cannot tell if a 0 value is the result of a
-            # 0 proficiency). So we need to manually replace any rating in the Rating column with
-            # 'DMNS' where the School proficiency value is '0.00%.'
+            # are both '0'; and there is no case where we want a school to receive anything other
+            # than a 'DNMS' for a 0% proficiency. However, the set_academic_rating() function does
+            # not have access to the values used to calculate the difference value (so it cannot
+            # tell if a 0 value is the result of a 0 proficiency). So we need to manually replace
+            # any rating in the Rating column with 'DMNS' where the School proficiency value is '0.00%.'
 
             # because we are changing the value of one column based on the value of another (paired)
             # column, the way we do this is to create a list of tuples (a list of year and rating
@@ -1192,12 +1200,13 @@ def load_data(school, year):
 
             # create the list of tuples
             # NOTE: the zip function stops at the end of the shortest list which automatically drops
-            # the single 'Initial Year' column from the list. It returns an empty list if school_years_cols
-            # only contains the Initial Year columns (because rating_cols will be empty)
+            # the single 'Initial Year' column from the list. It returns an empty list if
+            # school_years_cols only contains the Initial Year columns (because rating_cols will be empty)
             rating_cols = list(col for col in year_over_year_values.columns if "Rate" in col)
             col_pair = list(zip(school_years_cols, rating_cols))
 
-            # iterate over list of tuples, if value in first item in pair is zero, change value in second item in pair
+            # iterate over list of tuples, if value in first item in pair is zero, change second
+            # value in pair to DNMS
             if col_pair:
                 for k, v in col_pair:
                     year_over_year_values[v] = np.where(
@@ -1269,16 +1278,16 @@ def load_data(school, year):
             ]
 
             # AHS- temporarily pull AHS specific values (CCR and GradAll)
-            # that don't have corp equivalent.
+            # where there is no corp equivalent.
             if school_info["School Type"].values[0] == "AHS":
                 ahs_data = hs_school_data.filter(regex=r"GradAll$|CCR$", axis=1)
 
             # keep only those columns used in calculations
 
-            # SAT Data Categories: 'Total Tested', 'Below Benchmark',
-            # 'Approaching Benchmark', 'At Benchmark', 'Benchmark %'
-            # Grade 10 ECA Categories are:'Pass N' and 'Test N'
-            # Graduation Categories are: 'Cohort Count' and 'Graduates'
+            # SAT Categories: 'Total Tested', 'Below Benchmark', 'Approaching Benchmark',
+            #   'At Benchmark', & 'Benchmark %'
+            # Grade 10 ECA Categories: 'Pass N' and 'Test N'
+            # Graduation Categories: 'Cohort Count' and 'Graduates'
             hs_school_data = hs_school_data.filter(
                 regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1
             )
@@ -1343,7 +1352,8 @@ def load_data(school, year):
             # Use ECA data as calculated at the corporation level (from corporation_rates datafile).
             # NOTE: 'Due to suspension of assessments in 2019-2020, Grade 11 students were assessed
             # on ISTEP10 in 2020-2021' 'Results reflect first-time test takers in Grade 11 Cohort
-            # (Graduation Year 2022). 'Results may not be comparable to past years due to assessment of Grade 11'
+            # (Graduation Year 2022). 'Results may not be comparable to past years due to assessment
+            # of Grade 11'
             hs_corp_rates_filtered = corporation_rates[~corporation_rates["Year"].isin(excluded_years)]
             hs_corp_rate_data = hs_corp_rates_filtered.loc[(hs_corp_rates_filtered["Corp ID"] == school_info["GEO Corp"].values[0])].copy()
 
@@ -1351,10 +1361,9 @@ def load_data(school, year):
             for col in hs_corp_rate_data.columns:
                 hs_corp_rate_data[col] = pd.to_numeric(hs_corp_rate_data[col], errors="coerce")
 
-            # NOTE: Because we are going to take the results from one dataframe (hs_corp_rate_data) and add it to
-            # another dataframe (hs_corp_data), we need to ensure that the dfs have the same number of years (rows)
-            # Special case for 2020 - corp_data exists for 2020 (e.g., grad rate), but no data exists for 2020
-            # in corp_rate_data - so there will always be a mismatch - so need to take some additional steps
+            # NOTE: Special case for 2020 - corp_data exists for 2020 (e.g., grad rate),
+            # but no data exists for 2020 in corp_rate_data - so there will always be a
+            # mismatch - so need to take some additional steps
 
             # drop all non_matching years from hs_corp_rate_data
             hs_corp_rate_data = hs_corp_rate_data.loc[
@@ -1392,16 +1401,14 @@ def load_data(school, year):
                     )
                     hs_corp_rate_data.at[hs_corp_rate_data.index[-1], "Year"] = y
 
-            # sort columns and reset index so the two df's match
             hs_corp_rate_data = hs_corp_rate_data.sort_values(by="Year", ascending=False)
             hs_corp_rate_data = hs_corp_rate_data.reset_index(drop=True)
 
-            # calculate ECA averages ('Grade 10' + '|ELA/Math' + 'Test N' / 'Grade 10' + '|ELA/Math' + 'Pass N')
-            # if none_categories includes 'Grade 10' - there is no ECA data available for the school for the selected Years
-            eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
+            # if none_categories includes 'Grade 10' - there is no ECA data available
+            # # for the school for the selected Years
+            # eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
 
             # checks to see if substring ('Grade 10') is in the list of missing cols
-            # this performs substring search on a single combined string (separated by tabs):
             if "Grade 10" not in "\t".join(missing_cols):
                 for e in eca_categories:
                     new_col = e + " Pass Rate"
@@ -1426,13 +1433,12 @@ def load_data(school, year):
                     total_tested = sc + "|" + ss + " Total Tested"
 
                     if total_tested not in missing_cols:
-                        # IDOE sometimes leaves 0's where there should be nulls
+                        # Dats sometimes has 0's where there should be nulls
                         # so we drop all columns for a category where the
                         # total tested # of students is '0' (values are currently
                         # strings, get converted to numeric in the calculate-percentage
                         # function)
                         if hs_school_data[total_tested].values[0] == '0':
-                            # drop category
                             drop_columns = [new_col, at_benchmark, total_tested]
                             hs_school_data = hs_school_data.drop(drop_columns, axis=1)
                             hs_corp_data = hs_corp_data.drop(drop_columns, axis=1)
@@ -1444,13 +1450,10 @@ def load_data(school, year):
                                 hs_corp_data[at_benchmark] / hs_corp_data[total_tested]
                             )
 
-            # add 'non-waiver grad rate' ('Non-Waiver|Cohort Count' / 'Total|Cohort Count')
-            # and 'strength of diploma' (Non-Waiver|Cohort Count` * 1.08) / `Total|Cohort Count`)
-            # calculation and average to both dataframes
-
             # if missing_cols includes 'Non-Waiver' - there is no data available for the school
             # for the selected Years
             if "Non-Waiver" not in "\t".join(missing_cols):
+
                 # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
                 # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
                 # cohort, there were no 'waiver' graduates (which means no non-waiver data).
@@ -1467,9 +1470,7 @@ def load_data(school, year):
                     hs_corp_data["Non-Waiver|Cohort Count"] * 1.08
                 ) / hs_corp_data["Total|Cohort Count"]
 
-                # NOTE: the conversion causes all '***' values to be NaN. We are
-                # unlikely to have a '***' value here, but it is possible and we
-                # may want to eventually account for this
+                # NOTE: pd.to_numeric (coerce) should have converted all '***' values (to NaN)
                 hs_school_data["Non-Waiver|Cohort Count"] = pd.to_numeric(
                     hs_school_data["Non-Waiver|Cohort Count"], errors="coerce"
                 )
@@ -1502,13 +1503,10 @@ def load_data(school, year):
                     ahs_data["AHS|CCR"] / ahs_data["AHS|GradAll"]
                 )
 
-                ahs_metric_data = (
-                    ahs_school_data.copy()
-                )  # Keep original data for metric calculations
+                ahs_metric_data = (ahs_school_data.copy())
                 ahs_metric_data = ahs_metric_data.reset_index(drop=True)
 
-            # filter all columns keeping only the relevant ones (NOTE: comment this out to retain all columns)
-
+            # filter out unused cols
             hs_school_data = hs_school_data.filter(
                 regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|Total Tested|^Year$", # ^Strength of Diploma
                 axis=1,
@@ -1554,26 +1552,24 @@ def load_data(school, year):
             # and rename the column this merges data only where both dataframes share a common key,
             # in this case 'Year')
             state_grad_average["Year"] = state_grad_average["Year"].astype(int)
-            hs_corp_data = hs_corp_data.merge(
-                state_grad_average, on="Year", how="inner"
-            )
+            
+            hs_corp_data = hs_corp_data.merge(state_grad_average, on="Year", how="inner")
+            
             hs_corp_data = hs_corp_data.rename(
                 columns={"State_Grad_Average": "Average State Graduation Rate"}
             )
 
-            # duplicate 'Total Grad' row and name it 'State Average Graduation Rate' for comparison purposes
+            # duplicate 'Total Grad' row and name it 'State Average Graduation Rate'
+            # for comparison purposes
             hs_school_data["Average State Graduation Rate"] = hs_school_data[
                 "Total Graduation Rate"
             ]
 
-            # reset indicies and concat
             hs_school_info = hs_school_info.reset_index(drop=True)
             hs_school_data = hs_school_data.reset_index(drop=True)
-            hs_school_data = pd.concat(
-                [hs_school_data, hs_school_info], axis=1, join="inner"
-            )
 
-            # ensure columns headers are strings
+            hs_school_data = pd.concat([hs_school_data, hs_school_info], axis=1, join="inner")
+
             hs_school_data.columns = hs_school_data.columns.astype(str)
             hs_corp_data.columns = hs_corp_data.columns.astype(str)
 
@@ -1601,8 +1597,7 @@ def load_data(school, year):
             )
             hs_corp_data = hs_corp_data.iloc[:, : (hs_num_years + 1)]
 
-            # Drop State/Federal grade rows from school_data
-            # (used in 'about' tab, but not here)
+            # State/Federal grade rows are used in 'about' page, but not here
             hs_school_data = hs_school_data[hs_school_data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
             
             hs_school_data = hs_school_data.reset_index(drop=True)
@@ -1660,7 +1655,6 @@ def load_data(school, year):
             )
             hs_merged_data = hs_merged_data[merged_cols]
 
-            # temporarily drop 'Category' column to simplify calculating difference
             tmp_category = hs_school_data["Category"]
             hs_school_data = hs_school_data.drop("Category", axis=1)
             hs_corp_data = hs_corp_data.drop("Category", axis=1)
@@ -1668,23 +1662,6 @@ def load_data(school, year):
             # make sure there are no lingering NoneTypes to screw up the creation of hs_results
             hs_school_data = hs_school_data.fillna(value=np.nan)
             hs_corp_data = hs_corp_data.fillna(value=np.nan)
-
-            # NOTE: This is not necessary because we removed '***' through
-            # pd.to_numeric(coerce)
-
-            # def calculate_graduation_rate_difference(school_col, corp_col):
-            #     return np.where(
-            #         (school_col == "***") | (corp_col == "***"),
-            #         "***",
-            #         # np.where((school_col.isna()) & (corp_col.isna()),None,
-            #         #          np.where(school_col.isna(),0,
-            #         np.where(
-            #             school_col.isna(),
-            #             None,
-            #             pd.to_numeric(school_col, errors="coerce")
-            #             - pd.to_numeric(corp_col, errors="coerce"),
-            #         ),
-            #     )  # )
 
             # calculate difference between two dataframes
             hs_results = pd.DataFrame()
@@ -1766,8 +1743,7 @@ def load_data(school, year):
                     .reset_index()
                 )
 
-                # ensure state_grades df contains same years of data as
-                # ahs_metric_cols (drop cols that don't match)
+                # ensure state_grades df contains same years of data as ahs_metric_cols
                 ahs_state_grades = ahs_state_grades.loc[:,ahs_state_grades.columns.str.contains("|".join(ahs_metric_cols + ["Category"]))]
 
                 letter_grade_limits = ["A", "B", "C", "D", "F"]
@@ -1888,6 +1864,7 @@ def load_data(school, year):
     current_academic_year_dict = {'current_academic_year': current_academic_year}
 
     # combine into dictionary of dictionarys for dcc.store
+    # TODO: Reorder
     dict_of_df = {}
 
     dict_of_df[0] = school_info_dict
@@ -1906,6 +1883,8 @@ def load_data(school, year):
     dict_of_df[13] = ahs_metrics_data_json
     dict_of_df[14] = combined_grad_metrics_json
     dict_of_df[15] = current_academic_year_dict
+    dict_of_df[16] = network_finance_dict
+    dict_of_df[17] = school_finance_dict
 
     return dict_of_df
 

@@ -129,6 +129,15 @@ def update_financial_information_page(data,year,radio_value):
 
         financial_data = pd.read_csv(finance_file)
 
+        network_finance_data = pd.DataFrame.from_dict(data['16'])
+        # df gets flipped when converted either to or from dict
+        network_finance_data = network_finance_data.iloc[:, ::-1]
+        print(school_index['School Name'].values[0])
+        print(network_finance_data)
+        if not network_finance_data.empty:
+            print('NETWORK!')
+        else:
+            print('NO NETWORK!')
         # Financial data will almost always be more recent than academic
         # data. This is the only time we want do display 'future' data,
         # that is data from a year more recent than the maximum dropdown
