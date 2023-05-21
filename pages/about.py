@@ -14,6 +14,7 @@ import json
 
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
+from .load_data import school_index, ethnicity, status, current_academic_year, max_display_years
 
 dash.register_page(__name__, path='/', order=0, top_nav=True)
 
@@ -34,14 +35,12 @@ dash.register_page(__name__, path='/', order=0, top_nav=True)
     Output('info-table-no-data', 'children'),    
     Output('about-no-data', 'children'),
     State('year-dropdown', 'value'),
+    Input('charter-dropdown', 'value'),
     Input('dash-session', 'data')
 )
-def update_about_page(year, data):
+def update_about_page(year, school, data):
     if not data:
         raise PreventUpdate
-
-    ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
-    status = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
 
     # see color list in chart_helpers.py
     linecolor = ['#df8f2d']
@@ -52,13 +51,13 @@ def update_about_page(year, data):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('School Enrollment & Demographics')
 
-    school_index = pd.DataFrame.from_dict(data['0'])
-
-    school_name = school_index['School Name'].values[0]
+    # school_index = pd.DataFrame.from_dict(data['0'])
+    selected_school_info = school_index.loc[school_index["School ID"] == school]
+    school_name = selected_school_info['School Name'].values[0]
     headers = ['Category','Description']
 
     # school index df has additional values that can be added to this list (see school_index.csv)
-    info = school_index[['City','Principal','Opening Year']]
+    info = selected_school_info[['City','Principal','Opening Year']]
 
     school_info = info.T
     school_info = school_info.reset_index()
@@ -102,11 +101,12 @@ def update_about_page(year, data):
     school_demographics = pd.DataFrame.from_dict(data['1'])
     
     # get adm data
-    school_adm = pd.DataFrame.from_dict(data['6'])
-
+    school_financial_data = pd.DataFrame.from_dict(data['17'])
+    school_financial_data = school_financial_data.iloc[:, ::-1]
+    
     # data['3'] is a json file containing school letter grade information
     if not data['3'] and (len(school_demographics.index) == 0 & \
-          len(school_adm.index) == 0):
+          len(school_financial_data.index) == 0):
         
         letter_grade_table = {}
         enroll_title = {}
@@ -304,19 +304,67 @@ def update_about_page(year, data):
             ]
 
         # ADM chart
-        if len(school_adm.index) == 0:
+
+        if len(school_financial_data.index) == 0:
 
             adm_fig = no_data_fig_label('Average Daily Membership History',400)
-
+        
         else:
+
+            adm_values = school_financial_data[school_financial_data['Category'].str.contains('ADM Average')]
+            adm_values = adm_values.drop('Category', axis=1)
+            adm_values = adm_values.reset_index(drop=True)
+            
+            for col in adm_values.columns:
+                adm_values[col] = pd.to_numeric(adm_values[col], errors="coerce")
+            
+            adm_values = adm_values.loc[:, (adm_values != 0).any(axis=0)]
+
+            adm_values = adm_values[adm_values.columns[::-1]]
+
+            # file exists, but there is no adm data
+            if (adm_values.sum(axis=1).values[0] == 0):
+                
+                adm_fig = no_data_fig_label('Average Daily Membership History',400)
+            
+            else:
+
+                # NOTE: The number of years with positive ADM is the most reliable
+                # way to track the number of years a school has been open to students.
+                # The ADM dataset can be longer than five years (maximum display), so
+                # need to filter both the selected year (the year to display) and the
+                # total # of years
+                operating_years_by_adm = len(adm_values.columns)
+
+                # if number of available years exceeds year_limit, drop excess columns (years)
+                if operating_years_by_adm > max_display_years:
+                    adm_values = adm_values.drop(columns = adm_values.columns[: (operating_years_by_adm - max_display_years)],axis=1)
+
+                # 'excluded years' is a list of YYYY strings (all years more
+                # recent than selected year) that can be used to filter data
+                # that should not be displayed
+                excluded_academic_years = int(current_academic_year) - int(year)
+                
+                excluded_years = []
+                
+                for i in range(excluded_academic_years):
+                    excluded_year = int(current_academic_year) - i
+                    excluded_years.append(str(excluded_year))
+                
+                # if the display year is less than current year
+                # drop columns where year matches any years in 'excluded years' list
+                if excluded_years:
+                    adm_values = adm_values.loc[
+                        :, ~adm_values.columns.str.contains("|".join(excluded_years))
+                    ]
 
             # drop any columns with partial year data (e.g., 2023 (Q2)) because
             # they generally do not have reliable adm data.
-            school_adm = school_adm[school_adm.columns.drop(list(school_adm.filter(regex='Q')))]
+            adm_values = adm_values[adm_values.columns.drop(list(adm_values.filter(regex='Q')))]
             
             # turn single row dataframe into two lists (column headers and data)
-            adm_data=school_adm.iloc[0].tolist()
-            years=school_adm.columns.tolist()
+            adm_data=adm_values.iloc[0].tolist()
+            years=adm_values.columns.tolist()
 
             # create chart
             adm_fig = px.line(

@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 ## Load Data Files ##
 print("#### Loading Data. . . . . ####")
 
@@ -12,6 +11,8 @@ corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
 all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
 
 current_academic_year = school_academic_data_k8["Year"].unique().max()
+
+max_display_years = 5
 
 # global category variables
 ethnicity = [

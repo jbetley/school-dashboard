@@ -10,10 +10,13 @@ import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
+import json
 import os.path
 
 from .table_helpers import no_data_page
 from .subnav import subnav_finance
+from .load_data import school_index, ethnicity, status, current_academic_year, max_display_years
+
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
 
 @callback(
@@ -24,10 +27,11 @@ dash.register_page(__name__, top_nav=True, path = '/financial_information', orde
     Output('financial-information-empty-container', 'style'),
     Output('financial-information-no-data', 'children'),
     Input('dash-session', 'data'),
+    Input('charter-dropdown', 'value'),
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-info', component_property='value')
 )
-def update_financial_information_page(data,year,radio_value):
+def update_financial_information_page(data,school,year,radio_value):
     if not data:
         raise PreventUpdate
 
@@ -37,9 +41,10 @@ def update_financial_information_page(data,year,radio_value):
 
     selected_year = int(year)
     
-    max_display_years = 5
+    # max_display_years = 5
 
-    school_index = pd.DataFrame.from_dict(data['0'])
+    # school_index = pd.DataFrame.from_dict(data['0'])
+    selected_school_info = school_index.loc[school_index["School ID"] == school]
 
     # Displays either School or Network level financials, if a school is not
     # part of a network, no radio buttons are displayed at all. If a school
@@ -47,7 +52,7 @@ def update_financial_information_page(data,year,radio_value):
     # buttons in a variable ensures there is no flickering of the component as
     # it is drawn and then hidden - as the button variable has no content until
     # it also meets the display condition.
-    if school_index['Network'].values[0] != 'None':
+    if selected_school_info['Network'].values[0] != 'None':
         if radio_value == 'network-finance':
 
             radio_content = html.Div(
@@ -114,30 +119,46 @@ def update_financial_information_page(data,year,radio_value):
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-finance':
-        finance_file = 'data/F-' + school_index['Network'].values[0] + '.csv'
-        table_title = 'Audited Financial Information (' + school_index['Network'].values[0] + ')'
-    else:
-        finance_file = 'data/F-' + school_index['School Name'].values[0] + '.csv'
+        # finance_file = 'data/F-' + selected_school_info['Network'].values[0] + '.csv'
+        # finance_file = pd.DataFrame.from_dict(data['16'])
+        finance_file_json = json.loads(data['16'])
 
+        table_title = 'Audited Financial Information (' + selected_school_info['Network'].values[0] + ')'
+
+    else:
+        # finance_file = 'data/F-' + selected_school_info['School Name'].values[0] + '.csv'
+        finance_file_json = json.loads(data['17'])
+        # finance_file = pd.DataFrame.from_dict(finance_file_json)
+    # finance_file = pd.DataFrame.from_dict(data['17'])
         # don't display the school name in table title if the school isn't part of a network
-        if school_index['Network'].values[0] == 'None':
+
+        if selected_school_info['Network'].values[0] == 'None':
             table_title = 'Audited Financial Information'
         else:
-            table_title = 'Audited Financial Information (' + school_index['School Name'].values[0] + ')'
+            table_title = 'Audited Financial Information (' + selected_school_info['School Name'].values[0] + ')'
 
-    if os.path.isfile(finance_file):
+    # df gets flipped when converted either to or from dict
+    # print(finance_file)
+    financial_data = pd.DataFrame.from_dict(finance_file_json)
+    # financial_data = finance_file.iloc[:, ::-1]
+    print(financial_data)
+    if len(financial_data.index) != 0:
+        # print(financial_data)
+    # os.path.isfile(finance_file):
 
-        financial_data = pd.read_csv(finance_file)
+        # financial_data = pd.read_csv(finance_file)
 
-        network_finance_data = pd.DataFrame.from_dict(data['16'])
-        # df gets flipped when converted either to or from dict
-        network_finance_data = network_finance_data.iloc[:, ::-1]
-        print(school_index['School Name'].values[0])
-        print(network_finance_data)
-        if not network_finance_data.empty:
-            print('NETWORK!')
-        else:
-            print('NO NETWORK!')
+        # network_finance_data = pd.DataFrame.from_dict(data['16'])
+    
+        # network_finance_data = network_finance_data.iloc[:, ::-1]
+        # print(selected_school_info['School Name'].values[0])
+        # print(network_finance_data)
+        # if not network_finance_data.empty:
+        #     print('NETWORK!')
+        # else:
+        #     print('NO NETWORK!')
+
+
         # Financial data will almost always be more recent than academic
         # data. This is the only time we want do display 'future' data,
         # that is data from a year more recent than the maximum dropdown
@@ -154,18 +175,18 @@ def update_financial_information_page(data,year,radio_value):
         # drop any years that are later in time than the selected year
         years_to_exclude = most_recent_finance_year - selected_year
 
-        # The current academic year ( which will always be the max
-        # dropdown value) is stored in dcc store as the 15th dictionary.
-        # use it to determine if financial data that is more recent than
-        # the allowed display year exists
-        current_academic_year = int(data['15']['current_academic_year'])
+        # # The current academic year ( which will always be the max
+        # # dropdown value) is stored in dcc store as the 15th dictionary.
+        # # use it to determine if financial data that is more recent than
+        # # the allowed display year exists
+        # current_academic_year = int(data['15']['current_academic_year'])
 
         # if the selected year is less than the most recent academic year,
         # drop all financial years more recent than the selected year
         # this has the effect of displaying any financial year more
         # recent than the current academic year if it is present in the
         # dataframe
-        if selected_year < current_academic_year:
+        if selected_year < int(current_academic_year):
             financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
 
         # financial file exists, but is empty
@@ -180,6 +201,7 @@ def update_financial_information_page(data,year,radio_value):
             for col in financial_data.columns[1:]:
                 financial_data[col]=pd.to_numeric(financial_data[col], errors='coerce')
 
+            print(financial_data)
             # NOTE: certain categories in dataframe are pre-calculated ('Total Grants',
             # 'Net Asset Position', and 'Change in Net Assets'). However, rather than
             # rely on these pre-calculated categories, we calculate them from the 

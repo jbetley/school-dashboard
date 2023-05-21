@@ -42,8 +42,8 @@ from pages.calculations import set_academic_rating, calculate_percentage, \
 
 # load data and global variables
 from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
-    corporation_rates, all_demographic_data, ethnicity, status, grades, subject, \
-    current_academic_year, eca_categories
+    corporation_rates, all_demographic_data, ethnicity, status, grades, subject, eca_categories, \
+    current_academic_year, max_display_years
     #academic_info_grades, info, 
 
 # This is used solely to generate metric rating svg circles
@@ -462,9 +462,6 @@ def load_data(school, year):
     # demographic data exists for 2020
     demographic_year = str(year)
 
-    # NOTE: Maximum number of years of data to display
-    max_display_years = 5
-
     ## Demographic data
     # Get school demographic data for all years
     school_demographic_data = all_demographic_data.loc[
@@ -605,79 +602,30 @@ def load_data(school, year):
         attendance_data_metrics_dict = attendance_data_metrics.to_dict(into=OrderedDict)
         attendance_data_metrics_json = json.dumps(attendance_data_metrics_dict)
 
-    # NOTE: school finances are currently accessed separately both because of
-    # the way the financial data is processed and stored (still needs to be
-    # human readable) and because there may be both school and network information.
-
-    # TODO: Load and Pass finance file as dict. move adm_values calc to about.py
-
-    # It is accessed here to provide adm data to 'about.py' because the
-    # adm data uses variables not currently available in about.py
-
-    ## Average Daily Membership
-
     ## Financial Information
     # All schools will have a school finance file
     # Network schools (not 'None' in Network column) will also have network finance file
 
-    if school_info['Network'].values[0] != 'None':
-        network_finance_file = 'data/F-' + school_info['Network'].values[0] + '.csv'
-        network_financial_data = pd.read_csv(network_finance_file)
-        network_finance_dict = network_financial_data.to_dict()
-    else:
-        network_finance_dict = {}
+    # NOTE: school finances are currently accessed as separate csv files both because of
+    # the way the financial data is processed and stored (still needs to be
+    # human readable) and because there may be both school and network information.
 
     finance_file = 'data/F-' + school_info['School Name'].values[0] + '.csv'
     
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
-        school_finance_dict = financial_data.to_dict()
-
-        adm_values = financial_data[financial_data['Category'].str.contains('ADM Average')]
-        adm_values = adm_values.drop('Category', axis=1)
-        adm_values = adm_values.reset_index(drop=True)
-        
-        for col in adm_values.columns:
-            adm_values[col] = pd.to_numeric(adm_values[col], errors="coerce")
-        
-        adm_values = adm_values.loc[:, (adm_values != 0).any(axis=0)]
-
-        adm_values = adm_values[adm_values.columns[::-1]]
-
-        if (
-            # this is true if all columns are equal to 0
-            adm_values.sum(axis=1).values[0] == 0
-        ):  
-            school_adm_dict = {}
-        else:
-
-            # NOTE: The number of years with positive ADM is the most reliable
-            # way to track the number of years a school has been open to students.
-            # The ADM dataset can be longer than five years (maximum display), so
-            # need to filter both the selected year (the year to display) and the
-            # total # of years
-            operating_years_by_adm = len(adm_values.columns)
-
-            # if number of available years exceeds year_limit, drop excess columns (years)
-            if operating_years_by_adm > max_display_years:
-                adm_values = adm_values.drop(
-                    columns = adm_values.columns[
-                        : (operating_years_by_adm - max_display_years)
-                    ],
-                    axis=1
-                )
-
-            # if the display year is less than current year
-            # drop columns where year matches any years in 'excluded years' list
-            if excluded_years:
-                adm_values = adm_values.loc[
-                    :, ~adm_values.columns.str.contains("|".join(excluded_years))
-                ]
-
-            school_adm_dict = adm_values.to_dict()
-
+        school_finance_dict = financial_data.to_dict(into=OrderedDict)
+        school_finance_json = json.dumps(school_finance_dict)
     else:
-        school_adm_dict = {}
+        school_finance_json = {}
+
+    if school_info['Network'].values[0] != 'None':
+        network_finance_file = 'data/F-' + school_info['Network'].values[0] + '.csv'
+        network_financial_data = pd.read_csv(network_finance_file)
+        network_finance_dict = network_financial_data.to_dict(into=OrderedDict)
+        network_finance_json = json.dumps(network_finance_dict)
+    else:
+        network_finance_json = {}
 
     # K8 Academic Data
     if (
@@ -1873,7 +1821,7 @@ def load_data(school, year):
     dict_of_df[3] = school_letter_grades_json
     dict_of_df[4] = attendance_data_json
     dict_of_df[5] = attendance_data_metrics_json
-    dict_of_df[6] = school_adm_dict
+    # dict_of_df[6] = school_adm_dict
     dict_of_df[7] = academic_analysis_corp_dict
     dict_of_df[8] = k8_academic_data_json
     dict_of_df[9] = iread_data_json
@@ -1883,8 +1831,8 @@ def load_data(school, year):
     dict_of_df[13] = ahs_metrics_data_json
     dict_of_df[14] = combined_grad_metrics_json
     dict_of_df[15] = current_academic_year_dict
-    dict_of_df[16] = network_finance_dict
-    dict_of_df[17] = school_finance_dict
+    dict_of_df[16] = network_finance_json
+    dict_of_df[17] = school_finance_json
 
     return dict_of_df
 
