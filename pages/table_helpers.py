@@ -1,8 +1,9 @@
-"""
-ICSB Dashboard - Table Functions
-version:  1.02.051823
-author:   jbetley
-"""
+########################################
+# ICSB Dashboard - DataTable Functions #
+########################################
+# author:   jbetley
+# version:  1.03
+# date:     5/22/23
 
 import numpy as np
 import pandas as pd

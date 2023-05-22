@@ -1,8 +1,9 @@
-"""
-ICSB Dashboard - Calculation Functions
-version:  1.02.051823
-author:   jbetley
-"""
+##########################################
+# ICSB Dashboard - Calculation Functions #
+##########################################
+# author:   jbetley
+# version:  1.03
+# date:     5/22/23
 
 import pandas as pd
 import numpy as np
@@ -79,7 +80,6 @@ def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str
     """
 
     # NOTE: The order of these operations matters
-
     # if data is a string
     if data == "***" or data == "No Grade":
         indicator = "NA"
@@ -304,7 +304,7 @@ def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:
 # that the refactored version is easier to comprehend than the previous
 # loop version. it is also longer.
 
-def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
+def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     """Takes a dataframe of float values and returns the same dataframe with one
     extra 'Rating' column for each year of data. Ratings are calculated based
     on specific thresholds and return either: MS, DNMS, or N/A (or null) 
@@ -321,11 +321,12 @@ def calculate_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # begins to operate and receive state/federal grants. The below code
     # ignores all columns (years) where the value in the State Grant column
     # is equal to '0'. Any pre-opening data will be lost
-    operating_data = data.loc[:,~(data.iloc[1]==0)].copy()
 
-    # TODO: A more precise fix would be to keep all columns (including those with
-    # TODO: no value in grant columns), but ignore/except (N/A) any calculation that requires
-    # TODO: either grant revenue or adm. Need to test
+    # NOTE: A more precise fix would be to keep all columns (including those with
+    # no value in grant columns), but ignore/except (N/A) any calculation that requires
+    # either grant revenue or adm. Need to test
+    
+    operating_data = data.loc[:,~(data.iloc[1]==0)].copy()
 
     cols = [i for i in operating_data.columns if i not in ['Category']]
 

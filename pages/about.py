@@ -2,7 +2,8 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley
-# version:  1.02.051823
+# version:  1.03
+# date:     5/22/23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, State, callback
@@ -14,7 +15,7 @@ import json
 
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
-from .load_data import school_index, ethnicity, status, current_academic_year, max_display_years
+from .load_data import school_index, ethnicity, subgroup, current_academic_year, max_display_years
 
 dash.register_page(__name__, path='/', order=0, top_nav=True)
 
@@ -28,14 +29,14 @@ dash.register_page(__name__, path='/', order=0, top_nav=True)
     Output('ethnicity-title', 'children'),
     Output('ethnicity-fig', 'figure'),
     Output('subgroup-title', 'children'),
-    Output('status-fig', 'figure'),
+    Output('subgroup-fig', 'figure'),
     Output('about-main-container', 'style'),
     Output('about-empty-container', 'style'),
     Output('school-name-no-data', 'children'),
     Output('info-table-no-data', 'children'),    
     Output('about-no-data', 'children'),
     State('year-dropdown', 'value'),
-    Input('charter-dropdown', 'value'),
+    State('charter-dropdown', 'value'),
     Input('dash-session', 'data')
 )
 def update_about_page(year, school, data):
@@ -46,17 +47,16 @@ def update_about_page(year, school, data):
     linecolor = ['#df8f2d']
     bar_colors = ['#74a2d7', '#df8f2d']
 
-    # default is to display main container
     main_container = {'display': 'block'}
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('School Enrollment & Demographics')
 
-    # school_index = pd.DataFrame.from_dict(data['0'])
     selected_school_info = school_index.loc[school_index["School ID"] == school]
     school_name = selected_school_info['School Name'].values[0]
     headers = ['Category','Description']
 
-    # school index df has additional values that can be added to this list (see school_index.csv)
+    # school index df has additional values that can be added to this list
+    # see selected_school_info.columns
     info = selected_school_info[['City','Principal','Opening Year']]
 
     school_info = info.T
@@ -101,8 +101,8 @@ def update_about_page(year, school, data):
     school_demographics = pd.DataFrame.from_dict(data['1'])
     
     # get adm data
-    school_financial_data = pd.DataFrame.from_dict(data['17'])
-    school_financial_data = school_financial_data.iloc[:, ::-1]
+    finance_file_json = json.loads(data['17'])
+    school_financial_data = pd.DataFrame.from_dict(finance_file_json)
     
     # data['3'] is a json file containing school letter grade information
     if not data['3'] and (len(school_demographics.index) == 0 & \
@@ -115,7 +115,7 @@ def update_about_page(year, school, data):
         ethnicity_title = {}
         ethnicity_fig = {}
         subgroup_title = {}
-        status_fig = {}
+        subgroup_fig = {}
 
         main_container = {'display': 'none'}
         empty_container = {'display': 'block'}
@@ -329,9 +329,7 @@ def update_about_page(year, school, data):
             
             else:
 
-                # NOTE: The number of years with positive ADM is the most reliable
-                # way to track the number of years a school has been open to students.
-                # The ADM dataset can be longer than five years (maximum display), so
+                # ADM dataset can be longer than five years (maximum display), so
                 # need to filter both the selected year (the year to display) and the
                 # total # of years
                 operating_years_by_adm = len(adm_values.columns)
@@ -343,12 +341,12 @@ def update_about_page(year, school, data):
                 # 'excluded years' is a list of YYYY strings (all years more
                 # recent than selected year) that can be used to filter data
                 # that should not be displayed
-                excluded_academic_years = int(current_academic_year) - int(year)
+                excluded_academic_years = current_academic_year - int(year)
                 
                 excluded_years = []
                 
                 for i in range(excluded_academic_years):
-                    excluded_year = int(current_academic_year) - i
+                    excluded_year = current_academic_year - i
                     excluded_years.append(str(excluded_year))
                 
                 # if the display year is less than current year
@@ -492,37 +490,37 @@ def update_about_page(year, school, data):
             )
 
             # Enrollment by subgroup chart
-            status_school = school_demographics.loc[:, (school_demographics.columns.isin(status)) | (school_demographics.columns.isin(['Corporation Name','Total Enrollment']))]
-            status_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(status)) | (corp_demographics.columns.isin(['Corporation Name','Total Enrollment']))]
-            status_data = pd.concat([status_school,status_corp])
+            subgroup_school = school_demographics.loc[:, (school_demographics.columns.isin(subgroup)) | (school_demographics.columns.isin(['Corporation Name','Total Enrollment']))]
+            subgroup_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(subgroup)) | (corp_demographics.columns.isin(['Corporation Name','Total Enrollment']))]
+            subgroup_data = pd.concat([subgroup_school,subgroup_corp])
 
-            total_enrollment=status_data['Total Enrollment'].tolist()
+            total_enrollment=subgroup_data['Total Enrollment'].tolist()
             total_enrollment = [int(i) for i in total_enrollment]
-            status_data.drop('Total Enrollment',axis=1,inplace=True)
+            subgroup_data.drop('Total Enrollment',axis=1,inplace=True)
 
-            cols=[i for i in status_data.columns if i not in ['Corporation Name']]
+            cols=[i for i in subgroup_data.columns if i not in ['Corporation Name']]
             for col in cols:
-                status_data[col]=pd.to_numeric(status_data[col], errors='coerce')
+                subgroup_data[col]=pd.to_numeric(subgroup_data[col], errors='coerce')
 
             # store categories with no data (NaN)
-            status_no_data = status_data[status_data.columns[status_data.isna().any()]].columns.tolist()
+            subgroup_no_data = subgroup_data[subgroup_data.columns[subgroup_data.isna().any()]].columns.tolist()
 
-            status_data_t = status_data.set_index('Corporation Name').T
+            subgroup_data_t = subgroup_data.set_index('Corporation Name').T
 
             # Calculate Percentage
             for i in range(0, 2):
-                status_data_t.iloc[:,i] = status_data_t.iloc[:,i] / total_enrollment[i]
+                subgroup_data_t.iloc[:,i] = subgroup_data_t.iloc[:,i] / total_enrollment[i]
 
             # force categories to wrap
             categories_wrap=['English<br>Language<br>Learners', 'Special<br>Education', 'Free/Reduced<br>Price Meals', 'Paid Meals']
 
-            elements = status_data_t.columns.tolist()
+            elements = subgroup_data_t.columns.tolist()
 
             trace_color = {elements[i]: bar_colors[i] for i in range(len(elements))}
 
-            status_fig = px.bar(
-                data_frame = status_data_t,
-                x = [c for c in status_data_t.columns],
+            subgroup_fig = px.bar(
+                data_frame = subgroup_data_t,
+                x = [c for c in subgroup_data_t.columns],
                 y = categories_wrap,
                 text_auto=True,
                 color_discrete_map=trace_color,
@@ -530,24 +528,24 @@ def update_about_page(year, school, data):
                 orientation = 'h',
                 barmode = 'group',
             )
-            status_fig.update_xaxes(ticks='outside', tickcolor='#a9a9a9', range=[0, 1], dtick=0.2, tickformat=',.0%', title='')
-            status_fig.update_yaxes(ticks='outside', tickcolor='#a9a9a9', title='')
+            subgroup_fig.update_xaxes(ticks='outside', tickcolor='#a9a9a9', range=[0, 1], dtick=0.2, tickformat=',.0%', title='')
+            subgroup_fig.update_yaxes(ticks='outside', tickcolor='#a9a9a9', title='')
 
             # add text traces
-            status_fig.update_traces(textposition='outside')
+            subgroup_fig.update_traces(textposition='outside')
 
             # Want to distinguish between null (no data) and '0'
             # so loop through data and only color text traces when the value of x (t.x) is not NaN
-            # display all: status_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
-            status_fig.for_each_trace(lambda t: t.update(textfont_color=np.where(~np.isnan(t.x),t.marker.color, 'white'),textfont_size=11))
+            # display all: subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
+            subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=np.where(~np.isnan(t.x),t.marker.color, 'white'),textfont_size=11))
 
-            status_fig.update_traces(hovertemplate = None, hoverinfo='skip')
+            subgroup_fig.update_traces(hovertemplate = None, hoverinfo='skip')
 
             # Uncomment to add hover
-            #status_fig['data'][0]['hovertemplate'] = status_fig['data'][0]['name'] + ': %{x}<extra></extra>'
-            #status_fig['data'][1]['hovertemplate'] = status_fig['data'][1]['name'] + ': %{x}<extra></extra>'
+            #subgroup_fig['data'][0]['hovertemplate'] = subgroup_fig['data'][0]['name'] + ': %{x}<extra></extra>'
+            #subgroup_fig['data'][1]['hovertemplate'] = subgroup_fig['data'][1]['name'] + ': %{x}<extra></extra>'
 
-            status_fig.update_layout(
+            subgroup_fig.update_layout(
                 margin=dict(l=10, r=40, t=60, b=70,pad=0),
                 font = dict(
                     family='Jost, sans-serif',
@@ -569,11 +567,11 @@ def update_about_page(year, school, data):
                 plot_bgcolor='rgba(0,0,0,0)'
             )
 
-            if status_no_data:
-                status_anno_txt = ', '.join(status_no_data)
+            if subgroup_no_data:
+                subgroup_anno_txt = ', '.join(subgroup_no_data)
 
-                status_fig.add_annotation(
-                    text = (f'Data not available: ' + status_anno_txt + '.'),
+                subgroup_fig.add_annotation(
+                    text = (f'Data not available: ' + subgroup_anno_txt + '.'),
                     showarrow=False,
                     x = -0.1,
                     y = -0.25,
@@ -588,12 +586,12 @@ def update_about_page(year, school, data):
                 )
 
         else:
-            status_fig = no_data_fig_label('Enrollment by Subgroup', 400)
+            subgroup_fig = no_data_fig_label('Enrollment by Subgroup', 400)
             ethnicity_fig = no_data_fig_label('Enrollment by Ethnicity', 400)
 
     return school_name, info_table, letter_grade_table, \
         enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, \
-        subgroup_title, status_fig, main_container, empty_container, school_name,\
+        subgroup_title, subgroup_fig, main_container, empty_container, school_name,\
         info_table, no_data_to_display
 
 layout = \
@@ -654,7 +652,7 @@ layout = \
                             html.Div(
                                 [
                                     html.Label(id='subgroup-title', className = 'header_label'),
-                                    dcc.Graph(id='status-fig', figure = loading_fig(),config={'displayModeBar': False})
+                                    dcc.Graph(id='subgroup-fig', figure = loading_fig(),config={'displayModeBar': False})
                                 ],
                                 className = 'pretty_container six columns'
                             ),

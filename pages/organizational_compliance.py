@@ -1,54 +1,53 @@
 ##############################################
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
-# author:   jbetley
-# version:  1.02.051823
+# version:  1.03
+# date:     5/22/23
 
 import dash
-from dash import html, dash_table, Input, Output, callback
+from dash import html, dash_table, Input, Output, State, callback
 from dash.exceptions import PreventUpdate
-import os.path
 import pandas as pd
+import json
 
-from .table_helpers import get_svg_circle,no_data_table
+from .table_helpers import get_svg_circle, no_data_table
 
 dash.register_page(__name__, top_nav=True, order=7)
 
 @callback(
     Output('org-compliance-table', 'children'),
     Output('org-compliance-definitions-table', 'children'),
-    Input('dash-session', 'data'),
-    Input('year-dropdown', 'value')
+    State('year-dropdown', 'value'),
+    Input('dash-session', 'data')
 )
-def update_organizational_compliance(data, year):
+def update_organizational_compliance(year, data):
     if not data:
         raise PreventUpdate
 
     selected_year = int(year)
 
-    school_index = pd.DataFrame.from_dict(data['0'])
+    finance_file_json = json.loads(data['17'])
 
-    finance_file = 'data\F-' + school_index['School Name'].values[0] + '.csv'
+    financial_data = pd.DataFrame.from_dict(finance_file_json)
 
-    if os.path.isfile(finance_file):
-        organizational_data = pd.read_csv(finance_file)
+    if len(financial_data.index) != 0:
 
         # Ignore any partial years- e.g., 2023(Q3- when displaying
         # organizational indicators
-        if 'Q' in organizational_data.columns[1]:
-            organizational_data = organizational_data.drop(organizational_data.columns[[1]],axis = 1)
+        if 'Q' in financial_data.columns[1]:
+            financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
-        most_recent_finance_year = int(organizational_data.columns[1])
+        most_recent_finance_year = int(financial_data.columns[1])
 
         years_to_exclude = most_recent_finance_year - selected_year
-        organizational_data = organizational_data.drop(organizational_data.columns[1:years_to_exclude+1], axis=1)
+        financial_data = financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1)
 
         # if a school doesn't have data for the selected year, df will only have 1 column (Category)
-        if len(organizational_data.columns) <= 1:
+        if len(financial_data.columns) <= 1:
             org_compliance_table = no_data_table('Organizational and Operational Accountability')
 
         else:
-            organizational_indicators = organizational_data[organizational_data['Category'].str.startswith('3.')].copy()
+            organizational_indicators = financial_data[financial_data['Category'].str.startswith('3.')].copy()
             organizational_indicators[['Standard','Description']] = organizational_indicators['Category'].str.split('|', expand=True)
 
             # reorder and clean up dataframe
@@ -58,7 +57,7 @@ def update_organizational_compliance(data, year):
             organizational_indicators = organizational_indicators.drop(columns=['Standard','Description'])
             organizational_indicators.insert(loc=0, column='Description', value = description)
             organizational_indicators.insert(loc=0, column='Standard', value = standard)
-            print(organizational_indicators)
+
             # convert ratings to colored circles
             organizational_indicators = get_svg_circle(organizational_indicators)
 

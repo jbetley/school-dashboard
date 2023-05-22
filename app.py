@@ -2,7 +2,8 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley
-# version:  1.02.051823
+# version:  1.03
+# date:     5/22/23
 
 ## NOTE: Because of the way data is store and presented by IDOE, there are
 # cases in which data points need to be manually calculated that the school
@@ -42,9 +43,7 @@ from pages.calculations import set_academic_rating, calculate_percentage, \
 
 # load data and global variables
 from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
-    corporation_rates, all_demographic_data, ethnicity, status, grades, subject, eca_categories, \
-    current_academic_year, max_display_years
-    #academic_info_grades, info, 
+    corporation_rates, all_demographic_data, ethnicity, subgroup, grades, subject, current_academic_year
 
 # This is used solely to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
@@ -170,61 +169,6 @@ app = dash.Dash(
 ],
 )
 
-# TODO: Explore serverside disk caching
-#https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
-
-# TODO: Can these globals be used across all pages?
-# global category variables
-# ethnicity = [
-#     "American Indian",
-#     "Asian",
-#     "Black",
-#     "Hispanic",
-#     "Multiracial",
-#     "Native Hawaiian or Other Pacific Islander",
-#     "White",
-# ]
-# status = [
-#     "Special Education",
-#     "General Education",
-#     "Paid Meals",
-#     "Free/Reduced Price Meals",
-#     "English Language Learners",
-#     "Non-English Language Learners",
-# ]
-# subgroups = ethnicity + status
-
-# grades = ["Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8"]
-# academic_info_grades = [
-#     "Grade 3",
-#     "Grade 4",
-#     "Grade 5",
-#     "Grade 6",
-#     "Grade 7",
-#     "Grade 8",
-#     "Total",
-#     "IREAD Pass %",
-# ]
-# eca = ["Grade 10|ELA", "Grade 10|Math"]
-# info = ["Year", "School Type"]
-# subject = ["Math", "ELA"]
-
-## Load Data Files ##
-# print("#### Loading Data. . . . . ####")
-
-# NOTE: No K8 academic data exists for 2020
-# school_index = pd.read_csv(r"data/school_index.csv", dtype=str)
-# school_academic_data_k8 = pd.read_csv(r"data/school_data_k8.csv", dtype=str)
-# all_academic_data_hs = pd.read_csv(r"data/academic_data_hs.csv", dtype=str)
-# corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
-# all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
-
-# Get the most recent year of academic data.
-# NOTE: Both demographic and financial data will almost always be
-# more current than academic data due to IDOE release cadence and ICSB
-# # reporting schedule
-# current_academic_year = school_academic_data_k8["Year"].unique().max()
-
 # Dropdown shows single school if school login is used
 # It shows all schools if admin login is used.
 # NOTE: 'application-state' is a dummy input
@@ -269,6 +213,7 @@ def set_dropdown_value(charter_options):
 #   min = the earliest year for which the school has adm (is open)
 #   limit = typically a limit of 5 years (currently and 
 #   temporarily 4 years so that 2018 academic data is not shown)
+
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
@@ -505,9 +450,7 @@ def load_data(school, year):
             ]
 
         ## State and Federal Letter Grades
-        school_letter_grades = school_demographic_data[
-            ["State Grade", "Federal Rating", "Year"]
-        ]
+        school_letter_grades = school_demographic_data[["State Grade", "Federal Rating", "Year"]]
 
         # transpose for display
         school_letter_grades = (
@@ -717,7 +660,7 @@ def load_data(school, year):
             # and store in a new column
             k8_corp_rate_data = k8_corp_rate_filtered.copy()
 
-            categories = ethnicity + status + grades + ["Total"]
+            categories = ethnicity + subgroup + grades + ["Total"]
 
             for s in subject:
                 for c in categories:
@@ -797,9 +740,7 @@ def load_data(school, year):
             )
 
             # add School Name column back
-            k8_school_data = pd.concat(
-                [k8_school_data, k8_school_info], axis=1, join="inner"
-            )
+            k8_school_data = pd.concat([k8_school_data, k8_school_info], axis=1, join="inner")
 
             # reset indexes
             k8_school_data = k8_school_data.reset_index(drop=True)
@@ -1286,7 +1227,7 @@ def load_data(school, year):
             # reverse order of rows (Year) and reset index to bring Year back as column
             hs_corp_data = hs_corp_data.loc[::-1].reset_index()
 
-            grad_categories = ethnicity + status + ["Total"]
+            grad_categories = ethnicity + subgroup + ["Total"]
             for g in grad_categories:
                 new_col = g + " Graduation Rate"
                 graduates = g + "|Graduates"
@@ -1354,7 +1295,7 @@ def load_data(school, year):
 
             # if none_categories includes 'Grade 10' - there is no ECA data available
             # # for the school for the selected Years
-            # eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
+            eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
 
             # checks to see if substring ('Grade 10') is in the list of missing cols
             if "Grade 10" not in "\t".join(missing_cols):
@@ -1371,7 +1312,7 @@ def load_data(school, year):
                         hs_corp_rate_data[passN] / hs_corp_rate_data[testN]
                     )
 
-            sat_categories = ethnicity + status + ["School Total"]
+            sat_categories = ethnicity + subgroup + ["School Total"]
             sat_subject = ['EBRW','Math','Both']
 
             for ss in sat_subject:
@@ -1808,9 +1749,6 @@ def load_data(school, year):
                 )
                 combined_grad_metrics_json = json.dumps(combined_grad_metrics_dict)
 
-    # Store the current_academic_year in dcc.store so other pages can use it
-    current_academic_year_dict = {'current_academic_year': current_academic_year}
-
     # combine into dictionary of dictionarys for dcc.store
     # TODO: Reorder
     dict_of_df = {}
@@ -1821,7 +1759,7 @@ def load_data(school, year):
     dict_of_df[3] = school_letter_grades_json
     dict_of_df[4] = attendance_data_json
     dict_of_df[5] = attendance_data_metrics_json
-    # dict_of_df[6] = school_adm_dict
+    
     dict_of_df[7] = academic_analysis_corp_dict
     dict_of_df[8] = k8_academic_data_json
     dict_of_df[9] = iread_data_json
@@ -1830,7 +1768,7 @@ def load_data(school, year):
     dict_of_df[12] = hs_academic_data_json
     dict_of_df[13] = ahs_metrics_data_json
     dict_of_df[14] = combined_grad_metrics_json
-    dict_of_df[15] = current_academic_year_dict
+
     dict_of_df[16] = network_finance_json
     dict_of_df[17] = school_finance_json
 

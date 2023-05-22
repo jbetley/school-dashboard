@@ -2,19 +2,21 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley
-# version:  1.02.051823
+# version:  1.03
+# date:     5/22/23
 
 import dash
-from dash import html, dash_table, Input, Output, callback
+from dash import html, dash_table, Input, State, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
-import os.path
+import json
 
 # import local functions
-from .calculations import calculate_metrics
+from .calculations import calculate_financial_metrics
 from .table_helpers import no_data_page, get_svg_circle, create_key
 from .subnav import subnav_finance
+from .load_data import school_index, current_academic_year, max_display_years
 
 dash.register_page(__name__, path='/financial_metrics', order=2)
 
@@ -28,10 +30,11 @@ dash.register_page(__name__, path='/financial_metrics', order=2)
     Output('financial-metrics-empty-container', 'style'),
     Output('financial-metrics-no-data', 'children'),      
     Input('dash-session', 'data'),
-    Input('year-dropdown', 'value'),
+    State('charter-dropdown', 'value'),
+    State('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-metrics', component_property='value')
 )
-def update_financial_metrics(data,year,radio_value):
+def update_financial_metrics(data,school,year,radio_value):
     if not data:
          raise PreventUpdate
 
@@ -40,13 +43,11 @@ def update_financial_metrics(data,year,radio_value):
     no_data_to_display = no_data_page('Financial Metrics')
 
     selected_year = int(year)
-
-    max_display_years = 5
-
-    school_index = pd.DataFrame.from_dict(data['0'])
+    
+    selected_school = school_index.loc[school_index["School ID"] == school]
 
     # NOTE: See financial_information.py for comments
-    if school_index['Network'].values[0] != 'None':
+    if selected_school['Network'].values[0] != 'None':
         if radio_value == 'network-metrics':
             radio_content = html.Div(
                 [
@@ -106,19 +107,25 @@ def update_financial_metrics(data,year,radio_value):
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-metrics':
-        finance_file = 'data/F-' + school_index['Network'].values[0] + '.csv'
-        table_title = 'Financial Accountability Metrics (' + school_index['Network'].values[0] + ')'
+
+        # network financial data
+        finance_file_json = json.loads(data['16'])
+        table_title = 'Financial Accountability Metrics (' + selected_school['Network'].values[0] + ')'
+    
     else:
-        finance_file = 'data/F-' + school_index['School Name'].values[0] + '.csv'
+
+        # school financial data
+        finance_file_json = json.loads(data['17'])        
         
         # don't display school name in title if the school isn't part of a network
-        if school_index['Network'].values[0] == 'None':
+        if selected_school['Network'].values[0] == 'None':
             table_title = 'Financial Accountability Metrics'
         else:
-            table_title = 'Financial Accountability Metrics (' + school_index['School Name'].values[0] + ')'
+            table_title = 'Financial Accountability Metrics (' + selected_school['School Name'].values[0] + ')'
 
-    if os.path.isfile(finance_file):
-        financial_data = pd.read_csv(finance_file)
+    financial_data = pd.DataFrame.from_dict(finance_file_json)
+
+    if len(financial_data.index) != 0:
         
         # in order for metrics to be calculated properly, we need
         # to temporarily store and remove the (Q#) part of string
@@ -130,8 +137,6 @@ def update_financial_metrics(data,year,radio_value):
 
         years_to_exclude = most_recent_finance_year - selected_year
         
-        current_academic_year = int(data['15']['current_academic_year'])
-
         if selected_year < current_academic_year:
             financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
 
@@ -170,7 +175,7 @@ def update_financial_metrics(data,year,radio_value):
             financial_values = financial_data.drop(financial_data.index[41:])
 
             # Release The Hounds!
-            financial_metrics = calculate_metrics(financial_values)
+            financial_metrics = calculate_financial_metrics(financial_values)
             
             # convert ratings to colored circles
             financial_metrics = get_svg_circle(financial_metrics)
@@ -193,10 +198,12 @@ def update_financial_metrics(data,year,radio_value):
 
             headers = financial_metrics.columns.tolist()
 
+            # NOTE: Consider turning table_size into a function()
             # input: table_size
-            # output: col_width, category_width, rating_width, and year_width, (difference_width, corporation_width)
-            # Problem: variable number of return items. table_size adjustments are differente between financial
-            # metrics table and academic metrics table
+            # output: col_width, category_width, rating_width, and year_width,
+            #  (difference_width, corporation_width)
+            # Problem: variable number of return items. table_size adjustments
+            #  are differente between financial metrics table and academic metrics table
 
             clean_headers = []
             for i, x in enumerate (headers):
@@ -416,7 +423,6 @@ def update_financial_metrics(data,year,radio_value):
                                                     'height': 'auto',
                                                     'textAlign': 'center',
                                                     'color': '#6783a9',
-                                                    # 'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
                                                 },
                                                 style_cell_conditional=[
                                                     {

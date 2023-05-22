@@ -15,7 +15,7 @@ import numpy as np
 
 # from app import app
 # np.warnings.filterwarnings('ignore')
-dash.register_page(__name__, top_nav=True, order=8)
+# dash.register_page(__name__, top_nav=True, order=8)
 
 ## Callback ##
 @callback(

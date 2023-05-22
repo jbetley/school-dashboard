@@ -2,17 +2,18 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley
-# version:  1.02.051823
+# version:  1.03
+# date:     5/22/23
 
 import dash
-from dash import dcc, html, dash_table, Input, Output, callback
+from dash import dcc, html, dash_table, Input, State, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 from dash.dash_table import FormatTemplate
 import plotly.express as px
 import pandas as pd
 import numpy as np
-import os.path
+import json
 import plotly.graph_objects as go
 
 # import local functions
@@ -20,7 +21,7 @@ from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
-# from .load_data import financial_ratios
+from .load_data import school_index, financial_ratios, max_display_years
 
 dash.register_page(__name__, path = '/financial_analysis', order=3)
 
@@ -42,10 +43,11 @@ dash.register_page(__name__, path = '/financial_analysis', order=3)
     Output('financial-analysis-empty-container', 'style'),
     Output('financial-analysis-no-data', 'children'),
     Input('dash-session', 'data'),
-    Input('year-dropdown', 'value'),
+    State('charter-dropdown', 'value'),
+    State('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-analysis', component_property='value')
 )
-def update_financial_analysis_page(data, year, radio_value):
+def update_financial_analysis_page(data, school, year, radio_value):
     if not data:
         raise PreventUpdate
 
@@ -54,12 +56,11 @@ def update_financial_analysis_page(data, year, radio_value):
     no_data_to_display = no_data_page('Financial Analysis')
 
     selected_year = int(year)
-    max_display_years = 5
-    
-    school_index = pd.DataFrame.from_dict(data['0'])
+
+    selected_school = school_index.loc[school_index["School ID"] == school]
 
     # See financial_information.py for comments
-    if school_index['Network'].values[0] != 'None':
+    if selected_school['Network'].values[0] != 'None':
         if radio_value == 'network-analysis':
 
             radio_content = html.Div(
@@ -120,29 +121,32 @@ def update_financial_analysis_page(data, year, radio_value):
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-analysis':
-        finance_file = 'data/F-' + school_index['Network'].values[0] + '.csv'
-        RandE_title = 'Revenue and Expenses (' + school_index['Network'].values[0] + ')'
-        AandL_title = 'Assets and Liabilities (' + school_index['Network'].values[0] + ')'
-        FP_title = '2-Year Financial Position (' + school_index['Network'].values[0] + ')'
-        FA_title = '2-Year Financial Activities (' + school_index['Network'].values[0] + ')'
+
+        finance_file_json = json.loads(data['16'])
+        RandE_title = 'Revenue and Expenses (' + selected_school['Network'].values[0] + ')'
+        AandL_title = 'Assets and Liabilities (' + selected_school['Network'].values[0] + ')'
+        FP_title = '2-Year Financial Position (' + selected_school['Network'].values[0] + ')'
+        FA_title = '2-Year Financial Activities (' + selected_school['Network'].values[0] + ')'
 
     else:
-        finance_file = 'data/F-' + school_index['School Name'].values[0] + '.csv'
+
+        finance_file_json = json.loads(data['17'])    
 
         # don't display school name in title if the school isn't part of a network
-        if school_index['Network'].values[0] == 'None':
+        if selected_school['Network'].values[0] == 'None':
             RandE_title = 'Revenue and Expenses'
             AandL_title = 'Assets and Liabilities'
             FP_title = '2-Year Financial Position'
             FA_title = '2-Year Financial Activities'  
         else:
-            RandE_title = 'Revenue and Expenses (' + school_index['School Name'].values[0] + ')'
-            AandL_title = 'Assets and Liabilities (' + school_index['School Name'].values[0] + ')'
-            FP_title = '2-Year Financial Position (' + school_index['School Name'].values[0] + ')'
-            FA_title = '2-Year Financial Activities (' + school_index['School Name'].values[0] + ')'
+            RandE_title = 'Revenue and Expenses (' + selected_school['School Name'].values[0] + ')'
+            AandL_title = 'Assets and Liabilities (' + selected_school['School Name'].values[0] + ')'
+            FP_title = '2-Year Financial Position (' + selected_school['School Name'].values[0] + ')'
+            FA_title = '2-Year Financial Activities (' + selected_school['School Name'].values[0] + ')'
 
-    if os.path.isfile(finance_file):
-        financial_data = pd.read_csv(finance_file)
+    financial_data = pd.DataFrame.from_dict(finance_file_json)
+
+    if len(financial_data.index) != 0:
 
         # NOTE: Drop partial year data (financial data with a 'Q#' in column header).
         # may eventually want to implement for Q4 data, but the display quickly gets
@@ -413,7 +417,7 @@ def update_financial_analysis_page(data, year, radio_value):
             previous_year_string = str(previous_year)
 
             # Display Category and Two Years of Data
-            display_years = [year] + [previous_year_string]
+            display_years = [str(year)] + [previous_year_string]
             table_headers = ['Category'] + display_years
 
             # there may be columns with no or partial data at beginning or ending of dataframe,
@@ -621,9 +625,9 @@ def update_financial_analysis_page(data, year, radio_value):
 
             # Table 4: Financial Ratios
             # Get financial ratios
-            school_corp = school_index['Corporation ID'].values[0]
+            school_corp = selected_school['Corporation ID'].values[0]
             
-            financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
+            # financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
             financial_ratios_data = financial_ratios.loc[financial_ratios['School Corporation'] == school_corp].copy()
 
             # Networks do not have ratios- only way to tell if network finances
@@ -670,33 +674,14 @@ def update_financial_analysis_page(data, year, radio_value):
                     if (financial_ratios_data[year] != 'N/A').any():
                         financial_ratios_data[year] = pd.Series(['{0:.2f}%'.format(val * 100) for val in financial_ratios_data[year]], index = financial_ratios_data.index)
 
-        # ['Occupancy Ratio (Occupancy Expense / Total Revenue) = Measures
-        # the percentage of total revenue used to occupy and maintain school
-        # facilities. A school\'s occupancy ratio generally should be less than 25%.],
-        # ['Human Capital Ratio (Personnel Expense / Total Revenue) = Measures
-        # the percentage of total revenue used for payroll. A school\'s human
-        # capital ratio should be less than 50%. A human capital ratio that is
-        # significantly Higher than a school\'s instruction ratio may be a sign
-        # that the school is \'top-heavy.\'],
-        # ['Instruction Ratio (Instructional Expense + Instructional Staff Expense)
-        # / Total Revenue) = Measures how much of a school\'s revenue is used to pay for instruction.]
-        
-        #   Ratios calculated from Form 9 data using 'process-form9.py':
-        #   Total Revenue: Form 9 Section Codes 1 and 3
-        #   Total Expenditures: Form 9 Section Codes 2 and 4
-        #   Instructional Expense: Form 9 Object Codes 311, 312, and 313
-        #   Instructional Staff Expense = Form 9 Object Codes between 110
-        #   & 290, excluding 115, 120, 121, 149, and 150  
-        #   Occupancy Expense = Form 9 Object Codes 411, 431, 441, 450,
-        #   between 621 & 626, and between 710 & 720
-        #   Personnel Expense = Form 9 Object Codes between 110 & 290
-
+                # NOTE: make prettier
                 # markdown_table = """|**Occupancy Expense** (Object Codes 411, 431, 441, 450,
                 # between 621 & 626, and between 710 & 720)|
                 # |:-----------:|
                 # |divided by|
                 # |**Total Revenue** (Form 9 Section Codes 1 and 3) |
                 # """
+
                 financial_ratios_table = [
                     html.Label('Financial Ratios', className = 'header_label'),
                     html.P(''),
@@ -708,19 +693,29 @@ def update_financial_analysis_page(data, year, radio_value):
                                 {
                                 'Category': {
             #                        'value': markdown_table,
-                                    'value': '**Occupancy Expense** (Form 9 Object Codes 411, 431, 441, 450, between 621 & 626, and between 710 & 720) \
-                                    divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
+                                    'value': '**Occupancy Ratio** measures the percentage of total revenue used to \
+                                    occupy and maintain school facilities. A school\'s occupancy ratio generally \
+                                    should be less than 25%. It is calculated as: **Occupancy Expense** (Form 9 Object\
+                                    Codes 411, 431, 441, 450, between 621 & 626, and between 710 & 720) divided by \
+                                    **Total Revenue** (Form 9 Section Codes 1 and 3)',
                                     'type': 'markdown'},
                                 },
                                 {
                                 'Category': {
-                                    'value': '**Personnel Expense** (Form 9 Object Codes between 110 & 290) divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
+                                    'value': '**Human Capital Ratio** measures the percentage of total revenue used \
+                                    for payroll. A school\'s human capital ratio should be less than 50%. A human \
+                                    capital ratio that is significantly Higher than a school\'s instruction ratio \
+                                    may be a sign that the school has too many administrators. It is calculated as: \
+                                    **Personnel Expense** (Form 9 Object Codes between 110 & 290) divided by **Total \
+                                    Revenue** (Form 9 Section Codes 1 and 3)',
                                     'type': 'markdown'},
                                 },
                                 {
                                 'Category': {
-                                    'value': '**Instruction Expense** (Form 9 Object Codes between 110 & 290- excluding 115, 120, 121, 149, and 150- \
-                                    311, 312, and 313) divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
+                                    'value': '**Instruction Ratio** measures how much of a school\'s revenue is used \
+                                    to pay for instruction. It is calculated as: **Instruction Expense** (Form 9 \
+                                    Object Codes between 110 & 290- excluding 115, 120, 121, 149, and 150-311, 312, \
+                                    and 313) divided by **Total Revenue** (Form 9 Section Codes 1 and 3)',
                                     'type': 'markdown'},
                                 },
                             ],
@@ -960,4 +955,4 @@ def layout():
                     ),
                 ],
                 id='mainContainer'
-            )
+        )

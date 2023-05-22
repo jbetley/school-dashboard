@@ -2,10 +2,11 @@
 # ICSB Dashboard - Academic Metrics #
 #####################################
 # author:   jbetley
-# version:  1.02.051823
+# version:  1.03
+# date:     5/22/23
 
 import dash
-from dash import html, Input, Output, callback
+from dash import html, Input, Output, State, callback
 from dash.exceptions import PreventUpdate
 import json
 import pandas as pd
@@ -14,6 +15,7 @@ import pandas as pd
 from .table_helpers import no_data_page, no_data_table, create_metric_table, \
     set_table_layout, get_svg_circle, create_key
 from .subnav import subnav_academic
+from .load_data import school_index, ethnicity, subgroup, grades_all
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
@@ -39,13 +41,12 @@ dash.register_page(__name__,  path = '/academic_metrics', order=5)
     Output('academic-metrics-empty-container', 'style'),
     Output('academic-metrics-no-data', 'children'),  
     Input('dash-session', 'data'),
-    Input('year-dropdown', 'value')
+    State('charter-dropdown', 'value'),
+    State('year-dropdown', 'value'),
 )
-def update_academic_metrics(data,year):
+def update_academic_metrics(data, school, year):
     if not data:
         raise PreventUpdate
-
-    school_index = pd.DataFrame.from_dict(data['0'])
 
     # default styles
     display_attendance = {}
@@ -56,8 +57,10 @@ def update_academic_metrics(data,year):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('Academic Metrics')    
 
+    selected_school = school_index.loc[school_index['School ID'] == school]
+
      # Adult High School Academic Metrics
-    if school_index['School Type'].values[0] == 'AHS':
+    if selected_school['School Type'].values[0] == 'AHS':
 
         # if AHS, hide all non-AHS related metrics
         table_container_11cd = {}
@@ -135,11 +138,11 @@ def update_academic_metrics(data,year):
         display_ahs_metrics = {'display': 'none'}
 
         # High School Academic Metrics (including CHS if prior to 2021)
-        if school_index['School Type'].values[0] == 'HS' or school_index['School Type'].values[0] == 'K12' or \
-            (school_index['School ID'].values[0] == '5874' and int(year) < 2021):
+        if selected_school['School Type'].values[0] == 'HS' or selected_school['School Type'].values[0] == 'K12' or \
+            (selected_school['School ID'].values[0] == '5874' and int(year) < 2021):
         
             # if HS only, no K8 data
-            if school_index['School Type'].values[0] == 'HS':
+            if selected_school['School Type'].values[0] == 'HS':
                 table_container_11cd = {}
                 table_container_14ab = {}
                 table_container_14cd = {}
@@ -200,10 +203,10 @@ def update_academic_metrics(data,year):
                 empty_container = {'display': 'block'}
 
         # K8 Academic Metrics (for K8 and K12 schools)
-        if school_index['School Type'].values[0] == 'K8' or school_index['School Type'].values[0] == 'K12':
+        if selected_school['School Type'].values[0] == 'K8' or selected_school['School Type'].values[0] == 'K12':
 
             # if schooltype is K8, hide 9-12(HS) tables (except for CHS prior to 2021)
-            if school_index['School Type'].values[0] == 'K8' and not (school_index['School ID'].values[0] == '5874' and int(year) < 2021):
+            if selected_school['School Type'].values[0] == 'K8' and not (selected_school['School ID'].values[0] == '5874' and int(year) < 2021):
                 table_container_17ab = {}
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
@@ -219,18 +222,15 @@ def update_academic_metrics(data,year):
                 json_data = json.loads(data['11'])
                 combined_years = pd.DataFrame.from_dict(json_data)
 
-                ethnicity = ['American Indian','Asian','Black','Hispanic','Multiracial','Native Hawaiian or Other Pacific Islander','White']
-                status = ['Special Education','General Education','Paid Meals','Free/Reduced Price Meals','English Language Learners','Non-English Language Learners']
-                grades = ['Grade 3','Grade 4','Grade 5','Grade 6','Grade 7','Grade 8','Total','IREAD Pass %']
-                subgroup = ethnicity + status
+                category = ethnicity + subgroup
 
-                metric_14a_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades))) & (combined_years['Category'].str.contains('ELA'))]
+                metric_14a_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades_all))) & (combined_years['Category'].str.contains('ELA'))]
                 metric_14a_label = ['1.4a Grade level proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' compared with the previous school year.']
 
                 metric_14a_data = get_svg_circle(metric_14a_data)
                 table_14a = create_metric_table(metric_14a_label, metric_14a_data)
 
-                metric_14b_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades))) & (combined_years['Category'].str.contains('Math'))]
+                metric_14b_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades_all))) & (combined_years['Category'].str.contains('Math'))]
                 metric_14b_label = ['1.4b Grade level proficiency on the state assessment in',html.Br(), html.U('Math'), ' compared with the previous school year.']
                 
                 metric_14b_data = get_svg_circle(metric_14b_data)
@@ -238,13 +238,13 @@ def update_academic_metrics(data,year):
 
                 table_container_14ab = set_table_layout(table_14a,table_14b,combined_years.columns)
 
-                metric_14c_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(grades))) & (combined_delta['Category'].str.contains('ELA'))]
+                metric_14c_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(grades_all))) & (combined_delta['Category'].str.contains('ELA'))]
                 metric_14c_label = ['1.4c Grade level proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' compared with traditional school corporation.']
                 
                 metric_14c_data = get_svg_circle(metric_14c_data)
                 table_14c = create_metric_table(metric_14c_label, metric_14c_data)
 
-                metric_14d_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(grades))) & (combined_delta['Category'].str.contains('Math'))]            
+                metric_14d_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(grades_all))) & (combined_delta['Category'].str.contains('Math'))]            
                 metric_14d_label = ['1.4.d Grade level proficiency on the state assessment in',html.Br(), html.U('Math'), ' compared with traditional school corporation.']
                 
                 metric_14d_data = get_svg_circle(metric_14d_data)
@@ -321,24 +321,24 @@ def update_academic_metrics(data,year):
                 table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
                 table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
 
-                metric_16a_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(subgroup))) & (combined_delta['Category'].str.contains('ELA'))]
+                metric_16a_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(category))) & (combined_delta['Category'].str.contains('ELA'))]
                 metric_16a_label = ['1.6a Proficiency on the state assessment in ', html.U('English Language Arts'), html.Br(),'for each subgroup compared with traditional school corporation.']
                 metric_16a_data = get_svg_circle(metric_16a_data)
                 table_16a = create_metric_table(metric_16a_label,metric_16a_data)
 
-                metric_16b_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(subgroup))) & (combined_delta['Category'].str.contains('Math'))]            
+                metric_16b_data = combined_delta[(combined_delta['Category'].str.contains('|'.join(category))) & (combined_delta['Category'].str.contains('Math'))]            
                 metric_16b_label = ['1.6b Proficiency on the state assessment in ', html.U('Math'), ' for each', html.Br(), 'subgroup compared with traditional school corporation.']
                 metric_16b_data = get_svg_circle(metric_16b_data)
                 table_16b = create_metric_table(metric_16b_label, metric_16b_data)
 
                 table_container_16ab = set_table_layout(table_16a,table_16b,combined_delta.columns)
 
-                metric_16c_data = combined_years[(combined_years['Category'].str.contains('|'.join(subgroup))) & (combined_years['Category'].str.contains('ELA'))]
+                metric_16c_data = combined_years[(combined_years['Category'].str.contains('|'.join(category))) & (combined_years['Category'].str.contains('ELA'))]
                 metric_16c_label = ['1.6c The change in proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' for each subgroup compared with the previous school year.']
                 metric_16c_data = get_svg_circle(metric_16c_data)
                 table_16c = create_metric_table(metric_16c_label,metric_16c_data)
 
-                metric_16d_data = combined_years[(combined_years['Category'].str.contains('|'.join(subgroup))) & (combined_years['Category'].str.contains('Math'))]
+                metric_16d_data = combined_years[(combined_years['Category'].str.contains('|'.join(category))) & (combined_years['Category'].str.contains('Math'))]
                 metric_16d_label = ['1.6d The change in proficiency on the state assessment in',html.Br(), html.U('Math'), ' for each subgroup compared with the previous school year.']
                 metric_16d_data = get_svg_circle(metric_16d_data)
                 table_16d = create_metric_table(metric_16d_label,metric_16d_data)
@@ -362,8 +362,8 @@ def update_academic_metrics(data,year):
 
     #If there is no matching school_type - display empty table. this should never
     # happen. which is why this code is here.
-    if school_index['School Type'].values[0] != 'K8' and school_index['School Type'].values[0] != 'K12' \
-        and school_index['School Type'].values[0] != 'HS' and school_index['School Type'].values[0] != 'AHS':
+    if selected_school['School Type'].values[0] != 'K8' and selected_school['School Type'].values[0] != 'K12' \
+        and selected_school['School Type'].values[0] != 'HS' and selected_school['School Type'].values[0] != 'AHS':
         
         table_container_11ab = {}
         table_container_11cd = {}

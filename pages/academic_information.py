@@ -2,10 +2,11 @@
 # ICSB Dashboard - Academic Information #
 #########################################
 # author:   jbetley
-# version:  1.02.051823
+# version:  1.03
+# date:     5/22/23
 
 import dash
-from dash import html, Input, Output, callback
+from dash import html, Input, Output, State, callback
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import numpy as np
@@ -20,6 +21,8 @@ from .table_helpers import no_data_page, no_data_table, hidden_table, \
 from .chart_helpers import no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages
 from .subnav import subnav_academic
+from .load_data import school_index, ethnicity, subgroup, subject, \
+    grades_all, grades_ordinal
 
 dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
 
@@ -67,50 +70,13 @@ dash.register_page(__name__, top_nav=True, path='/academic_information', order=4
     Output('academic-growth-no-data', 'children'),    
     Output('notes-string', 'children'),
     Input('dash-session', 'data'),
-    Input('charter-dropdown', 'value'),
-    Input('year-dropdown', 'value'),
+    State('charter-dropdown', 'value'),
+    State('year-dropdown', 'value'),
     Input(component_id='radio-button-academic-info', component_property='value')
 )
 def update_academic_information_page(data, school, year, radio_value):
     if not data:
         raise PreventUpdate
-
-    ethnicity = [
-        'American Indian',
-        'Asian',
-        'Black',
-        'Hispanic',
-        'Multiracial',
-        'Native Hawaiian or Other Pacific Islander',
-        'White'
-    ]
-    subgroup = [
-        'Special Education',
-        'General Education',
-        'Paid Meals',
-        'Free/Reduced Price Meals',
-        'English Language Learners',
-        'Non-English Language Learners'
-    ]
-    grades = [
-        'Grade 3',
-        'Grade 4',
-        'Grade 5',
-        'Grade 6',
-        'Grade 7',
-        'Grade 8',
-        'Total',
-        'IREAD Pass %'
-    ]
-    grades_ordinal = [
-        '3rd',
-        '4th',
-        '5th',
-        '6th',
-        '7th',
-        '8th'
-    ]
-    subject = ['ELA', 'Math']
 
     # default styles
     main_container = {'display': 'block'}
@@ -123,7 +89,7 @@ def update_academic_information_page(data, school, year, radio_value):
     empty_growth_container = {'display': 'none'}
     no_growth_data_to_display = no_data_page('Academic Growth')
 
-    school_index = pd.DataFrame.from_dict(data['0'])
+    selected_school = school_index.loc[school_index['School ID'] == school]
 
     ## Proficiency Tables ##
     if radio_value == 'proficiency':
@@ -147,8 +113,8 @@ def update_academic_information_page(data, school, year, radio_value):
         empty_growth_container = {'display': 'none'}
 
         if (
-            school_index['School Type'].values[0] == 'K8'
-            or school_index['School Type'].values[0] == 'K12'
+            selected_school['School Type'].values[0] == 'K8'
+            or selected_school['School Type'].values[0] == 'K12'
         ):
             # load K8 academic_data
             if data['10']:
@@ -162,10 +128,10 @@ def update_academic_information_page(data, school, year, radio_value):
         # CHS is a K8, with the high school moving to Christel House
         # Watanabe Manual HS
         if (
-            school_index['School Type'].values[0] == 'HS'
-            or school_index['School Type'].values[0] == 'AHS'
-            or school_index['School Type'].values[0] == 'K12'
-            or (school_index['School ID'].values[0] == '5874' and int(year) < 2021)
+            selected_school['School Type'].values[0] == 'HS'
+            or selected_school['School Type'].values[0] == 'AHS'
+            or selected_school['School Type'].values[0] == 'K12'
+            or (selected_school['School ID'].values[0] == '5874' and int(year) < 2021)
         ):
             # load HS academic data
             if data['12']:
@@ -178,7 +144,7 @@ def update_academic_information_page(data, school, year, radio_value):
         # set all tables to null and style properties to 'display': 'none' 
         # except for the empty table style
         if (
-            school_index['School Type'].values[0] == 'K8'
+            selected_school['School Type'].values[0] == 'K8'
             and len(academic_data_k8.index) == 0
         ):
             hs_grad_overview_table = {}
@@ -212,12 +178,12 @@ def update_academic_information_page(data, school, year, radio_value):
             ## K8 Academic Information
             # Both K8 school types and K12 school types can have K8 data
             if (
-                school_index['School Type'].values[0] == 'K8'
-                or school_index['School Type'].values[0] == 'K12'
+                selected_school['School Type'].values[0] == 'K8'
+                or selected_school['School Type'].values[0] == 'K12'
             ):
                 # if K8, hide HS table (except for CHS prior to 2021 when it was a K12)
-                if school_index['School Type'].values[0] == 'K8' and not (
-                    school_index['School ID'].values[0] == '5874' and int(year) < 2021
+                if selected_school['School Type'].values[0] == 'K8' and not (
+                    selected_school['School ID'].values[0] == '5874' and int(year) < 2021
                 ):
                     hs_grad_overview_table = {}
                     hs_grad_ethnicity_table = {}
@@ -242,8 +208,9 @@ def update_academic_information_page(data, school, year, radio_value):
                 )
 
                 years_by_grade = k8_academic_info[
-                    k8_academic_info['Category'].str.contains('|'.join(grades))
+                    k8_academic_info['Category'].str.contains('|'.join(grades_all))
                 ]
+
                 if not years_by_grade.empty:
                     k8_grade_table = create_academic_info_table(years_by_grade,'Proficiency by Grade','proficiency')
                 else:
@@ -252,6 +219,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 years_by_subgroup = k8_academic_info[
                     k8_academic_info['Category'].str.contains('|'.join(subgroup))
                 ]
+
                 if not years_by_subgroup.empty:            
                     k8_subgroup_table = create_academic_info_table(years_by_subgroup,'Proficiency by Subgroup','proficiency')
                 else:
@@ -260,6 +228,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 years_by_ethnicity = k8_academic_info[
                     k8_academic_info['Category'].str.contains('|'.join(ethnicity))
                 ]
+
                 if not years_by_ethnicity.empty:            
                     k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,'Proficiency by Ethnicity','proficiency')
                 else:
@@ -298,18 +267,12 @@ def update_academic_information_page(data, school, year, radio_value):
                     k8_other_table = no_data_table('Attendance Data')
 
                 k8_not_calculated = [
-                    {
-                        'Category': "The school’s teacher retention rate."
-                    },
-                    {
-                        'Category': "The school’s student re-enrollment rate."
-                    },
-                    {
-                        'Category': 'Proficiency in ELA and Math of students who have been enrolled in school for at least two (2) full years.'
-                    },
-                    {
-                        'Category': "Student growth on the state assessment in ELA and Math according to Indiana's Growth Model."
-                    },
+                    {'Category': "The school’s teacher retention rate."},
+                    {'Category': "The school’s student re-enrollment rate."},
+                    {'Category': 'Proficiency in ELA and Math of students who \
+                     have been enrolled in school for at least two (2) full years.'},
+                    {'Category': "Student growth on the state assessment in ELA and \
+                     Math according to Indiana's Growth Model."},
                 ]
 
                 k8_not_calculated_data = pd.DataFrame(k8_not_calculated)
@@ -325,6 +288,8 @@ def update_academic_information_page(data, school, year, radio_value):
                 
                 # The raw proficency data from IDOE is annoyingly inconsistent. In some cases missing
                 # data is blank and in other cases it is represented by '0.'
+                # NOTE: This is the biggest data file (~6mb) and is only used here - not
+                # sure if we want to move it to load_data.py
                 k8_all_data_all_years = pd.read_csv(r'data/ilearnAll.csv', dtype=str)
                 
                 # Get selected school data for all categories
@@ -375,9 +340,9 @@ def update_academic_information_page(data, school, year, radio_value):
                     'Above Proficiency'
                 ]
 
-                # for each category, create a list of columns using the strings in
+                # for each category, create a proficiency_columns list of columns using the strings in
                 # 'proficiency_rating' and then divide each column by 'Total Tested'
-                categories = grades + ethnicity + subgroup
+                categories = grades_all + ethnicity + subgroup
 
                 # create dataframe to hold annotations (Categories missing data)
                 # NOTE: Currently, annotations are stored but not used
@@ -386,7 +351,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 for c in categories:
                     for s in subject:
                         category_subject = c + '|' + s
-                        colz = [category_subject + ' ' + x for x in proficiency_rating]
+                        proficiency_columns = [category_subject + ' ' + x for x in proficiency_rating]
                         total_tested = category_subject + ' ' + 'Total Tested'
 
                         # We do not want categories that do not appear in the dataframe
@@ -411,50 +376,51 @@ def update_academic_information_page(data, school, year, radio_value):
 
                         if total_tested in all_proficiency_data.columns:
 
-                            if all_proficiency_data[colz].iloc[0].sum() == 0:
+                            if all_proficiency_data[proficiency_columns].iloc[0].sum() == 0:
 
                                 # if the value is a float, the measured values were NaN, which
                                 # means they were converted '***', and thus 'insufficient data'
-                                if isinstance(all_proficiency_data[colz].iloc[0].sum(), np.floating):
-                                    annotations.loc[len(annotations.index)] = [colz[0],all_proficiency_data[total_tested].values[0],'Insufficient']
+                                if isinstance(all_proficiency_data[proficiency_columns].iloc[0].sum(), np.floating):
+                                    annotations.loc[len(annotations.index)] = [proficiency_columns[0],all_proficiency_data[total_tested].values[0],'Insufficient']
 
                                 # if the value is an integer, the measured values were 0, which
                                 # means 'missing data'
-                                elif isinstance(all_proficiency_data[colz].iloc[0].sum(), np.integer):
+                                elif isinstance(all_proficiency_data[proficiency_columns].iloc[0].sum(), np.integer):
 
                                     # Only add to annotations if it is a non 'Grade' category.
                                     # this is to account for IDOE's shitty data practices- sometimes
                                     # missing grades are blank (the correct way) and sometimes the
                                     # columns are filled with 0. So if everything is 0 AND it is a Grade
                                     # category, we assume it is just IDOE's fucked up data entry
-                                    if ~all_proficiency_data[colz].columns.str.contains('Grade').any():
-                                        annotations.loc[len(annotations.index)] = [colz[0],all_proficiency_data[total_tested].values[0],'Missing']
+                                    if ~all_proficiency_data[proficiency_columns].columns.str.contains('Grade').any():
+                                        annotations.loc[len(annotations.index)] = [proficiency_columns[0],all_proficiency_data[total_tested].values[0],'Missing']
 
                                 # either way, drop all columns related to the category from the df
-                                all_colz = colz + [total_tested]
+                                all_proficiency_columns = proficiency_columns + [total_tested]
 
-                                all_proficiency_data = all_proficiency_data.drop(all_colz, axis=1)
+                                all_proficiency_data = all_proficiency_data.drop(all_proficiency_columns, axis=1)
 
                             else:
                                 # calculate percentage
-                                all_proficiency_data[colz] = all_proficiency_data[colz].divide(
+                                all_proficiency_data[proficiency_columns] = all_proficiency_data[proficiency_columns].divide(
                                     all_proficiency_data[total_tested], axis='index'
                                 )
 
                                 # get a list of all values
-                                row_list = all_proficiency_data[colz].values.tolist()
+                                row_list = all_proficiency_data[proficiency_columns].values.tolist()
 
                                 # round percentages using Largest Remainder Method
                                 rounded = round_percentages(row_list[0])
 
                                 # add back to dataframe
                                 tmp_df = pd.DataFrame([rounded])
-                                cols = list(tmp_df.columns)
-                                all_proficiency_data[colz] = tmp_df[cols]
+                                tmp_cols = list(tmp_df.columns)
+                                all_proficiency_data[proficiency_columns] = tmp_df[tmp_cols]
 
                             # each existing category has a calculated proficiency column
                             # named 'grade_subject'. Since we arent using it, we need to
                             # drop it from each category
+
                             all_proficiency_data.drop(category_subject, axis=1, inplace=True)
 
                 # drop all remaining columns used for calculation that we dont want to chart
@@ -472,6 +438,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 all_proficiency_data = all_proficiency_data.rename(
                     columns=lambda x: re.sub('(Grade )(\d)', '\\2th', x)
                 )
+
                 # all use 'th' suffix except for 3rd - so we need to specially treat '3''
                 all_proficiency_data.columns = [
                     x.replace('3th', '3rd') for x in all_proficiency_data.columns.to_list()
@@ -496,8 +463,8 @@ def update_academic_information_page(data, school, year, radio_value):
                     all_proficiency_data['Category'] != 'index'
                 ]
 
-                ela_title = year + ' ELA Proficiency Breakdown'
-                math_title = year + ' Math Proficiency Breakdown'
+                ela_title = str(year) + ' ELA Proficiency Breakdown'
+                math_title = str(year) + ' Math Proficiency Breakdown'
                 
                 # ELA by Grade
                 grade_annotations = annotations.loc[annotations['Category'].str.contains('Grade')]
@@ -578,15 +545,15 @@ def update_academic_information_page(data, school, year, radio_value):
         # HS and AHS school types will not have K8 data
         # K12 school type may have K8 data
         if (
-            school_index['School Type'].values[0] == 'HS'
-            or school_index['School Type'].values[0] == 'AHS'
-            or school_index['School Type'].values[0] == 'K12'
-            or (school_index['School ID'].values[0] == '5874' and int(year) < 2021)
+            selected_school['School Type'].values[0] == 'HS'
+            or selected_school['School Type'].values[0] == 'AHS'
+            or selected_school['School Type'].values[0] == 'K12'
+            or (selected_school['School ID'].values[0] == '5874' and int(year) < 2021)
         ):
             # if HS or AHS, hide K8 table
             if (
-                school_index['School Type'].values[0] == 'HS'
-                or school_index['School Type'].values[0] == 'AHS'
+                selected_school['School Type'].values[0] == 'HS'
+                or selected_school['School Type'].values[0] == 'AHS'
             ):
                 k8_grade_table = {}
                 k8_ethnicity_table = {}
@@ -630,7 +597,7 @@ def update_academic_information_page(data, school, year, radio_value):
                     # 'Strength of Diploma',
                 ]
 
-                if school_index['School Type'].values[0] == 'AHS':
+                if selected_school['School Type'].values[0] == 'AHS':
                     grad_overview_categories.append('CCR Percentage')
 
                 # strip out all comparative data and clean headers
@@ -649,6 +616,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 eca_data = hs_academic_info[
                     hs_academic_info['Category'].str.contains('Grade 10')
                 ].copy()
+
                 if not eca_data.empty:            
                     hs_eca_table = create_academic_info_table(eca_data,'End of Course Assessments','proficiency')            
                 else:
@@ -685,6 +653,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 grad_subgroup = graduation_data[
                     graduation_data['Category'].str.contains('|'.join(subgroup))
                 ]
+
                 if not grad_subgroup.empty:                
                     hs_grad_subgroup_table = create_academic_info_table(grad_subgroup,'Graduation Rate by Subgroup','proficiency')
                 else:
@@ -705,6 +674,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 sat_overview = sat_table_data[
                     sat_table_data['Category'].str.contains('School Total')
                 ]
+
                 if not sat_overview.empty:          
                     sat_overview_table = create_academic_info_table(sat_overview,'SAT Overview','proficiency')
                 else:
@@ -713,6 +683,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 sat_ethnicity = sat_table_data[
                     sat_table_data['Category'].str.contains('|'.join(ethnicity))
                 ]
+
                 if not sat_ethnicity.empty:                 
                     sat_ethnicity_table = create_academic_info_table(sat_ethnicity,'SAT Benchmarks by Ethnicity','proficiency')
                 else:
@@ -721,6 +692,7 @@ def update_academic_information_page(data, school, year, radio_value):
                 sat_subgroup = sat_table_data[
                     sat_table_data['Category'].str.contains('|'.join(subgroup))
                 ]
+
                 if not sat_subgroup.empty:                
                     sat_subgroup_table = create_academic_info_table(sat_subgroup,'SAT Benchmarks by Subgroup','proficiency')
                 else:
@@ -784,6 +756,7 @@ def update_academic_information_page(data, school, year, radio_value):
             # grade configurations, and, to add insult to injury, sometimes tables are present with null
             # values and other times the tables are just missing. So we pull the data out by specific rows
             # in order to avoid column index errors when pandas tries to read it in all at once.
+            
             # NOTE: the original excel files (format: "2022ReportCardSummary86855593ALL") are in even
             # worse shape with tables arranged horizontally and a liberal use of Merge Columns. There 
             # is a utility file ('_growthFileScrape.py') that converts these original files to a flattened
@@ -1045,33 +1018,6 @@ def update_academic_information_page(data, school, year, radio_value):
 
             else:
                 
-                # hs_grad_overview_table = {}
-                # hs_grad_ethnicity_table = {}
-                # hs_grad_subgroup_table = {}
-                # sat_overview_table = {}
-                # sat_ethnicity_table = {}
-                # sat_subgroup_table = {}        
-                # hs_eca_table = {}
-                # hs_not_calculated_table = {}
-                # hs_table_container = {'display': 'none'}
-
-                # k8_grade_table = {}
-                # k8_ethnicity_table = {}
-                # k8_subgroup_table = {}
-                # k8_other_table = {}
-                # k8_not_calculated_table = {}
-                # k8_table_container = {'display': 'none'}
-
-                # k8_grade_ela_fig = {}
-                # k8_grade_math_fig = {}
-                # k8_ethnicity_ela_fig = {}
-                # k8_ethnicity_math_fig = {}
-                # k8_subgroup_ela_fig = {}
-                # k8_subgroup_math_fig = {}
-
-                # main_container = {'display': 'none'}
-                # empty_container = {'display': 'none'}
-                
                 # If no growth file exists, null out all tables and
                 # styles and set containers to display:none
                 k8_overall_indicators = {}
@@ -1096,33 +1042,6 @@ def update_academic_information_page(data, school, year, radio_value):
         # If the selected school year is anything other than 2022, there
         # will not be any growth data- set all growth tables to null and
         # containers to display:none
-        
-            # hs_grad_overview_table = {}
-            # hs_grad_ethnicity_table = {}
-            # hs_grad_subgroup_table = {}
-            # sat_overview_table = {}
-            # sat_ethnicity_table = {}
-            # sat_subgroup_table = {}        
-            # hs_eca_table = {}
-            # hs_not_calculated_table = {}
-            # hs_table_container = {'display': 'none'}
-
-            # k8_grade_table = {}
-            # k8_ethnicity_table = {}
-            # k8_subgroup_table = {}
-            # k8_other_table = {}
-            # k8_not_calculated_table = {}
-            # k8_table_container = {'display': 'none'}
-
-            # k8_grade_ela_fig = {}
-            # k8_grade_math_fig = {}
-            # k8_ethnicity_ela_fig = {}
-            # k8_ethnicity_math_fig = {}
-            # k8_subgroup_ela_fig = {}
-            # k8_subgroup_math_fig = {}
-
-            # main_container = {'display': 'none'}
-            # empty_container = {'display': 'none'}
             
             k8_overall_indicators = {}
             hs_overall_indicators = {}
@@ -1146,7 +1065,7 @@ def update_academic_information_page(data, school, year, radio_value):
 
     # Add notes string based on school type
     if radio_value == 'proficiency':
-        if school_index['School Type'].values[0] == 'AHS':
+        if selected_school['School Type'].values[0] == 'AHS':
             notes_string = 'Adult High Schools enroll students who are over the age of 18, under credited, \
                 dropped out of high school for a variety of reasons, and are typically out of cohort from \
                 their original graduation year. Because graduation rate is calculated at the end of the school \
@@ -1154,9 +1073,9 @@ def update_academic_information_page(data, school, year, radio_value):
                 the graduation rate of a traditional high school.'
             
         elif (
-                school_index['School Type'].values[0] == 'K8'
-                or school_index['School Type'].values[0] == 'K12'
-                or school_index['School Type'].values[0] == 'HS'
+                selected_school['School Type'].values[0] == 'K8'
+                or selected_school['School Type'].values[0] == 'K12'
+                or selected_school['School Type'].values[0] == 'HS'
                 ):
             notes_string = 'There are a number of factors that make it difficult to make valid and reliable \
                 comparisons between test scores from 2019 to 2022. For example, ILEARN was administered for \

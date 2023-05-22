@@ -1,8 +1,9 @@
-"""
-ICSB Dashboard - Chart Functions
-version:  1.02.051023
-author:   jbetley
-"""
+#######################################
+# ICSB Dashboard - Charting Functions #
+#######################################
+# author:   jbetley
+# version:  1.03
+# date:     5/22/23
 
 import plotly.express as px
 import pandas as pd
@@ -19,8 +20,13 @@ from dash import html, dcc
 
 color= ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
 
-# blank fig with no title and 'Loading . . .' string only
 def loading_fig() -> dict:
+    """Creates a blank fig with no title and 'Loading . . .' string only
+
+    Returns:
+        dict: plotly figure dict
+    """
+
     fig = {
         'layout': {
             'xaxis': {
@@ -49,6 +55,15 @@ def loading_fig() -> dict:
 
 # blank fig with label and height.
 def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> dict:
+    """Creates a blank fig with with a label. can specify height height
+
+    Args:
+        label (str, optional): figure label. Defaults to 'No Data to Display'.
+        height (int, optional): figure height. Defaults to 400.
+
+    Returns:
+        dict: plotly figure dict
+    """
 
     fig = go.Figure()
     
@@ -93,9 +108,12 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> d
 
     return fig_layout
 
-# Blank fig with no label
 def no_data_fig_blank() -> dict:
+    """Creates a blank fig with no label
 
+    Returns:
+        dict: plotly figure dict
+    """
     fig = go.Figure()
     
     fig.update_layout(
@@ -134,9 +152,32 @@ def no_data_fig_blank() -> dict:
 # add two spaces before <br> to ensure the words at the end of each
 # break have the same spacing as 'ticksuffix' in make_stacked_bar()
 def customwrap(s: str,width: int = 16):
+    """create wrapped text using html tags based on the specified width.
+     it adds two spaces before <br> to ensure the words at the end of each
+     break have the same spacing as 'ticksuffix' in make_stacked_bar()
+
+    Args:
+        s (str): a string
+        width (int, optional): the desired maximum width of the string. Defaults to 16.
+
+    Returns:
+        _type_: a string
+    """
+
     return '  <br>'.join(textwrap.wrap(s,width=width))
 
 def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
+    """Create a layout with a 100% stacked bar chart showing proficiency percentages for
+    all academic categories
+
+    Args:
+        values (pd.DataFrame): a dataframe with categories, proficiency categories, and proficiency percentages
+        label (str): title of the figure
+
+    Returns:
+        list: a plotly dash html layout in the form of a list containing a string and a stacked bar chart figure (px.bar)
+    """
+
     data = values.copy()
 
     # In order to get the total_tested value into hovertemplate
@@ -229,7 +270,15 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
 
 # create a basic line (scatter) plot
 def make_line_chart(values: pd.DataFrame, label: str) -> list:
+    """Creates a layout containg a label and a basic line (scatter) plot (px.line)
 
+    Args:
+        values (pd.DataFrame): a dataframe with proficiency categories for each year
+        label (str): title of the figure
+
+    Returns:
+        list: a plotly dash html layout in the form of a list containing string and px.line figure
+    """    """"""
     data = values.copy()
 
     data.columns = data.columns.str.split('|').str[0]
@@ -351,6 +400,18 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     return fig_layout
 
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
+    """Creates a layout containg a label and a simple bar chart (px.bar)
+
+    Args:
+        values (pd.DataFrame): a dataframe with a list of schools and proficiency values
+         for a given category
+        category (str): the category being compared
+        school_name (str): the name of the selected school
+        label (str): the title of the figure
+
+    Returns:
+        list: a plotly dash html layout in the form of a list containing a string and px.bar figure
+    """
 
     data = values.copy()
 
@@ -435,8 +496,19 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
     return fig_layout
 
 def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> list: #px.bar:
+    """Creates a layout containing a label and a grouped bar chart (px.bar)
 
+    Args:
+        values (pd.DataFrame): a dataframe with a list of schools and proficiency values
+         for a given subject and category group (e.g., Math by Ethnicity)
+        school_name (str): the name of the selected school
+        label (str): the title of the figure
+
+    Returns:
+        list: a plotly dash html layout in the form of a list containing a string and px.bar figure
+    """
     data = values.copy()
+
     if 'Low Grade' in data:
         data = data.drop(['Low Grade', 'High Grade'], axis = 1)
 
