@@ -10,13 +10,14 @@ from dash import html, dash_table, Input, State, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
-import json
+# import json
 
 # import local functions
 from .calculations import calculate_financial_metrics
 from .table_helpers import no_data_page, get_svg_circle, create_key
 from .subnav import subnav_finance
 from .load_data import school_index, current_academic_year, max_display_years
+from .load_db import get_finance
 
 dash.register_page(__name__, path='/financial_metrics', order=2)
 
@@ -29,13 +30,13 @@ dash.register_page(__name__, path='/financial_metrics', order=2)
     Output('financial-metrics-main-container', 'style'),
     Output('financial-metrics-empty-container', 'style'),
     Output('financial-metrics-no-data', 'children'),      
-    Input('dash-session', 'data'),
-    State('charter-dropdown', 'value'),
-    State('year-dropdown', 'value'),
+    # Input('dash-session', 'data'),
+    Input('charter-dropdown', 'value'),
+    Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-metrics', component_property='value')
 )
-def update_financial_metrics(data,school,year,radio_value):
-    if not data:
+def update_financial_metrics(school, year, radio_value):
+    if not school:
          raise PreventUpdate
 
     main_container = {'display': 'block'}
@@ -108,22 +109,32 @@ def update_financial_metrics(data,school,year,radio_value):
 
     if radio_value == 'network-metrics':
 
+        network_id = selected_school['Network'].values[0]
+        
         # network financial data
-        finance_file_json = json.loads(data['16'])
+        if network_id != 'None':
+            finance_file = get_finance(network_id)
+        else:
+            finance_file = {}
+
         table_title = 'Financial Accountability Metrics (' + selected_school['Network'].values[0] + ')'
     
     else:
-
-        # school financial data
-        finance_file_json = json.loads(data['17'])        
         
+        # school financial data
+        finance_file = get_finance(school)
+
         # don't display school name in title if the school isn't part of a network
         if selected_school['Network'].values[0] == 'None':
             table_title = 'Financial Accountability Metrics'
         else:
             table_title = 'Financial Accountability Metrics (' + selected_school['School Name'].values[0] + ')'
 
-    financial_data = pd.DataFrame.from_dict(finance_file_json)
+    # clean up
+    finance_file = finance_file.drop('School ID', axis=1)
+    finance_file = finance_file.dropna(axis=1, how='all')
+
+    financial_data = finance_file.copy()
 
     if len(financial_data.index) != 0:
         

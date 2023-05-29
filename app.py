@@ -45,6 +45,7 @@ from pages.calculations import set_academic_rating, calculate_percentage, \
 from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
     corporation_rates, all_demographic_data, ethnicity, subgroup, grades, subject, current_academic_year
 
+# from pages.load_db import engine
 # This is used solely to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 
@@ -563,10 +564,11 @@ def load_data(school, year):
         school_finance_json = {}
 
     if school_info['Network'].values[0] != 'None':
-        network_finance_file = 'data/F-' + school_info['Network'].values[0] + '.csv'
-        network_financial_data = pd.read_csv(network_finance_file)
-        network_finance_dict = network_financial_data.to_dict(into=OrderedDict)
-        network_finance_json = json.dumps(network_finance_dict)
+        # network_finance_file = 'data/F-' + school_info['Network'].values[0] + '.csv'
+        # network_financial_data = pd.read_csv(network_finance_file)
+        # network_finance_dict = network_financial_data.to_dict(into=OrderedDict)
+        # network_finance_json = json.dumps(network_finance_dict)
+        network_finance_json = {}        
     else:
         network_finance_json = {}
 

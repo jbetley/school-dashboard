@@ -22,6 +22,7 @@ from .chart_helpers import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
 from .load_data import school_index, financial_ratios, max_display_years
+from .load_db import get_finance
 
 dash.register_page(__name__, path = '/financial_analysis', order=3)
 
@@ -42,13 +43,13 @@ dash.register_page(__name__, path = '/financial_analysis', order=3)
     Output('financial-analysis-main-container', 'style'),
     Output('financial-analysis-empty-container', 'style'),
     Output('financial-analysis-no-data', 'children'),
-    Input('dash-session', 'data'),
-    State('charter-dropdown', 'value'),
-    State('year-dropdown', 'value'),
+    # Input('dash-session', 'data'),
+    Input('charter-dropdown', 'value'),
+    Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-analysis', component_property='value')
 )
-def update_financial_analysis_page(data, school, year, radio_value):
-    if not data:
+def update_financial_analysis_page(school, year, radio_value):
+    if not school:
         raise PreventUpdate
 
     main_container = {'display': 'block'}
@@ -122,15 +123,27 @@ def update_financial_analysis_page(data, school, year, radio_value):
 
     if radio_value == 'network-analysis':
 
-        finance_file_json = json.loads(data['16'])
+        network_id = selected_school['Network'].values[0]
+        
+        # network financial data
+        if network_id != 'None':
+            finance_file = get_finance(network_id)
+        else:
+            finance_file = {}
+
+        # finance_file_json = json.loads(data['16'])
+
         RandE_title = 'Revenue and Expenses (' + selected_school['Network'].values[0] + ')'
         AandL_title = 'Assets and Liabilities (' + selected_school['Network'].values[0] + ')'
         FP_title = '2-Year Financial Position (' + selected_school['Network'].values[0] + ')'
         FA_title = '2-Year Financial Activities (' + selected_school['Network'].values[0] + ')'
 
     else:
+        
+        # school financial data
+        finance_file = get_finance(school)
 
-        finance_file_json = json.loads(data['17'])    
+        # finance_file_json = json.loads(data['17'])    
 
         # don't display school name in title if the school isn't part of a network
         if selected_school['Network'].values[0] == 'None':
@@ -144,7 +157,13 @@ def update_financial_analysis_page(data, school, year, radio_value):
             FP_title = '2-Year Financial Position (' + selected_school['School Name'].values[0] + ')'
             FA_title = '2-Year Financial Activities (' + selected_school['School Name'].values[0] + ')'
 
-    financial_data = pd.DataFrame.from_dict(finance_file_json)
+    # clean up
+    finance_file = finance_file.drop('School ID', axis=1)
+    finance_file = finance_file.dropna(axis=1, how='all')
+
+    financial_data = finance_file.copy()
+
+    # financial_data = pd.DataFrame.from_dict(finance_file_json)
 
     if len(financial_data.index) != 0:
 

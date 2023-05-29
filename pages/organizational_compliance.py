@@ -7,28 +7,33 @@
 import dash
 from dash import html, dash_table, Input, Output, State, callback
 from dash.exceptions import PreventUpdate
-import pandas as pd
-import json
+# import pandas as pd
+# import json
 
 from .table_helpers import get_svg_circle, no_data_table
+from .load_db import get_finance
 
 dash.register_page(__name__, top_nav=True, order=7)
 
 @callback(
     Output('org-compliance-table', 'children'),
     Output('org-compliance-definitions-table', 'children'),
-    State('year-dropdown', 'value'),
-    Input('dash-session', 'data')
+    Input('charter-dropdown', 'value'),
+    Input('year-dropdown', 'value'),
+    # Input('dash-session', 'data')
 )
-def update_organizational_compliance(year, data):
-    if not data:
+def update_organizational_compliance(school, year):
+    if not school:
         raise PreventUpdate
 
     selected_year = int(year)
 
-    finance_file_json = json.loads(data['17'])
+    # get organizational comliance data from financial data and clean-up
+    finance_file = get_finance(school)
+    finance_file = finance_file.drop('School ID', axis=1)
+    finance_file = finance_file.dropna(axis=1, how='all')
 
-    financial_data = pd.DataFrame.from_dict(finance_file_json)
+    financial_data = finance_file.copy()
 
     if len(financial_data.index) != 0:
 

@@ -11,11 +11,11 @@ from dash.exceptions import PreventUpdate
 import plotly.express as px
 import pandas as pd
 import numpy as np
-import json
 
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
 from .load_data import school_index, ethnicity, subgroup, current_academic_year, max_display_years
+from .load_db import get_finance, get_demographics, get_corp_demographics, get_letter_grades
 
 dash.register_page(__name__, path='/', order=0, top_nav=True)
 
@@ -35,12 +35,12 @@ dash.register_page(__name__, path='/', order=0, top_nav=True)
     Output('school-name-no-data', 'children'),
     Output('info-table-no-data', 'children'),    
     Output('about-no-data', 'children'),
-    State('year-dropdown', 'value'),
-    State('charter-dropdown', 'value'),
-    Input('dash-session', 'data')
+    Input('year-dropdown', 'value'),
+    Input('charter-dropdown', 'value'),
+    # Input('dash-session', 'data')
 )
-def update_about_page(year, school, data):
-    if not data:
+def update_about_page(year, school):
+    if not school:
         raise PreventUpdate
 
     # see color list in chart_helpers.py
@@ -97,15 +97,20 @@ def update_about_page(year, school, data):
         )
     ]
 
-    # get enrollment and demographic data
-    school_demographics = pd.DataFrame.from_dict(data['1'])
+    # get enrollment & demographic data and letter grades
+    school_demographics = get_demographics(school,year)
+    school_letter_grades = get_letter_grades(school)
     
-    # get adm data
-    finance_file_json = json.loads(data['17'])
-    school_financial_data = pd.DataFrame.from_dict(finance_file_json)
+    # get adm data from school financial_data
+    finance_file = get_finance(school)
     
-    # data['3'] is a json file containing school letter grade information
-    if not data['3'] and (len(school_demographics.index) == 0 & \
+    # clean up
+    finance_file = finance_file.drop('School ID', axis=1)
+    finance_file = finance_file.dropna(axis=1, how='all')
+
+    school_financial_data = finance_file.copy()
+
+    if len(school_letter_grades.index) == 0 and (len(school_demographics.index) == 0 & \
           len(school_financial_data.index) == 0):
         
         letter_grade_table = {}
@@ -125,8 +130,8 @@ def update_about_page(year, school, data):
         selected_year = str(year)
 
         # get demographic data for the relevant school corporation
-        corp_demographics = pd.DataFrame.from_dict(data['2'])
-
+        corp_demographics = get_corp_demographics(school,year)
+        
         current_year = selected_year
         previous_year = int(current_year) - 1
         year_string = str(previous_year) + '-' + str(current_year)[-2:]
@@ -194,18 +199,22 @@ def update_about_page(year, school, data):
                 )
             ]
 
+
         # create State and Federal ratings table
-        if not data['3']:
+        if len(school_letter_grades.index) == 0:
 
             letter_grade_table = no_data_table('State and Federal Ratings')
 
         else:
 
-            # school_letter_grades_dict
-            letter_grade_json = json.loads(data['3'])
-            letter_grade_data = pd.DataFrame.from_dict(letter_grade_json)
+            school_letter_grades = (
+                school_letter_grades.set_index("Year")
+                .T.rename_axis("Category")
+                .rename_axis(None, axis=1)
+                .reset_index()
+        )
 
-            year_columns = [i for i in letter_grade_data.columns if i not in ['Category','2018']]
+            year_columns = [str(i) for i in school_letter_grades.columns if i not in ['Category','2018']]
 
             # schools have been held harmless by the State of Indiana since
             # 2019, and continue to be held harmless (2019-2023). This builds
@@ -231,8 +240,8 @@ def update_about_page(year, school, data):
 
             letter_grade_table = [
                 dash_table.DataTable(
-                    letter_grade_data.to_dict('records'),
-                    columns = [{'name': str(i), 'id': str(i)} for i in letter_grade_data.columns],
+                    school_letter_grades.to_dict('records'),
+                    columns = [{'name': str(i), 'id': str(i)} for i in school_letter_grades.columns],
                     style_table={
                         'height': '20vh'
                     },
@@ -314,7 +323,7 @@ def update_about_page(year, school, data):
             adm_values = school_financial_data[school_financial_data['Category'].str.contains('ADM Average')]
             adm_values = adm_values.drop('Category', axis=1)
             adm_values = adm_values.reset_index(drop=True)
-            
+
             for col in adm_values.columns:
                 adm_values[col] = pd.to_numeric(adm_values[col], errors="coerce")
             
@@ -323,8 +332,8 @@ def update_about_page(year, school, data):
             adm_values = adm_values[adm_values.columns[::-1]]
 
             # file exists, but there is no adm data
-            if (adm_values.sum(axis=1).values[0] == 0):
-                
+            if (int(adm_values.sum(axis=1).values[0]) == 0):
+
                 adm_fig = no_data_fig_label('Average Daily Membership History',400)
             
             else:

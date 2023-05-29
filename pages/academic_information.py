@@ -14,15 +14,18 @@ import json
 import pandas as pd
 import re
 import os
+import itertools
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, hidden_table, \
     create_academic_info_table, get_svg_circle
 from .chart_helpers import no_data_fig_label, make_stacked_bar
-from .calculations import round_percentages
+from .calculations import round_percentages, set_academic_rating, calculate_percentage, \
+    calculate_difference
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, subject, \
-    grades_all, grades_ordinal
+    grades, grades_all, grades_ordinal, current_academic_year
+from .load_db import get_school_data, get_corp_data
 
 dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
 
@@ -91,6 +94,16 @@ def update_academic_information_page(data, school, year, radio_value):
 
     selected_school = school_index.loc[school_index['School ID'] == school]
 
+    excluded_academic_years = int(current_academic_year) - int(year)
+
+    # 'excluded years' is a list of YYYY strings (all years more
+    # recent than selected year) that can be used to filter data
+    # that should not be displayed
+    excluded_years = []
+    for i in range(excluded_academic_years):
+        excluded_year = int(current_academic_year) - i
+        excluded_years.append(excluded_year)
+
     ## Proficiency Tables ##
     if radio_value == 'proficiency':
 
@@ -120,6 +133,121 @@ def update_academic_information_page(data, school, year, radio_value):
             if data['10']:
                 json_data = json.loads(data['10'])
                 academic_data_k8 = pd.DataFrame.from_dict(json_data)
+                
+################
+                all_k8_school_data = get_school_data(school,year)
+
+                k8_school_data = all_k8_school_data[
+                   ~all_k8_school_data["Year"].isin(excluded_years)
+                ]
+
+                if len(k8_school_data.index) == 0:
+                    k8_academic_data_json = {}
+                    year_over_year_values_json = {}
+                    diff_to_corp_json = {}
+                    iread_data_json = {}
+                    academic_analysis_corp_dict = {}
+                else:
+
+                    k8_school_info = k8_school_data[["School Name"]].copy()
+
+                    # NOTE: Apparently we cannot filter columns by substring with SQLite because
+                    # it does not allow dynamic SQL - so we filter here
+                    k8_school_data = k8_school_data.filter(
+                        regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",
+                        axis=1,
+                    )
+                    
+                    # create list of columns with no date (used in loop below)
+                    # missing_mask returns boolean series of columns where column
+                    # is true if all elements in the column are equal to null
+                    missing_mask = pd.isnull(k8_school_data[k8_school_data.columns]).all()
+                    missing_cols = k8_school_data.columns[missing_mask].to_list()
+                
+                    # now drop em
+                    k8_school_data = k8_school_data.dropna(axis=1, how='all')
+
+                    categories = ethnicity + subgroup + grades + ["Total"]
+
+                    for s in subject:
+                        for c in categories:
+                            new_col = c + "|" + s + " Proficient %"
+                            proficient = c + "|" + s + " Total Proficient"
+                            tested = c + "|" + s + " Total Tested"
+
+                            if proficient not in missing_cols:
+                                k8_school_data[new_col] = calculate_percentage(
+                                    k8_school_data[proficient], k8_school_data[tested]
+                                )
+
+                    if "IREAD Pass N" in k8_school_data:
+                        
+                        k8_school_data["IREAD Pass %"] = pd.to_numeric(
+                            k8_school_data["IREAD Pass N"], errors="coerce"
+                        ) / pd.to_numeric(k8_school_data["IREAD Test N"], errors="coerce")
+
+                        # If either Test or Pass category had a '***' value, the resulting value will be 
+                        # NaN - we want it to display '***', so we just fillna
+                        k8_school_data["IREAD Pass %"] = k8_school_data["IREAD Pass %"].fillna("***")
+
+                    # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
+                    k8_school_data = k8_school_data.filter(
+                        regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",
+                        axis=1,
+                    )
+
+                    # add School Name column back
+                    k8_school_data = pd.concat([k8_school_data, k8_school_info], axis=1, join="inner")
+
+                    # reset indexes
+                    k8_school_data = k8_school_data.reset_index(drop=True)
+                                        
+                    # ensure columns headers are strings
+                    k8_school_data.columns = k8_school_data.columns.astype(str)
+                    
+                    # # Ensure each df has same # of years - relies on each year having a single row
+                    # k8_num_years = len(k8_school_data.index)
+
+                    # transpose dataframes and clean headers
+                    k8_school_data = (
+                        k8_school_data.set_index("Year")
+                        .T.rename_axis("Category")
+                        .rename_axis(None, axis=1)
+                        .reset_index()
+                    )
+
+                    k8_school_data = k8_school_data.fillna("No Data")
+
+                    # # Keep category and all available years of data
+                    # k8_school_data = k8_school_data.iloc[:, : (k8_num_years + 1)]
+
+                    k8_school_data = k8_school_data[
+                        k8_school_data["Category"].str.contains("School Name") == False
+                    ]
+                    
+                    k8_academic_info = k8_school_data.reset_index(drop=True)
+
+                    k8_academic_info = (
+                        k8_academic_info.set_index(["Category"])
+                        .add_suffix("School")
+                        .reset_index()
+                    )
+
+                    # Make Purty
+                    k8_academic_info.columns = k8_academic_info.columns.str.replace(
+                        r'School$', '', regex=True
+                    )
+
+                    k8_academic_info["Category"] = (
+                        k8_academic_info["Category"]
+                        .str.replace(" Proficient %", "")
+                        .str.strip()
+                    )
+
+                    k8_academic_info.loc[
+                        k8_academic_info["Category"] == "IREAD Pass %", "Category"
+                    ] = "IREAD Proficiency (Grade 3 only)"
+
             else:
                 academic_data_k8 = pd.DataFrame()
 
@@ -194,18 +322,6 @@ def update_academic_information_page(data, school, year, radio_value):
                     hs_eca_table = {}
                     hs_not_calculated_table = {}
                     hs_table_container = {'display': 'none'}
-
-                # for academic information, strip out all comparative data and clean headers
-                k8_academic_info = academic_data_k8[
-                    [
-                        col
-                        for col in academic_data_k8.columns
-                        if 'School' in col or 'Category' in col
-                    ]
-                ]
-                k8_academic_info.columns = k8_academic_info.columns.str.replace(
-                    r'School$', '', regex=True
-                )
 
                 years_by_grade = k8_academic_info[
                     k8_academic_info['Category'].str.contains('|'.join(grades_all))

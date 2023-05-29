@@ -11,11 +11,12 @@ import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
-import json
+# import json
 
 from .table_helpers import no_data_page
 from .subnav import subnav_finance
 from .load_data import school_index, current_academic_year, max_display_years
+from .load_db import get_finance
 
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
 
@@ -26,13 +27,13 @@ dash.register_page(__name__, top_nav=True, path = '/financial_information', orde
     Output('financial-information-main-container', 'style'),
     Output('financial-information-empty-container', 'style'),
     Output('financial-information-no-data', 'children'),
-    Input('dash-session', 'data'),
-    State('charter-dropdown', 'value'),
-    State('year-dropdown', 'value'),
+    # Input('dash-session', 'data'),
+    Input('charter-dropdown', 'value'),
+    Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-info', component_property='value')
 )
-def update_financial_information_page(data,school,year,radio_value):
-    if not data:
+def update_financial_information_page(school, year, radio_value):
+    if not school:
         raise PreventUpdate
 
     main_container = {'display': 'block'}
@@ -41,7 +42,7 @@ def update_financial_information_page(data,school,year,radio_value):
 
     selected_year = int(year)
     
-    selected_school_info = school_index.loc[school_index["School ID"] == school]
+    selected_school = school_index.loc[school_index["School ID"] == school]
 
     # Displays either School or Network level financials, if a school is not
     # part of a network, no radio buttons are displayed at all. If a school
@@ -49,7 +50,7 @@ def update_financial_information_page(data,school,year,radio_value):
     # buttons in a variable ensures there is no flickering of the component as
     # it is drawn and then hidden - as the button variable has no content until
     # it also meets the display condition.
-    if selected_school_info['Network'].values[0] != 'None':
+    if selected_school['Network'].values[0] != 'None':
         if radio_value == 'network-finance':
 
             radio_content = html.Div(
@@ -116,24 +117,34 @@ def update_financial_information_page(data,school,year,radio_value):
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-finance':
-
+        
+        network_id = selected_school['Network'].values[0]
+        
         # network financial data
-        finance_file_json = json.loads(data['16'])
-        table_title = 'Audited Financial Information (' + selected_school_info['Network'].values[0] + ')'
+        if network_id != 'None':
+            finance_file = get_finance(network_id)
+        else:
+            finance_file = {}
+        
+        table_title = 'Audited Financial Information (' + selected_school['Network'].values[0] + ')'
 
     else:
         
         # school financial data
-        finance_file_json = json.loads(data['17'])
+        finance_file = get_finance(school)
 
         # don't display the school name in table title if the school isn't part of a network
-        if selected_school_info['Network'].values[0] == 'None':
+        if selected_school['Network'].values[0] == 'None':
             table_title = 'Audited Financial Information'
         else:
-            table_title = 'Audited Financial Information (' + selected_school_info['School Name'].values[0] + ')'
+            table_title = 'Audited Financial Information (' + selected_school['School Name'].values[0] + ')'
 
-    financial_data = pd.DataFrame.from_dict(finance_file_json)
+    # clean up
+    finance_file = finance_file.drop('School ID', axis=1)
+    finance_file = finance_file.dropna(axis=1, how='all')
 
+    financial_data = finance_file.copy()
+    
     if len(financial_data.index) != 0:
 
         # Financial data will almost always be more recent than academic
