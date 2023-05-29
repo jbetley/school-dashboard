@@ -59,8 +59,8 @@ def run_query(q, *args):
         # sqlite column headers do not have spaces, but we need to add them back for display
         # purposes. Adding a space between any lowercase character and uppercase/number character
         # takes care of most of it. We need two other replace functions to catch edge cases.
-        df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9])", r"\1 \2", regex=True)
-        df.columns = df.columns.str.replace(r"([AD])([TP])", r"\1 \2", regex=True)
+        df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
+        df.columns = df.columns.str.replace(r"([WAD])([ATPB])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace("or ", " or ")
         df.columns = df.columns.astype(str)
 
@@ -186,7 +186,7 @@ def get_finance(school_id):
 # Get School Academic Data
 # Input: school_id, year
 def get_school_data(*args):
-    keys = ['id','year']
+    keys = ['id']
     params = dict(zip(keys, args))
 
     q = text('''
@@ -201,10 +201,22 @@ def get_school_data(*args):
 	    #     WHERE SchoolID = :id AND Year = :year
         # ''')
 
+# Input: school_id, year
+def get_hs_data(*args):
+    keys = ['id']
+    params = dict(zip(keys, args))
+
+    q = text('''
+        SELECT *
+            FROM academic_data_hs
+	        WHERE SchoolID = :id
+        ''')
+    return run_query(q, params)
+
 # Get Corporation Rate Academic Data
 # Input: school_id, year
 def get_corp_data(*args):
-    keys = ['id','year']
+    keys = ['id']
     params = dict(zip(keys, args))
 
     q = text('''
@@ -213,7 +225,23 @@ def get_corp_data(*args):
 	        WHERE CorporationID = (
 		        SELECT GEOCorp
 			        FROM school_index
-			        WHERE SchoolID = :id AND Year = :year)
+			        WHERE SchoolID = :id)
+        ''')
+    return run_query(q, params)
+
+# Get Corporation Rate Academic Data
+# Input: school_id, year
+def get_hs_corp_data(*args):
+    keys = ['id']
+    params = dict(zip(keys, args))
+
+    q = text('''
+        SELECT *
+	        FROM academic_data_hs
+	        WHERE CorporationID = (
+		        SELECT GEOCorp
+			        FROM school_index
+			        WHERE SchoolID = :id)
         ''')
     return run_query(q, params)
 

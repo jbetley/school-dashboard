@@ -1144,6 +1144,9 @@ def load_data(school, year):
 
         hs_school_data = filtered_academic_data_hs.loc[filtered_academic_data_hs["School ID"] == school]
 
+        # pd.set_option('display.max_columns', None)
+        # pd.set_option('display.max_rows', None)
+
         # If no data exists for the selected school, all dicts are empty
         if len(hs_school_data.index) == 0:
             hs_academic_data_json = {}
@@ -1163,6 +1166,7 @@ def load_data(school, year):
             # tmp remove text columns from dataframe
             hs_school_info = hs_school_data[["School Name"]].copy()
 
+
             # drop adult high schools (AHS) from Corp Average df
             hs_corp_data = hs_corp_data[
                 hs_corp_data["School Type"].str.contains("AHS") == False
@@ -1179,12 +1183,16 @@ def load_data(school, year):
             #   'At Benchmark', & 'Benchmark %'
             # Grade 10 ECA Categories: 'Pass N' and 'Test N'
             # Graduation Categories: 'Cohort Count' and 'Graduates'
+
+
             hs_school_data = hs_school_data.filter(
                 regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1
             )
             hs_corp_data = hs_corp_data.filter(
                 regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1
             )
+
+
 
             # remove 'ELA & Math' columns (NOTE: Comment this out to retain 'ELA & Math' columns)
             hs_school_data = hs_school_data.drop(
@@ -1340,7 +1348,7 @@ def load_data(school, year):
                             hs_corp_data[new_col] = (
                                 hs_corp_data[at_benchmark] / hs_corp_data[total_tested]
                             )
-
+         
             # if missing_cols includes 'Non-Waiver' - there is no data available for the school
             # for the selected Years
             if "Non-Waiver" not in "\t".join(missing_cols):
@@ -1455,6 +1463,7 @@ def load_data(school, year):
             hs_school_data["Average State Graduation Rate"] = hs_school_data[
                 "Total Graduation Rate"
             ]
+  
 
             hs_school_info = hs_school_info.reset_index(drop=True)
             hs_school_data = hs_school_data.reset_index(drop=True)
@@ -1493,6 +1502,8 @@ def load_data(school, year):
             
             hs_school_data = hs_school_data.reset_index(drop=True)
 
+            print(hs_school_data)
+            print('++++')
             # get clean list of years
             hs_year_cols = list(hs_school_data.columns[:0:-1])
             hs_year_cols.reverse()
