@@ -51,13 +51,13 @@ def update_about_page(year, school):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('School Enrollment & Demographics')
 
-    selected_school_info = school_index.loc[school_index["School ID"] == school]
-    school_name = selected_school_info['School Name'].values[0]
+    selected_school = school_index.loc[school_index["School ID"] == school]
+    school_name = selected_school['School Name'].values[0]
     headers = ['Category','Description']
 
     # school index df has additional values that can be added to this list
-    # see selected_school_info.columns
-    info = selected_school_info[['City','Principal','Opening Year']]
+    # see selected_school.columns
+    info = selected_school[['City','Principal','Opening Year']]
 
     school_info = info.T
     school_info = school_info.reset_index()
@@ -97,11 +97,9 @@ def update_about_page(year, school):
         )
     ]
 
-    # get enrollment & demographic data and letter grades
-    school_demographics = get_demographics(school,year)
+    school_demographics = get_demographics(school)
     school_letter_grades = get_letter_grades(school)
-    
-    # get adm data from school financial_data
+
     finance_file = get_finance(school)
     
     # clean up
@@ -126,12 +124,11 @@ def update_about_page(year, school):
         empty_container = {'display': 'block'}
 
     else:
-        # Enrollment table
-        selected_year = str(year)
 
-        # get demographic data for the relevant school corporation
-        corp_demographics = get_corp_demographics(school,year)
-        
+        # Enrollment table
+        corp_demographics = get_corp_demographics(school)
+
+        selected_year = str(year)
         current_year = selected_year
         previous_year = int(current_year) - 1
         year_string = str(previous_year) + '-' + str(current_year)[-2:]
@@ -146,6 +143,10 @@ def update_about_page(year, school):
             enroll_table = no_data_table(enroll_title)
 
         else:
+
+            school_demographics = school_demographics.loc[school_demographics["Year"] == int(year)]
+            corp_demographics = corp_demographics.loc[corp_demographics["Year"] == int(year)]
+
             enrollment_filter = school_demographics.filter(regex = r'^Grade \d{1}|[1-9]\d{1}$;|^Pre-K$|^Kindergarten$|^Total Enrollment$',axis=1)
             enrollment_filter = enrollment_filter[[c for c in enrollment_filter if c not in ['Total Enrollment']] + ['Total Enrollment']]
             enrollment_filter = enrollment_filter.dropna(axis=1, how='all')
@@ -156,6 +157,8 @@ def update_about_page(year, school):
 
             school_enrollment = school_enrollment.reset_index()
 
+
+            print(school_enrollment)            
             enroll_table = [
                 dash_table.DataTable(
                     school_enrollment.to_dict('records'),

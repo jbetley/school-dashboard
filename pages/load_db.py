@@ -42,7 +42,7 @@ engine = create_engine('sqlite:///data/dashboard_0123.db')
 # or sqlite3 DBAPI2 connectionother DBAPI2 objects are not tested, please consider using SQLAlchemy
 # connection = engine.raw_connection()
 
-print('DB CONNECTED')
+print('Connection Established . . .')
 
 # Return Dataframe (read_sql is a convenience function wrapper around read_sql_query or read_sql_table depending on input)
 # TODO: Can refactor, everything should passed in as a tuple of a dict for named placeholders, even if only a single
@@ -108,15 +108,15 @@ def get_info(school_id):
 # print(info)
 
 # Get School Demographics
-# Input: school_id, selected_year
+# Input: school_id
 def get_demographics(*args):
-    keys = ['id','year']
+    keys = ['id']
     params = dict(zip(keys, args))
 
     q = text('''
         SELECT *
             FROM demographic_data
-	        WHERE SchoolID = :id AND Year = :year
+	        WHERE SchoolID = :id
         ''')
     
     return run_query(q, params)
@@ -138,7 +138,7 @@ def get_letter_grades(*args):
 # Get Corporation Demographics
 # Input: school_id, selected_year
 def get_corp_demographics(*args):
-    keys = ['id','year']
+    keys = ['id']
     params = dict(zip(keys, args))
 
     q = text('''
@@ -147,7 +147,7 @@ def get_corp_demographics(*args):
 	        WHERE SchoolID = (
 		        SELECT GEOCorp
 			        FROM school_index
-			        WHERE SchoolID = :id AND Year = :year)
+			        WHERE SchoolID = :id)
         ''')
     return run_query(q, params)
 

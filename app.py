@@ -1192,8 +1192,6 @@ def load_data(school, year):
                 regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1
             )
 
-
-
             # remove 'ELA & Math' columns (NOTE: Comment this out to retain 'ELA & Math' columns)
             hs_school_data = hs_school_data.drop(
                 list(hs_school_data.filter(regex="ELA & Math")), axis=1
@@ -1502,8 +1500,6 @@ def load_data(school, year):
             
             hs_school_data = hs_school_data.reset_index(drop=True)
 
-            print(hs_school_data)
-            print('++++')
             # get clean list of years
             hs_year_cols = list(hs_school_data.columns[:0:-1])
             hs_year_cols.reverse()
