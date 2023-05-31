@@ -6,7 +6,7 @@
 # date:     5/22/23
 
 import dash
-from dash import html, Input, Output, State, callback
+from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import numpy as np
@@ -18,8 +18,7 @@ import os
 from .table_helpers import no_data_page, no_data_table, hidden_table, \
     create_academic_info_table, get_svg_circle
 from .chart_helpers import no_data_fig_label, make_stacked_bar
-from .calculations import round_percentages, set_academic_rating, calculate_percentage, \
-    calculate_difference
+from .calculations import round_percentages, calculate_percentage
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, subject, \
     grades, grades_all, grades_ordinal, current_academic_year
@@ -70,13 +69,14 @@ dash.register_page(__name__, top_nav=True, path='/academic_information', order=4
     Output('academic-growth-empty-container', 'style'),
     Output('academic-growth-no-data', 'children'),    
     Output('notes-string', 'children'),
-    Input('dash-session', 'data'),
-    State('charter-dropdown', 'value'),
-    State('year-dropdown', 'value'),
+    # Input('dash-session', 'data'),
+    Input('charter-dropdown', 'value'),
+    Input('year-dropdown', 'value'),
     Input(component_id='radio-button-academic-info', component_property='value')
 )
-def update_academic_information_page(data, school, year, radio_value):
-    if not data:
+def update_academic_information_page(school: str, year: str, radio_value:str):
+
+    if not school:
         raise PreventUpdate
 
     # default styles
@@ -90,6 +90,7 @@ def update_academic_information_page(data, school, year, radio_value):
     empty_growth_container = {'display': 'none'}
     no_growth_data_to_display = no_data_page('Academic Growth')
 
+    # this is a dataframe
     selected_school = school_index.loc[school_index['School ID'] == school]
 
     excluded_academic_years = int(current_academic_year) - int(year)
@@ -241,9 +242,6 @@ def update_academic_information_page(data, school, year, radio_value):
             or selected_school['School Type'].values[0] == 'K12'
             or (selected_school['School ID'].values[0] == '5874' and int(year) < 2021)
         ):
-
-            # pd.set_option('display.max_columns', None)
-            # pd.set_option('display.max_rows', None)    
 
             # load HS academic data
             all_hs_school_data = get_hs_data(school)
@@ -590,21 +588,16 @@ def update_academic_information_page(data, school, year, radio_value):
                 # data is blank and in other cases it is represented by '0.'
                 # NOTE: This is the biggest data file (~6mb) and is only used here - not
                 # sure if we want to move it to load_data.py
-                k8_all_data_all_years = pd.read_csv(r'data/ilearnAll.csv', dtype=str)
-                
-                # Get selected school data for all categories
-                school_k8_all_data = k8_all_data_all_years.loc[k8_all_data_all_years['School ID'] == school]
 
-                school_k8_all_data =  school_k8_all_data.reset_index(drop=True)
+                # get all data
+                # TODO: DO WE DO THIS ABOVE ALREADY?
+                school_all_k8_data = get_school_data(school)
 
                 # show 2019 instead of 2020 as 2020 has no academic data
                 year = '2019' if year == '2020' else year
 
-                school_k8_proficiency_data = school_k8_all_data.loc[
-                school_k8_all_data['Year'] == str(year)
-                ]
+                school_k8_proficiency_data = school_all_k8_data.loc[school_all_k8_data['Year'] == int(year)]
 
-                # drop columns with no values and reset index
                 school_k8_proficiency_data = school_k8_proficiency_data.dropna(axis=1)
                 school_k8_proficiency_data = school_k8_proficiency_data.reset_index()
 
@@ -619,15 +612,10 @@ def update_academic_information_page(data, school, year, radio_value):
                         school_k8_proficiency_data[col], errors='coerce'
                     )
 
-                # Drop columns: 'Year','School ID', 'School Name', 'Corp ID','Corp Name'
-                # which will automatically exclude these categories
-                # Also drop 'ELA & Math' Category (not currently displayed on dashboard)
-                school_k8_proficiency_data = school_k8_proficiency_data.drop(
-                    list(
-                        school_k8_proficiency_data.filter(
-                            regex='ELA & Math|Year|Corp ID|Corp Name|School ID|School Name'
-                        )
-                    ),
+                # Filter needed categories (this captures ELA&Math as well, which we drop later)
+
+                school_k8_proficiency_data = school_k8_proficiency_data.filter(
+                    regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
                     axis=1,
                 )
 
@@ -717,17 +705,11 @@ def update_academic_information_page(data, school, year, radio_value):
                                 tmp_cols = list(tmp_df.columns)
                                 all_proficiency_data[proficiency_columns] = tmp_df[tmp_cols]
 
-                            # each existing category has a calculated proficiency column
-                            # named 'grade_subject'. Since we arent using it, we need to
-                            # drop it from each category
-
-                            all_proficiency_data.drop(category_subject, axis=1, inplace=True)
-
                 # drop all remaining columns used for calculation that we dont want to chart
                 all_proficiency_data.drop(
                     list(
                         all_proficiency_data.filter(
-                            regex='School Total|Total Proficient'
+                            regex='Total\||Total Proficient|ELA&Math'
                         )
                     ),
                     axis=1,
@@ -758,7 +740,6 @@ def update_academic_information_page(data, school, year, radio_value):
 
                 all_proficiency_data.rename(columns={0: 'Percentage'}, inplace=True)
 
-                # Drop 'index' row (created during transpose)
                 all_proficiency_data = all_proficiency_data[
                     all_proficiency_data['Category'] != 'index'
                 ]
@@ -1047,6 +1028,7 @@ def update_academic_information_page(data, school, year, radio_value):
             # table out by row using iloc (e.g., growth_data.iloc[0:10]). Eventually we need to put
             # all this crap into a database.
 
+            #TODO: Need to figure out a way to get this into DB
             growth_file = 'data/growth_data' + school + '.csv'
             
             # Adult high schools and new charter schools do not have growth data.
@@ -1087,13 +1069,8 @@ def update_academic_information_page(data, school, year, radio_value):
                         pd.Dataframe: returns the same dataframe first row headers and
                         no NaN columns
                     """
-                    # set first row as header
                     data.columns = data.iloc[0].tolist()
-                    
-                    # remove first row
                     data = data[1:]
-                    
-                    # drop null columns
                     data = data.dropna(axis=1, how='all')
 
                     return data

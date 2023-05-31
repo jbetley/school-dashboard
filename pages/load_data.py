@@ -9,6 +9,7 @@
 #https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
 
 import pandas as pd
+from .load_db import get_current_year
 
 ## Load Data Files ##
 print("#### Loading Data. . . . . ####")
@@ -23,7 +24,8 @@ all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
 financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
 
 # global integers
-current_academic_year = int(school_academic_data_k8["Year"].unique().max())
+current_academic_year = get_current_year()
+
 max_display_years = 5
 
 # global strings

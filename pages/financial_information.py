@@ -6,7 +6,7 @@
 # date:     5/22/23
 
 import dash
-from dash import html, dash_table, Input, State, Output, callback
+from dash import html, dash_table, Input, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
@@ -15,7 +15,7 @@ import numpy as np
 
 from .table_helpers import no_data_page
 from .subnav import subnav_finance
-from .load_data import school_index, current_academic_year, max_display_years
+from .load_data import school_index, max_display_years, current_academic_year
 from .load_db import get_finance
 
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
@@ -27,7 +27,6 @@ dash.register_page(__name__, top_nav=True, path = '/financial_information', orde
     Output('financial-information-main-container', 'style'),
     Output('financial-information-empty-container', 'style'),
     Output('financial-information-no-data', 'children'),
-    # Input('dash-session', 'data'),
     Input('charter-dropdown', 'value'),
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-info', component_property='value')

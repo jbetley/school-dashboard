@@ -1,4 +1,7 @@
-# school-dashboard (using Dash 2.9.2)
+# school-dashboard
+Note: This version is essentially the same as main branch other than it uses SQLite for data storage
+rather than multiple csv files.
+
 Dashboard created in Plotly Dash (python) to measure School Performance
 
 The dashboard was created to provide academic and financial information for selected schools using both school provided

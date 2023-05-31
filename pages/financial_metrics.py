@@ -6,17 +6,16 @@
 # date:     5/22/23
 
 import dash
-from dash import html, dash_table, Input, State, Output, callback
+from dash import html, dash_table, Input, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
-# import json
 
 # import local functions
 from .calculations import calculate_financial_metrics
 from .table_helpers import no_data_page, get_svg_circle, create_key
 from .subnav import subnav_finance
-from .load_data import school_index, current_academic_year, max_display_years
+from .load_data import school_index, max_display_years, current_academic_year
 from .load_db import get_finance
 
 dash.register_page(__name__, path='/financial_metrics', order=2)

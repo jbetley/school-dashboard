@@ -29,18 +29,12 @@ from sqlalchemy import create_engine
 from sqlalchemy import text
 
 # Create a simple database
-engine = create_engine('sqlite:///data/dashboard_0123.db')
+engine = create_engine('sqlite:///data/dashboard2.db')
 
 # consider
 # import importlib.resources as resources
 # with resources.path("dashboard_0123.db") as sqlite_filepath:
 #     engine = create_engine(f"sqlite:///{sqlite_filepath}")
-
-
-# raw_connection works but gives following error:
-# UserWarning: pandas only support SQLAlchemy connectable(engine/connection) or database string URI
-# or sqlite3 DBAPI2 connectionother DBAPI2 objects are not tested, please consider using SQLAlchemy
-# connection = engine.raw_connection()
 
 print('Connection Established . . .')
 
@@ -65,37 +59,21 @@ def run_query(q, *args):
         df.columns = df.columns.astype(str)
 
         return df
+
+def get_current_year():
+
+    db = engine.raw_connection()
+    cur = db.cursor()
+    cur.execute(''' SELECT MAX(Year) FROM academic_data_k8 ''')
+    year = cur.fetchone()[0]
+    db.close()
     
-    #    return pd.read_sql_query(q, conn, params=conditions)
+    return year
 
-# NOTE: Table specific queries
-# def show_tables():
-#     q = text('''
-#         SELECT
-#             name
-#         FROM sqlite_master
-#         WHERE type IN ("table","view");
-#         ''')
-    
-#     return run_query(q)
-
-# def get_table_row_count(tablename):
-#     q = '''
-#         SELECT
-#             COUNT(1)
-#         FROM %s;
-#         ''' % tablename
-#     return run_query(q)["COUNT(1)"][0]
-
-# tables = show_tables()
-# tables["row_count"] = [get_table_row_count(t) for t in tables["name"]]
-
-# Get school information
-# Input: school_id
 def get_info(school_id):
     params = dict(id=school_id)
 
-    # Using text to pass 'textual' SQL string directly to database
+    # Using text to pass 'textual' SQL string
     q = text('''
         SELECT SchoolName, City, Principal, OpeningYear
             FROM school_index
@@ -104,11 +82,6 @@ def get_info(school_id):
 
     return run_query(q, params)
 
-# info = get_info(pass_id)
-# print(info)
-
-# Get School Demographics
-# Input: school_id
 def get_demographics(*args):
     keys = ['id']
     params = dict(zip(keys, args))
@@ -121,8 +94,6 @@ def get_demographics(*args):
     
     return run_query(q, params)
 
-# Get School Letter Grades (all years)
-# Input: school_id
 def get_letter_grades(*args):
     keys = ['id']
     params = dict(zip(keys, args))
@@ -135,8 +106,6 @@ def get_letter_grades(*args):
     
     return run_query(q, params)
 
-# Get Corporation Demographics
-# Input: school_id, selected_year
 def get_corp_demographics(*args):
     keys = ['id']
     params = dict(zip(keys, args))
@@ -150,9 +119,6 @@ def get_corp_demographics(*args):
 			        WHERE SchoolID = :id)
         ''')
     return run_query(q, params)
-
-# demo2 = get_corp_demographics(pass_id,pass_year)
-# print(demo2)
 
 # Get ADM
 # Input: school_id
@@ -171,9 +137,6 @@ def get_adm(school_id):
 
 # Get Financial Data
 # Input: school_id
-# NOTE: Can use for networks as well - just need a school_index query getting NetworkID by matching SchoolID and
-# then passing NetworkID
-# e.g., school_id = school_index.loc[school_index['School ID'] == school,['Network']].values[0][0]
 def get_finance(school_id):
     params = dict(id=school_id)
     q = text('''
@@ -183,25 +146,19 @@ def get_finance(school_id):
     ''')
     return run_query(q, params)
 
-# Get School Academic Data
-# Input: school_id, year
+# School Academic Data (k8)
 def get_school_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
 
     q = text('''
         SELECT *
-            FROM charter_school_k8_data
+            FROM academic_data_k8
 	        WHERE SchoolID = :id
         ''')
     return run_query(q, params)
 
-        # SELECT *
-        #     FROM charter_school_k8_data
-	    #     WHERE SchoolID = :id AND Year = :year
-        # ''')
-
-# Input: school_id, year
+# School Academic Data (hs)
 def get_hs_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
@@ -213,8 +170,7 @@ def get_hs_data(*args):
         ''')
     return run_query(q, params)
 
-# Get Corporation Rate Academic Data
-# Input: school_id, year
+# Corporation Rate Academic Data (k8)
 def get_corp_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
@@ -229,8 +185,7 @@ def get_corp_data(*args):
         ''')
     return run_query(q, params)
 
-# Get Corporation Rate Academic Data
-# Input: school_id, year
+# Corporation Rate Academic Data (hs)
 def get_hs_corp_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))

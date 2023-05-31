@@ -6,7 +6,7 @@
 # date:     5/22/23
 
 import dash
-from dash import dcc, html, dash_table, Input, Output, State, callback
+from dash import dcc, html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import plotly.express as px
 import pandas as pd
@@ -14,7 +14,7 @@ import numpy as np
 
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
-from .load_data import school_index, ethnicity, subgroup, current_academic_year, max_display_years
+from .load_data import school_index, ethnicity, subgroup, max_display_years, current_academic_year
 from .load_db import get_finance, get_demographics, get_corp_demographics, get_letter_grades
 
 dash.register_page(__name__, path='/', order=0, top_nav=True)
@@ -156,9 +156,7 @@ def update_about_page(year, school):
             school_enrollment.rename(index={'Total Enrollment':'Total'},inplace=True)
 
             school_enrollment = school_enrollment.reset_index()
-
-
-            print(school_enrollment)            
+      
             enroll_table = [
                 dash_table.DataTable(
                     school_enrollment.to_dict('records'),

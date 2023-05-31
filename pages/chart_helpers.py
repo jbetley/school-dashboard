@@ -179,7 +179,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     """
 
     data = values.copy()
-
+    stacked_color = ['#df8f2d', '#ebbb81', '#96b8db', '#74a2d7']
     # In order to get the total_tested value into hovertemplate
     # without displaying it on the chart, we need to pull the
     # Total Tested values out of the dataframe and into a new
@@ -190,6 +190,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     # This adds 'percentage_x' and 'percentage_y' columns.
     # 'percentage_y' is equal to the Total Tested Values
     data = pd.merge(data, total_tested[['Category','Percentage']], on=['Category'], how='left')
+
 
     # rename the columns (percentage_x to Percentage & percentage_y to Total Tested)
     data.columns = ['Category','Percentage','Proficiency','Total Tested']
@@ -208,7 +209,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
         barmode='stack',
         text=[f'{i}%' for i in data['Percentage']],
         orientation='h',
-        color_discrete_sequence=color,
+        color_discrete_sequence = stacked_color,
         height=200,
     )
 
