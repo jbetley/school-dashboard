@@ -34,7 +34,7 @@ dash.register_page(__name__, path='/financial_metrics', order=2)
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-metrics', component_property='value')
 )
-def update_financial_metrics(school, year, radio_value):
+def update_financial_metrics(school:str, year:str, radio_value:str):
     if not school:
          raise PreventUpdate
 
@@ -130,7 +130,7 @@ def update_financial_metrics(school, year, radio_value):
             table_title = 'Financial Accountability Metrics (' + selected_school['School Name'].values[0] + ')'
 
     # clean up
-    finance_file = finance_file.drop('School ID', axis=1)
+    finance_file = finance_file.drop(['School ID','School Name'], axis=1)
     finance_file = finance_file.dropna(axis=1, how='all')
 
     financial_data = finance_file.copy()

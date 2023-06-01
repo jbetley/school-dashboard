@@ -947,8 +947,6 @@ def load_data(school, year):
             #   if first value = 0 and second value is *** -> -***
             #   if first value = 0 and second value is NaN -> -***
 
-            year_over_year_values_values = pd.DataFrame()
-
             def calculate_year_over_year(current_year, previous_year):
                 return np.where(
                     (current_year == 0) & ((previous_year.isna()) | (previous_year == "***")), "-***",
@@ -966,62 +964,27 @@ def load_data(school, year):
                 )
 
             # calculate year over year values
-            # loops over dataframe calculating difference between col and col+1
-            # the final df contains a column for each year showing the difference value
-            # between that year and the previous year
-            for y in range(0, (len(k8_school_metric_data.columns) - 1)):
-                year_over_year_values_values[k8_school_metric_data.columns[y]] = calculate_year_over_year(
-                    k8_school_metric_data.iloc[:, y], k8_school_metric_data.iloc[:, y + 1])
+            # loops over dataframe calculating difference between col and col+1 and inserts it
+            # into the dataframe
+            z = 1
+            x = 0
+            for y in range(0, (len(k8_school_metric_data.columns)-1)):
+                values = calculate_year_over_year(k8_school_metric_data.iloc[:, x], k8_school_metric_data.iloc[:, x + 1])
+                k8_school_metric_data.insert(loc = z, column = k8_school_metric_data.columns[x] + '+/-', value = values)
+                z+=2
+                x+=2
+           
+            k8_school_metric_data.columns = [i + 'School' if '+/-' not in i else i for i in k8_school_metric_data.columns]
 
+            k8_school_metric_data.insert(loc=0, column="Category", value=category_header)
+            k8_school_metric_data["Category"] = (k8_school_metric_data["Category"].str.replace(" Proficient %", "").str.strip())
             # Add first_year data back
-            year_over_year_values_values[first_year.columns] = first_year
-
-            # reorder using k8_year_cols list and add Category back
-            year_over_year_values_values = year_over_year_values_values.set_axis(k8_year_cols, axis=1)
-            year_over_year_values_values.insert(loc=0, column="Category", value=category_header)
-
-            year_over_year_values = final_k8_academic_data.copy()
-
-            # 'Corp Proficiency' and '+/-' columns aren't used in year over year calculation
-            year_over_year_values = year_over_year_values.drop(
-                [
-                    col
-                    for col in year_over_year_values.columns
-                    if "Corp Proficiency" in col or "+/-" in col
-                ],
-                axis=1
-            )
-
-            # Add suffix to year columns (ignore Category by setting it to index)
-            year_over_year_values_values = (
-                year_over_year_values_values.set_index(["Category"])
-                .add_suffix("+/-")
-                .reset_index()
-            )
-
-            year_over_year_values_values["Category"] = (
-                year_over_year_values_values["Category"]
-                .str.replace(" Proficient %", "")
-                .str.strip()
-            )
+            k8_school_metric_data[first_year.columns] = first_year
 
             # Create clean col lists - (YYYY + 'School') and (YYYY + '+/-')
-            school_years_cols = list(year_over_year_values.columns[1:])
-            year_over_year_values_values_cols = list(year_over_year_values_values.columns[1:])
+            school_years_cols = list(k8_school_metric_data.columns[1:])
 
-            # interweave the above two lists
-            merged_years_cols = [
-                val
-                for pair in zip(school_years_cols, year_over_year_values_values_cols)
-                for val in pair
-            ]
-            merged_years_cols.insert(0, "Category")
-
-            # merge the values for each year (year_over_year_values) with the difference between the values for
-            # each year and the previous year (diff_over_years_values)
-            year_over_year_values = year_over_year_values.merge(year_over_year_values_values, on="Category", how="left")
-            year_over_year_values = year_over_year_values[merged_years_cols]
-
+# TODO: FIX THIS TOO
             # duplicate final academic data in preparation for calculating Ratings for diff_to_corp
             diff_to_corp = final_k8_academic_data.copy()
 
@@ -1044,33 +1007,34 @@ def load_data(school, year):
             ]
 
             [
-                year_over_year_values.insert(
+                k8_school_metric_data.insert(
                     i,
-                    str(year_over_year_values.columns[i - 1])[: 7 - 3]
+                    str(k8_school_metric_data.columns[i - 1])[: 7 - 3]
                     + "Rate"
                     + str(i),
-                    year_over_year_values.apply(
+                    k8_school_metric_data.apply(
                         lambda x: set_academic_rating(
-                            x[year_over_year_values.columns[i - 1]], years_limits, 1
+                            x[k8_school_metric_data.columns[i - 1]], years_limits, 1
                         ),
                         axis=1,
                     ),
                 )
-                for i in range(year_over_year_values.shape[1], 1, -2)
+                for i in range(k8_school_metric_data.shape[1], 1, -2)
             ]
 
             diff_to_corp = diff_to_corp.fillna("No Data")
-            year_over_year_values = year_over_year_values.fillna("No Data")
+            k8_school_metric_data = k8_school_metric_data.fillna("No Data")
 
             # ensure all column headers are strings
             diff_to_corp.columns = diff_to_corp.columns.astype(str)
-            year_over_year_values.columns = year_over_year_values.columns.astype(str)
+            k8_school_metric_data.columns = k8_school_metric_data.columns.astype(str)
 
             # for the year_over_year df, drop the 'Rating' column for the last year_data column and rename it -
             # we don't use last Rating column becase we cannot calculate a 'year over year'calculation for the first year -
             # it is just the baseline
-            year_over_year_values = year_over_year_values.iloc[:, :-2]
-            year_over_year_values.columns.values[-1] = (year_over_year_values.columns.values[-1] + " (Initial Data Year)")
+
+            k8_school_metric_data = k8_school_metric_data.iloc[:, :-2]
+            k8_school_metric_data.columns.values[-1] = (k8_school_metric_data.columns.values[-1] + " (Initial Data Year)")
 
             diff_to_corp_dict = diff_to_corp.to_dict(into=OrderedDict)
             diff_to_corp_json = json.dumps(diff_to_corp_dict)
@@ -1093,19 +1057,19 @@ def load_data(school, year):
             # NOTE: the zip function stops at the end of the shortest list which automatically drops
             # the single 'Initial Year' column from the list. It returns an empty list if
             # school_years_cols only contains the Initial Year columns (because rating_cols will be empty)
-            rating_cols = list(col for col in year_over_year_values.columns if "Rate" in col)
+            rating_cols = list(col for col in k8_school_metric_data.columns if "Rate" in col)
             col_pair = list(zip(school_years_cols, rating_cols))
 
             # iterate over list of tuples, if value in first item in pair is zero, change second
             # value in pair to DNMS
             if col_pair:
                 for k, v in col_pair:
-                    year_over_year_values[v] = np.where(
-                        year_over_year_values[k] == 0, "DNMS", year_over_year_values[v]
+                    k8_school_metric_data[v] = np.where(
+                        k8_school_metric_data[k] == 0, "DNMS", k8_school_metric_data[v]
                     )
 
             # save to_json
-            year_over_year_values_dict = year_over_year_values.to_dict(into=OrderedDict)
+            year_over_year_values_dict = k8_school_metric_data.to_dict(into=OrderedDict)
             year_over_year_values_json = json.dumps(year_over_year_values_dict)
 
     ## HS Academic Information
@@ -1462,7 +1426,6 @@ def load_data(school, year):
                 "Total Graduation Rate"
             ]
   
-
             hs_school_info = hs_school_info.reset_index(drop=True)
             hs_school_data = hs_school_data.reset_index(drop=True)
 

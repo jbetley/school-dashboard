@@ -15,7 +15,8 @@ import pandas as pd
 from .table_helpers import no_data_page, no_data_table, create_metric_table, \
     set_table_layout, get_svg_circle, create_key
 from .subnav import subnav_academic
-from .load_data import school_index, ethnicity, subgroup, grades_all
+from .load_data import school_index, ethnicity, subgroup, grades_all, process_yearly_indicators, \
+    process_academic_data
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
@@ -41,10 +42,10 @@ dash.register_page(__name__,  path = '/academic_metrics', order=5)
     Output('academic-metrics-empty-container', 'style'),
     Output('academic-metrics-no-data', 'children'),  
     Input('dash-session', 'data'),
-    State('charter-dropdown', 'value'),
-    State('year-dropdown', 'value'),
+    Input('charter-dropdown', 'value'),
+    Input('year-dropdown', 'value'),
 )
-def update_academic_metrics(data, school, year):
+def update_academic_metrics(data, school: str, year: str):
     if not data:
         raise PreventUpdate
 
@@ -222,6 +223,11 @@ def update_academic_metrics(data, school, year):
                 json_data = json.loads(data['11'])
                 combined_years = pd.DataFrame.from_dict(json_data)
 
+                academic_data = process_academic_data(school, year)
+                combined_years2 = process_yearly_indicators(academic_data)
+
+                # print(combined_years)
+                # print(combined_years2)
                 category = ethnicity + subgroup
 
                 metric_14a_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades_all))) & (combined_years['Category'].str.contains('ELA'))]

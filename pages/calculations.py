@@ -64,6 +64,37 @@ def calculate_difference(value1: str, value2: str) -> float|None|str:
         ),
     )
 
+# NOTE: Calculating year-over-year values is complicated by the fact that we need
+# to track, not ignore, insufficent n-size ('***'), a non-numeric value- . This is
+# used when there is available data, but not enough of it to show under privacy laws.
+
+# 1) If both the current_year and previous_year values are '***' -> the result is '***'
+# 2) If the previous year is either NaN or '***' and the current_year is 0 (that is 0% of students
+#    were proficient) -> the result is '-***", which is a special flag used for accountability
+#    purposes (a '-***' is generally treated as a Did Not Meet Standard rather than a No Rating).
+#   Thus:
+#   if None in Either Column -> None
+#   if *** in either column -> ***
+#   if # -> subtract
+#   if first value = 0 and second value is *** -> -***
+#   if first value = 0 and second value is NaN -> -***
+
+def calculate_year_over_year(current_year, previous_year):
+    return np.where(
+        (current_year == 0) & ((previous_year.isna()) | (previous_year == "***")), "-***",
+        np.where(
+            (current_year == "***") | (previous_year == "***"), "***",
+            np.where(
+                (current_year.isna()) & (previous_year.isna()), None,
+                np.where(
+                    (~current_year.isna()) & (previous_year.isna()), None,
+                    
+                    pd.to_numeric(current_year, errors="coerce") - pd.to_numeric(previous_year, errors="coerce"),
+                ),
+            ),
+        ),
+    )
+    
 def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str:
     """
     Takes a value (which may be of type str, float, or None), a list (consisting of

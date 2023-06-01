@@ -39,7 +39,7 @@ dash.register_page(__name__, path='/', order=0, top_nav=True)
     Input('charter-dropdown', 'value'),
     # Input('dash-session', 'data')
 )
-def update_about_page(year, school):
+def update_about_page(year: str, school: str):
     if not school:
         raise PreventUpdate
 
@@ -103,7 +103,7 @@ def update_about_page(year, school):
     finance_file = get_finance(school)
     
     # clean up
-    finance_file = finance_file.drop('School ID', axis=1)
+    finance_file = finance_file.drop(['School ID','School Name'], axis=1)
     finance_file = finance_file.dropna(axis=1, how='all')
 
     school_financial_data = finance_file.copy()

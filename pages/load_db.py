@@ -27,22 +27,25 @@
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import text
+import time
 
 # Create a simple database
-engine = create_engine('sqlite:///data/dashboard2.db')
+engine = create_engine('sqlite:///data/db_all.db')
 
 # consider
 # import importlib.resources as resources
 # with resources.path("dashboard_0123.db") as sqlite_filepath:
 #     engine = create_engine(f"sqlite:///{sqlite_filepath}")
 
-print('Connection Established . . .')
+print('Engine Created . . .')
+
 
 # Return Dataframe (read_sql is a convenience function wrapper around read_sql_query or read_sql_table depending on input)
 # TODO: Can refactor, everything should passed in as a tuple of a dict for named placeholders, even if only a single
 # value, so type should always be dict
 def run_query(q, *args):
     conditions = None
+    t2 = time.process_time()
 
     with engine.connect() as conn:
         if args:
@@ -50,16 +53,25 @@ def run_query(q, *args):
 
         df = pd.read_sql_query(q, conn, params=conditions)
 
-        # sqlite column headers do not have spaces, but we need to add them back for display
-        # purposes. Adding a space between any lowercase character and uppercase/number character
-        # takes care of most of it. We need two other replace functions to catch edge cases.
+        # sqlite column headers do not have spaces between words. But we need to display them,
+        # so we have to do a bunch of str.replace to account for all conditions. Maybe a better
+        # way, but this is pretty fast. Adding a space between any lowercase character and any 
+        # uppercase/number character takes care of most of it. The other replace functions catch
+        # edge cases.
         df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
-        df.columns = df.columns.str.replace(r"([WAD])([ATPB])", r"\1 \2", regex=True)
+        df.columns = df.columns.str.replace(r"([WAD])([ATPB&])", r"\1 \2", regex=True)
+        df.columns = df.columns.str.replace(r"([&])([M])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace("or ", " or ")
         df.columns = df.columns.astype(str)
 
+        db_load_time = time.process_time() - t2
+        num_cols = len(df.columns)
+        
+        print(f'Time to load ' + str(num_cols) + ' columns is: ' + str(db_load_time))
+        
         return df
 
+# Only loads once, from 'load_globals.py'
 def get_current_year():
 
     db = engine.raw_connection()
@@ -67,13 +79,12 @@ def get_current_year():
     cur.execute(''' SELECT MAX(Year) FROM academic_data_k8 ''')
     year = cur.fetchone()[0]
     db.close()
-    
+
     return year
 
 def get_info(school_id):
     params = dict(id=school_id)
 
-    # Using text to pass 'textual' SQL string
     q = text('''
         SELECT SchoolName, City, Principal, OpeningYear
             FROM school_index

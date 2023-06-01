@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import re
 import os
+import time
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, hidden_table, \
@@ -21,7 +22,7 @@ from .chart_helpers import no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages, calculate_percentage
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, subject, \
-    grades, grades_all, grades_ordinal, current_academic_year
+    grades, grades_all, grades_ordinal, current_academic_year, process_academic_data
 from .load_db import get_school_data, get_hs_data, get_demographics
 
 dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
@@ -69,7 +70,6 @@ dash.register_page(__name__, top_nav=True, path='/academic_information', order=4
     Output('academic-growth-empty-container', 'style'),
     Output('academic-growth-no-data', 'children'),    
     Output('notes-string', 'children'),
-    # Input('dash-session', 'data'),
     Input('charter-dropdown', 'value'),
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-academic-info', component_property='value')
@@ -129,13 +129,18 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             or selected_school['School Type'].values[0] == 'K12'
         ):
 
-            all_k8_school_data = get_school_data(school)
+            school_data = process_academic_data(school, year)
+            school_data = school_data.fillna("No Data")
+            
+            # all_k8_school_data = get_school_data(school)
 
-            k8_school_data = all_k8_school_data[~all_k8_school_data["Year"].isin(excluded_years)]
+            # k8_school_data = all_k8_school_data[~all_k8_school_data["Year"].isin(excluded_years)]
+            # Make copy for proficiency charts
+            # proficiency_data = k8_school_data.copy()
+            
+### TODO: Check error handling
 
-# TODO: Check error handling
-
-            if len(k8_school_data.index) == 0:
+            if school_data.empty:  #if len(k8_school_data.index) == 0:
                 k8_academic_info = {}
                 year_over_year_values_json = {}
                 diff_to_corp_json = {}
@@ -144,72 +149,73 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             
             else:
 
-                k8_school_info = k8_school_data[["School Name"]].copy()
+                # k8_school_info = k8_school_data[["School Name"]].copy()
 
-                # NOTE: Apparently we cannot filter columns by substring with SQLite because
-                # it does not allow dynamic SQL - so we filter here
-                k8_school_data = k8_school_data.filter(
-                    regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",
-                    axis=1,
-                )
-                
-                # missing_mask returns boolean series of columns where column
-                # is true if all elements in the column are equal to null
-                missing_mask = pd.isnull(k8_school_data[k8_school_data.columns]).all()
-                missing_cols = k8_school_data.columns[missing_mask].to_list()
+                # # NOTE: Apparently we cannot filter columns by substring with SQLite because
+                # # it does not allow dynamic SQL - so we filter here
+                # k8_school_data = k8_school_data.filter(
+                #     regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",
+                #     axis=1,
+                # )
+
+                # # missing_mask returns boolean series of columns where column
+                # # is true if all elements in the column are equal to null
+                # missing_mask = pd.isnull(k8_school_data[k8_school_data.columns]).all()
+                # missing_cols = k8_school_data.columns[missing_mask].to_list()
             
-                # now drop em
-                k8_school_data = k8_school_data.dropna(axis=1, how='all')
+                # # now drop em
+                # k8_school_data = k8_school_data.dropna(axis=1, how='all')
 
-                categories = ethnicity + subgroup + grades + ["Total"]
+                # categories = ethnicity + subgroup + grades + ["School Total"]
 
-                for s in subject:
-                    for c in categories:
-                        new_col = c + "|" + s + " Proficient %"
-                        proficient = c + "|" + s + " Total Proficient"
-                        tested = c + "|" + s + " Total Tested"
+                # for s in subject:
+                #     for c in categories:
+                #         new_col = c + "|" + s + " Proficient %"
+                #         proficient = c + "|" + s + " Total Proficient"
+                #         tested = c + "|" + s + " Total Tested"
 
-                        if proficient not in missing_cols:
-                            k8_school_data[new_col] = calculate_percentage(
-                                k8_school_data[proficient], k8_school_data[tested]
-                            )
+                #         if proficient not in missing_cols:
+                #             k8_school_data[new_col] = calculate_percentage(
+                #                 k8_school_data[proficient], k8_school_data[tested]
+                #             )
 
-                if "IREAD Pass N" in k8_school_data:
+                # if "IREAD Pass N" in k8_school_data:
                     
-                    k8_school_data["IREAD Pass %"] = pd.to_numeric(
-                        k8_school_data["IREAD Pass N"], errors="coerce"
-                    ) / pd.to_numeric(k8_school_data["IREAD Test N"], errors="coerce")
+                #     k8_school_data["IREAD Pass %"] = pd.to_numeric(
+                #         k8_school_data["IREAD Pass N"], errors="coerce"
+                #     ) / pd.to_numeric(k8_school_data["IREAD Test N"], errors="coerce")
 
-                    # If either Test or Pass category had a '***' value, the resulting value will be 
-                    # NaN - we want it to display '***', so we just fillna
-                    k8_school_data["IREAD Pass %"] = k8_school_data["IREAD Pass %"].fillna("***")
+                #     # If either Test or Pass category had a '***' value, the resulting value will be 
+                #     # NaN - we want it to display '***', so we just fillna
+                #     k8_school_data["IREAD Pass %"] = k8_school_data["IREAD Pass %"].fillna("***")
 
-                # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
-                k8_school_data = k8_school_data.filter(
-                    regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",
-                    axis=1,
-                )
+                # # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
+                # k8_school_data = k8_school_data.filter(
+                #     regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",
+                #     axis=1,
+                # )
 
-                # add School Name column back
-                k8_school_data = pd.concat([k8_school_data, k8_school_info], axis=1, join="inner")
+                # # add School Name column back
+                # k8_school_data = pd.concat([k8_school_data, k8_school_info], axis=1, join="inner")
 
-                k8_school_data = k8_school_data.reset_index(drop=True)
+                # k8_school_data = k8_school_data.reset_index(drop=True)
                                     
-                k8_school_data.columns = k8_school_data.columns.astype(str)
+                # k8_school_data.columns = k8_school_data.columns.astype(str)
 
-                # transpose dataframes and clean headers
-                k8_school_data = (
-                    k8_school_data.set_index("Year")
-                    .T.rename_axis("Category")
-                    .rename_axis(None, axis=1)
-                    .reset_index()
-                )
+                # # transpose dataframes and clean headers
+                # k8_school_data = (
+                #     k8_school_data.set_index("Year")
+                #     .T.rename_axis("Category")
+                #     .rename_axis(None, axis=1)
+                #     .reset_index()
+                # )
 
-                k8_school_data = k8_school_data.fillna("No Data")
+                # k8_school_data = k8_school_data.fillna("No Data")
 
-                k8_school_data = k8_school_data[k8_school_data["Category"].str.contains("School Name") == False]
+                # k8_school_data = k8_school_data[k8_school_data["Category"].str.contains("School Name") == False]
                 
-                k8_academic_info = k8_school_data.reset_index(drop=True)
+                # k8_academic_info = k8_school_data.reset_index(drop=True)
+                k8_academic_info = school_data.copy()
 
                 k8_academic_info = (
                     k8_academic_info.set_index(["Category"])
@@ -583,20 +589,22 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 k8_not_calculated_table = create_academic_info_table(k8_not_calculated_data,'Not Currently Calculated','proficiency')
 
             ## Proficiency Breakdown stacked bar charts
-                
+                proficiency_data = get_school_data(school)
+                proficiency_data = proficiency_data[~proficiency_data["Year"].isin(excluded_years)]
                 # The raw proficency data from IDOE is annoyingly inconsistent. In some cases missing
                 # data is blank and in other cases it is represented by '0.'
                 # NOTE: This is the biggest data file (~6mb) and is only used here - not
                 # sure if we want to move it to load_data.py
 
                 # get all data
-                # TODO: DO WE DO THIS ABOVE ALREADY?
-                school_all_k8_data = get_school_data(school)
+                t3 = time.process_time()
+                # school_all_k8_data = get_school_data(school)
 
                 # show 2019 instead of 2020 as 2020 has no academic data
                 year = '2019' if year == '2020' else year
 
-                school_k8_proficiency_data = school_all_k8_data.loc[school_all_k8_data['Year'] == int(year)]
+                school_k8_proficiency_data = proficiency_data.loc[proficiency_data['Year'] == int(year)]
+                # school_k8_proficiency_data = school_all_k8_data.loc[school_all_k8_data['Year'] == int(year)]
 
                 school_k8_proficiency_data = school_k8_proficiency_data.dropna(axis=1)
                 school_k8_proficiency_data = school_k8_proficiency_data.reset_index()
@@ -619,8 +627,11 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     axis=1,
                 )
 
-                all_proficiency_data = school_k8_proficiency_data.copy()
 
+                all_proficiency_data = school_k8_proficiency_data.copy()
+                
+                # print(all_proficiency_data.T)
+                
                 proficiency_rating = [
                     'Below Proficiency',
                     'Approaching Proficiency',
@@ -709,7 +720,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 all_proficiency_data.drop(
                     list(
                         all_proficiency_data.filter(
-                            regex='Total\||Total Proficient|ELA&Math'
+                            regex='Total\||Total Proficient|ELA & Math'
                         )
                     ),
                     axis=1,
@@ -744,9 +755,14 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     all_proficiency_data['Category'] != 'index'
                 ]
 
+                load_proficiency_data = time.process_time() - t3
+
+                print(f'Time to load proficiency data: ' + str(load_proficiency_data))
+
                 ela_title = str(year) + ' ELA Proficiency Breakdown'
                 math_title = str(year) + ' Math Proficiency Breakdown'
-                
+
+                t4 = time.process_time()                
                 # ELA by Grade
                 grade_annotations = annotations.loc[annotations['Category'].str.contains('Grade')]
 
@@ -819,6 +835,9 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 else:
 
                     k8_subgroup_math_fig = no_data_fig_label(math_title, 100)
+
+                load_proficiency_charts = time.process_time() - t4
+                print(f'Time to load proficiency charts: ' + str(load_proficiency_charts))
 
         ## End of K8 table proficiency block
 

@@ -6,14 +6,13 @@
 # date:     5/22/23
 
 import dash
-from dash import dcc, html, dash_table, Input, State, Output, callback
+from dash import dcc, html, dash_table, Input, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 from dash.dash_table import FormatTemplate
 import plotly.express as px
 import pandas as pd
 import numpy as np
-import json
 import plotly.graph_objects as go
 
 # import local functions
@@ -43,12 +42,11 @@ dash.register_page(__name__, path = '/financial_analysis', order=3)
     Output('financial-analysis-main-container', 'style'),
     Output('financial-analysis-empty-container', 'style'),
     Output('financial-analysis-no-data', 'children'),
-    # Input('dash-session', 'data'),
     Input('charter-dropdown', 'value'),
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-analysis', component_property='value')
 )
-def update_financial_analysis_page(school, year, radio_value):
+def update_financial_analysis_page(school: str, year: str, radio_value: str):
     if not school:
         raise PreventUpdate
 
@@ -158,12 +156,10 @@ def update_financial_analysis_page(school, year, radio_value):
             FA_title = '2-Year Financial Activities (' + selected_school['School Name'].values[0] + ')'
 
     # clean up
-    finance_file = finance_file.drop('School ID', axis=1)
+    finance_file = finance_file.drop(['School ID','School Name'], axis=1)
     finance_file = finance_file.dropna(axis=1, how='all')
 
     financial_data = finance_file.copy()
-
-    # financial_data = pd.DataFrame.from_dict(finance_file_json)
 
     if len(financial_data.index) != 0:
 

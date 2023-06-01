@@ -30,7 +30,7 @@ def update_organizational_compliance(school, year):
 
     # get organizational comliance data from financial data and clean-up
     finance_file = get_finance(school)
-    finance_file = finance_file.drop('School ID', axis=1)
+    finance_file = finance_file.drop(['School ID','School Name'], axis=1)
     finance_file = finance_file.dropna(axis=1, how='all')
 
     financial_data = finance_file.copy()
