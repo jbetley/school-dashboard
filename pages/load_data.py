@@ -10,8 +10,10 @@
 
 import pandas as pd
 import numpy as np
-from .load_db import get_current_year, get_school_data
-from .calculations import calculate_percentage, set_academic_rating, calculate_year_over_year
+import itertools
+from .load_db import get_current_year, get_school_data, get_corporation_data
+from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
+    set_academic_rating
 
 ## Load Data Files ##
 print("#### Loading Data. . . . . ####")
@@ -24,7 +26,6 @@ all_academic_data_k8 = pd.read_csv(r"data/academic_data_k8.csv", dtype=str)
 corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
 all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
 financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
-
 
 # global integers
 current_academic_year = get_current_year()
@@ -108,29 +109,18 @@ def process_academic_data(school, year):
             axis=1,
         )
 
-        # missing_mask returns boolean series of columns where column
-        # is true if all elements in the column are equal to null
-        # TODO: Need to drop columns with all 0 or 0.0 (as strings)
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_rows', None)
-        school_data = school_data.fillna(0.0)
-        school_data.loc[:, (school_data != 0).any(axis=0)]
-        school_data.loc[:, (school_data != 0.0).any(axis=0)]
-        print(school_data.T)
+        # convert to numeric, but keep strings ('***')
+        for col in school_data:
+            school_data[col] = pd.to_numeric(school_data[col], errors='coerce').fillna(school_data[col])
 
-        
-        print(school_data['Native Hawaiian or Other Pacific Islander|ELA Total Proficient'][0])
-
-        # TODO: This is str
-        print(type(school_data['Native Hawaiian or Other Pacific Islander|ELA Total Proficient'][1]))
-        
-        # TODO: This is float
-        print(type(school_data['Native Hawaiian or Other Pacific Islander|ELA Total Tested'][0]))
-        missing_mask = pd.isnull(school_data[school_data.columns]).all()
+        # mask returns a boolean series of columns where all values in cols
+        # are not either NaN or 0
+        missing_mask = ~school_data.any()
         missing_cols = school_data.columns[missing_mask].to_list()
 
-        # now drop em
-        school_data = school_data.dropna(axis=1, how='all')
+        # opposite mask of above. keep only valid columns
+        valid_mask = school_data.any()
+        school_data = school_data[school_data.columns[valid_mask]]
 
         categories = ethnicity + subgroup + grades + ["School Total"]
 
@@ -230,9 +220,8 @@ def process_yearly_indicators(data):
     first_year = pd.DataFrame()
     first_year[data.columns[-1]] = data[data.columns[-1]]
 
-    # calculate year over year values
-    # loops over dataframe calculating difference between col and col+1 and inserts it
-    # into the dataframe
+    # loops over dataframe calculating difference between col (Year) and col+1 (Previous Year)
+    # and inserts it into the dataframe every third index
     z = 1
     x = 0
     for y in range(0, (len(data.columns)-1)):
@@ -275,10 +264,9 @@ def process_yearly_indicators(data):
 
     data.columns = data.columns.astype(str)
 
-    # for the year_over_year df, drop the 'Rating' column for the last year_data column and rename it -
-    # we don't use last Rating column becase we cannot calculate a 'year over year'calculation for the first year -
-    # it is just the baseline
-
+    # for the year_over_year df, drop the 'Rating' column for the last year_data column
+    # and rename it - we don't use last Rating column becase we cannot calculate a 'year
+    # over year'calculation for the baseline (first) year
     data = data.iloc[:, :-2]
     data.columns.values[-1] = (data.columns.values[-1] + " (Initial Data Year)")
 
@@ -312,3 +300,215 @@ def process_yearly_indicators(data):
             )
 
     return data
+
+def process_comparison_indicators(school_data, year, school):
+
+    excluded_academic_years = int(current_academic_year) - int(year)
+
+    # 'excluded years' is a list of YYYY strings (all years more
+    # recent than selected year) that can be used to filter data
+    # that should not be displayed
+    excluded_years = []
+    for i in range(excluded_academic_years):
+        excluded_year = int(current_academic_year) - i
+        excluded_years.append(excluded_year)
+
+    all_corporation_data = get_corporation_data(school)
+    
+    corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)]
+
+    school_data.columns = school_data.columns.astype(str)
+    corporation_data.columns = corporation_data.columns.astype(str)
+
+    # convert to numeric, but keep strings ('***')
+    for col in school_data:
+        school_data[col] = pd.to_numeric(school_data[col], errors='coerce').fillna(school_data[col])
+
+    # do not want to retain strings ('***') for corporation_data
+    for col in corporation_data:
+        corporation_data[col] = pd.to_numeric(corporation_data[col], errors='coerce')       
+
+    # school_data = school_data.filter(
+    #     regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",
+    #     axis=1,
+    # )
+    corporation_data = corporation_data.filter(
+        regex=r"Total Tested$|Total Proficient$|IREAD Pass N|IREAD Test N|Year",
+        axis=1,
+    )
+
+    # missing_mask = ~school_data.any()
+    # missing_cols = school_data.columns[missing_mask].to_list()
+
+    # valid_mask = school_data.any()
+    # school_data = school_data[school_data.columns[valid_mask]]
+
+    # corporation_data = corporation_data[corporation_data.columns[valid_mask]]    
+
+    # reset index as 'Year' for corp_rate data
+    corporation_data = corporation_data.set_index("Year")
+
+    # TODO: MOVE TO FUNCTION
+    # iterate over (non missing) columns, calculate the average,
+    # and store in a new column
+    categories = ethnicity + subgroup + grades + ["School Total"]
+
+    for s in subject:
+        for c in categories:
+            new_col = c + "|" + s + " Proficient %"
+            proficient = c + "|" + s + " Total Proficient"
+            tested = c + "|" + s + " Total Tested"
+
+            corporation_data[new_col] = (
+                corporation_data[proficient] / corporation_data[tested]
+            )
+
+    # replace 'Totals' with calculation taking the masking step into account
+    # The masking step above removes grades from the corp_rate dataframe
+    # that are not also in the school dataframe (e.g., if school only has data
+    # for grades 3, 4, & 5, only those grades will remain in corp_rate df).
+    # However, the 'Corporation Total' for proficiency in a subject is
+    # calculated using ALL grades. So we need to recalculate the 'Corporation Total'
+    # rate manually to ensure it includes only the included grades.
+    adjusted_corporation_math_proficient = corporation_data.filter(
+        regex=r"Grade.+?Math Total Proficient"
+    )
+    adjusted_corporation_math_tested = corporation_data.filter(
+        regex=r"Grade.+?Math Total Tested"
+    )
+
+    corporation_data["School Total|Math Proficient %"] = adjusted_corporation_math_proficient.sum(axis=1) \
+    / adjusted_corporation_math_tested.sum(axis=1)
+
+    adjusted_corporation_ela_proficient = corporation_data.filter(regex=r"Grade.+?ELA Total Proficient")
+    adjusted_corporation_ela_tested = corporation_data.filter(regex=r"Grade.+?ELA Total Tested")
+
+    corporation_data["School Total|ELA Proficient %"] = adjusted_corporation_ela_proficient.sum(axis=1) \
+        / adjusted_corporation_ela_tested.sum(axis=1)
+
+    # use this to ensure corporation data has same categories
+    # add Year to ensure it is retained as well
+    column_list = school_data['Category'].tolist() + ['Year']
+
+    # calculate IREAD Pass %
+    if "IREAD Pass %" in column_list:
+        
+        corporation_data["IREAD Pass %"] = (corporation_data["IREAD Pass N"] / corporation_data["IREAD Test N"])
+
+        # school_data["IREAD Pass %"] = pd.to_numeric(school_data["IREAD Pass N"], errors="coerce") \
+        #     / pd.to_numeric(school_data["IREAD Test N"], errors="coerce")
+
+        # If either Test or Pass category had a '***' value, the resulting value will be 
+        # NaN - we want it to display '***', so we just fillna
+        # school_data["IREAD Pass %"] = school_data["IREAD Pass %"].fillna("***")
+
+        # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
+        # school_data = school_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",axis=1)
+    
+    corporation_data = corporation_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",axis=1)
+
+    # add School Name column back
+    # school_data = pd.concat([school_data, school_info], axis=1, join="inner")
+
+    # reset indexes
+    # k8_school_data = k8_school_data.reset_index(drop=True)
+    
+    # no drop because index was previous set to year
+    corporation_data = corporation_data.reset_index()
+
+    # ensure columns headers are strings
+    # k8_school_data.columns = k8_school_data.columns.astype(str)
+    corporation_data.columns = corporation_data.columns.astype(str)
+    
+    # keep only corp columns that match school_columns
+    corporation_data = corporation_data[corporation_data.columns.intersection(column_list)]
+
+    # # freeze Corp Proficiency dataframe in current state for use in academic analysis page
+    # academic_analysis_corp_dict = k8_corp_rate_data.to_dict()
+    # k8_corp_data = k8_corp_rate_data.copy()
+
+    # Ensure each df has same # of years - relies on each year having a single row
+    # k8_num_years = len(k8_school_data.index)
+
+    # # transpose dataframes and clean headers
+    # k8_school_data = (
+    #     k8_school_data.set_index("Year")
+    #     .T.rename_axis("Category")
+    #     .rename_axis(None, axis=1)
+    #     .reset_index()
+    # )
+
+    #     # Keep category and all available years of data
+    # k8_school_data = k8_school_data.iloc[:, : (k8_num_years + 1)]
+
+    corporation_data = (corporation_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+    # Keep category and all available years of data
+    # k8_corp_data = k8_corp_data.iloc[:, : (k8_num_years + 1)]  
+
+    # k8_school_data = k8_school_data[
+    #     k8_school_data["Category"].str.contains("School Name") == False
+    # ]
+
+    # k8_school_data = k8_school_data.reset_index(drop=True)
+
+    # reverse order of corp_data columns (ignoring 'Category') so current year is first and
+    # get clean list of years
+    k8_year_cols = list(school_data.columns[:0:-1])
+    k8_year_cols.reverse()
+
+    # add_suffix is applied to entire df. To hide columns we dont want\
+    # renamed, set it as index and reset back after renaming.
+    corporation_data = (corporation_data.set_index(["Category"]).add_suffix("Corp Proficiency").reset_index())
+    school_data = (school_data.set_index(["Category"]).add_suffix("School").reset_index())
+
+    school_cols = list(school_data.columns[:0:-1])
+    school_cols.reverse()
+
+    corp_cols = list(corporation_data.columns[:0:-1])
+    corp_cols.reverse()
+
+    result_cols = [str(s) + "+/-" for s in k8_year_cols]
+
+    final_cols = list(itertools.chain(*zip(school_cols, corp_cols, result_cols)))
+
+    final_cols.insert(0, "Category")
+
+    merged_cols = [val for pair in zip(school_cols, corp_cols) for val in pair]
+    merged_cols.insert(0, "Category")
+
+    merged_data = school_data.merge(corporation_data, on="Category", how="left")
+    merged_data = merged_data[merged_cols]
+
+    tmp_category = school_data["Category"]
+    school_data = school_data.drop("Category", axis=1)
+    corporation_data = corporation_data.drop("Category", axis=1)
+
+    k8_result = pd.DataFrame()
+
+    for c in school_data.columns:
+        c = c[0:4]  # keeps only YYYY part of string
+        k8_result[c + "+/-"] = calculate_difference(
+            school_data[c + "School"], corporation_data[c + "Corp Proficiency"]
+        )
+
+    # add headers
+    k8_result = k8_result.set_axis(result_cols, axis=1)
+    k8_result.insert(loc=0, column="Category", value=tmp_category)
+
+    # combined merged (school and corp) and result dataframes and reorder
+    # (according to result columns)
+    final_k8_academic_data = merged_data.merge(k8_result, on="Category", how="left")
+
+    final_k8_academic_data = final_k8_academic_data[final_cols]
+
+    # NOTE: Pretty sure this is redundant as we add 'Proficient %; suffix to totals
+    # above, then remove it here, then pass to academic_analysis page, and add it
+    # back. But I tried to fix it once and broke everything. So I'm just gonna
+    # leave it alone for now.
+    final_k8_academic_data["Category"] = (final_k8_academic_data["Category"].str.replace(" Proficient %", "").str.strip())
+
+    # rename IREAD Category
+    final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
+
+    return final_k8_academic_data

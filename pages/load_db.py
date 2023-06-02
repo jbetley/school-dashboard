@@ -59,7 +59,7 @@ def run_query(q, *args):
         # uppercase/number character takes care of most of it. The other replace functions catch
         # edge cases.
         df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
-        df.columns = df.columns.str.replace(r"([WAD])([ATPB&])", r"\1 \2", regex=True)
+        df.columns = df.columns.str.replace(r"([WADT])([ATPB&])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([&])([M])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace("or ", " or ")
         df.columns = df.columns.astype(str)
@@ -182,7 +182,7 @@ def get_hs_data(*args):
     return run_query(q, params)
 
 # Corporation Rate Academic Data (k8)
-def get_corp_data(*args):
+def get_corporation_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
 

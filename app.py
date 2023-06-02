@@ -628,7 +628,7 @@ def load_data(school, year):
                 regex=r"Total Tested$|Total Proficient$|IREAD Pass N|IREAD Test N|Year",
                 axis=1,
             )
-            
+
             # equalize the two dataframes by comparing corp columns to school columns
 
             # valid_mask returns a boolean series of columns where column is true
@@ -662,7 +662,7 @@ def load_data(school, year):
             # and store in a new column
             k8_corp_rate_data = k8_corp_rate_filtered.copy()
 
-            categories = ethnicity + subgroup + grades + ["Total"]
+            categories = ethnicity + subgroup + grades + ["School Total"]
 
             for s in subject:
                 for c in categories:
@@ -693,7 +693,7 @@ def load_data(school, year):
             )
 
             k8_corp_rate_data[
-                "Total|Math Proficient %"
+                "School Total|Math Proficient %"
             ] = adjusted_corp_total_math_proficient.sum(
                 axis=1
             ) / adjusted_corp_total_math_tested.sum(
@@ -708,7 +708,7 @@ def load_data(school, year):
             )
 
             k8_corp_rate_data[
-                "Total|ELA Proficient %"
+                "School Total|ELA Proficient %"
             ] = adjusted_corp_total_ela_proficient.sum(
                 axis=1
             ) / adjusted_corp_total_ela_tested.sum(
@@ -867,6 +867,7 @@ def load_data(school, year):
             k8_academic_data_dict = final_k8_academic_data.to_dict(into=OrderedDict)
             k8_academic_data_json = json.dumps(k8_academic_data_dict)
 
+## TODO: HERE
         ## Academic Metrics (k8)
 
             # Non-comparative indicators
@@ -947,6 +948,7 @@ def load_data(school, year):
             #   if first value = 0 and second value is *** -> -***
             #   if first value = 0 and second value is NaN -> -***
 
+## TODO: REMOVE TO CALC PAGE
             def calculate_year_over_year(current_year, previous_year):
                 return np.where(
                     (current_year == 0) & ((previous_year.isna()) | (previous_year == "***")), "-***",
@@ -978,6 +980,7 @@ def load_data(school, year):
 
             k8_school_metric_data.insert(loc=0, column="Category", value=category_header)
             k8_school_metric_data["Category"] = (k8_school_metric_data["Category"].str.replace(" Proficient %", "").str.strip())
+            
             # Add first_year data back
             k8_school_metric_data[first_year.columns] = first_year
 

@@ -16,7 +16,7 @@ from .table_helpers import no_data_page, no_data_table, create_metric_table, \
     set_table_layout, get_svg_circle, create_key
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, grades_all, process_yearly_indicators, \
-    process_academic_data
+    process_academic_data, process_comparison_indicators
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
@@ -219,15 +219,20 @@ def update_academic_metrics(data, school: str, year: str):
                 json_data = json.loads(data['10'])
                 combined_delta = pd.DataFrame.from_dict(json_data)
 
-                # year_over_year_values_json
-                json_data = json.loads(data['11'])
-                combined_years = pd.DataFrame.from_dict(json_data)
+                # # year_over_year_values_json
+                # json_data = json.loads(data['11'])
+                # combined_years = pd.DataFrame.from_dict(json_data)
 
                 academic_data = process_academic_data(school, year)
-                combined_years2 = process_yearly_indicators(academic_data)
 
-                # print(combined_years)
-                # print(combined_years2)
+                combined_years = process_yearly_indicators(academic_data)
+                tst = process_comparison_indicators(academic_data, year, school)
+
+                print('ORIG')
+                print(combined_delta)
+                print('NEW')
+                print(tst)
+
                 category = ethnicity + subgroup
 
                 metric_14a_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades_all))) & (combined_years['Category'].str.contains('ELA'))]
