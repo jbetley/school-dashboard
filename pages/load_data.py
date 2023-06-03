@@ -11,7 +11,7 @@
 import pandas as pd
 import numpy as np
 import itertools
-from .load_db import get_current_year, get_school_data, get_corporation_data
+from .load_db import get_current_year, get_school_data, get_corporation_data, get_demographics
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating
 
@@ -82,6 +82,128 @@ grades_ordinal = [
     '7th',
     '8th'
 ]
+
+def get_excluded_years(year):
+    # 'excluded years' is a list of YYYY strings (all years more
+    # recent than selected year) that can be used to filter data
+    # that should not be displayed
+    excluded_years = []
+
+    excluded_academic_years = int(current_academic_year) - int(year)
+
+    for i in range(excluded_academic_years):
+        excluded_year = int(current_academic_year) - i
+        excluded_years.append(excluded_year)
+    
+    return excluded_years
+
+def get_attendance_rate(data, year):
+
+    excluded_years = get_excluded_years(year)
+
+    demographic_data = data[~data["Year"].isin(excluded_years)]
+    attendance_data = demographic_data[["Year", "Avg Attendance"]]
+
+    attendance_rate = (attendance_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+    attendance_rate['Category'] =  attendance_rate['Category'].replace(['Avg Attendance'], 'Attendance Rate')
+
+    attendance_rate = attendance_rate.fillna('No Data')
+
+    attendance_rate.columns = attendance_rate.columns.astype(str)
+
+    for col in attendance_rate.columns:
+        attendance_rate[col] = pd.to_numeric(attendance_rate[col], errors='coerce').fillna(attendance_rate[col]).tolist()
+
+    return attendance_rate
+
+def get_attendance_metrics(school, year):
+
+    selected_school = school_index.loc[school_index["School ID"] == school]
+    corp_id = selected_school['GEO Corp'].values[0]
+
+    corp_demographics = get_demographics(corp_id)
+    school_demographics = get_demographics(school)
+    corp_attendance_rate = get_attendance_rate(corp_demographics, year)
+    school_attendance_rate = get_attendance_rate(school_demographics, year)    
+
+    # school_attendance_rate = school_demographics[["Year", "Avg Attendance"]]
+    # corp_attendance_rate = corp_demographics[["Year", "Avg Attendance"]]
+    print(school_attendance_rate)
+    print(corp_attendance_rate)
+
+    # TODO: Refactor this to account for fact that stuff is done in get_attendance_rate
+    attendance_merge = school_attendance_rate.merge(
+        corp_attendance_rate, on="Year", how="left"
+    )
+    attendance_merge.columns = ['Year','School', 'Corp Average']
+
+    # calculate difference
+    attendance_merge['+/-'] = attendance_merge['School'].astype(float) - attendance_merge['Corp Average'].astype(float)
+    
+    # set year as index and unstack the dataframe,
+    # unstack returns a series having a new level of column labels whose
+    # inner-most level consists of the pivoted index ('Year') levels
+    # use to_frame() to convert to df and then transpose
+    attendance_merge = attendance_merge.set_index(['Year'])
+    attendance_data = attendance_merge.unstack().to_frame().sort_index(level=1).T
+    attendance_data.columns = attendance_data.columns.map(lambda x: f'{x[1]}{x[0]}')
+
+    # reverse the order of the columns and add Category
+    attendance_data = attendance_data[attendance_data.columns[::-1]]
+    attendance_data.insert(0, "Category", "1.1.a. Attendance Rate")
+
+    # save attendance_data to json
+    # attendance_data_dict = attendance_data.to_dict(into=OrderedDict)
+    # attendance_data_json = json.dumps(attendance_data_dict)
+
+    # use the final data to calculate attendance data metrics
+    attendance_data_metrics = attendance_data.copy()
+
+    # threshold limits for rating calculations
+    attendance_limits = [
+        0,
+        -0.01,
+        -0.01,
+    ]
+
+    # NOTE: Calculates and adds an accountability rating ('MS', 'DNMS', 'N/A', etc)
+    # as a new column to existing dataframe:
+    #   1) the loop ('for i in range(attendance_data_metrics.shape[1], 1, -3)')
+    #   counts backwards by -3, beginning with the index of the last column in
+    #   the dataframe ('attendance_data_metrics.shape[1]') to '1' (actually '2'
+    #   as range does not include the last number). These are indexes, so the
+    #   loop stops at the third column (which has an index of 2);
+    #   2) for each step, the code inserts a new column, at index 'i'. The column
+    #   header is a string that is equal to 'the year (YYYY) part of the column
+    #   string (attendance_data_metrics.columns[i-1])[:7 - 3]) + 'Rating' + 'i'
+    #   (the value of 'i' doesn't matter other than to differentiate the columns) +
+    #   the accountability value, a string returned by the set_academic_rating() function.
+    #   3) the set_academic_rating() function calculates an 'accountability rating'
+    #   ('MS', 'DNMS', 'N/A', etc) taking as args:
+    #       i) the 'value' to be rated. this will be from the 'School' column, if
+    #       the value itself is rated (e.g., iread performance), or the difference
+    #       ('+/-') column, if there is an additional calculation required (e.g.,
+    #       year over year or compared to corp);
+    #       ii) a list of the threshold 'limits' to be used in the calculation; and
+    #       iii) an integer 'flag' which tells the function which calculation to use.
+    [
+        attendance_data_metrics.insert(
+            i,
+            str(attendance_data_metrics.columns[i - 1])[: 7 - 3]
+            + "Rate"
+            + str(i),
+            attendance_data_metrics.apply(
+                lambda x: set_academic_rating(
+                    x[attendance_data_metrics.columns[i - 1]], attendance_limits, 3
+                ),
+                axis=1,
+            ),
+        )
+        for i in range(attendance_data_metrics.shape[1], 1, -3)
+    ]
+
+    return attendance_data_metrics
 
 def process_academic_data(school, year):
     
@@ -178,35 +300,32 @@ def process_academic_data(school, year):
 
 def process_iread_data(data):
 
-    iread_data = data[data["Category"] == "IREAD Pass %"]
-    data = data.drop(data[data["Category"] == "IREAD Pass %"].index)
+    # data = data[data["Category"] == "IREAD Pass %"]
 
-    if not iread_data.empty:
+    # if not data.empty:
         
-        iread_limits = [0.9, 0.8, 0.7, 0.7] 
-        
-        iread_data = (
-            iread_data.set_index(["Category"])
-            .add_suffix("School")
-            .reset_index()
-        )
+    iread_limits = [0.9, 0.8, 0.7, 0.7] 
 
-        [
-            iread_data.insert(
-                i,
-                str(iread_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-                iread_data.apply(
-                    lambda x: set_academic_rating(
-                        x[iread_data.columns[i - 1]], iread_limits, 1
-                    ),
-                    axis=1,
+    data = (data.set_index(["Category"]).add_suffix("School").reset_index())
+
+    [
+        data.insert(
+            i,
+            str(data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
+            data.apply(
+                lambda x: set_academic_rating(
+                    x[data.columns[i - 1]], iread_limits, 1
                 ),
-            )
-            for i in range(iread_data.shape[1], 1, -1)
-        ]
+                axis=1,
+            ),
+        )
+        for i in range(data.shape[1], 1, -1)
+    ]
 
-    iread_data = iread_data.fillna("No Data")
-    iread_data.columns = iread_data.columns.astype(str)
+    data = data.fillna("No Data")
+    data.columns = data.columns.astype(str)
+
+    return data
 
 def process_yearly_indicators(data):
     

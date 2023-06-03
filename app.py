@@ -867,7 +867,6 @@ def load_data(school, year):
             k8_academic_data_dict = final_k8_academic_data.to_dict(into=OrderedDict)
             k8_academic_data_json = json.dumps(k8_academic_data_dict)
 
-## TODO: HERE
         ## Academic Metrics (k8)
 
             # Non-comparative indicators
@@ -1075,6 +1074,7 @@ def load_data(school, year):
             year_over_year_values_dict = k8_school_metric_data.to_dict(into=OrderedDict)
             year_over_year_values_json = json.dumps(year_over_year_values_dict)
 
+# TODO: HERE
     ## HS Academic Information
 
     # NOTE: CHS (School ID: 5874) converted from a K12 to a K8 and

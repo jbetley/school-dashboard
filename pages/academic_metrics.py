@@ -16,7 +16,7 @@ from .table_helpers import no_data_page, no_data_table, create_metric_table, \
     set_table_layout, get_svg_circle, create_key
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, grades_all, process_yearly_indicators, \
-    process_academic_data, process_comparison_indicators
+    process_academic_data, process_comparison_indicators, process_iread_data, get_attendance_metrics
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
@@ -212,26 +212,22 @@ def update_academic_metrics(data, school: str, year: str):
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
 
+            academic_data = process_academic_data(school, year)
+
+            if not academic_data.empty:
             # load k-8 data files                        
-            if (data['10'] and data['11']):
+            # if (data['10'] and data['11']):
 
                 # diff_to_corp_json
-                json_data = json.loads(data['10'])
-                combined_delta = pd.DataFrame.from_dict(json_data)
+                # json_data = json.loads(data['10'])
+                # combined_delta = pd.DataFrame.from_dict(json_data)
 
                 # # year_over_year_values_json
                 # json_data = json.loads(data['11'])
                 # combined_years = pd.DataFrame.from_dict(json_data)
 
-                academic_data = process_academic_data(school, year)
-
                 combined_years = process_yearly_indicators(academic_data)
-                tst = process_comparison_indicators(academic_data, year, school)
-
-                print('ORIG')
-                print(combined_delta)
-                print('NEW')
-                print(tst)
+                combined_delta = process_comparison_indicators(academic_data, year, school)
 
                 category = ethnicity + subgroup
 
@@ -289,11 +285,17 @@ def update_academic_metrics(data, school: str, year: str):
                 metric_14ef_data = get_svg_circle(metric_14ef_data)
                 table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
                 table_container_14ef = set_table_layout(table_14ef, table_14ef, metric_14ef_data.columns)
-                
-                # iread_data_json
-                if data['9']:
-                    json_data = json.loads(data['9'])
-                    iread_data = pd.DataFrame.from_dict(json_data)
+
+                # iread_data
+                iread_df = academic_data[academic_data["Category"] == "IREAD Pass %"]
+
+                if not iread_df.empty:
+
+                # if data['9']:
+                    # json_data = json.loads(data['9'])
+                    # iread_data = pd.DataFrame.from_dict(json_data)
+
+                    iread_data = process_iread_data(iread_df)
 
                     metric_14g_label = '1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment.'
                     iread_data = get_svg_circle(iread_data)   
@@ -303,6 +305,7 @@ def update_academic_metrics(data, school: str, year: str):
                 else:
                     table_container_14g = no_data_table('1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.')
 
+## TODO: MOVE GROWTH METRIC STUFF HERE
                 # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
                 growth_metrics_empty = pd.DataFrame(columns = simple_cols)
                 growth_metrics_dict = {
@@ -408,6 +411,9 @@ def update_academic_metrics(data, school: str, year: str):
         json_data = json.loads(data['5'])
         attendance_data = pd.DataFrame.from_dict(json_data)
 
+        print(attendance_data)
+        tst = get_attendance_metrics(school, year)
+        print(tst)
         # Create placeholders (Acountability Metric 1.1.b.)
         teacher_retention_rate = pd.DataFrame({'Category': ['1.1.b. Teacher Retention Rate']})
 

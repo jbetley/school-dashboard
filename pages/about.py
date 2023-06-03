@@ -126,7 +126,9 @@ def update_about_page(year: str, school: str):
     else:
 
         # Enrollment table
-        corp_demographics = get_corp_demographics(school)
+        corp_id = selected_school['GEO Corp'].values[0]
+        
+        corp_demographics = get_demographics(corp_id)
 
         selected_year = str(year)
         current_year = selected_year

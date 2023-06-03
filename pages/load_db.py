@@ -93,24 +93,13 @@ def get_info(school_id):
 
     return run_query(q, params)
 
+# for school corporations, SchoolID and CorpID are the same
 def get_demographics(*args):
     keys = ['id']
     params = dict(zip(keys, args))
 
     q = text('''
         SELECT *
-            FROM demographic_data
-	        WHERE SchoolID = :id
-        ''')
-    
-    return run_query(q, params)
-
-def get_letter_grades(*args):
-    keys = ['id']
-    params = dict(zip(keys, args))
-
-    q = text('''
-        SELECT demographic_data.Year, demographic_data.StateGrade, demographic_data.FederalRating
             FROM demographic_data
 	        WHERE SchoolID = :id
         ''')
@@ -130,6 +119,20 @@ def get_corp_demographics(*args):
 			        WHERE SchoolID = :id)
         ''')
     return run_query(q, params)
+
+def get_letter_grades(*args):
+    keys = ['id']
+    params = dict(zip(keys, args))
+
+    q = text('''
+        SELECT demographic_data.Year, demographic_data.StateGrade, demographic_data.FederalRating
+            FROM demographic_data
+	        WHERE SchoolID = :id
+        ''')
+    
+    return run_query(q, params)
+
+
 
 # Get ADM
 # Input: school_id

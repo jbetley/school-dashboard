@@ -22,7 +22,7 @@ from .chart_helpers import no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages, calculate_percentage
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, subject, \
-    grades, grades_all, grades_ordinal, current_academic_year, process_academic_data
+    grades, grades_all, grades_ordinal, current_academic_year, process_academic_data, get_attendance_rate
 from .load_db import get_school_data, get_hs_data, get_demographics
 
 dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
@@ -545,24 +545,27 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
                 # Attendance data
                 school_demographic_data = get_demographics(school)
-                school_demographic_data = school_demographic_data[~school_demographic_data["Year"].isin(excluded_years)]
-                school_attendance_data = school_demographic_data[["Year", "Avg Attendance"]]
 
-                attendance_rate = (
-                    school_attendance_data.set_index("Year")
-                    .T.rename_axis("Category")
-                    .rename_axis(None, axis=1)
-                    .reset_index()
-                )
+                attendance_rate = get_attendance_rate(school_demographic_data, year)
 
-                attendance_rate['Category'] =  attendance_rate['Category'].replace(['Avg Attendance'], 'Attendance Rate')
+                # school_demographic_data = school_demographic_data[~school_demographic_data["Year"].isin(excluded_years)]
+                # school_attendance_data = school_demographic_data[["Year", "Avg Attendance"]]
 
-                attendance_rate = attendance_rate.fillna('No Data')
+                # attendance_rate = (
+                #     school_attendance_data.set_index("Year")
+                #     .T.rename_axis("Category")
+                #     .rename_axis(None, axis=1)
+                #     .reset_index()
+                # )
 
-                attendance_rate.columns = attendance_rate.columns.astype(str)
+                # attendance_rate['Category'] =  attendance_rate['Category'].replace(['Avg Attendance'], 'Attendance Rate')
 
-                for col in attendance_rate.columns:
-                    attendance_rate[col] = pd.to_numeric(attendance_rate[col], errors='coerce').fillna(attendance_rate[col]).tolist()
+                # attendance_rate = attendance_rate.fillna('No Data')
+
+                # attendance_rate.columns = attendance_rate.columns.astype(str)
+
+                # for col in attendance_rate.columns:
+                #     attendance_rate[col] = pd.to_numeric(attendance_rate[col], errors='coerce').fillna(attendance_rate[col]).tolist()
 
                 if len(attendance_rate.index) != 0:
                     k8_other_table = create_academic_info_table(attendance_rate,'Attendance Data','proficiency')
@@ -1046,6 +1049,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             # Unfortunately,it still has variable and unrelated columns, so we need to pull each individual
             # table out by row using iloc (e.g., growth_data.iloc[0:10]). Eventually we need to put
             # all this crap into a database.
+
+## TODO: KEEP GROWTH INFORMATION DATA HERE
 
             #TODO: Need to figure out a way to get this into DB
             growth_file = 'data/growth_data' + school + '.csv'
