@@ -479,7 +479,7 @@ def load_data(school, year):
 
         # calculate difference
         attendance_merge['+/-'] = attendance_merge['School'].astype(float) - attendance_merge['Corp Average'].astype(float)
-        
+
         # set year as index and unstack the dataframe,
         # unstack returns a series having a new level of column labels whose
         # inner-most level consists of the pivoted index ('Year') levels

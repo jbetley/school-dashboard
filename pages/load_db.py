@@ -93,6 +93,17 @@ def get_info(school_id):
 
     return run_query(q, params)
 
+# Get Financial Data
+# Input: school_id
+def get_finance(school_id):
+    params = dict(id=school_id)
+    q = text('''
+        SELECT * 
+        FROM financial_data 
+        WHERE SchoolID = :id
+    ''')
+    return run_query(q, params)
+
 # for school corporations, SchoolID and CorpID are the same
 def get_demographics(*args):
     keys = ['id']
@@ -104,20 +115,6 @@ def get_demographics(*args):
 	        WHERE SchoolID = :id
         ''')
     
-    return run_query(q, params)
-
-def get_corp_demographics(*args):
-    keys = ['id']
-    params = dict(zip(keys, args))
-
-    q = text('''
-        SELECT *
-            FROM demographic_data
-	        WHERE SchoolID = (
-		        SELECT GEOCorp
-			        FROM school_index
-			        WHERE SchoolID = :id)
-        ''')
     return run_query(q, params)
 
 def get_letter_grades(*args):
@@ -132,8 +129,6 @@ def get_letter_grades(*args):
     
     return run_query(q, params)
 
-
-
 # Get ADM
 # Input: school_id
 def get_adm(school_id):
@@ -146,19 +141,7 @@ def get_adm(school_id):
         ''')
     return run_query(q, params)
 
-# adm = get_adm(pass_id)
-# print(adm)
 
-# Get Financial Data
-# Input: school_id
-def get_finance(school_id):
-    params = dict(id=school_id)
-    q = text('''
-        SELECT * 
-        FROM financial_data 
-        WHERE SchoolID = :id
-    ''')
-    return run_query(q, params)
 
 # School Academic Data (k8)
 def get_school_data(*args):
@@ -168,18 +151,6 @@ def get_school_data(*args):
     q = text('''
         SELECT *
             FROM academic_data_k8
-	        WHERE SchoolID = :id
-        ''')
-    return run_query(q, params)
-
-# School Academic Data (hs)
-def get_hs_data(*args):
-    keys = ['id']
-    params = dict(zip(keys, args))
-
-    q = text('''
-        SELECT *
-            FROM academic_data_hs
 	        WHERE SchoolID = :id
         ''')
     return run_query(q, params)
@@ -199,6 +170,18 @@ def get_corporation_data(*args):
         ''')
     return run_query(q, params)
 
+# School Academic Data (hs)
+def get_hs_data(*args):
+    keys = ['id']
+    params = dict(zip(keys, args))
+
+    q = text('''
+        SELECT *
+            FROM academic_data_hs
+	        WHERE SchoolID = :id
+        ''')
+    return run_query(q, params)
+
 # Corporation Rate Academic Data (hs)
 def get_hs_corp_data(*args):
     keys = ['id']
@@ -213,6 +196,10 @@ def get_hs_corp_data(*args):
 			        WHERE SchoolID = :id)
         ''')
     return run_query(q, params)
+
+
+
+
 
 ## TODO: Working Section below - Need to import all_academic_data_k8 to db
 # Get Lat and Lon Data (for given year)

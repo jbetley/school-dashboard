@@ -404,16 +404,15 @@ def update_academic_metrics(data, school: str, year: str):
 
     metric_11ab_label = 'Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation.'
     
-    # attendance_data_metrics_json
-    # all school types can have attendence data
-    if data['5']:
+    # attendance_data_metrics
+    # all school types have attendence data
+    attendance_data = get_attendance_metrics(school, year)
+    if not attendance_data.empty:
+        # if data['5']:
 
-        json_data = json.loads(data['5'])
-        attendance_data = pd.DataFrame.from_dict(json_data)
+        # json_data = json.loads(data['5'])
+        # attendance_data = pd.DataFrame.from_dict(json_data)
 
-        print(attendance_data)
-        tst = get_attendance_metrics(school, year)
-        print(tst)
         # Create placeholders (Acountability Metric 1.1.b.)
         teacher_retention_rate = pd.DataFrame({'Category': ['1.1.b. Teacher Retention Rate']})
 
@@ -437,7 +436,8 @@ def update_academic_metrics(data, school: str, year: str):
 
     # Create placeholders (Acountability Metrics 1.1.c & 1.1.d)
     metric_11cd_label = 'End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate.'
-    
+
+# TODO: HERE    (ALSO FIX DEMOGRAPHICS 2023)
     # Test to see if year_over_year_values_json exists
     if data['11']:
 

@@ -127,38 +127,29 @@ def get_attendance_metrics(school, year):
     corp_attendance_rate = get_attendance_rate(corp_demographics, year)
     school_attendance_rate = get_attendance_rate(school_demographics, year)    
 
-    # school_attendance_rate = school_demographics[["Year", "Avg Attendance"]]
-    # corp_attendance_rate = corp_demographics[["Year", "Avg Attendance"]]
-    print(school_attendance_rate)
-    print(corp_attendance_rate)
+    corp_attendance_rate = (corp_attendance_rate.set_index(["Category"]).add_suffix("Corp Avg").reset_index())
+    school_attendance_rate = (school_attendance_rate.set_index(["Category"]).add_suffix("School").reset_index())
+    school_attendance_rate = school_attendance_rate.drop("Category", axis=1)
+    corp_attendance_rate = corp_attendance_rate.drop("Category", axis=1)
 
-    # TODO: Refactor this to account for fact that stuff is done in get_attendance_rate
-    attendance_merge = school_attendance_rate.merge(
-        corp_attendance_rate, on="Year", how="left"
-    )
-    attendance_merge.columns = ['Year','School', 'Corp Average']
+    # concat the two df's and reorder so that the columns alternate
+    attendance_metrics = pd.concat([school_attendance_rate, corp_attendance_rate], axis=1)
+    reordered_cols = list(sum(zip(school_attendance_rate.columns, corp_attendance_rate.columns), ()))
+    attendance_metrics = attendance_metrics[reordered_cols]
 
-    # calculate difference
-    attendance_merge['+/-'] = attendance_merge['School'].astype(float) - attendance_merge['Corp Average'].astype(float)
-    
-    # set year as index and unstack the dataframe,
-    # unstack returns a series having a new level of column labels whose
-    # inner-most level consists of the pivoted index ('Year') levels
-    # use to_frame() to convert to df and then transpose
-    attendance_merge = attendance_merge.set_index(['Year'])
-    attendance_data = attendance_merge.unstack().to_frame().sort_index(level=1).T
-    attendance_data.columns = attendance_data.columns.map(lambda x: f'{x[1]}{x[0]}')
+    # loops over dataframe calculating difference between a pair of columns, inserts the result in
+    # the following column, and then skips over the calculated columns to the next pair
+    y = 0
+    z = 2
+    end = int(len(attendance_metrics.columns)/2)
 
-    # reverse the order of the columns and add Category
-    attendance_data = attendance_data[attendance_data.columns[::-1]]
-    attendance_data.insert(0, "Category", "1.1.a. Attendance Rate")
+    for x in range(0, end):
+        values = calculate_year_over_year(attendance_metrics.iloc[:, y], attendance_metrics.iloc[:, y + 1])
+        attendance_metrics.insert(loc = z, column = attendance_metrics.columns[y][0:4] + '+/-', value = values)
+        y+=3
+        z+=3
 
-    # save attendance_data to json
-    # attendance_data_dict = attendance_data.to_dict(into=OrderedDict)
-    # attendance_data_json = json.dumps(attendance_data_dict)
-
-    # use the final data to calculate attendance data metrics
-    attendance_data_metrics = attendance_data.copy()
+    attendance_metrics.insert(loc=0, column="Category", value='1.1.a. Attendance Rate')
 
     # threshold limits for rating calculations
     attendance_limits = [
@@ -188,22 +179,22 @@ def get_attendance_metrics(school, year):
     #       ii) a list of the threshold 'limits' to be used in the calculation; and
     #       iii) an integer 'flag' which tells the function which calculation to use.
     [
-        attendance_data_metrics.insert(
+        attendance_metrics.insert(
             i,
-            str(attendance_data_metrics.columns[i - 1])[: 7 - 3]
+            str(attendance_metrics.columns[i - 1])[: 7 - 3]
             + "Rate"
             + str(i),
-            attendance_data_metrics.apply(
+            attendance_metrics.apply(
                 lambda x: set_academic_rating(
-                    x[attendance_data_metrics.columns[i - 1]], attendance_limits, 3
+                    x[attendance_metrics.columns[i - 1]], attendance_limits, 3
                 ),
                 axis=1,
             ),
         )
-        for i in range(attendance_data_metrics.shape[1], 1, -3)
+        for i in range(attendance_metrics.shape[1], 1, -3)
     ]
 
-    return attendance_data_metrics
+    return attendance_metrics
 
 def process_academic_data(school, year):
     

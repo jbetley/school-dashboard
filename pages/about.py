@@ -15,7 +15,7 @@ import numpy as np
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
 from .load_data import school_index, ethnicity, subgroup, max_display_years, current_academic_year
-from .load_db import get_finance, get_demographics, get_corp_demographics, get_letter_grades
+from .load_db import get_finance, get_demographics, get_letter_grades
 
 dash.register_page(__name__, path='/', order=0, top_nav=True)
 

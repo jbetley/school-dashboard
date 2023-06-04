@@ -543,29 +543,9 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 else:
                     k8_ethnicity_table = no_data_table('Proficiency by Ethnicity')
 
-                # Attendance data
+                # Attendance rate
                 school_demographic_data = get_demographics(school)
-
                 attendance_rate = get_attendance_rate(school_demographic_data, year)
-
-                # school_demographic_data = school_demographic_data[~school_demographic_data["Year"].isin(excluded_years)]
-                # school_attendance_data = school_demographic_data[["Year", "Avg Attendance"]]
-
-                # attendance_rate = (
-                #     school_attendance_data.set_index("Year")
-                #     .T.rename_axis("Category")
-                #     .rename_axis(None, axis=1)
-                #     .reset_index()
-                # )
-
-                # attendance_rate['Category'] =  attendance_rate['Category'].replace(['Avg Attendance'], 'Attendance Rate')
-
-                # attendance_rate = attendance_rate.fillna('No Data')
-
-                # attendance_rate.columns = attendance_rate.columns.astype(str)
-
-                # for col in attendance_rate.columns:
-                #     attendance_rate[col] = pd.to_numeric(attendance_rate[col], errors='coerce').fillna(attendance_rate[col]).tolist()
 
                 if len(attendance_rate.index) != 0:
                     k8_other_table = create_academic_info_table(attendance_rate,'Attendance Data','proficiency')
