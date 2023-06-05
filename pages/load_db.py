@@ -82,6 +82,32 @@ def get_current_year():
 
     return year
 
+def get_graduation_data():
+    params = dict(id='')
+
+    q = text('''
+        SELECT
+            Year,
+            SUM("Total|Graduates") / SUM("Total|CohortCount") AS "State Graduation Average"
+        FROM academic_data_hs
+        WHERE SchoolType != "AHS"
+        GROUP BY
+            Year
+        ''')
+
+    return run_query(q, params)
+
+def get_index(school_id):
+    params = dict(id=school_id)
+
+    q = text('''
+        SELECT *
+            FROM school_index
+            WHERE school_index.SchoolID = :id
+        ''')
+
+    return run_query(q, params)
+
 def get_info(school_id):
     params = dict(id=school_id)
 
@@ -140,7 +166,6 @@ def get_adm(school_id):
             WHERE school_index.SchoolID = :id
         ''')
     return run_query(q, params)
-
 
 
 # School Academic Data (k8)

@@ -1074,7 +1074,6 @@ def load_data(school, year):
             year_over_year_values_dict = k8_school_metric_data.to_dict(into=OrderedDict)
             year_over_year_values_json = json.dumps(year_over_year_values_dict)
 
-# TODO: HERE
     ## HS Academic Information
 
     # NOTE: CHS (School ID: 5874) converted from a K12 to a K8 and
@@ -1180,6 +1179,7 @@ def load_data(school, year):
             # use valid_mask keep only columns that have at least one value
             hs_school_data = hs_school_data[hs_school_data.columns[valid_mask]]
             hs_corp_data = hs_corp_data[hs_corp_data.columns[valid_mask]]
+        
 
             # Calculate Graduation Rates
 
@@ -1350,6 +1350,7 @@ def load_data(school, year):
                     hs_school_data["Non-Waiver|Cohort Count"] * 1.08
                 ) / hs_school_data["Total|Cohort Count"]
 
+# TODO: AHS ONLY? SEPARATE PROCESS?
             # Calculate CCR Rate (AHS Only), add Year column and store in temporary dataframe
             # NOTE: All other values pulled from HS dataframe required for AHS calculations
             # should go here
@@ -1416,7 +1417,7 @@ def load_data(school, year):
             # and rename the column this merges data only where both dataframes share a common key,
             # in this case 'Year')
             state_grad_average["Year"] = state_grad_average["Year"].astype(int)
-            
+
             hs_corp_data = hs_corp_data.merge(state_grad_average, on="Year", how="inner")
             
             hs_corp_data = hs_corp_data.rename(

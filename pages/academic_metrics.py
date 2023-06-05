@@ -16,7 +16,8 @@ from .table_helpers import no_data_page, no_data_table, create_metric_table, \
     set_table_layout, get_svg_circle, create_key
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, grades_all, process_yearly_indicators, \
-    process_academic_data, process_comparison_indicators, process_iread_data, get_attendance_metrics
+    process_academic_data, process_comparison_indicators, process_iread_data, get_attendance_metrics, \
+    process_hs_academic_data
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
@@ -49,6 +50,8 @@ def update_academic_metrics(data, school: str, year: str):
     if not data:
         raise PreventUpdate
 
+    tst = process_hs_academic_data(school, year)
+    
     # default styles
     display_attendance = {}
     display_k8_metrics = {}
@@ -437,9 +440,9 @@ def update_academic_metrics(data, school: str, year: str):
     # Create placeholders (Acountability Metrics 1.1.c & 1.1.d)
     metric_11cd_label = 'End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate.'
 
-# TODO: HERE    (ALSO FIX DEMOGRAPHICS 2023)
-    # Test to see if year_over_year_values_json exists
-    if data['11']:
+    # Add placeholderif there is attendance data
+    if not attendance_data.empty:
+    # if data['11']:
 
         student_retention_rate_dict = {'Category': ['1.1.c. Re-Enrollment Rate',
             '1.1.d. Re-Enrollment Rate']
