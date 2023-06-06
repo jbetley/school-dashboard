@@ -50,7 +50,7 @@ def update_academic_metrics(data, school: str, year: str):
     if not data:
         raise PreventUpdate
 
-    tst = process_hs_academic_data(school, year)
+
     
     # default styles
     display_attendance = {}

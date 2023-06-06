@@ -1110,9 +1110,6 @@ def load_data(school, year):
 
         hs_school_data = filtered_academic_data_hs.loc[filtered_academic_data_hs["School ID"] == school]
 
-        # pd.set_option('display.max_columns', None)
-        # pd.set_option('display.max_rows', None)
-
         # If no data exists for the selected school, all dicts are empty
         if len(hs_school_data.index) == 0:
             hs_academic_data_json = {}
@@ -1179,8 +1176,6 @@ def load_data(school, year):
             # use valid_mask keep only columns that have at least one value
             hs_school_data = hs_school_data[hs_school_data.columns[valid_mask]]
             hs_corp_data = hs_corp_data[hs_corp_data.columns[valid_mask]]
-        
-
             # Calculate Graduation Rates
 
             # NOTE: Coercing hs_corp_data values to numeric has the effect
@@ -1313,7 +1308,7 @@ def load_data(school, year):
                             hs_corp_data[new_col] = (
                                 hs_corp_data[at_benchmark] / hs_corp_data[total_tested]
                             )
-         
+
             # if missing_cols includes 'Non-Waiver' - there is no data available for the school
             # for the selected Years
             if "Non-Waiver" not in "\t".join(missing_cols):
@@ -1551,6 +1546,10 @@ def load_data(school, year):
                 )
                 final_hs_academic_data = final_hs_academic_data.reset_index(drop=True)
 
+
+            # print('*START*')
+            # pd.set_option('display.max_rows', None)
+            # print(final_hs_academic_data)
             hs_academic_data_dict = final_hs_academic_data.to_dict(into=OrderedDict)
             hs_academic_data_json = json.dumps(hs_academic_data_dict)
 

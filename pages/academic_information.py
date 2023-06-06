@@ -22,7 +22,8 @@ from .chart_helpers import no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages, calculate_percentage
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, subject, \
-    grades, grades_all, grades_ordinal, current_academic_year, process_academic_data, get_attendance_rate
+    grades, grades_all, grades_ordinal, current_academic_year, process_academic_data, get_attendance_rate,\
+        process_hs_academic_data
 from .load_db import get_school_data, get_hs_data, get_demographics
 
 dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
@@ -92,7 +93,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
     # this is a dataframe
     selected_school = school_index.loc[school_index['School ID'] == school]
-
+    selected_school_type = selected_school['School Type'].values[0]
     excluded_academic_years = int(current_academic_year) - int(year)
 
     # 'excluded years' is a list of YYYY strings (all years more
@@ -124,23 +125,14 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         main_growth_container = {'display': 'none'}
         empty_growth_container = {'display': 'none'}
 
-        if (
-            selected_school['School Type'].values[0] == 'K8'
-            or selected_school['School Type'].values[0] == 'K12'
-        ):
+        if (selected_school_type == 'K8' or selected_school_type == 'K12'):
 
             school_data = process_academic_data(school, year)
             school_data = school_data.fillna("No Data")
             
-            # all_k8_school_data = get_school_data(school)
-
-            # k8_school_data = all_k8_school_data[~all_k8_school_data["Year"].isin(excluded_years)]
-            # Make copy for proficiency charts
-            # proficiency_data = k8_school_data.copy()
-            
 ### TODO: Check error handling
 
-            if school_data.empty:  #if len(k8_school_data.index) == 0:
+            if len(school_data.index) == 0:
                 k8_academic_info = {}
                 year_over_year_values_json = {}
                 diff_to_corp_json = {}
@@ -149,72 +141,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             
             else:
 
-                # k8_school_info = k8_school_data[["School Name"]].copy()
-
-                # # NOTE: Apparently we cannot filter columns by substring with SQLite because
-                # # it does not allow dynamic SQL - so we filter here
-                # k8_school_data = k8_school_data.filter(
-                #     regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",
-                #     axis=1,
-                # )
-
-                # # missing_mask returns boolean series of columns where column
-                # # is true if all elements in the column are equal to null
-                # missing_mask = pd.isnull(k8_school_data[k8_school_data.columns]).all()
-                # missing_cols = k8_school_data.columns[missing_mask].to_list()
-            
-                # # now drop em
-                # k8_school_data = k8_school_data.dropna(axis=1, how='all')
-
-                # categories = ethnicity + subgroup + grades + ["School Total"]
-
-                # for s in subject:
-                #     for c in categories:
-                #         new_col = c + "|" + s + " Proficient %"
-                #         proficient = c + "|" + s + " Total Proficient"
-                #         tested = c + "|" + s + " Total Tested"
-
-                #         if proficient not in missing_cols:
-                #             k8_school_data[new_col] = calculate_percentage(
-                #                 k8_school_data[proficient], k8_school_data[tested]
-                #             )
-
-                # if "IREAD Pass N" in k8_school_data:
-                    
-                #     k8_school_data["IREAD Pass %"] = pd.to_numeric(
-                #         k8_school_data["IREAD Pass N"], errors="coerce"
-                #     ) / pd.to_numeric(k8_school_data["IREAD Test N"], errors="coerce")
-
-                #     # If either Test or Pass category had a '***' value, the resulting value will be 
-                #     # NaN - we want it to display '***', so we just fillna
-                #     k8_school_data["IREAD Pass %"] = k8_school_data["IREAD Pass %"].fillna("***")
-
-                # # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
-                # k8_school_data = k8_school_data.filter(
-                #     regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",
-                #     axis=1,
-                # )
-
-                # # add School Name column back
-                # k8_school_data = pd.concat([k8_school_data, k8_school_info], axis=1, join="inner")
-
-                # k8_school_data = k8_school_data.reset_index(drop=True)
-                                    
-                # k8_school_data.columns = k8_school_data.columns.astype(str)
-
-                # # transpose dataframes and clean headers
-                # k8_school_data = (
-                #     k8_school_data.set_index("Year")
-                #     .T.rename_axis("Category")
-                #     .rename_axis(None, axis=1)
-                #     .reset_index()
-                # )
-
-                # k8_school_data = k8_school_data.fillna("No Data")
-
-                # k8_school_data = k8_school_data[k8_school_data["Category"].str.contains("School Name") == False]
-                
-                # k8_academic_info = k8_school_data.reset_index(drop=True)
                 k8_academic_info = school_data.copy()
 
                 k8_academic_info = (
@@ -242,232 +168,24 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         # NOTE: There is a special exception here for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
         # Christel House Watanabe Manual HS
-        if (
-            selected_school['School Type'].values[0] == 'HS'
-            or selected_school['School Type'].values[0] == 'AHS'
-            or selected_school['School Type'].values[0] == 'K12'
+        if (selected_school_type == 'HS' or selected_school_type == 'AHS' or selected_school_type == 'K12'
             or (selected_school['School ID'].values[0] == '5874' and int(year) < 2021)
         ):
 
             # load HS academic data
-            all_hs_school_data = get_hs_data(school)
-            all_hs_school_data = all_hs_school_data.fillna(value=np.nan)
+            hs_school_data = process_hs_academic_data(school, year)
+            # tst_school_data = school_data.fillna("No Data")
 
-            hs_school_data = all_hs_school_data[~all_hs_school_data["Year"].isin(excluded_years)]
-            
+# TODO: CHCEK ERRORS
             if len(hs_school_data.index) == 0:
                 hs_academic_data_json = {}
                 combined_grad_metrics_json = {}
                 ahs_metrics_data_json = {}
 
-            else:
-
-                hs_school_info = hs_school_data[["School Name"]].copy()
-
-                # AHS- temporarily pull AHS specific values (CCR and Grad All)
-                # where there is no corp equivalent.
-                if selected_school["School Type"].values[0] == "AHS":
-                    ahs_data = hs_school_data.filter(regex=r"Grad All$|CCR$", axis=1)
-
-                # keep only those columns used in calculations
-
-                # SAT Categories: 'Total Tested', 'Below Benchmark', 'Approaching Benchmark',
-                #   'At Benchmark', & 'Benchmark %'
-                # Grade 10 ECA Categories: 'Pass N' and 'Test N'
-                # Graduation Categories: 'Cohort Count' and 'Graduates'
-                hs_school_data = hs_school_data.filter(
-                    regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1
-                )
-
-                # remove 'ELA & Math' columns (NOTE: Comment this out to retain 'ELA & Math' columns)
-                hs_school_data = hs_school_data.drop(
-                    list(hs_school_data.filter(regex="ELA & Math")), axis=1
-                )
-
-                # valid_mask returns a boolean series of columns where column
-                # is true if any element in the column is not equal to null
-                valid_mask = ~pd.isnull(hs_school_data[hs_school_data.columns]).all()
-
-                # create list of columns with no data (used in loop below)
-                # missing_mask returns boolean series of columns where column
-                # is true if all elements in the column are equal to null
-                missing_mask = pd.isnull(hs_school_data[hs_school_data.columns]).all()
-                missing_cols = hs_school_data.columns[missing_mask].to_list()
-
-                # use valid_mask keep only columns that have at least one value
-                hs_school_data = hs_school_data[hs_school_data.columns[valid_mask]]
-
-                # Calculate Graduation Rates
-
-                # NOTE: Coercing hs_corp_data values to numeric has the effect
-                # of converting all '***' (insufficient n-size) values to NaN.
-                # Because we are manually calculating a corp average, a NaN means
-                # the school has been removed from the average calculation.
-                # Typically, this won't have a large effect as there are few
-                # traditional public high schools with supressed data, but it
-                # could still potentially skew the results.
-
-                grad_categories = ethnicity + subgroup + ["Total"]
-                for g in grad_categories:
-                    new_col = g + " Graduation Rate"
-                    graduates = g + "|Graduates"
-                    cohort = g + "|Cohort Count"
-
-                    if cohort not in missing_cols:
-                        hs_school_data[new_col] = calculate_percentage(hs_school_data[graduates], hs_school_data[cohort])
-    
-                # Calculate ECA (Grade 10) rate
-                # NOTE: 'Due to suspension of assessments in 2019-2020, Grade 11 students were assessed
-                # on ISTEP10 in 2020-2021' 'Results reflect first-time test takers in Grade 11 Cohort
-                # (Graduation Year 2022). 'Results may not be comparable to past years due to assessment
-                # of Grade 11'
-
-                # if none_categories includes 'Grade 10' - there is no ECA data available
-                # for the school for the selected Years
-                eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
-
-                # checks to see if substring ('Grade 10') is in the list of missing cols
-                if "Grade 10" not in "\t".join(missing_cols):
-                    for e in eca_categories:
-                        new_col = e + " Pass Rate"
-                        passN = e + " Pass N"
-                        testN = e + " Test N"
-
-                        hs_school_data[new_col] = calculate_percentage(
-                            hs_school_data[passN], hs_school_data[testN]
-                        )
-
-                sat_categories = ethnicity + subgroup + ["School Total"]
-                sat_subject = ['EBRW','Math','Both']
-
-                for ss in sat_subject:
-                    for sc in sat_categories:
-                        new_col = sc + "|" + ss + " Benchmark %"
-                        at_benchmark = sc + "|" + ss + " At Benchmark"
-                        total_tested = sc + "|" + ss + " Total Tested"
-
-                        if total_tested not in missing_cols:
-                            # Dats sometimes has 0's where there should be nulls
-                            # so we drop all columns for a category where the
-                            # total tested # of students is '0' (values are currently
-                            # strings, get converted to numeric in the calculate-percentage
-                            # function)
-                            if hs_school_data[total_tested].values[0] == 0: #'0':
-                                drop_columns = [new_col, at_benchmark, total_tested]
-                                hs_school_data = hs_school_data.drop(drop_columns, axis=1)
-                            else:
-                                hs_school_data[new_col] = calculate_percentage(
-                                    hs_school_data[at_benchmark], hs_school_data[total_tested]
-                                )
-
-                # if missing_cols includes 'Non-Waiver' - there is no data available for the school
-                # for the selected Years
-                if "Non-Waiver" not in "\t".join(missing_cols):
-
-                    # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
-                    # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
-                    # cohort, there were no 'waiver' graduates (which means no non-waiver data).
-                    # so we replace 0 with NaN (to ensure a NaN result rather than 0)
-
-                    # NOTE: pd.to_numeric (coerce) should have converted all '***' values (to NaN)
-                    hs_school_data["Non-Waiver|Cohort Count"] = pd.to_numeric(
-                        hs_school_data["Non-Waiver|Cohort Count"], errors="coerce"
-                    )
-                    hs_school_data["Total|Cohort Count"] = pd.to_numeric(
-                        hs_school_data["Total|Cohort Count"], errors="coerce"
-                    )
-
-                    hs_school_data["Non-Waiver Graduation Rate"] = (
-                        hs_school_data["Non-Waiver|Cohort Count"]
-                        / hs_school_data["Total|Cohort Count"]
-                    )
-                    hs_school_data["Strength of Diploma"] = (
-                        hs_school_data["Non-Waiver|Cohort Count"] * 1.08
-                    ) / hs_school_data["Total|Cohort Count"]
-
-                # Calculate CCR Rate (AHS Only), add Year column and store in temporary dataframe
-                # NOTE: All other values pulled from HS dataframe required for AHS calculations
-                # should go here
-                if selected_school["School Type"].values[0] == "AHS":
-                    ahs_school_data = pd.DataFrame()
-                    ahs_school_data["Year"] = hs_school_data["Year"]
-
-                    ahs_data["AHS|CCR"] = pd.to_numeric(
-                        ahs_data["AHS|CCR"], errors="coerce"
-                    )
-                    ahs_data["AHS|Grad All"] = pd.to_numeric(
-                        ahs_data["AHS|Grad All"], errors="coerce"
-                    )
-                    ahs_school_data["CCR Percentage"] = (
-                        ahs_data["AHS|CCR"] / ahs_data["AHS|Grad All"]
-                    )
-
-
-                # filter out unused cols
-                hs_school_data = hs_school_data.filter(
-                    regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|Total Tested|^Year$", # ^Strength of Diploma
-                    axis=1,
-                )
-
-                hs_school_info = hs_school_info.reset_index(drop=True)
-                hs_school_data = hs_school_data.reset_index(drop=True)
-
-                hs_school_data = pd.concat([hs_school_data, hs_school_info], axis=1, join="inner")
-
-                hs_school_data.columns = hs_school_data.columns.astype(str)
-
-                # transpose dataframes and clean headers
-                hs_school_data = (
-                    hs_school_data.set_index("Year")
-                    .T.rename_axis("Category")
-                    .rename_axis(None, axis=1)
-                    .reset_index()
-                )
-
-                # State/Federal grade rows are used in 'about' page, but not here
-                hs_school_data = hs_school_data[hs_school_data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
-                
-                hs_school_data = hs_school_data.reset_index(drop=True)
-
-                hs_school_data = (
-                    hs_school_data.set_index(["Category"])
-                    .add_suffix("School")
-                    .reset_index()
-                )
-
-                # have to do same things to ahs_data to be able to insert it back
-                # into hs_data file even though there is no comparison data involved
-                if selected_school["School Type"].values[0] == "AHS":
-                    ahs_school_data = (
-                        ahs_school_data.set_index("Year")
-                        .T.rename_axis("Category")
-                        .rename_axis(None, axis=1)
-                        .reset_index()
-                    )
-
-                    ahs_school_data = (
-                        ahs_school_data.set_index(["Category"])
-                        .add_suffix("School")
-                        .reset_index()
-                    )
-
-                #If AHS - add CCR data to hs_data file
-                if selected_school["School Type"].values[0] == "AHS":
-                    hs_school_data = pd.concat(
-                        [hs_school_data, ahs_school_data], sort=False
-                    )
-                    hs_school_data = hs_school_data.reset_index(drop=True)
-
-        else:
-            hs_school_data = pd.DataFrame()
-
         # If school is K8 and dataframe is empty
         # set all tables to null and style properties to 'display': 'none' 
         # except for the empty table style
-        if (
-            selected_school['School Type'].values[0] == 'K8'
-            and len(k8_academic_info.index) == 0
-        ):
+        if (selected_school_type == 'K8' and len(k8_academic_info.index) == 0):
             hs_grad_overview_table = {}
             hs_grad_ethnicity_table = {}
             hs_grad_subgroup_table = {}
@@ -498,14 +216,10 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         else:
             ## K8 Academic Information
             # Both K8 school types and K12 school types can have K8 data
-            if (
-                selected_school['School Type'].values[0] == 'K8'
-                or selected_school['School Type'].values[0] == 'K12'
-            ):
+            if (selected_school_type == 'K8' or selected_school_type == 'K12'):
                 # if K8, hide HS table (except for CHS prior to 2021 when it was a K12)
-                if selected_school['School Type'].values[0] == 'K8' and not (
-                    selected_school['School ID'].values[0] == '5874' and int(year) < 2021
-                ):
+
+                if selected_school_type == 'K8' and not (selected_school_type == '5874' and int(year) < 2021):
                     hs_grad_overview_table = {}
                     hs_grad_ethnicity_table = {}
                     hs_grad_subgroup_table = {}
@@ -610,10 +324,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     axis=1,
                 )
 
-
                 all_proficiency_data = school_k8_proficiency_data.copy()
-                
-                # print(all_proficiency_data.T)
                 
                 proficiency_rating = [
                     'Below Proficiency',
@@ -827,17 +538,11 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         ## HS academic information
         # HS and AHS school types will not have K8 data
         # K12 school type may have K8 data
-        if (
-            selected_school['School Type'].values[0] == 'HS'
-            or selected_school['School Type'].values[0] == 'AHS'
-            or selected_school['School Type'].values[0] == 'K12'
-            or (selected_school['School ID'].values[0] == '5874' and int(year) < 2021)
+        if (selected_school_type == 'HS' or selected_school_type == 'AHS' or selected_school_type == 'K12'
+            or (selected_school_type == '5874' and int(year) < 2021)
         ):
             # if HS or AHS, hide K8 table
-            if (
-                selected_school['School Type'].values[0] == 'HS'
-                or selected_school['School Type'].values[0] == 'AHS'
-            ):
+            if (selected_school_type == 'HS' or selected_school_type == 'AHS'):
                 k8_grade_table = {}
                 k8_ethnicity_table = {}
                 k8_subgroup_table = {}
@@ -869,32 +574,21 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 empty_container = {'display': 'block'}
 
             else:
-                ## Built HS Academic Information Tables
-                # NOTE: Strength of Diploma not displayed
+                # HS Academic Information Tables
 
                 # Graduation Rate
                 grad_overview_categories = [
                     'Total',
                     'Non-Waiver',
                     'State Average'
-                    # 'Strength of Diploma',
+                    # 'Strength of Diploma',    # Not currently displayed
                 ]
 
-                if selected_school['School Type'].values[0] == 'AHS':
+                if selected_school_type == 'AHS':
                     grad_overview_categories.append('CCR Percentage')
 
-                # strip out all comparative data and clean headers
-                hs_academic_info = hs_school_data[
-                    [
-                        col
-                        for col in hs_school_data.columns
-                        if 'School' in col or 'Category' in col
-                    ]
-                ]
-
-                hs_academic_info.columns = hs_academic_info.columns.str.replace(
-                    r'School$', '', regex=True
-                )
+                hs_academic_info = hs_school_data.copy()
+                hs_academic_info.columns = hs_academic_info.columns.astype(str)
 
                 eca_data = hs_academic_info[hs_academic_info['Category'].str.contains('Grade 10')].copy()
 
@@ -907,11 +601,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 graduation_data = hs_academic_info[hs_academic_info['Category'].str.contains('Graduation')].copy()
 
                 # drop 'Graduation Rate' from all 'Category' rows and remove whitespace
-                graduation_data['Category'] = (
-                    graduation_data['Category']
-                    .str.replace('Graduation Rate', '')
-                    .str.strip()
-                )
+                graduation_data['Category'] = (graduation_data['Category'].str.replace('Graduation Rate', '').str.strip())
 
                 grad_overview = graduation_data[graduation_data['Category'].str.contains('|'.join(grad_overview_categories))]
 
@@ -982,8 +672,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         ## End of HS Academic Information Block
 
     else:
-        ## Growth Tables ##
-
         # set all proficiency tables to null and containers to display:none
         hs_grad_overview_table = {}
         hs_grad_ethnicity_table = {}
@@ -1328,18 +1016,14 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
     # Add notes string based on school type
     if radio_value == 'proficiency':
-        if selected_school['School Type'].values[0] == 'AHS':
+        if selected_school_type == 'AHS':
             notes_string = 'Adult High Schools enroll students who are over the age of 18, under credited, \
                 dropped out of high school for a variety of reasons, and are typically out of cohort from \
                 their original graduation year. Because graduation rate is calculated at the end of the school \
                 year regardless of the length of time a student is enrolled at a school, it is not comparable to \
                 the graduation rate of a traditional high school.'
             
-        elif (
-                selected_school['School Type'].values[0] == 'K8'
-                or selected_school['School Type'].values[0] == 'K12'
-                or selected_school['School Type'].values[0] == 'HS'
-                ):
+        elif (selected_school_type == 'K8' or selected_school_type == 'K12' or selected_school_type == 'HS'):
             notes_string = 'There are a number of factors that make it difficult to make valid and reliable \
                 comparisons between test scores from 2019 to 2022. For example, ILEARN was administered for \
                 the first time during the 2018-19 SY and represented an entirely new type and mode of \

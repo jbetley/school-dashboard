@@ -198,7 +198,186 @@ def get_attendance_metrics(school, year):
     return attendance_metrics
 
 # TODO: Break out individual calculations? ECA, Grad, SAT, etc.
+def calculate_graduation_rate(data):
+    grad_categories = ethnicity + subgroup + ["Total"]
+    for g in grad_categories:
+        new_col = g + " Graduation Rate"
+        graduates = g + "|Graduates"
+        cohort = g + "|Cohort Count"
+
+        if cohort in data.columns:
+            data[new_col] = calculate_percentage(data[graduates], data[cohort])
+
+    return data
+
+# NOTE: HS INFO ONLY
 def process_hs_academic_data(school, year):
+
+    all_hs_school_data = get_hs_data(school)
+    excluded_years = get_excluded_years(year)
+
+    hs_school_data = all_hs_school_data[~all_hs_school_data["Year"].isin(excluded_years)]
+
+    school_type = hs_school_data["School Type"].values[0]
+
+    if len(hs_school_data.index) != 0:
+
+        school_info = hs_school_data[["School Name"]].copy()
+
+        # AHS- temporarily pull AHS specific values (CCR and GradAll)
+        # where there is no corp equivalent.
+        if school_type == "AHS":
+            ahs_data = hs_school_data.filter(regex=r"GradAll$|CCR$", axis=1)
+
+        # Keep following columns:
+        #    SAT Categories: 'Total Tested', 'Below Benchmark', 'Approaching Benchmark',
+        #   'At Benchmark', & 'Benchmark %'
+        #   Grade 10 ECA Categories: 'Pass N' and 'Test N'
+        #   Graduation Categories: 'Cohort Count' and 'Graduates'
+        hs_school_data = hs_school_data.filter(regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
+
+        # remove 'ELA & Math' columns (NOTE: Comment this out to retain 'ELA & Math' columns)
+        hs_school_data = hs_school_data.drop(list(hs_school_data.filter(regex="ELA & Math")), axis=1)
+
+        # convert to numeric, but keep strings ('***')
+        for col in hs_school_data.columns:
+            hs_school_data[col] = pd.to_numeric(hs_school_data[col], errors='coerce').fillna(hs_school_data[col])
+
+        # mask returns a boolean series of columns where all values in cols
+        # are not either NaN or 0
+        missing_mask = pd.isnull(hs_school_data[hs_school_data.columns]).all()
+        missing_cols = hs_school_data.columns[missing_mask].to_list()
+
+        # opposite mask of above. keep only valid columns
+        valid_mask = ~pd.isnull(hs_school_data[hs_school_data.columns]).all()
+
+        hs_school_data = hs_school_data[hs_school_data.columns[valid_mask]]
+
+        # Calculate Grad Rate #
+        hs_school_data = calculate_graduation_rate(hs_school_data)
+
+# TODO: HERE
+        # grad_categories = ethnicity + subgroup + ["Total"]
+        # for g in grad_categories:
+        #     new_col = g + " Graduation Rate"
+        #     graduates = g + "|Graduates"
+        #     cohort = g + "|Cohort Count"
+
+        #     if cohort in hs_school_data.columns:
+        #         hs_school_data[new_col] = calculate_percentage(hs_school_data[graduates], hs_school_data[cohort])
+
+        # Calculate Non-Waiver Grad Rate #
+        if "Non-Waiver" not in "\t".join(missing_cols):
+
+            # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
+            # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
+            # cohort, there were no 'waiver' graduates (which means no non-waiver data).
+            # so we replace 0 with NaN (to ensure a NaN result rather than 0)
+            hs_school_data["Non-Waiver|Cohort Count"] = pd.to_numeric(hs_school_data["Non-Waiver|Cohort Count"], errors="coerce")
+            hs_school_data["Total|Cohort Count"] = pd.to_numeric(hs_school_data["Total|Cohort Count"], errors="coerce")
+
+            hs_school_data["Non-Waiver Graduation Rate"] = (hs_school_data["Non-Waiver|Cohort Count"]/ hs_school_data["Total|Cohort Count"])
+            hs_school_data["Strength of Diploma"] = (hs_school_data["Non-Waiver|Cohort Count"] * 1.08) / hs_school_data["Total|Cohort Count"]
+
+        # Calculate ECA (Grade 10) Rate #
+        eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
+
+        if "Grade 10" not in "\t".join(missing_cols):
+            for e in eca_categories:
+                new_col = e + " Pass Rate"
+                passN = e + " Pass N"
+                testN = e + " Test N"
+
+                hs_school_data[new_col] = calculate_percentage(hs_school_data[passN], hs_school_data[testN])
+
+        # Calculate SAT Rates #
+        sat_categories = ethnicity + subgroup + ["School Total"]
+        sat_subject = ['EBRW','Math','Both']
+
+        for ss in sat_subject:
+            for sc in sat_categories:
+                new_col = sc + "|" + ss + " Benchmark %"
+                at_benchmark = sc + "|" + ss + " At Benchmark"
+                total_tested = sc + "|" + ss + " Total Tested"
+
+                if total_tested in hs_school_data.columns:
+                    # Data is messy so we test whether or not to drop all related categories
+                    # if total tested # of students is = 0
+                    if hs_school_data[total_tested].values[0] == 0:
+                        drop_columns = [new_col, at_benchmark, total_tested]
+                        hs_school_data = hs_school_data.drop(drop_columns, axis=1)
+                    else:
+                        hs_school_data[new_col] = calculate_percentage(hs_school_data[at_benchmark], hs_school_data[total_tested])
+
+        # Calculate CCR Rate (AHS Only) #
+        # NOTE: All other values pulled from HS dataframe required for AHS calculations should go here
+        if school_type == "AHS":
+            ahs_school_data = pd.DataFrame()
+            ahs_school_data["Year"] = hs_school_data["Year"]
+
+            ahs_data["AHS|CCR"] = pd.to_numeric(ahs_data["AHS|CCR"], errors="coerce")
+            ahs_data["AHS|GradAll"] = pd.to_numeric(ahs_data["AHS|GradAll"], errors="coerce")
+            ahs_school_data["CCR Percentage"] = (ahs_data["AHS|CCR"] / ahs_data["AHS|GradAll"])
+
+            ahs_metric_data = (ahs_school_data.copy())
+            ahs_metric_data = ahs_metric_data.reset_index(drop=True)
+
+        # filter and prepare for display
+        hs_school_data = hs_school_data.filter(
+            regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|Total Tested|^Year$", # ^Strength of Diploma
+            axis=1,
+        )
+
+        school_info = school_info.reset_index(drop=True)
+        hs_school_data = hs_school_data.reset_index(drop=True)
+
+        hs_school_data = pd.concat([hs_school_data, school_info], axis=1, join="inner")
+
+        hs_school_data.columns = hs_school_data.columns.astype(str)
+
+        # transpose dataframes and clean headers
+        hs_school_data = (hs_school_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+        # State/Federal grade rows not used
+        hs_school_data = hs_school_data[hs_school_data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
+        
+        hs_school_data = hs_school_data.reset_index(drop=True)
+
+        # have to do same things to ahs_data to be able to insert it back
+        # into hs_data file even though there is no comparison data involved
+        if school_type == "AHS":
+            ahs_school_data = (
+                ahs_school_data.set_index("Year")
+                .T.rename_axis("Category")
+                .rename_axis(None, axis=1)
+                .reset_index()
+            )
+            ahs_school_data = (
+                ahs_school_data.set_index(["Category"])
+                .add_suffix("School")
+                .reset_index()
+            )
+
+        # make sure there are no lingering NoneTypes 
+        hs_school_data = hs_school_data.fillna(value=np.nan)
+
+        # If AHS - add CCR data to hs_data file
+        if school_type == "AHS":
+            hs_school_data = pd.concat(
+                [hs_school_data, ahs_school_data], sort=False
+            )
+            hs_school_data = hs_school_data.reset_index(drop=True)
+
+    else:
+
+        hs_school_data = pd.DataFrame()
+
+    return hs_school_data
+
+## TODO: METRICS CALC
+
+# TODO: Break out individual calculations? ECA, Grad, SAT, etc.
+def process_hs_academic_metrics(school, year):
 
     # school_info = get_index(school)
     all_school_data = get_hs_data(school)
@@ -206,9 +385,9 @@ def process_hs_academic_data(school, year):
     excluded_years = get_excluded_years(year)
 
     school_data = all_school_data[~all_school_data["Year"].isin(excluded_years)]
-# TODO: SUBSTITUTE THROUGHOUT AND REMOVE SCHOOL TYPE IN COLUMN    
+
     school_type = school_data["School Type"].values[0]
-    
+
     if len(school_data.index) != 0:
         corp_data = all_corp_data[~all_corp_data["Year"].isin(excluded_years)]
 
@@ -220,7 +399,7 @@ def process_hs_academic_data(school, year):
 
         # AHS- temporarily pull AHS specific values (CCR and GradAll)
         # where there is no corp equivalent.
-        if school_data["School Type"].values[0] == "AHS":
+        if school_type == "AHS":
             ahs_data = school_data.filter(regex=r"GradAll$|CCR$", axis=1)
 
         # keep only those columns used in calculations
@@ -230,8 +409,8 @@ def process_hs_academic_data(school, year):
         # Graduation Categories: 'Cohort Count' and 'Graduates'
 
         # temporary info column: School Type
-        school_data = school_data.filter(regex=r"School Type|Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
-        corp_data = corp_data.filter(regex=r"School Type|Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
+        school_data = school_data.filter(regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
+        corp_data = corp_data.filter(regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
 
         # remove 'ELA & Math' columns (NOTE: Comment this out to retain 'ELA & Math' columns)
         school_data = school_data.drop(list(school_data.filter(regex="ELA & Math")), axis=1)
@@ -374,10 +553,8 @@ def process_hs_academic_data(school, year):
                 if total_tested in school_data.columns:
                     # Data sometimes has 0's where there should be nulls
                     # so we drop all columns for a category where the
-                    # total tested # of students is '0' (values are currently
-                    # strings, get converted to numeric in the calculate-percentage
-                    # function)
-                    if school_data[total_tested].values[0] == '0':
+                    # total tested # of students is = 0
+                    if school_data[total_tested].values[0] == 0:
                         drop_columns = [new_col, at_benchmark, total_tested]
                         school_data = school_data.drop(drop_columns, axis=1)
                         corp_data = corp_data.drop(drop_columns, axis=1)
@@ -408,7 +585,7 @@ def process_hs_academic_data(school, year):
         # Calculate CCR Rate (AHS Only), add Year column and store in temporary dataframe
         # NOTE: All other values pulled from HS dataframe required for AHS calculations
         # should go here
-        if school_data["School Type"].values[0] == "AHS":
+        if school_type == "AHS":
             ahs_school_data = pd.DataFrame()
             ahs_school_data["Year"] = school_data["Year"]
 
@@ -420,43 +597,17 @@ def process_hs_academic_data(school, year):
             ahs_metric_data = ahs_metric_data.reset_index(drop=True)
 
         school_data = school_data.filter(
-            regex=r"^Category|School Type|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|Total Tested|^Year$", # ^Strength of Diploma
+            regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|Total Tested|^Year$", # ^Strength of Diploma
             axis=1,
         )
         
         corp_data = corp_data.filter(
-            regex=r"^Category|School Type|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|Total Tested|^Year$", # ^Strength of Diploma
+            regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|Total Tested|^Year$", # ^Strength of Diploma
             axis=1,
         )
 
         # State Average Graduation Rate
         state_grad_rate = get_graduation_data()
-
-        # filtered_academic_data_hs["Total|Graduates"] = pd.to_numeric(
-        #     filtered_academic_data_hs["Total|Graduates"], errors="coerce"
-        # )
-        # filtered_academic_data_hs["Total|Cohort Count"] = pd.to_numeric(
-        #     filtered_academic_data_hs["Total|Cohort Count"], errors="coerce"
-        # )
-
-        # # NOTE: exclude AHS from graduation rate calculation due to the inapplicability
-        # # of grad rates to the AHS model
-        # filtered_academic_data_hs[
-        #     "Total|Graduates"
-        # ] = filtered_academic_data_hs.loc[
-        #     filtered_academic_data_hs["School Type"] != "AHS", "Total|Graduates"
-        # ]
-        # filtered_academic_data_hs[
-        #     "Total|Cohort Count"
-        # ] = filtered_academic_data_hs.loc[
-        #     filtered_academic_data_hs["School Type"] != "AHS", "Total|Cohort Count"
-        # ]
-
-        # state_grad_average = (
-        #     filtered_academic_data_hs.groupby("Year", as_index=False)
-        #     .sum(numeric_only=True)
-        #     .eval("State_Grad_Average = `Total|Graduates` / `Total|Cohort Count`")
-        # )
 
         # # drop all other columns, invert rows (so most recent year at index [0]) & reset the index
         # state_grad_average = state_grad_average[["Year", "State_Grad_Average"]]
@@ -465,8 +616,6 @@ def process_hs_academic_data(school, year):
         # merge applicable years of grad_avg dataframe into hs_school df using an inner merge
         # and rename the column this merges data only where both dataframes share a common key,
         # in this case 'Year')
-        # state_grad_average["Year"] = state_grad_average["Year"].astype(int)
-        
         corp_data = corp_data.merge(state_grad_average, on="Year", how="inner")
         
         corp_data = corp_data.rename(columns={"State_Grad_Average": "Average State Graduation Rate"})
@@ -508,10 +657,9 @@ def process_hs_academic_data(school, year):
         corp_data = (corp_data.set_index(["Category"]).add_suffix("Corp Average").reset_index())
         school_data = (school_data.set_index(["Category"]).add_suffix("School").reset_index())
 
-        print(school_data.T)
         # have to do same things to ahs_data to be able to insert it back
         # into hs_data file even though there is no comparison data involved
-        if school_data["School Type"].values[0] == "AHS":
+        if school_type == "AHS":
             ahs_school_data = (
                 ahs_school_data.set_index("Year")
                 .T.rename_axis("Category")
@@ -558,7 +706,7 @@ def process_hs_academic_data(school, year):
         hs_results = pd.DataFrame()
         for y in hs_year_cols:
             hs_results[y] = calculate_difference(
-                school_data[y + "School"], corp_data[y + "Corp Average"]
+                school_data[str(y) + "School"], corp_data[str(y) + "Corp Average"]
             )
 
         # add headers
@@ -571,33 +719,21 @@ def process_hs_academic_data(school, year):
         final_hs_academic_data = final_hs_academic_data[final_cols]
 
         # If AHS - add CCR data to hs_data file
-        if school_data["School Type"].values[0] == "AHS":
+        if school_type == "AHS":
             final_hs_academic_data = pd.concat(
                 [final_hs_academic_data, ahs_school_data], sort=False
             )
             final_hs_academic_data = final_hs_academic_data.reset_index(drop=True)
 
-        print(final_hs_academic_data)
     else:
         final_hs_academic_data = pd.DataFrame()
 
     return final_hs_academic_data
-
-
-
+## TODO: METRICS CALC
 def process_academic_data(school, year):
     
     all_data = get_school_data(school)
     excluded_years = get_excluded_years(year)
-    # excluded_academic_years = int(current_academic_year) - int(year)
-
-    # # 'excluded years' is a list of YYYY strings (all years more
-    # # recent than selected year) that can be used to filter data
-    # # that should not be displayed
-    # excluded_years = []
-    # for i in range(excluded_academic_years):
-    #     excluded_year = int(current_academic_year) - i
-    #     excluded_years.append(excluded_year)
     
     school_data = all_data[~all_data["Year"].isin(excluded_years)]
 
@@ -673,7 +809,9 @@ def process_academic_data(school, year):
         school_data = school_data[school_data["Category"].str.contains("School Name") == False]
         
         final_data = school_data.reset_index(drop=True)
+    
     else:
+    
         final_data = pd.DataFrame()
 
     return final_data
