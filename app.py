@@ -788,6 +788,12 @@ def load_data(school, year):
 
             k8_school_data = k8_school_data.reset_index(drop=True)
 
+            pd.set_option('display.max_rows', None)
+            print('ORIG')
+            print(k8_school_data)
+            print(k8_corp_data)
+
+# TODO: Metrics stuff starts here
             # reverse order of corp_data columns (ignoring 'Category') so current year is first and
             # get clean list of years
             k8_year_cols = list(k8_school_data.columns[:0:-1])
@@ -1377,10 +1383,6 @@ def load_data(school, year):
                 regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|Total Tested|^Year$", # ^Strength of Diploma
                 axis=1,
             )
-
-            pd.set_option('display.max_rows', None)
-            print('ORIG')
-            print(hs_school_data)
 
             # State Average Graduation Rate
 

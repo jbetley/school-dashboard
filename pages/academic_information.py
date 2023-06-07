@@ -89,6 +89,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
     empty_growth_container = {'display': 'none'}
     no_growth_data_to_display = no_data_page('Academic Growth')
 
+# TODO: ADD get_info()
     selected_school = school_index.loc[school_index['School ID'] == school]
     selected_school_type = selected_school['School Type'].values[0]
 
@@ -115,7 +116,9 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
         if (selected_school_type == 'K8' or selected_school_type == 'K12'):
 
-            all_k8_school_data = process_k8_academic_data(school, year)
+            raw_k8_school_data = get_school_data(school)
+            all_k8_school_data = process_k8_academic_data(raw_k8_school_data, year)
+
             all_k8_school_data = all_k8_school_data.fillna("No Data")
 
             # TODO: Errr
@@ -710,7 +713,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     
                     k8_overall_indicators_data = replace_header(k8_overall_indicators_data)
 
-                    # Drop rows where there are zero points and No Ragting
+                    # Drop rows where there are zero points and No Rating
                     k8_overall_indicators_data = k8_overall_indicators_data.loc[~((k8_overall_indicators_data['Points'] == '0.00') & \
                         (k8_overall_indicators_data['Rating'] == 'No Rating'))]
                     

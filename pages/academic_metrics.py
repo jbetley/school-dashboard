@@ -18,7 +18,9 @@ from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, grades_all, process_k8_academic_data, \
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
         calculate_iread_metrics, get_attendance_metrics, calculate_high_school_metrics
-    
+
+from .load_db import get_school_data, get_corporation_data
+
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
 @callback(
@@ -60,9 +62,49 @@ def update_academic_metrics(data, school: str, year: str):
     no_data_to_display = no_data_page('Academic Metrics')    
 
     selected_school = school_index.loc[school_index['School ID'] == school]
+    selected_school_type = selected_school['School Type'].values[0]
 
+    raw_school_data = get_school_data(school)
+    raw_corp_data = get_corporation_data(school)
+    
+    clean_school_data = process_k8_academic_data(raw_school_data, year)
+    clean_corp_data = process_k8_academic_data(raw_corp_data, year)
+
+    # Further processing necessary for Corp Data
+    # remove rows from corp data that aren't in school data
+    valid_categories = clean_school_data['Category'].tolist()
+    clean_corp_data = clean_corp_data[clean_corp_data['Category'].isin(valid_categories)]
+    clean_corp_data = clean_corp_data.reset_index(drop=True)
+  
+    # replace 'Totals' with calculation taking the masking step into account
+    # The masking step above removes grades from the corp_rate dataframe
+    # that are not also in the school dataframe (e.g., if school only has data
+    # for grades 3, 4, & 5, only those grades will remain in corp_rate df).
+    # However, the 'Corporation Total' for proficiency in a subject is
+    # calculated using ALL grades. So we need to recalculate the 'Corporation Total'
+    # rate manually to ensure it includes only the included grades.
+    
+    # TODO: Adjust this logic to work with a df that has been transposed
+    # adjusted_corp_total_math_proficient = clean_corp_data.filter(regex=r"Grade.+?Math Total Proficient")
+    # adjusted_corp_total_math_tested = clean_corp_data.filter(regex=r"Grade.+?Math Total Tested")
+
+    # clean_corp_data["School Total|Math Proficient %"] = adjusted_corp_total_math_proficient.sum(axis=1) \
+    #     / adjusted_corp_total_math_tested.sum(axis=1)
+
+    # adjusted_corp_total_ela_proficient = clean_corp_data.filter(regex=r"Grade.+?ELA Total Proficient")
+    # adjusted_corp_total_ela_tested = clean_corp_data.filter(regex=r"Grade.+?ELA Total Tested")
+
+    # clean_corp_data["School Total|ELA Proficient %"] = adjusted_corp_total_ela_proficient.sum(axis=1) \
+    #     / adjusted_corp_total_ela_tested.sum(axis=1)
+
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)
+    print('REFACTOR')
+    # print(clean_school_data)
+    print(clean_corp_data)    
+    
      # Adult High School Academic Metrics
-    if selected_school['School Type'].values[0] == 'AHS':
+    if selected_school_type == 'AHS':
 
         # if AHS, hide all non-AHS related metrics
         table_container_11cd = {}
@@ -213,7 +255,8 @@ def update_academic_metrics(data, school: str, year: str):
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
 
-            academic_data = process_academic_data(school, year)
+            print('CRASHGYT!!')
+            academic_data = process_k8_academic_data(raw_school_data, year)
 
             if not academic_data.empty:
             # load k-8 data files                        
@@ -227,8 +270,8 @@ def update_academic_metrics(data, school: str, year: str):
                 # json_data = json.loads(data['11'])
                 # combined_years = pd.DataFrame.from_dict(json_data)
 
-                combined_years = process_yearly_indicators(academic_data)
-                combined_delta = process_comparison_indicators(academic_data, year, school)
+                combined_years = calculate_k8_yearly_metrics(academic_data)
+                combined_delta = calculate_k8_comparison_metrics(academic_data, year, school)
 
                 category = ethnicity + subgroup
 
@@ -296,7 +339,7 @@ def update_academic_metrics(data, school: str, year: str):
                     # json_data = json.loads(data['9'])
                     # iread_data = pd.DataFrame.from_dict(json_data)
 
-                    iread_data = process_iread_data(iread_df)
+                    iread_data = calculate_iread_metrics(iread_df)
 
                     metric_14g_label = '1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment.'
                     iread_data = get_svg_circle(iread_data)   
@@ -377,8 +420,8 @@ def update_academic_metrics(data, school: str, year: str):
 
     #If there is no matching school_type - display empty table. this should never
     # happen. which is why this code is here.
-    if selected_school['School Type'].values[0] != 'K8' and selected_school['School Type'].values[0] != 'K12' \
-        and selected_school['School Type'].values[0] != 'HS' and selected_school['School Type'].values[0] != 'AHS':
+    if selected_school_type != 'K8' and selected_school_type != 'K12' \
+        and selected_school_type != 'HS' and selected_school_type != 'AHS':
         
         table_container_11ab = {}
         table_container_11cd = {}

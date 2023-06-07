@@ -268,67 +268,77 @@ def calculate_proficiency(data):
 
 ### Dataframe Formatting Functions ###
 
-def process_k8_academic_data(school, year):
+def process_k8_academic_data(all_data, year):
     
-    all_data = get_school_data(school)
     excluded_years = get_excluded_years(year)
-    
-    school_data = all_data[~all_data["Year"].isin(excluded_years)]
 
-    if len(school_data.index) != 0:
-        school_info = school_data[["School Name"]].copy()
+    if excluded_years:
+        data = all_data[~all_data["Year"].isin(excluded_years)]
+    else:
+        data = all_data.copy()
+
+    # school data has School Name column, corp data does not
+    if len(data.index) != 0:
+        if 'School Name' in data.columns:
+            school_info = data[["School Name"]].copy()
+        else:
+            school_info = data[["Corp Name"]].copy()
 
         # NOTE: Apparently we cannot filter columns by substring with SQLite because
         # it does not allow dynamic SQL - so we filter here
-        school_data = school_data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+        data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
 
         # convert to numeric, but keep strings ('***')
-        for col in school_data:
-            school_data[col] = pd.to_numeric(school_data[col], errors='coerce').fillna(school_data[col])
+        for col in data:
+            data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
-        # # mask returns a boolean series of columns where all values in cols
-        # # are not either NaN or 0
-        # # TODO: Does this still work in light of the change we made to hs_academic data?
-        # missing_mask = ~school_data.any()
-        # missing_cols = school_data.columns[missing_mask].to_list()
+        # TODO: WTF - Why is valid_mask working differently here vs get hs_data ?
+        # mask of valid columns only
+        # valid_mask = ~pd.isnull(data[data.columns]).all()        
+        valid_mask = data.any()
+        data = data[data.columns[valid_mask]]
 
-        # opposite mask of above. keep only valid columns
-        valid_mask = school_data.any()
-        school_data = school_data[school_data.columns[valid_mask]]
-        
-        if "School Total|ELA Total Tested" in school_data.columns:
-            school_data = calculate_proficiency(school_data)
+        # for corp?
+        # data = data.set_index("Year")
 
-        if "IREAD Pass N" in school_data.columns:
-            school_data["IREAD Pass %"] = pd.to_numeric(school_data["IREAD Pass N"], errors="coerce") \
-                / pd.to_numeric(school_data["IREAD Test N"], errors="coerce")
+        if "School Total|ELA Total Tested" in data.columns:
+            data = calculate_proficiency(data)
+
+        if "IREAD Pass N" in data.columns:
+            data["IREAD Pass %"] = pd.to_numeric(data["IREAD Pass N"], errors="coerce") \
+                / pd.to_numeric(data["IREAD Test N"], errors="coerce")
 
             # If either Test or Pass category had a '***' value, the resulting value will be 
             # NaN - we want it to display '***', so we just fillna
-            school_data["IREAD Pass %"] = school_data["IREAD Pass %"].fillna("***")
+            data["IREAD Pass %"] = data["IREAD Pass %"].fillna("***")
 
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
-        school_data = school_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$", axis=1)
+        data = data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$", axis=1)
 
         # add School Name column back
-        school_data = pd.concat([school_data, school_info], axis=1, join="inner")
+        # school data has School Name column, corp data does not
+        if len(school_info.index) > 0:
+            data = pd.concat([data, school_info], axis=1, join="inner")
 
-        school_data = school_data.reset_index(drop=True)
-                            
-        school_data.columns = school_data.columns.astype(str)
+        data = data.reset_index(drop=True)
 
-        # transpose dataframes and clean headers
-        school_data = (school_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+        # for corp?
+        # data = data.reset_index()
 
-        school_data = school_data[school_data["Category"].str.contains("School Name") == False]
-        
-        final_data = school_data.reset_index(drop=True)
+        data.columns = data.columns.astype(str)
+
+        # transpose dataframes and clean headers    
+        data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+        data = data[data["Category"].str.contains("School Name") == False]
+
+        data = data.reset_index(drop=True)
     
     else:
     
-        final_data = pd.DataFrame()
+        data = pd.DataFrame()
 
-    return final_data
+    return data
 
 def process_high_school_academic_data(school, year):
 
@@ -545,18 +555,6 @@ def calculate_k8_comparison_metrics(school_data, year, school):
     # iterate over (non missing) columns, calculate the average,
     # and store in a new column
     corporation_data = calculate_proficiency(corporation_data)
-    
-    # categories = ethnicity + subgroup + grades + ["School Total"]
-
-    # for s in subject:
-    #     for c in categories:
-    #         new_col = c + "|" + s + " Proficient %"
-    #         proficient = c + "|" + s + " Total Proficient"
-    #         tested = c + "|" + s + " Total Tested"
-
-    #         corporation_data[new_col] = (
-    #             corporation_data[proficient] / corporation_data[tested]
-    #         )
 
     # replace 'Totals' with calculation taking the masking step into account
     # The masking step above removes grades from the corp_rate dataframe
