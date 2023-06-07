@@ -16,14 +16,12 @@ import os
 import time
 
 # import local functions
-from .table_helpers import no_data_page, no_data_table, hidden_table, \
-    create_academic_info_table, get_svg_circle
+from .table_helpers import no_data_page, no_data_table, hidden_table, create_academic_info_table, get_svg_circle
 from .chart_helpers import no_data_fig_label, make_stacked_bar
-from .calculations import round_percentages, calculate_percentage
+from .calculations import round_percentages #, calculate_percentage
 from .subnav import subnav_academic
-from .load_data import school_index, ethnicity, subgroup, subject, \
-    grades, grades_all, grades_ordinal, current_academic_year, process_academic_data, get_attendance_rate,\
-        process_hs_academic_data, get_excluded_years
+from .load_data import school_index, ethnicity, subgroup, subject, grades, grades_all, grades_ordinal, \
+    process_k8_academic_data, get_attendance_data, process_high_school_academic_data, get_excluded_years  # current_academic_year, 
 from .load_db import get_school_data, get_hs_data, get_demographics
 
 dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
@@ -94,16 +92,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
     selected_school = school_index.loc[school_index['School ID'] == school]
     selected_school_type = selected_school['School Type'].values[0]
 
-
-    # 'excluded years' is a list of YYYY strings (all years more
-    # recent than selected year) that can be used to filter data
-    # that should not be displayed
-    # excluded_academic_years = int(current_academic_year) - int(year)
-    # excluded_years = []
-    # for i in range(excluded_academic_years):
-    #     excluded_year = int(current_academic_year) - i
-    #     excluded_years.append(excluded_year)
-
     ## Proficiency Tables ##
     if radio_value == 'proficiency':
 
@@ -127,37 +115,27 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
         if (selected_school_type == 'K8' or selected_school_type == 'K12'):
 
-            school_data = process_academic_data(school, year)
-            school_data = school_data.fillna("No Data")
+            all_k8_school_data = process_k8_academic_data(school, year)
+            all_k8_school_data = all_k8_school_data.fillna("No Data")
 
-            if len(school_data.index) == 0:
-                k8_academic_info = pd.DataFrame()
+            # TODO: Errr
+            if len(all_k8_school_data.index) == 0:
+                all_k8_school_data = pd.DataFrame()
             
             else:
 
-                k8_academic_info = school_data.copy()
+                # k8_academic_info = school_data_k8.copy()
 
-                k8_academic_info = (
-                    k8_academic_info.set_index(["Category"])
-                    .add_suffix("School")
-                    .reset_index()
-                )
+                all_k8_school_data = (all_k8_school_data.set_index(["Category"]).add_suffix("School").reset_index())
 
-                # Make Purty
-                k8_academic_info.columns = k8_academic_info.columns.str.replace(r'School$', '', regex=True)
+                all_k8_school_data.columns = all_k8_school_data.columns.str.replace(r'School$', '', regex=True)
 
-                k8_academic_info["Category"] = (
-                    k8_academic_info["Category"]
-                    .str.replace(" Proficient %", "")
-                    .str.strip()
-                )
+                all_k8_school_data["Category"] = (all_k8_school_data["Category"].str.replace(" Proficient %", "").str.strip())
 
-                k8_academic_info.loc[
-                    k8_academic_info["Category"] == "IREAD Pass %", "Category"
-                ] = "IREAD Proficiency (Grade 3 only)"
+                all_k8_school_data.loc[all_k8_school_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
 
         else:
-            k8_academic_info = pd.DataFrame()
+            all_k8_school_data = pd.DataFrame()
 
         # NOTE: There is a special exception here for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
@@ -166,16 +144,15 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             or (selected_school['School ID'].values[0] == '5874' and int(year) < 2021)):
 
             # load HS academic data
-            hs_school_data = process_hs_academic_data(school, year)
-            # tst_school_data = school_data.fillna("No Data")
+            all_hs_school_data = process_high_school_academic_data(school, year)
 
-            if len(hs_school_data.index) == 0:
-                hs_school_data = pd.DataFrame()
+            # TODO: Errr.
+            if len(all_hs_school_data.index) == 0:
+                all_hs_school_data = pd.DataFrame()
 
-        # If school is K8 and dataframe is empty
-        # set all tables to null and style properties to 'display': 'none' 
+        # If school is K8 and dataframe is empty set all tables to null and style properties to 'display': 'none' 
         # except for the empty table style
-        if (selected_school_type == 'K8' and len(k8_academic_info.index) == 0):
+        if (selected_school_type == 'K8' and len(all_k8_school_data.index) == 0):
             hs_grad_overview_table = {}
             hs_grad_ethnicity_table = {}
             hs_grad_subgroup_table = {}
@@ -220,21 +197,21 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     hs_not_calculated_table = {}
                     hs_table_container = {'display': 'none'}
 
-                years_by_grade = k8_academic_info[k8_academic_info['Category'].str.contains('|'.join(grades_all))]
+                years_by_grade = all_k8_school_data[all_k8_school_data['Category'].str.contains('|'.join(grades_all))]
 
                 if not years_by_grade.empty:
                     k8_grade_table = create_academic_info_table(years_by_grade,'Proficiency by Grade','proficiency')
                 else:
                     k8_grade_table = no_data_table('Proficiency by Grade')
 
-                years_by_subgroup = k8_academic_info[k8_academic_info['Category'].str.contains('|'.join(subgroup))]
+                years_by_subgroup = all_k8_school_data[all_k8_school_data['Category'].str.contains('|'.join(subgroup))]
 
                 if not years_by_subgroup.empty:            
                     k8_subgroup_table = create_academic_info_table(years_by_subgroup,'Proficiency by Subgroup','proficiency')
                 else:
                     k8_subgroup_table = no_data_table('Proficiency by Subgroup')
 
-                years_by_ethnicity = k8_academic_info[k8_academic_info['Category'].str.contains('|'.join(ethnicity))]
+                years_by_ethnicity = all_k8_school_data[all_k8_school_data['Category'].str.contains('|'.join(ethnicity))]
 
                 if not years_by_ethnicity.empty:            
                     k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,'Proficiency by Ethnicity','proficiency')
@@ -243,7 +220,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
                 # Attendance rate
                 school_demographic_data = get_demographics(school)
-                attendance_rate = get_attendance_rate(school_demographic_data, year)
+                attendance_rate = get_attendance_data(school_demographic_data, year)
 
                 if len(attendance_rate.index) == 0:
                     k8_other_table = no_data_table('Attendance Data')
@@ -261,7 +238,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 ]
 
                 k8_not_calculated_data = pd.DataFrame(k8_not_calculated)
-                k8_not_calculated_data = k8_not_calculated_data.reindex(columns=k8_academic_info.columns)
+                k8_not_calculated_data = k8_not_calculated_data.reindex(columns = all_k8_school_data.columns)
                 k8_not_calculated_data = k8_not_calculated_data.fillna('N/A')
 
                 # as this is generated by the script, it will always have data
@@ -527,7 +504,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
             # If school type is HS, AHS, or K12 but dataframe is empty
             # set everything to null/display:none except empty_container
-            if len(hs_school_data.index) == 0:
+            if len(all_hs_school_data.index) == 0:
                 hs_grad_overview_table = {}
                 hs_grad_ethnicity_table = {}
                 hs_grad_subgroup_table = {}
@@ -554,10 +531,9 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 if selected_school_type == 'AHS':
                     grad_overview_categories.append('CCR Percentage')
 
-                hs_academic_info = hs_school_data.copy()
-                hs_academic_info.columns = hs_academic_info.columns.astype(str)
+                all_hs_school_data.columns = all_hs_school_data.columns.astype(str)
 
-                eca_data = hs_academic_info[hs_academic_info['Category'].str.contains('Grade 10')].copy()
+                eca_data = all_hs_school_data[all_hs_school_data['Category'].str.contains('Grade 10')].copy()
 
                 if not eca_data.empty:            
                     hs_eca_table = create_academic_info_table(eca_data,'End of Course Assessments','proficiency')            
@@ -565,7 +541,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     hs_eca_table = no_data_table('End of Course Assessments')
 
                 # Graduation Rate Tables
-                graduation_data = hs_academic_info[hs_academic_info['Category'].str.contains('Graduation')].copy()
+                graduation_data = all_hs_school_data[all_hs_school_data['Category'].str.contains('Graduation')].copy()
 
                 # drop 'Graduation Rate' from all 'Category' rows and remove whitespace
                 graduation_data['Category'] = (graduation_data['Category'].str.replace('Graduation Rate', '').str.strip())
@@ -592,14 +568,10 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     hs_grad_subgroup_table = no_data_table('Graduation Rate by Subgroup')
 
                 # SAT Benchmark Tables
-                sat_table_data = hs_academic_info[hs_academic_info['Category'].str.contains('Benchmark %')].copy()
+                sat_table_data = all_hs_school_data[all_hs_school_data['Category'].str.contains('Benchmark %')].copy()
 
                 # drop 'Graduation Rate' from all 'Category' rows and remove whitespace
-                sat_table_data['Category'] = (
-                    sat_table_data['Category']
-                    .str.replace('Benchmark %', '')
-                    .str.strip()
-                )
+                sat_table_data['Category'] = (sat_table_data['Category'].str.replace('Benchmark %', '').str.strip())
 
                 sat_overview = sat_table_data[sat_table_data['Category'].str.contains('School Total')]
 
@@ -628,7 +600,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 ]
 
                 hs_not_calculated_data = pd.DataFrame(hs_not_calculated)
-                hs_not_calculated_data = hs_not_calculated_data.reindex(columns=hs_academic_info.columns)
+                hs_not_calculated_data = hs_not_calculated_data.reindex(columns = all_hs_school_data.columns)
                 hs_not_calculated_data = hs_not_calculated_data.fillna('NA')
 
                 hs_not_calculated_table = create_academic_info_table(hs_not_calculated_data,'Not Currently Calculated','proficiency')
@@ -664,7 +636,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         empty_container = {'display': 'none'}
 
         ## Build Growth Page ##
-        # TODO: Currently added to Academic Info, but should be moved to Academic Metrics
+        # TODO: Move to Academic Metrics
 
         # NOTE: Currently have a single year of growth data (2022). Therefore unless
         # the selected year is 2022, we show an empty table.
@@ -933,8 +905,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
             else:
                 
-                # If no growth file exists, null out all tables and
-                # styles and set containers to display:none
+                # If no growth file exists, null out all tables and styles and set containers to display:none
                 k8_overall_indicators = {}
                 hs_overall_indicators = {}
                 combined_indicators = {}
@@ -953,9 +924,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 empty_growth_container = {'display': 'block'}
 
         else:
-        # If the selected school year is anything other than 2022, there
-        # will not be any growth data- set all growth tables to null and
-        # containers to display:none
+        # If selected year is anything other than 2022, hide all tables
             
             k8_overall_indicators = {}
             hs_overall_indicators = {}

@@ -29,7 +29,6 @@ dash.register_page(__name__, path='/financial_metrics', order=2)
     Output('financial-metrics-main-container', 'style'),
     Output('financial-metrics-empty-container', 'style'),
     Output('financial-metrics-no-data', 'children'),      
-    # Input('dash-session', 'data'),
     Input('charter-dropdown', 'value'),
     Input('year-dropdown', 'value'),
     Input(component_id='radio-button-finance-metrics', component_property='value')
@@ -466,9 +465,6 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             
             # Financial Metric Definitions
             # NOTE: Explore better styling- Markdown or Images
-            # http://www.latex2png.com/
-            # https://stackoverflow.com/questions/70205486/clickable-hyperlinks-in-plotly-dash-datatable
-            # https://stackoverflow.com/questions/66583063/how-to-add-hyperlink-in-column-field-of-dash-datatable
 
             financial_metrics_definitions_data = [
                 ['Current Ratio = Current Assets ÷ Current Liabilities','Current Ratio is greater than 1.1; or is between 1.0 and 1.1 and the one-year trend is not negative.'],

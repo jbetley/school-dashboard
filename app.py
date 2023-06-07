@@ -1308,6 +1308,8 @@ def load_data(school, year):
                             hs_corp_data[new_col] = (
                                 hs_corp_data[at_benchmark] / hs_corp_data[total_tested]
                             )
+                            
+
 
             # if missing_cols includes 'Non-Waiver' - there is no data available for the school
             # for the selected Years
@@ -1375,6 +1377,10 @@ def load_data(school, year):
                 regex=r"^Category|Graduation Rate$|Pass Rate$|Benchmark %|Below|Approaching|At|Total Tested|^Year$", # ^Strength of Diploma
                 axis=1,
             )
+
+            pd.set_option('display.max_rows', None)
+            print('ORIG')
+            print(hs_school_data)
 
             # State Average Graduation Rate
 

@@ -37,7 +37,6 @@ dash.register_page(__name__, path='/', order=0, top_nav=True)
     Output('about-no-data', 'children'),
     Input('year-dropdown', 'value'),
     Input('charter-dropdown', 'value'),
-    # Input('dash-session', 'data')
 )
 def update_about_page(year: str, school: str):
     if not school:
@@ -55,8 +54,7 @@ def update_about_page(year: str, school: str):
     school_name = selected_school['School Name'].values[0]
     headers = ['Category','Description']
 
-    # school index df has additional values that can be added to this list
-    # see selected_school.columns
+    # selected_school.columns shows additional values that can be displayed
     info = selected_school[['City','Principal','Opening Year']]
 
     school_info = info.T
@@ -202,21 +200,16 @@ def update_about_page(year: str, school: str):
                 )
             ]
 
-
-        # create State and Federal ratings table
+        # State and Federal ratings table
         if len(school_letter_grades.index) == 0:
 
             letter_grade_table = no_data_table('State and Federal Ratings')
 
         else:
 
-            school_letter_grades = (
-                school_letter_grades.set_index("Year")
-                .T.rename_axis("Category")
-                .rename_axis(None, axis=1)
-                .reset_index()
-        )
+            school_letter_grades = (school_letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
+            # hide 2018 grades
             year_columns = [str(i) for i in school_letter_grades.columns if i not in ['Category','2018']]
 
             # schools have been held harmless by the State of Indiana since
@@ -316,7 +309,6 @@ def update_about_page(year: str, school: str):
             ]
 
         # ADM chart
-
         if len(school_financial_data.index) == 0:
 
             adm_fig = no_data_fig_label('Average Daily Membership History',400)

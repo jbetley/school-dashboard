@@ -15,10 +15,10 @@ import pandas as pd
 from .table_helpers import no_data_page, no_data_table, create_metric_table, \
     set_table_layout, get_svg_circle, create_key
 from .subnav import subnav_academic
-from .load_data import school_index, ethnicity, subgroup, grades_all, process_yearly_indicators, \
-    process_academic_data, process_comparison_indicators, process_iread_data, get_attendance_metrics, \
-    process_hs_academic_data
-
+from .load_data import school_index, ethnicity, subgroup, grades_all, process_k8_academic_data, \
+    process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
+        calculate_iread_metrics, get_attendance_metrics, calculate_high_school_metrics
+    
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
 @callback(
@@ -47,11 +47,9 @@ dash.register_page(__name__,  path = '/academic_metrics', order=5)
     Input('year-dropdown', 'value'),
 )
 def update_academic_metrics(data, school: str, year: str):
-    if not data:
+    if not school:
         raise PreventUpdate
 
-
-    
     # default styles
     display_attendance = {}
     display_k8_metrics = {}

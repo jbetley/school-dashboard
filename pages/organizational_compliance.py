@@ -5,10 +5,8 @@
 # date:     5/22/23
 
 import dash
-from dash import html, dash_table, Input, Output, State, callback
+from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
-# import pandas as pd
-# import json
 
 from .table_helpers import get_svg_circle, no_data_table
 from .load_db import get_finance
@@ -20,7 +18,6 @@ dash.register_page(__name__, top_nav=True, order=7)
     Output('org-compliance-definitions-table', 'children'),
     Input('charter-dropdown', 'value'),
     Input('year-dropdown', 'value'),
-    # Input('dash-session', 'data')
 )
 def update_organizational_compliance(school, year):
     if not school:
@@ -37,8 +34,7 @@ def update_organizational_compliance(school, year):
 
     if len(financial_data.index) != 0:
 
-        # Ignore any partial years- e.g., 2023(Q3- when displaying
-        # organizational indicators
+        # Ignore any partial years- e.g., 2023(Q3)
         if 'Q' in financial_data.columns[1]:
             financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
