@@ -789,9 +789,10 @@ def load_data(school, year):
             k8_school_data = k8_school_data.reset_index(drop=True)
 
             pd.set_option('display.max_rows', None)
-            print('ORIG')
-            print(k8_school_data)
-            print(k8_corp_data)
+            pd.set_option('display.max_columns', None)
+            # print('ORIG')
+            # print(k8_school_data)
+            # print(k8_corp_data)
 
 # TODO: Metrics stuff starts here
             # reverse order of corp_data columns (ignoring 'Category') so current year is first and
@@ -1152,8 +1153,6 @@ def load_data(school, year):
             #   'At Benchmark', & 'Benchmark %'
             # Grade 10 ECA Categories: 'Pass N' and 'Test N'
             # Graduation Categories: 'Cohort Count' and 'Graduates'
-
-
             hs_school_data = hs_school_data.filter(
                 regex=r"Cohort Count$|Graduates$|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1
             )
@@ -1315,8 +1314,6 @@ def load_data(school, year):
                                 hs_corp_data[at_benchmark] / hs_corp_data[total_tested]
                             )
                             
-
-
             # if missing_cols includes 'Non-Waiver' - there is no data available for the school
             # for the selected Years
             if "Non-Waiver" not in "\t".join(missing_cols):
@@ -1353,7 +1350,7 @@ def load_data(school, year):
                     hs_school_data["Non-Waiver|Cohort Count"] * 1.08
                 ) / hs_school_data["Total|Cohort Count"]
 
-# TODO: AHS ONLY? SEPARATE PROCESS?
+# TODO: AHS SPLIT STARTS HERE
             # Calculate CCR Rate (AHS Only), add Year column and store in temporary dataframe
             # NOTE: All other values pulled from HS dataframe required for AHS calculations
             # should go here
@@ -1555,9 +1552,6 @@ def load_data(school, year):
                 final_hs_academic_data = final_hs_academic_data.reset_index(drop=True)
 
 
-            # print('*START*')
-            # pd.set_option('display.max_rows', None)
-            # print(final_hs_academic_data)
             hs_academic_data_dict = final_hs_academic_data.to_dict(into=OrderedDict)
             hs_academic_data_json = json.dumps(hs_academic_data_dict)
 
@@ -1588,7 +1582,7 @@ def load_data(school, year):
                     .reset_index()
                 )
 
-                ahs_metric_data = ahs_metric_data.loc[ahs_metric_data["Category"] == "CCR Percentage"]
+                # ahs_metric_data = ahs_metric_data.loc[ahs_metric_data["Category"] == "CCR Percentage"]
 
                 ccr_limits = [0.5, 0.499, 0.234]
 
@@ -1635,6 +1629,9 @@ def load_data(school, year):
                     )
                     for i in range(ahs_state_grades.shape[1], 1, -1)
                 ]
+# TODO: HERE
+                print('ORIG GRADES')
+                print(ahs_state_grades)
 
                 # concatenate and add metric column
                 ahs_metric_data = pd.concat([ahs_state_grades, ahs_metric_data])
@@ -1646,6 +1643,7 @@ def load_data(school, year):
                 ahs_metrics_data_json = json.dumps(ahs_school_metric_dict)
 
             else:
+            # TODO: HS METRICS BEGIN HERE
                 combined_hs_metrics = final_hs_academic_data.copy()
 
                 # rename 'Corp Average' to 'Average'

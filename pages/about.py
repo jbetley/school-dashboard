@@ -206,7 +206,7 @@ def update_about_page(year: str, school: str):
             letter_grade_table = no_data_table('State and Federal Ratings')
 
         else:
-
+# TODO: Process letter grades function?
             school_letter_grades = (school_letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
             # hide 2018 grades

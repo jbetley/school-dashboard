@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 import itertools
 from .load_db import get_current_year, get_index, get_school_data, get_demographics, \
-    get_hs_data, get_corporation_data, get_graduation_data, get_hs_corp_data
+    get_hs_data, get_corporation_data, get_graduation_data, get_hs_corp_data, get_letter_grades
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating
 
@@ -264,10 +264,10 @@ def calculate_proficiency(data):
                 data[new_col] = calculate_percentage(data[proficient], data[tested])
     
     return data
+
 ### End Helper Functions ###
 
 ### Dataframe Formatting Functions ###
-
 def process_k8_academic_data(all_data, year):
     
     excluded_years = get_excluded_years(year)
@@ -292,14 +292,11 @@ def process_k8_academic_data(all_data, year):
         for col in data:
             data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
-        # TODO: WTF - Why is valid_mask working differently here vs get hs_data ?
+        # TODO: Why is valid_mask working differently here vs get hs_data ?
         # mask of valid columns only
         # valid_mask = ~pd.isnull(data[data.columns]).all()        
         valid_mask = data.any()
         data = data[data.columns[valid_mask]]
-
-        # for corp?
-        # data = data.set_index("Year")
 
         if "School Total|ELA Total Tested" in data.columns:
             data = calculate_proficiency(data)
@@ -312,6 +309,19 @@ def process_k8_academic_data(all_data, year):
             # NaN - we want it to display '***', so we just fillna
             data["IREAD Pass %"] = data["IREAD Pass %"].fillna("***")
 
+        # re-calculate and replace total Math & ELA proficiency values using only the
+        # grades for which the school has data (after the masking step above). This
+        # ensures an apples to apples comparison with traditional school corporations.
+        adjusted_total_math_proficient = data.filter(regex=r"Grade.+?Math Total Proficient")
+        adjusted_total_math_tested = data.filter(regex=r"Grade.+?Math Total Tested")
+        data["School Total|Math Proficient %"] = adjusted_total_math_proficient.sum(axis=1) \
+            / adjusted_total_math_tested.sum(axis=1)
+
+        adjusted_total_ela_proficient = data.filter(regex=r"Grade.+?ELA Total Proficient")
+        adjusted_total_ela_tested = data.filter(regex=r"Grade.+?ELA Total Tested")
+        data["School Total|ELA Proficient %"] = adjusted_total_ela_proficient.sum(axis=1) \
+            / adjusted_total_ela_tested.sum(axis=1)
+
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         data = data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$", axis=1)
 
@@ -320,18 +330,12 @@ def process_k8_academic_data(all_data, year):
         if len(school_info.index) > 0:
             data = pd.concat([data, school_info], axis=1, join="inner")
 
-        data = data.reset_index(drop=True)
-
-        # for corp?
-        # data = data.reset_index()
-
-        data.columns = data.columns.astype(str)
+        data = data.reset_index(drop=True)  #TODO: NEED THIS ONE?
 
         # transpose dataframes and clean headers    
+        data.columns = data.columns.astype(str)
         data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-
         data = data[data["Category"].str.contains("School Name") == False]
-
         data = data.reset_index(drop=True)
     
     else:
@@ -390,7 +394,7 @@ def process_high_school_academic_data(school, year):
 
         # Calculate AHS Only Data #
         # NOTE: All other values pulled from HS dataframe required for AHS calculations should go here        
-        
+# TODO: AHS SPLIT IS HERE        
         # CCR Rate #
         if school_type == "AHS":
             hs_school_data["AHS|CCR"] = pd.to_numeric(hs_school_data["AHS|CCR"], errors="coerce")
@@ -656,6 +660,81 @@ def calculate_k8_comparison_metrics(school_data, year, school):
     final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
 
     return final_k8_academic_data
+
+def calculate_adult_high_school_metrics(data, school): #school, year):
+    # Keep category and all available years of data
+    # ahs_metric_data = ahs_metric_data.iloc[:, : (hs_num_years + 1)]
+    data.columns = data.columns.astype(str)
+
+    # format for multi-header display
+    data_columns = list(data.columns[:0:-1])
+    data_columns.reverse()
+
+    data = (
+        data.set_index(["Category"])
+        .add_suffix("School")
+        .reset_index()
+    )
+    # TODO: NECESSARY?
+    # data = data.loc[data["Category"] == "CCR Percentage"]
+
+    ccr_limits = [0.5, 0.499, 0.234]
+    [
+        data.insert(
+            i,
+            str(data_columns[i - 2]) + "Rate" + str(i),
+            data.apply(
+                lambda x: set_academic_rating(
+                    x[data.columns[i - 1]], ccr_limits, 2
+                ),
+                axis=1,
+            ),
+        )
+        for i in range(data.shape[1], 1, -1)
+    ]
+
+    school_letter_grades = get_letter_grades(school)
+    school_letter_grades = (school_letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+    # strip second row (Federal Rating)
+    ahs_state_grades = school_letter_grades.iloc[0:1, :]
+
+    ahs_state_grades.columns = ahs_state_grades.columns.astype(str)
+    ahs_state_grades = (ahs_state_grades.set_index(["Category"]).add_suffix("School").reset_index())
+
+    # ensure state_grades df contains same years of data as ahs_metric_cols
+
+    ahs_state_grades = ahs_state_grades.loc[:,ahs_state_grades.columns.str.contains("|".join(data_columns + ["Category"]))]
+
+    letter_grade_limits = ["A", "B", "C", "D", "F"]
+
+    [
+        ahs_state_grades.insert(
+            i,
+            str(data_columns[i - 2]) + "Rate" + str(i),
+            ahs_state_grades.apply(
+                lambda x: set_academic_rating(
+                    x[ahs_state_grades.columns[i - 1]],
+                    letter_grade_limits,
+                    4,
+                ),
+                axis=1,
+            ),
+        )
+        for i in range(ahs_state_grades.shape[1], 1, -1)
+    ]
+
+# TODO: HERE
+    print("REFACTORRATION")    
+    print(ahs_state_grades)
+
+    # concatenate and add metric column
+    ahs_metric_data = pd.concat([ahs_state_grades, ahs_metric_data])
+    ahs_metric_data = ahs_metric_data.reset_index(drop=True)
+    ahs_metric_nums = ["1.1.", "1.3."]
+    ahs_metric_data.insert(loc=0, column="Metric", value=ahs_metric_nums)
+
+    return data
 
 # TODO: Have not touched Yet
 def calculate_high_school_metrics(school, year):
