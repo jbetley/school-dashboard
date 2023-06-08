@@ -344,9 +344,9 @@ def process_k8_academic_data(all_data, year):
 
     return data
 
-def process_high_school_academic_data(school, year):
-
-    all_hs_school_data = get_hs_data(school)
+def process_high_school_academic_data(all_hs_school_data, year):
+# TODO: Better to do db call in function? or in program and pass df to function?
+    # all_hs_school_data = get_hs_data(school)
     excluded_years = get_excluded_years(year)
 
     hs_school_data = all_hs_school_data[~all_hs_school_data["Year"].isin(excluded_years)]
@@ -394,7 +394,7 @@ def process_high_school_academic_data(school, year):
 
         # Calculate AHS Only Data #
         # NOTE: All other values pulled from HS dataframe required for AHS calculations should go here        
-# TODO: AHS SPLIT IS HERE        
+
         # CCR Rate #
         if school_type == "AHS":
             hs_school_data["AHS|CCR"] = pd.to_numeric(hs_school_data["AHS|CCR"], errors="coerce")
@@ -434,6 +434,7 @@ def process_high_school_academic_data(school, year):
     return hs_school_data
 
 ### Calculate Accountability Metrics ###
+
 def calculate_k8_yearly_metrics(data):
     
     data.columns = data.columns.astype(str)
@@ -661,22 +662,15 @@ def calculate_k8_comparison_metrics(school_data, year, school):
 
     return final_k8_academic_data
 
-def calculate_adult_high_school_metrics(data, school): #school, year):
-    # Keep category and all available years of data
-    # ahs_metric_data = ahs_metric_data.iloc[:, : (hs_num_years + 1)]
+def calculate_adult_high_school_metrics(data, school):
+
     data.columns = data.columns.astype(str)
 
     # format for multi-header display
     data_columns = list(data.columns[:0:-1])
     data_columns.reverse()
 
-    data = (
-        data.set_index(["Category"])
-        .add_suffix("School")
-        .reset_index()
-    )
-    # TODO: NECESSARY?
-    # data = data.loc[data["Category"] == "CCR Percentage"]
+    data = (data.set_index(["Category"]).add_suffix("School").reset_index())
 
     ccr_limits = [0.5, 0.499, 0.234]
     [
@@ -724,27 +718,31 @@ def calculate_adult_high_school_metrics(data, school): #school, year):
         for i in range(ahs_state_grades.shape[1], 1, -1)
     ]
 
-# TODO: HERE
-    print("REFACTORRATION")    
-    print(ahs_state_grades)
-
     # concatenate and add metric column
-    ahs_metric_data = pd.concat([ahs_state_grades, ahs_metric_data])
-    ahs_metric_data = ahs_metric_data.reset_index(drop=True)
+    data = pd.concat([ahs_state_grades, data])
+    data = data.reset_index(drop=True)
     ahs_metric_nums = ["1.1.", "1.3."]
-    ahs_metric_data.insert(loc=0, column="Metric", value=ahs_metric_nums)
+    data.insert(loc=0, column="Metric", value=ahs_metric_nums)
 
     return data
 
 # TODO: Have not touched Yet
-def calculate_high_school_metrics(school, year):
+def calculate_high_school_metrics(all_school_data, year, school):
 
-    # school_info = get_index(school)
-    all_school_data = get_hs_data(school)
-    all_corp_data = get_hs_corp_data(school)
     excluded_years = get_excluded_years(year)
 
+    all_corporation_data = get_hs_corp_data(school)
+
+    corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)]
+
+    school_data.columns = school_data.columns.astype(str)
+    corporation_data.columns = corporation_data.columns.astype(str)
+
     school_data = all_school_data[~all_school_data["Year"].isin(excluded_years)]
+
+    # print('REFACTOR')
+    # print(school_data)
+    # print(corporation_data)    
 
     school_type = school_data["School Type"].values[0]
 

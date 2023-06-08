@@ -790,9 +790,6 @@ def load_data(school, year):
 
             pd.set_option('display.max_rows', None)
             pd.set_option('display.max_columns', None)
-            # print('ORIG')
-            # print(k8_school_data)
-            # print(k8_corp_data)
 
 # TODO: Metrics stuff starts here
             # reverse order of corp_data columns (ignoring 'Category') so current year is first and
@@ -1467,6 +1464,11 @@ def load_data(school, year):
             
             hs_school_data = hs_school_data.reset_index(drop=True)
 
+            # TODO: HERE WITH HS METRICS - FIGURE OUT WHY ORIG DOESNT MATCH WITH REFACTGOR
+            print('ORIG')
+            print(hs_corp_data)
+            # print(hs_corp_data.T)
+
             # get clean list of years
             hs_year_cols = list(hs_school_data.columns[:0:-1])
             hs_year_cols.reverse()
@@ -1482,6 +1484,8 @@ def load_data(school, year):
                 .add_suffix("School")
                 .reset_index()
             )
+
+# TODO: END OF REG HS DATA
 
             # have to do same things to ahs_data to be able to insert it back
             # into hs_data file even though there is no comparison data involved
@@ -1629,9 +1633,6 @@ def load_data(school, year):
                     )
                     for i in range(ahs_state_grades.shape[1], 1, -1)
                 ]
-# TODO: HERE
-                print('ORIG GRADES')
-                print(ahs_state_grades)
 
                 # concatenate and add metric column
                 ahs_metric_data = pd.concat([ahs_state_grades, ahs_metric_data])
@@ -1643,9 +1644,11 @@ def load_data(school, year):
                 ahs_metrics_data_json = json.dumps(ahs_school_metric_dict)
 
             else:
-            # TODO: HS METRICS BEGIN HERE
+            # TODO: HS METRICS BEGIN HERE (this is data[14])
                 combined_hs_metrics = final_hs_academic_data.copy()
 
+                # print('ORIG:')
+                # print(combined_hs_metrics)
                 # rename 'Corp Average' to 'Average'
                 combined_hs_metrics.columns = combined_hs_metrics.columns.str.replace(r"Corp Average", "Average")
 

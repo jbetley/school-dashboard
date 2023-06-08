@@ -20,7 +20,7 @@ from .load_data import school_index, ethnicity, subgroup, grades_all, process_k8
         calculate_iread_metrics, get_attendance_metrics, calculate_high_school_metrics, \
         calculate_adult_high_school_metrics
 
-from .load_db import get_school_data, get_corporation_data
+from .load_db import get_school_data, get_corporation_data, get_hs_data, get_hs_corp_data
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
@@ -86,30 +86,30 @@ def update_academic_metrics(data, school: str, year: str):
         table_container_17cd = {}
         display_hs_metrics = {'display': 'none'}
 
-# TODO: WE ARE HERE
+        # Adult High School Data
         ahs_all_data = process_high_school_academic_data(school, year)
-        # load ahs_academic_metrics_json
-        # if len(ahs_all_data) > 0:
-        if data['13']:
+
+        if len(ahs_all_data) > 0:
+
+        # if data['13']:
             ahs_data = ahs_all_data[ahs_all_data["Category"] == "CCR Percentage"]
 
-            ahs_metric_data = calculate_adult_high_school_metrics(ahs_data, school)
-            print(ahs_metric_data)
+            ahs_metric_data_113 = calculate_adult_high_school_metrics(ahs_data, school)
 
-            json_data = json.loads(data['13'])
-            metric_ahs_113_data = pd.DataFrame.from_dict(json_data)
-            print(metric_ahs_113_data)
-            metric_ahs_113_data['Category'] = metric_ahs_113_data['Metric'] + ' ' + metric_ahs_113_data['Category']
+            # json_data = json.loads(data['13'])
+            # metric_ahs_113_data = pd.DataFrame.from_dict(json_data)
+
+            ahs_metric_data_113['Category'] = ahs_metric_data_113['Metric'] + ' ' + ahs_metric_data_113['Category']
             
-            metric_ahs_113_data.drop('Metric', inplace=True, axis=1)
+            ahs_metric_data_113 = ahs_metric_data_113.drop('Metric', axis=1)
 
-            metric_ahs_113_label = 'Adult High School Accountability Metrics 1.1 & 1.3'
-            metric_ahs_113_data = get_svg_circle(metric_ahs_113_data)            
-            table_ahs_113 = create_metric_table(metric_ahs_113_label, metric_ahs_113_data)
-            table_container_ahs_113 = set_table_layout(table_ahs_113, table_ahs_113, metric_ahs_113_data.columns)
+            ahs_metric_data_113 = 'Adult High School Accountability Metrics 1.1 & 1.3'
+            ahs_metric_data_113 = get_svg_circle(ahs_metric_data_113)            
+            table_ahs_113 = create_metric_table(ahs_metric_data_113, ahs_metric_data_113)
+            table_container_ahs_113 = set_table_layout(table_ahs_113, table_ahs_113, ahs_metric_data_113.columns)
 
             # Create placeholders (Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b)
-            all_cols = metric_ahs_113_data.columns.tolist()
+            all_cols = ahs_metric_data_113.columns.tolist()
             simple_cols = [x for x in all_cols if not x.endswith('+/-')]
 
             ahs_nocalc_empty = pd.DataFrame(columns = simple_cols)
@@ -170,6 +170,28 @@ def update_academic_metrics(data, school: str, year: str):
                 display_k8_metrics = {'display': 'none'}
 
 # TODO: ADD HS ONLY METRICS HERE
+# TODO: May need to reorder hs and ahs as they use the same data/function
+            print('Get HS School Data')
+            raw_hs_school_data = get_hs_data(school)
+
+            if len(raw_hs_school_data) > 0:
+                clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, year)
+            else:
+                pass # TODO: if NO DATA THEN NO TABLE
+
+            print('Get HS Corp Data')
+            raw_hs_corp_data = get_hs_corp_data(school)
+            clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, year)
+
+# TODO: HS Corp Data does not currently match ORIG hs_corp_data at same point
+            print('RizzACTOR!')
+            print(clean_hs_corp_data)
+
+            # print(clean_hs_corp_data)
+            hs_all_metrics = calculate_high_school_metrics(clean_hs_corp_data, year, school)
+
+
+            # print(hs_all_data)
             # combined_grad_metrics_json
             if data['14']:
 

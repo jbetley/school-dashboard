@@ -147,7 +147,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             or (selected_school['School ID'].values[0] == '5874' and int(year) < 2021)):
 
             # load HS academic data
-            all_hs_school_data = process_high_school_academic_data(school, year)
+            raw_hs_school_data = get_hs_data(school)
+            all_hs_school_data = process_high_school_academic_data(raw_hs_school_data, year)
 
             # TODO: Errr.
             if len(all_hs_school_data.index) == 0:
