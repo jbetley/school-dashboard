@@ -64,9 +64,6 @@ def update_academic_metrics(data, school: str, year: str):
 
     selected_school = school_index.loc[school_index['School ID'] == school]
     selected_school_type = selected_school['School Type'].values[0]
-
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)
         
      # Adult High School Academic Metrics
     if selected_school_type == 'AHS':
@@ -169,26 +166,28 @@ def update_academic_metrics(data, school: str, year: str):
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
 
+            # pd.set_option('display.max_columns', None)
+            pd.set_option('display.max_rows', None)
 # TODO: ADD HS ONLY METRICS HERE
 # TODO: May need to reorder hs and ahs as they use the same data/function
             print('Get HS School Data')
             raw_hs_school_data = get_hs_data(school)
-
+            raw_hs_school_data = raw_hs_school_data.replace({"^": "***"})
             if len(raw_hs_school_data) > 0:
-                clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, year)
+                clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, year, school)
             else:
                 pass # TODO: if NO DATA THEN NO TABLE
 
             print('Get HS Corp Data')
             raw_hs_corp_data = get_hs_corp_data(school)
-            clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, year)
+            # raw_hs_corp_data = raw_hs_corp_data.replace({"^": "***"})
+            clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, year, school)
 
-# TODO: HS Corp Data does not currently match ORIG hs_corp_data at same point
-            print('RizzACTOR!')
-            print(clean_hs_corp_data)
-
+            # print('RizzACTOR!')
+            # print(clean_hs_school_data)
             # print(clean_hs_corp_data)
-            hs_all_metrics = calculate_high_school_metrics(clean_hs_corp_data, year, school)
+
+            # hs_all_metrics = calculate_high_school_metrics(clean_hs_corp_data, year, school)
 
 
             # print(hs_all_data)

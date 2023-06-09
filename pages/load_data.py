@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 import itertools
 from .load_db import get_current_year, get_index, get_school_data, get_demographics, \
-    get_hs_data, get_corporation_data, get_graduation_data, get_hs_corp_data, get_letter_grades
+    get_hs_data, get_corporation_data, get_graduation_data, get_hs_corp_data, get_letter_grades, get_index
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating
 
@@ -282,7 +282,7 @@ def process_k8_academic_data(all_data, year):
         if 'School Name' in data.columns:
             school_info = data[["School Name"]].copy()
         else:
-            school_info = data[["Corp Name"]].copy()
+            school_info = data[["Corporation Name"]].copy()
 
         # NOTE: Apparently we cannot filter columns by substring with SQLite because
         # it does not allow dynamic SQL - so we filter here
@@ -344,94 +344,126 @@ def process_k8_academic_data(all_data, year):
 
     return data
 
-def process_high_school_academic_data(all_hs_school_data, year):
-# TODO: Better to do db call in function? or in program and pass df to function?
-    # all_hs_school_data = get_hs_data(school)
+def process_high_school_academic_data(all_data, year, school):
+
+    school_information = get_index(school)
+
+    # use these to determine if data belongs to school or corporation
+    school_geo_code = school_information["GEO Corp"].values[0]
+    data_geo_code = all_data['Corporation ID'][0]
+
     excluded_years = get_excluded_years(year)
 
-    hs_school_data = all_hs_school_data[~all_hs_school_data["Year"].isin(excluded_years)]
+    if excluded_years:
+        data = all_data[~all_data["Year"].isin(excluded_years)].copy()
+    else:
+        data = all_data.copy()
 
-    school_type = hs_school_data["School Type"].values[0]
+    school_type = data["School Type"].values[0]
 
-    if len(hs_school_data.index) != 0:
+    if len(data.index) != 0:
+        # We identify 'corp' data where the value of 'Corporation ID' in the df is equal
+        # to the value of the school's 'GEO Corp'.
+        if data_geo_code == school_geo_code:
+            school_info = data[["Corporation Name"]].copy()
 
-        school_info = hs_school_data[["School Name"]].copy()
+            # corporation data: coerce strings ('***' and '^') to NaN (for
+            # both masking and groupby.sum() purposes)
+            for col in data.columns:
+                data[col] = pd.to_numeric(data[col], errors='coerce')
+       
+        else:
+       
+            school_info = data[["School Name"]].copy()
+            
+            # school data: coerce, but keep strings ('***' and '^')
+            for col in data.columns:
+                data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
         # Categories to keep: 'Total Tested', 'Below Benchmark', 'Approaching Benchmark', 'At Benchmark', & 'Benchmark %' (SAT);
         #   'Pass N' & 'Test N' (Grade 10 ECA); 'Cohort Count' & 'Graduates' (Graduation Rate); 'AHS|CCR' & 'AHS|Grad All' (AHS Grad Rate)
-        hs_school_data = hs_school_data.filter(regex=r"Cohort Count$|Graduates$|AHS|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
+        data = data.filter(regex=r"Cohort Count$|Graduates$|AHS|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
 
-        # remove 'ELA & Math' columns (NOTE: Comment this out to retain 'ELA & Math' columns)
-        hs_school_data = hs_school_data.drop(list(hs_school_data.filter(regex="ELA & Math")), axis=1)
-
-        # convert to numeric, but keep strings ('***')
-        for col in hs_school_data.columns:
-            hs_school_data[col] = pd.to_numeric(hs_school_data[col], errors='coerce').fillna(hs_school_data[col])
+        # remove 'ELA and Math' columns (NOTE: Comment this out to retain 'ELA and Math' columns)
+        data = data.drop(list(data.filter(regex="ELA and Math")), axis=1)
 
         # mask of valid columns only
-        valid_mask = ~pd.isnull(hs_school_data[hs_school_data.columns]).all()
-        hs_school_data = hs_school_data[hs_school_data.columns[valid_mask]]
+        # valid_mask = data.any()
+        valid_mask = ~pd.isnull(data[data.columns]).all()
+        data = data[data.columns[valid_mask]]
 
+        if data_geo_code == school_geo_code:
+
+            # group corp dataframe by year and sum all rows for each category
+            data = data.groupby(["Year"]).sum(numeric_only=True)
+            # reverse order of rows (Year) and reset index to bring Year back as column
+            data = data.loc[::-1].reset_index()
+
+            pd.set_option('display.max_rows', None)
+            print('REFACTOR - GROUPBY')
+            print(data.T)
+
+# TODO: HERE AND GOOD. ONLY DISCREPANCY IS paid - cohort and grads (why?)
         # Calculate Grad Rate
-        if "Total|Cohort Count" in hs_school_data.columns:
-            hs_school_data = calculate_graduation_rate(hs_school_data)
+        if "Total|Cohort Count" in data.columns:
+            data = calculate_graduation_rate(data)
 
         # Calculate Non-Waiver Grad Rate #
         # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
         # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
         # cohort, there were no 'waiver' graduates (which means no non-waiver data).
         # so we replace 0 with NaN (to ensure a NaN result rather than 0)
-        if "Non-Waiver|Cohort Count" in hs_school_data.columns:
-            hs_school_data = calculate_nonwaiver_graduation_rate(hs_school_data)
+        if "Non-Waiver|Cohort Count" in data.columns:
+            data = calculate_nonwaiver_graduation_rate(data)
 
         # Calculate ECA (Grade 10) Rate #
-        if "Grade 10|ELA Test N" in hs_school_data.columns:
-            hs_school_data = calculate_eca_rate(hs_school_data)
+        if "Grade 10|ELA Test N" in data.columns:
+            data = calculate_eca_rate(data)
 
         # Calculate SAT Rates #
-        if "School Total|EBRW Total Tested" in hs_school_data.columns:
-            hs_school_data = calculate_sat_rate(hs_school_data)
+        if "School Total|EBRW Total Tested" in data.columns:
+            data = calculate_sat_rate(data)
 
         # Calculate AHS Only Data #
         # NOTE: All other values pulled from HS dataframe required for AHS calculations should go here        
 
         # CCR Rate #
         if school_type == "AHS":
-            hs_school_data["AHS|CCR"] = pd.to_numeric(hs_school_data["AHS|CCR"], errors="coerce")
-            hs_school_data["AHS|Grad All"] = pd.to_numeric(hs_school_data["AHS|Grad All"], errors="coerce")
-            hs_school_data["CCR Percentage"] = (hs_school_data["AHS|CCR"] / hs_school_data["AHS|Grad All"])
+            data["AHS|CCR"] = pd.to_numeric(data["AHS|CCR"], errors="coerce")
+            data["AHS|Grad All"] = pd.to_numeric(data["AHS|Grad All"], errors="coerce")
+            data["CCR Percentage"] = (data["AHS|CCR"] / data["AHS|Grad All"])
 
         # Prepare final dataframe #
 
         # filter
-        hs_school_data = hs_school_data.filter(
+        data = data.filter(
             regex=r"^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|Total Tested|^Year$", # ^Strength of Diploma
             axis=1,
         )
 
         school_info = school_info.reset_index(drop=True)
-        hs_school_data = hs_school_data.reset_index(drop=True)
+        data = data.reset_index(drop=True)
 
-        hs_school_data = pd.concat([hs_school_data, school_info], axis=1, join="inner")
+        data = pd.concat([data, school_info], axis=1, join="inner")
 
-        hs_school_data.columns = hs_school_data.columns.astype(str)
+        data.columns = data.columns.astype(str)
 
         # transpose dataframes and clean headers
-        hs_school_data = (hs_school_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+        data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
         # State/Federal grade rows not used
-        hs_school_data = hs_school_data[hs_school_data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
+        data = data[data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
         
-        hs_school_data = hs_school_data.reset_index(drop=True)
+        data = data.reset_index(drop=True)
 
         # make sure there are no lingering NoneTypes 
-        hs_school_data = hs_school_data.fillna(value=np.nan)
+        data = data.fillna(value=np.nan)
 
     else:
 
-        hs_school_data = pd.DataFrame()
+        data = pd.DataFrame()
 
-    return hs_school_data
+    return data
 
 ### Calculate Accountability Metrics ###
 

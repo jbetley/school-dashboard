@@ -788,9 +788,6 @@ def load_data(school, year):
 
             k8_school_data = k8_school_data.reset_index(drop=True)
 
-            pd.set_option('display.max_rows', None)
-            pd.set_option('display.max_columns', None)
-
 # TODO: Metrics stuff starts here
             # reverse order of corp_data columns (ignoring 'Category') so current year is first and
             # get clean list of years
@@ -1159,11 +1156,12 @@ def load_data(school, year):
 
             # remove 'ELA & Math' columns (NOTE: Comment this out to retain 'ELA & Math' columns)
             hs_school_data = hs_school_data.drop(
-                list(hs_school_data.filter(regex="ELA & Math")), axis=1
+                list(hs_school_data.filter(regex="ELA and Math")), axis=1
             )
             hs_corp_data = hs_corp_data.drop(
-                list(hs_corp_data.filter(regex="ELA & Math")), axis=1
+                list(hs_corp_data.filter(regex="ELA and Math")), axis=1
             )
+
 
             # valid_mask returns a boolean series of columns where column
             # is true if any element in the column is not equal to null
@@ -1178,7 +1176,6 @@ def load_data(school, year):
             # use valid_mask keep only columns that have at least one value
             hs_school_data = hs_school_data[hs_school_data.columns[valid_mask]]
             hs_corp_data = hs_corp_data[hs_corp_data.columns[valid_mask]]
-            # Calculate Graduation Rates
 
             # NOTE: Coercing hs_corp_data values to numeric has the effect
             # of converting all '***' (insufficient n-size) values to NaN.
@@ -1198,6 +1195,14 @@ def load_data(school, year):
 
             # reverse order of rows (Year) and reset index to bring Year back as column
             hs_corp_data = hs_corp_data.loc[::-1].reset_index()
+
+            # Calculate Graduation Rates
+
+# TODO: HERE - NEED TO GET READY FOR METRICS
+            pd.set_option('display.max_rows', None)
+            # pd.set_option('display.max_columns', None)
+            print('ORIG POSTGROUBY')
+            print(hs_corp_data.T)
 
             grad_categories = ethnicity + subgroup + ["Total"]
             for g in grad_categories:
@@ -1464,9 +1469,10 @@ def load_data(school, year):
             
             hs_school_data = hs_school_data.reset_index(drop=True)
 
+
             # TODO: HERE WITH HS METRICS - FIGURE OUT WHY ORIG DOESNT MATCH WITH REFACTGOR
-            print('ORIG')
-            print(hs_corp_data)
+            # print('ORIG')
+            # print(hs_corp_data)
             # print(hs_corp_data.T)
 
             # get clean list of years
