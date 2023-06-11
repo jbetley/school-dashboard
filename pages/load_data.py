@@ -11,8 +11,9 @@
 import pandas as pd
 import numpy as np
 import itertools
-from .load_db import get_current_year, get_index, get_school_data, get_demographics, \
-    get_hs_data, get_corporation_data, get_graduation_data, get_hs_corp_data, get_letter_grades, get_index
+from .load_db import get_current_year, get_index, get_k8_school_academic_data, get_demographics, \
+    get_high_school_academic_data, get_k8_corporation_academic_data, get_graduation_data, \
+        get_high_school_corporation_academic_data, get_letter_grades, get_index
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating
 
@@ -50,9 +51,9 @@ subgroup = [
     "Special Education",
     "General Education",
     "Paid Meals",
-    "Free/Reduced Price Meals",
+    "Free or Reduced Price Meals",
     "English Language Learners",
-    "Non-English Language Learners",
+    "Non English Language Learners",
 ]
 
 grades = [
@@ -198,8 +199,12 @@ def get_attendance_metrics(school, year):
 
     return attendance_metrics
 
-def calculate_graduation_rate(data):
+def calculate_graduation_rate(values):
+    
+    data = values.copy()
+    
     grad_categories = ethnicity + subgroup + ["Total"]
+    
     for g in grad_categories:
         new_col = g + " Graduation Rate"
         graduates = g + "|Graduates"
@@ -211,16 +216,20 @@ def calculate_graduation_rate(data):
     return data
 
 def calculate_nonwaiver_graduation_rate(data):
-    data["Non-Waiver|Cohort Count"] = pd.to_numeric(data["Non-Waiver|Cohort Count"], errors="coerce")
+    data["Non Waiver|Cohort Count"] = pd.to_numeric(data["Non Waiver|Cohort Count"], errors="coerce")
     data["Total|Cohort Count"] = pd.to_numeric(data["Total|Cohort Count"], errors="coerce")
 
-    data["Non-Waiver Graduation Rate"] = (data["Non-Waiver|Cohort Count"]/data["Total|Cohort Count"])
-    data["Strength of Diploma"] = (data["Non-Waiver|Cohort Count"] * 1.08)/data["Total|Cohort Count"]
+    data["Non Waiver Graduation Rate"] = (data["Non Waiver|Cohort Count"]/data["Total|Cohort Count"])
+    data["Strength of Diploma"] = (data["Non Waiver|Cohort Count"] * 1.08)/data["Total|Cohort Count"]
 
     return data
 
-def calculate_eca_rate(data):
+def calculate_eca_rate(values):
+
+    data = values.copy()
+    
     eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
+
     for e in eca_categories:
         new_col = e + " Pass Rate"
         passN = e + " Pass N"
@@ -230,7 +239,10 @@ def calculate_eca_rate(data):
     
     return data
 
-def calculate_sat_rate(data):
+def calculate_sat_rate(values):
+
+    data = values.copy()
+
     sat_categories = ethnicity + subgroup + ["School Total"]
     sat_subject = ['EBRW','Math','Both']
 
@@ -251,7 +263,10 @@ def calculate_sat_rate(data):
 
     return data
 
-def calculate_proficiency(data):
+def calculate_proficiency(values):
+
+    data = values.copy()
+
     categories = ethnicity + subgroup + grades + ["School Total"]
 
     for s in subject:
@@ -267,9 +282,16 @@ def calculate_proficiency(data):
 
 ### End Helper Functions ###
 
+pd.set_option('display.max_rows', None)
 ### Dataframe Formatting Functions ###
-def process_k8_academic_data(all_data, year):
+def process_k8_academic_data(all_data, year, school):
     
+    school_information = get_index(school)
+
+    # use these to determine if data belongs to school or corporation
+    school_geo_code = school_information["GEO Corp"].values[0]
+    data_geo_code = all_data['Corporation ID'][0]
+
     excluded_years = get_excluded_years(year)
 
     if excluded_years:
@@ -279,26 +301,32 @@ def process_k8_academic_data(all_data, year):
 
     # school data has School Name column, corp data does not
     if len(data.index) != 0:
-        if 'School Name' in data.columns:
-            school_info = data[["School Name"]].copy()
-        else:
+
+        # it is 'corp' data where the value of 'Corporation ID' in the df is equal
+        # to the value of the school's 'GEO Corp'.
+        if data_geo_code == school_geo_code:
             school_info = data[["Corporation Name"]].copy()
+
+            # corporation data: coerce strings ('***' and '^') to NaN (for
+            # both masking and groupby.sum() purposes)
+            for col in data.columns:
+                data[col] = pd.to_numeric(data[col], errors='coerce')
+       
+            # print(data.T)
+        else:
+       
+            school_info = data[["School Name"]].copy()
+            
+            # school data: coerce, but keep strings ('***' and '^')
+            for col in data.columns:
+                data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
         # NOTE: Apparently we cannot filter columns by substring with SQLite because
         # it does not allow dynamic SQL - so we filter here
         data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
 
-        # convert to numeric, but keep strings ('***')
-        for col in data:
-            data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
-
-        # TODO: Why is valid_mask working differently here vs get hs_data ?
-        # mask of valid columns only
-        # valid_mask = ~pd.isnull(data[data.columns]).all()        
-        valid_mask = data.any()
-        data = data[data.columns[valid_mask]]
-
         if "School Total|ELA Total Tested" in data.columns:
+
             data = calculate_proficiency(data)
 
         if "IREAD Pass N" in data.columns:
@@ -312,15 +340,17 @@ def process_k8_academic_data(all_data, year):
         # re-calculate and replace total Math & ELA proficiency values using only the
         # grades for which the school has data (after the masking step above). This
         # ensures an apples to apples comparison with traditional school corporations.
-        adjusted_total_math_proficient = data.filter(regex=r"Grade.+?Math Total Proficient")
-        adjusted_total_math_tested = data.filter(regex=r"Grade.+?Math Total Tested")
-        data["School Total|Math Proficient %"] = adjusted_total_math_proficient.sum(axis=1) \
-            / adjusted_total_math_tested.sum(axis=1)
+        if data_geo_code == school_geo_code:
+            adjusted_total_math_proficient = data.filter(regex=r"Grade.+?Math Total Proficient")
+            adjusted_total_math_tested = data.filter(regex=r"Grade.+?Math Total Tested")
 
-        adjusted_total_ela_proficient = data.filter(regex=r"Grade.+?ELA Total Proficient")
-        adjusted_total_ela_tested = data.filter(regex=r"Grade.+?ELA Total Tested")
-        data["School Total|ELA Proficient %"] = adjusted_total_ela_proficient.sum(axis=1) \
-            / adjusted_total_ela_tested.sum(axis=1)
+            data["School Total|Math Proficient %"] = adjusted_total_math_proficient.sum(axis=1) \
+                / adjusted_total_math_tested.sum(axis=1)
+
+            adjusted_total_ela_proficient = data.filter(regex=r"Grade.+?ELA Total Proficient")
+            adjusted_total_ela_tested = data.filter(regex=r"Grade.+?ELA Total Tested")
+            data["School Total|ELA Proficient %"] = adjusted_total_ela_proficient.sum(axis=1) \
+                / adjusted_total_ela_tested.sum(axis=1)
 
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         data = data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$", axis=1)
@@ -337,7 +367,7 @@ def process_k8_academic_data(all_data, year):
         data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
         data = data[data["Category"].str.contains("School Name") == False]
         data = data.reset_index(drop=True)
-    
+
     else:
     
         data = pd.DataFrame()
@@ -389,8 +419,8 @@ def process_high_school_academic_data(all_data, year, school):
 
         # mask of valid columns only
         # valid_mask = data.any()
-        valid_mask = ~pd.isnull(data[data.columns]).all()
-        data = data[data.columns[valid_mask]]
+        # valid_mask = ~pd.isnull(data[data.columns]).all()
+        # data = data[data.columns[valid_mask]]
 
         if data_geo_code == school_geo_code:
 
@@ -399,21 +429,20 @@ def process_high_school_academic_data(all_data, year, school):
             # reverse order of rows (Year) and reset index to bring Year back as column
             data = data.loc[::-1].reset_index()
 
-            pd.set_option('display.max_rows', None)
-            print('REFACTOR - GROUPBY')
-            print(data.T)
+            # print('REFACTOR - GROUPBY')
+            # print(data.T)
 
 # TODO: HERE AND GOOD. ONLY DISCREPANCY IS paid - cohort and grads (why?)
         # Calculate Grad Rate
         if "Total|Cohort Count" in data.columns:
             data = calculate_graduation_rate(data)
 
-        # Calculate Non-Waiver Grad Rate #
+        # Calculate Non Waiver Grad Rate #
         # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
         # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
-        # cohort, there were no 'waiver' graduates (which means no non-waiver data).
+        # cohort, there were no 'waiver' graduates (which means no Non Waiver data).
         # so we replace 0 with NaN (to ensure a NaN result rather than 0)
-        if "Non-Waiver|Cohort Count" in data.columns:
+        if "Non Waiver|Cohort Count" in data.columns:
             data = calculate_nonwaiver_graduation_rate(data)
 
         # Calculate ECA (Grade 10) Rate #
@@ -429,9 +458,15 @@ def process_high_school_academic_data(all_data, year, school):
 
         # CCR Rate #
         if school_type == "AHS":
-            data["AHS|CCR"] = pd.to_numeric(data["AHS|CCR"], errors="coerce")
-            data["AHS|Grad All"] = pd.to_numeric(data["AHS|Grad All"], errors="coerce")
-            data["CCR Percentage"] = (data["AHS|CCR"] / data["AHS|Grad All"])
+
+            if 'AHS|CCR' in data.columns:
+                data["AHS|CCR"] = pd.to_numeric(data["AHS|CCR"], errors="coerce")
+
+            if 'AHS|Grad All' in data.columns:                
+                data["AHS|Grad All"] = pd.to_numeric(data["AHS|Grad All"], errors="coerce")
+
+            if {'AHS|CCR','AHS|Grad All'}.issubset(data.columns):
+                data["CCR Percentage"] = (data["AHS|CCR"] / data["AHS|Grad All"])
 
         # Prepare final dataframe #
 
@@ -489,6 +524,7 @@ def calculate_k8_yearly_metrics(data):
         z+=2
         x+=2
     
+
     data.columns = [i + 'School' if '+/-' not in i else i for i in data.columns]
 
     data.insert(loc=0, column="Category", value=category_header)
@@ -567,7 +603,7 @@ def calculate_k8_comparison_metrics(school_data, year, school):
 
     excluded_years = get_excluded_years(year)
 
-    all_corporation_data = get_corporation_data(school)
+    all_corporation_data = get_k8_corporation_academic_data(school)
     
     corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)]
 
@@ -763,7 +799,7 @@ def calculate_high_school_metrics(all_school_data, year, school):
 
     excluded_years = get_excluded_years(year)
 
-    all_corporation_data = get_hs_corp_data(school)
+    all_corporation_data = get_high_school_corporation_academic_data(school)
 
     corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)]
 
@@ -952,25 +988,25 @@ def calculate_high_school_metrics(all_school_data, year, school):
                         school_data[new_col] = calculate_percentage(school_data[at_benchmark], school_data[total_tested])
                         corp_data[new_col] = (corp_data[at_benchmark] / corp_data[total_tested])
 
-    # Non-Waiver Grad Rate
-        # if missing_cols includes 'Non-Waiver' - there is no data available for the school
+    # Non Waiver Grad Rate
+        # if missing_cols includes 'Non Waiver' - there is no data available for the school
         # for the selected Years
-        if "Non-Waiver" not in "\t".join(missing_cols):
+        if "Non Waiver" not in "\t".join(missing_cols):
 
             # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
             # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
-            # cohort, there were no 'waiver' graduates (which means no non-waiver data).
+            # cohort, there were no 'waiver' graduates (which means no Non Waiver data).
             # so we replace 0 with NaN (to ensure a NaN result rather than 0)
-            corp_data["Non-Waiver|Cohort Count"] = corp_data["Non-Waiver|Cohort Count"].replace({"0": np.nan, 0: np.nan})
+            corp_data["Non Waiver|Cohort Count"] = corp_data["Non Waiver|Cohort Count"].replace({"0": np.nan, 0: np.nan})
 
-            corp_data["Non-Waiver Graduation Rate"] = (corp_data["Non-Waiver|Cohort Count"]/ corp_data["Total|Cohort Count"])
-            corp_data["Strength of Diploma"] = (corp_data["Non-Waiver|Cohort Count"] * 1.08) / corp_data["Total|Cohort Count"]
+            corp_data["Non Waiver Graduation Rate"] = (corp_data["Non Waiver|Cohort Count"]/ corp_data["Total|Cohort Count"])
+            corp_data["Strength of Diploma"] = (corp_data["Non Waiver|Cohort Count"] * 1.08) / corp_data["Total|Cohort Count"]
 
-            school_data["Non-Waiver|Cohort Count"] = pd.to_numeric(school_data["Non-Waiver|Cohort Count"], errors="coerce")
+            school_data["Non Waiver|Cohort Count"] = pd.to_numeric(school_data["Non Waiver|Cohort Count"], errors="coerce")
             school_data["Total|Cohort Count"] = pd.to_numeric(school_data["Total|Cohort Count"], errors="coerce")
 
-            school_data["Non-Waiver Graduation Rate"] = (school_data["Non-Waiver|Cohort Count"]/ school_data["Total|Cohort Count"])
-            school_data["Strength of Diploma"] = (school_data["Non-Waiver|Cohort Count"] * 1.08) / school_data["Total|Cohort Count"]
+            school_data["Non Waiver Graduation Rate"] = (school_data["Non Waiver|Cohort Count"]/ school_data["Total|Cohort Count"])
+            school_data["Strength of Diploma"] = (school_data["Non Waiver|Cohort Count"] * 1.08) / school_data["Total|Cohort Count"]
 
         # Calculate CCR Rate (AHS Only), add Year column and store in temporary dataframe
         # NOTE: All other values pulled from HS dataframe required for AHS calculations

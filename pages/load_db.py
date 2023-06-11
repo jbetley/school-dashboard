@@ -170,7 +170,7 @@ def get_adm(school_id):
 
 
 # School Academic Data (k8)
-def get_school_data(*args):
+def get_k8_school_academic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
 
@@ -182,7 +182,7 @@ def get_school_data(*args):
     return run_query(q, params)
 
 # Corporation Rate Academic Data (k8)
-def get_corporation_data(*args):
+def get_k8_corporation_academic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
 
@@ -197,7 +197,7 @@ def get_corporation_data(*args):
     return run_query(q, params)
 
 # School Academic Data (hs)
-def get_hs_data(*args):
+def get_high_school_academic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
 
@@ -209,7 +209,7 @@ def get_hs_data(*args):
     return run_query(q, params)
 
 # Corporation Rate Academic Data (hs)
-def get_hs_corp_data(*args):
+def get_high_school_corporation_academic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
 
@@ -222,9 +222,6 @@ def get_hs_corp_data(*args):
 			        WHERE SchoolID = :id)
         ''')
     return run_query(q, params)
-
-
-
 
 
 ## TODO: Working Section below - Need to import all_academic_data_k8 to db

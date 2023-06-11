@@ -43,8 +43,59 @@ from pages.calculations import set_academic_rating, calculate_percentage, \
 
 # load data and global variables
 from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
-    corporation_rates, all_demographic_data, ethnicity, subgroup, grades, subject, current_academic_year
+    corporation_rates, all_demographic_data, current_academic_year
 
+#TODO: TEMP ADD STRINGS TO KEEP THIS WORKING
+# global strings
+subject = ["Math", "ELA"]
+
+ethnicity = [
+    "American Indian",
+    "Asian",
+    "Black",
+    "Hispanic",
+    "Multiracial",
+    "Native Hawaiian or Other Pacific Islander",
+    "White",
+]
+
+subgroup = [
+    "Special Education",
+    "General Education",
+    "Paid Meals",
+    "Free/Reduced Price Meals",
+    "English Language Learners",
+    "Non-English Language Learners",
+]
+
+grades = [
+    "Grade 3",
+    "Grade 4",
+    "Grade 5",
+    "Grade 6",
+    "Grade 7",
+    "Grade 8"
+]
+
+grades_all = [
+    "Grade 3",
+    "Grade 4",
+    "Grade 5",
+    "Grade 6",
+    "Grade 7",
+    "Grade 8",
+    'Total',
+    'IREAD Pass %'
+]
+
+grades_ordinal = [
+    '3rd',
+    '4th',
+    '5th',
+    '6th',
+    '7th',
+    '8th'
+]
 # from pages.load_db import engine
 # This is used solely to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
@@ -685,6 +736,7 @@ def load_data(school, year):
             # However, the 'Corporation Total' for proficiency in a subject is
             # calculated using ALL grades. So we need to recalculate the 'Corporation Total'
             # rate manually to ensure it includes only the included grades.
+
             adjusted_corp_total_math_proficient = k8_corp_rate_data.filter(
                 regex=r"Grade.+?Math Total Proficient"
             )
@@ -1201,8 +1253,8 @@ def load_data(school, year):
 # TODO: HERE - NEED TO GET READY FOR METRICS
             pd.set_option('display.max_rows', None)
             # pd.set_option('display.max_columns', None)
-            print('ORIG POSTGROUBY')
-            print(hs_corp_data.T)
+            # print('ORIG POSTGROUBY')
+            # print(hs_corp_data.T)
 
             grad_categories = ethnicity + subgroup + ["Total"]
             for g in grad_categories:

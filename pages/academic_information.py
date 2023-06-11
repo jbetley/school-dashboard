@@ -22,7 +22,7 @@ from .calculations import round_percentages #, calculate_percentage
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, subject, grades, grades_all, grades_ordinal, \
     process_k8_academic_data, get_attendance_data, process_high_school_academic_data, get_excluded_years  # current_academic_year, 
-from .load_db import get_school_data, get_hs_data, get_demographics
+from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographics
 
 dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
 
@@ -116,8 +116,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
         if (selected_school_type == 'K8' or selected_school_type == 'K12'):
 
-            raw_k8_school_data = get_school_data(school)
-            all_k8_school_data = process_k8_academic_data(raw_k8_school_data, year)
+            raw_k8_school_data = get_k8_school_academic_data(school)
+            all_k8_school_data = process_k8_academic_data(raw_k8_school_data, year, school)
 
             all_k8_school_data = all_k8_school_data.fillna("No Data")
 
@@ -126,8 +126,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 all_k8_school_data = pd.DataFrame()
             
             else:
-
-                # k8_academic_info = school_data_k8.copy()
 
                 all_k8_school_data = (all_k8_school_data.set_index(["Category"]).add_suffix("School").reset_index())
 
@@ -147,8 +145,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             or (selected_school['School ID'].values[0] == '5874' and int(year) < 2021)):
 
             # load HS academic data
-            raw_hs_school_data = get_hs_data(school)
-            all_hs_school_data = process_high_school_academic_data(raw_hs_school_data, year)
+            raw_hs_school_data = get_high_school_academic_data(school)
+            all_hs_school_data = process_high_school_academic_data(raw_hs_school_data, year, school)
 
             # TODO: Errr.
             if len(all_hs_school_data.index) == 0:
@@ -252,7 +250,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
 # TODO: Move to function?
                 ## Proficiency Breakdown ##
-                proficiency_data = get_school_data(school)
+                proficiency_data = get_k8_school_academic_data(school)
                 proficiency_data = proficiency_data[~proficiency_data["Year"].isin(excluded_years)]
 
                 # IDOE's raw proficency data is annoyingly inconsistent. In some cases missing
@@ -375,7 +373,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                                 all_proficiency_data[proficiency_columns] = tmp_df[tmp_cols]
 
                 # drop all remaining columns used for calculation that we dont want to chart
-                all_proficiency_data.drop(list(all_proficiency_data.filter(regex='Total\||Total Proficient|ELA & Math')),
+                all_proficiency_data.drop(list(all_proficiency_data.filter(regex='Total\||Total Proficient|ELA and Math')),
                     axis=1,
                     inplace=True,
                 )
@@ -527,7 +525,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 # Graduation Rate
                 grad_overview_categories = [
                     'Total',
-                    'Non-Waiver',
+                    'Non Waiver',
                     'State Average'
                     # 'Strength of Diploma',    # Not currently displayed
                 ]

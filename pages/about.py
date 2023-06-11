@@ -516,7 +516,7 @@ def update_about_page(year: str, school: str):
                 subgroup_data_t.iloc[:,i] = subgroup_data_t.iloc[:,i] / total_enrollment[i]
 
             # force categories to wrap
-            categories_wrap=['English<br>Language<br>Learners', 'Special<br>Education', 'Free/Reduced<br>Price Meals', 'Paid Meals']
+            categories_wrap=['English<br>Language<br>Learners', 'Special<br>Education', 'Free or Reduced<br>Price Meals', 'Paid Meals']
 
             elements = subgroup_data_t.columns.tolist()
 
