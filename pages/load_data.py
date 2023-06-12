@@ -295,7 +295,7 @@ def process_k8_academic_data(all_data, year, school):
     excluded_years = get_excluded_years(year)
 
     if excluded_years:
-        data = all_data[~all_data["Year"].isin(excluded_years)]
+        data = all_data[~all_data["Year"].isin(excluded_years)].copy()
     else:
         data = all_data.copy()
 
@@ -605,7 +605,7 @@ def calculate_k8_comparison_metrics(school_data, year, school):
 
     all_corporation_data = get_k8_corporation_academic_data(school)
     
-    corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)]
+    corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)].copy()
 
     school_data.columns = school_data.columns.astype(str)
     corporation_data.columns = corporation_data.columns.astype(str)
@@ -795,22 +795,25 @@ def calculate_adult_high_school_metrics(data, school):
     return data
 
 # TODO: Have not touched Yet
-def calculate_high_school_metrics(all_school_data, year, school):
+def calculate_high_school_metrics(all_school_data, all_corp_data, year, school):
 
     excluded_years = get_excluded_years(year)
 
-    all_corporation_data = get_high_school_corporation_academic_data(school)
+    # all_corporation_data = get_high_school_corporation_academic_data(school)
 
-    corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)]
+    # corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)]
 
-    school_data.columns = school_data.columns.astype(str)
-    corporation_data.columns = corporation_data.columns.astype(str)
+    all_school_data.columns = all_school_data.columns.astype(str)
+    all_corp_data.columns = all_corp_data.columns.astype(str)
 
-    school_data = all_school_data[~all_school_data["Year"].isin(excluded_years)]
+    print('REFACTOR')
+    tst = all_corp_data.copy()
+    tst = tst.set_index(['Category'])
+    print(tst)
 
-    # print('REFACTOR')
-    # print(school_data)
-    # print(corporation_data)    
+    # school_data = all_school_data[~all_school_data["Year"].isin(excluded_years)].copy()
+
+    return all_corp_data
 
     school_type = school_data["School Type"].values[0]
 

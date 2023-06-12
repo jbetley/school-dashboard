@@ -1253,8 +1253,8 @@ def load_data(school, year):
 # TODO: HERE - NEED TO GET READY FOR METRICS
             pd.set_option('display.max_rows', None)
             # pd.set_option('display.max_columns', None)
-            # print('ORIG POSTGROUBY')
-            # print(hs_corp_data.T)
+            print('ORIG POSTGROUBY')
+            print(hs_corp_data.T)
 
             grad_categories = ethnicity + subgroup + ["Total"]
             for g in grad_categories:

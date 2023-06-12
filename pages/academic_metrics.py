@@ -208,7 +208,7 @@ def update_academic_metrics(data, school: str, year: str):
             # print(clean_hs_school_data)
             # print(clean_hs_corp_data)
 
-            # hs_all_metrics = calculate_high_school_metrics(clean_hs_corp_data, year, school)
+            hs_all_metrics = calculate_high_school_metrics(clean_hs_school_data, clean_hs_corp_data, year, school)
 
             # print(hs_all_data)
             # combined_grad_metrics_json
@@ -306,16 +306,6 @@ def update_academic_metrics(data, school: str, year: str):
             # clean_corp_data = clean_corp_data.reset_index(drop=True)
 
             if len(clean_school_data.index) > 0:
-            # load k-8 data files
-            # if (data['10'] and data['11']):
-
-                # diff_to_corp_json
-                # json_data = json.loads(data['10'])
-                # combined_delta = pd.DataFrame.from_dict(json_data)
-
-                # # year_over_year_values_json
-                # json_data = json.loads(data['11'])
-                # combined_years = pd.DataFrame.from_dict(json_data)
 
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
                 combined_delta = calculate_k8_comparison_metrics(clean_school_data, year, school)
@@ -381,11 +371,7 @@ def update_academic_metrics(data, school: str, year: str):
                 # iread_data
                 iread_df = clean_school_data[clean_school_data["Category"] == "IREAD Pass %"]
 
-                if not iread_df.empty:
-
-                # if data['9']:
-                    # json_data = json.loads(data['9'])
-                    # iread_data = pd.DataFrame.from_dict(json_data)
+                if len(iread_df) > 0:
 
                     iread_data = calculate_iread_metrics(iread_df)
 
