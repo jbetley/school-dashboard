@@ -171,12 +171,46 @@ def update_academic_metrics(data, school: str, year: str):
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
 
-            # pd.set_option('display.max_columns', None)
+            pd.set_option('display.max_columns', None)
             pd.set_option('display.max_rows', None)
 
 # TODO: ADD HS ONLY METRICS HERE
             print('Get HS School Data')
+            print(selected_school['School Name'])
+            # NOTE: SAT data is a nightmare. There are often 0's where there should be NaNs, so
+            # we cannot simply drop any columns without data or we may lose information - so we
+            # need to split out SAT data and process it separately (dropping any category 'set'
+            # where 'Total Tested' == 0).
+
             raw_hs_school_data = get_high_school_academic_data(school)
+# # TODO: FIX SAT MASKING TO ONLY DROP SAT CATEGORIES WHERE TOTAL TESTED IS 0
+            sat_hs_data = raw_hs_school_data[raw_hs_school_data.columns[raw_hs_school_data.columns.str.contains(r'Benchmark|Total Tested')]]
+            other_hs_data = raw_hs_school_data[raw_hs_school_data.columns[~raw_hs_school_data.columns.str.contains(r'Benchmark|Total Tested')]]
+
+# TODO: MOVE THIS SHITSHOW TO A FUNCTION
+            sat_categories = ethnicity + subgroup + ["School Total"]
+            sat_subject = ['EBRW','Math','Both']
+
+            for ss in sat_subject:
+                for sc in sat_categories:
+                    new_col = sc + "|" + ss + " Benchmark %"
+                    at_benchmark = sc + "|" + ss + " At Benchmark"
+                    approaching_benchmark = sc + "|" + ss + " Approaching Benchmark"
+                    below_benchmark = sc + "|" + ss + " Below Benchmark"
+                    total_tested = sc + "|" + ss + " Total Tested"
+                    
+                    if sat_hs_data[total_tested].values[0] == 0:
+                        print('DROPPED')
+                        print(total_tested)
+                        # the 'Both' Categories do not have 'approaching' or 'below'
+                        if ss == 'Both':
+                            drop_columns = [new_col, at_benchmark, total_tested]
+                        else:
+                            drop_columns = [new_col, at_benchmark, approaching_benchmark, below_benchmark, total_tested]
+                        
+                        sat_hs_data = sat_hs_data.drop(drop_columns, axis=1)
+
+            print(sat_hs_data.T)
 
             if len(raw_hs_school_data) > 0:
                 
@@ -184,14 +218,26 @@ def update_academic_metrics(data, school: str, year: str):
                 
                 year_columns = raw_hs_school_data["Year"].tolist()
 
-                # keep only school columns with non-null data.
-                valid_hs_column_mask = raw_hs_school_data.any()
+                # school data: coerce to numeric but keep strings ('***')
+                for col in raw_hs_school_data.columns:
+                    raw_hs_school_data[col] = pd.to_numeric(raw_hs_school_data[col], errors='coerce').fillna(raw_hs_school_data[col])
 
+                # keep only school columns with non-null data.
+                # print('RAW')
+                # print(raw_hs_school_data.T)
+                valid_hs_column_mask = raw_hs_school_data.any()
+                # print('MASK')
+                # print(valid_hs_column_mask)
                 # valid_mask = ~pd.isnull(data[data.columns]).all()        
                 raw_hs_school_data = raw_hs_school_data[raw_hs_school_data.columns[valid_hs_column_mask]]
 
                 print('Get HS Corp Data')
                 raw_hs_corp_data = get_high_school_corporation_academic_data(school)
+                raw_hs_corp_data = raw_hs_corp_data.replace({"^": "***"})
+
+                # corporation data: coerce strings
+                for col in raw_hs_corp_data.columns:
+                    raw_hs_corp_data[col] = pd.to_numeric(raw_hs_corp_data[col], errors='coerce')
 
                 # Find the common columns between the two dataframes - need to do this because
                 # school data has many more columns than col data
@@ -199,16 +245,18 @@ def update_academic_metrics(data, school: str, year: str):
                 raw_hs_corp_data = raw_hs_corp_data[common_cols]
 
                 clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, year, school)
-                clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, year, school)
-
+                # clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, year, school)
+                # print(clean_hs_school_data)
             else:
                 pass # TODO: if NO DATA THEN NO TABLE
 
-            # print('RizzACTOR!')
+            print('REFACTOR')
+            # tst = clean_hs_corp_data.copy()
+            # tst = tst.set_index(['Category'])
+            # print(tst)
             # print(clean_hs_school_data)
-            # print(clean_hs_corp_data)
-
-            hs_all_metrics = calculate_high_school_metrics(clean_hs_school_data, clean_hs_corp_data, year, school)
+            
+            # hs_all_metrics = calculate_high_school_metrics(clean_hs_school_data, clean_hs_corp_data, year, school)
 
             # print(hs_all_data)
             # combined_grad_metrics_json

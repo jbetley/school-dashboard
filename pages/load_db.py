@@ -61,7 +61,7 @@ def run_query(q, *args):
         df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([WADTO])([CATPB&])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([A])([a])", r"\1 \2", regex=True)
-        # df.columns = df.columns.str.replace(r"([&])([M])", r"\1 \2", regex=True)
+        df.columns = df.columns.str.replace(r"([1-9])([(])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace("or ", " or ")
         df.columns = df.columns.astype(str)
 

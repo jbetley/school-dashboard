@@ -142,7 +142,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
     finance_file = finance_file.dropna(axis=1, how='all')
 
     financial_data = finance_file.copy()
-    
+
     if len(financial_data.index) != 0:
 
         # Financial data will almost always be more recent than academic

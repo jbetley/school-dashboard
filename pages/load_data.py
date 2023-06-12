@@ -17,6 +17,8 @@ from .load_db import get_current_year, get_index, get_k8_school_academic_data, g
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating
 
+pd.set_option('display.max_rows', None)
+
 ## Load Data Files ##
 print("#### Loading Data. . . . . ####")
 
@@ -242,7 +244,7 @@ def calculate_eca_rate(values):
 def calculate_sat_rate(values):
 
     data = values.copy()
-
+    # print(data.T)
     sat_categories = ethnicity + subgroup + ["School Total"]
     sat_subject = ['EBRW','Math','Both']
 
@@ -250,13 +252,19 @@ def calculate_sat_rate(values):
         for sc in sat_categories:
             new_col = sc + "|" + ss + " Benchmark %"
             at_benchmark = sc + "|" + ss + " At Benchmark"
+            approaching_benchmark = sc + "|" + ss + " Approaching Benchmark"
+            below_benchmark = sc + "|" + ss + " Below Benchmark"
             total_tested = sc + "|" + ss + " Total Tested"
-
+            # print(total_tested)
             if total_tested in data.columns:
+                # print(total_tested)
                 # Data is messy so we test whether or not to drop all related categories
                 # if total tested # of students is = 0
+                # print(data[total_tested])
+                # print(type(data[total_tested].values[0]))
                 if data[total_tested].values[0] == 0:
-                    drop_columns = [new_col, at_benchmark, total_tested]
+                    print('DROPPED')
+                    drop_columns = [new_col, at_benchmark, approaching_benchmark, below_benchmark, total_tested]
                     data = data.drop(drop_columns, axis=1)
                 else:
                     data[new_col] = calculate_percentage(data[at_benchmark], data[total_tested])
@@ -282,7 +290,7 @@ def calculate_proficiency(values):
 
 ### End Helper Functions ###
 
-pd.set_option('display.max_rows', None)
+
 ### Dataframe Formatting Functions ###
 def process_k8_academic_data(all_data, year, school):
     
@@ -396,14 +404,7 @@ def process_high_school_academic_data(all_data, year, school):
         # to the value of the school's 'GEO Corp'.
         if data_geo_code == school_geo_code:
             school_info = data[["Corporation Name"]].copy()
-
-            # corporation data: coerce strings ('***' and '^') to NaN (for
-            # both masking and groupby.sum() purposes)
-            for col in data.columns:
-                data[col] = pd.to_numeric(data[col], errors='coerce')
-       
         else:
-       
             school_info = data[["School Name"]].copy()
             
             # school data: coerce, but keep strings ('***' and '^')
@@ -429,10 +430,6 @@ def process_high_school_academic_data(all_data, year, school):
             # reverse order of rows (Year) and reset index to bring Year back as column
             data = data.loc[::-1].reset_index()
 
-            # print('REFACTOR - GROUPBY')
-            # print(data.T)
-
-# TODO: HERE AND GOOD. ONLY DISCREPANCY IS paid - cohort and grads (why?)
         # Calculate Grad Rate
         if "Total|Cohort Count" in data.columns:
             data = calculate_graduation_rate(data)
@@ -806,14 +803,9 @@ def calculate_high_school_metrics(all_school_data, all_corp_data, year, school):
     all_school_data.columns = all_school_data.columns.astype(str)
     all_corp_data.columns = all_corp_data.columns.astype(str)
 
-    print('REFACTOR')
-    tst = all_corp_data.copy()
-    tst = tst.set_index(['Category'])
-    print(tst)
+
 
     # school_data = all_school_data[~all_school_data["Year"].isin(excluded_years)].copy()
-
-    return all_corp_data
 
     school_type = school_data["School Type"].values[0]
 

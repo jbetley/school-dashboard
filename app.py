@@ -45,7 +45,9 @@ from pages.calculations import set_academic_rating, calculate_percentage, \
 from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
     corporation_rates, all_demographic_data, current_academic_year
 
-#TODO: TEMP ADD STRINGS TO KEEP THIS WORKING
+from pages.load_db import get_finance
+
+#TODO: TEMP STRINGS TO KEEP THIS DATA WORKING
 # global strings
 subject = ["Math", "ELA"]
 
@@ -96,6 +98,8 @@ grades_ordinal = [
     '7th',
     '8th'
 ]
+# TODO: TEMP
+
 # from pages.load_db import engine
 # This is used solely to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
@@ -229,7 +233,6 @@ app = dash.Dash(
     [Input("application-state", "children")]
 )
 def set_dropdown_options(app_state):
-    # Charter Dropdown Options    
     # Get the current user id using the current_user proxy,
     # use the ._get_current_object() method to return the
     # underlying object (User)
@@ -263,7 +266,7 @@ def set_dropdown_value(charter_options):
 # year options are the range of:
 #   max = current_academic_year
 #   min = the earliest year for which the school has adm (is open)
-#   limit = typically a limit of 5 years (currently and 
+#   limit = typically a limit of 5 years (currently and
 #   temporarily 4 years so that 2018 academic data is not shown)
 
 @callback(
@@ -278,14 +281,17 @@ def set_year_dropdown_options(school, year):
     # Year Dropdown Options
     # TODO: Change to 5 years in 2023
     max_dropdown_years = 4
-  
-    # count the number of years that a school has ADM data, ignoring
-    # any most recent years with a 'Q#' prefix (indicating quarterly
-    # data)
-    finance_file = 'data/F-' + school_index.loc[school_index["School ID"] == school]['School Name'].values[0] + '.csv'
 
-    if os.path.isfile(finance_file):
-        financial_data = pd.read_csv(finance_file)
+    financial_data = get_finance(school)
+
+    # Empty file could potentially still have 'School Id','School Name', and 'Category'
+    # NOTE: should never be a school ID associated with a missing financial db entry,
+    # however, we test anyway.
+    if len(financial_data) > 3:
+
+        financial_data = financial_data.dropna(axis=1, how='all')
+        financial_data.columns = financial_data.columns.astype(str)
+        financial_data = financial_data.drop(['School ID','School Name'], axis=1)
 
         if 'Q' in financial_data.columns[1]:
             financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
@@ -293,12 +299,12 @@ def set_year_dropdown_options(school, year):
         adm_years = financial_data[financial_data['Category'].str.contains('ADM Average')]
 
         school_academic_years = len(adm_years.columns) - 1
-        
+
     num_dropdown_years = school_academic_years if school_academic_years <= max_dropdown_years else max_dropdown_years
-    
+
     # subtract 1 total to account for current year in display
     first_available_year = int(current_academic_year) - (num_dropdown_years-1)
-    
+
     # 'year' represents the State of the year-dropdown when a school is selected.
     # This sets the current year_value equal to: current_academic_year (when app
     # is first opened); current_year state (if the school has available data for
@@ -326,7 +332,7 @@ app.layout = html.Div(
     [
         dcc.Store(id="dash-session", storage_type="session"),
         html.Div(
-            [        
+            [
                 html.Div(
                     [
                         html.Div(
@@ -435,7 +441,7 @@ def load_data(school, year):
     if not school:
         raise PreventUpdate
 
-    # 'year' is the selected year, it will be equal to None whenever 
+    # 'year' is the selected year, it will be equal to None whenever
     # the user selects a year and then switches to a school that has
     # no data for that year - at which point we reset it to the current_year
     if year is None:
@@ -606,7 +612,7 @@ def load_data(school, year):
     # human readable) and because there may be both school and network information.
 
     finance_file = 'data/F-' + school_info['School Name'].values[0] + '.csv'
-    
+
     if os.path.isfile(finance_file):
         financial_data = pd.read_csv(finance_file)
         school_finance_dict = financial_data.to_dict(into=OrderedDict)
@@ -619,7 +625,7 @@ def load_data(school, year):
         # network_financial_data = pd.read_csv(network_finance_file)
         # network_finance_dict = network_financial_data.to_dict(into=OrderedDict)
         # network_finance_json = json.dumps(network_finance_dict)
-        network_finance_json = {}        
+        network_finance_json = {}
     else:
         network_finance_json = {}
 
@@ -655,7 +661,7 @@ def load_data(school, year):
             # individual school values (e.g., School A, School B, and School C are in
             # School Corporation 1- but the value for Category Z for School Corporation
             # 1 will not necessarily be equal to the combined values (or average value) of
-            # Schools A-C). This is because certain inclusion metrics are calculated 
+            # Schools A-C). This is because certain inclusion metrics are calculated
             # differently at the Corporation Level. All things being equal, the corporation_rate
             # values will always be more accurate for Corporation level data.
             k8_corp_rates_filtered = corporation_rates[
@@ -769,7 +775,7 @@ def load_data(school, year):
 
             # calculate IREAD Pass %
             if "IREAD Pass N" in k8_school_data:
-                
+
                 k8_corp_rate_data["IREAD Pass %"] = (
                     k8_corp_rate_data["IREAD Pass N"]
                     / k8_corp_rate_data["IREAD Test N"]
@@ -779,7 +785,7 @@ def load_data(school, year):
                     k8_school_data["IREAD Pass N"], errors="coerce"
                 ) / pd.to_numeric(k8_school_data["IREAD Test N"], errors="coerce")
 
-                # If either Test or Pass category had a '***' value, the resulting value will be 
+                # If either Test or Pass category had a '***' value, the resulting value will be
                 # NaN - we want it to display '***', so we just fillna
                 k8_school_data["IREAD Pass %"] = k8_school_data["IREAD Pass %"].fillna("***")
 
@@ -789,7 +795,7 @@ def load_data(school, year):
                 axis=1,
             )
             k8_corp_rate_data = k8_corp_rate_data.filter(
-                regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",                
+                regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",
                 axis=1,
             )
 
@@ -798,10 +804,10 @@ def load_data(school, year):
 
             # reset indexes
             k8_school_data = k8_school_data.reset_index(drop=True)
-            
+
             # no drop because index was previous set to year
             k8_corp_rate_data = k8_corp_rate_data.reset_index()
-            
+
             # ensure columns headers are strings
             k8_school_data.columns = k8_school_data.columns.astype(str)
             k8_corp_rate_data.columns = k8_corp_rate_data.columns.astype(str)
@@ -832,7 +838,7 @@ def load_data(school, year):
             )
 
             # Keep category and all available years of data
-            k8_corp_data = k8_corp_data.iloc[:, : (k8_num_years + 1)]  
+            k8_corp_data = k8_corp_data.iloc[:, : (k8_num_years + 1)]
 
             k8_school_data = k8_school_data[
                 k8_school_data["Category"].str.contains("School Name") == False
@@ -938,13 +944,13 @@ def load_data(school, year):
                 ].index
             )
 
-        ## IREAD 
+        ## IREAD
 
             # NOTE: See code explanation in discussion of 'attendance_data_metrics'above.
             if not iread_data.empty:
-                
-                iread_limits = [0.9, 0.8, 0.7, 0.7] 
-                
+
+                iread_limits = [0.9, 0.8, 0.7, 0.7]
+
                 iread_data = (
                     iread_data.set_index(["Category"])
                     .add_suffix("School")
@@ -1010,7 +1016,7 @@ def load_data(school, year):
                             (current_year.isna()) & (previous_year.isna()), None,
                             np.where(
                                 (~current_year.isna()) & (previous_year.isna()), None,
-                                
+
                                 pd.to_numeric(current_year, errors="coerce") - pd.to_numeric(previous_year, errors="coerce"),
                             ),
                         ),
@@ -1027,12 +1033,12 @@ def load_data(school, year):
                 k8_school_metric_data.insert(loc = z, column = k8_school_metric_data.columns[x] + '+/-', value = values)
                 z+=2
                 x+=2
-           
+
             k8_school_metric_data.columns = [i + 'School' if '+/-' not in i else i for i in k8_school_metric_data.columns]
 
             k8_school_metric_data.insert(loc=0, column="Category", value=category_header)
             k8_school_metric_data["Category"] = (k8_school_metric_data["Category"].str.replace(" Proficient %", "").str.strip())
-            
+
             # Add first_year data back
             k8_school_metric_data[first_year.columns] = first_year
 
@@ -1045,7 +1051,7 @@ def load_data(school, year):
 
             delta_limits = [0.1, 0.02, 0, 0]
             years_limits = [0.05, 0.02, 0, 0]
-            
+
             # NOTE: See comment in discussion of 'attendance_data_metrics' above.
             [
                 diff_to_corp.insert(
@@ -1214,7 +1220,6 @@ def load_data(school, year):
                 list(hs_corp_data.filter(regex="ELA and Math")), axis=1
             )
 
-
             # valid_mask returns a boolean series of columns where column
             # is true if any element in the column is not equal to null
             valid_mask = ~pd.isnull(hs_school_data[hs_school_data.columns]).all()
@@ -1249,13 +1254,6 @@ def load_data(school, year):
             hs_corp_data = hs_corp_data.loc[::-1].reset_index()
 
             # Calculate Graduation Rates
-
-# TODO: HERE - NEED TO GET READY FOR METRICS
-            pd.set_option('display.max_rows', None)
-            # pd.set_option('display.max_columns', None)
-            print('ORIG POSTGROUBY')
-            print(hs_corp_data.T)
-
             grad_categories = ethnicity + subgroup + ["Total"]
             for g in grad_categories:
                 new_col = g + " Graduation Rate"
@@ -1367,7 +1365,7 @@ def load_data(school, year):
                             hs_corp_data[new_col] = (
                                 hs_corp_data[at_benchmark] / hs_corp_data[total_tested]
                             )
-                            
+
             # if missing_cols includes 'Non-Waiver' - there is no data available for the school
             # for the selected Years
             if "Non-Waiver" not in "\t".join(missing_cols):
@@ -1473,7 +1471,7 @@ def load_data(school, year):
             state_grad_average["Year"] = state_grad_average["Year"].astype(int)
 
             hs_corp_data = hs_corp_data.merge(state_grad_average, on="Year", how="inner")
-            
+
             hs_corp_data = hs_corp_data.rename(
                 columns={"State_Grad_Average": "Average State Graduation Rate"}
             )
@@ -1483,7 +1481,7 @@ def load_data(school, year):
             hs_school_data["Average State Graduation Rate"] = hs_school_data[
                 "Total Graduation Rate"
             ]
-  
+
             hs_school_info = hs_school_info.reset_index(drop=True)
             hs_school_data = hs_school_data.reset_index(drop=True)
 
@@ -1518,14 +1516,11 @@ def load_data(school, year):
 
             # State/Federal grade rows are used in 'about' page, but not here
             hs_school_data = hs_school_data[hs_school_data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
-            
+
             hs_school_data = hs_school_data.reset_index(drop=True)
 
-
             # TODO: HERE WITH HS METRICS - FIGURE OUT WHY ORIG DOESNT MATCH WITH REFACTGOR
-            # print('ORIG')
-            # print(hs_corp_data)
-            # print(hs_corp_data.T)
+
 
             # get clean list of years
             hs_year_cols = list(hs_school_data.columns[:0:-1])
@@ -1705,8 +1700,9 @@ def load_data(school, year):
             # TODO: HS METRICS BEGIN HERE (this is data[14])
                 combined_hs_metrics = final_hs_academic_data.copy()
 
-                # print('ORIG:')
-                # print(combined_hs_metrics)
+                print('ORIG:')
+                # print(hs_school_data)
+                # print(hs_corp_data)
                 # rename 'Corp Average' to 'Average'
                 combined_hs_metrics.columns = combined_hs_metrics.columns.str.replace(r"Corp Average", "Average")
 
@@ -1734,7 +1730,7 @@ def load_data(school, year):
 
                 grad_limits_local = [0, 0.05, 0.10, 0.10]
                 local_grad_metric = combined_hs_metrics[combined_hs_metrics["Category"].isin(["Total Graduation Rate", "Non-Waiver Graduation Rate"])]
-                
+
                 [
                     local_grad_metric.insert(
                         i,
@@ -1754,7 +1750,7 @@ def load_data(school, year):
                 ]
 
                 strength_diploma = combined_hs_metrics[combined_hs_metrics["Category"] == "Strength of Diploma"]
-                
+
                 strength_diploma = strength_diploma[
                     [
                         col
@@ -1801,7 +1797,7 @@ def load_data(school, year):
     dict_of_df[3] = school_letter_grades_json
     dict_of_df[4] = attendance_data_json
     dict_of_df[5] = attendance_data_metrics_json
-    
+
     dict_of_df[7] = academic_analysis_corp_dict
     dict_of_df[8] = k8_academic_data_json
     dict_of_df[9] = iread_data_json
