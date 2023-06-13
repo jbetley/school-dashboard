@@ -171,65 +171,85 @@ def update_academic_metrics(data, school: str, year: str):
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
 
-            pd.set_option('display.max_columns', None)
-            pd.set_option('display.max_rows', None)
-
 # TODO: ADD HS ONLY METRICS HERE
             print('Get HS School Data')
             print(selected_school['School Name'])
-            # NOTE: SAT data is a nightmare. There are often 0's where there should be NaNs, so
-            # we cannot simply drop any columns without data or we may lose information - so we
-            # need to split out SAT data and process it separately (dropping any category 'set'
-            # where 'Total Tested' == 0).
 
-            raw_hs_school_data = get_high_school_academic_data(school)
-# # TODO: FIX SAT MASKING TO ONLY DROP SAT CATEGORIES WHERE TOTAL TESTED IS 0
-            sat_hs_data = raw_hs_school_data[raw_hs_school_data.columns[raw_hs_school_data.columns.str.contains(r'Benchmark|Total Tested')]]
-            other_hs_data = raw_hs_school_data[raw_hs_school_data.columns[~raw_hs_school_data.columns.str.contains(r'Benchmark|Total Tested')]]
+            # def filter_high_school_academic_data(data):
 
-# TODO: MOVE THIS SHITSHOW TO A FUNCTION
-            sat_categories = ethnicity + subgroup + ["School Total"]
-            sat_subject = ['EBRW','Math','Both']
-
-            for ss in sat_subject:
-                for sc in sat_categories:
-                    new_col = sc + "|" + ss + " Benchmark %"
-                    at_benchmark = sc + "|" + ss + " At Benchmark"
-                    approaching_benchmark = sc + "|" + ss + " Approaching Benchmark"
-                    below_benchmark = sc + "|" + ss + " Below Benchmark"
-                    total_tested = sc + "|" + ss + " Total Tested"
-                    
-                    if sat_hs_data[total_tested].values[0] == 0:
-                        print('DROPPED')
-                        print(total_tested)
-                        # the 'Both' Categories do not have 'approaching' or 'below'
-                        if ss == 'Both':
-                            drop_columns = [new_col, at_benchmark, total_tested]
-                        else:
-                            drop_columns = [new_col, at_benchmark, approaching_benchmark, below_benchmark, total_tested]
-                        
-                        sat_hs_data = sat_hs_data.drop(drop_columns, axis=1)
-
-            print(sat_hs_data.T)
-
-            if len(raw_hs_school_data) > 0:
+            #     # Separate SAT data categories and Other data categories into separate dfs
+            #     sat_hs_data = raw_hs_school_data[raw_hs_school_data.columns[raw_hs_school_data.columns.str.contains(r'Benchmark|Total Tested')]]
+            #     other_hs_data = raw_hs_school_data[raw_hs_school_data.columns[~raw_hs_school_data.columns.str.contains(r'Benchmark|Total Tested')]]
                 
-                raw_hs_school_data = raw_hs_school_data.replace({"^": "***"})
-                
-                year_columns = raw_hs_school_data["Year"].tolist()
+            #     tested_cols = sat_hs_data.filter(like='Total Tested').columns.tolist()
+            #     drop_columns=[]
+
+            #     for col in tested_cols:
+            #         if sat_hs_data[col].values[0] == 0:                    
+            #             drop_columns.append(sat_hs_data.filter(like = col.split(' Total')[0]).columns.tolist())
+
+            #     # flatten the resulting nested list
+            #     drop_all = [i for sub_list in drop_columns for i in sub_list]
+
+            #     sat_hs_data = sat_hs_data.drop(drop_all, axis=1).copy()
+
+            #     # recombine the modified SAT dataframe with the 'other data' dataframe
+
+
+            #     return tst
+
+# TODO: Have a problem either here or in sat_calc function that is dropping NonEnglish Learners?
+            def filter_high_school_academic_data(data):
+            # Iterates over all 'Total Tested' columns - if the value of 'Total Tested' for a
+            # particular 'Category' and 'Subject' (e.g., 'Multiracial|Math) is 0, drop all
+            # columns (e.g., 'Approaching Benchmark', 'At Benchmark', etc.) for that 'Category'
+            # and 'Subject'
+
+                data = data.replace({"^": "***"})
 
                 # school data: coerce to numeric but keep strings ('***')
-                for col in raw_hs_school_data.columns:
-                    raw_hs_school_data[col] = pd.to_numeric(raw_hs_school_data[col], errors='coerce').fillna(raw_hs_school_data[col])
+                for col in data.columns:
+                    data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
-                # keep only school columns with non-null data.
-                # print('RAW')
-                # print(raw_hs_school_data.T)
-                valid_hs_column_mask = raw_hs_school_data.any()
-                # print('MASK')
-                # print(valid_hs_column_mask)
+                # Separate SAT data categories and Other data categories into separate dfs
+                sat_data = data[data.columns[data.columns.str.contains(r'Year|Benchmark|Total Tested')]].copy()
+                other_data = data[data.columns[~data.columns.str.contains(r'Benchmark|Total Tested')]].copy()
+                
+                # clean SAT data
+                tested_cols = sat_data.filter(like='Total Tested').columns.tolist()
+                drop_columns=[]
+
+                for col in tested_cols:
+                    if sat_data[col].values[0] == 0:                    
+                        drop_columns.append(sat_data.filter(like = col.split(' Total')[0]).columns.tolist())
+
+                drop_all = [i for sub_list in drop_columns for i in sub_list]
+
+                sat_data = sat_data.drop(drop_all, axis=1).copy()
+
+                # clean Other data
+                # NOTE: Need to do this separately because we want to keep '0' values for SAT
+                # Categories with Tested students.
+                valid_column_mask = other_data.any()
+
                 # valid_mask = ~pd.isnull(data[data.columns]).all()        
-                raw_hs_school_data = raw_hs_school_data[raw_hs_school_data.columns[valid_hs_column_mask]]
+                other_data = other_data[other_data.columns[valid_column_mask]]
+                
+                final_data = other_data.merge(sat_data, how = 'outer')
+                
+                # final_data = other_data.append(sat_data, ignore_index=True)
+                
+                return final_data
+                        
+            raw_hs_school_data = get_high_school_academic_data(school)
+            raw_hs_school_data = filter_high_school_academic_data(raw_hs_school_data)
+
+            # pd.set_option('display.max_columns', None)
+            pd.set_option('display.max_rows', None)
+            
+            if len(raw_hs_school_data) > 0:
+                                
+                # year_columns = raw_hs_school_data["Year"].tolist()
 
                 print('Get HS Corp Data')
                 raw_hs_corp_data = get_high_school_corporation_academic_data(school)
@@ -251,9 +271,9 @@ def update_academic_metrics(data, school: str, year: str):
                 pass # TODO: if NO DATA THEN NO TABLE
 
             print('REFACTOR')
-            # tst = clean_hs_corp_data.copy()
-            # tst = tst.set_index(['Category'])
-            # print(tst)
+            tst = clean_hs_school_data.copy()
+            tst = tst.set_index(['Category'])
+            print(tst)
             # print(clean_hs_school_data)
             
             # hs_all_metrics = calculate_high_school_metrics(clean_hs_school_data, clean_hs_corp_data, year, school)

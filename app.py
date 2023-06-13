@@ -1520,8 +1520,12 @@ def load_data(school, year):
             hs_school_data = hs_school_data.reset_index(drop=True)
 
             # TODO: HERE WITH HS METRICS - FIGURE OUT WHY ORIG DOESNT MATCH WITH REFACTGOR
-
-
+            print('ORIG HS SCH')
+            print(hs_school_data)
+            tst2 = hs_school_data.copy()
+            tst2 = tst2.set_index(['Category'])
+            print(tst2)
+            
             # get clean list of years
             hs_year_cols = list(hs_school_data.columns[:0:-1])
             hs_year_cols.reverse()

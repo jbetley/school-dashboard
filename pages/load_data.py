@@ -243,6 +243,7 @@ def calculate_eca_rate(values):
 
 def calculate_sat_rate(values):
 
+# TODO: Have a problem either here or in filter_function that is dropping NonEnglish Learners?
     data = values.copy()
     # print(data.T)
     sat_categories = ethnicity + subgroup + ["School Total"]
@@ -255,13 +256,9 @@ def calculate_sat_rate(values):
             approaching_benchmark = sc + "|" + ss + " Approaching Benchmark"
             below_benchmark = sc + "|" + ss + " Below Benchmark"
             total_tested = sc + "|" + ss + " Total Tested"
-            # print(total_tested)
+
             if total_tested in data.columns:
-                # print(total_tested)
-                # Data is messy so we test whether or not to drop all related categories
-                # if total tested # of students is = 0
-                # print(data[total_tested])
-                # print(type(data[total_tested].values[0]))
+
                 if data[total_tested].values[0] == 0:
                     print('DROPPED')
                     drop_columns = [new_col, at_benchmark, approaching_benchmark, below_benchmark, total_tested]
