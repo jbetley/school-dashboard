@@ -218,26 +218,24 @@ def update_academic_metrics(data, school: str, year: str):
                 # clean SAT data
                 tested_cols = sat_data.filter(like='Total Tested').columns.tolist()
                 drop_columns=[]
-
                 for col in tested_cols:
-                    if sat_data[col].values[0] == 0:                    
-                        drop_columns.append(sat_data.filter(like = col.split(' Total')[0]).columns.tolist())
+                    if sat_data[col].values[0] == 0:
+                        matching_cols = sat_data.columns[pd.Series(sat_data.columns).str.startswith(col.split(' Total')[0])]
+                        drop_columns.append(matching_cols.tolist())                     
 
                 drop_all = [i for sub_list in drop_columns for i in sub_list]
 
                 sat_data = sat_data.drop(drop_all, axis=1).copy()
 
-                # clean Other data
+                # clean 'other' data
                 # NOTE: Need to do this separately because we want to keep '0' values for SAT
                 # Categories with Tested students.
                 valid_column_mask = other_data.any()
-
                 # valid_mask = ~pd.isnull(data[data.columns]).all()        
+
                 other_data = other_data[other_data.columns[valid_column_mask]]
                 
                 final_data = other_data.merge(sat_data, how = 'outer')
-                
-                # final_data = other_data.append(sat_data, ignore_index=True)
                 
                 return final_data
                         
@@ -248,8 +246,6 @@ def update_academic_metrics(data, school: str, year: str):
             pd.set_option('display.max_rows', None)
             
             if len(raw_hs_school_data) > 0:
-                                
-                # year_columns = raw_hs_school_data["Year"].tolist()
 
                 print('Get HS Corp Data')
                 raw_hs_corp_data = get_high_school_corporation_academic_data(school)
@@ -259,25 +255,20 @@ def update_academic_metrics(data, school: str, year: str):
                 for col in raw_hs_corp_data.columns:
                     raw_hs_corp_data[col] = pd.to_numeric(raw_hs_corp_data[col], errors='coerce')
 
-                # Find the common columns between the two dataframes - need to do this because
-                # school data has many more columns than col data
+                # NOTE: hs_data columns are a subset of school_data columns, but we still need to ensure hs_data
+                # only includes columns that are in school_data (after being cleaned/filtered above). So we find
+                # the intersection of the two sets and use it to filted hs_data
                 common_cols = [col for col in set(raw_hs_school_data.columns).intersection(raw_hs_corp_data.columns)]
                 raw_hs_corp_data = raw_hs_corp_data[common_cols]
 
                 clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, year, school)
-                # clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, year, school)
-                # print(clean_hs_school_data)
+                clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, year, school)
+
             else:
                 pass # TODO: if NO DATA THEN NO TABLE
-
-            print('REFACTOR')
-            tst = clean_hs_school_data.copy()
-            tst = tst.set_index(['Category'])
-            print(tst)
-            # print(clean_hs_school_data)
             
-            # hs_all_metrics = calculate_high_school_metrics(clean_hs_school_data, clean_hs_corp_data, year, school)
-
+            hs_all_metrics = calculate_high_school_metrics(clean_hs_school_data, clean_hs_corp_data, year, school)
+# TODO: hs_school and hs_corp data match app main data to here
             # print(hs_all_data)
             # combined_grad_metrics_json
             if data['14']:

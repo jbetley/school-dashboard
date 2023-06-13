@@ -922,6 +922,9 @@ def load_data(school, year):
                 final_k8_academic_data["Category"] == "IREAD Pass %", "Category"
             ] = "IREAD Proficiency (Grade 3 only)"
 
+            print('ORIG METRICS')
+            print(final_k8_academic_data)
+            
             # convert to ordered_dict and then json
             k8_academic_data_dict = final_k8_academic_data.to_dict(into=OrderedDict)
             k8_academic_data_json = json.dumps(k8_academic_data_dict)
@@ -1520,12 +1523,8 @@ def load_data(school, year):
             hs_school_data = hs_school_data.reset_index(drop=True)
 
             # TODO: HERE WITH HS METRICS - FIGURE OUT WHY ORIG DOESNT MATCH WITH REFACTGOR
-            print('ORIG HS SCH')
-            print(hs_school_data)
-            tst2 = hs_school_data.copy()
-            tst2 = tst2.set_index(['Category'])
-            print(tst2)
-            
+
+
             # get clean list of years
             hs_year_cols = list(hs_school_data.columns[:0:-1])
             hs_year_cols.reverse()
@@ -1542,7 +1541,7 @@ def load_data(school, year):
                 .reset_index()
             )
 
-# TODO: END OF REG HS DATA
+# TODO: academic_metrics hs_school and hs_corp data match to here
 
             # have to do same things to ahs_data to be able to insert it back
             # into hs_data file even though there is no comparison data involved
@@ -1560,6 +1559,7 @@ def load_data(school, year):
                     .reset_index()
                 )
 
+# TODO: THIS IS WHERE THE MAGIC HAPPENS WRT CREATING METRIC DF - create hs metrics starts here
             # Create list of alternating columns by year (School Value/Similar School Value)
             school_cols = list(hs_school_data.columns[:0:-1])
             school_cols.reverse()
@@ -1567,6 +1567,8 @@ def load_data(school, year):
             corp_cols = list(hs_corp_data.columns[:0:-1])
             corp_cols.reverse()
 
+            print(hs_year_cols)
+            
             result_cols = [str(s) + "+/-" for s in hs_year_cols]
 
             final_cols = list(
