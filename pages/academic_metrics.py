@@ -8,8 +8,13 @@
 import dash
 from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
-import json
+import re
 import pandas as pd
+
+# TESTING
+# pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
+# TESTING
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, create_metric_table, \
@@ -17,8 +22,8 @@ from .table_helpers import no_data_page, no_data_table, create_metric_table, \
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, grades_all, process_k8_academic_data, \
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
-        calculate_iread_metrics, get_attendance_metrics, calculate_high_school_metrics, \
-        calculate_adult_high_school_metrics
+        calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
+        calculate_adult_high_school_metrics, filter_high_school_academic_data
 
 from .load_db import get_k8_school_academic_data, get_k8_corporation_academic_data, get_high_school_academic_data, \
     get_high_school_corporation_academic_data
@@ -46,11 +51,10 @@ dash.register_page(__name__,  path = '/academic_metrics', order=5)
     Output('academic-metrics-main-container', 'style'),
     Output('academic-metrics-empty-container', 'style'),
     Output('academic-metrics-no-data', 'children'),  
-    Input('dash-session', 'data'),
     Input('charter-dropdown', 'value'),
     Input('year-dropdown', 'value'),
 )
-def update_academic_metrics(data, school: str, year: str):
+def update_academic_metrics(school: str, year: str):
     if not school:
         raise PreventUpdate
 
@@ -84,22 +88,11 @@ def update_academic_metrics(data, school: str, year: str):
         table_container_17cd = {}
         display_hs_metrics = {'display': 'none'}
 
-        print('Get AHS School Data')
-        raw_hs_school_data = get_high_school_academic_data(school)
+        ahs_metrics = calculate_adult_high_school_metrics(school)
 
-        if len(raw_hs_school_data) > 0:
-
-            raw_hs_school_data = raw_hs_school_data.replace({"^": "***"})
-
-            # Use this to build Placeholder tables
-            year_columns = raw_hs_school_data["Year"].tolist()
-
-            # Adult High School Data
-            ahs_all_data = process_high_school_academic_data(raw_hs_school_data, year, school)
+        if len(ahs_metrics) > 0:
             
-            ahs_ccr_data = ahs_all_data[ahs_all_data["Category"] == "CCR Percentage"]
-
-            ahs_metric_data_113 = calculate_adult_high_school_metrics(ahs_ccr_data, school)
+            ahs_metric_data_113 = ahs_metrics.copy()
 
             ahs_metric_data_113['Category'] = ahs_metric_data_113['Metric'] + ' ' + ahs_metric_data_113['Category']
             
@@ -171,87 +164,14 @@ def update_academic_metrics(data, school: str, year: str):
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
 
-# TODO: ADD HS ONLY METRICS HERE
-            print('Get HS School Data')
-            print(selected_school['School Name'])
-
-            # def filter_high_school_academic_data(data):
-
-            #     # Separate SAT data categories and Other data categories into separate dfs
-            #     sat_hs_data = raw_hs_school_data[raw_hs_school_data.columns[raw_hs_school_data.columns.str.contains(r'Benchmark|Total Tested')]]
-            #     other_hs_data = raw_hs_school_data[raw_hs_school_data.columns[~raw_hs_school_data.columns.str.contains(r'Benchmark|Total Tested')]]
-                
-            #     tested_cols = sat_hs_data.filter(like='Total Tested').columns.tolist()
-            #     drop_columns=[]
-
-            #     for col in tested_cols:
-            #         if sat_hs_data[col].values[0] == 0:                    
-            #             drop_columns.append(sat_hs_data.filter(like = col.split(' Total')[0]).columns.tolist())
-
-            #     # flatten the resulting nested list
-            #     drop_all = [i for sub_list in drop_columns for i in sub_list]
-
-            #     sat_hs_data = sat_hs_data.drop(drop_all, axis=1).copy()
-
-            #     # recombine the modified SAT dataframe with the 'other data' dataframe
-
-
-            #     return tst
-
-# TODO: Have a problem either here or in sat_calc function that is dropping NonEnglish Learners?
-            def filter_high_school_academic_data(data):
-            # Iterates over all 'Total Tested' columns - if the value of 'Total Tested' for a
-            # particular 'Category' and 'Subject' (e.g., 'Multiracial|Math) is 0, drop all
-            # columns (e.g., 'Approaching Benchmark', 'At Benchmark', etc.) for that 'Category'
-            # and 'Subject'
-
-                data = data.replace({"^": "***"})
-
-                # school data: coerce to numeric but keep strings ('***')
-                for col in data.columns:
-                    data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
-
-                # Separate SAT data categories and Other data categories into separate dfs
-                sat_data = data[data.columns[data.columns.str.contains(r'Year|Benchmark|Total Tested')]].copy()
-                other_data = data[data.columns[~data.columns.str.contains(r'Benchmark|Total Tested')]].copy()
-                
-                # clean SAT data
-                tested_cols = sat_data.filter(like='Total Tested').columns.tolist()
-                drop_columns=[]
-                for col in tested_cols:
-                    if sat_data[col].values[0] == 0:
-                        matching_cols = sat_data.columns[pd.Series(sat_data.columns).str.startswith(col.split(' Total')[0])]
-                        drop_columns.append(matching_cols.tolist())                     
-
-                drop_all = [i for sub_list in drop_columns for i in sub_list]
-
-                sat_data = sat_data.drop(drop_all, axis=1).copy()
-
-                # clean 'other' data
-                # NOTE: Need to do this separately because we want to keep '0' values for SAT
-                # Categories with Tested students.
-                valid_column_mask = other_data.any()
-                # valid_mask = ~pd.isnull(data[data.columns]).all()        
-
-                other_data = other_data[other_data.columns[valid_column_mask]]
-                
-                final_data = other_data.merge(sat_data, how = 'outer')
-                
-                return final_data
-                        
             raw_hs_school_data = get_high_school_academic_data(school)
             raw_hs_school_data = filter_high_school_academic_data(raw_hs_school_data)
-
-            # pd.set_option('display.max_columns', None)
-            pd.set_option('display.max_rows', None)
             
             if len(raw_hs_school_data) > 0:
 
-                print('Get HS Corp Data')
+# TODO: What if there is no Corp Data?
                 raw_hs_corp_data = get_high_school_corporation_academic_data(school)
-                raw_hs_corp_data = raw_hs_corp_data.replace({"^": "***"})
 
-                # corporation data: coerce strings
                 for col in raw_hs_corp_data.columns:
                     raw_hs_corp_data[col] = pd.to_numeric(raw_hs_corp_data[col], errors='coerce')
 
@@ -264,17 +184,8 @@ def update_academic_metrics(data, school: str, year: str):
                 clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, year, school)
                 clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, year, school)
 
-            else:
-                pass # TODO: if NO DATA THEN NO TABLE
-            
-            hs_all_metrics = calculate_high_school_metrics(clean_hs_school_data, clean_hs_corp_data, year, school)
-# TODO: hs_school and hs_corp data match app main data to here
-            # print(hs_all_data)
-            # combined_grad_metrics_json
-            if data['14']:
-
-                json_data = json.loads(data['14'])
-                combined_grad_metrics_data = pd.DataFrame.from_dict(json_data)
+                hs_merged_data = merge_high_school_data(clean_hs_school_data, clean_hs_corp_data, year)
+                combined_grad_metrics_data = calculate_high_school_metrics(hs_merged_data)
 
                 metric_17ab_label = 'High School Accountability Metrics 1.7.a & 1.7.b'
                 combined_grad_metrics_data = get_svg_circle(combined_grad_metrics_data)  
@@ -328,14 +239,11 @@ def update_academic_metrics(data, school: str, year: str):
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
 
-            print('Get k8 School Data')
             raw_school_data = get_k8_school_academic_data(school)
 
             if len(raw_school_data) > 0:
 
                 raw_school_data = raw_school_data.replace({"^": "***"})
-
-                year_columns = raw_school_data["Year"].tolist()
 
                 # keep only school columns with non-null data.
                 valid_column_mask = raw_school_data.any()
@@ -343,33 +251,23 @@ def update_academic_metrics(data, school: str, year: str):
                 # valid_mask = ~pd.isnull(data[data.columns]).all()        
                 raw_school_data = raw_school_data[raw_school_data.columns[valid_column_mask]]
 
-                print('Get k8 Corp Data')
-                raw_corp_data = get_k8_corporation_academic_data(school)
+                # raw_corp_data = get_k8_corporation_academic_data(school)
 
-                # Find the common columns between the two dataframes - need to do this because
-                # school data has many more columns than col data
-                common_cols = [col for col in set(raw_school_data.columns).intersection(raw_corp_data.columns)]
-                raw_corp_data = raw_corp_data[common_cols]
+                # TODO: Does this need to be moved to calculate_comparison function?
+                # # Find the common columns between the two dataframes - need to do this because
+                # # school data has many more columns than col data
+                # common_cols = [col for col in set(raw_school_data.columns).intersection(raw_corp_data.columns)]
+                # raw_corp_data = raw_corp_data[common_cols]
 
                 clean_school_data = process_k8_academic_data(raw_school_data, year, school)
-                clean_corp_data = process_k8_academic_data(raw_corp_data, year, school)
+                
+                # # TODO: CURRENTLY GETTING CORP DATA IN calculate fn - it isn't used anywhere else
+                # # TODO: and should only be called if school data is not null.
+                # clean_corp_data = process_k8_academic_data(raw_corp_data, year, school)
            
-            else:
-           
-                pass # TODO: if NO DATA THEN NO TABLE
-
-            # # Further processing necessary for Corp Data
-            # # remove rows from corp data that aren't in school data
-            # valid_categories = clean_school_data['Category'].tolist()
-            # clean_corp_data = clean_corp_data[clean_corp_data['Category'].isin(valid_categories)]
-            # clean_corp_data = clean_corp_data.reset_index(drop=True)
-
-            if len(clean_school_data.index) > 0:
-
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
                 combined_delta = calculate_k8_comparison_metrics(clean_school_data, year, school)
 
-                print('K8 METRICS PROCESSED')
                 category = ethnicity + subgroup
 
                 metric_14a_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades_all))) & (combined_years['Category'].str.contains('ELA'))]
@@ -511,8 +409,7 @@ def update_academic_metrics(data, school: str, year: str):
                 main_container = {'display': 'none'}
                 empty_container = {'display': 'block'}
 
-    #If there is no matching school_type - display empty table. this should never
-    # happen. which is why this code is here.
+    # Theoretically, this should never happen . . . which is why we are accounting for it.
     if selected_school_type != 'K8' and selected_school_type != 'K12' \
         and selected_school_type != 'HS' and selected_school_type != 'AHS':
         
@@ -539,11 +436,15 @@ def update_academic_metrics(data, school: str, year: str):
         main_container = {'display': 'none'}
         empty_container = {'display': 'block'}
 
-    # Attendance Data & Teacher Retention Rate
+    # Attendance Data & Teacher Retention Rate (All schools have this data)
     metric_11ab_label = 'Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation.'
     
-    # all school types have attendence data
     attendance_data = get_attendance_metrics(school, year)
+    
+    # Get a list of unique years from columns (used this to build Placeholder tables)
+    # r = re.compile(".*([1-3][0-9]{3})")
+    # year_group = [m.group(1) for l in attendance_data.columns.to_list() for m in [r.search(l)] if m]
+    # year_columns = [*set(year_group)].sort()
 
     if len(attendance_data) > 0:
 
@@ -578,17 +479,7 @@ def update_academic_metrics(data, school: str, year: str):
             '1.1.d. Re-Enrollment Rate']
         }
         
-        # NOTE: This is hideous, but we need the columns to look something like:
-        #   Index(['Category', '2022School', '2022+/-', '2022Rate3', '2021School',
-        #   '2021+/-', '2021Rate5', etc.])- so we use a placeholder until we actually have data
-
-        mock_columns = ['Category']
-        i = 1
-        for y in year_columns:
-            mock_columns.append(str(y) + 'School')
-            mock_columns.append(str(y) + '+/-')
-            mock_columns.append(str(y) + 'Rate' + str(i))
-            i+=i
+        mock_columns = [i for i in attendance_data.columns if 'Corp Avg' not in i]
 
         student_retention_empty = pd.DataFrame(columns = mock_columns)
         student_retention_rate = pd.DataFrame(student_retention_rate_dict)

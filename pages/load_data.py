@@ -13,7 +13,7 @@ import numpy as np
 import itertools
 from .load_db import get_current_year, get_index, get_k8_school_academic_data, get_demographics, \
     get_high_school_academic_data, get_k8_corporation_academic_data, get_graduation_data, \
-        get_high_school_corporation_academic_data, get_letter_grades, get_index
+        get_high_school_corporation_academic_data, get_letter_grades, get_index, get_adult_high_school_metric_data
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating
 
@@ -108,6 +108,9 @@ def get_attendance_data(data, year):
 
     demographic_data = data[~data["Year"].isin(excluded_years)]
     attendance_data = demographic_data[["Year", "Avg Attendance"]]
+
+    # drop years with no data
+    attendance_data = attendance_data[attendance_data['Avg Attendance'].notnull()]
 
     attendance_rate = (attendance_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
@@ -315,7 +318,6 @@ def process_k8_academic_data(all_data, year, school):
             for col in data.columns:
                 data[col] = pd.to_numeric(data[col], errors='coerce')
        
-            # print(data.T)
         else:
        
             school_info = data[["School Name"]].copy()
@@ -377,6 +379,49 @@ def process_k8_academic_data(all_data, year, school):
 
     return data
 
+def filter_high_school_academic_data(data):
+# Iterates over all 'Total Tested' columns - if the value of 'Total Tested' for a
+# particular 'Category' and 'Subject' (e.g., 'Multiracial|Math) is 0, drop all
+# columns (e.g., 'Approaching Benchmark', 'At Benchmark', etc.) for that 'Category'
+# and 'Subject'
+    if len(data) > 0:
+        data = data.replace({"^": "***"})
+
+        # school data: coerce to numeric but keep strings ('***')
+        for col in data.columns:
+            data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
+
+        # Separate SAT data categories and Other data categories into separate dfs
+        sat_data = data[data.columns[data.columns.str.contains(r'Year|Benchmark|Total Tested')]].copy()
+        other_data = data[data.columns[~data.columns.str.contains(r'Benchmark|Total Tested')]].copy()
+        
+        # clean SAT data
+        tested_cols = sat_data.filter(like='Total Tested').columns.tolist()
+        drop_columns=[]
+        for col in tested_cols:
+            if sat_data[col].values[0] == 0:
+                matching_cols = sat_data.columns[pd.Series(sat_data.columns).str.startswith(col.split(' Total')[0])]
+                drop_columns.append(matching_cols.tolist())                     
+
+        drop_all = [i for sub_list in drop_columns for i in sub_list]
+
+        sat_data = sat_data.drop(drop_all, axis=1).copy()
+
+        # clean 'other' data
+        # NOTE: Need to do this separately because we want to keep '0' values for SAT
+        # Categories with Tested students.
+        valid_column_mask = other_data.any()
+        # valid_mask = ~pd.isnull(data[data.columns]).all()        
+
+        other_data = other_data[other_data.columns[valid_column_mask]]
+        
+        final_data = other_data.merge(sat_data, how = 'outer')
+    
+    else:
+        final_data = pd.DataFrame()
+
+    return final_data
+    
 def process_high_school_academic_data(all_data, year, school):
 
     school_information = get_index(school)
@@ -492,7 +537,229 @@ def process_high_school_academic_data(all_data, year, school):
 
     return data
 
+
 ### Calculate Accountability Metrics ###
+
+def calculate_adult_high_school_metrics(school):
+    # AHS metrics is such a small subset of all metrics, instead of pulling in entire HS DF, we just pull the three
+    # datapoints we need directly from the DB.
+
+    data = get_adult_high_school_metric_data(school)
+
+    if len(data) > 0:
+        data.columns = data.columns.astype(str)
+
+        data["CCR Percentage"] = pd.to_numeric(data["AHS|CCR"]) / pd.to_numeric(data["AHS|Grad All"])
+        
+        ahs_data = data [['Year', 'CCR Percentage']]
+
+        # transpose dataframe and clean headers
+        ahs_data = (ahs_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+            
+        # format for multi-header display
+        ahs_data.columns = ahs_data.columns.astype(str)
+        data_columns = list(ahs_data.columns[:0:-1])
+        data_columns.reverse()
+
+        ahs_data = (ahs_data.set_index(["Category"]).add_suffix("School").reset_index())
+
+        ccr_limits = [0.5, 0.499, 0.234]
+        [
+            ahs_data.insert(
+                i,
+                str(data_columns[i - 2]) + "Rate" + str(i),
+                ahs_data.apply(
+                    lambda x: set_academic_rating(
+                        x[ahs_data.columns[i - 1]], ccr_limits, 2
+                    ),
+                    axis=1,
+                ),
+            )
+            for i in range(ahs_data.shape[1], 1, -1)
+        ]
+
+        school_letter_grades = get_letter_grades(school)
+        school_letter_grades = (school_letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+        # strip second row (Federal Rating)
+        ahs_state_grades = school_letter_grades.iloc[0:1, :]
+
+        ahs_state_grades.columns = ahs_state_grades.columns.astype(str)
+        ahs_state_grades = (ahs_state_grades.set_index(["Category"]).add_suffix("School").reset_index())
+
+        # ensure state_grades df contains same years of data as ahs_metric_cols
+        ahs_state_grades = ahs_state_grades.loc[:,ahs_state_grades.columns.str.contains("|".join(data_columns + ["Category"]))]
+
+        letter_grade_limits = ["A", "B", "C", "D", "F"]
+
+        [
+            ahs_state_grades.insert(
+                i,
+                str(data_columns[i - 2]) + "Rate" + str(i),
+                ahs_state_grades.apply(
+                    lambda x: set_academic_rating(
+                        x[ahs_state_grades.columns[i - 1]],
+                        letter_grade_limits,
+                        4,
+                    ),
+                    axis=1,
+                ),
+            )
+            for i in range(ahs_state_grades.shape[1], 1, -1)
+        ]
+
+        # concatenate and add metric column
+        ahs_data = pd.concat([ahs_state_grades, ahs_data])
+        ahs_data = ahs_data.reset_index(drop=True)
+        ahs_metric_nums = ["1.1.", "1.3."]
+        ahs_data.insert(loc=0, column="Metric", value=ahs_metric_nums)
+    
+    else:
+        ahs_data = pd.DataFrame()
+
+    return ahs_data
+
+def merge_high_school_data(all_school_data, all_corp_data, year):
+
+    all_school_data.columns = all_school_data.columns.astype(str)
+    all_corp_data.columns = all_corp_data.columns.astype(str)
+
+    # Add State Graduation Average to both dataframes
+    state_grad_average = get_graduation_data()
+    state_grad_average = state_grad_average.loc[::-1].reset_index(drop=True)
+    
+    # add to corp data by transposing, mirroring the columns, dropping the 'Year' row, and
+    # concatenating together
+    state_grad_average = state_grad_average.T.reset_index()
+    state_grad_average = state_grad_average.drop(0)
+    state_grad_average.columns = all_corp_data.columns
+    all_corp_data = pd.concat([all_corp_data, state_grad_average], axis=0, ignore_index=True)
+
+    # add to school data by making a copy, renaming the category, and concatenating
+    duplicate_row = all_school_data[all_school_data['Category'] == 'Total Graduation Rate']
+    duplicate_row['Category'] = 'State Graduation Average'
+    all_school_data = pd.concat([all_school_data, duplicate_row], axis=0, ignore_index=True)
+
+    # Clean up and merge school and corporation dataframes
+
+    year_cols = list(all_school_data.columns[:0:-1])
+    year_cols.reverse()
+
+    all_corp_data = (all_corp_data.set_index(["Category"]).add_suffix("Corp Average").reset_index())
+    all_school_data = (all_school_data.set_index(["Category"]).add_suffix("School").reset_index())
+
+    # last bit of cleanup is to drop 'Corporation Name' Category from corp df
+    # all_corp_data = all_corp_data[all_corp_data['Category'] != 'Corporation Name']
+    all_corp_data = all_corp_data.drop(all_corp_data.loc[all_corp_data['Category']=='Corporation Name'].index).reset_index(drop=True)
+
+    # Create list of alternating columns by year
+    school_cols = list(all_school_data.columns[:0:-1])
+    school_cols.reverse()
+
+    corp_cols = list(all_corp_data.columns[:0:-1])
+    corp_cols.reverse()
+
+    result_cols = [str(s) + "+/-" for s in year_cols]
+
+    final_cols = list(itertools.chain(*zip(school_cols, corp_cols, result_cols)))
+    final_cols.insert(0, "Category")
+
+    merged_cols = [val for pair in zip(school_cols, corp_cols) for val in pair]
+    merged_cols.insert(0, "Category")
+    hs_merged_data = all_school_data.merge(all_corp_data, on="Category", how="left")
+    hs_merged_data = hs_merged_data[merged_cols]
+
+    tmp_category = all_school_data["Category"]
+    all_school_data = all_school_data.drop("Category", axis=1)
+    all_corp_data = all_corp_data.drop("Category", axis=1)
+
+    # make sure there are no lingering NoneTypes to screw up the creation of hs_results
+    all_school_data = all_school_data.fillna(value=np.nan)
+    all_corp_data = all_corp_data.fillna(value=np.nan)
+
+    # calculate difference between two dataframes
+    hs_results = pd.DataFrame()
+
+    for y in year_cols:
+        hs_results[y] = calculate_difference(
+            all_school_data[y + "School"], all_corp_data[y + "Corp Average"]
+        )
+
+    # add headers
+    hs_results = hs_results.set_axis(result_cols, axis=1)
+    hs_results.insert(loc=0, column="Category", value=tmp_category)
+
+    final_hs_academic_data = hs_merged_data.merge(hs_results, on="Category", how="left")
+    final_hs_academic_data = final_hs_academic_data[final_cols]
+
+    return final_hs_academic_data
+
+def calculate_high_school_metrics(merged_data):
+
+    data = merged_data.copy()
+
+    data.columns = data.columns.str.replace(r"Corp Average", "Average")
+
+    grad_limits_state = [0, 0.05, 0.15, 0.15]
+
+    state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
+
+    [
+        state_grad_metric.insert(
+            i,
+            str(state_grad_metric.columns[i - 1])[: 7 - 3]
+            + "Rate"
+            + str(i),
+            state_grad_metric.apply(
+                lambda x: set_academic_rating(
+                    x[state_grad_metric.columns[i - 1]],
+                    grad_limits_state,
+                    2,
+                ),
+                axis=1,
+            ),
+        )
+        for i in range(state_grad_metric.shape[1], 1, -3)
+    ]
+
+    grad_limits_local = [0, 0.05, 0.10, 0.10]
+    local_grad_metric = data[data["Category"].isin(["Total Graduation Rate", "Non Waiver Graduation Rate"])]
+
+    [
+        local_grad_metric.insert(
+            i,
+            str(local_grad_metric.columns[i - 1])[: 7 - 3]
+            + "Rate"
+            + str(i),
+            local_grad_metric.apply(
+                lambda x: set_academic_rating(
+                    x[local_grad_metric.columns[i - 1]],
+                    grad_limits_local,
+                    2,
+                ),
+                axis=1,
+            ),
+        )
+        for i in range(local_grad_metric.shape[1], 1, -3)
+    ]
+
+    strength_diploma = data[data["Category"] == "Strength of Diploma"]
+    strength_diploma = strength_diploma[[col for col in strength_diploma.columns if "School" in col or "Category" in col]]
+
+    # NOTE: Strength of Diploma is not currently displayed
+    strength_diploma.loc[strength_diploma["Category"] == "Strength of Diploma", "Category"] = "1.7.e The school's strength of diploma indicator."
+
+    # combine dataframes and rename categories
+    combined_grad_metrics = pd.concat([state_grad_metric, local_grad_metric], ignore_index=True)
+    combined_grad_metrics.loc[combined_grad_metrics["Category"] == "Average State Graduation Rate","Category",
+    ] = "1.7.a 4 year graduation rate compared with the State average"
+    combined_grad_metrics.loc[combined_grad_metrics["Category"] == "Total Graduation Rate", "Category",
+    ] = "1.7.b 4 year graduation rate compared with school corporation average"
+
+    combined_grad_metrics.loc[ combined_grad_metrics["Category"] == "Non-Waiver Graduation Rate", "Category",
+    ] = "1.7.b 4 year non-waiver graduation rate  with school corporation average"
+
+    return combined_grad_metrics
 
 def calculate_k8_yearly_metrics(data):
     
@@ -720,142 +987,6 @@ def calculate_k8_comparison_metrics(school_data, year, school):
     final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
 
     return final_k8_academic_data
-
-def calculate_adult_high_school_metrics(data, school):
-
-    data.columns = data.columns.astype(str)
-
-    # format for multi-header display
-    data_columns = list(data.columns[:0:-1])
-    data_columns.reverse()
-
-    data = (data.set_index(["Category"]).add_suffix("School").reset_index())
-
-    ccr_limits = [0.5, 0.499, 0.234]
-    [
-        data.insert(
-            i,
-            str(data_columns[i - 2]) + "Rate" + str(i),
-            data.apply(
-                lambda x: set_academic_rating(
-                    x[data.columns[i - 1]], ccr_limits, 2
-                ),
-                axis=1,
-            ),
-        )
-        for i in range(data.shape[1], 1, -1)
-    ]
-
-    school_letter_grades = get_letter_grades(school)
-    school_letter_grades = (school_letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-
-    # strip second row (Federal Rating)
-    ahs_state_grades = school_letter_grades.iloc[0:1, :]
-
-    ahs_state_grades.columns = ahs_state_grades.columns.astype(str)
-    ahs_state_grades = (ahs_state_grades.set_index(["Category"]).add_suffix("School").reset_index())
-
-    # ensure state_grades df contains same years of data as ahs_metric_cols
-
-    ahs_state_grades = ahs_state_grades.loc[:,ahs_state_grades.columns.str.contains("|".join(data_columns + ["Category"]))]
-
-    letter_grade_limits = ["A", "B", "C", "D", "F"]
-
-    [
-        ahs_state_grades.insert(
-            i,
-            str(data_columns[i - 2]) + "Rate" + str(i),
-            ahs_state_grades.apply(
-                lambda x: set_academic_rating(
-                    x[ahs_state_grades.columns[i - 1]],
-                    letter_grade_limits,
-                    4,
-                ),
-                axis=1,
-            ),
-        )
-        for i in range(ahs_state_grades.shape[1], 1, -1)
-    ]
-
-    # concatenate and add metric column
-    data = pd.concat([ahs_state_grades, data])
-    data = data.reset_index(drop=True)
-    ahs_metric_nums = ["1.1.", "1.3."]
-    data.insert(loc=0, column="Metric", value=ahs_metric_nums)
-
-    return data
-
-# TODO: Have not touched Yet
-def calculate_high_school_metrics(all_school_data, all_corp_data, year, school):
-
-    excluded_years = get_excluded_years(year)
-    # corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)]
-
-    all_school_data.columns = all_school_data.columns.astype(str)
-    all_corp_data.columns = all_corp_data.columns.astype(str)
-
-    year_cols = list(all_school_data.columns[:0:-1])
-    year_cols.reverse()
-
-    all_corp_data = (all_corp_data.set_index(["Category"]).add_suffix("Corp Average").reset_index())
-    all_school_data = (all_school_data.set_index(["Category"]).add_suffix("School").reset_index())
-
-    # TODO: From app.py right before metric calculation
-
-    # Create list of alternating columns by year (School Value/Similar School Value)
-    school_cols = list(all_school_data.columns[:0:-1])
-    school_cols.reverse()
-
-    corp_cols = list(all_corp_data.columns[:0:-1])
-    corp_cols.reverse()
-
-    result_cols = [str(s) + "+/-" for s in year_cols]
-
-    final_cols = list(itertools.chain(*zip(school_cols, corp_cols, result_cols)))
-    final_cols.insert(0, "Category")
-
-    merged_cols = [val for pair in zip(school_cols, corp_cols) for val in pair]
-    merged_cols.insert(0, "Category")
-    hs_merged_data = all_school_data.merge(all_corp_data, on="Category", how="left")
-    hs_merged_data = hs_merged_data[merged_cols]
-
-    tmp_category = all_school_data["Category"]
-    all_school_data = all_school_data.drop("Category", axis=1)
-    all_corp_data = all_corp_data.drop("Category", axis=1)
-
-    # make sure there are no lingering NoneTypes to screw up the creation of hs_results
-    all_school_data = all_school_data.fillna(value=np.nan)
-    all_corp_data = all_corp_data.fillna(value=np.nan)
-
-    # calculate difference between two dataframes
-    hs_results = pd.DataFrame()
-    
-# TODO: NEED To ADD MISSING DATA HERE
-
-    for y in year_cols:
-        hs_results[y] = calculate_difference(
-            all_school_data[y + "School"], all_corp_data[y + "Corp Average"]
-        )
-
-    # add headers
-    hs_results = hs_results.set_axis(result_cols, axis=1)
-    hs_results.insert(loc=0, column="Category", value=tmp_category)
-
-    final_hs_academic_data = hs_merged_data.merge(hs_results, on="Category", how="left")
-    final_hs_academic_data = final_hs_academic_data[final_cols]
-
-    print('REFACTOR METRICS')
-    print(final_hs_academic_data)
-
-    # TODO: DOES tHIS NEED TO BE HERE?
-    # # If AHS - add CCR data to hs_data file
-    # if school_info["School Type"].values[0] == "AHS":
-    #     final_hs_academic_data = pd.concat(
-    #         [final_hs_academic_data, ahs_school_data], sort=False
-    #     )
-    #     final_hs_academic_data = final_hs_academic_data.reset_index(drop=True)
-
-    return final_hs_academic_data
 
 def calculate_iread_metrics(data):
     

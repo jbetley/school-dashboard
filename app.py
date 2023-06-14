@@ -922,9 +922,6 @@ def load_data(school, year):
                 final_k8_academic_data["Category"] == "IREAD Pass %", "Category"
             ] = "IREAD Proficiency (Grade 3 only)"
 
-            print('ORIG METRICS')
-            print(final_k8_academic_data)
-            
             # convert to ordered_dict and then json
             k8_academic_data_dict = final_k8_academic_data.to_dict(into=OrderedDict)
             k8_academic_data_json = json.dumps(k8_academic_data_dict)
@@ -1474,7 +1471,7 @@ def load_data(school, year):
             state_grad_average["Year"] = state_grad_average["Year"].astype(int)
 
             hs_corp_data = hs_corp_data.merge(state_grad_average, on="Year", how="inner")
-
+            
             hs_corp_data = hs_corp_data.rename(
                 columns={"State_Grad_Average": "Average State Graduation Rate"}
             )
@@ -1522,9 +1519,6 @@ def load_data(school, year):
 
             hs_school_data = hs_school_data.reset_index(drop=True)
 
-            # TODO: HERE WITH HS METRICS - FIGURE OUT WHY ORIG DOESNT MATCH WITH REFACTGOR
-
-
             # get clean list of years
             hs_year_cols = list(hs_school_data.columns[:0:-1])
             hs_year_cols.reverse()
@@ -1540,8 +1534,6 @@ def load_data(school, year):
                 .add_suffix("School")
                 .reset_index()
             )
-
-# TODO: academic_metrics hs_school and hs_corp data match to here
 
             # have to do same things to ahs_data to be able to insert it back
             # into hs_data file even though there is no comparison data involved
@@ -1559,7 +1551,6 @@ def load_data(school, year):
                     .reset_index()
                 )
 
-# TODO: THIS IS WHERE THE MAGIC HAPPENS WRT CREATING METRIC DF - create hs metrics starts here
             # Create list of alternating columns by year (School Value/Similar School Value)
             school_cols = list(hs_school_data.columns[:0:-1])
             school_cols.reverse()
@@ -1567,8 +1558,6 @@ def load_data(school, year):
             corp_cols = list(hs_corp_data.columns[:0:-1])
             corp_cols.reverse()
 
-            print(hs_year_cols)
-            
             result_cols = [str(s) + "+/-" for s in hs_year_cols]
 
             final_cols = list(
@@ -1614,10 +1603,10 @@ def load_data(school, year):
                 )
                 final_hs_academic_data = final_hs_academic_data.reset_index(drop=True)
 
-
             hs_academic_data_dict = final_hs_academic_data.to_dict(into=OrderedDict)
             hs_academic_data_json = json.dumps(hs_academic_data_dict)
 
+# TODO: HERE!
             # calculate AHS/HS Academic Metrics
 
             if school_info["School Type"].values[0] == "AHS":
@@ -1703,13 +1692,8 @@ def load_data(school, year):
                 ahs_metrics_data_json = json.dumps(ahs_school_metric_dict)
 
             else:
-            # TODO: HS METRICS BEGIN HERE (this is data[14])
                 combined_hs_metrics = final_hs_academic_data.copy()
 
-                print('ORIG:')
-                # print(hs_school_data)
-                # print(hs_corp_data)
-                # rename 'Corp Average' to 'Average'
                 combined_hs_metrics.columns = combined_hs_metrics.columns.str.replace(r"Corp Average", "Average")
 
                 grad_limits_state = [0, 0.05, 0.15, 0.15]
