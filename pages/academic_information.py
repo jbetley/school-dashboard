@@ -21,8 +21,8 @@ from .chart_helpers import no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages #, calculate_percentage
 from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, subject, grades, grades_all, grades_ordinal, \
-    process_k8_academic_data, get_attendance_data, process_high_school_academic_data, get_excluded_years  # current_academic_year, 
-from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographics
+    process_k8_academic_data, get_attendance_data, process_high_school_academic_data, get_excluded_years
+from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographic_data, get_school_index
 
 dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
 
@@ -221,7 +221,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     k8_ethnicity_table = no_data_table('Proficiency by Ethnicity')
 
                 # Attendance rate
-                school_demographic_data = get_demographics(school)
+                school_demographic_data = get_demographic_data(school)
                 attendance_rate = get_attendance_data(school_demographic_data, year)
 
                 if len(attendance_rate.index) == 0:

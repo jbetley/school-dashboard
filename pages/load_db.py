@@ -98,7 +98,7 @@ def get_graduation_data():
 
     return run_query(q, params)
 
-def get_index(school_id):
+def get_school_index(school_id):
     params = dict(id=school_id)
 
     q = text('''
@@ -122,7 +122,7 @@ def get_info(school_id):
 
 # Get Financial Data
 # Input: school_id
-def get_finance(school_id):
+def get_financial_data(school_id):
     params = dict(id=school_id)
     q = text('''
         SELECT * 
@@ -132,7 +132,7 @@ def get_finance(school_id):
     return run_query(q, params)
 
 # for school corporations, SchoolID and CorpID are the same
-def get_demographics(*args):
+def get_demographic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
 

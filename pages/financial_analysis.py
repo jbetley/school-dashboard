@@ -20,8 +20,8 @@ from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
-from .load_data import school_index, financial_ratios, max_display_years
-from .load_db import get_finance
+from .load_data import financial_ratios, max_display_years
+from .load_db import get_school_index, get_financial_data
 
 dash.register_page(__name__, path = '/financial_analysis', order=3)
 
@@ -55,8 +55,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     no_data_to_display = no_data_page('Financial Analysis')
 
     selected_year = int(year)
-
-    selected_school = school_index.loc[school_index["School ID"] == school]
+    selected_school = get_school_index(school)
 
     # See financial_information.py for comments
     if selected_school['Network'].values[0] != 'None':
@@ -125,7 +124,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         
         # network financial data
         if network_id != 'None':
-            finance_file = get_finance(network_id)
+            finance_file = get_financial_data(network_id)
         else:
             finance_file = {}
 
@@ -139,7 +138,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     else:
         
         # school financial data
-        finance_file = get_finance(school)
+        finance_file = get_financial_data(school)
 
         # finance_file_json = json.loads(data['17'])    
 

@@ -25,8 +25,7 @@ from .load_data import school_index, ethnicity, subgroup, grades_all, process_k8
         calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
         calculate_adult_high_school_metrics, filter_high_school_academic_data
 
-from .load_db import get_k8_school_academic_data, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_high_school_corporation_academic_data
+from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_high_school_corporation_academic_data
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 

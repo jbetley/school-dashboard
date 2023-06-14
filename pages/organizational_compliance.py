@@ -9,7 +9,7 @@ from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 
 from .table_helpers import get_svg_circle, no_data_table
-from .load_db import get_finance
+from .load_db import get_financial_data
 
 dash.register_page(__name__, top_nav=True, order=7)
 
@@ -26,7 +26,7 @@ def update_organizational_compliance(school, year):
     selected_year = int(year)
 
     # get organizational comliance data from financial data and clean-up
-    finance_file = get_finance(school)
+    finance_file = get_financial_data(school)
     finance_file = finance_file.drop(['School ID','School Name'], axis=1)
     finance_file = finance_file.dropna(axis=1, how='all')
 

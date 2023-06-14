@@ -11,9 +11,9 @@
 import pandas as pd
 import numpy as np
 import itertools
-from .load_db import get_current_year, get_index, get_k8_school_academic_data, get_demographics, \
+from .load_db import get_current_year, get_school_index, get_k8_school_academic_data, get_demographic_data, \
     get_high_school_academic_data, get_k8_corporation_academic_data, get_graduation_data, \
-        get_high_school_corporation_academic_data, get_letter_grades, get_index, get_adult_high_school_metric_data
+        get_high_school_corporation_academic_data, get_letter_grades, get_adult_high_school_metric_data
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating
 
@@ -130,8 +130,8 @@ def get_attendance_metrics(school, year):
     selected_school = school_index.loc[school_index["School ID"] == school]
     corp_id = selected_school['GEO Corp'].values[0]
 
-    corp_demographics = get_demographics(corp_id)
-    school_demographics = get_demographics(school)
+    corp_demographics = get_demographic_data(corp_id)
+    school_demographics = get_demographic_data(school)
     corp_attendance_rate = get_attendance_data(corp_demographics, year)
     school_attendance_rate = get_attendance_data(school_demographics, year)    
 
@@ -292,7 +292,7 @@ def calculate_proficiency(values):
 ### Dataframe Formatting Functions ###
 def process_k8_academic_data(all_data, year, school):
     
-    school_information = get_index(school)
+    school_information = get_school_index(school)
 
     # use these to determine if data belongs to school or corporation
     school_geo_code = school_information["GEO Corp"].values[0]

@@ -14,8 +14,8 @@ import numpy as np
 
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
-from .load_data import school_index, ethnicity, subgroup, max_display_years, current_academic_year
-from .load_db import get_finance, get_demographics, get_letter_grades
+from .load_data import ethnicity, subgroup, max_display_years, current_academic_year
+from .load_db import get_school_index, get_financial_data, get_demographic_data, get_letter_grades
 
 dash.register_page(__name__, path='/', order=0, top_nav=True)
 
@@ -50,7 +50,8 @@ def update_about_page(year: str, school: str):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('School Enrollment & Demographics')
 
-    selected_school = school_index.loc[school_index["School ID"] == school]
+    selected_school = get_school_index(school)
+
     school_name = selected_school['School Name'].values[0]
     headers = ['Category','Description']
 
@@ -95,16 +96,15 @@ def update_about_page(year: str, school: str):
         )
     ]
 
-    school_demographics = get_demographics(school)
+    school_demographics = get_demographic_data(school)
+    financial_data = get_financial_data(school)
     school_letter_grades = get_letter_grades(school)
-
-    finance_file = get_finance(school)
     
     # clean up
-    finance_file = finance_file.drop(['School ID','School Name'], axis=1)
-    finance_file = finance_file.dropna(axis=1, how='all')
+    financial_data = financial_data.drop(['School ID','School Name'], axis=1)
+    financial_data = financial_data.dropna(axis=1, how='all')
 
-    school_financial_data = finance_file.copy()
+    school_financial_data = financial_data.copy()
 
     if len(school_letter_grades.index) == 0 and (len(school_demographics.index) == 0 & \
           len(school_financial_data.index) == 0):
@@ -123,10 +123,10 @@ def update_about_page(year: str, school: str):
 
     else:
 
-        # Enrollment table
-        corp_id = selected_school['GEO Corp'].values[0]
-        
-        corp_demographics = get_demographics(corp_id)
+        # Build enrollment table
+
+        corp_id = str(selected_school['GEO Corp'].values[0])
+        corp_demographics = get_demographic_data(corp_id)
 
         selected_year = str(year)
         current_year = selected_year
@@ -200,13 +200,13 @@ def update_about_page(year: str, school: str):
                 )
             ]
 
-        # State and Federal ratings table
+        # State grades and Federal ratings table
         if len(school_letter_grades.index) == 0:
 
             letter_grade_table = no_data_table('State and Federal Ratings')
 
         else:
-# TODO: Process letter grades function?
+
             school_letter_grades = (school_letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
             # hide 2018 grades
@@ -394,7 +394,8 @@ def update_about_page(year: str, school: str):
                 plot_bgcolor='rgba(0,0,0,0)'
             )
 
-        # Enrollment by ethnicity chart
+        # Build enrollment by ethnicity chart
+
         ethnicity_school = school_demographics.loc[:, (school_demographics.columns.isin(ethnicity)) | (school_demographics.columns.isin(['Corporation Name','Total Enrollment']))].copy()
         ethnicity_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(ethnicity)) | (corp_demographics.columns.isin(['Corporation Name','Total Enrollment']))].copy()
 

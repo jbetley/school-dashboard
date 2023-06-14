@@ -45,7 +45,7 @@ from pages.calculations import set_academic_rating, calculate_percentage, \
 from pages.load_data import school_index, school_academic_data_k8, all_academic_data_hs, \
     corporation_rates, all_demographic_data, current_academic_year
 
-from pages.load_db import get_finance
+from pages.load_db import get_financial_data
 
 #TODO: TEMP STRINGS TO KEEP THIS DATA WORKING
 # global strings
@@ -282,7 +282,7 @@ def set_year_dropdown_options(school, year):
     # TODO: Change to 5 years in 2023
     max_dropdown_years = 4
 
-    financial_data = get_finance(school)
+    financial_data = get_financial_data(school)
 
     # Empty file could potentially still have 'School Id','School Name', and 'Category'
     # NOTE: should never be a school ID associated with a missing financial db entry,
@@ -492,11 +492,16 @@ def load_data(school, year):
             school_demographic_selected_year.to_dict()
         )
 
+        # print('ORIG')
+        # print(school_demographic_selected_year.T)
+
         # get corp demographic data for selected year and save to dict
         corp_demographic_selected_year = corp_demographic_data.loc[
             corp_demographic_data["Year"] == demographic_year
         ]
         corp_demographic_selected_year_dict = corp_demographic_selected_year.to_dict()
+        
+        # print(corp_demographic_selected_year.T)
 
         # remove 'excluded years' from full demographic data sets
         if excluded_years:

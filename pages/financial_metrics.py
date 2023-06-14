@@ -15,8 +15,8 @@ import pandas as pd
 from .calculations import calculate_financial_metrics
 from .table_helpers import no_data_page, get_svg_circle, create_key
 from .subnav import subnav_finance
-from .load_data import school_index, max_display_years, current_academic_year
-from .load_db import get_finance
+from .load_data import max_display_years, current_academic_year
+from .load_db import get_school_index, get_financial_data
 
 dash.register_page(__name__, path='/financial_metrics', order=2)
 
@@ -42,8 +42,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     no_data_to_display = no_data_page('Financial Metrics')
 
     selected_year = int(year)
-    
-    selected_school = school_index.loc[school_index["School ID"] == school]
+    selected_school = get_school_index(school)
 
     # NOTE: See financial_information.py for comments
     if selected_school['Network'].values[0] != 'None':
@@ -111,16 +110,16 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         
         # network financial data
         if network_id != 'None':
-            finance_file = get_finance(network_id)
+            financial_data = get_financial_data(network_id)
         else:
-            finance_file = {}
+            financial_data = {}
 
         table_title = 'Financial Accountability Metrics (' + selected_school['Network'].values[0] + ')'
     
     else:
         
         # school financial data
-        finance_file = get_finance(school)
+        financial_data = get_financial_data(school)
 
         # don't display school name in title if the school isn't part of a network
         if selected_school['Network'].values[0] == 'None':
@@ -129,10 +128,8 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             table_title = 'Financial Accountability Metrics (' + selected_school['School Name'].values[0] + ')'
 
     # clean up
-    finance_file = finance_file.drop(['School ID','School Name'], axis=1)
-    finance_file = finance_file.dropna(axis=1, how='all')
-
-    financial_data = finance_file.copy()
+    financial_data = financial_data.drop(['School ID','School Name'], axis=1)
+    financial_data = financial_data.dropna(axis=1, how='all')
 
     if len(financial_data.index) != 0:
         
@@ -185,7 +182,9 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
             # Release The Hounds!
             financial_metrics = calculate_financial_metrics(financial_values)
-            
+
+            # TODO: Excel: Elkhart crashing in above function for YR 2021
+
             # convert ratings to colored circles
             financial_metrics = get_svg_circle(financial_metrics)
 

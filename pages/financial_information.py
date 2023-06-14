@@ -14,8 +14,8 @@ import numpy as np
 
 from .table_helpers import no_data_page
 from .subnav import subnav_finance
-from .load_data import school_index, max_display_years, current_academic_year
-from .load_db import get_finance
+from .load_data import max_display_years, current_academic_year
+from .load_db import get_school_index, get_financial_data
 
 dash.register_page(__name__, top_nav=True, path = '/financial_information', order=1)
 
@@ -39,8 +39,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
     no_data_to_display = no_data_page('Audited Financial Information')
 
     selected_year = int(year)
-    
-    selected_school = school_index.loc[school_index["School ID"] == school]
+    selected_school = get_school_index(school)
 
     # Displays either School or Network level financials, if a school is not
     # part of a network, no radio buttons are displayed at all. If a school
@@ -120,16 +119,16 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         
         # network financial data
         if network_id != 'None':
-            finance_file = get_finance(network_id)
+            financial_data = get_financial_data(network_id)
         else:
-            finance_file = {}
+            financial_data = {}
         
         table_title = 'Audited Financial Information (' + selected_school['Network'].values[0] + ')'
 
     else:
         
         # school financial data
-        finance_file = get_finance(school)
+        financial_data = get_financial_data(school)
 
         # don't display the school name in table title if the school isn't part of a network
         if selected_school['Network'].values[0] == 'None':
@@ -138,10 +137,8 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             table_title = 'Audited Financial Information (' + selected_school['School Name'].values[0] + ')'
 
     # clean up
-    finance_file = finance_file.drop(['School ID','School Name'], axis=1)
-    finance_file = finance_file.dropna(axis=1, how='all')
-
-    financial_data = finance_file.copy()
+    financial_data = financial_data.drop(['School ID','School Name'], axis=1)
+    financial_data = financial_data.dropna(axis=1, how='all')
 
     if len(financial_data.index) != 0:
 
