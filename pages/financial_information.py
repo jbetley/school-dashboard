@@ -139,8 +139,8 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
     # clean up
     financial_data = financial_data.drop(['School ID','School Name'], axis=1)
     financial_data = financial_data.dropna(axis=1, how='all')
-
-    if len(financial_data.index) != 0:
+    
+    if len(financial_data.columns) > 1:
 
         # Financial data will almost always be more recent than academic
         # data. This is the only time we want do display 'future' data,
@@ -168,6 +168,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
         # financial file exists, but is empty
         if len(financial_data.columns) <= 1:
+            
             financial_information_table = {}
             main_container = {'display': 'none'}
             empty_container = {'display': 'block'}

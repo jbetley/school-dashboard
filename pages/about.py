@@ -106,8 +106,8 @@ def update_about_page(year: str, school: str):
 
     school_financial_data = financial_data.copy()
 
-    if len(school_letter_grades.index) == 0 and (len(school_demographics.index) == 0 & \
-          len(school_financial_data.index) == 0):
+    if len(school_letter_grades.columns) <= 1 and (len(school_demographics.columns) <= 1 & \
+          len(school_financial_data.columns) <= 0):
         
         letter_grade_table = {}
         enroll_title = {}
@@ -309,7 +309,7 @@ def update_about_page(year: str, school: str):
             ]
 
         # ADM chart
-        if len(school_financial_data.index) == 0:
+        if len(school_financial_data.columns) <= 1:
 
             adm_fig = no_data_fig_label('Average Daily Membership History',400)
         

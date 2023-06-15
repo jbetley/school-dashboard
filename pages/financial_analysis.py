@@ -158,7 +158,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     financial_data = financial_data.drop(['School ID','School Name'], axis=1)
     financial_data = financial_data.dropna(axis=1, how='all')
 
-    if len(financial_data.index) != 0:
+    if len(financial_data.columns) > 1:
 
         # NOTE: Drop partial year data (financial data with a 'Q#' in column header).
         # may eventually want to implement for Q4 data, but the display quickly gets
@@ -637,9 +637,11 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             # Table 4: Financial Ratios
             # Get financial ratios
             school_corp = selected_school['Corporation ID'].values[0]
-            
+
+            print(financial_ratios['School Corporation'])
+            # TODO: Fix this - ADD Financial Ratios to DB
             # financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
-            financial_ratios_data = financial_ratios.loc[financial_ratios['School Corporation'] == school_corp].copy()
+            financial_ratios_data = financial_ratios.loc[financial_ratios['School Corporation'] == str(school_corp)].copy()
 
             # Networks do not have ratios- only way to tell if network finances
             # are being displayed is if the radio_value is equal to 'network-finance.'
@@ -650,6 +652,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             # two lists share at least one item (e.g., at least one of the
             # table_headers are in the Years dataframe column)).
 
+            print(financial_ratios_data)
             if radio_value != 'network-finance' and (len(financial_ratios_data.index) != 0) and \
                 not set(financial_ratios_data['Year'].tolist()).isdisjoint(table_headers):
 

@@ -131,7 +131,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     financial_data = financial_data.drop(['School ID','School Name'], axis=1)
     financial_data = financial_data.dropna(axis=1, how='all')
 
-    if len(financial_data.index) != 0:
+    if len(financial_data.columns) > 1:
         
         # in order for metrics to be calculated properly, we need
         # to temporarily store and remove the (Q#) part of string
