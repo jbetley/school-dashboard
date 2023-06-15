@@ -29,6 +29,8 @@ all_academic_data_hs = pd.read_csv(r"data/academic_data_hs.csv", dtype=str)
 all_academic_data_k8 = pd.read_csv(r"data/academic_data_k8.csv", dtype=str)
 corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
 all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
+
+# TODO: NEED FINANCIAL RATIOS
 financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
 
 # global integers
@@ -207,65 +209,83 @@ def get_attendance_metrics(school, year):
 def calculate_graduation_rate(values):
     
     data = values.copy()
-    
-    grad_categories = ethnicity + subgroup + ["Total"]
-    
-    for g in grad_categories:
-        new_col = g + " Graduation Rate"
-        graduates = g + "|Graduates"
-        cohort = g + "|Cohort Count"
 
+    cohorts = data[data.columns[data.columns.str.contains(r'Cohort Count')]].columns.tolist()
+
+    for cohort in cohorts:
         if cohort in data.columns:
-            data[new_col] = calculate_percentage(data[graduates], data[cohort])
+            # get Category + Subject string
+            cat_sub = cohort.split('|Cohort Count')[0]
+            data[cat_sub + " Graduation Rate"] = calculate_percentage(data[cat_sub + "|Graduates"], data[cohort])
+
+    # NOTE: Orig Code
+    # grad_categories = ethnicity + subgroup + ["Total"]
+    
+    # for g in grad_categories:
+    #     new_col = g + " Graduation Rate"
+    #     graduates = g + "|Graduates"
+    #     cohort = g + "|Cohort Count"
+
+    #     if cohort in data.columns:
+    #         data[new_col] = calculate_percentage(data[graduates], data[cohort])
 
     return data
 
-def calculate_nonwaiver_graduation_rate(data):
-    data["Non Waiver|Cohort Count"] = pd.to_numeric(data["Non Waiver|Cohort Count"], errors="coerce")
-    data["Total|Cohort Count"] = pd.to_numeric(data["Total|Cohort Count"], errors="coerce")
-
-    data["Non Waiver Graduation Rate"] = (data["Non Waiver|Cohort Count"]/data["Total|Cohort Count"])
-    data["Strength of Diploma"] = (data["Non Waiver|Cohort Count"] * 1.08)/data["Total|Cohort Count"]
+def calculate_strength_of_diploma(data):
+    # NOTE: Not Currently Used
+    data["Strength of Diploma"] = pd.to_numeric((data["Non Waiver|Cohort Count"] * 1.08)) \
+         / pd.to_numeric(data["Total|Cohort Count"])
 
     return data
 
 def calculate_eca_rate(values):
-
     data = values.copy()
-    
-    eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
 
-    for e in eca_categories:
-        new_col = e + " Pass Rate"
-        passN = e + " Pass N"
-        testN = e + " Test N"
+    tested = data[data.columns[data.columns.str.contains(r'Test N')]].columns.tolist()
 
-        data[new_col] = calculate_percentage(data[passN], data[testN])
+    for test in tested:
+        if test in data.columns:
+            # get Category + Subject string
+            cat_sub = test.split(' Test N')[0]
+            data[cat_sub + " Pass Rate"] = calculate_percentage(data[cat_sub + " Pass N"], data[test])
+
+    # NOTE: Original Code
+    # eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
+
+    # for e in eca_categories:
+    #     new_col = e + " Pass Rate"
+    #     passN = e + " Pass N"
+    #     testN = e + " Test N"
+
+    #     data[new_col] = calculate_percentage(data[passN], data[testN])
     
     return data
 
 def calculate_sat_rate(values):
-# TODO: fix this to be more like the filter_hs_school_academic_data()
+# NOTE: All nulls should have already been filtered out by filter_high_school_academic_data()
     data = values.copy()
 
-    sat_categories = ethnicity + subgroup + ["School Total"]
-    sat_subject = ['EBRW','Math','Both']
+    tested = data[data.columns[data.columns.str.contains(r'Total Tested')]].columns.tolist()
 
-    for ss in sat_subject:
-        for sc in sat_categories:
-            new_col = sc + "|" + ss + " Benchmark %"
-            at_benchmark = sc + "|" + ss + " At Benchmark"
-            approaching_benchmark = sc + "|" + ss + " Approaching Benchmark"
-            below_benchmark = sc + "|" + ss + " Below Benchmark"
-            total_tested = sc + "|" + ss + " Total Tested"
+    for test in tested:
+        if test in data.columns:
+            
+            # get Category + Subject string
+            cat_sub = test.split(' Total Tested')[0]
+            data[cat_sub + ' Benchmark %'] = calculate_percentage(data[cat_sub + ' At Benchmark'], data[test])
 
-            if total_tested in data.columns:
+    ## NOTE: Original Code
+    # sat_categories = ethnicity + subgroup + ["School Total"]
+    # sat_subject = ['EBRW','Math','Both']
 
-                if data[total_tested].values[0] == 0:
-                    drop_columns = [new_col, at_benchmark, approaching_benchmark, below_benchmark, total_tested]
-                    data = data.drop(drop_columns, axis=1)
-                else:
-                    data[new_col] = calculate_percentage(data[at_benchmark], data[total_tested])
+    # for ss in sat_subject:
+    #     for sc in sat_categories:
+    #         new_col = sc + "|" + ss + " Benchmark %"
+    #         at_benchmark = sc + "|" + ss + " At Benchmark"
+    #         total_tested = sc + "|" + ss + " Total Tested"
+
+    #         if total_tested in data.columns:
+    #             data[new_col] = calculate_percentage(data[at_benchmark], data[total_tested])
 
     return data
 
@@ -273,17 +293,26 @@ def calculate_proficiency(values):
 
     data = values.copy()
 
-    categories = ethnicity + subgroup + grades + ["School Total"]
+    tested = data[data.columns[data.columns.str.contains(r'Total Tested')]].columns.tolist()
+    tested = [i for i in tested if 'ELA and Math' not in i]
 
-    for s in subject:
-        for c in categories:
-            new_col = c + "|" + s + " Proficient %"
-            proficient = c + "|" + s + " Total Proficient"
-            tested = c + "|" + s + " Total Tested"
+    for test in tested:
+        if test in data.columns:
+            # get Category + Subject string
+            cat_sub = test.split(' Total Tested')[0]
+            data[cat_sub + ' Proficient %'] = calculate_percentage(data[cat_sub + ' Total Proficient'], data[test])
 
-            if tested in data.columns:
-                data[new_col] = calculate_percentage(data[proficient], data[tested])
-    
+    # NOTE: Original Code
+    # categories = ethnicity + subgroup + grades + ["School Total"]
+
+    # for s in subject:
+    #     for c in categories:
+    #         new_col = c + "|" + s + " Proficient %"
+    #         proficient = c + "|" + s + " Total Proficient"
+    #         tested = c + "|" + s + " Total Tested"
+
+    #         if tested in data.columns:
+    #             data[new_col] = calculate_percentage(data[proficient], data[tested])
     return data
 
 ### End Helper Functions ###
@@ -424,7 +453,7 @@ def filter_high_school_academic_data(data):
     
 def process_high_school_academic_data(all_data, year, school):
 
-    school_information = get_index(school)
+    school_information = get_school_index(school)
 
     # use these to determine if data belongs to school or corporation
     school_geo_code = school_information["GEO Corp"].values[0]
@@ -479,8 +508,8 @@ def process_high_school_academic_data(all_data, year, school):
         # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
         # cohort, there were no 'waiver' graduates (which means no Non Waiver data).
         # so we replace 0 with NaN (to ensure a NaN result rather than 0)
-        if "Non Waiver|Cohort Count" in data.columns:
-            data = calculate_nonwaiver_graduation_rate(data)
+        # if "Non Waiver|Cohort Count" in data.columns:
+        #     data = calculate_nonwaiver_graduation_rate(data)
 
         # Calculate ECA (Grade 10) Rate #
         if "Grade 10|ELA Test N" in data.columns:

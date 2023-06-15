@@ -124,11 +124,11 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         
         # network financial data
         if network_id != 'None':
-            finance_file = get_financial_data(network_id)
+            financial_data = get_financial_data(network_id)
         else:
-            finance_file = {}
+            financial_data = {}
 
-        # finance_file_json = json.loads(data['16'])
+        # financial_data_json = json.loads(data['16'])
 
         RandE_title = 'Revenue and Expenses (' + selected_school['Network'].values[0] + ')'
         AandL_title = 'Assets and Liabilities (' + selected_school['Network'].values[0] + ')'
@@ -138,9 +138,9 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     else:
         
         # school financial data
-        finance_file = get_financial_data(school)
+        financial_data = get_financial_data(school)
 
-        # finance_file_json = json.loads(data['17'])    
+        # financial_data_json = json.loads(data['17'])    
 
         # don't display school name in title if the school isn't part of a network
         if selected_school['Network'].values[0] == 'None':
@@ -155,10 +155,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             FA_title = '2-Year Financial Activities (' + selected_school['School Name'].values[0] + ')'
 
     # clean up
-    finance_file = finance_file.drop(['School ID','School Name'], axis=1)
-    finance_file = finance_file.dropna(axis=1, how='all')
-
-    financial_data = finance_file.copy()
+    financial_data = financial_data.drop(['School ID','School Name'], axis=1)
+    financial_data = financial_data.dropna(axis=1, how='all')
 
     if len(financial_data.index) != 0:
 
@@ -204,8 +202,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
-            # Copy the dataframe to use for figs - tables display missing years as blank,
-            # but figs do not display them at all.
+            # tables display missing years as blank, figs do not display them at all.
             financial_data_fig = financial_data.copy()
 
             # Network financial data typically lags behind school data by at
