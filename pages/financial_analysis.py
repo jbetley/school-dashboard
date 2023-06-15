@@ -20,8 +20,8 @@ from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
-from .load_data import financial_ratios, max_display_years
-from .load_db import get_school_index, get_financial_data
+from .load_data import max_display_years # financial_ratios, 
+from .load_db import get_school_index, get_financial_data, get_financial_ratios
 
 dash.register_page(__name__, path = '/financial_analysis', order=3)
 
@@ -57,6 +57,13 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     selected_year = int(year)
     selected_school = get_school_index(school)
 
+    previous_year = int(year) - 1
+    
+    # display_years and default_headers are used throughout to ensure
+    # consistent data display
+    display_years = [str(year)] + [str(previous_year)]
+    default_headers = ['Category'] + display_years
+    
     # See financial_information.py for comments
     if selected_school['Network'].values[0] != 'None':
         if radio_value == 'network-analysis':
@@ -424,13 +431,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 },
             ]            
 
-            previous_year = int(year) - 1
-            previous_year_string = str(previous_year)
-
-            # Display Category and Two Years of Data
-            display_years = [str(year)] + [previous_year_string]
-            table_headers = ['Category'] + display_years
-
             # there may be columns with no or partial data at beginning or ending of dataframe,
             # this deletes any column where more than 80% of the columns values are == 0
             # (otherwise empty columns may have some data, eg., ADM)
@@ -438,19 +438,19 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
             # if all of the years to display (+ Category) exist in (are a subset of) the dataframe,
             # filter the dataframe by the display header
-            if set(table_headers).issubset(set(financial_data.columns)):
-                financial_data = financial_data[table_headers]
+            if set(default_headers).issubset(set(financial_data.columns)):
+                financial_data = financial_data[default_headers]
 
             else:
                 # identify the missing_year and the remaining_year and then add the missing_year as a blank
                 # column to the dataframe either before or after remaining_year depending on which year
                 # is less (earlier in time)
-                missing_year = list(set(table_headers).difference(financial_data.columns))
-                remaining_year = [e for e in table_headers if e not in ('Category', missing_year[0])]
+                missing_year = list(set(default_headers).difference(financial_data.columns))
+                remaining_year = [e for e in default_headers if e not in ('Category', missing_year[0])]
                 i = 1 if (int(missing_year[0]) < int(remaining_year[0])) else 0
 
                 financial_data.insert(loc = i, column = missing_year[0], value = 0)
-                financial_data = financial_data[table_headers]
+                financial_data = financial_data[default_headers]
 
             # Table 1: 2-Year Financial Position
 
@@ -635,14 +635,12 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             ]
 
             # Table 4: Financial Ratios
-            # Get financial ratios
-            school_corp = selected_school['Corporation ID'].values[0]
 
-            print(financial_ratios['School Corporation'])
-            # TODO: Fix this - ADD Financial Ratios to DB
-            # financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
-            financial_ratios_data = financial_ratios.loc[financial_ratios['School Corporation'] == str(school_corp)].copy()
+            school_corp = int(selected_school['Corporation ID'].values[0])
+            financial_ratios_data = get_financial_ratios(school_corp)
+            ratio_years = financial_ratios_data['Year'].astype(str).tolist()
 
+            # financial_ratios_data.columns = financial_ratios_data.columns.astype(str)
             # Networks do not have ratios- only way to tell if network finances
             # are being displayed is if the radio_value is equal to 'network-finance.'
             # So we show an empty table if 'network-finance' is being displayed.
@@ -650,43 +648,65 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             # (empty df) OR where there are no years of data in the dataframe that
             # match the years being displayed (the last condition is True if the
             # two lists share at least one item (e.g., at least one of the
-            # table_headers are in the Years dataframe column)).
-
-            print(financial_ratios_data)
+            # default_headers are in the Years dataframe column)).
+           
             if radio_value != 'network-finance' and (len(financial_ratios_data.index) != 0) and \
-                not set(financial_ratios_data['Year'].tolist()).isdisjoint(table_headers):
+                not set(ratio_years).isdisjoint(default_headers):
 
                 # drop unused columns, transpose and rename
-                financial_ratios_data = financial_ratios_data.drop(columns=['Corporation Name','School Corporation'])
+                
+                financial_ratios_data = financial_ratios_data.drop(columns=['Corporation Name','Corporation ID'])
                 financial_ratios_data = financial_ratios_data.set_index('Year').T.rename_axis('Category').rename_axis(None, axis=1).reset_index()
 
-                # ensure data is adjusted to display from the selected year
-                # if years_to_exclude > 0:
-                #     financial_ratios_data = financial_ratios_data.drop(financial_ratios_data.columns[1:years_to_exclude], axis=1)
+                financial_ratios_data.columns = financial_ratios_data.columns.astype(str)
 
                 # change all cols to numeric except for Category
                 for col in financial_ratios_data.columns[1:]:
                     financial_ratios_data[col]=pd.to_numeric(financial_ratios_data[col], errors='coerce')
 
-                # Form 9 data usually lags financial data by at least a year-
-                # so not uncommon if current year is missing from ratios dataframe.
-                # If missing, add a blank column with the missing year as header
-                ratio_display = ['Category'] + display_years
-                missing_year = list(sorted(set(ratio_display) - set(financial_ratios_data.columns.tolist())))
+                # TODO: Still need to test this
+                # Create empty df in the shape that we want and combine & merge it
+                # with the existing financial ratios dataframe
+                # https://stackoverflow.com/questions/56842140/pandas-merge-dataframes-with-shared-column-fillna-in-left-with-right
+                default_df = pd.DataFrame(columns=default_headers)
+                default_df['Category'] = financial_ratios_data['Category']
 
-                if missing_year:
-                    i = 1
-                    for m in missing_year:
-                        financial_ratios_data.insert(loc = i, column = m, value = 'N/A')
-                        i+=1
+                non_duplicate_cols = ['Category'] + [i for i in default_df.columns.to_list() if i not in financial_ratios_data.columns.to_list()]
 
-                # Limit display to the same two years that are available for all other financial data
-                financial_ratios_data = financial_ratios_data[ratio_display]
+                final_ratios_data = default_df.combine_first(default_df[non_duplicate_cols].merge(financial_ratios_data, 'left'))
+                final_ratios_data = final_ratios_data[default_headers]
+
+                # TODO: First Try. This is hilariously rube goldbergian
+                # NOTE: This creates and empty dataframe in the shape that we want, drops the 'Category'
+                # column, merges the empty dataframe with the financial ratios dataframe, identifies
+                # any duplicate columns, creates a new column with the 'duplicate' name that is a
+                # combination of the duplicated columns (values replacing null), sorts it, and adds
+                # the category back. It is ridiculous.
+                # test = default_df.merge(financial_ratios_data, on='Category')
+                
+                # tmp_category = test['Category']
+                # test = test.drop('Category', axis = 1)
+                # from collections import Counter
+
+                # test_cols = test.columns.to_list()
+                # stripped_cols = [i[:4] for i in test_cols]
+                # duplicates = [k for k,v in Counter(stripped_cols).items() if v>1]
+                # for duplicate in duplicates:
+                #     test[duplicate] = test.pop(duplicate + '_x').fillna(test.pop(duplicate + '_y'))
+
+                # test = test.sort_index(axis=1, ascending=False)
+                # test.insert(loc=0, column="Category", value=tmp_category)
+
+                # # Limit display to the same two years that are available for all other financial data
+                # # financial_ratios_data = financial_ratios_data[default_headers]
+                # financial_ratios_data = test[default_headers]
 
                 # Force correct format for display of numeric (not N/A) columns in df
+                final_ratios_data = final_ratios_data.fillna('N/A')
+
                 for year in display_years:
-                    if (financial_ratios_data[year] != 'N/A').any():
-                        financial_ratios_data[year] = pd.Series(['{0:.2f}%'.format(val * 100) for val in financial_ratios_data[year]], index = financial_ratios_data.index)
+                    if (final_ratios_data[year] != 'N/A').any():
+                        final_ratios_data[year] = pd.Series(['{0:.2f}%'.format(val * 100) for val in final_ratios_data[year]], index = final_ratios_data.index)
 
                 # NOTE: make prettier
                 # markdown_table = """|**Occupancy Expense** (Object Codes 411, 431, 441, 450,
@@ -701,8 +721,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     html.P(''),
                     html.Div(
                         dash_table.DataTable(
-                            data = financial_ratios_data.to_dict('records'),
-                            columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.percentage(2)} for i in financial_ratios_data.columns],
+                            data = final_ratios_data.to_dict('records'),
+                            columns = [{'name': i, 'id': i, 'type':'numeric','format': FormatTemplate.percentage(2)} for i in final_ratios_data.columns],
                             tooltip_data=[
                                 {
                                 'Category': {
