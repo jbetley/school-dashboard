@@ -106,7 +106,6 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     
         # ensure val is always set to school if the school does not have a network tag
         radio_value = 'school-metrics'
-
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-metrics':

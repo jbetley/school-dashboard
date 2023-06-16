@@ -90,7 +90,9 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                 ],
                 className='radio-group',
             )
-
+            
+            radio_value = 'school-metrics'
+        
         display_radio = {}
 
     else:
@@ -110,7 +112,9 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                 ],
                 className='radio-group',
             )
-
+        
+        # ensure val is always set to school if the school does not have a network tag
+        radio_value = 'school-metrics'
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-finance':

@@ -21,8 +21,7 @@ from .chart_helpers import no_data_fig_label, make_stacked_bar
 from .calculations import round_percentages
 from .subnav import subnav_academic
 from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_excluded_years, \
-    process_k8_academic_data, get_attendance_data, process_high_school_academic_data, filter_high_school_academic_data
-    
+    process_k8_academic_data, get_attendance_data, process_high_school_academic_data, filter_high_school_academic_data  
 from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographic_data, get_school_index
 
 dash.register_page(__name__, top_nav=True, path='/academic_information', order=4)
@@ -194,6 +193,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 excluded_years = get_excluded_years(year)
 
 # TODO: Move to function?
+# TODO: At the very least clean this up - see load_data.py
                 ## Proficiency Breakdown ##
                 proficiency_data = get_k8_school_academic_data(school)
                 proficiency_data = proficiency_data[~proficiency_data["Year"].isin(excluded_years)]

@@ -20,7 +20,7 @@ from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
-from .load_data import max_display_years # financial_ratios, 
+from .load_data import max_display_years 
 from .load_db import get_school_index, get_financial_data, get_financial_ratios
 
 dash.register_page(__name__, path = '/financial_analysis', order=3)
@@ -59,8 +59,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     previous_year = int(year) - 1
     
-    # display_years and default_headers are used throughout to ensure
-    # consistent data display
+    # ensure consistent data display throughout
     display_years = [str(year)] + [str(previous_year)]
     default_headers = ['Category'] + display_years
     
@@ -105,6 +104,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 className='radio-group',
             )
 
+            radio_value = 'school-metrics'
+
         display_radio = {}
 
     else:
@@ -123,6 +124,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 className='radio-group',
             )
 
+        # ensure val is always set to school if the school does not have a network tag
+        radio_value = 'school-metrics'
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-analysis':
@@ -147,8 +150,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         # school financial data
         financial_data = get_financial_data(school)
 
-        # financial_data_json = json.loads(data['17'])    
-
         # don't display school name in title if the school isn't part of a network
         if selected_school['Network'].values[0] == 'None':
             RandE_title = 'Revenue and Expenses'
@@ -171,6 +172,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         # may eventually want to implement for Q4 data, but the display quickly gets
         # too confusing with incomplete data.
         if 'Q' in financial_data.columns[1]:
+
             financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
         most_recent_finance_year = int(financial_data.columns[1])
@@ -255,6 +257,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
             # NOTE: change step value to increase/decrease the total number of ticks
             step = 6
+
             tick_val = round_nearest(revenue_expenses_data, step)
 
             revenue_expenses_bar_fig.update_xaxes(showline=False, linecolor='#a9a9a9',ticks='outside', tickcolor='#a9a9a9', title='')
@@ -335,6 +338,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             )
             
             step = 6
+
             tick_val = round_nearest(assets_liabilities_data, step)
 
             assets_liabilities_bar_fig.update_xaxes(showline=False, linecolor='#a9a9a9',ticks='outside', tickcolor='#a9a9a9', title='')
@@ -434,6 +438,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             # there may be columns with no or partial data at beginning or ending of dataframe,
             # this deletes any column where more than 80% of the columns values are == 0
             # (otherwise empty columns may have some data, eg., ADM)
+            # NOTE: This could be more precise.
             financial_data = financial_data.loc[:, (financial_data==0).mean() < .7]
 
             # if all of the years to display (+ Category) exist in (are a subset of) the dataframe,
