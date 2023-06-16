@@ -131,6 +131,15 @@ def get_financial_data(school_id):
     ''')
     return run_query(q, params)
 
+def get_financial_ratios(corp_id):
+    params = dict(id=corp_id)
+    q = text('''
+        SELECT * 
+        FROM financial_ratios 
+        WHERE CorporationID = :id
+    ''')
+    return run_query(q, params)
+
 # for school corporations, SchoolID and CorpID are the same
 def get_demographic_data(*args):
     keys = ['id']
