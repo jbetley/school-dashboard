@@ -84,6 +84,8 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 className='radio-group',
             )
 
+            radio_value = 'school-metrics'
+
         display_radio = {}
 
     else:
@@ -101,6 +103,9 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 ],
                 className='radio-group',
             )
+    
+        # ensure val is always set to school if the school does not have a network tag
+        radio_value = 'school-metrics'
 
         display_radio = {'display': 'none'}
 
@@ -125,7 +130,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         if selected_school['Network'].values[0] == 'None':
             table_title = 'Financial Accountability Metrics'
         else:
-            table_title = 'Financial Accountability Metrics (' + selected_school['School Name'].values[0] + ')'
+            table_title = 'Financial Accountability Metrics (' + financial_data['School Name'].values[0] + ')'
 
     # clean up
     financial_data = financial_data.drop(['School ID','School Name'], axis=1)
@@ -182,176 +187,185 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
             # Release The Hounds!
             financial_metrics = calculate_financial_metrics(financial_values)
+            
+            # Catches edge case where school with only opening year of data has empty df
+            # after calculation
+            if len(financial_metrics.columns) == 0:
+                financial_metrics_table = {}
+                financial_indicators_table = {}
+                financial_metrics_definitions_table = {}
+                main_container = {'display': 'none'}
+                empty_container = {'display': 'block'}
 
-            # TODO: Excel: Elkhart crashing in above function for YR 2021
+            else:
+                
+                # convert ratings to colored circles
+                financial_metrics = get_svg_circle(financial_metrics)
 
-            # convert ratings to colored circles
-            financial_metrics = get_svg_circle(financial_metrics)
+                financial_metrics = financial_metrics.fillna('')
 
-            financial_metrics = financial_metrics.fillna('')
+                # Force correct format for display of df in datatable
+                for x in range(1,len(financial_metrics.columns),2):
+                    if financial_metrics.iat[3,x]:
+                        financial_metrics.iat[3,x] = '{:.0%}'.format(financial_metrics.iat[3,x])
+                    if financial_metrics.iat[9,x]:
+                        financial_metrics.iat[9,x] = '{:,.2f}'.format(financial_metrics.iat[9,x])
+                    if financial_metrics.iat[10,x]:
+                        financial_metrics.iat[10,x] = '{:,.2f}'.format(financial_metrics.iat[10,x])
 
-            # Force correct format for display of df in datatable
-            for x in range(1,len(financial_metrics.columns),2):
-                if financial_metrics.iat[3,x]:
-                    financial_metrics.iat[3,x] = '{:.0%}'.format(financial_metrics.iat[3,x])
-                if financial_metrics.iat[9,x]:
-                    financial_metrics.iat[9,x] = '{:,.2f}'.format(financial_metrics.iat[9,x])
-                if financial_metrics.iat[10,x]:
-                    financial_metrics.iat[10,x] = '{:,.2f}'.format(financial_metrics.iat[10,x])
+                # Add financial quarter back to financial header for display purposes (if partial
+                # year is being displayed)
+                if int(financial_metrics.columns[1]) > current_academic_year:
+                    financial_metrics = financial_metrics.rename(columns={financial_metrics.columns[1]: financial_metrics.columns[1] + financial_quarter})
 
-            # Add financial quarter back to financial header for display purposes (if partial
-            # year is being displayed)
-            if int(financial_metrics.columns[1]) > current_academic_year:
-                financial_metrics = financial_metrics.rename(columns={financial_metrics.columns[1]: financial_metrics.columns[1] + financial_quarter})
+                headers = financial_metrics.columns.tolist()
 
-            headers = financial_metrics.columns.tolist()
+                # NOTE: Consider turning table_size into a function()
+                # input: table_size
+                # output: col_width, category_width, rating_width, and year_width,
+                #  (difference_width, corporation_width)
+                # Problem: variable number of return items. table_size adjustments
+                #  are differente between financial metrics table and academic metrics table
 
-            # NOTE: Consider turning table_size into a function()
-            # input: table_size
-            # output: col_width, category_width, rating_width, and year_width,
-            #  (difference_width, corporation_width)
-            # Problem: variable number of return items. table_size adjustments
-            #  are differente between financial metrics table and academic metrics table
+                clean_headers = []
+                for i, x in enumerate (headers):
+                    if 'Rating' in x:
+                        clean_headers.append('Rate')
+                    else:
+                        clean_headers.append(x)
 
-            clean_headers = []
-            for i, x in enumerate (headers):
-                if 'Rating' in x:
-                    clean_headers.append('Rate')
-                else:
-                    clean_headers.append(x)
+                year_headers = [i for i in headers if 'Rating' not in i and 'Metric' not in i]
+                rating_headers = [y for y in headers if 'Rating' in y]
 
-            year_headers = [i for i in headers if 'Rating' not in i and 'Metric' not in i]
-            rating_headers = [y for y in headers if 'Rating' in y]
+                # determines the col_width class and width of the category
+                # column based on the size on the dataframe
+                table_size = len(financial_metrics.columns)
 
-            # determines the col_width class and width of the category
-            # column based on the size on the dataframe
-            table_size = len(financial_metrics.columns)
+                if table_size <= 3:
+                    col_width = 'four'
+                    category_width = 70
+                if table_size > 3 and table_size <=4:
+                    col_width = 'six'
+                    category_width = 35
+                elif table_size >= 5 and table_size <= 8:
+                    col_width = 'six'
+                    category_width = 30
+                elif table_size == 9:
+                    col_width = 'seven'
+                    category_width = 30
+                elif table_size >= 10 and table_size <= 13:
+                    col_width = 'eight'
+                    category_width = 25
+                elif table_size > 13 and table_size <=17:
+                    col_width = 'nine'
+                    category_width = 15
+                elif table_size > 17:
+                    col_width = 'ten'
+                    category_width = 15
 
-            if table_size <= 3:
-                col_width = 'four'
-                category_width = 70
-            if table_size > 3 and table_size <=4:
-                col_width = 'six'
-                category_width = 35
-            elif table_size >= 5 and table_size <= 8:
-                col_width = 'six'
-                category_width = 30
-            elif table_size == 9:
-                col_width = 'seven'
-                category_width = 30
-            elif table_size >= 10 and table_size <= 13:
-                col_width = 'eight'
-                category_width = 25
-            elif table_size > 13 and table_size <=17:
-                col_width = 'nine'
-                category_width = 15
-            elif table_size > 17:
-                col_width = 'ten'
-                category_width = 15
+                # this splits column width evenly for all columns other than 'Category'
+                data_width = 100 - category_width
+                data_col_width = data_width / (table_size - 1)
+                rating_width = year_width = data_col_width
+                rating_width = rating_width / 2
 
-            # this splits column width evenly for all columns other than 'Category'
-            data_width = 100 - category_width
-            data_col_width = data_width / (table_size - 1)
-            rating_width = year_width = data_col_width
-            rating_width = rating_width / 2
+                class_name = 'pretty_container ' + col_width + ' columns'
 
-            class_name = 'pretty_container ' + col_width + ' columns'
-
-            financial_metrics_table = [
-                html.Div(
-                    [                
-                        html.Div(
-                            [
-                                html.Label(table_title, className='header_label'),
-                                html.Div(
-                                    dash_table.DataTable(
-                                        financial_metrics.to_dict('records'),
-                                        columns=[
-                                            {'name': col,'id': headers[idx], 'presentation': 'markdown'}
-                                            if 'Rate' in col
-                                            else {'name': col, 'id': headers[idx]}
-                                            for (idx, col) in enumerate(clean_headers)
-                                        ],                                            
-                                        style_data={
-                                            'fontSize': '11px',
-                                            'border': 'none',
-                                            'fontFamily': 'Jost, sans-serif',
-                                        },
-                                        style_data_conditional=
-                                        [
-                                            {
-                                                'if': {
-                                                    'row_index': 'odd'
-                                                },
-                                                'backgroundColor': '#eeeeee',
+                financial_metrics_table = [
+                    html.Div(
+                        [                
+                            html.Div(
+                                [
+                                    html.Label(table_title, className='header_label'),
+                                    html.Div(
+                                        dash_table.DataTable(
+                                            financial_metrics.to_dict('records'),
+                                            columns=[
+                                                {'name': col,'id': headers[idx], 'presentation': 'markdown'}
+                                                if 'Rate' in col
+                                                else {'name': col, 'id': headers[idx]}
+                                                for (idx, col) in enumerate(clean_headers)
+                                            ],                                            
+                                            style_data={
+                                                'fontSize': '11px',
+                                                'border': 'none',
+                                                'fontFamily': 'Jost, sans-serif',
                                             },
-                                            {
-                                                'if': {
-                                                    'filter_query': "{Metric} eq 'Near Term' || {Metric} eq 'Long Term' || {Metric} eq 'Other Metrics'"
+                                            style_data_conditional=
+                                            [
+                                                {
+                                                    'if': {
+                                                        'row_index': 'odd'
+                                                    },
+                                                    'backgroundColor': '#eeeeee',
                                                 },
-                                                'paddingLeft': '10px',
-                                                'text-decoration': 'underline',
+                                                {
+                                                    'if': {
+                                                        'filter_query': "{Metric} eq 'Near Term' || {Metric} eq 'Long Term' || {Metric} eq 'Other Metrics'"
+                                                    },
+                                                    'paddingLeft': '10px',
+                                                    'text-decoration': 'underline',
+                                                    'fontWeight': 'bold'
+                                                },
+                                            ],
+                                            style_header={
+                                                'height': '20px',
+                                                'backgroundColor': '#ffffff',
+                                                'border': 'none',
+                                                'borderBottom': '.5px solid #6783a9',
+                                                'fontSize': '12px',
+                                                'fontFamily': 'Jost, sans-serif',
+                                                'color': '#6783a9',
+                                                'textAlign': 'center',
                                                 'fontWeight': 'bold'
                                             },
-                                        ],
-                                        style_header={
-                                            'height': '20px',
-                                            'backgroundColor': '#ffffff',
-                                            'border': 'none',
-                                            'borderBottom': '.5px solid #6783a9',
-                                            'fontSize': '12px',
-                                            'fontFamily': 'Jost, sans-serif',
-                                            'color': '#6783a9',
-                                            'textAlign': 'center',
-                                            'fontWeight': 'bold'
-                                        },
-                                        style_cell={
-                                            'whiteSpace': 'normal',
-                                            'height': 'auto',
-                                            'textAlign': 'center',
-                                            'color': '#6783a9',
-                                            'boxShadow': '0 0',
-                                        },
-                                        style_cell_conditional=[
-                                            {
-                                                'if': {
-                                                    'column_id': 'Metric'
-                                                },
-                                                'textAlign': 'left',
-                                                'paddingLeft': '20px',                                                
-                                                'fontWeight': '500',
-                                                'width': str(category_width) + '%'
+                                            style_cell={
+                                                'whiteSpace': 'normal',
+                                                'height': 'auto',
+                                                'textAlign': 'center',
+                                                'color': '#6783a9',
+                                                'boxShadow': '0 0',
                                             },
-                                        ] + [
-                                            {
-                                                'if': {
-                                                    'column_id': year
+                                            style_cell_conditional=[
+                                                {
+                                                    'if': {
+                                                        'column_id': 'Metric'
+                                                    },
+                                                    'textAlign': 'left',
+                                                    'paddingLeft': '20px',                                                
+                                                    'fontWeight': '500',
+                                                    'width': str(category_width) + '%'
                                                 },
-                                                'textAlign': 'center',
-                                                'fontWeight': '500',
-                                                'width': str(year_width) + '%',
-                                            } for year in year_headers
-                                        ] + [  
-                                            {
-                                                'if': {
-                                                    'column_id': rating
-                                                },
-                                                'textAlign': 'center',
-                                                'fontWeight': '500',                                                
-                                                'width': str(rating_width) + '%',
-                                            } for rating in rating_headers
-                                        ],
-                                        style_as_list_view=True,
-                                        markdown_options={'html': True},
+                                            ] + [
+                                                {
+                                                    'if': {
+                                                        'column_id': year
+                                                    },
+                                                    'textAlign': 'center',
+                                                    'fontWeight': '500',
+                                                    'width': str(year_width) + '%',
+                                                } for year in year_headers
+                                            ] + [  
+                                                {
+                                                    'if': {
+                                                        'column_id': rating
+                                                    },
+                                                    'textAlign': 'center',
+                                                    'fontWeight': '500',                                                
+                                                    'width': str(rating_width) + '%',
+                                                } for rating in rating_headers
+                                            ],
+                                            style_as_list_view=True,
+                                            markdown_options={'html': True},
+                                        )
                                     )
-                                )
-                            ],
-                            className = class_name,
-                        ),
-                    ],
-                    className = 'bare_container twelve columns',
-                )
-            ]
+                                ],
+                                className = class_name,
+                            ),
+                        ],
+                        className = 'bare_container twelve columns',
+                    )
+                ]
 
             # Financial Indicators
             financial_indicators = financial_data[financial_data['Category'].str.startswith('2.1.')].copy()

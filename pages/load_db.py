@@ -69,7 +69,7 @@ def run_query(q, *args):
         num_cols = len(df.columns)
         
         print(f'Time to load ' + str(num_cols) + ' columns is: ' + str(db_load_time))
-        
+
         return df
 
 # Only loads once, from 'load_globals.py'

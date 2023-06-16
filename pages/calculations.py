@@ -363,8 +363,10 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
     operating_data = data.loc[:,~(data.iloc[1]==0)].copy()
 
+    # If school only has opening year data, the slice above will drop it, resulting in a single
+    # column df ('Category')
     if len(operating_data.columns) <=1:
-        print('HERE')
+
         final_grid = pd.DataFrame()
 
     else:
