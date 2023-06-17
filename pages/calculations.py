@@ -269,7 +269,7 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
  
     Takes a dataframe of schools and their Lat and Lon coordinates and the index of the
     selected school within that list. Calculates the distances of all schools in the
-    dataframe from the lat/lon coordinates of the selected schoo using the scipy.spatial
+    dataframe from the lat/lon coordinates of the selected school using the scipy.spatial
     KDTree method, which is reasonably quick.
 
     Args:

@@ -20,6 +20,10 @@ from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, ma
 from .table_helpers import create_comparison_table, no_data_page, no_data_table
 from .subnav import subnav_academic
 from .load_data import all_academic_data_k8, school_index, ethnicity, subgroup, subject, grades
+from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_excluded_years, \
+    process_k8_academic_data, get_attendance_data, process_high_school_academic_data, filter_high_school_academic_data  
+from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographic_data, get_school_index, \
+    get_school_coordinates
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
@@ -47,9 +51,15 @@ def set_dropdown_options(school, year, comparison_schools):
     current_year_all_schools_k8_academic_data = all_academic_data_k8[all_academic_data_k8['Year'].isin(eval_year)].copy()
     current_year_all_schools_k8_academic_data = current_year_all_schools_k8_academic_data.reset_index(drop=True)
 
+    # TODO: pull directly from DB
+    # Get all Lat and Lon Coords (and School ID)
+    # Do comparison
+    # Get academic info for matches schools
     location_data = current_year_all_schools_k8_academic_data[['Lat','Lon']]
-
     school_idx = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data['School ID'] == school].index
+
+    loc_data = get_school_coordinates(year)
+    school_idx2 = loc_data[loc_data['School ID'] == int(school)].index
 
     # because school_idx is calculated by searching the academic data
     # for grades 3-8, any school that is not included in the grade 3-8
@@ -61,17 +71,34 @@ def set_dropdown_options(school, year, comparison_schools):
     # get array of indexes and distances using the kdtree spatial tree function
     index_array, dist_array = find_nearest(school_idx,location_data)
 
+    index_array2, dist_array2 = find_nearest(school_idx2,loc_data)
+
+    print('here')
     # convert np arrays to lists
+    print(index_array[0])
     index_list = index_array[0].tolist()
     distance_list = dist_array[0].tolist()
+    print(index_array2[0])
+    index_list2 = index_array2[0].tolist()
+    # print(index_list2[0])
+    distance_list2 = dist_array2[0].tolist()
 
+    print(distance_list)
+    print(distance_list2)
     # create dataframe with distances and indexes
     distances = pd.DataFrame({'index':index_list, 'y':distance_list})
     distances = distances.set_index(list(distances)[0])
 
+    distances2 = pd.DataFrame({'index':index_list2, 'y':distance_list2})
+    distances2 = distances2.set_index(list(distances2)[0])
+
     # filter comparison set by matching indexes
     closest_schools = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data.index.isin(index_list)]
 
+    closest_schools2 = loc_data[loc_data.index.isin(index_list)]
+
+    print(closest_schools['School Name'])
+    print(closest_schools2['School Name'])
     # add 'Distance' column to comparison_set (NOTE: Not currently used)
     comparison_set = pd.merge(closest_schools,distances,left_index=True, right_index=True)
     comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
@@ -183,7 +210,9 @@ def update_academic_analysis(school, year, data, comparison_school_list):
     dropdown_container = {'display': 'none'}
     no_data_to_display = no_data_page('Academic Analysis')
 
-    selected_school = school_index.loc[school_index['School ID'] == school]
+    # selected_school = school_index.loc[school_index['School ID'] == school]
+    selected_school = get_school_index(school)
+    
     school_name = selected_school['School Name'].values[0]
 
     # Test if data exists - there are 4 cases where we end up with an empty page:

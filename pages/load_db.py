@@ -165,6 +165,18 @@ def get_letter_grades(*args):
     
     return run_query(q, params)
 
+def get_school_coordinates(*args):
+    keys = ['year']
+    params = dict(zip(keys, args))
+
+    q = text('''
+        SELECT Lat, Lon, SchoolID, SchoolName
+            FROM academic_data_k8 
+            WHERE Year = :year
+        ''')
+    
+    return run_query(q, params)
+
 def get_adult_high_school_metric_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
