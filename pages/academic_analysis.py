@@ -23,7 +23,7 @@ from .load_data import all_academic_data_k8, school_index, ethnicity, subgroup, 
 from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_excluded_years, \
     process_k8_academic_data, get_attendance_data, process_high_school_academic_data, filter_high_school_academic_data  
 from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographic_data, get_school_index, \
-    get_school_coordinates
+    get_school_coordinates, get_comparable_schools
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
@@ -60,6 +60,9 @@ def set_dropdown_options(school, year, comparison_schools):
 
     loc_data = get_school_coordinates(year)
     school_idx2 = loc_data[loc_data['School ID'] == int(school)].index
+    
+    # keep school_id_columns - will have same index as loc_data
+    school_id_columns = loc_data['School ID']
 
     # because school_idx is calculated by searching the academic data
     # for grades 3-8, any school that is not included in the grade 3-8
@@ -73,18 +76,20 @@ def set_dropdown_options(school, year, comparison_schools):
 
     index_array2, dist_array2 = find_nearest(school_idx2,loc_data)
 
-    print('here')
+    # convert indecies back to School IDs
+    school_list = school_id_columns.loc[index_array2[0].tolist()].tolist()
+
     # convert np arrays to lists
-    print(index_array[0])
+    # print(index_array[0])
     index_list = index_array[0].tolist()
     distance_list = dist_array[0].tolist()
-    print(index_array2[0])
+    # print(index_array2[0])
     index_list2 = index_array2[0].tolist()
     # print(index_list2[0])
     distance_list2 = dist_array2[0].tolist()
 
-    print(distance_list)
-    print(distance_list2)
+    # print(distance_list)
+    # print(distance_list2)
     # create dataframe with distances and indexes
     distances = pd.DataFrame({'index':index_list, 'y':distance_list})
     distances = distances.set_index(list(distances)[0])
@@ -95,14 +100,23 @@ def set_dropdown_options(school, year, comparison_schools):
     # filter comparison set by matching indexes
     closest_schools = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data.index.isin(index_list)]
 
-    closest_schools2 = loc_data[loc_data.index.isin(index_list)]
+    closest_schools2 = loc_data[loc_data.index.isin(index_list2)]
 
-    print(closest_schools['School Name'])
-    print(closest_schools2['School Name'])
+    # Get comparable schools
+ 
     # add 'Distance' column to comparison_set (NOTE: Not currently used)
     comparison_set = pd.merge(closest_schools,distances,left_index=True, right_index=True)
     comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
 
+    comparison_set2 = pd.merge(closest_schools2,distances2,left_index=True, right_index=True)
+    comparison_set2 = comparison_set2.rename(columns = {'y': 'Distance'})
+
+    print(comparison_set[['School Name', 'Distance']])
+
+    tst2 = get_comparable_schools(comparison_set2['School ID'].tolist(), year)
+    # TODO: Need to figure out cleanest way to merge academic data + Distance to the
+    # TODO: Result file without having to bring in the entire database
+    print(tst2[['School Name', 'Distance']])
     # Drop the selected school from the list of available selections,
     # so selected school cannot be removed from dropdown. Comment this
     # line out to permit selected school to be cleared from chart (NOTE:

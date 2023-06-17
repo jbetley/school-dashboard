@@ -263,11 +263,22 @@ def get_location_data(year):
     params = dict(year=year)
     q = text('''
         SELECT Lat, Lon, SchoolID
-            FROM all_k8_data
+            FROM academic_data_k8
             Where Year = :year)
         ''')
     return run_query(q, params)
 
+def get_comparable_schools(*args):
+    keys = ['schools','year']
+    params = dict(zip(keys, args))
+
+    school_str = ', '.join( [ str(int(v)) for v in params['schools'] ] )
+    # query_string = '''SELECT * FROM academic_data_k8 WHERE rowid IN ({})'''.format( school_str )
+    query_string = '''SELECT * FROM academic_data_k8 WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
+
+    q = text(query_string)
+
+    return run_query(q, params)
 # Get Comparison School Academic Data (For dropdown)
 # After getting Lat/Lon data, run nearest() and the results will be in a list
 # get all schools in the list

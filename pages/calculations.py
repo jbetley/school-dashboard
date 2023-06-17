@@ -285,7 +285,10 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
 
     # as the selected school already exists in the 'data' df,
     # just pass in index and use that to find it
-    data = data.apply(pd.to_numeric)
+    for col in data.columns:
+                data[col] = pd.to_numeric(data[col], errors="coerce")
+    
+    # data = data.apply(pd.to_numeric)
 
     phi = np.deg2rad(data['Lat'])
     theta = np.deg2rad(data['Lon'])
