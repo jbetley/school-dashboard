@@ -21,7 +21,8 @@ from .table_helpers import create_comparison_table, no_data_page, no_data_table
 from .subnav import subnav_academic
 from .load_data import all_academic_data_k8, school_index, ethnicity, subgroup, subject, grades
 from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_excluded_years, \
-    process_k8_academic_data, get_attendance_data, process_high_school_academic_data, filter_high_school_academic_data  
+    process_k8_academic_data, get_attendance_data, process_high_school_academic_data, filter_high_school_academic_data, \
+    calculate_k8_comparison_metrics
 from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographic_data, get_school_index, \
     get_school_coordinates, get_comparable_schools
 
@@ -63,7 +64,6 @@ def set_dropdown_options(school, year, comparison_schools):
     grade_mask = schools_by_distance.apply(filter_grades, compare=school_grade_range, axis=1)
     schools_by_distance = schools_by_distance[grade_mask]
 
-
     school_idx = schools_by_distance[schools_by_distance['School ID'] == int(school)].index
 
     # because school_idx is calculated by searching the academic data
@@ -73,30 +73,31 @@ def set_dropdown_options(school, year, comparison_schools):
     if school_idx.size == 0:
         return [],[],[]
     
-    # duplicate schools_by_distance
+    # make a copy of the original dataframe to use to merge later
     all_schools = schools_by_distance.copy()
 
-    # get array of indexes and distances using the kdtree spatial tree function
-    # index_array, dist_array = find_nearest(school_idx,location_data)
-
+    # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
     index_array, dist_array = find_nearest(school_idx,schools_by_distance)
 
     index_list = index_array[0].tolist()
     distance_list = dist_array[0].tolist()
 
+    # Match School ID with indexes
     closest_schools = pd.DataFrame()
     closest_schools['School ID'] = schools_by_distance[schools_by_distance.index.isin(index_list)]['School ID']
 
-    # Merge two lists into a dataframe and merge with School ID
+    # Merge the index and distances lists into a dataframe
     distances = pd.DataFrame({'index':index_list, 'y':distance_list})
     distances = distances.set_index(list(distances)[0])
+
+    # Merge School ID with Distances by index
     combined = closest_schools.join(distances)
 
-    # Merge results with original schools_by_distance
+    # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
     comparison_set = pd.merge(combined, all_schools, on='School ID', how='inner')
     comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
  
-    # drop selected school
+    # drop selected school (so it cannot be selected in the dropdown)
     comparison_set = comparison_set.drop(comparison_set[comparison_set['School ID'] == school].index)
 
     # limit maximum dropdown to the [n] closest schools
@@ -167,14 +168,16 @@ def set_dropdown_options(school, year, comparison_schools):
     Output('academic-analysis-main-container', 'style'),
     Output('academic-analysis-empty-container', 'style'),
     Output('academic-analysis-no-data', 'children'),
-    State('charter-dropdown', 'value'),
-    State('year-dropdown', 'value'),
+    Input('charter-dropdown', 'value'),
+    Input('year-dropdown', 'value'),
     Input('dash-session', 'data'),
     [Input('comparison-dropdown', 'value')],
 )
 def update_academic_analysis(school, year, data, comparison_school_list):
     if not school:
         raise PreventUpdate
+
+    print(comparison_school_list)
 
     selected_year = str(year)
 
@@ -225,20 +228,43 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
     else:
 
+        raw_school_data = get_k8_school_academic_data(school)
+
+        if len(raw_school_data) > 0:
+            raw_school_data = raw_school_data.replace({"^": "***"})
+
+            # keep only school columns with non-null data.
+            valid_column_mask = raw_school_data.any()
+
+            # valid_mask = ~pd.isnull(data[data.columns]).all()        
+            raw_school_data = raw_school_data[raw_school_data.columns[valid_column_mask]]
+
+            # raw_corp_data = get_k8_corporation_academic_data(school)
+
+            # TODO: Does this need to be moved to calculate_comparison function?
+            # # Find the common columns between the two dataframes - need to do this because
+            # # school data has many more columns than col data
+            # common_cols = [col for col in set(raw_school_data.columns).intersection(raw_corp_data.columns)]
+            # raw_corp_data = raw_corp_data[common_cols]
+
+            clean_school_data = process_k8_academic_data(raw_school_data, year, school)        
+            combined_delta = calculate_k8_comparison_metrics(clean_school_data, year, school)        
+        # print(combined_delta.set_index(["Category"]))
         # load k8_academic_data_json (School/Corp/+- for each category)
         json_data = json.loads(data['8'])
         school_academic_matrix = pd.DataFrame.from_dict(json_data)
         
-        tested_academic_data = school_academic_matrix.copy()
+        # print(school_academic_matrix.set_index(["Category"]))
+        # tested_academic_data = school_academic_matrix.copy()
         
-        for col in tested_academic_data.columns:
-            tested_academic_data[col] = pd.to_numeric(tested_academic_data[col], errors='coerce')
+        # for col in tested_academic_data.columns:
+        #     tested_academic_data[col] = pd.to_numeric(tested_academic_data[col], errors='coerce')
         
         tested_header = selected_year + 'School'
 
         # Testing (3) and (4)
-        if tested_header not in tested_academic_data.columns or \
-            tested_academic_data[tested_header].isnull().all():
+        if tested_header not in school_academic_matrix.columns or \
+            school_academic_matrix[tested_header].isnull().all():
             
             fig14a = fig14b = fig14c = fig14d = fig_iread = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig14g = {}
             
@@ -405,11 +431,15 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             current_year_all_schools_k8_academic_data = all_academic_data_k8[all_academic_data_k8['Year'].isin(eval_year)]
 
-            comparison_schools_filtered = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data['School ID'].isin(comparison_school_list)]
+            comparison_schools_filtered = get_comparable_schools(comparison_school_list, year)
+            # comparison_schools_filtered = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data['School ID'].isin(comparison_school_list)]
 
             # drop unused columns
+
             comparison_schools_filtered = comparison_schools_filtered.filter(regex = r'Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year|School Name|School ID|Distance|Low Grade|High Grade',axis=1)
 
+            print(comparison_schools_filtered)
+            
             # create list of columns with no date (used in loop below)
             # missing_mask returns boolean series of columns where all elements in the column
             # are equal to null 
