@@ -170,7 +170,7 @@ def get_school_coordinates(*args):
     params = dict(zip(keys, args))
 
     q = text('''
-        SELECT Lat, Lon, SchoolID
+        SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade
             FROM academic_data_k8 
             WHERE Year = :year
         ''')
@@ -257,24 +257,27 @@ def get_high_school_corporation_academic_data(*args):
     return run_query(q, params)
 
 
-## TODO: Working Section below - Need to import all_academic_data_k8 to db
-# Get Lat and Lon Data (for given year)
-def get_location_data(year):
-    params = dict(year=year)
-    q = text('''
-        SELECT Lat, Lon, SchoolID
-            FROM academic_data_k8
-            Where Year = :year)
-        ''')
-    return run_query(q, params)
+# ## TODO: Working Section below - Need to import all_academic_data_k8 to db
+# # Get Lat and Lon Data (for given year)
+# def get_location_data(year):
+#     params = dict(year=year)
+#     q = text('''
+#         SELECT Lat, Lon, SchoolID, SchoolName, LowGrade, HighGrade
+#             FROM academic_data_k8
+#             Where Year = :year)
+#         ''')
+#     return run_query(q, params)
 
 def get_comparable_schools(*args):
     keys = ['schools','year']
     params = dict(zip(keys, args))
 
     school_str = ', '.join( [ str(int(v)) for v in params['schools'] ] )
-    # query_string = '''SELECT * FROM academic_data_k8 WHERE rowid IN ({})'''.format( school_str )
-    query_string = '''SELECT * FROM academic_data_k8 WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
+
+    query_string = '''
+        SELECT SchoolID, SchoolName, LowGrade, HighGrade
+            FROM academic_data_k8
+            WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
 
     q = text(query_string)
 
