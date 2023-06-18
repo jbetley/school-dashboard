@@ -436,10 +436,11 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             # drop unused columns
 
+# TODO: FIX COmparison Schools
             comparison_schools_filtered = comparison_schools_filtered.filter(regex = r'Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year|School Name|School ID|Distance|Low Grade|High Grade',axis=1)
 
             print(comparison_schools_filtered)
-            
+
             # create list of columns with no date (used in loop below)
             # missing_mask returns boolean series of columns where all elements in the column
             # are equal to null 
