@@ -264,7 +264,7 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
     https://stackoverflow.com/questions/43020919/scipy-how-to-convert-kd-tree-distance-from-query-to-kilometers-python-pandas
     https://kanoki.org/2020/08/05/find-nearest-neighbor-using-kd-tree/
 
-        Uses  to find the nearest schools to the
+        Used to find the [20] nearest schools to the
     selected school
  
     Takes a dataframe of schools and their Lat and Lon coordinates and the index of the
@@ -279,6 +279,12 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
     Returns:
         np.ndarray: an array of dataframe indexes and an array of distances (in miles)
     """
+    # number of schools to return (add 1 to account for the fact that the selected school
+    # is included in the return set) - number needs to be high enough to ensure there are
+    # enough left once non-comparable grades are filtered out.
+    # TODO: Do we want to use the DB to filter the list by Grade Span as well when we get
+    # TODO: The list of Schools?
+    num_hits = 26
 
     # the radius of earth in miles. For kilometers use 6372.8 km
     R = 3959.87433 
@@ -296,8 +302,6 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
     data['y'] = R * np.cos(phi) * np.sin(theta)
     data['z'] = R * np.sin(phi)
     tree = spatial.KDTree(data[['x', 'y','z']])
-
-    num_hits = 30
 
     # gets a list of the indexes and distances in the data tree that
     # match the [num_hits] number of 'nearest neighbor' schools

@@ -170,7 +170,7 @@ def get_school_coordinates(*args):
     params = dict(zip(keys, args))
 
     q = text('''
-        SELECT Lat, Lon, SchoolID, SchoolName
+        SELECT Lat, Lon, SchoolID
             FROM academic_data_k8 
             WHERE Year = :year
         ''')

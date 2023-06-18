@@ -46,85 +46,81 @@ def set_dropdown_options(school, year, comparison_schools):
         comparison_schools = []
 
     # filter out schools that did not exist in the selected year
-    eval_year = [str(year)]
+    # eval_year = [str(year)]
 
-    current_year_all_schools_k8_academic_data = all_academic_data_k8[all_academic_data_k8['Year'].isin(eval_year)].copy()
-    current_year_all_schools_k8_academic_data = current_year_all_schools_k8_academic_data.reset_index(drop=True)
+    # current_year_all_schools_k8_academic_data = all_academic_data_k8[all_academic_data_k8['Year'].isin(eval_year)].copy()
+    # current_year_all_schools_k8_academic_data = current_year_all_schools_k8_academic_data.reset_index(drop=True)
 
-    # TODO: pull directly from DB
     # Get all Lat and Lon Coords (and School ID)
     # Do comparison
     # Get academic info for matches schools
-    location_data = current_year_all_schools_k8_academic_data[['Lat','Lon']]
-    school_idx = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data['School ID'] == school].index
+    # location_data = current_year_all_schools_k8_academic_data[['Lat','Lon']]
+    # school_idx = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data['School ID'] == school].index
+
 
     loc_data = get_school_coordinates(year)
+    # TODO: Filter out non-comparable grade spans here - Presumably it is faster than sending
+    # TODO: entire list to geo algo
     school_idx2 = loc_data[loc_data['School ID'] == int(school)].index
-    
+
+
     # keep school_id_columns - will have same index as loc_data
-    school_id_columns = loc_data['School ID']
+    # school_id_columns = loc_data['School ID']
 
     # because school_idx is calculated by searching the academic data
     # for grades 3-8, any school that is not included in the grade 3-8
     # dataset will have an empty school_idx. This check prevents HS and
     # AHS from generating a list of comparable schools.
-    if school_idx.size == 0:
+    if school_idx2.size == 0:
         return [],[],[]
     
     # get array of indexes and distances using the kdtree spatial tree function
-    index_array, dist_array = find_nearest(school_idx,location_data)
+    # index_array, dist_array = find_nearest(school_idx,location_data)
 
     index_array2, dist_array2 = find_nearest(school_idx2,loc_data)
 
-    # convert indecies back to School IDs
-    school_list = school_id_columns.loc[index_array2[0].tolist()].tolist()
-
-    # convert np arrays to lists
-    # print(index_array[0])
-    index_list = index_array[0].tolist()
-    distance_list = dist_array[0].tolist()
-    # print(index_array2[0])
     index_list2 = index_array2[0].tolist()
-    # print(index_list2[0])
     distance_list2 = dist_array2[0].tolist()
 
-    # print(distance_list)
-    # print(distance_list2)
-    # create dataframe with distances and indexes
-    distances = pd.DataFrame({'index':index_list, 'y':distance_list})
-    distances = distances.set_index(list(distances)[0])
+    closest_schools2 = pd.DataFrame()
+    closest_schools2['School ID'] = loc_data[loc_data.index.isin(index_list2)]['School ID']
 
+    # Merge two lists into a dataframe and merge with School ID
     distances2 = pd.DataFrame({'index':index_list2, 'y':distance_list2})
     distances2 = distances2.set_index(list(distances2)[0])
+    comb = closest_schools2.join(distances2)
 
-    # filter comparison set by matching indexes
-    closest_schools = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data.index.isin(index_list)]
+    # TODO: Only need School ID and School Name!
+    # Get academic data for schools using School ID
+    comparable_schools = get_comparable_schools(comb['School ID'].tolist(), year)
 
-    closest_schools2 = loc_data[loc_data.index.isin(index_list2)]
-
-    # Get comparable schools
- 
-    # add 'Distance' column to comparison_set (NOTE: Not currently used)
-    comparison_set = pd.merge(closest_schools,distances,left_index=True, right_index=True)
+    comparison_set = pd.merge(comb, comparable_schools, on='School ID', how='outer')
     comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
 
-    comparison_set2 = pd.merge(closest_schools2,distances2,left_index=True, right_index=True)
-    comparison_set2 = comparison_set2.rename(columns = {'y': 'Distance'})
+    # index_list = index_array[0].tolist()
+    # distance_list = dist_array[0].tolist()
 
-    print(comparison_set[['School Name', 'Distance']])
+    # create dataframe with distances and indexes
+    # distances = pd.DataFrame({'index':index_list, 'y':distance_list})
+    # distances = distances.set_index(list(distances)[0])
 
-    tst2 = get_comparable_schools(comparison_set2['School ID'].tolist(), year)
-    # TODO: Need to figure out cleanest way to merge academic data + Distance to the
-    # TODO: Result file without having to bring in the entire database
-    print(tst2[['School Name', 'Distance']])
+    # # filter comparison set by matching indexes
+    # closest_schools = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data.index.isin(index_list)]
+ 
+    # add 'Distance' column to comparison_set (NOTE: Not currently used)
+    # comparison_set = pd.merge(closest_schools,distances,left_index=True, right_index=True)
+    # comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
+
     # Drop the selected school from the list of available selections,
     # so selected school cannot be removed from dropdown. Comment this
     # line out to permit selected school to be cleared from chart (NOTE:
     # this may cause unexpected behavior)
-    comparison_set = comparison_set.drop(comparison_set[comparison_set['School ID'] == school].index)
 
+    # TODO: Move this to above the GEO func
     # drop schools with no grade overlap with selected school by getting school grade span and filtering
-    school_grade_span = current_year_all_schools_k8_academic_data.loc[current_year_all_schools_k8_academic_data['School ID'] == school][['Low Grade','High Grade']].values[0].tolist()
+    # school_grade_span = current_year_all_schools_k8_academic_data.loc[current_year_all_schools_k8_academic_data['School ID'] == school][['Low Grade','High Grade']].values[0].tolist()
+    school_grade_span = comparison_set.loc[comparison_set['School ID'] == int(school)][['Low Grade','High Grade']].values[0].astype(str).tolist()
+    
     school_grade_span = [s.replace('KG', '0').replace('PK', '0') for s in school_grade_span]
     school_grade_span = [int(i) for i in school_grade_span]
     school_grade_range = list(range(school_grade_span[0],(school_grade_span[1]+1)))
@@ -138,6 +134,8 @@ def set_dropdown_options(school, year, comparison_schools):
 
     grade_mask = comparison_set.apply(filter_grades, compare=school_grade_range, axis=1)
     comparison_set = comparison_set[grade_mask]
+
+    comparison_set = comparison_set.drop(comparison_set[comparison_set['School ID'] == school].index)
 
     # limit maximum dropdown to the [n] closest schools
     num_schools_expanded = 20
@@ -156,6 +154,7 @@ def set_dropdown_options(school, year, comparison_schools):
     default_options = [{'label':name,'value':id} for name, id in comparison_list.items()]
     options = default_options
 
+    print(default_options)
     # value for number of default display selections and maximum
     # display selections (because of zero indexing, max should be
     # 1 less than actual desired number)
