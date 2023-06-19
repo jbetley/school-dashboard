@@ -435,11 +435,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # comparison_schools_filtered = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data['School ID'].isin(comparison_school_list)]
 
             # drop unused columns
-
-# TODO: FIX COmparison Schools
             comparison_schools_filtered = comparison_schools_filtered.filter(regex = r'Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year|School Name|School ID|Distance|Low Grade|High Grade',axis=1)
-
-            print(comparison_schools_filtered)
 
             # create list of columns with no date (used in loop below)
             # missing_mask returns boolean series of columns where all elements in the column
@@ -457,7 +453,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             comparison_schools = comparison_schools_filtered.copy()
 
             # iterate over all categories, ignoring missing columns, calculate the average, and store in a new column
-            categories = ethnicity + subgroup + grades + ['Total']
+            categories = ethnicity + subgroup + grades + ['School Total']
 
             for s in subject:
                 for c in categories:
@@ -468,6 +464,8 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                     if proficient not in missing_cols:
                         comparison_schools[new_col] = comparison_schools[proficient] / comparison_schools[tested]
 
+# TODO: FIX COmparison Schools
+            print(comparison_schools_filtered.T)
             # NOTE: The masking step above removes grades from the comparison
             # dataframe that are not also in the school dataframe (e.g., if
             # school only has data for grades 3, 4, & 5, only those grades
