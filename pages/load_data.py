@@ -289,34 +289,43 @@ def calculate_sat_rate(values):
 
     return data
 
-def calculate_proficiency(values):
+# TODO: This is slow. Refactor
+import time
 
+def calculate_proficiency(values):
+    t2 = time.process_time()
+# Calculates proficiency. If Total Tested == 0 or NaN or if Total Tested > 0, but Total Proficient is
+# NaN, all associated columns are dropped
     data = values.copy()
 
-    tested = data[data.columns[data.columns.str.contains(r'Total Tested')]].columns.tolist()
-    tested = [i for i in tested if 'ELA and Math' not in i]
+    # Get a list of all 'Total Tested' columns except those for ELA & Math
+    tested_categories = data[data.columns[data.columns.str.contains(r'Total Tested')]].columns.tolist()
+    tested_categories = [i for i in tested_categories if 'ELA and Math' not in i]
 
-    for test in tested:
-        if test in data.columns:
-            # get Category + Subject string
-            cat_sub = test.split(' Total Tested')[0]
-            data[cat_sub + ' Proficient %'] = calculate_percentage(data[cat_sub + ' Total Proficient'], data[test])
+    for total_tested in tested_categories:
+        if total_tested in data.columns:
+            
+            cat_sub = total_tested.split(' Total Tested')[0]
+            total_proficient = cat_sub + ' Total Proficient'
+            proficiency = cat_sub + ' Proficient %'
 
-    # NOTE: Original Code
-    # categories = ethnicity + subgroup + grades + ["School Total"]
+            # drop the entire category if ('Total Tested' == 0 or NaN) or if 
+            # ('Total Tested' > 0 and 'Total Proficient' is NaN. A 'Total Proficient'
+            # value of NaN means it was a '***' before being converted to numeric
+            # we use sum/all because there could be one or many columns
+            if (data[total_tested].sum() == 0 or pd.isna(data[total_tested]).all()) | \
+                (data[total_tested].sum() > 0 and pd.isna(data[total_proficient]).all()):
 
-    # for s in subject:
-    #     for c in categories:
-    #         new_col = c + "|" + s + " Proficient %"
-    #         proficient = c + "|" + s + " Total Proficient"
-    #         tested = c + "|" + s + " Total Tested"
+                data = data.drop([total_tested, total_proficient], axis=1)
+            else:
+                data[proficiency] = calculate_percentage(data[total_proficient], data[total_tested])
 
-    #         if tested in data.columns:
-    #             data[new_col] = calculate_percentage(data[proficient], data[tested])
+    process_prof = time.process_time() - t2
+    print(f'Time to calculate proficiency: ' + str(process_prof))
+
     return data
 
 ### End Helper Functions ###
-
 
 ### Dataframe Formatting Functions ###
 def process_k8_academic_data(all_data, year, school):

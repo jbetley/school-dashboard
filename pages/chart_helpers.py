@@ -677,3 +677,25 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         )
     ]
     return fig_layout
+
+def combine_barchart_and_table(fig,table):
+    layout = [
+                html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(fig)           
+                        ],
+                        className = 'pretty_container nine columns',
+                    ),
+                    html.Div(
+                        [
+                            html.Div(table)           
+                        ],
+                        className = 'pretty_container three columns'
+                    ),
+                ],
+                className='row'
+            )
+    ]
+    return layout

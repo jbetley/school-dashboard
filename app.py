@@ -817,6 +817,7 @@ def load_data(school, year):
             k8_school_data.columns = k8_school_data.columns.astype(str)
             k8_corp_rate_data.columns = k8_corp_rate_data.columns.astype(str)
 
+# TODO: CORP DATA
             # freeze Corp Proficiency dataframe in current state for use in academic analysis page
             academic_analysis_corp_dict = k8_corp_rate_data.to_dict()
             k8_corp_data = k8_corp_rate_data.copy()

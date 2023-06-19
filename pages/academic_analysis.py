@@ -16,7 +16,8 @@ from typing import Tuple
 
 # import local functions
 from .calculations import find_nearest, filter_grades
-from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, make_group_bar_chart
+from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, make_group_bar_chart, \
+    combine_barchart_and_table
 from .table_helpers import create_comparison_table, no_data_page, no_data_table
 from .subnav import subnav_academic
 from .load_data import all_academic_data_k8, school_index, ethnicity, subgroup, subject, grades
@@ -24,7 +25,7 @@ from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal,
     process_k8_academic_data, get_attendance_data, process_high_school_academic_data, filter_high_school_academic_data, \
     calculate_k8_comparison_metrics
 from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographic_data, get_school_index, \
-    get_school_coordinates, get_comparable_schools
+    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
@@ -247,18 +248,13 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # common_cols = [col for col in set(raw_school_data.columns).intersection(raw_corp_data.columns)]
             # raw_corp_data = raw_corp_data[common_cols]
 
-            clean_school_data = process_k8_academic_data(raw_school_data, year, school)        
-            combined_delta = calculate_k8_comparison_metrics(clean_school_data, year, school)        
-        # print(combined_delta.set_index(["Category"]))
+            clean_school_data = process_k8_academic_data(raw_school_data, year, school)
+
+            raw_comparison_data = calculate_k8_comparison_metrics(clean_school_data, year, school)
+
         # load k8_academic_data_json (School/Corp/+- for each category)
         json_data = json.loads(data['8'])
         school_academic_matrix = pd.DataFrame.from_dict(json_data)
-        
-        # print(school_academic_matrix.set_index(["Category"]))
-        # tested_academic_data = school_academic_matrix.copy()
-        
-        # for col in tested_academic_data.columns:
-        #     tested_academic_data[col] = pd.to_numeric(tested_academic_data[col], errors='coerce')
         
         tested_header = selected_year + 'School'
 
@@ -288,10 +284,13 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             # Display selected school's year over year data
 
+            # raw_comparison_data
             # keep only columns with 'Category' or 'School' in name
+            school_academic_data2 = raw_comparison_data[[col for col in raw_comparison_data.columns if 'School' in col or 'Category' in col]].copy()
             school_academic_data = school_academic_matrix[[col for col in school_academic_matrix.columns if 'School' in col or 'Category' in col]].copy()
 
             # remove 'School' from column headers (leaving the Year)
+            school_academic_data2.columns = school_academic_data2.columns.str.replace(r'School$', '', regex=True)
             school_academic_data.columns = school_academic_data.columns.str.replace(r'School$', '', regex=True)
 
             # drop any column (Year) where all values are either None or ***
@@ -300,23 +299,33 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # and '***' values to NaN, and then dropping all columns where every
             # value is NaN
             school_academic_data_numeric_headers = [j for j in school_academic_data.columns if 'Category' not in j]
+            school_academic_data_numeric_headers2 = [j for j in school_academic_data2.columns if 'Category' not in j]
+
 
             for col in school_academic_data_numeric_headers:
                 school_academic_data[col] = pd.to_numeric(school_academic_data[col], errors='coerce')
-            
+
+            for col in school_academic_data_numeric_headers2:
+                school_academic_data2[col] = pd.to_numeric(school_academic_data2[col], errors='coerce')
+
+            pd.set_option('display.max_rows', None)  
             school_academic_data = school_academic_data.dropna(axis=1, how='all')
+            school_academic_data2 = school_academic_data2.dropna(axis=1, how='all')
 
             # transpose the resulting dataframe (making Categories the column headers)
             display_academic_data = school_academic_data.set_index('Category').T.rename_axis('Year').rename_axis(None, axis=1).reset_index()
+            display_academic_data2 = school_academic_data2.set_index('Category').T.rename_axis('Year').rename_axis(None, axis=1).reset_index()
 
             # drop any Category where all values are NaN
             display_academic_data = display_academic_data.dropna(axis=1, how='all')
+            display_academic_data2 = display_academic_data2.dropna(axis=1, how='all')
 
             # add suffix to certain Categories
             display_academic_data = display_academic_data.rename(columns={c: c + ' Proficient %' for c in display_academic_data.columns if c not in ['Year', 'School Name','IREAD Proficiency (Grade 3 only)']})
+            display_academic_data2 = display_academic_data2.rename(columns={c: c + ' Proficient %' for c in display_academic_data2.columns if c not in ['Year', 'School Name','IREAD Proficiency (Grade 3 only)']})
 
         ## Make Line Charts
-            yearly_school_data = display_academic_data.copy()
+            yearly_school_data = display_academic_data2.copy()
             yearly_school_data['School Name'] = school_name
 
             # Chart 1: Year over Year ELA Proficiency by Grade (1.4.a)
@@ -398,8 +407,10 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             else:
                 fig14g = no_data_fig_label('Year over Year IREAD Proficiency', 200)
 
+# TODO: CLEAN UP OLD CODE e.g., #2
             # Get current year school data
-            current_school_data = display_academic_data.loc[display_academic_data['Year'] == selected_year].copy()
+            # current_school_data = display_academic_data.loc[display_academic_data['Year'] == selected_year].copy()
+            current_school_data = display_academic_data2.loc[display_academic_data2['Year'] == selected_year].copy()
 
             # drop any Category where value is NaN
             current_school_data = current_school_data.dropna(axis=1, how='all')
@@ -410,16 +421,26 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             current_school_data['Low Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == selected_year)]['Low Grade'].values[0]
             current_school_data['High Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == selected_year)]['High Grade'].values[0]
 
+            raw_corp_data = get_k8_corporation_academic_data(school)
+            school_corporation_name = raw_corp_data['Corporation Name'].values[0]
+
+            raw_corp_data = raw_corp_data.loc[raw_corp_data['Year'] == int(selected_year)]
+
+            for col in raw_corp_data.columns:
+                raw_corp_data[col]=pd.to_numeric(raw_corp_data[col], errors='coerce')
+
+            clean_corp_data = process_k8_academic_data(raw_corp_data, year, school)
+            clean_corp_data.loc[clean_corp_data['Category'] == 'IREAD Pass %', 'Category'] = 'IREAD Proficiency (Grade 3 only)'
+
             # academic_analysis_corp_dict
             k8_corp_data = pd.DataFrame.from_dict(data['7'])
-
             corp_current_data = k8_corp_data.loc[k8_corp_data['Year'] == int(selected_year)]
 
             # rename IREAD column
             corp_current_data = corp_current_data.rename(
                 columns={'IREAD Pass %': 'IREAD Proficiency (Grade 3 only)'}
-            )            
-      
+            )
+
             # coerce data types to numeric (except strings)
             for col in corp_current_data.columns:
                 corp_current_data[col]=pd.to_numeric(corp_current_data[col], errors='coerce').fillna(corp_current_data[col]).tolist()
@@ -427,17 +448,24 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # get academic data for comparison schools
             # filter full set by year and the schools selected in the dropdown
 
-            eval_year = [str(current_school_data['Year'].values[0])]
+# TODO: Corp data is aligned except  clean_corp is already transposed
+# TODO: Eventually need to ensure columns are aligned with School
+            # print(clean_corp_data.set_index('Category'))
+            # print(corp_current_data.T)
 
-            current_year_all_schools_k8_academic_data = all_academic_data_k8[all_academic_data_k8['Year'].isin(eval_year)]
+            # eval_year = [str(current_school_data['Year'].values[0])]
+            # current_year_all_schools_k8_academic_data = all_academic_data_k8[all_academic_data_k8['Year'].isin(eval_year)]
 
             comparison_schools_filtered = get_comparable_schools(comparison_school_list, year)
             # comparison_schools_filtered = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data['School ID'].isin(comparison_school_list)]
 
+# TODO: HERE
+            # print(comparison_schools_filtered)
+            print(current_school_data.T)
             # drop unused columns
             comparison_schools_filtered = comparison_schools_filtered.filter(regex = r'Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year|School Name|School ID|Distance|Low Grade|High Grade',axis=1)
 
-            # create list of columns with no date (used in loop below)
+            # create list of columns with no data (used in loop below)
             # missing_mask returns boolean series of columns where all elements in the column
             # are equal to null 
             missing_mask = pd.isnull(current_school_data[current_school_data.columns]).all()
@@ -452,6 +480,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             comparison_schools = comparison_schools_filtered.copy()
 
+# TODO: Change this re: load_data.py
             # iterate over all categories, ignoring missing columns, calculate the average, and store in a new column
             categories = ethnicity + subgroup + grades + ['School Total']
 
@@ -465,7 +494,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                         comparison_schools[new_col] = comparison_schools[proficient] / comparison_schools[tested]
 
 # TODO: FIX COmparison Schools
-            print(comparison_schools_filtered.T)
+
             # NOTE: The masking step above removes grades from the comparison
             # dataframe that are not also in the school dataframe (e.g., if
             # school only has data for grades 3, 4, & 5, only those grades
@@ -508,7 +537,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
 
             # reset indicies
             comparison_schools = comparison_schools.reset_index(drop=True)
-            
+
             ### TODO: Add AHS/HS Data ###
             # hs_comparison_data = hs_all_data_included_years.loc[(hs_all_data_included_years['School ID'].isin(comparison_schools))]
             #     # filter comparable school data
@@ -524,8 +553,11 @@ def update_academic_analysis(school, year, data, comparison_school_list):
             # # ensure columns headers are strings
             # hs_comparison_data.columns = hs_comparison_data.columns.astype(str)
 
-            school_corporation_name = current_year_all_schools_k8_academic_data.loc[(all_academic_data_k8['Corp ID'] == selected_school['GEO Corp'].values[0])]['Corp Name'].values[0]
+            print('ERE')
+            
+            # school_corporation_name = current_year_all_schools_k8_academic_data.loc[(all_academic_data_k8['Corp ID'] == selected_school['GEO Corp'].values[0])]['Corp Name'].values[0]
 
+            print(school_corporation_name)
             info_categories = ['School Name','Low Grade','High Grade']
 
             #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
@@ -570,27 +602,7 @@ def update_academic_analysis(school, year, data, comparison_school_list):
                 fig14c_chart = no_data_fig_label('Comparison: Current Year ELA Proficiency',200)
                 fig14c_table = no_data_table('Proficiency')
 
-            def combine_barchart_and_table(fig,table):
-                layout = [
-                            html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(fig)           
-                                    ],
-                                    className = 'pretty_container nine columns',
-                                ),
-                                html.Div(
-                                    [
-                                        html.Div(table)           
-                                    ],
-                                    className = 'pretty_container three columns'
-                                ),
-                            ],
-                            className='row'
-                        )
-                ]
-                return layout
+            print('HERE')
 
             fig14c = combine_barchart_and_table(fig14c_chart,fig14c_table)
 
