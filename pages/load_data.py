@@ -30,7 +30,6 @@ all_academic_data_k8 = pd.read_csv(r"data/academic_data_k8.csv", dtype=str)
 corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
 all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
 
-# TODO: NEED FINANCIAL RATIOS
 financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
 
 # global integers
@@ -40,6 +39,8 @@ max_display_years = 5
 
 # global strings
 subject = ["Math", "ELA"]
+
+info_categories = ['School Name','Low Grade','High Grade']
 
 ethnicity = [
     "American Indian",

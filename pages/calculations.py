@@ -295,6 +295,8 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
                 data[col] = pd.to_numeric(data[col], errors="coerce")
     
     # data = data.apply(pd.to_numeric)
+    print('FN: DATA GOES IN')
+    print(data)
 
     phi = np.deg2rad(data['Lat'])
     theta = np.deg2rad(data['Lon'])
@@ -307,6 +309,8 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
     # match the [num_hits] number of 'nearest neighbor' schools
     distance, index = tree.query(data.iloc[school_idx][['x', 'y','z']], k = num_hits)
 
+    print('IDNEX OF FOUND SCHOOLS')
+    print(index)
     return index, distance
 
 def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:

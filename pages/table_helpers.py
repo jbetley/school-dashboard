@@ -10,6 +10,9 @@ import pandas as pd
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
+import re
+from typing import Tuple
+from .load_data import ethnicity, subgroup, info_categories
 
 def no_data_table(label: str = 'No Data to Display') -> list:
     """Creates single empty table with provided label
@@ -566,6 +569,174 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         ]
     return table
 
+def create_chart_label(final_data: pd.DataFrame) -> str:
+
+    final_data_columns = final_data.columns.tolist()
+
+    # the list returns any strings in final_data_columns that are in the
+    # ethnicity list or subgroup list. Label is based on whichever list
+    # of substrings matches the column list
+    if len([i for e in ethnicity for i in final_data_columns if e in i]) > 0:
+        label_category = ' Proficiency by Ethnicity'
+
+    elif len([i for e in subgroup for i in final_data_columns if e in i]) > 0:
+        label_category = ' Proficiency by Subgroup'                      
+
+    # get the subject using regex
+    label_subject = re.search(r'(?<=\|)(.*?)(?=\s)',final_data_columns[0]).group()
+    
+    label = 'Comparison: ' + label_subject + label_category
+
+    return label
+    
+def create_school_label(data):
+
+    label = data['School Name'] + ' (' + data['Low Grade'].fillna('').astype(str) + \
+        '-' + data['High Grade'].fillna('').astype(str) + ')'
+    
+    # removes empty parentheses from School Corp
+    label = label.str.replace("\(-\)", '',regex=True)
+
+
+    return label
+
+def process_table_data(data: pd.DataFrame) -> pd.DataFrame:
+    # Create a series that merges school name and grade spans and drop the grade span columns 
+    # from the dataframe (they are not charted)
+
+    
+    # school_names = data['School Name'] + ' (' + data['Low Grade'].fillna('').astype(str) + '-' \
+    # + data['High Grade'].fillna('').astype(str) + ')'
+
+    # # removes extraneous string from School Corporation Data
+    # school_names = school_names.str.replace("\(-\)", '',regex=True)
+
+    school_names = create_school_label(data)
+
+    data = data.drop(['Low Grade', 'High Grade'], axis = 1)
+
+    # shift the 'School Name' column to the first position and replace
+    # the values in 'School Name' column with the series we created earlier
+    data = data.drop('School Name', axis = 1)
+    data['School Name'] = school_names
+
+    first_column = data.pop('School Name')
+    data.insert(0, 'School Name', first_column)
+    
+    return data
+
+def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: str, corp_name: str) -> Tuple[pd.DataFrame, str, str]:
+    
+    all_categories = categories + info_categories
+
+    school_columns = [i for i in categories if i in school_data.columns]
+
+    # sort corp data by the school columns (this excludes any categories
+    # not in the school data)
+    corporation_data = corporation_data.loc[:, (corporation_data.columns.isin(school_columns))].copy()
+
+    # add the school corporation name
+    corporation_data['School Name'] = corp_name
+
+    # concatenate the school and corporation dataframes, filling empty values (e.g., Low and High Grade) with ''
+    first_merge_data = pd.concat([school_data, corporation_data], sort=False).fillna('')
+
+    # filter comparable schools
+    comparison_data = comparison_data.loc[:, comparison_data.columns.isin(all_categories)].copy()
+
+    # concatenate school/corp and comparison dataframes
+    combined_data = pd.concat([first_merge_data,comparison_data])
+    combined_data = combined_data.reset_index(drop=True)
+
+    # make a copy (used for comparison purposes)
+    final_data = combined_data.copy()
+
+    # get a list of all of the Categories (each one a column)
+    school_categories = [ele for ele in school_columns if ele not in info_categories]
+
+    # test all school columns and drop any where all columns (proficiency data) is nan/null
+    final_data = final_data.dropna(subset=school_categories, how='all')  
+
+    # replace any blanks with NaN
+    final_data = final_data.replace(r'^\s*$', np.nan, regex=True)
+
+    # get the names of the schools that have no data by comparing the
+    # column sets before and after the drop
+    missing_schools = list(set(combined_data['School Name']) - set(final_data['School Name']))
+
+    # Now comes the hard part. Get the names and categories of schools that
+    # have data for some categories and not others. In the end we want
+    # to build a list of schools that is made up of schools that are missing
+    # all data + schools that are missing some data + what data they are
+    # missing
+
+    check_data = final_data.copy()
+    check_data = check_data.drop(['Low Grade','High Grade'], axis = 1)
+    check_data = check_data.reset_index(drop=True)
+
+    # get a list of the categories that are missing from selected school data and
+    # strip everything following '|' delimeter. Use this to list the categories
+    # in an annotation
+
+    missing_categories = [i for i in categories if i not in check_data.columns]                
+    missing_categories = [s.split('|')[0] for s in missing_categories]
+
+    # get index and columns where there are null values (numpy array)
+    idx, idy = np.where(pd.isnull(check_data))
+
+    # np.where returns an index for each column, resulting in duplicate
+    #  indexes for schools missing multiple categories. But we only need one
+    # unique value for each school that is missing data
+    schools_with_missing = np.unique(idx, axis=0)
+
+    schools_with_missing_list = []
+    if schools_with_missing.size != 0:
+        for i in schools_with_missing:
+
+            schools_with_missing_name = check_data.iloc[i]['School Name']
+
+            # get missing categories as a list, remove everything
+            # after the '|', and filter down to unique categories
+            with_missing_categories = list(check_data.columns[idy])
+            with_missing_categories = [s.split('|')[0] for s in with_missing_categories]
+            unique__missing_categories = list(set(with_missing_categories))
+
+            # create a list of ['School Name (Cat 1, Cat2)']
+            schools_with_missing_list.append(schools_with_missing_name + ' (' + ', '.join(unique__missing_categories) + ')')
+
+    else:
+        schools_with_missing_list = []
+
+    # create the string. Yes this is ugly, and i will probably fix it later, but
+    # we need to make sure that all conditions match proper punctuation.
+    if len(schools_with_missing_list) != 0:
+        if len(schools_with_missing_list) > 1:
+            schools_with_missing_list = ', '.join(schools_with_missing_list)
+        else:
+            schools_with_missing_list = schools_with_missing_list[0]
+
+        if missing_schools:
+            missing_schools = [i + ' (All)' for i in missing_schools]
+            school_string = ', '.join(list(map(str, missing_schools))) + '.'
+            school_string = schools_with_missing_list + ', ' + school_string
+        else:
+            school_string = schools_with_missing_list + '.'
+    else:
+        if missing_schools:
+            missing_schools = [i + ' (All)' for i in missing_schools]
+            school_string = ', '.join(list(map(str, missing_schools))) + '.'
+        else:
+            school_string = 'None.'
+    
+    # Create string for categories for which the selected school has
+    # no data. These categories are not shown at all.
+    if missing_categories:
+        category_string = ', '.join(list(map(str, missing_categories))) + '.'
+    else:
+        category_string = 'None.'
+
+    return final_data, category_string, school_string
+        
 def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) -> list:
     """ Takes a dataframe that is a column of schools and one or more columns
         of data, school name, and table label. Uses the school name to find

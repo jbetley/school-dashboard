@@ -294,7 +294,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         data.sort_values('Year', inplace=True)
         data = data.reset_index(drop=True)
 
-        data_years = data['Year'].astype(int).tolist()
+        # data_years = data['Year'].astype(int).tolist()
         
         #add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
     
@@ -370,6 +370,8 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         # fig.update_xaxes(anchor='free')
         # fig.update_yaxes(position=.5)
 
+        # NOTE: The range is currently fixed at between 0 - 50% - at 100% everything is to compressed (sadly),
+        # may need to consider some kind of sliding range based on the max value
         fig.update_yaxes(
             title='',
             mirror=True,
@@ -380,7 +382,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             showgrid=True,
             gridcolor='#b0c4de',
             zeroline=False,
-            range=[0, 1],
+            range=[0, .5], 
             dtick=.2,
             tickformat=',.0%',
         )
