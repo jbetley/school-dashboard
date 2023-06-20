@@ -913,7 +913,7 @@ def calculate_k8_comparison_metrics(school_data, year, school):
     # do not want to retain strings ('***') for corporation_data
     for col in corporation_data:
         corporation_data[col] = pd.to_numeric(corporation_data[col], errors='coerce')       
-
+    
     corporation_data = corporation_data.filter(regex=r"Total Tested$|Total Proficient$|IREAD Pass N|IREAD Test N|Year",
         axis=1,
     )
