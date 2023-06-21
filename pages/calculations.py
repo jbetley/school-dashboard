@@ -282,8 +282,6 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
     # number of schools to return (add 1 to account for the fact that the selected school
     # is included in the return set) - number needs to be high enough to ensure there are
     # enough left once non-comparable grades are filtered out.
-    # TODO: Do we want to use the DB to filter the list by Grade Span as well when we get
-    # TODO: The list of Schools?
     num_hits = 26
 
     # the radius of earth in miles. For kilometers use 6372.8 km
@@ -294,23 +292,18 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
     for col in data.columns:
                 data[col] = pd.to_numeric(data[col], errors="coerce")
     
-    # data = data.apply(pd.to_numeric)
-    print('FN: DATA GOES IN')
-    print(data)
-
     phi = np.deg2rad(data['Lat'])
     theta = np.deg2rad(data['Lon'])
     data['x'] = R * np.cos(phi) * np.cos(theta)
     data['y'] = R * np.cos(phi) * np.sin(theta)
     data['z'] = R * np.sin(phi)
+
     tree = spatial.KDTree(data[['x', 'y','z']])
 
     # gets a list of the indexes and distances in the data tree that
     # match the [num_hits] number of 'nearest neighbor' schools
     distance, index = tree.query(data.iloc[school_idx][['x', 'y','z']], k = num_hits)
 
-    print('IDNEX OF FOUND SCHOOLS')
-    print(index)
     return index, distance
 
 def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:

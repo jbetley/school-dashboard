@@ -8,8 +8,9 @@
 import dash
 from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
-import re
+
 import pandas as pd
+import time
 
 # TESTING
 # pd.set_option('display.max_columns', None)
@@ -163,6 +164,7 @@ def update_academic_metrics(school: str, year: str):
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
 
+            t0 = time.process_time()
             raw_hs_school_data = get_high_school_academic_data(school)
             raw_hs_school_data = filter_high_school_academic_data(raw_hs_school_data)
             
@@ -171,6 +173,9 @@ def update_academic_metrics(school: str, year: str):
 # TODO: What if there is no Corp Data?
                 raw_hs_corp_data = get_high_school_corporation_academic_data(school)
 
+                print(f'Time to load HS data: ' + str(time.process_time() - t0))
+
+                t1 = time.process_time()
                 for col in raw_hs_corp_data.columns:
                     raw_hs_corp_data[col] = pd.to_numeric(raw_hs_corp_data[col], errors='coerce')
 
@@ -186,6 +191,9 @@ def update_academic_metrics(school: str, year: str):
                 hs_merged_data = merge_high_school_data(clean_hs_school_data, clean_hs_corp_data, year)
                 combined_grad_metrics_data = calculate_high_school_metrics(hs_merged_data)
 
+                print(f'Time to process HS data: ' + str(time.process_time() - t1))
+
+                t2 = time.process_time()
                 metric_17ab_label = 'High School Accountability Metrics 1.7.a & 1.7.b'
                 combined_grad_metrics_data = get_svg_circle(combined_grad_metrics_data)  
                 table_17ab = create_metric_table(metric_17ab_label, combined_grad_metrics_data)
@@ -219,6 +227,8 @@ def update_academic_metrics(school: str, year: str):
                 table_17cd = create_metric_table(metric_17cd_label, metric_17cd_data)
                 table_container_17cd = set_table_layout(table_17cd, table_17cd, metric_17cd_data.columns)
 
+                print(f'Time to create HS tables: ' + str(time.process_time() - t2))
+
             else:
                 # school is HS, but has no data
                 table_container_17ab = {}
@@ -238,10 +248,12 @@ def update_academic_metrics(school: str, year: str):
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
 
+            t2_5 = time.process_time()
             raw_school_data = get_k8_school_academic_data(school)
-
+            print(f'Time to load k8 data: ' + str(time.process_time() - t2_5))
             if len(raw_school_data) > 0:
 
+                t3 = time.process_time()
                 raw_school_data = raw_school_data.replace({"^": "***"})
 
                 # keep only school columns with non-null data.
@@ -269,6 +281,9 @@ def update_academic_metrics(school: str, year: str):
 
                 category = ethnicity + subgroup
 
+                print(f'Time to process K8 data: ' + str(time.process_time() - t3))
+
+                t4 = time.process_time()
                 metric_14a_data = combined_years[(combined_years['Category'].str.contains('|'.join(grades_all))) & (combined_years['Category'].str.contains('ELA'))]
                 metric_14a_label = ['1.4a Grade level proficiency on the state assessment in',html.Br(), html.U('English Language Arts'), ' compared with the previous school year.']
 
@@ -393,6 +408,7 @@ def update_academic_metrics(school: str, year: str):
 
                 table_container_16cd = set_table_layout(table_16c,table_16d,combined_years.columns)
 
+                print(f'Time to create K8 tables: ' + str(time.process_time() - t4))
             else:
 
                 #if school type is K8 only but dataframes are empty

@@ -27,7 +27,7 @@
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import text
-import time
+# import time
 
 # Create a simple database
 engine = create_engine('sqlite:///data/db_all.db')
@@ -39,13 +39,12 @@ engine = create_engine('sqlite:///data/db_all.db')
 
 print('Engine Created . . .')
 
-
 # Return Dataframe (read_sql is a convenience function wrapper around read_sql_query or read_sql_table depending on input)
 # TODO: Can refactor, everything should passed in as a tuple of a dict for named placeholders, even if only a single
 # value, so type should always be dict
 def run_query(q, *args):
     conditions = None
-    t2 = time.process_time()
+    # t2 = time.process_time()
 
     with engine.connect() as conn:
         if args:
@@ -65,10 +64,9 @@ def run_query(q, *args):
         df.columns = df.columns.str.replace("or ", " or ")
         df.columns = df.columns.astype(str)
 
-        db_load_time = time.process_time() - t2
-        num_cols = len(df.columns)
-        
-        print(f'Time to load ' + str(num_cols) + ' columns is: ' + str(db_load_time))
+        # db_load_time = time.process_time() - t2
+        # num_cols = len(df.columns)        
+        # print(f'Time to load ' + str(num_cols) + ' columns is: ' + str(db_load_time))
 
         return df
 
@@ -244,17 +242,6 @@ def get_high_school_corporation_academic_data(*args):
         ''')
     return run_query(q, params)
 
-
-# ## TODO: Working Section below - Need to import all_academic_data_k8 to db
-# # Get Lat and Lon Data (for given year)
-# def get_location_data(year):
-#     params = dict(year=year)
-#     q = text('''
-#         SELECT Lat, Lon, SchoolID, SchoolName, LowGrade, HighGrade
-#             FROM academic_data_k8
-#             Where Year = :year)
-#         ''')
-#     return run_query(q, params)
 
 def get_school_coordinates(*args):
     keys = ['year']

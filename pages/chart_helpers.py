@@ -269,6 +269,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     
     return fig_layout
 
+import time
 # create a basic line (scatter) plot
 def make_line_chart(values: pd.DataFrame, label: str) -> list:
     """Creates a layout containg a label and a basic line (scatter) plot (px.line)
@@ -280,6 +281,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     Returns:
         list: a plotly dash html layout in the form of a list containing string and px.line figure
     """    """"""
+    t9 = time.process_time()
     data = values.copy()
 
     data.columns = data.columns.str.split('|').str[0]
@@ -399,6 +401,8 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             ]
         )
     ]
+
+    print(f'Processing line chart( ' + label + ' ): ' + str(time.process_time() - t9))
 
     return fig_layout
 

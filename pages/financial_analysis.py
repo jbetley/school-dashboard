@@ -140,10 +140,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
         # financial_data_json = json.loads(data['16'])
 
-        RandE_title = 'Revenue and Expenses (' + selected_school['Network'].values[0] + ')'
-        AandL_title = 'Assets and Liabilities (' + selected_school['Network'].values[0] + ')'
-        FP_title = '2-Year Financial Position (' + selected_school['Network'].values[0] + ')'
-        FA_title = '2-Year Financial Activities (' + selected_school['Network'].values[0] + ')'
+        RandE_title = 'Revenue and Expenses (' + financial_data['School Name'][0] + ')'
+        AandL_title = 'Assets and Liabilities (' + financial_data['School Name'][0] + ')'
+        FP_title = '2-Year Financial Position (' + financial_data['School Name'][0] + ')'
+        FA_title = '2-Year Financial Activities (' + financial_data['School Name'][0] + ')'
 
     else:
         
@@ -157,10 +157,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             FP_title = '2-Year Financial Position'
             FA_title = '2-Year Financial Activities'  
         else:
-            RandE_title = 'Revenue and Expenses (' + selected_school['School Name'].values[0] + ')'
-            AandL_title = 'Assets and Liabilities (' + selected_school['School Name'].values[0] + ')'
-            FP_title = '2-Year Financial Position (' + selected_school['School Name'].values[0] + ')'
-            FA_title = '2-Year Financial Activities (' + selected_school['School Name'].values[0] + ')'
+            RandE_title = 'Revenue and Expenses (' + financial_data['School Name'][0] + ')'
+            AandL_title = 'Assets and Liabilities (' + financial_data['School Name'][0] + ')'
+            FP_title = '2-Year Financial Position (' + financial_data['School Name'][0] + ')'
+            FA_title = '2-Year Financial Activities (' + financial_data['School Name'][0] + ')'
 
     # clean up
     financial_data = financial_data.drop(['School ID','School Name'], axis=1)

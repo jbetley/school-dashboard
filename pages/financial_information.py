@@ -113,21 +113,22 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                 className='radio-group',
             )
         
-        # ensure val is always set to school if the school does not have a network tag
+        # radio_value defaults to school if 'Network' value is None in school_index
         radio_value = 'school-metrics'
         display_radio = {'display': 'none'}
 
     if radio_value == 'network-finance':
         
         network_id = selected_school['Network'].values[0]
-        
+
         # network financial data
         if network_id != 'None':
             financial_data = get_financial_data(network_id)
+
         else:
             financial_data = {}
         
-        table_title = 'Audited Financial Information (' + selected_school['Network'].values[0] + ')'
+        table_title = 'Audited Financial Information (' + financial_data['School Name'][0] + ')'
 
     else:
         
@@ -138,7 +139,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         if selected_school['Network'].values[0] == 'None':
             table_title = 'Audited Financial Information'
         else:
-            table_title = 'Audited Financial Information (' + selected_school['School Name'].values[0] + ')'
+            table_title = 'Audited Financial Information (' + financial_data['School Name'][0] + ')'
 
     # clean up
     financial_data = financial_data.drop(['School ID','School Name'], axis=1)

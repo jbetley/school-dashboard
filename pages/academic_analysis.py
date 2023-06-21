@@ -9,6 +9,7 @@ import dash
 from dash import ctx, dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
+import time
 
 # import local functions
 from .calculations import find_nearest, filter_grades
@@ -18,10 +19,10 @@ from .table_helpers import create_comparison_table, no_data_page, no_data_table,
     process_chart_data, process_table_data, create_school_label, create_chart_label
 from .subnav import subnav_academic
 from .load_data import all_academic_data_k8, ethnicity, subgroup, ethnicity, info_categories, \
-    get_excluded_years, process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
-    filter_high_school_academic_data, calculate_k8_comparison_metrics, calculate_proficiency
-from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographic_data, get_school_index, \
-    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
+   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency #get_attendance_data, process_high_school_academic_data, get_excluded_years, \
+    #filter_high_school_academic_data, 
+from .load_db import get_k8_school_academic_data, get_school_index, \
+    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data # get_high_school_academic_data,
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
@@ -35,7 +36,7 @@ dash.register_page(__name__, path = '/academic_analysis', order=6)
     Input('comparison-dropdown', 'value'),
 )
 def set_dropdown_options(school, year, comparison_schools):
-
+    t0 = time.process_time()
     # clear the list of comparison_schools when a new school is
     # selected (e.g., 'charter-dropdown' Input). otherwise
     # comparison_schools will carry over from school to school
@@ -51,7 +52,7 @@ def set_dropdown_options(school, year, comparison_schools):
     school_grade_span = [s.replace('KG', '1').replace('PK', '0') for s in school_grade_span]
     school_grade_span = [int(i) for i in school_grade_span]
 
-    # right now dont track PreK(0) and K(1)
+    # ignore PreK(0) and K(1)
     low_bound = 3 if school_grade_span[0] < 3 else school_grade_span[0]
     school_grade_range = list(range(low_bound,(school_grade_span[1]+1)))
 
@@ -60,13 +61,14 @@ def set_dropdown_options(school, year, comparison_schools):
 
     grade_mask = schools_by_distance.apply(filter_grades, compare=school_grade_range, axis=1)
     schools_by_distance = schools_by_distance[grade_mask]
+    
+    # reset index and make a copy to re-add School Names after distance sort
+    schools_by_distance = schools_by_distance.reset_index(drop = True)
+    all_schools = schools_by_distance.copy()
 
+    # get school index
     school_idx = schools_by_distance[schools_by_distance['School ID'] == int(school)].index
 
-# TODO: Getting Error: "IndexError: positional indexers are out-of-bounds"
-
-    print('MY INDEX:')
-    print(school_idx)
     # because school_idx is calculated by searching the academic data
     # for grades 3-8, any school that is not included in the grade 3-8
     # dataset will have an empty school_idx. This check prevents HS and
@@ -74,10 +76,6 @@ def set_dropdown_options(school, year, comparison_schools):
     if school_idx.size == 0:
         return [],[],[]
     
-    # make a copy of the original dataframe to use to merge later
-    all_schools = schools_by_distance.copy()
-
-    print('WOOKING FOR WUB!')
     # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
     index_array, dist_array = find_nearest(school_idx,schools_by_distance)
 
@@ -87,8 +85,7 @@ def set_dropdown_options(school, year, comparison_schools):
     # Match School ID with indexes
     closest_schools = pd.DataFrame()
     closest_schools['School ID'] = schools_by_distance[schools_by_distance.index.isin(index_list)]['School ID']
-    print('FOUND LIST OF SCHOOLS')
-    print(closest_schools)
+
     # Merge the index and distances lists into a dataframe
     distances = pd.DataFrame({'index':index_list, 'y':distance_list})
     distances = distances.set_index(list(distances)[0])
@@ -101,7 +98,7 @@ def set_dropdown_options(school, year, comparison_schools):
     comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
  
     # drop selected school (so it cannot be selected in the dropdown)
-    comparison_set = comparison_set.drop(comparison_set[comparison_set['School ID'] == school].index)
+    comparison_set = comparison_set.drop(comparison_set[comparison_set['School ID'] == int(school)].index)
 
     # limit maximum dropdown to the [n] closest schools
     num_schools_expanded = 20
@@ -145,6 +142,7 @@ def set_dropdown_options(school, year, comparison_schools):
                 {'label': option['label'], 'value': option['value'], 'disabled': True}
                 for option in default_options
             ]
+    print(f'Time to create dropdown: ' + str(time.process_time() - t0))
 
     return options, input_warning, comparison_schools
 
@@ -180,8 +178,6 @@ def update_academic_analysis(school, year, comparison_school_list):
     if not school:
         raise PreventUpdate
 
-    print(comparison_school_list)
-
     selected_year = str(year)
 
     academic_analysis_main_container = {'display': 'none'}
@@ -192,7 +188,7 @@ def update_academic_analysis(school, year, comparison_school_list):
     selected_school = get_school_index(school)
     
     school_name = selected_school['School Name'].values[0]
-
+    t1 = time.process_time()
     raw_school_data = get_k8_school_academic_data(school)
 
     # Test if data exists - there are 4 cases where we end up with an empty page:
@@ -249,8 +245,11 @@ def update_academic_analysis(school, year, comparison_school_list):
 
         clean_school_data = process_k8_academic_data(raw_school_data, year, school)
 
+        print(f'Time to load and process K8 data: ' + str(time.process_time() - t1))
+        t2 = time.process_time()        
         raw_comparison_data = calculate_k8_comparison_metrics(clean_school_data, year, school)
-        
+
+        print(f'Time to process comparison metrics: ' + str(time.process_time() - t2))        
         tested_header = selected_year + 'School'
 
         # Testing (3) and (4)
@@ -276,7 +275,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             dropdown_container = {'display': 'none'}
 
         else:
-
+            pd.set_option('display.max_rows', None)  
             # Display selected school's year over year data
 
             # keep only columns with 'Category' or 'School' in name
@@ -292,13 +291,13 @@ def update_academic_analysis(school, year, comparison_school_list):
             # columns other than 'Category' to numeric. This turns all None
             # and '***' values to NaN, and then dropping all columns where every
             # value is NaN
-            # school_academic_data_numeric_headers = [j for j in school_academic_data.columns if 'Category' not in j]
+            # TODO: This screws up charting tho - because it shows as a break in the line
+
             school_academic_data_numeric_headers = [j for j in school_academic_data.columns if 'Category' not in j]
 
             for col in school_academic_data_numeric_headers:
                 school_academic_data[col] = pd.to_numeric(school_academic_data[col], errors='coerce')
 
-            pd.set_option('display.max_rows', None)  
             school_academic_data = school_academic_data.dropna(axis=1, how='all')
 
             # transpose the resulting dataframe (making Categories the column headers)
@@ -311,6 +310,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             display_academic_data = display_academic_data.rename(columns={c: c + ' Proficient %' for c in display_academic_data.columns if c not in ['Year', 'School Name','IREAD Proficiency (Grade 3 only)']})
 
         ## Make Line Charts
+            t3 = time.process_time()   
             yearly_school_data = display_academic_data.copy()
             yearly_school_data['School Name'] = school_name
 
@@ -393,6 +393,8 @@ def update_academic_analysis(school, year, comparison_school_list):
             else:
                 fig14g = no_data_fig_label('Year over Year IREAD Proficiency', 200)
 
+            print(f'Time to make line charts: ' + str(time.process_time() - t3))
+
             # Get current year school data
             current_school_data = display_academic_data.loc[display_academic_data['Year'] == selected_year].copy()
 
@@ -404,6 +406,8 @@ def update_academic_analysis(school, year, comparison_school_list):
             # Grade range data is used for the chart 'hovertemplate'
             current_school_data['Low Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == selected_year)]['Low Grade'].values[0]
             current_school_data['High Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == selected_year)]['High Grade'].values[0]
+
+            t4 = time.process_time()
 
             raw_corp_data = get_k8_corporation_academic_data(school)
             school_corporation_name = raw_corp_data['Corporation Name'].values[0]
@@ -429,6 +433,10 @@ def update_academic_analysis(school, year, comparison_school_list):
 
             # eval_year = [str(current_school_data['Year'].values[0])]
             # current_year_all_schools_k8_academic_data = all_academic_data_k8[all_academic_data_k8['Year'].isin(eval_year)]
+            print(f'Time to get and process corp data: ' + str(time.process_time() - t4))
+
+
+            t5 = time.process_time()
 
             comparison_schools_filtered = get_comparable_schools(comparison_school_list, year)
             # comparison_schools_filtered = current_year_all_schools_k8_academic_data[current_year_all_schools_k8_academic_data['School ID'].isin(comparison_school_list)]
@@ -495,7 +503,7 @@ def update_academic_analysis(school, year, comparison_school_list):
 
             # reset indicies
             comparison_schools = comparison_schools.reset_index(drop=True)
-
+            print(f'Time to get and process comparison data: ' + str(time.process_time() - t5))
 ### TODO: Add AHS/HS Data ###
             # hs_comparison_data = hs_all_data_included_years.loc[(hs_all_data_included_years['School ID'].isin(comparison_schools))]
             #     # filter comparable school data
@@ -512,7 +520,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             # hs_comparison_data.columns = hs_comparison_data.columns.astype(str)
             
             # school_corporation_name = current_year_all_schools_k8_academic_data.loc[(all_academic_data_k8['Corp ID'] == selected_school['GEO Corp'].values[0])]['Corp Name'].values[0]
-
+            t6 = time.process_time()
             #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
             category = 'School Total|ELA Proficient %'
 
@@ -549,9 +557,6 @@ def update_academic_analysis(school, year, comparison_school_list):
                 #     ' (' + fig14c_table_data['Low Grade'].fillna('').astype(str) + '-' + fig14c_table_data['High Grade'].fillna('').astype(str) + ')'
                 
                 fig14c_table_data['School Name'] = create_school_label(fig14c_table_data)
-
-                # print(fig14c_table_data['School Name'])
-                # print(tst['School Name'])
 
                 fig14c_table_data = fig14c_table_data[['School Name', category]]
                 fig14c_table_data = fig14c_table_data.reset_index(drop=True)
@@ -646,6 +651,7 @@ def update_academic_analysis(school, year, comparison_school_list):
 
             fig_iread = combine_barchart_and_table(fig_iread_chart,fig_iread_table)
 
+            print(f'Time to make single subject bar charts: ' + str(time.process_time() - t6))
             # functions to create comparison charts/tables
             # NOTE: See backup data 01.23.23 for pre- create_full_chart() function code
 
@@ -804,6 +810,7 @@ def update_academic_analysis(school, year, comparison_school_list):
                 ]
                 return layout
 
+            t7 = time.process_time()
 # TODO: Why not process all categories for school, comparison schools, and corp at once and then just slice them
 # TODO: up instead of running the process_chart_data function over and over again on the same dataframes?
             # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
@@ -914,6 +921,7 @@ def update_academic_analysis(school, year, comparison_school_list):
                 fig16b2 = no_data_fig_label('Comparison: Math Proficiency by Subgroup', 200)            
                 fig16b2_container = {'display': 'none'}
     
+            print(f'Time to make multibar comparison charts: ' + str(time.process_time() - t7))
     academic_analysis_main_container = {'display': 'block'}
 
     return fig14a, fig14b, fig14c, fig14d, fig_iread, \

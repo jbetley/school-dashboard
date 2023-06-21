@@ -294,7 +294,7 @@ def calculate_sat_rate(values):
 import time
 
 def calculate_proficiency(values):
-    t2 = time.process_time()
+
 # Calculates proficiency. If Total Tested == 0 or NaN or if Total Tested > 0, but Total Proficient is
 # NaN, all associated columns are dropped
     data = values.copy()
@@ -320,9 +320,6 @@ def calculate_proficiency(values):
                 data = data.drop([total_tested, total_proficient], axis=1)
             else:
                 data[proficiency] = calculate_percentage(data[total_proficient], data[total_tested])
-
-    process_prof = time.process_time() - t2
-    print(f'Time to calculate proficiency: ' + str(process_prof))
 
     return data
 
@@ -675,7 +672,7 @@ def merge_high_school_data(all_school_data, all_corp_data, year):
     all_corp_data = pd.concat([all_corp_data, state_grad_average], axis=0, ignore_index=True)
 
     # add to school data by making a copy, renaming the category, and concatenating
-    duplicate_row = all_school_data[all_school_data['Category'] == 'Total Graduation Rate']
+    duplicate_row = all_school_data[all_school_data['Category'] == 'Total Graduation Rate'].copy()
     duplicate_row['Category'] = 'State Graduation Average'
     all_school_data = pd.concat([all_school_data, duplicate_row], axis=0, ignore_index=True)
 

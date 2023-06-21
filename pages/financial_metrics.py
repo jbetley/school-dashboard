@@ -118,7 +118,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         else:
             financial_data = {}
 
-        table_title = 'Financial Accountability Metrics (' + selected_school['Network'].values[0] + ')'
+        table_title = 'Financial Accountability Metrics (' + financial_data['School Name'][0] + ')'
     
     else:
         
@@ -129,7 +129,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         if selected_school['Network'].values[0] == 'None':
             table_title = 'Financial Accountability Metrics'
         else:
-            table_title = 'Financial Accountability Metrics (' + financial_data['School Name'].values[0] + ')'
+            table_title = 'Financial Accountability Metrics (' + financial_data['School Name'][0] + ')'
 
     # clean up
     financial_data = financial_data.drop(['School ID','School Name'], axis=1)
