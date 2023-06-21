@@ -374,6 +374,12 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
         # NOTE: The range is currently fixed at between 0 - 50% - at 100% everything is to compressed (sadly),
         # may need to consider some kind of sliding range based on the max value
+        #TODO: if category is IREAD then range [0,1] else [0,.5]
+        print(data.columns[data.columns.str.contains('IREAD')])
+        if ~data.columns[data.columns.str.contains('IREAD')].empty:
+        # if 'IREAD' in data.columns:
+            print('IREAD!')
+        print(data)
         fig.update_yaxes(
             title='',
             mirror=True,

@@ -59,6 +59,12 @@ def update_organizational_compliance(school, year):
             organizational_indicators.insert(loc=0, column='Description', value = description)
             organizational_indicators.insert(loc=0, column='Standard', value = standard)
 
+            # import pandas as pd
+            # pd.set_option('display.max_columns', None)
+            # pd.set_option('display.max_rows', None)
+            # pd.get_option('display.width', None)
+            # print(organizational_indicators['Description'][51])
+
             # convert ratings to colored circles
             organizational_indicators = get_svg_circle(organizational_indicators)
 

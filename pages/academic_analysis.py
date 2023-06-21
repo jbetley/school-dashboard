@@ -627,6 +627,8 @@ def update_academic_analysis(school, year, comparison_school_list):
                 # Get comparable school values for the specific category
                 fig_iread_comp_data = comparison_schools[info_categories + [category]]
                 # fig_iread_comp_data = comparison_schools[['School Name','Low Grade','High Grade','Distance',category]]
+                
+                print(fig_iread_k8_school_data)
 
                 fig_iread_all_data = pd.concat([fig_iread_k8_school_data,fig_iread_comp_data])
                 # save table data

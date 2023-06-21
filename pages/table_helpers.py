@@ -182,12 +182,13 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
         pd.Dataframe: returns the same dataframe with svg circles in place of text
     """
     result = val.copy()
-    
+
+    # Use regex and beginning(^) and end-of-line ($) anchors to ensure exact matches only
     # NOTE: Using font-awesome circle icon.
-    result = result.replace(['DNMS','Does Not Meet Expectations'],'<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
-    result = result.replace(['AS','Approaches Expectations'],'<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
-    result = result.replace(['MS','Meets Expectations'],'<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
-    result = result.replace(['ES','Exceeds Expectations'],'<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(["^DNMS$",'Does Not Meet Expectations'],'<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(["^AS$",'Approaches Expectations'],'<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(["^MS$",'Meets Expectations'],'<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(["^ES$",'Exceeds Expectations'],'<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
     result = result.replace(['N/A','NA','No Rating',np.nan],'', regex=True)
 
     return result
