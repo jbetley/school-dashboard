@@ -372,8 +372,13 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         # fig.update_xaxes(anchor='free')
         # fig.update_yaxes(position=.5)
 
-        # NOTE: The range is currently fixed at between 0 - 50% - at 100% everything is to compressed (sadly),
-        # may need to consider some kind of sliding range based on the max value
+        # NOTE: Range is set at 0-100% for IREAD; everything else is 0-50%. At higher ranges, the values
+        # compress together and are hard to read (unfortunately).
+        if "IREAD Proficiency (Grade 3 only)" in data.columns:
+            range_vals = [0,1]
+        else:
+            range_vals = [0,.5]
+
         fig.update_yaxes(
             title='',
             mirror=True,
@@ -384,7 +389,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             showgrid=True,
             gridcolor='#b0c4de',
             zeroline=False,
-            range=[0, .5], 
+            range=range_vals, 
             dtick=.2,
             tickformat=',.0%',
         )
