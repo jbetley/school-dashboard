@@ -677,7 +677,7 @@ def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame
     # get a list of the categories that are missing from selected school data and
     # strip everything following '|' delimeter. Use this to list the categories
     # in an annotation
-
+# TODO: Add this concepto line charts with *** data    
     missing_categories = [i for i in categories if i not in check_data.columns]                
     missing_categories = [s.split('|')[0] for s in missing_categories]
 
@@ -727,7 +727,7 @@ def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame
             school_string = ', '.join(list(map(str, missing_schools))) + '.'
         else:
             school_string = 'None.'
-    
+
     # Create string for categories for which the selected school has
     # no data. These categories are not shown at all.
     if missing_categories:
@@ -757,6 +757,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
 
     # sort dataframe by the 'first' proficiency column and reset index
     data = data.sort_values(data.columns[1], ascending=False)
+
     data = data.reset_index(drop=True)
 
     # need to find the index again because the sort has jumbled things up

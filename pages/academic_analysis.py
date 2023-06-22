@@ -274,7 +274,8 @@ def update_academic_analysis(school, year, comparison_school_list):
             dropdown_container = {'display': 'none'}
 
         else:
-            pd.set_option('display.max_rows', None)  
+            pd.set_option('display.max_rows', None)
+            pd.set_option('display.max_columns', None) 
             # Display selected school's year over year data
 
             # keep only columns with 'Category' or 'School' in name
@@ -292,19 +293,20 @@ def update_academic_analysis(school, year, comparison_school_list):
 
             school_year_headers = [j for j in school_academic_data.columns if 'Category' not in j]
 
-            import numpy as np
-            # Create a mask of '***' values
+#TODO: GET INFO AND USE FOR MISSING STRING LINE AT BOTTOM OF CHART
 
-            tst = school_academic_data[school_year_headers]
-
-            # Get row and column index of all '***' values
-            insufficient_n_size = np.where(school_academic_data == '***')
-            print(insufficient_n_size)
-            print(list(insufficient_n_size[0]))
-            print(list(insufficient_n_size[1]))
+            # insufficient_n_size = np.where(data == '***')
+            # pair = list(zip(list(insufficient_n_size[0]),list(insufficient_n_size[1])))
+            # print(pair)
+            # tst = pd.DataFrame()
+            # for (i, j) in pair:
+            #     tst['Category'] = data.columns[j]
+            #     tst['Year'] = data['Year'][i]
+            #     print(f'insufficent data for ' + data.columns[j] + ' in year: ' + data['Year'][i])
+                # Leave strings ('***') intact for tracking purposes (see make_line_chart())
 
             for col in school_year_headers:
-                school_academic_data[col] = pd.to_numeric(school_academic_data[col], errors='coerce')
+                school_academic_data[col] = pd.to_numeric(school_academic_data[col], errors='coerce').fillna(school_academic_data[col])
 
             school_academic_data = school_academic_data.dropna(axis=1, how='all')
 
@@ -326,7 +328,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             # Chart 1: Year over Year ELA Proficiency by Grade (1.4.a)
             fig14a_data = yearly_school_data.filter(regex = r'^Grade \d\|ELA|^School Name$|^Year$',axis=1)
 # TODO: Keep strings, track loc of '***' and convert inside line function before charting
-            print(fig14a_data.T)
+            # print(fig14a_data.T)
             # All df contain 'Year' & 'School Name'. So 3rd and beyond categories would be data
             if len(fig14a_data.columns) >= 3:
                 fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
@@ -405,8 +407,13 @@ def update_academic_analysis(school, year, comparison_school_list):
 
             print(f'Time to make line charts: ' + str(time.process_time() - t3))
 
+            ## Current School Data ##
             # Get current year school data
             current_school_data = display_academic_data.loc[display_academic_data['Year'] == selected_year].copy()
+
+            # COvnert '***' strings to NaN
+            for col in current_school_data.columns:
+                current_school_data[col]=pd.to_numeric(current_school_data[col], errors='coerce')
 
             # drop any Category where value is NaN
             current_school_data = current_school_data.dropna(axis=1, how='all')

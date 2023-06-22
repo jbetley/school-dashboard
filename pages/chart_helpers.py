@@ -289,13 +289,77 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
     # create chart only if data exists
     if (len(cols)) > 0:
+        
+        # string_data = data.copy()
+        
+        # # Need to track '***' values before we remove them
+        # insufficient = data[data == '***'].dropna(how='all', axis=0)
+        # insufficient = insufficient[insufficient == '***'].dropna(how='all', axis=1)
+        # insufficient.insert(loc=0, column="Year", value=data['Year'])
+        
+        # print(insufficient)
 
+        insufficient_n_size = np.where(data == '***')
+        # nyr = list(insufficient_n_size[0])
+        # nloc = list(insufficient_n_size[1])
+
+        # for l in range(0,nloc):
+        #     for y in range(0,nyr):
+        tst = data.copy()
+        pair = list(zip(list(insufficient_n_size[0]),list(insufficient_n_size[1])))
+        # print(pair)
+        insuff = pd.DataFrame(np.nan, index=[0, 1, 2], columns=['N_size'])
+        # print(insuff)
+        for (i, j) in pair:
+            # print(insuff.loc[i])
+            if  pd.isna(insuff.loc[i]).item() == True:
+                insuff.loc[i] = tst.columns[j]
+            else:
+                insuff.loc[i] = insuff.loc[i] + ", " + tst.columns[j]
+
+
+        # print(insuff)
+        # # tst = pd.DataFrame()
+        # lst=[]
+        # tmp=[]
+        # z=0
+        # for (i, j) in pair:
+        #     if i == z:
+        #         tmp.append(data.columns[j])
+        #         print(i,j)
+        #     # tst['Category'] = data.columns[j]
+        #     # tst['Year'] = data['Year'][i]
+
+        #     lst.append(data.columns[j])
+        #     # print(f'insufficent data for ' + data.columns[j] + ' in year: ' + data['Year'][i])
+
+        # print(data)        
+        # print(lst)
+        # print('Insufficient n-size:')
         for col in cols:
             data[col]=pd.to_numeric(data[col], errors='coerce')
         
+        data['N_size'] = insuff['N_size']
+        # add insufficient n-size text to new column
+        # def fnsize(row, loc):
+        #     for i in range(0,loc):
+
+        #     if row['A'] == row['B']:
+        #         val = 0
+        #     elif row['A'] > row['B']:
+        #         val = 1
+        #     else:
+        #         val = -1
+        #     return val
+            # df['N_size'] = np.where(data == '***',data
+            #     df['A'] == df['B'], 0, np.where(
+            #     df['A'] >  df['B'], 1, -1))
+        # data['N_size'] = 
         data.sort_values('Year', inplace=True)
+
         data = data.reset_index(drop=True)
 
+        print(data)
         # data_years = data['Year'].astype(int).tolist()
         
         #add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
@@ -319,15 +383,21 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         #         )
         #         data.at[data.index[-1], 'Year'] = y
 
+
         fig = px.line(
             data,
             x='Year',
             y=cols,
             markers=True,
             color_discrete_sequence=color,
+            # hover_data = insufficient[[insufficient.columns]], #string_data
         )
 
-        fig.update_traces(mode='markers+lines', hovertemplate=None)
+        # print(fig)
+        # print(fig['data'][0]['y'])
+        # print(fig['data'][0]['y'][0])
+        fig.update_traces(hovertemplate=None)
+        # fig.update_traces(mode='markers+lines', hovertemplate=None)        
         fig.update_layout(
             margin=dict(l=40, r=40, t=40, b=60),
             title_x=0.5,
