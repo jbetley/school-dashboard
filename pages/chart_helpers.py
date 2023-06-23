@@ -148,6 +148,7 @@ def no_data_fig_blank() -> dict:
 
     return fig
 
+## Helper Functions ##
 # create wrapped text using html tags based on the specified width.
 # add two spaces before <br> to ensure the words at the end of each
 # break have the same spacing as 'ticksuffix' in make_stacked_bar()
@@ -166,6 +167,50 @@ def customwrap(s: str,width: int = 16):
 
     return '  <br>'.join(textwrap.wrap(s,width=width))
 
+# TODO: Keep strings, track loc of '***' and convert inside line function before charting
+
+def get_insufficient_n_size(data):
+# # Get Year and Category where value is '***' (insufficient N-Size)
+#     insufficient_n_size = np.where(data == '***')
+
+#     if len(insufficient_n_size[0]) != 0:
+#         lst = []
+#         pair = list(zip(list(insufficient_n_size[0]),list(insufficient_n_size[1])))
+
+#         if pair:
+#             for (i, j) in pair:
+#                 lst.append((data['Year'][i],data.columns[j]))
+#     else:
+#         lst = []
+
+#         # if lst:
+#         #     lst.append(lst[len(lst)-1] + ", " + data.columns[j])
+#         # else:
+#         #     lst.append(data.columns[j])
+    
+#     return lst
+
+    #Create two column df with year and category for each '***' value
+    insufficient_n_size = np.where(data == '***')
+    if len(insufficient_n_size[0]) != 0:
+        pair = list(zip(list(insufficient_n_size[0]),list(insufficient_n_size[1])))
+
+        df = pd.DataFrame(np.nan, index=[0, 1, 2], columns=['N_size'])
+
+        for (i, j) in pair:
+            if  pd.isna(df.loc[i]).item() == True:
+                df.loc[i] = data.columns[j]
+            else:
+                df.loc[i] = df.loc[i] + ", " + data.columns[j]
+
+        df['Year'] = data['Year']
+
+    else:
+        df = pd.DataFrame()
+
+    return df
+
+## Charting Functions
 def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     """Create a layout with a 100% stacked bar chart showing proficiency percentages for
     all academic categories
@@ -290,76 +335,23 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     # create chart only if data exists
     if (len(cols)) > 0:
         
-        # string_data = data.copy()
+        # NOTE: Could add this as column to data if there was a way to elegantly display it in 
+        # x-unified hover. See:
+        # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
+
+        nsize_list = get_insufficient_n_size(data)
         
-        # # Need to track '***' values before we remove them
-        # insufficient = data[data == '***'].dropna(how='all', axis=0)
-        # insufficient = insufficient[insufficient == '***'].dropna(how='all', axis=1)
-        # insufficient.insert(loc=0, column="Year", value=data['Year'])
-        
-        # print(insufficient)
+        print(nsize_list)
 
-        insufficient_n_size = np.where(data == '***')
-        # nyr = list(insufficient_n_size[0])
-        # nloc = list(insufficient_n_size[1])
-
-        # for l in range(0,nloc):
-        #     for y in range(0,nyr):
-        tst = data.copy()
-        pair = list(zip(list(insufficient_n_size[0]),list(insufficient_n_size[1])))
-        # print(pair)
-        insuff = pd.DataFrame(np.nan, index=[0, 1, 2], columns=['N_size'])
-        # print(insuff)
-        for (i, j) in pair:
-            # print(insuff.loc[i])
-            if  pd.isna(insuff.loc[i]).item() == True:
-                insuff.loc[i] = tst.columns[j]
-            else:
-                insuff.loc[i] = insuff.loc[i] + ", " + tst.columns[j]
-
-
-        # print(insuff)
-        # # tst = pd.DataFrame()
-        # lst=[]
-        # tmp=[]
-        # z=0
-        # for (i, j) in pair:
-        #     if i == z:
-        #         tmp.append(data.columns[j])
-        #         print(i,j)
-        #     # tst['Category'] = data.columns[j]
-        #     # tst['Year'] = data['Year'][i]
-
-        #     lst.append(data.columns[j])
-        #     # print(f'insufficent data for ' + data.columns[j] + ' in year: ' + data['Year'][i])
-
-        # print(data)        
-        # print(lst)
-        # print('Insufficient n-size:')
         for col in cols:
             data[col]=pd.to_numeric(data[col], errors='coerce')
-        
-        data['N_size'] = insuff['N_size']
-        # add insufficient n-size text to new column
-        # def fnsize(row, loc):
-        #     for i in range(0,loc):
 
-        #     if row['A'] == row['B']:
-        #         val = 0
-        #     elif row['A'] > row['B']:
-        #         val = 1
-        #     else:
-        #         val = -1
-        #     return val
-            # df['N_size'] = np.where(data == '***',data
-            #     df['A'] == df['B'], 0, np.where(
-            #     df['A'] >  df['B'], 1, -1))
-        # data['N_size'] = 
         data.sort_values('Year', inplace=True)
 
         data = data.reset_index(drop=True)
 
-        print(data)
+## TODO: FIGURE OUT WAY TO ADD TEXT DIRECTLY TO BOTTOM OF CHART - POSSIBLY WITHOUT HAVING TO USE CALLBACK STRINGS
+        # NOTE: These are attempts to fix irregular axis lines
         # data_years = data['Year'].astype(int).tolist()
         
         #add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
@@ -390,14 +382,11 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             y=cols,
             markers=True,
             color_discrete_sequence=color,
-            # hover_data = insufficient[[insufficient.columns]], #string_data
+            # custom_data = ['N_size']
         )
 
-        # print(fig)
-        # print(fig['data'][0]['y'])
-        # print(fig['data'][0]['y'][0])
+        # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
         fig.update_traces(hovertemplate=None)
-        # fig.update_traces(mode='markers+lines', hovertemplate=None)        
         fig.update_layout(
             margin=dict(l=40, r=40, t=40, b=60),
             title_x=0.5,

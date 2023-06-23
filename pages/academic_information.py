@@ -77,7 +77,10 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
     if not school:
         raise PreventUpdate
-
+# TODO: FIX NUMERIC/STRING_YEAR (EVERYWHERE)
+    # show 2019 instead of 2020 as 2020 has no academic data
+    year = '2019' if year == '2020' else year
+        
     # default styles
     main_container = {'display': 'block'}
     k8_table_container = {'display': 'block'}
@@ -203,9 +206,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
                 # get all data
                 t3 = time.process_time()
-
-                # show 2019 instead of 2020 as 2020 has no academic data
-                year = '2019' if year == '2020' else year
 
                 school_k8_proficiency_data = proficiency_data.loc[proficiency_data['Year'] == int(year)]
                 # school_k8_proficiency_data = school_all_k8_data.loc[school_all_k8_data['Year'] == int(year)]

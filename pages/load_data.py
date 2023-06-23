@@ -102,7 +102,7 @@ def get_excluded_years(year):
     for i in range(excluded_academic_years):
         excluded_year = int(current_academic_year) - i
         excluded_years.append(excluded_year)
-    
+
     return excluded_years
 
 def get_attendance_data(data, year):
@@ -327,12 +327,18 @@ def calculate_proficiency(values):
 
 ### Dataframe Formatting Functions ###
 def process_k8_academic_data(all_data, year, school):
-    
+
     school_information = get_school_index(school)
 
     # use these to determine if data belongs to school or corporation
     school_geo_code = school_information["GEO Corp"].values[0]
-    data_geo_code = all_data['Corporation ID'][0]
+
+    # Ensure geo_code is always at index 0
+    all_data = all_data.reset_index(drop = True)
+
+    #geo_code_index = 0 if len(all_data.index) > 1 else all_data.index.values[0]
+
+    data_geo_code = all_data['Corporation ID'][0]   #[geo_code_index]
 
     excluded_years = get_excluded_years(year)
 

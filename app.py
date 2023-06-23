@@ -249,7 +249,7 @@ def set_year_dropdown_options(school, year):
     # for the school
 
     if year is None:
-        year_value = current_academic_year
+        year_value = str(current_academic_year)
     elif int(year) < first_available_year:
         year_value = str(first_available_year)
     else:
