@@ -12,7 +12,7 @@ import pandas as pd
 import time
 
 # import local functions
-from .calculations import find_nearest, filter_grades
+from .calculations import find_nearest, filter_grades, get_insufficient_n_size
 from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, make_group_bar_chart, \
     combine_barchart_and_table
 from .table_helpers import create_comparison_table, no_data_page, no_data_table, create_school_label, \
@@ -331,6 +331,9 @@ def update_academic_analysis(school, year, comparison_school_list):
             display_academic_data = display_academic_data.rename(columns={c: c + ' Proficient %' for c in display_academic_data.columns if c not in ['Year', 'School Name','IREAD Proficiency (Grade 3 only)']})
 
         ## Make Line Charts
+        # NOTE: Could add this as column to data if there was a way to elegantly display it in 
+        # x-unified hover. See:
+        # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
 
             t3 = time.process_time()   
             yearly_school_data = display_academic_data.copy()
@@ -341,6 +344,8 @@ def update_academic_analysis(school, year, comparison_school_list):
             
             # All df contain 'Year' & 'School Name'. So 3rd and beyond categories would be data
             if len(fig14a_data.columns) >= 3:
+                # nsize_list = get_insufficient_n_size(fig14a_data)
+                # print(nsize_list)
                 fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
             else:
                 fig14a = no_data_fig_label('Year over Year ELA Proficiency by Grade', 200)
@@ -365,6 +370,8 @@ def update_academic_analysis(school, year, comparison_school_list):
         
             if len(fig16c1_data.columns) >= 3: 
                 fig16c1 = make_line_chart(fig16c1_data,'Year over Year ELA Proficiency by Ethnicity')
+                # nsize_list = get_insufficient_n_size(fig16c1_data)
+                # print(nsize_list)
             else:
                 fig16c1 = no_data_fig_label('Year over Year ELA Proficiency by Ethnicity', 200)
 
@@ -619,7 +626,6 @@ def update_academic_analysis(school, year, comparison_school_list):
 
             fig14d = combine_barchart_and_table(fig14d_chart,fig14d_table)
 
-
             #### Current Year IREAD Proficiency Compared to Similar Schools #
             category = 'IREAD Proficiency (Grade 3 only)'
 
@@ -660,6 +666,8 @@ def update_academic_analysis(school, year, comparison_school_list):
             print(f'Time to make single subject bar charts: ' + str(time.process_time() - t6))
 
             def combine_group_barchart_and_table(fig,table,category_string,school_string):
+
+                print(school_string)
                 layout = [
                     html.Div(
                         [
@@ -812,6 +820,7 @@ def update_academic_analysis(school, year, comparison_school_list):
                 fig16b2_container = {'display': 'none'}
     
             print(f'Time to make multibar comparison charts: ' + str(time.process_time() - t7))
+
     academic_analysis_main_container = {'display': 'block'}
 
     return fig14a, fig14b, fig14c, fig14d, fig_iread, \

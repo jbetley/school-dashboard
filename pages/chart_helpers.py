@@ -11,7 +11,7 @@ import numpy as np
 import textwrap
 import plotly.graph_objects as go
 from dash import html, dcc
-
+from .calculations import get_insufficient_n_size
 # Colors
 # https://codepen.io/ctf0/pen/BwLezW
 
@@ -167,49 +167,6 @@ def customwrap(s: str,width: int = 16):
 
     return '  <br>'.join(textwrap.wrap(s,width=width))
 
-# TODO: Keep strings, track loc of '***' and convert inside line function before charting
-
-def get_insufficient_n_size(data):
-# # Get Year and Category where value is '***' (insufficient N-Size)
-#     insufficient_n_size = np.where(data == '***')
-
-#     if len(insufficient_n_size[0]) != 0:
-#         lst = []
-#         pair = list(zip(list(insufficient_n_size[0]),list(insufficient_n_size[1])))
-
-#         if pair:
-#             for (i, j) in pair:
-#                 lst.append((data['Year'][i],data.columns[j]))
-#     else:
-#         lst = []
-
-#         # if lst:
-#         #     lst.append(lst[len(lst)-1] + ", " + data.columns[j])
-#         # else:
-#         #     lst.append(data.columns[j])
-    
-#     return lst
-
-    #Create two column df with year and category for each '***' value
-    insufficient_n_size = np.where(data == '***')
-    if len(insufficient_n_size[0]) != 0:
-        pair = list(zip(list(insufficient_n_size[0]),list(insufficient_n_size[1])))
-
-        df = pd.DataFrame(np.nan, index=[0, 1, 2], columns=['N_size'])
-
-        for (i, j) in pair:
-            if  pd.isna(df.loc[i]).item() == True:
-                df.loc[i] = data.columns[j]
-            else:
-                df.loc[i] = df.loc[i] + ", " + data.columns[j]
-
-        df['Year'] = data['Year']
-
-    else:
-        df = pd.DataFrame()
-
-    return df
-
 ## Charting Functions
 def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     """Create a layout with a 100% stacked bar chart showing proficiency percentages for
@@ -235,7 +192,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     # This adds 'percentage_x' and 'percentage_y' columns.
     # 'percentage_y' is equal to the Total Tested Values
     data = pd.merge(data, total_tested[['Category','Percentage']], on=['Category'], how='left')
-
 
     # rename the columns (percentage_x to Percentage & percentage_y to Total Tested)
     data.columns = ['Category','Percentage','Proficiency','Total Tested']
@@ -334,14 +290,15 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
     # create chart only if data exists
     if (len(cols)) > 0:
-        
-        # NOTE: Could add this as column to data if there was a way to elegantly display it in 
-        # x-unified hover. See:
-        # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
 
-        nsize_list = get_insufficient_n_size(data)
-        
-        print(nsize_list)
+        # returns a string if there are categories/years with a '***' value
+        # empty if not
+        nsize_string = get_insufficient_n_size(data)
+
+        # wrap if longer than 120 characters
+        if len(nsize_string) > 120:
+            print(nsize_string.find(';'))
+            nsize_string = customwrap(nsize_string,nsize_string.find(';')+7)
 
         for col in cols:
             data[col]=pd.to_numeric(data[col], errors='coerce')
@@ -350,7 +307,6 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
         data = data.reset_index(drop=True)
 
-## TODO: FIGURE OUT WAY TO ADD TEXT DIRECTLY TO BOTTOM OF CHART - POSSIBLY WITHOUT HAVING TO USE CALLBACK STRINGS
         # NOTE: These are attempts to fix irregular axis lines
         # data_years = data['Year'].astype(int).tolist()
         
@@ -388,7 +344,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
         fig.update_traces(hovertemplate=None)
         fig.update_layout(
-            margin=dict(l=40, r=40, t=40, b=60),
+            margin=dict(l=40, r=40, t=40, b=80),
             title_x=0.5,
             font = dict(
                 family = 'Jost, sans-serif',
@@ -423,13 +379,30 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             legend_title='',
         )
 
-        # NOTE: More experiments
-        # fig.update_xaxes(constrain='domain')
-        # fig.update_xaxes(autorange='reversed')
-        # fig.update_xaxes(range=[2021, 2022])
-        # fig.update_xaxes(constraintoward='center')
-        # fig.update_xaxes(anchor='free')
-        # fig.update_yaxes(position=.5)
+        if nsize_string:
+
+            # add annotation
+            fig.add_annotation(dict(
+                font = dict(
+                    family = 'Jost, sans-serif',
+                    color = 'steelblue',
+                    size = 10
+                ),
+                x=-0.10,
+                y=-0.30,
+                showarrow=False,
+                text='<b>Insufficient n-size: </b>' + nsize_string,
+                textangle=0,
+                xanchor='left',
+                xref="paper",
+                yref="paper"))
+            # NOTE: More experiments
+            # fig.update_xaxes(constrain='domain')
+            # fig.update_xaxes(autorange='reversed')
+            # fig.update_xaxes(range=[2021, 2022])
+            # fig.update_xaxes(constraintoward='center')
+            # fig.update_xaxes(anchor='free')
+            # fig.update_yaxes(position=.5)
 
         # NOTE: Range is set at 0-100% for IREAD; everything else is 0-50%. At higher ranges, the values
         # compress together and are hard to read (unfortunately).
@@ -462,9 +435,21 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             [
             html.Label(label, className = 'header_label'),
             dcc.Graph(figure = fig, config={'displayModeBar': False})
-            ]
+            ],
+            # html.Div(
+            #     [
+            #         html.P(
+            #             children=[
+            #             'Insufficient n-size or no data:',
+            #             html.Span(nsize_string, className = 'school_string'),
+            #             ],
+            #             className = 'school_string_label',
+            #         ),
+            #     ],
+            #     className = 'close_container twelve columns'
+            # )
         )
-    ]
+    ] 
 
     print(f'Processing line chart( ' + label + ' ): ' + str(time.process_time() - t9))
 

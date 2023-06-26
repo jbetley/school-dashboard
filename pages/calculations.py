@@ -257,6 +257,68 @@ def round_percentages(percentages: list) -> list:
     # return just the percentage
     return [percentage[0] for percentage in result]
 
+# Get Year and Category where value is '***' (insufficient N-Size)
+# NOTE: Geez this turned out to be complicated. Task: Take a dataframe, find the Categories and Years 
+# where there are '***' (insufficient n-size) values, and turn the results into a single string, grouped
+# by year, where duplicates have one or more years in paren. Example:
+#    Year               Category
+# 0  2022                  White
+# 1  2021                  White
+# 2  2019  Hispanic, Multiracial
+# 
+# Becomes: 'White (2021, 2022); Hispanic, Multiracial (2019)'
+
+# The below solution seems overly complicated and convoluted, but seems to work. So leaving it alone
+# for now, may refactor later.
+def get_insufficient_n_size(data):
+    
+    #  returns the indices of elements in a tuple of arrays where the condition is satisfied
+    insufficient_n_size = np.where(data == '***')
+
+    # creates a dataframe from the respective indicies
+    df = pd.DataFrame(np.column_stack(insufficient_n_size),columns=['Year','Category'])
+
+    # use map, in conjunction with mask, to replace the index values in the dataframes with the Year
+    # and Category values
+    df['Category'] = df['Category'].mask(df['Category'] >= 0, df['Category'].map(dict(enumerate(data.columns.tolist()))))
+    df['Year'] = df['Year'].mask(df['Year'] >= 0, df['Year'].map(dict(enumerate(data['Year'].tolist()))))
+    
+    # sort so earliest year is first
+    df = df.sort_values(by=['Year'], ascending=True)
+
+    # Shift the Year column one unit down then compare the shifted column with the
+    # non-shifted one to create a boolean mask which can be used to identify the
+    # boundaries between adjacent duplicate rows. then take the cumulative sum on
+    # the boolean mask to identify the blocks of rows where the value stays the same
+    # df = df[df.columns[::-1]]
+    # TODO: Most assuredly a better way to do this
+    c = df['Category'].ne(df['Category'].shift()).cumsum()
+
+    # group the dataframe on the above identfied blocks and aggregate the Year column
+    # using first and Message using .join
+    df = df.groupby(c, as_index=False).agg({'Category': 'first', 'Year': ', '.join})    
+
+    # then do the same thing for year
+    y = df['Year'].ne(df['Year'].shift()).cumsum()
+    df = df.groupby(y, as_index=False).agg({'Year': 'first', 'Category': ', '.join})   
+    
+    # reverse order of columns
+    df = df[df.columns[::-1]]
+    
+    # add parentheses around year values
+    df['Year'] = '(' + df['Year'].astype(str) + ')'
+
+# TODO: HOW TO WRAP???
+
+    # Finally combine all rows into a single string.
+    int_string = [', '.join(val) for val in df.astype(str).values.tolist()]
+    df_string = '; '.join(int_string)
+
+    # clean up extra comma
+    df_string = df_string.replace(", (", " (" )
+    
+    return df_string
+
 def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.ndarray:
     """
     Based on https://stackoverflow.com/q/43020919/190597
