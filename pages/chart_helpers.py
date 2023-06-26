@@ -271,8 +271,10 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     return fig_layout
 
 import time
+
+# TODO: Do not display a year if only '***' for all categories
 # create a basic line (scatter) plot
-def make_line_chart(values: pd.DataFrame, label: str) -> list:
+def make_line_chart(values: pd.DataFrame) -> list:  # , label: str
     """Creates a layout containg a label and a basic line (scatter) plot (px.line)
 
     Args:
@@ -291,14 +293,14 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     # create chart only if data exists
     if (len(cols)) > 0:
 
-        # returns a string if there are categories/years with a '***' value
-        # empty if not
-        nsize_string = get_insufficient_n_size(data)
+        # # returns a string if there are categories/years with a '***' value
+        # # empty if not
+        # nsize_string = get_insufficient_n_size(data)
 
-        # wrap if longer than 120 characters
-        if len(nsize_string) > 120:
-            print(nsize_string.find(';'))
-            nsize_string = customwrap(nsize_string,nsize_string.find(';')+7)
+        # # wrap if longer than 120 characters
+        # if len(nsize_string) > 120:
+        #     print(nsize_string.find(';'))
+        #     nsize_string = customwrap(nsize_string,nsize_string.find(';')+7)
 
         for col in cols:
             data[col]=pd.to_numeric(data[col], errors='coerce')
@@ -331,7 +333,6 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         #         )
         #         data.at[data.index[-1], 'Year'] = y
 
-
         fig = px.line(
             data,
             x='Year',
@@ -344,7 +345,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
         fig.update_traces(hovertemplate=None)
         fig.update_layout(
-            margin=dict(l=40, r=40, t=40, b=80),
+            margin=dict(l=40, r=40, t=40, b=60),
             title_x=0.5,
             font = dict(
                 family = 'Jost, sans-serif',
@@ -373,29 +374,33 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 zeroline=False,
                 # range = add_years
                 ),   
-            legend=dict(orientation='h'),         
+            legend=dict(
+                orientation='h'
+            ),
             hovermode='x unified',
             height=400,
             legend_title='',
         )
 
-        if nsize_string:
+        # if nsize_string:
 
-            # add annotation
-            fig.add_annotation(dict(
-                font = dict(
-                    family = 'Jost, sans-serif',
-                    color = 'steelblue',
-                    size = 10
-                ),
-                x=-0.10,
-                y=-0.30,
-                showarrow=False,
-                text='<b>Insufficient n-size: </b>' + nsize_string,
-                textangle=0,
-                xanchor='left',
-                xref="paper",
-                yref="paper"))
+        #     # add annotation
+        #     fig.add_annotation(dict(
+        #         font = dict(
+        #             family = 'Jost, sans-serif',
+        #             color = 'steelblue',
+        #             size = 10
+        #         ),
+        #         x=-0.10,
+        #         y=-0.30,
+        #         showarrow=False,
+        #         text='<b>Insufficient n-size: </b>' + nsize_string,
+        #         textangle=0,
+        #         xanchor='left',
+        #         xref="paper",
+        #         yref="paper"
+        #         )
+        #     )
             # NOTE: More experiments
             # fig.update_xaxes(constrain='domain')
             # fig.update_xaxes(autorange='reversed')
@@ -430,30 +435,32 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
         fig = no_data_fig_blank()
 
-    fig_layout = [
-        html.Div(
-            [
-            html.Label(label, className = 'header_label'),
-            dcc.Graph(figure = fig, config={'displayModeBar': False})
-            ],
-            # html.Div(
-            #     [
-            #         html.P(
-            #             children=[
-            #             'Insufficient n-size or no data:',
-            #             html.Span(nsize_string, className = 'school_string'),
-            #             ],
-            #             className = 'school_string_label',
-            #         ),
-            #     ],
-            #     className = 'close_container twelve columns'
-            # )
-        )
-    ] 
+    # fig_layout = [
+    #     html.Div(
+    #         [
+    #         html.Label(label, className = 'header_label'),
+    #         dcc.Graph(figure = fig, config={'displayModeBar': False})
+    #         ],
+    #         # html.Div(
+    #         #     [
+    #         #         html.P(
+    #         #             children=[
+    #         #             'Insufficient n-size or no data:',
+    #         #             html.Span(nsize_string, className = 'school_string'),
+    #         #             ],
+    #         #             className = 'school_string_label',
+    #         #         ),
+    #         #     ],
+    #         #     className = 'close_container twelve columns'
+    #         # )
+    #     )
+    # ] 
 
-    print(f'Processing line chart( ' + label + ' ): ' + str(time.process_time() - t9))
-
-    return fig_layout
+    print(f'Processing line chart: ' + str(time.process_time() - t9)) #( ' + label + ' )
+    
+    return fig
+    
+    # return fig_layout
 
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
     """Creates a layout containg a label and a simple bar chart (px.bar)

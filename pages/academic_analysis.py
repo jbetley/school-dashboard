@@ -335,6 +335,39 @@ def update_academic_analysis(school, year, comparison_school_list):
         # x-unified hover. See:
         # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
 
+            def add_nsize_string(fig,label,string):
+                if string:
+                    string = 'Insufficient n-size: ' + string
+
+                    layout = [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                    html.Label(label, className = 'header_label'),
+                                    dcc.Graph(figure = fig, config={'displayModeBar': False})
+                                    ],
+                                ),
+# TODO: Figure out how to get bolded first part of string and get rid of the weird border thing
+                                html.Div(string,className ='nsize_string'),
+                                ],
+                                className = 'close_container twelve columns'
+                        )
+                    ]
+
+                else:
+                    
+                    layout = [
+                        html.Div(
+                            [
+                            html.Label(label, className = 'header_label'),
+                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            ],
+                        )
+                    ]
+                
+                return layout
+               
             t3 = time.process_time()   
             yearly_school_data = display_academic_data.copy()
             yearly_school_data['School Name'] = school_name
@@ -344,9 +377,11 @@ def update_academic_analysis(school, year, comparison_school_list):
             
             # All df contain 'Year' & 'School Name'. So 3rd and beyond categories would be data
             if len(fig14a_data.columns) >= 3:
-                # nsize_list = get_insufficient_n_size(fig14a_data)
-                # print(nsize_list)
-                fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
+                # fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
+                nsize_string = get_insufficient_n_size(fig14a_data)
+                print(nsize_string)
+                fig14af = make_line_chart(fig14a_data)
+                fig14a = add_nsize_string(fig14af,'Year over Year ELA Proficiency by Grade',nsize_string)
             else:
                 fig14a = no_data_fig_label('Year over Year ELA Proficiency by Grade', 200)
 
@@ -354,7 +389,10 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig14b_data = yearly_school_data.filter(regex = r'^Grade \d\|Math|^School Name$|^Year$',axis=1)
 
             if len(fig14b_data.columns) >= 3:
-                fig14b = make_line_chart(fig14b_data,'Year over Year Math Proficiency by Grade')
+                # fig14b = make_line_chart(fig14b_data,'Year over Year Math Proficiency by Grade')
+                nsize_string = get_insufficient_n_size(fig14b_data)
+                fig14bf = make_line_chart(fig14b_data)
+                fig14b = add_nsize_string(fig14bf,'Year over Year Math Proficiency by Grade',nsize_string)
             else:
                 fig14b = no_data_fig_label('Year over Year Math Proficiency by Grade', 200)
 
@@ -369,9 +407,10 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig16c1_data = fig16c1_data.rename(columns = {'Native Hawaiian or Other Pacific Islander|ELA Proficient %': 'Pacific Islander|ELA Proficient %'})
         
             if len(fig16c1_data.columns) >= 3: 
-                fig16c1 = make_line_chart(fig16c1_data,'Year over Year ELA Proficiency by Ethnicity')
-                # nsize_list = get_insufficient_n_size(fig16c1_data)
-                # print(nsize_list)
+                # fig16c1 = make_line_chart(fig16c1_data,'Year over Year ELA Proficiency by Ethnicity')
+                nsize_string = get_insufficient_n_size(fig16c1_data)
+                fig16c1f = make_line_chart(fig16c1_data)
+                fig16c1 = add_nsize_string(fig16c1f,'Year over Year ELA Proficiency by Ethnicity',nsize_string)
             else:
                 fig16c1 = no_data_fig_label('Year over Year ELA Proficiency by Ethnicity', 200)
 
@@ -384,7 +423,10 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig16d1_data = fig16d1_data.rename(columns = {'Native Hawaiian or Other Pacific Islander|Math Proficient %': 'Pacific Islander|Math Proficient %'})
             
             if len(fig16d1_data.columns) >= 3:
-                fig16d1 = make_line_chart(fig16d1_data,'Year over Year Math Proficiency by Ethnicity')
+                # fig16d1 = make_line_chart(fig16d1_data,'Year over Year Math Proficiency by Ethnicity')
+                nsize_string = get_insufficient_n_size(fig16d1_data)
+                fig16d1f = make_line_chart(fig16d1_data)
+                fig16d1 = add_nsize_string(fig16d1f,'Year over Year Math Proficiency by Ethnicity',nsize_string)                
             else:
                 fig16d1 = no_data_fig_label('Year over Year Math Proficiency by Ethnicity', 200)
 
@@ -396,7 +438,10 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig16c2_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16c2)) | (yearly_school_data.columns.isin(['School Name','Year']))]
             
             if len(fig16c2_data.columns) >= 3:   
-                fig16c2 = make_line_chart(fig16c2_data,'Year over Year ELA Proficiency by Subgroup')
+                # fig16c2 = make_line_chart(fig16c2_data,'Year over Year ELA Proficiency by Subgroup')
+                nsize_string = get_insufficient_n_size(fig16c2_data)
+                fig16c2f = make_line_chart(fig16c2_data)
+                fig16c2 = add_nsize_string(fig16c2f,'Year over Year ELA Proficiency by Subgroup',nsize_string)                  
             else:
                 fig16c2 = no_data_fig_label('Year over Year ELA Proficiency by Subgroup', 200)
 
@@ -408,7 +453,10 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig16d2_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16d2)) | (yearly_school_data.columns.isin(['School Name','Year']))]
             
             if len(fig16d2_data.columns) >= 3:                   
-                fig16d2 = make_line_chart(fig16d2_data,'Year over Year Math Proficiency by Subgroup')
+                # fig16d2 = make_line_chart(fig16d2_data,'Year over Year Math Proficiency by Subgroup')
+                nsize_string = get_insufficient_n_size(fig16d2_data)
+                fig16d2f = make_line_chart(fig16d2_data)
+                fig16d2 = add_nsize_string(fig16d2f,'Year over Year Math Proficiency by Subgroup',nsize_string)                  
             else:
                 fig16d2 = no_data_fig_label('Year over Year Math Proficiency by Subgroup', 200)
 
@@ -418,7 +466,10 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig14g_data = yearly_school_data.loc[:, (yearly_school_data.columns == category_iread) | (yearly_school_data.columns.isin(['School Name','Year']))]
 
             if len(fig14g_data.columns) >= 3:                
-                fig14g = make_line_chart(fig14g_data, category_iread)
+                # fig14g = make_line_chart(fig14g_data, category_iread)
+                nsize_string = get_insufficient_n_size(fig14g_data)
+                fig14gf = make_line_chart(fig14g_data)
+                fig14g = add_nsize_string(fig14gf,category_iread,nsize_string)                   
             else:
                 fig14g = no_data_fig_label('Year over Year IREAD Proficiency', 200)
 
@@ -667,7 +718,6 @@ def update_academic_analysis(school, year, comparison_school_list):
 
             def combine_group_barchart_and_table(fig,table,category_string,school_string):
 
-                print(school_string)
                 layout = [
                     html.Div(
                         [
