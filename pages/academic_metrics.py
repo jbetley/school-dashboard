@@ -24,7 +24,8 @@ from .subnav import subnav_academic
 from .load_data import school_index, ethnicity, subgroup, grades_all, process_k8_academic_data, \
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
         calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
-        calculate_adult_high_school_metrics, filter_high_school_academic_data
+        calculate_adult_high_school_metrics, filter_high_school_academic_data, get_excluded_years, \
+        get_adult_high_school_metric_data
 from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_high_school_corporation_academic_data
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
@@ -57,6 +58,11 @@ def update_academic_metrics(school: str, year: str):
     if not school:
         raise PreventUpdate
 
+    # show 2019 instead of 2020 as 2020 has no academic data
+    year = '2019' if year == '2020' else year
+    
+    excluded_years = get_excluded_years(year)
+
     # default styles
     display_attendance = {}
     display_k8_metrics = {}
@@ -87,11 +93,19 @@ def update_academic_metrics(school: str, year: str):
         table_container_17cd = {}
         display_hs_metrics = {'display': 'none'}
 
-        ahs_metrics = calculate_adult_high_school_metrics(school)
+        raw_ahs_metrics = get_adult_high_school_metric_data(school)
 
-        if len(ahs_metrics) > 0:
+        # filter out years of data later than the selected year
+        if excluded_years:
+            selected_raw_ahs_metrics = raw_ahs_metrics[~raw_ahs_metrics["Year"].isin(excluded_years)].copy()
+        else:
+            selected_raw_ahs_metrics = raw_ahs_metrics.copy()
+        
+        if len(selected_raw_ahs_metrics.index) > 0:
             
-            ahs_metric_data_113 = ahs_metrics.copy()
+            ahs_metric_data_113 = calculate_adult_high_school_metrics(school, selected_raw_ahs_metrics)
+
+            # ahs_metric_data_113 = selected_raw_ahs_metrics.copy()
 
             ahs_metric_data_113['Category'] = ahs_metric_data_113['Metric'] + ' ' + ahs_metric_data_113['Category']
             
@@ -136,6 +150,7 @@ def update_academic_metrics(school: str, year: str):
             ahs_table_container_113 = {}
             ahs_table_container_1214 = {}
             display_ahs_metrics = {'display': 'none'}
+
             main_container = {'display': 'none'}
             empty_container = {'display': 'block'}
 
@@ -165,10 +180,17 @@ def update_academic_metrics(school: str, year: str):
 
             t0 = time.process_time()
             raw_hs_school_data = get_high_school_academic_data(school)
-            raw_hs_school_data = filter_high_school_academic_data(raw_hs_school_data)
 
-            if len(raw_hs_school_data) > 0:
+            # exclude years later than the selected year
+            if excluded_years:
+                selected_raw_hs_school_data = raw_hs_school_data[~raw_hs_school_data["Year"].isin(excluded_years)].copy()
+            else:
+                selected_raw_hs_school_data = raw_hs_school_data.copy()
 
+            if len(selected_raw_hs_school_data.index) > 0:
+
+                raw_hs_school_data = filter_high_school_academic_data(raw_hs_school_data)
+                
                 raw_hs_corp_data = get_high_school_corporation_academic_data(school)
 
                 print(f'Time to load HS data: ' + str(time.process_time() - t0))
@@ -228,12 +250,11 @@ def update_academic_metrics(school: str, year: str):
                 print(f'Time to create HS tables: ' + str(time.process_time() - t2))
 
             else:
-                # school is HS (or AHS), but has no data
+                # school is HS, but has no data
                 table_container_17ab = {}
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}
 
-                # no_data_to_display = no_data_page('Academic Accountability Metrics')
                 main_container = {'display': 'none'}
                 empty_container = {'display': 'block'}
 
@@ -247,18 +268,27 @@ def update_academic_metrics(school: str, year: str):
                 display_hs_metrics = {'display': 'none'}
 
             t2_5 = time.process_time()
-            raw_school_data = get_k8_school_academic_data(school)
+
+            raw_k8_school_data = get_k8_school_academic_data(school)
+            
             print(f'Time to load k8 data: ' + str(time.process_time() - t2_5))
-            if len(raw_school_data) > 0:
+
+            # filter out years of data later than the selected year
+            if excluded_years:
+                selected_raw_k8_school_data = raw_k8_school_data[~raw_k8_school_data["Year"].isin(excluded_years)].copy()
+            else:
+                selected_raw_k8_school_data = raw_k8_school_data.copy()
+
+            if len(selected_raw_k8_school_data.index) > 0:
 
                 t3 = time.process_time()
-                raw_school_data = raw_school_data.replace({"^": "***"})
+                selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
                 # keep only school columns with non-null data.
-                valid_column_mask = raw_school_data.any()
+                valid_column_mask = selected_raw_k8_school_data.any()
 
                 # valid_mask = ~pd.isnull(data[data.columns]).all()        
-                raw_school_data = raw_school_data[raw_school_data.columns[valid_column_mask]]
+                selected_raw_k8_school_data = selected_raw_k8_school_data[selected_raw_k8_school_data.columns[valid_column_mask]]
 
                 # raw_corp_data = get_k8_corporation_academic_data(school)
 
@@ -268,7 +298,7 @@ def update_academic_metrics(school: str, year: str):
                 # common_cols = [col for col in set(raw_school_data.columns).intersection(raw_corp_data.columns)]
                 # raw_corp_data = raw_corp_data[common_cols]
 
-                clean_school_data = process_k8_academic_data(raw_school_data, year, school)
+                clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, year, school)
                 
                 # # TODO: CURRENTLY GETTING CORP DATA IN calculate fn - it isn't used anywhere else
                 # # TODO: and should only be called if school data is not null.
@@ -419,6 +449,7 @@ def update_academic_metrics(school: str, year: str):
                 table_container_16ab = {}
                 table_container_16cd = {}
                 display_k8_metrics = {'display': 'none'}
+
                 main_container = {'display': 'none'}
                 empty_container = {'display': 'block'}
 
@@ -459,7 +490,7 @@ def update_academic_metrics(school: str, year: str):
     # year_group = [m.group(1) for l in attendance_data.columns.to_list() for m in [r.search(l)] if m]
     # year_columns = [*set(year_group)].sort()
 
-    if len(attendance_data) > 0:
+    if len(attendance_data.index) > 0:
 
         # Create placeholders (Acountability Metric 1.1.b.)
         teacher_retention_rate = pd.DataFrame({'Category': ['1.1.b. Teacher Retention Rate']})
@@ -476,17 +507,6 @@ def update_academic_metrics(school: str, year: str):
         table_11ab = create_metric_table(metric_11ab_label, metric_11ab_data)
         table_container_11ab = set_table_layout(table_11ab, table_11ab, metric_11ab_data.columns)
 
-    else:
-
-        table_container_11ab = {}
-        table_container_11ab = no_data_table(metric_11ab_label)
-        display_attendance = {'display': 'none'}
-
-    # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
-    metric_11cd_label = 'End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate.'
-    
-    # Only add placeholder if there is attendance data
-    if len(attendance_data) > 0:
 
         student_retention_rate_dict = {'Category': ['1.1.c. Re-Enrollment Rate',
             '1.1.d. Re-Enrollment Rate']
@@ -494,6 +514,10 @@ def update_academic_metrics(school: str, year: str):
         
         mock_columns = [i for i in attendance_data.columns if 'Corp Avg' not in i]
 
+        # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
+        metric_11cd_label = 'End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate.'
+        
+        # Only add placeholder if there is attendance data
         student_retention_empty = pd.DataFrame(columns = mock_columns)
         student_retention_rate = pd.DataFrame(student_retention_rate_dict)
 
@@ -512,7 +536,42 @@ def update_academic_metrics(school: str, year: str):
 
     else:
 
-        table_container_11cd = no_data_table(metric_11cd_label)
+        # table_container_11ab = {}
+        table_container_11ab = no_data_table(metric_11ab_label)
+        table_container_11cd = no_data_table(metric_11cd_label)        
+        display_attendance = {'display': 'none'}
+
+    # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
+    metric_11cd_label = 'End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate.'
+    
+    # # Only add placeholder if there is attendance data
+    # if len(attendance_data.index) > 0:
+
+    #     student_retention_rate_dict = {'Category': ['1.1.c. Re-Enrollment Rate',
+    #         '1.1.d. Re-Enrollment Rate']
+    #     }
+        
+    #     mock_columns = [i for i in attendance_data.columns if 'Corp Avg' not in i]
+
+    #     student_retention_empty = pd.DataFrame(columns = mock_columns)
+    #     student_retention_rate = pd.DataFrame(student_retention_rate_dict)
+
+    #     metric_11cd_data = pd.concat([student_retention_empty, student_retention_rate], ignore_index = True)
+    #     metric_11cd_data.reset_index()
+
+    #     for h in metric_11cd_data.columns:
+    #         if 'Rate' in h:
+    #             metric_11cd_data[h].fillna(value='N/A', inplace=True)
+    #         else:
+    #             metric_11cd_data[h].fillna(value='No Data', inplace=True)
+
+    #     metric_11cd_data = get_svg_circle(metric_11cd_data)
+    #     table_11cd = create_metric_table(metric_11cd_label, metric_11cd_data)
+    #     table_container_11cd = set_table_layout(table_11cd, table_11cd, metric_11cd_data.columns)
+
+    # else:
+
+    #     table_container_11cd = no_data_table(metric_11cd_label)
  
     return table_container_11ab, display_attendance, table_container_11cd, table_container_14ab, \
         table_container_14cd, table_container_14ef, table_container_14g, \

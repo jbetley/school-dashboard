@@ -19,7 +19,7 @@ from .table_helpers import create_comparison_table, no_data_page, no_data_table,
     process_chart_data, process_table_data, create_school_label, create_chart_label
 from .subnav import subnav_academic
 from .load_data import all_academic_data_k8, ethnicity, subgroup, ethnicity, info_categories, \
-   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency
+   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency, get_excluded_years
 from .load_db import get_k8_school_academic_data, get_school_index, \
     get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
 
@@ -35,10 +35,14 @@ dash.register_page(__name__, path = '/academic_analysis', order=6)
     Input('comparison-dropdown', 'value'),
 )
 def set_dropdown_options(school, year, comparison_schools):
-    
+
+# TODO: Fix year. Scrfewed up for 21C. Also gets screwed up when year is selected where
+# TODO: School doesnt have data.
     string_year = '2019' if year == '2020' else year
     numeric_year = int(string_year)
+    
     t0 = time.process_time()
+
     # clear the list of comparison_schools when a new school is
     # selected (e.g., 'charter-dropdown' Input). otherwise
     # comparison_schools will carry over from school to school
@@ -179,7 +183,7 @@ def set_dropdown_options(school, year, comparison_schools):
     Input('year-dropdown', 'value'),
     [Input('comparison-dropdown', 'value')],
 )
-def update_academic_analysis(school, year, comparison_school_list):
+def update_academic_analysis(school: str, year: str, comparison_school_list: list):
     if not school:
         raise PreventUpdate
 
@@ -187,6 +191,8 @@ def update_academic_analysis(school, year, comparison_school_list):
     string_year = '2019' if year == '2020' else year
 
     numeric_year = int(string_year)
+    
+    excluded_years = get_excluded_years(year)
 
     academic_analysis_main_container = {'display': 'none'}
     academic_analysis_empty_container = {'display': 'none'}
@@ -199,23 +205,30 @@ def update_academic_analysis(school, year, comparison_school_list):
     
     t1 = time.process_time()
     
-    raw_school_data = get_k8_school_academic_data(school)
+    raw_k8_school_data = get_k8_school_academic_data(school)
+
+    # filter out years of data later than the selected year
+    if excluded_years:
+        selected_raw_k8_school_data = raw_k8_school_data[~raw_k8_school_data["Year"].isin(excluded_years)].copy()
+    else:
+        selected_raw_k8_school_data = raw_k8_school_data.copy()
+
+# TODO: NEED TO ADD CHECKS FOR NO DATA / EXCLUDED YEARS, ETCET CETC
 
     # Test if data exists - there are 4 cases where we end up with an empty page:
-    #   1)  the dataframe itself does not exist because there is no academic
-    #       data for the school at all
-    #   2)  the school is of a type (AHS/HS) that doesn't yet have any charted data
-    #   3)  the dataframe exists, but the tested_header (YEARSchool) does not exist
-    #       in the dataframe- this catches any year with no data (e.g., 2020School
-    #       because there is no 2020 data in the dataframe
+    #   1)  The school is a K8 or K12, but the df has no data
+    #   2)  the school is not a K8/K12 (AHS/HS) and thus doesn't have any charted data
+    #   3)  The school is a K8/K12, and the df has data, but the tested_header (YEARSchool)
+    #       does not exist in the dataframe- this catches any year with no data (e.g., 2020)
     #   4)  the tested header does exist, but all data in the column is NaN- this
     #       catches any year where the school has no data or insufficient n-size ('***')
     
     #   Only get to tests (3) and (4) if dataframe passes tests (1) & (2)
 
     # Testing (1) and (2)
-    if (selected_school['School Type'].values[0] == 'K8' and len(raw_school_data.index) == 0) or \
-        selected_school['School Type'].values[0] == 'HS' or selected_school['School Type'].values[0] == 'AHS':
+    if ((selected_school['School Type'].values[0] == 'K8' or selected_school['School Type'].values[0] == 'K12') \
+        and len(selected_raw_k8_school_data.index) < 1) or selected_school['School Type'].values[0] == 'HS' \
+            or selected_school['School Type'].values[0] == 'AHS':
 
         fig14a = fig14b = fig14c = fig14d = fig_iread = fig16c1 = fig16d1 = fig16c2 = fig16d2 = fig14g = {}
         
@@ -237,14 +250,15 @@ def update_academic_analysis(school, year, comparison_school_list):
 
     else:
 
-        raw_school_data = raw_school_data.replace({"^": "***"})
+# TODO: Need to check this. The use of any may have unintended consequences.
+        selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
         # keep only school columns with non-null data.
-        valid_column_mask = raw_school_data.any()
+        valid_column_mask = selected_raw_k8_school_data.any()
       
-        raw_school_data = raw_school_data[raw_school_data.columns[valid_column_mask]]
+        selected_raw_k8_school_data = selected_raw_k8_school_data[selected_raw_k8_school_data.columns[valid_column_mask]]
 
-        clean_school_data = process_k8_academic_data(raw_school_data, numeric_year, school)
+        clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, numeric_year, school)
 
         print(f'Time to load and process K8 data: ' + str(time.process_time() - t1))
         
@@ -562,8 +576,6 @@ def update_academic_analysis(school, year, comparison_school_list):
             if category in current_school_data.columns:
 
                 fig14d_k8_school_data = current_school_data[info_categories + [category]].copy()
-
-                # TODO: corp_current_data is missing the ' Proficient %' - may want to fix one of these days (?)
 
                 # add corp average for category to dataframe - the '','','N/A' are values for
                 # Low & High Grade and Distance columns

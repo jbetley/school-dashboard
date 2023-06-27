@@ -326,7 +326,7 @@ def calculate_proficiency(values):
 ### End Helper Functions ###
 
 ### Dataframe Formatting Functions ###
-def process_k8_academic_data(all_data, year, school):
+def process_k8_academic_data(data, year, school):
 
     school_information = get_school_index(school)
 
@@ -334,18 +334,18 @@ def process_k8_academic_data(all_data, year, school):
     school_geo_code = school_information["GEO Corp"].values[0]
 
     # Ensure geo_code is always at index 0
-    all_data = all_data.reset_index(drop = True)
+    data = data.reset_index(drop = True)
 
     #geo_code_index = 0 if len(all_data.index) > 1 else all_data.index.values[0]
 
-    data_geo_code = all_data['Corporation ID'][0]   #[geo_code_index]
+    data_geo_code = data['Corporation ID'][0]   #[geo_code_index]
 
-    excluded_years = get_excluded_years(year)
+    # excluded_years = get_excluded_years(year)
 
-    if excluded_years:
-        data = all_data[~all_data["Year"].isin(excluded_years)].copy()
-    else:
-        data = all_data.copy()
+    # if excluded_years:
+    #     data = all_data[~all_data["Year"].isin(excluded_years)].copy()
+    # else:
+    #     data = all_data.copy()
 
     # school data has School Name column, corp data does not
     if len(data.index) != 0:
@@ -521,20 +521,20 @@ def filter_high_school_academic_data(data):
 
     return final_data
     
-def process_high_school_academic_data(all_data, year, school):
+def process_high_school_academic_data(data, year, school):
 
     school_information = get_school_index(school)
 
     # use these to determine if data belongs to school or corporation
     school_geo_code = school_information["GEO Corp"].values[0]
-    data_geo_code = all_data['Corporation ID'][0]
+    data_geo_code = data['Corporation ID'][0]
 
-    excluded_years = get_excluded_years(year)
+    # excluded_years = get_excluded_years(year)
 
-    if excluded_years:
-        data = all_data[~all_data["Year"].isin(excluded_years)].copy()
-    else:
-        data = all_data.copy()
+    # if excluded_years:
+    #     data = all_data[~all_data["Year"].isin(excluded_years)].copy()
+    # else:
+    #     data = all_data.copy()
 
     school_type = data["School Type"].values[0]
 
@@ -636,16 +636,13 @@ def process_high_school_academic_data(all_data, year, school):
 
     return data
 
-
 ### Calculate Accountability Metrics ###
 
-def calculate_adult_high_school_metrics(school):
-    # AHS metrics is such a small subset of all metrics, instead of pulling in entire HS DF, we just pull the three
-    # datapoints we need directly from the DB.
+def calculate_adult_high_school_metrics(school, data):
+    # AHS metrics is such a small subset of all metrics, instead of pulling in the
+    # entire HS DF, we just pull the three datapoints we need directly from the DB.
 
-    data = get_adult_high_school_metric_data(school)
-
-    if len(data) > 0:
+    if len(data.index) > 0:
         data.columns = data.columns.astype(str)
 
         data["CCR Percentage"] = pd.to_numeric(data["AHS|CCR"]) / pd.to_numeric(data["AHS|Grad All"])
