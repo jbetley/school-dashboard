@@ -120,7 +120,7 @@ src: local(''),
 
 /* Hide Divs on Print */
 @media print {
-  .no-print { 
+  .no-print {
     display: none;
   }
   .pagebreak {
@@ -210,7 +210,7 @@ body {
 
 .pretty_close_container {
   border-top-left-radius: 5px;
-  border-top-right-radius: 5px;  
+  border-top-right-radius: 5px;
   background-color: #ffffff;
   margin-top: 10px;
   padding-top: 15px;
@@ -223,19 +223,28 @@ body {
 
 .close_container {
   border-bottom-left-radius: 5px;
-  border-bottom-right-radius: 5px;    
+  border-bottom-right-radius: 5px;
   background-color: #ffffff;
   padding-top: 0px;
   padding-right: 15px;
   padding-left: 15px;
-  padding-bottom: 15px;  
+  padding-bottom: 15px;
   position: relative;
   box-shadow: 2px 2px 2px lightgrey;
 }
 
+.close_clean_container {
+  background-color: #ffffff;
+  padding-top: 0px;
+  padding-right: 15px;
+  padding-left: 15px;
+  padding-bottom: 15px;
+  position: relative;
+}
+
 .no_data_container {
   border-top-left-radius: 5px;
-  border-top-right-radius: 5px;  
+  border-top-right-radius: 5px;
   background-color: #ffffff;
   margin-top: 10px;
   padding-top: 15px;
@@ -660,16 +669,16 @@ fieldset:disabled .btn {
 /* TODO: Not working consistently across pages - doesn't stay active when selected */
 /* See:
 https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
-You're only ever setting/removig the active class when the button is clicked. 
+You're only ever setting/removig the active class when the button is clicked.
 You'll also need javascript code that runs on page load, checks the current url,
 removes the 'active' class from all nav links, then adds the 'active' class to
 the nav link that matches the current url. (or you could do that in php, either way */
 
-a:link { 
+a:link {
   text-decoration: none;
 }
 
-a.nav-link:hover { 
+a.nav-link:hover {
   text-transform: uppercase;
   font-family: 'Jost', sans-serif;
   color: white;
@@ -759,7 +768,7 @@ label > .label-body {
 }
 
 .header_label {
-  height: auto;  
+  height: auto;
   background-color: #6783a9;
   font-size: 12px;
   font-family: 'Jost', sans-serif;
@@ -770,50 +779,6 @@ label > .label-body {
   padding-top: 5px;
 }
 
-.category_string_label {
-  color: #6783a9;
-  font-size: 11px;
-  margin-left: 10px;
-  margin-right: 10px;
-  margin-top: 10px;
-  border-top: .5px solid rgb(201,211,224);
-  font-weight: bold;
-}
-
-.category_string {
-  color: #6783a9;
-  font-size: 11px;
-  margin-left: 10px;
-  margin-right: 10px;
-  margin-top: 10px;
-  border-top: .5px solid rgb(201,211,224);
-  font-weight: normal;
-}
-
-.school_string_label {
-  color: #6783a9;
-  font-size: 11px;
-  margin-left: 10px;
-  margin-right: 10px;
-  font-weight: bold;
-}
-
-.nsize_string_label {
-  color: #6783a9;
-  font-size: 11px;
-  margin-left: 10px;
-  margin-right: 10px;
-  font-weight: bold;
-}
-
-.nsize_string {
-  color: #6783a9;
-  font-size: 11px;
-  margin-left: 10px;
-  margin-right: 10px;
-  font-weight: normal;
-}
-
 .school_string {
   color: #6783a9;
   font-size: 11px;
@@ -822,6 +787,75 @@ label > .label-body {
   font-weight: normal;
 }
 
+.school_string_label {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 0px;
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.category_string {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 10px;
+  margin-right: 5px;
+  margin-top: 0px;
+  font-weight: normal;
+}
+
+.category_string_label {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 10px;
+  margin-right: 5px;
+  margin-top: 0px;
+  position: relative;
+  /* display: block; */
+  /* border-top: .5px solid rgb(201,211,224); */
+  font-weight: bold;
+}
+
+.category_string_label:before {
+  content: '';
+  /* position: relative; */
+  display: block;
+  padding-bottom: 10px;
+  bottom: 25%;
+  left: 2%;
+  width: 35%;
+  border-top: .5px solid rgb(201,211,224);
+}
+
+.nsize_string {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 0px;
+  font-weight: normal;
+}
+
+.nsize_string_label {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 0px;
+  margin-right: 5px;
+  margin-top: 0px;
+  font-weight: bold;
+}
+
+.nsize_string_label:before {
+  content: '';
+  position: absolute;
+  display: block;
+  bottom: 90%;
+  left: 3%;
+  width: 35%;
+  border-top: .5px solid rgb(201,211,224);
+}
+
+/* Logout Button */
 .logout-button {
   text-transform: uppercase;
   font-family: 'Jost', sans-serif;
@@ -841,7 +875,7 @@ label > .label-body {
   height: 20px;
 }
 
-a.logout-button:hover { 
+a.logout-button:hover {
   text-transform: uppercase;
   font-family: 'Jost', sans-serif;
   color: white;

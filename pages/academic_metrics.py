@@ -25,7 +25,6 @@ from .load_data import school_index, ethnicity, subgroup, grades_all, process_k8
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
         calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
         calculate_adult_high_school_metrics, filter_high_school_academic_data
-
 from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_high_school_corporation_academic_data
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
@@ -167,10 +166,9 @@ def update_academic_metrics(school: str, year: str):
             t0 = time.process_time()
             raw_hs_school_data = get_high_school_academic_data(school)
             raw_hs_school_data = filter_high_school_academic_data(raw_hs_school_data)
-            
+
             if len(raw_hs_school_data) > 0:
 
-# TODO: What if there is no Corp Data?
                 raw_hs_corp_data = get_high_school_corporation_academic_data(school)
 
                 print(f'Time to load HS data: ' + str(time.process_time() - t0))
@@ -230,7 +228,7 @@ def update_academic_metrics(school: str, year: str):
                 print(f'Time to create HS tables: ' + str(time.process_time() - t2))
 
             else:
-                # school is HS, but has no data
+                # school is HS (or AHS), but has no data
                 table_container_17ab = {}
                 table_container_17cd = {}
                 display_hs_metrics = {'display': 'none'}

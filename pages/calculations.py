@@ -257,20 +257,24 @@ def round_percentages(percentages: list) -> list:
     # return just the percentage
     return [percentage[0] for percentage in result]
 
-# Get Year and Category where value is '***' (insufficient N-Size)
-# NOTE: Geez this turned out to be complicated. Task: Take a dataframe, find the Categories and Years 
-# where there are '***' (insufficient n-size) values, and turn the results into a single string, grouped
-# by year, where duplicates have one or more years in parenthesis. Example:
-#    Year               Category
-# 0  2022                  White
-# 1  2021                  White
-# 2  2019  Hispanic, Multiracial
-# 
-# Becomes: 'White (2021, 2022); Hispanic, Multiracial (2019)'
+# Take a dataframe, find the Categories and Years  where there are '***' (insufficient n-size) values,
+# and turn the results into a single string, grouped by year, where duplicates have one or more years
+# in parenthesis. E.g., 'White (2021, 2022); Hispanic, Multiracial (2019)'
+# NOTE: This turned out to be complicated. The below solution seems overly convoluted, but works. Felt
+# cute, may refactor later.
+def get_insufficient_n_size(data: pd.DataFrame) -> str:
+    """
+    Takes a dataframe, finds the Categories and Years where the value is equal
+    to '***'(insufficient n-size), and turns the results into a single string,
+    grouped by year, where duplicates have one or more years in parenthesis.
+    E.g., 'White (2021, 2022); Hispanic, Multiracial (2019)'
 
-# The below solution seems overly complicated and convoluted, but seems to work.
-# Felt cute, may refactor later.
-def get_insufficient_n_size(data):
+    Args:
+        data (_type_): pd.DataFrame
+
+    Returns:
+        _type_: string
+    """
     
     #  returns the indices of elements in a tuple of arrays where the condition is satisfied
     insufficient_n_size = np.where(data == '***')
@@ -284,7 +288,6 @@ def get_insufficient_n_size(data):
         df['Category'] = df['Category'].mask(df['Category'] >= 0, df['Category'].map(dict(enumerate(data.columns.tolist()))))
         df['Year'] = df['Year'].mask(df['Year'] >= 0, df['Year'].map(dict(enumerate(data['Year'].tolist()))))
         
-        print(df)
         # strip everything after '|'
         df["Category"] = (df["Category"].str.replace('\|.*$', ''))
 
@@ -295,8 +298,6 @@ def get_insufficient_n_size(data):
         # non-shifted one to create a boolean mask which can be used to identify the
         # boundaries between adjacent duplicate rows. then take the cumulative sum on
         # the boolean mask to identify the blocks of rows where the value stays the same
-        # df = df[df.columns[::-1]]
-        # TODO: Most assuredly a better way to do this
         c = df['Category'].ne(df['Category'].shift()).cumsum()
 
         # group the dataframe on the above identfied blocks and aggregate the Year column
@@ -322,7 +323,7 @@ def get_insufficient_n_size(data):
 
     else:
         df_string = ''
-        
+
     return df_string
 
 def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.ndarray:
@@ -428,10 +429,6 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # NOTE: A more precise fix would be to keep all columns (including those with
     # no value in grant columns), but ignore/except (N/A) any calculation that requires
     # either grant revenue or adm. Need to test
-
-# TODO: Excel Elkhart Crashing here
-# TODO: The pre-opening data is crashing - after it strips out the first year there is any empty dataframe
-# TODO: THINK IVE SCREWED UP SOME OF THE LEN() CHECKS BYLEAVING OFF INDEX. CHECK
 
     operating_data = data.loc[:,~(data.iloc[1]==0)].copy()
 

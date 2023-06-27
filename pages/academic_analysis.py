@@ -12,17 +12,16 @@ import pandas as pd
 import time
 
 # import local functions
-from .calculations import find_nearest, filter_grades, get_insufficient_n_size
+from .calculations import find_nearest, filter_grades
 from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, make_group_bar_chart, \
     combine_barchart_and_table
 from .table_helpers import create_comparison_table, no_data_page, no_data_table, create_school_label, \
     process_chart_data, process_table_data, create_school_label, create_chart_label
 from .subnav import subnav_academic
 from .load_data import all_academic_data_k8, ethnicity, subgroup, ethnicity, info_categories, \
-   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency #get_attendance_data, process_high_school_academic_data, get_excluded_years, \
-    #filter_high_school_academic_data, 
+   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency
 from .load_db import get_k8_school_academic_data, get_school_index, \
-    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data # get_high_school_academic_data,
+    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
@@ -282,6 +281,7 @@ def update_academic_analysis(school, year, comparison_school_list):
         else:
             pd.set_option('display.max_rows', None)
             pd.set_option('display.max_columns', None) 
+           
             # Display selected school's year over year data
 
             # keep only columns with 'Category' or 'School' in name
@@ -289,33 +289,9 @@ def update_academic_analysis(school, year, comparison_school_list):
 
             school_academic_data.columns = school_academic_data.columns.str.replace(r'School$', '', regex=True)
 
-            # drop any column (Year) where all values are either None or ***
-            # '***' represents data, but is unchartable. Do this by converting all
-            # columns other than 'Category' to numeric. This turns all None
-            # and '***' values to NaN, and then dropping all columns where every
-            # value is NaN
-            # TODO: This screws up charting tho - because it shows as a break in the line
-            ## TODO: Capture '***' and display in tooltip
-
             school_year_headers = [j for j in school_academic_data.columns if 'Category' not in j]
 
-#TODO: GET INFO AND USE FOR MISSING STRING LINE AT BOTTOM OF CHART
-
-            # import numpy as np
-            # print(len(school_academic_data.index))
-            # # Create column in df that contains any categories with '***'
-            # find_n_size = np.where(school_academic_data == '***')
-            # pair = list(zip(list(find_n_size[0]),list(find_n_size[1])))
-            # n_size = pd.DataFrame(np.nan, index=range(len(school_academic_data.index)), columns=['N_size'])
-            # print(pair)
-            # for (i, j) in pair:
-            #     if  pd.isna(n_size.loc[i]).item() == True:
-            #         n_size.loc[i] = school_academic_data.columns[j]
-            #     else:
-            #         n_size.loc[i] = n_size.loc[i] + ", " + school_academic_data.columns[j]
-
-            # print(n_size)
-            # TODO: if move to here, then get rid of fillna on following line
+            # NOTE: Here, we keep strings ('***') on conversion to that we can track them later
             for col in school_year_headers:
                 school_academic_data[col] = pd.to_numeric(school_academic_data[col], errors='coerce').fillna(school_academic_data[col])
 
@@ -331,43 +307,11 @@ def update_academic_analysis(school, year, comparison_school_list):
             display_academic_data = display_academic_data.rename(columns={c: c + ' Proficient %' for c in display_academic_data.columns if c not in ['Year', 'School Name','IREAD Proficiency (Grade 3 only)']})
 
         ## Make Line Charts
-        # NOTE: Could add this as column to data if there was a way to elegantly display it in 
-        # x-unified hover. See:
+        # NOTE: Currently insufficient n-size information is separately calculated in a function
+        # and displayed below the fig in the layout. Would prefer to somehow add this to the actual
+        # trace (x-unified) hover, but it doesn't currently seem to be possible.
         # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
 
-            def add_nsize_string(fig,label,string):
-                if string:
-                    string = 'Insufficient n-size: ' + string
-
-                    layout = [
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                    html.Label(label, className = 'header_label'),
-                                    dcc.Graph(figure = fig, config={'displayModeBar': False})
-                                    ],
-                                ),
-# TODO: Figure out how to get bolded first part of string and get rid of the weird border thing
-                                html.Div(string,className ='nsize_string'),
-                                ],
-                                className = 'close_container twelve columns'
-                        )
-                    ]
-
-                else:
-                    
-                    layout = [
-                        html.Div(
-                            [
-                            html.Label(label, className = 'header_label'),
-                            dcc.Graph(figure = fig, config={'displayModeBar': False})
-                            ],
-                        )
-                    ]
-                
-                return layout
-               
             t3 = time.process_time()   
             yearly_school_data = display_academic_data.copy()
             yearly_school_data['School Name'] = school_name
@@ -377,11 +321,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             
             # All df contain 'Year' & 'School Name'. So 3rd and beyond categories would be data
             if len(fig14a_data.columns) >= 3:
-                # fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
-                nsize_string = get_insufficient_n_size(fig14a_data)
-                print(nsize_string)
-                fig14af = make_line_chart(fig14a_data)
-                fig14a = add_nsize_string(fig14af,'Year over Year ELA Proficiency by Grade',nsize_string)
+                fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
             else:
                 fig14a = no_data_fig_label('Year over Year ELA Proficiency by Grade', 200)
 
@@ -389,10 +329,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig14b_data = yearly_school_data.filter(regex = r'^Grade \d\|Math|^School Name$|^Year$',axis=1)
 
             if len(fig14b_data.columns) >= 3:
-                # fig14b = make_line_chart(fig14b_data,'Year over Year Math Proficiency by Grade')
-                nsize_string = get_insufficient_n_size(fig14b_data)
-                fig14bf = make_line_chart(fig14b_data)
-                fig14b = add_nsize_string(fig14bf,'Year over Year Math Proficiency by Grade',nsize_string)
+                fig14b = make_line_chart(fig14b_data,'Year over Year Math Proficiency by Grade')
             else:
                 fig14b = no_data_fig_label('Year over Year Math Proficiency by Grade', 200)
 
@@ -407,10 +344,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig16c1_data = fig16c1_data.rename(columns = {'Native Hawaiian or Other Pacific Islander|ELA Proficient %': 'Pacific Islander|ELA Proficient %'})
         
             if len(fig16c1_data.columns) >= 3: 
-                # fig16c1 = make_line_chart(fig16c1_data,'Year over Year ELA Proficiency by Ethnicity')
-                nsize_string = get_insufficient_n_size(fig16c1_data)
-                fig16c1f = make_line_chart(fig16c1_data)
-                fig16c1 = add_nsize_string(fig16c1f,'Year over Year ELA Proficiency by Ethnicity',nsize_string)
+                fig16c1 = make_line_chart(fig16c1_data,'Year over Year ELA Proficiency by Ethnicity')
             else:
                 fig16c1 = no_data_fig_label('Year over Year ELA Proficiency by Ethnicity', 200)
 
@@ -423,10 +357,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig16d1_data = fig16d1_data.rename(columns = {'Native Hawaiian or Other Pacific Islander|Math Proficient %': 'Pacific Islander|Math Proficient %'})
             
             if len(fig16d1_data.columns) >= 3:
-                # fig16d1 = make_line_chart(fig16d1_data,'Year over Year Math Proficiency by Ethnicity')
-                nsize_string = get_insufficient_n_size(fig16d1_data)
-                fig16d1f = make_line_chart(fig16d1_data)
-                fig16d1 = add_nsize_string(fig16d1f,'Year over Year Math Proficiency by Ethnicity',nsize_string)                
+                fig16d1 = make_line_chart(fig16d1_data,'Year over Year Math Proficiency by Ethnicity')
             else:
                 fig16d1 = no_data_fig_label('Year over Year Math Proficiency by Ethnicity', 200)
 
@@ -438,10 +369,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig16c2_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16c2)) | (yearly_school_data.columns.isin(['School Name','Year']))]
             
             if len(fig16c2_data.columns) >= 3:   
-                # fig16c2 = make_line_chart(fig16c2_data,'Year over Year ELA Proficiency by Subgroup')
-                nsize_string = get_insufficient_n_size(fig16c2_data)
-                fig16c2f = make_line_chart(fig16c2_data)
-                fig16c2 = add_nsize_string(fig16c2f,'Year over Year ELA Proficiency by Subgroup',nsize_string)                  
+                fig16c2 = make_line_chart(fig16c2_data,'Year over Year ELA Proficiency by Subgroup')
             else:
                 fig16c2 = no_data_fig_label('Year over Year ELA Proficiency by Subgroup', 200)
 
@@ -453,10 +381,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig16d2_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16d2)) | (yearly_school_data.columns.isin(['School Name','Year']))]
             
             if len(fig16d2_data.columns) >= 3:                   
-                # fig16d2 = make_line_chart(fig16d2_data,'Year over Year Math Proficiency by Subgroup')
-                nsize_string = get_insufficient_n_size(fig16d2_data)
-                fig16d2f = make_line_chart(fig16d2_data)
-                fig16d2 = add_nsize_string(fig16d2f,'Year over Year Math Proficiency by Subgroup',nsize_string)                  
+                fig16d2 = make_line_chart(fig16d2_data,'Year over Year Math Proficiency by Subgroup')
             else:
                 fig16d2 = no_data_fig_label('Year over Year Math Proficiency by Subgroup', 200)
 
@@ -466,10 +391,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             fig14g_data = yearly_school_data.loc[:, (yearly_school_data.columns == category_iread) | (yearly_school_data.columns.isin(['School Name','Year']))]
 
             if len(fig14g_data.columns) >= 3:                
-                # fig14g = make_line_chart(fig14g_data, category_iread)
-                nsize_string = get_insufficient_n_size(fig14g_data)
-                fig14gf = make_line_chart(fig14g_data)
-                fig14g = add_nsize_string(fig14gf,category_iread,nsize_string)                   
+                fig14g = make_line_chart(fig14g_data, category_iread)
             else:
                 fig14g = no_data_fig_label('Year over Year IREAD Proficiency', 200)
 
@@ -478,7 +400,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             ## Current School Data ##
             current_school_data = display_academic_data.loc[display_academic_data['Year'] == string_year].copy()
 
-            # COvnert '***' strings to NaN
+            # NOTE: We lose strings to NaN here
             for col in current_school_data.columns:
                 current_school_data[col]=pd.to_numeric(current_school_data[col], errors='coerce')
 
@@ -488,7 +410,6 @@ def update_academic_analysis(school, year, comparison_school_list):
             current_school_data['School Name'] = school_name
 
             # Grade range data is used for the chart 'hovertemplate'
-            # TODO: THink this is correct - test for numeric_year
             current_school_data['Low Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == string_year)]['Low Grade'].values[0]
             current_school_data['High Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == string_year)]['High Grade'].values[0]
 
@@ -559,7 +480,6 @@ def update_academic_analysis(school, year, comparison_school_list):
             # because the school file has already been processed, column names will not directly
             # match, so we create a list of unique substrings from the column names and use it
             # to filter the comparison set
-
             valid_columns = current_school_data.columns.str.split('|').str[0].tolist()
 
             comparison_schools = comparison_schools.filter(regex='|'.join(valid_columns))
@@ -576,6 +496,7 @@ def update_academic_analysis(school, year, comparison_school_list):
             # reset indicies
             comparison_schools = comparison_schools.reset_index(drop=True)
             print(f'Time to get and process comparison data: ' + str(time.process_time() - t5))
+
 ### TODO: Add AHS/HS Data ###
             # hs_comparison_data = hs_all_data_included_years.loc[(hs_all_data_included_years['School ID'].isin(comparison_schools))]
             #     # filter comparable school data
@@ -599,8 +520,6 @@ def update_academic_analysis(school, year, comparison_school_list):
             if category in current_school_data.columns:
 
                 fig14c_k8_school_data = current_school_data[info_categories + [category]].copy()
-
-                # TODO: corp_current_data is missing the ' Proficient %' - may want to fix one of these days (?)
 
                 # add corp average for category to dataframe - the '','','N/A' are values for
                 # Low & High Grade and Distance columns
@@ -737,17 +656,17 @@ def update_academic_analysis(school, year, comparison_school_list):
                                     html.Div(table),
                                     html.P(
                                         children=[
-                                        'Categories with no data to display:',
+                                        html.Span('Categories with no data to display:', className = 'category_string_label'),
                                         html.Span(category_string, className = 'category_string'),
                                         ],
-                                        className = 'category_string_label',
+                                        style={'marginTop': -10, 'marginBottom': -10}
                                     ),
                                     html.P(
                                         children=[
-                                        'School Categories with insufficient n-size or no data:',
+                                        html.Span('School Categories with insufficient n-size or no data:',className = 'school_string_label'),
                                         html.Span(school_string, className = 'school_string'),
                                         ],
-                                        className = 'school_string_label',
+                                        
                                     ),
                                 ],
                                 className = 'close_container twelve columns'

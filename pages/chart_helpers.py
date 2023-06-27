@@ -272,9 +272,8 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
 
 import time
 
-# TODO: Do not display a year if only '***' for all categories
-# create a basic line (scatter) plot
-def make_line_chart(values: pd.DataFrame) -> list:  # , label: str
+# create a basic line (scatter) plot with label and additional text if there are '***' values
+def make_line_chart(values: pd.DataFrame, label: str) -> list:
     """Creates a layout containg a label and a basic line (scatter) plot (px.line)
 
     Args:
@@ -282,8 +281,9 @@ def make_line_chart(values: pd.DataFrame) -> list:  # , label: str
         label (str): title of the figure
 
     Returns:
-        list: a plotly dash html layout in the form of a list containing string and px.line figure
-    """    """"""
+        list: a plotly dash html layout in the form of a list containing a string, a px.line figure,
+        and another string if certain conditions are met.
+    """
     t9 = time.process_time()
     data = values.copy()
 
@@ -293,14 +293,8 @@ def make_line_chart(values: pd.DataFrame) -> list:  # , label: str
     # create chart only if data exists
     if (len(cols)) > 0:
 
-        # # returns a string if there are categories/years with a '***' value
-        # # empty if not
-        # nsize_string = get_insufficient_n_size(data)
-
-        # # wrap if longer than 120 characters
-        # if len(nsize_string) > 120:
-        #     print(nsize_string.find(';'))
-        #     nsize_string = customwrap(nsize_string,nsize_string.find(';')+7)
+        # returns a string if there are categories with a '***' value; otherwise empty
+        nsize_string = get_insufficient_n_size(data)
 
         for col in cols:
             data[col]=pd.to_numeric(data[col], errors='coerce')
@@ -333,6 +327,15 @@ def make_line_chart(values: pd.DataFrame) -> list:  # , label: str
         #         )
         #         data.at[data.index[-1], 'Year'] = y
 
+
+        # NOTE: More axis experiments
+        # fig.update_xaxes(constrain='domain')
+        # fig.update_xaxes(autorange='reversed')
+        # fig.update_xaxes(range=[2021, 2022])
+        # fig.update_xaxes(constraintoward='center')
+        # fig.update_xaxes(anchor='free')
+        # fig.update_yaxes(position=.5)
+
         fig = px.line(
             data,
             x='Year',
@@ -345,7 +348,7 @@ def make_line_chart(values: pd.DataFrame) -> list:  # , label: str
         # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
         fig.update_traces(hovertemplate=None)
         fig.update_layout(
-            margin=dict(l=40, r=40, t=40, b=60),
+            margin=dict(l=40, r=40, t=40, b=0),
             title_x=0.5,
             font = dict(
                 family = 'Jost, sans-serif',
@@ -382,33 +385,6 @@ def make_line_chart(values: pd.DataFrame) -> list:  # , label: str
             legend_title='',
         )
 
-        # if nsize_string:
-
-        #     # add annotation
-        #     fig.add_annotation(dict(
-        #         font = dict(
-        #             family = 'Jost, sans-serif',
-        #             color = 'steelblue',
-        #             size = 10
-        #         ),
-        #         x=-0.10,
-        #         y=-0.30,
-        #         showarrow=False,
-        #         text='<b>Insufficient n-size: </b>' + nsize_string,
-        #         textangle=0,
-        #         xanchor='left',
-        #         xref="paper",
-        #         yref="paper"
-        #         )
-        #     )
-            # NOTE: More experiments
-            # fig.update_xaxes(constrain='domain')
-            # fig.update_xaxes(autorange='reversed')
-            # fig.update_xaxes(range=[2021, 2022])
-            # fig.update_xaxes(constraintoward='center')
-            # fig.update_xaxes(anchor='free')
-            # fig.update_yaxes(position=.5)
-
         # NOTE: Range is set at 0-100% for IREAD; everything else is 0-50%. At higher ranges, the values
         # compress together and are hard to read (unfortunately).
         if "IREAD Proficiency (Grade 3 only)" in data.columns:
@@ -431,36 +407,55 @@ def make_line_chart(values: pd.DataFrame) -> list:  # , label: str
             tickformat=',.0%',
         )
 
+        if nsize_string:
+            
+            fig_layout = [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                            html.Label(label, className = 'header_label'),
+                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            ],
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.P(
+                                            children=[
+                                            html.Span('Insufficient n-size:', className = 'nsize_string_label'),
+                                            html.Span(nsize_string, className = 'nsize_string'),
+                                            ],
+                                        ),
+                                    ],
+                                    className = 'close_clean_container twelve columns'
+                                )
+                                ],
+                                className='row'
+                            ),
+                    ]
+                )
+            ]
+
+        else:  
+            
+            fig_layout = [
+                html.Div(
+                    [
+                    html.Label(label, className = 'header_label'),
+                    dcc.Graph(figure = fig, config={'displayModeBar': False})
+                    ],
+                )
+            ]
+
     else:
 
-        fig = no_data_fig_blank()
-
-    # fig_layout = [
-    #     html.Div(
-    #         [
-    #         html.Label(label, className = 'header_label'),
-    #         dcc.Graph(figure = fig, config={'displayModeBar': False})
-    #         ],
-    #         # html.Div(
-    #         #     [
-    #         #         html.P(
-    #         #             children=[
-    #         #             'Insufficient n-size or no data:',
-    #         #             html.Span(nsize_string, className = 'school_string'),
-    #         #             ],
-    #         #             className = 'school_string_label',
-    #         #         ),
-    #         #     ],
-    #         #     className = 'close_container twelve columns'
-    #         # )
-    #     )
-    # ] 
+        fig_layout = no_data_fig_blank()
 
     print(f'Processing line chart: ' + str(time.process_time() - t9)) #( ' + label + ' )
     
-    return fig
-    
-    # return fig_layout
+    return fig_layout
 
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
     """Creates a layout containg a label and a simple bar chart (px.bar)
@@ -609,7 +604,8 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
 
     data_set.reset_index(drop=True, inplace=True)
 
-    # Create text values for display. NOTE: This can be 99.9% done by setting 'text_auto=True'
+    # Create text values for display.
+    # NOTE: This can be 99.9% done by setting 'text_auto=True'
     # in 'fig' without setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
     # that is displayed for ''. This converts the series to a string in the proper format
     # and replaces nan with ''    
@@ -653,13 +649,9 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         linecolor='#b0c4de'
     )
 
-    # NOTE: right now, we are adding a negative bottomMargin to each fig in the layout to
-    # reduce the distance between the fig and the table. Is there a way to reduce the 
-    # margin within the fig itself? (fig.update_layout(yaxis=dict(range=[0, ymax*3])))
-
     fig.update_layout(
         title_x=0.5,
-        margin=dict(l=40, r=40, t=40, b=40),
+        margin=dict(l=40, r=40, t=40, b=10),
         font = dict(
             family='Open Sans, sans-serif',
             color='steelblue',

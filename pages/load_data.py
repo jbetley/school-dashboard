@@ -422,10 +422,13 @@ def process_k8_academic_data(all_data, year, school):
     return data
 
 def filter_high_school_academic_data(data):
-# Iterates over all 'Total Tested' columns - if the value of 'Total Tested' for a
-# particular 'Category' and 'Subject' (e.g., 'Multiracial|Math) is 0, drop all
-# columns (e.g., 'Approaching Benchmark', 'At Benchmark', etc.) for that 'Category'
-# and 'Subject'
+    # NOTE: Drop columns without data. Generally, we want to keep 'result' (e.g., 'Graduates', 'Pass N',
+    # 'Benchmark') columns with '0' values if the 'tested' (e.g., 'Cohort Count', 'Total Tested',
+    # 'Test N') values are greater than '0'. The data is pretty shitty as well, using blank, null,
+    # and '0' interchangeably depending on the type. This makes it difficult to simply use dropna() or
+    # masking with any() because they may erroneously drop a 0 value that we want to keep. So we need to
+    # iterate through each tested category, if it is NaN or 0, we drop it and all associate categories.
+
     if len(data) > 0:
         data = data.replace({"^": "***"})
 
@@ -433,32 +436,86 @@ def filter_high_school_academic_data(data):
         for col in data.columns:
             data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
-        # Separate SAT data categories and Other data categories into separate dfs
-        sat_data = data[data.columns[data.columns.str.contains(r'Year|Benchmark|Total Tested')]].copy()
-        other_data = data[data.columns[~data.columns.str.contains(r'Benchmark|Total Tested')]].copy()
-        
-        # clean SAT data
-        tested_cols = sat_data.filter(like='Total Tested').columns.tolist()
+        # Drop: 'Graduation Rate', 'Percent Pass', 'ELA and Math' (never need these)
+        data = data[data.columns[~data.columns.str.contains(r'Graduation Rate|Percent Pass|ELA and Math')]].copy()
+
+        # # Separate SAT data categories and Other data categories into separate dfs
+        # sat_data = data[data.columns[data.columns.str.contains(r'Year|Benchmark|Total Tested')]].copy()
+
+        # # 'Cohort Count', 'Graduates', 
+        # other_data = data[data.columns[~data.columns.str.contains(r'Benchmark|Total Tested')]].copy()
+        # print(other_data.T)
+
+        # Drop: all SAT related columns ('Approaching Benchmark', 'At Benchmark', etc.)
+        # for a Category if the value of 'Total Tested' for that Category is '0'
+        # sat_tested_cols = data.filter(like='Total Tested').columns.tolist()
+
+        tested_cols = data.filter(regex='Total Tested|Cohort Count|Test N').columns.tolist()
+
         drop_columns=[]
         for col in tested_cols:
-            if sat_data[col].values[0] == 0:
-                matching_cols = sat_data.columns[pd.Series(sat_data.columns).str.startswith(col.split(' Total')[0])]
-                drop_columns.append(matching_cols.tolist())                     
+            if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
+                
+                if 'Total Tested' in col:
+                    match_string = ' Total Tested'
+                elif 'Cohort Count' in col:
+                    match_string = '|Cohort Count'
+                elif 'Test N' in col:
+                    match_string = ' Test N'
+
+                matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(match_string)[0])]
+                drop_columns.append(matching_cols.tolist())   
+
+        # drop_columns=[]
+
+        # for col in sat_tested_cols:
+        #     print(col)
+        #     print(pd.to_numeric(data[col], errors='coerce').sum())
+        #     if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
+        #         print('DELETE')
+        #         matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(' Total')[0])]
+        #         drop_columns.append(matching_cols.tolist())                     
+       
+        # # Drop: all 'Cohort Count' and 'Graduates' cols where the value of 'Cohort Count' is '0'
+        # grad_cohort_cols = data.filter(like='Cohort Count').columns.tolist()
+        
+        # for col in grad_cohort_cols:
+        #     print(col)
+        #     print(pd.to_numeric(data[col], errors='coerce').sum())
+        #     if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
+        #         print('DELETE')
+        #         matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split('|Cohort Count')[0])]
+        #         drop_columns.append(matching_cols.tolist())   
+
+        # # Drop: all 'Test N' and 'Pass N' cols where the value of 'Test N' is '0'
+        # eca_cohort_cols = data.filter(like='Test N').columns.tolist()
+        # for col in eca_cohort_cols:
+        #     print(col)
+        #     print(pd.to_numeric(data[col], errors='coerce').sum())      
+        #     if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
+        #         print('DELETE')
+        #         matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(' Test N')[0])]
+        #         drop_columns.append(matching_cols.tolist())   
 
         drop_all = [i for sub_list in drop_columns for i in sub_list]
 
-        sat_data = sat_data.drop(drop_all, axis=1).copy()
+# OR
+# data = data.loc[:,~data.columns.str.contains(drop_all, case=False)] 
+        data = data.drop(drop_all, axis=1).copy()
 
-        # clean 'other' data
-        # NOTE: Need to do this separately because we want to keep '0' values for SAT
-        # Categories with Tested students.
-        valid_column_mask = other_data.any()
-        # valid_mask = ~pd.isnull(data[data.columns]).all()        
+        final_data = data.copy()
 
-        other_data = other_data[other_data.columns[valid_column_mask]]
+        # # NOTE: Need to do this separately because we want to keep '0' values for SAT
+        # # NOTE: this only drops cols where all values are NaN, this will keep '0' values even
+        # # if they are the only numeric in the column.
+        # other_data = other_data.dropna(how='all')
+
+        # # NOTE: Tried this, but it was dropping columns with NaN and 0
+        # # valid_column_mask = other_data.any()
+        # # other_data = other_data[other_data.columns[valid_column_mask]]
         
-        final_data = other_data.merge(sat_data, how = 'outer')
-    
+        # final_data = other_data.merge(sat_data, how = 'outer')
+        # print(final_data)
     else:
         final_data = pd.DataFrame()
 

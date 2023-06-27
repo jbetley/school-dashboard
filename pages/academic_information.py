@@ -976,10 +976,10 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             notes_string = ''
 
     if radio_value == 'growth':
-        notes_string = 'Growth Data comes from IDOE\'s School Report Card Summaries. While the data represented \
-            here is an accurate representation of the data present in the Summaries, it has not been otherwise \
-            reconciled with the raw data used to produce the Summaries. It is presented here in beta format and \
-            should be used for informational purposes only.'
+        notes_string = 'Growth Data comes from IDOE\'s School Report Card Summaries of Federal Growth indicators. \
+            While the data represented here is an accurate representation of the data present in the Summaries, \
+            it has not been otherwise reconciled with the raw data used to produce the Summaries. It is presented \
+            here for informational purposes only.'
 
     return (
         k8_grade_table,
