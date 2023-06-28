@@ -27,7 +27,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 
 import dash
-from dash import dcc, html, Input, Output, callback
+from dash import ctx, dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 
 from dotenv import load_dotenv
@@ -200,6 +200,28 @@ def set_dropdown_options(app_state):
 def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
 
+# @callback(
+#     Output('where-am-i', 'children'),
+#     Input('_pages_location', 'path')
+# )
+# def where_am_i(page):
+#     print(page)
+#     return page
+from furl import furl
+# TODO: NOT WORKING
+
+# https://stackoverflow.com/questions/69913867/get-parameters-from-url-in-dash-python-this-id-is-assigned-to-a-dash-core-compo
+@app.callback(Output('content', 'children'),
+              [Input('url', 'href')])
+def where_am_i(href: str):
+    print(href)
+    f = furl(href)
+    print(f)
+    # param1= f.args['param1']
+    # param2= f.args['param2']
+
+    return f
+                       
 # year options are the range of:
 #   max = current_academic_year
 #   min = the earliest year for which the school has adm (is open)
@@ -215,6 +237,10 @@ def set_dropdown_value(charter_options):
 )
 def set_year_dropdown_options(school, year):
 
+    input_trigger = ctx.args_grouping #.triggered_id
+    print(input_trigger)
+#TODO: Get Academic Years of Data for Academic Data
+#TODO: Get FInancial YEars of Data for Financial/ORg Data
     # Year Dropdown Options
     # TODO: Change to 5 years in 2023
     max_dropdown_years = 4
@@ -268,6 +294,9 @@ def set_year_dropdown_options(school, year):
 app.layout = html.Div(
     [
         dcc.Store(id="dash-session", storage_type="session"),
+        # dcc.Location(id='where-am-i', refresh=False),
+        dcc.Location(id='url', refresh=False),        
+        # dcc.Store(id='where-am-i', storage_type="session"), #data=[{'path':'Path'}]),
         html.Div(
             [
                 html.Div(

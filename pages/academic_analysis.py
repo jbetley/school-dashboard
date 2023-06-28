@@ -36,11 +36,10 @@ dash.register_page(__name__, path = '/academic_analysis', order=6)
 )
 def set_dropdown_options(school, year, comparison_schools):
 
-# TODO: Fix year. Scrfewed up for 21C. Also gets screwed up when year is selected where
-# TODO: School doesnt have data.
     string_year = '2019' if year == '2020' else year
     numeric_year = int(string_year)
-    
+
+# TODO: Clean up all of the return empties  [],[],[]  
     t0 = time.process_time()
 
     # clear the list of comparison_schools when a new school is
@@ -61,9 +60,13 @@ def set_dropdown_options(school, year, comparison_schools):
     schools_by_distance = get_school_coordinates(numeric_year)
 
     # drop schools with no grade overlap with selected school by getting school grade span and filtering
-    school_grade_span = schools_by_distance.loc[schools_by_distance['School ID'] == int(school)][['Low Grade','High Grade']].values[0].astype(str).tolist()
-    school_grade_span = [s.replace('KG', '1').replace('PK', '0') for s in school_grade_span]
-    school_grade_span = [int(i) for i in school_grade_span]
+    # if it is a year when the school didnt exist, return empty
+    if int(school) in schools_by_distance['School ID'].values:
+        school_grade_span = schools_by_distance.loc[schools_by_distance['School ID'] == int(school)][['Low Grade','High Grade']].values[0].astype(str).tolist()
+        school_grade_span = [s.replace('KG', '1').replace('PK', '0') for s in school_grade_span]
+        school_grade_span = [int(i) for i in school_grade_span]
+    else:
+        return [],[],[]
 
     # ignore PreK(0) and K(1)
     low_bound = 3 if school_grade_span[0] < 3 else school_grade_span[0]
@@ -614,17 +617,21 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             if category in current_school_data.columns:
 
                 fig_iread_k8_school_data = current_school_data[info_categories + [category]].copy()
-
+                
+                print(fig_iread_k8_school_data)
+                
                 # add corp average for category to dataframe - the '','','N/A' are values for
                 # Low & High Grade and Distance columns
                 fig_iread_k8_school_data.loc[len(fig_iread_k8_school_data.index)] = \
                     [school_corporation_name, '3','8',corp_current_data[category].values[0]]
                 
+                print(comparison_schools)
                 # Get comparable school values for the specific category
                 fig_iread_comp_data = comparison_schools[info_categories + [category]]
                 # fig_iread_comp_data = comparison_schools[['School Name','Low Grade','High Grade','Distance',category]]
 
                 fig_iread_all_data = pd.concat([fig_iread_k8_school_data,fig_iread_comp_data])
+                
                 # save table data
                 fig_iread_table_data = fig_iread_all_data.copy()
 
