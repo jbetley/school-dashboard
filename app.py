@@ -200,27 +200,29 @@ def set_dropdown_options(app_state):
 def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
 
+# # TODO: THIS IS WORKING - WAAAT
 # @callback(
-#     Output('where-am-i', 'children'),
-#     Input('_pages_location', 'path')
+#     Output('erewhon', 'children'),
+#     Input('where-am-i', 'href'),
 # )
 # def where_am_i(page):
-#     print(page)
 #     return page
-from furl import furl
-# TODO: NOT WORKING
 
-# https://stackoverflow.com/questions/69913867/get-parameters-from-url-in-dash-python-this-id-is-assigned-to-a-dash-core-compo
-@app.callback(Output('content', 'children'),
-              [Input('url', 'href')])
-def where_am_i(href: str):
-    print(href)
-    f = furl(href)
-    print(f)
-    # param1= f.args['param1']
-    # param2= f.args['param2']
+# from furl import furl
 
-    return f
+# # https://stackoverflow.com/questions/69913867/get-parameters-from-url-in-dash-python-this-id-is-assigned-to-a-dash-core-compo
+# @app.callback(Output('content', 'children'),
+#             [Input('url', 'href')],
+# )
+# def where_am_i(href: str, page: str):
+#     print(page)
+#     print(href)
+#     f = furl(href)
+#     print(f)
+#     # param1= f.args['param1']
+#     # param2= f.args['param2']
+
+#     return f
                        
 # year options are the range of:
 #   max = current_academic_year
@@ -231,14 +233,19 @@ def where_am_i(href: str):
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
+    Output('hidden', 'children'),   # used to track current url
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
+    Input('current-page', 'href'),
     # https://community.plotly.com/t/duplicate-callback-outputs-solution-api-discussion/55909/20
 )
-def set_year_dropdown_options(school, year):
+def set_year_dropdown_options(school, year, page):
 
-    input_trigger = ctx.args_grouping #.triggered_id
-    print(input_trigger)
+    print(page)
+    # input_trigger = ctx.args_grouping #.triggered_id
+    # print(input_trigger)
+    # print(dash.page_registry)
+
 #TODO: Get Academic Years of Data for Academic Data
 #TODO: Get FInancial YEars of Data for Financial/ORg Data
     # Year Dropdown Options
@@ -289,14 +296,13 @@ def set_year_dropdown_options(school, year):
         )
     ]
 
-    return year_options, year_value
+    return year_options, year_value, page
 
 app.layout = html.Div(
     [
         dcc.Store(id="dash-session", storage_type="session"),
-        # dcc.Location(id='where-am-i', refresh=False),
-        dcc.Location(id='url', refresh=False),        
-        # dcc.Store(id='where-am-i', storage_type="session"), #data=[{'path':'Path'}]),
+        dcc.Location(id='current-page', refresh=False),
+        html.Div(id='hidden'),
         html.Div(
             [
                 html.Div(
