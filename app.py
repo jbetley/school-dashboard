@@ -239,7 +239,7 @@ def set_year_dropdown_options(school_id, year, current_page):
     # set year_value and year_options
     number_of_years_to_display = len(years) if len(years) <= max_dropdown_years else max_dropdown_years
     dropdown_years = years[0:number_of_years_to_display]
-    first_available_year = int(current_academic_year) - (number_of_years_to_display-1)
+    first_available_year = dropdown_years[-1]
 
     # 'year' represents the State of the year-dropdown when a school is selected.
     # This sets the current year_value equal to: current_academic_year (when app
@@ -253,8 +253,9 @@ def set_year_dropdown_options(school_id, year, current_page):
     else:
         year_value = str(year)
 
-# TODO: Need to test for empty dropdown_years?
-
+    if not dropdown_years:
+        raise Exception("There is simply no way that you can be seeing this error message.")
+    
     year_options=[
         {"label": str(y), "value": str(y)}
         for y in dropdown_years

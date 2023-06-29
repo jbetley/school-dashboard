@@ -251,6 +251,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     'Above Proficiency'
                 ]
 
+        # TODO: See load_data line 375 for perhaps a better way to do this
                 # for each category, create a proficiency_columns list of columns using the strings in
                 # 'proficiency_rating' and then divide each column by 'Total Tested'
                 categories = grades_all + ethnicity + subgroup
@@ -497,10 +498,11 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 selected_raw_hs_school_data = raw_hs_school_data.copy()
 
             if len(selected_raw_hs_school_data.index) > 0:
-
+                
+                # TODO: ERROR somehwere in these two functions - eg, 21C on Academic Info in 2021
                 selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
                 all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, year, school)
-
+                print('RAN THE GANTLETG!')
                 # Graduation Rate
                 grad_overview_categories = [
                     'Total',

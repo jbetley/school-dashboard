@@ -57,13 +57,13 @@ def run_query(q, *args):
         # way, but this is pretty fast. Adding a space between any lowercase character and any 
         # uppercase/number character takes care of most of it. The other replace functions catch
         # edge cases.
+        pd.set_option('display.max_rows', None)             
         df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([WADTO])([CATPB&])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([A])([a])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([1-9])([(])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace("or ", " or ")
         df.columns = df.columns.astype(str)
-
         # db_load_time = time.process_time() - t2
         # num_cols = len(df.columns)        
         # print(f'Time to load ' + str(num_cols) + ' columns is: ' + str(db_load_time))
@@ -86,14 +86,14 @@ def get_academic_dropdown_years(*args):
     params = dict(zip(keys, args))
 
     if params['type'] == 'K8' or params['type'] == 'K12':
-        print('K8!')
+
         q = text(''' 
             SELECT DISTINCT	Year
             FROM academic_data_k8
             WHERE SchoolID = :id
         ''')
     else:
-        print('HS!')
+
         q = text('''
             SELECT DISTINCT	Year
             FROM academic_data_hs
@@ -149,7 +149,7 @@ def get_school_dropdown_list():
         schools = pd.read_sql_query(q, conn)
 
     schools = schools.astype(str)
-    
+
     return schools
 
 def get_graduation_data():

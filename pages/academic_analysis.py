@@ -25,6 +25,9 @@ from .load_db import get_k8_school_academic_data, get_school_index, \
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+
 # Set options for comparison schools (multi-select dropdown)
 @callback(
     Output('comparison-dropdown', 'options'),
@@ -190,7 +193,7 @@ def set_dropdown_options(school, year, comparison_schools):
 def update_academic_analysis(school: str, year: str, comparison_school_list: list):
     if not school:
         raise PreventUpdate
-    print(type(school))
+
     # show 2019 instead of 2020 as 2020 has no academic data
     string_year = '2019' if year == '2020' else year
 
@@ -254,13 +257,8 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
     else:
 
-# TODO: Need to check this. The use of any may have unintended consequences.
-        selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
-        # keep only school columns with non-null data.
-        valid_column_mask = selected_raw_k8_school_data.any()
-      
-        selected_raw_k8_school_data = selected_raw_k8_school_data[selected_raw_k8_school_data.columns[valid_column_mask]]
+        selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
         clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, numeric_year, school)
 
@@ -297,8 +295,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             dropdown_container = {'display': 'none'}
 
         else:
-            pd.set_option('display.max_rows', None)
-            pd.set_option('display.max_columns', None) 
            
             # Display selected school's year over year data
 
@@ -444,7 +440,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             corp_current_data = process_k8_academic_data(raw_corp_data, numeric_year, school)
 
             corp_current_data.loc[corp_current_data['Category'] == 'IREAD Pass %', 'Category'] = 'IREAD Proficiency (Grade 3 only)'
-            print('HERE')
+
             # Re-transpose the corp df to get the Categories back to column headers
             corp_current_data = (
                 corp_current_data.set_index("Category")
