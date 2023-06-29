@@ -27,15 +27,17 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 
 import dash
-from dash import ctx, dcc, html, Input, Output, State, callback
+from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
 
 from dotenv import load_dotenv
 
 # load data and global variables
-from pages.load_data import school_index, current_academic_year
+# TODO: REMOVE STATIC VARIABLES
+from pages.load_data import current_academic_year
 
-from pages.load_db import get_financial_data
+from pages.load_db import get_school_index, get_academic_dropdown_years, \
+     get_operational_dropdown_years, get_school_dropdown_list
 
 # from pages.load_db import engine
 # This is used solely to generate metric rating svg circles
@@ -175,18 +177,20 @@ def set_dropdown_options(app_state):
     # underlying object (User)
     authorized_user = current_user._get_current_object()
 
+    available_charters = get_school_dropdown_list()
+    
     # admin user
     if authorized_user.id == 0:
         # use entire list
-        charters = school_index[["School Name", "School ID", "School Type"]]
+        charters = available_charters
 
     else:
         # select only the authorized school using the id field of the authorized_user
         # object. need to subtract 1 from id to get correct school from index, because
         # the admin login is at index 0
-        charters = school_index.iloc[[(authorized_user.id - 1)]]
+        charters = available_charters.iloc[[(authorized_user.id - 1)]]
 
-    dropdown_dict = dict(zip(charters["School Name"], charters["School ID"]))
+    dropdown_dict = dict(zip(charters["SchoolName"], charters["SchoolID"]))
     dropdown_list = dict(sorted(dropdown_dict.items()))
     dropdown_options = [{"label": name, "value": id} for name, id in dropdown_list.items()]
 
@@ -199,88 +203,49 @@ def set_dropdown_options(app_state):
 )
 def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
-
-# # TODO: THIS IS WORKING - WAAAT
-# @callback(
-#     Output('erewhon', 'children'),
-#     Input('where-am-i', 'href'),
-# )
-# def where_am_i(page):
-#     return page
-
-# from furl import furl
-
-# # https://stackoverflow.com/questions/69913867/get-parameters-from-url-in-dash-python-this-id-is-assigned-to-a-dash-core-compo
-# @app.callback(Output('content', 'children'),
-#             [Input('url', 'href')],
-# )
-# def where_am_i(href: str, page: str):
-#     print(page)
-#     print(href)
-#     f = furl(href)
-#     print(f)
-#     # param1= f.args['param1']
-#     # param2= f.args['param2']
-
-#     return f
-                       
+            
 # year options are the range of:
 #   max = current_academic_year
 #   min = the earliest year for which the school has adm (is open)
 #   limit = typically a limit of 5 years (currently and
 #   temporarily 4 years so that 2018 academic data is not shown)
 
+# Input current-page and Output hidden are used to track the currently
+# selected url (Tab)
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
-    Output('hidden', 'children'),   # used to track current url
+    Output('hidden', 'children'),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input('current-page', 'href'),
-    # https://community.plotly.com/t/duplicate-callback-outputs-solution-api-discussion/55909/20
 )
-def set_year_dropdown_options(school, year, page):
+def set_year_dropdown_options(school_id, year, current_page):
 
-    print(page)
-    # input_trigger = ctx.args_grouping #.triggered_id
-    # print(input_trigger)
-    # print(dash.page_registry)
-
-#TODO: Get Academic Years of Data for Academic Data
-#TODO: Get FInancial YEars of Data for Financial/ORg Data
-    # Year Dropdown Options
     # TODO: Change to 5 years in 2023
     max_dropdown_years = 4
 
-    financial_data = get_financial_data(school)
+    current_page = current_page.rsplit('/', 1)[-1]
 
-    # Empty file could potentially still have 'School Id','School Name', and 'Category'
-    # NOTE: should never be a school ID associated with a missing financial db entry,
-    # however, we test anyway.
-    if len(financial_data) > 3:
+    selected_school = get_school_index(school_id)    
+    school_type = selected_school['School Type'].values[0]
 
-        financial_data = financial_data.dropna(axis=1, how='all')
-        financial_data.columns = financial_data.columns.astype(str)
-        financial_data = financial_data.drop(['School ID','School Name'], axis=1)
+    if 'academic' in current_page:
+        years = get_academic_dropdown_years(school_id,school_type)
 
-        if 'Q' in financial_data.columns[1]:
-            financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
+    else:
+        years = get_operational_dropdown_years(school_id)
 
-        adm_years = financial_data[financial_data['Category'].str.contains('ADM Average')]
-
-        school_academic_years = len(adm_years.columns) - 1
-
-    num_dropdown_years = school_academic_years if school_academic_years <= max_dropdown_years else max_dropdown_years
-
-    # subtract 1 total to account for current year in display
-    first_available_year = int(current_academic_year) - (num_dropdown_years-1)
+    # set year_value and year_options
+    number_of_years_to_display = len(years) if len(years) <= max_dropdown_years else max_dropdown_years
+    dropdown_years = years[0:number_of_years_to_display]
+    first_available_year = int(current_academic_year) - (number_of_years_to_display-1)
 
     # 'year' represents the State of the year-dropdown when a school is selected.
     # This sets the current year_value equal to: current_academic_year (when app
     # is first opened); current_year state (if the school has available data for
     # that year), or to the next earliest year of academic data that is available
     # for the school
-
     if year is None:
         year_value = str(current_academic_year)
     elif int(year) < first_available_year:
@@ -288,21 +253,21 @@ def set_year_dropdown_options(school, year, page):
     else:
         year_value = str(year)
 
+# TODO: Need to test for empty dropdown_years?
+
     year_options=[
         {"label": str(y), "value": str(y)}
-        for y in range(
-            first_available_year,
-            int(current_academic_year) + 1,
-        )
+        for y in dropdown_years
     ]
 
-    return year_options, year_value, page
+    return year_options, year_value, current_page
 
 app.layout = html.Div(
     [
         dcc.Store(id="dash-session", storage_type="session"),
+        # the next two components are used by the year dropdown callback to determine the current url
         dcc.Location(id='current-page', refresh=False),
-        html.Div(id='hidden'),
+        html.Div(id='hidden', style={"display": "none"}),
         html.Div(
             [
                 html.Div(
@@ -327,7 +292,6 @@ app.layout = html.Div(
                                     style={
                                         "fontFamily": "Roboto, sans-serif",
                                         'color': 'steelblue',
-
                                     },
                                     multi=False,
                                     clearable=False,

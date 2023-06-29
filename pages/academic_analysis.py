@@ -155,6 +155,7 @@ def set_dropdown_options(school, year, comparison_schools):
                 {'label': option['label'], 'value': option['value'], 'disabled': True}
                 for option in default_options
             ]
+    
     print(f'Time to create dropdown: ' + str(time.process_time() - t0))
 
     return options, input_warning, comparison_schools
@@ -189,7 +190,7 @@ def set_dropdown_options(school, year, comparison_schools):
 def update_academic_analysis(school: str, year: str, comparison_school_list: list):
     if not school:
         raise PreventUpdate
-
+    print(type(school))
     # show 2019 instead of 2020 as 2020 has no academic data
     string_year = '2019' if year == '2020' else year
 
@@ -443,7 +444,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             corp_current_data = process_k8_academic_data(raw_corp_data, numeric_year, school)
 
             corp_current_data.loc[corp_current_data['Category'] == 'IREAD Pass %', 'Category'] = 'IREAD Proficiency (Grade 3 only)'
-
+            print('HERE')
             # Re-transpose the corp df to get the Categories back to column headers
             corp_current_data = (
                 corp_current_data.set_index("Category")
@@ -618,14 +619,11 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 fig_iread_k8_school_data = current_school_data[info_categories + [category]].copy()
                 
-                print(fig_iread_k8_school_data)
-                
                 # add corp average for category to dataframe - the '','','N/A' are values for
                 # Low & High Grade and Distance columns
                 fig_iread_k8_school_data.loc[len(fig_iread_k8_school_data.index)] = \
                     [school_corporation_name, '3','8',corp_current_data[category].values[0]]
                 
-                print(comparison_schools)
                 # Get comparable school values for the specific category
                 fig_iread_comp_data = comparison_schools[info_categories + [category]]
                 # fig_iread_comp_data = comparison_schools[['School Name','Low Grade','High Grade','Distance',category]]

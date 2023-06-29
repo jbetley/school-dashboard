@@ -81,6 +81,77 @@ def get_current_year():
 
     return year
 
+def get_academic_dropdown_years(*args):
+    keys = ['id','type']
+    params = dict(zip(keys, args))
+
+    if params['type'] == 'K8' or params['type'] == 'K12':
+        print('K8!')
+        q = text(''' 
+            SELECT DISTINCT	Year
+            FROM academic_data_k8
+            WHERE SchoolID = :id
+        ''')
+    else:
+        print('HS!')
+        q = text('''
+            SELECT DISTINCT	Year
+            FROM academic_data_hs
+            WHERE SchoolID = :id
+        ''')
+        
+    result = run_query(q, params)
+    
+    years = result['Year'].tolist()
+    
+    return years
+
+def get_operational_dropdown_years(school_id):
+    params = dict(id=school_id)
+    q = text('''
+        SELECT * 
+        FROM financial_data 
+        WHERE SchoolID = :id
+    ''')
+    
+    results = run_query(q, params)
+
+    # Processes financial df and returns a list of Year column names for
+    # each year for which ADM Average is greater than '0'
+    if len(results.columns) > 3:
+
+        adm_index = results.index[results['Category'] == 'ADM Average'].values[0]
+
+        results = results.filter(regex='^\d{4}$')
+
+        for col in results.columns:
+            results[col] = pd.to_numeric(results[col], errors='coerce')
+
+        mask = results.iloc[adm_index] > 0
+
+        results = results.loc[:, mask]
+
+        years = results.columns.to_list()
+    
+    else:
+        years = []
+
+    return years
+
+def get_school_dropdown_list():
+
+    q = text('''
+        SELECT SchoolName, SchoolID, SchoolType
+        FROM school_index '''
+    )
+
+    with engine.connect() as conn:
+        schools = pd.read_sql_query(q, conn)
+
+    schools = schools.astype(str)
+    
+    return schools
+
 def get_graduation_data():
     params = dict(id='')
 
@@ -119,7 +190,6 @@ def get_info(school_id):
     return run_query(q, params)
 
 # Get Financial Data
-# Input: school_id
 def get_financial_data(school_id):
     params = dict(id=school_id)
     q = text('''

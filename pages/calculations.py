@@ -289,7 +289,7 @@ def get_insufficient_n_size(data: pd.DataFrame) -> str:
         df['Year'] = df['Year'].mask(df['Year'] >= 0, df['Year'].map(dict(enumerate(data['Year'].tolist()))))
         
         # strip everything after '|'
-        df["Category"] = (df["Category"].str.replace('\|.*$', ''))
+        df["Category"] = (df["Category"].str.replace('\|.*$', '', regex=True))
 
         # sort so earliest year is first
         df = df.sort_values(by=['Year'], ascending=True)
