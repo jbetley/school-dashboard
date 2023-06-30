@@ -257,12 +257,51 @@ def round_percentages(percentages: list) -> list:
     # return just the percentage
     return [percentage[0] for percentage in result]
 
+def check_for_no_data(data: pd.DataFrame) -> str:
+    """
+    Takes a dataframe, finds the Years where all values are '***', nan, or none
+    and turns the results into a single string of the year(s)
+
+    Args:
+        data (_type_): pd.DataFrame
+
+    Returns:
+        _type_: string
+    """
+    # Identify and drop rows with no or insufficient data ('***' or NaN/None)
+    tmp = data.copy()
+    tmp = tmp.drop('School Name', axis=1)
+    tmp = tmp.set_index('Year')
+
+    # the nunique test will always be true for a single column (e.g., IREAD). so we
+    # need to test one column dataframes separately
+    if len(tmp.columns) == 1:
+
+        # the safest way is to coerce all strings to numeric and then test for null
+        tmp[tmp.columns[0]] = pd.to_numeric(tmp[tmp.columns[0]], errors='coerce')
+        no_data_years = tmp.index[tmp[tmp.columns[0]].isnull()].values.tolist()
+    
+    else:
+        no_data_years = tmp[tmp.apply(pd.Series.nunique, axis=1) == 1].index.values.tolist()
+
+    if no_data_years:
+        data = data[~data['Year'].isin(no_data_years)]
+        
+        if len(no_data_years) > 1:
+            string = ', '.join(no_data_years) + '.'
+        else:
+            string = no_data_years[0] + '.'
+    else:
+        string =''                    
+
+    return data, string
+
 # Take a dataframe, find the Categories and Years  where there are '***' (insufficient n-size) values,
 # and turn the results into a single string, grouped by year, where duplicates have one or more years
 # in parenthesis. E.g., 'White (2021, 2022); Hispanic, Multiracial (2019)'
 # NOTE: This turned out to be complicated. The below solution seems overly convoluted, but works. Felt
 # cute, may refactor later.
-def get_insufficient_n_size(data: pd.DataFrame) -> str:
+def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
     """
     Takes a dataframe, finds the Categories and Years where the value is equal
     to '***'(insufficient n-size), and turns the results into a single string,

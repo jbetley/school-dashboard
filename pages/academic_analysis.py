@@ -321,10 +321,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             display_academic_data = display_academic_data.rename(columns={c: c + ' Proficient %' for c in display_academic_data.columns if c not in ['Year', 'School Name','IREAD Proficiency (Grade 3 only)']})
 
         ## Make Line Charts
-        # NOTE: Currently insufficient n-size information is separately calculated in a function
-        # and displayed below the fig in the layout. Would prefer to somehow add this to the actual
-        # trace (x-unified) hover, but it doesn't currently seem to be possible.
-        # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
 
             t3 = time.process_time()   
             yearly_school_data = display_academic_data.copy()
@@ -333,19 +329,12 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             # Chart 1: Year over Year ELA Proficiency by Grade (1.4.a)
             fig14a_data = yearly_school_data.filter(regex = r'^Grade \d\|ELA|^School Name$|^Year$',axis=1)
             
-            # All df contain 'Year' & 'School Name'. So 3rd and beyond categories would be data
-            if len(fig14a_data.columns) >= 3:
-                fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
-            else:
-                fig14a = no_data_fig_label('Year over Year ELA Proficiency by Grade', 200)
+            # NOTE: make_line_chart() returns a layout as a list (either a chart with data or an empty chart)
+            fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
 
             # Chart 2: Year over Year Math Proficiency by Grade (1.4.b)
             fig14b_data = yearly_school_data.filter(regex = r'^Grade \d\|Math|^School Name$|^Year$',axis=1)
-
-            if len(fig14b_data.columns) >= 3:
-                fig14b = make_line_chart(fig14b_data,'Year over Year Math Proficiency by Grade')
-            else:
-                fig14b = no_data_fig_label('Year over Year Math Proficiency by Grade', 200)
+            fig14b = make_line_chart(fig14b_data,'Year over Year Math Proficiency by Grade')
 
             # Charts 3 & 4: See below
 
@@ -356,11 +345,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             fig16c1_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16c1)) | (yearly_school_data.columns.isin(['School Name','Year']))]
             fig16c1_data = fig16c1_data.rename(columns = {'Native Hawaiian or Other Pacific Islander|ELA Proficient %': 'Pacific Islander|ELA Proficient %'})
-        
-            if len(fig16c1_data.columns) >= 3: 
-                fig16c1 = make_line_chart(fig16c1_data,'Year over Year ELA Proficiency by Ethnicity')
-            else:
-                fig16c1 = no_data_fig_label('Year over Year ELA Proficiency by Ethnicity', 200)
+            fig16c1 = make_line_chart(fig16c1_data,'Year over Year ELA Proficiency by Ethnicity')
 
             # Chart 6: Year over Year Math Proficiency by Ethnicity (1.6.d)
             categories_16d1 = []
@@ -369,11 +354,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             fig16d1_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16d1)) | (yearly_school_data.columns.isin(['School Name','Year']))]
             fig16d1_data = fig16d1_data.rename(columns = {'Native Hawaiian or Other Pacific Islander|Math Proficient %': 'Pacific Islander|Math Proficient %'})
-            
-            if len(fig16d1_data.columns) >= 3:
-                fig16d1 = make_line_chart(fig16d1_data,'Year over Year Math Proficiency by Ethnicity')
-            else:
-                fig16d1 = no_data_fig_label('Year over Year Math Proficiency by Ethnicity', 200)
+            fig16d1 = make_line_chart(fig16d1_data,'Year over Year Math Proficiency by Ethnicity')
 
             # Chart 7: Year over Year ELA Proficiency by Subgroup (1.6.c)
             categories_16c2 = []
@@ -381,11 +362,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 categories_16c2.append(s + '|' + 'ELA Proficient %')
 
             fig16c2_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16c2)) | (yearly_school_data.columns.isin(['School Name','Year']))]
-            
-            if len(fig16c2_data.columns) >= 3:   
-                fig16c2 = make_line_chart(fig16c2_data,'Year over Year ELA Proficiency by Subgroup')
-            else:
-                fig16c2 = no_data_fig_label('Year over Year ELA Proficiency by Subgroup', 200)
+            fig16c2 = make_line_chart(fig16c2_data,'Year over Year ELA Proficiency by Subgroup')
 
             # Chart 8: Year over Year Math Proficiency by Subgroup (1.6.d)
             categories_16d2 = []
@@ -393,21 +370,13 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 categories_16d2.append(s + '|' + 'Math Proficient %')
 
             fig16d2_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16d2)) | (yearly_school_data.columns.isin(['School Name','Year']))]
-            
-            if len(fig16d2_data.columns) >= 3:                   
-                fig16d2 = make_line_chart(fig16d2_data,'Year over Year Math Proficiency by Subgroup')
-            else:
-                fig16d2 = no_data_fig_label('Year over Year Math Proficiency by Subgroup', 200)
+            fig16d2 = make_line_chart(fig16d2_data,'Year over Year Math Proficiency by Subgroup')
 
             # Chart 9 - IREAD Year over Year
             category_iread = 'IREAD Proficiency (Grade 3 only)'
 
-            fig14g_data = yearly_school_data.loc[:, (yearly_school_data.columns == category_iread) | (yearly_school_data.columns.isin(['School Name','Year']))]
-
-            if len(fig14g_data.columns) >= 3:                
-                fig14g = make_line_chart(fig14g_data, category_iread)
-            else:
-                fig14g = no_data_fig_label('Year over Year IREAD Proficiency', 200)
+            fig14g_data = yearly_school_data.loc[:, (yearly_school_data.columns == category_iread) | (yearly_school_data.columns.isin(['School Name','Year']))]         
+            fig14g = make_line_chart(fig14g_data, category_iread)
 
             print(f'Time to make line charts: ' + str(time.process_time() - t3))
 
@@ -624,8 +593,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 fig_iread_comp_data = comparison_schools[info_categories + [category]]
                 # fig_iread_comp_data = comparison_schools[['School Name','Low Grade','High Grade','Distance',category]]
                 
-                print(fig_iread_k8_school_data)
-
                 fig_iread_all_data = pd.concat([fig_iread_k8_school_data,fig_iread_comp_data])
                 
                 # save table data

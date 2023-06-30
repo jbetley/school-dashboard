@@ -11,7 +11,7 @@ import numpy as np
 import textwrap
 import plotly.graph_objects as go
 from dash import html, dcc
-from .calculations import get_insufficient_n_size
+from .calculations import check_for_insufficient_n_size , check_for_no_data
 # Colors
 # https://codepen.io/ctf0/pen/BwLezW
 
@@ -272,6 +272,12 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
 
 import time
 
+# TODO: add info strings to hover
+# NOTE: Currently insufficient n-size and no data information is displayed below
+# the fig in the layout. Would prefer to somehow add this to the actual
+# trace (x-unified) hover, but it doesn't currently seem to be possible.
+# https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
+
 # create a basic line (scatter) plot with label and additional text if there are '***' values
 def make_line_chart(values: pd.DataFrame, label: str) -> list:
     """Creates a layout containg a label and a basic line (scatter) plot (px.line)
@@ -290,113 +296,138 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     data.columns = data.columns.str.split('|').str[0]
     cols=[i for i in data.columns if i not in ['School Name','Year']]
 
-# TODO: NEED TO ACCOUNT FOR SITUATION WHERE ONLY DATA IN DF IS '***' (See Ace Prep 2019)
-# TODO: Prob shouldnt display anything.
     # create chart only if data exists
     if (len(cols)) > 0:
 
-        # Identify and drop rows with no or insufficient data ('***' or NaN/None)
-        tmp = data.copy()
-        tmp = tmp.drop('School Name', axis=1)
-        tmp = tmp.set_index('Year')
-
-        # the nunique test will always be true for a single column (e.g., IREAD). so we
-        # need to test one column dataframes separately
-        if len(tmp.columns) == 1:
-
-# TODO: Turn this into function as well(?). Cant drop row until after it returns
-            # the safest way is to coerce all strings to numeric and then test for null
-            tmp[tmp.columns[0]] = pd.to_numeric(tmp[tmp.columns[0]], errors='coerce')
-            no_data_years = tmp.index[tmp[tmp.columns[0]].isnull()].values.tolist()
-        
-        else:
-            no_data_years = tmp[tmp.apply(pd.Series.nunique, axis=1) == 1].index.values.tolist()
-
-        if no_data_years:
-            data = data[~data['Year'].isin(no_data_years)]
-            
-            if len(no_data_years) > 1:
-                no_data_string = ', '.join(no_data_years) + '.'
-            else:
-                no_data_string = no_data_years[0] + '.'
-        
-        else:
-            no_data_string =''
-
-        # Get string of categories with a '***' value; if none, string is empty
-        nsize_string = get_insufficient_n_size(data)
+        data, no_data_string = check_for_no_data(data)
+        nsize_string = check_for_insufficient_n_size(data)
 
         for col in cols:
             data[col]=pd.to_numeric(data[col], errors='coerce')
 
         data.sort_values('Year', inplace=True)
 
+        # One last check, if there is only one year of data being displayed, we need to drop
+        # all columns with only NaN- otherwise the traces will be displayed on the chart
+        # even though they are listed as having no data to display - afterwards we need
+        # to reset the cols variable to make sure it matches the changed df
+        if len(data.index) == 1:
+            data = data.dropna(axis=1, how='all')
+            cols=[i for i in data.columns if i not in ['School Name','Year']]
+
         data = data.reset_index(drop=True)
-
-        # NOTE: These are attempts to fix irregular axis lines
-        # data_years = data['Year'].astype(int).tolist()
         
-        #add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
-    
-        # NOTE: Plotly displays two years of data with the year axis near the edges, which is ugly
-        # so when we only have 2 years of data, we add two additiona blank years on either side
-        # of the range. Doesn't look that great either
+        # If the initial df has data, but after dropping all no data rows is then
+        # empty, we return an empty layout
+        if data.empty:
 
-        # if len(data_years) == 2:
-        #     for y in add_years:
-        #         data = pd.concat(
-        #             [
-        #                 data,
-        #                 pd.DataFrame(
-        #                     np.nan,
-        #                     columns=data.columns,
-        #                     index=range(1),
-        #                 ),
-        #             ],
-        #             ignore_index=True,
-        #         )
-        #         data.at[data.index[-1], 'Year'] = y
+            fig = no_data_fig_blank()
+            fig_layout = [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                            html.Label(label, className = 'header_label'),
+                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            ],
+                        ),
+                    ]
+                )
+            ]
+        
+        else:
+
+            # NOTE: These are attempts to fix irregular axis lines
+            # data_years = data['Year'].astype(int).tolist()
+            
+            #add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
+        
+            # NOTE: Plotly displays two years of data with the year axis near the edges, which is ugly
+            # so when we only have 2 years of data, we add two additiona blank years on either side
+            # of the range. Doesn't look that great either
+
+            # if len(data_years) == 2:
+            #     for y in add_years:
+            #         data = pd.concat(
+            #             [
+            #                 data,
+            #                 pd.DataFrame(
+            #                     np.nan,
+            #                     columns=data.columns,
+            #                     index=range(1),
+            #                 ),
+            #             ],
+            #             ignore_index=True,
+            #         )
+            #         data.at[data.index[-1], 'Year'] = y
 
 
-        # NOTE: More axis experiments
-        # fig.update_xaxes(constrain='domain')
-        # fig.update_xaxes(autorange='reversed')
-        # fig.update_xaxes(range=[2021, 2022])
-        # fig.update_xaxes(constraintoward='center')
-        # fig.update_xaxes(anchor='free')
-        # fig.update_yaxes(position=.5)
+            # NOTE: More axis experiments
+            # fig.update_xaxes(constrain='domain')
+            # fig.update_xaxes(autorange='reversed')
+            # fig.update_xaxes(range=[2021, 2022])
+            # fig.update_xaxes(constraintoward='center')
+            # fig.update_xaxes(anchor='free')
+            # fig.update_yaxes(position=.5)
 
-        fig = px.line(
-            data,
-            x='Year',
-            y=cols,
-            markers=True,
-            color_discrete_sequence=color,
-            # custom_data = ['N_size']
-        )
+            fig = px.line(
+                data,
+                x='Year',
+                y=cols,
+                markers=True,
+                color_discrete_sequence=color,
+                # custom_data = ['N_size']
+            )
 
-        # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
-        fig.update_traces(hovertemplate=None)
-        fig.update_layout(
-            margin=dict(l=40, r=40, t=40, b=0),
-            title_x=0.5,
-            font = dict(
-                family = 'Jost, sans-serif',
-                color = 'steelblue',
-                size = 10
+            # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
+            fig.update_traces(hovertemplate=None)
+            fig.update_layout(
+                margin=dict(l=40, r=40, t=40, b=0),
+                title_x=0.5,
+                font = dict(
+                    family = 'Jost, sans-serif',
+                    color = 'steelblue',
+                    size = 10
+                    ),
+                plot_bgcolor='white',
+                xaxis = dict(
+                    title='',
+                    type='date',
+                    # tickmode = 'array',
+                    # tickmode = 'linear',
+                    tickvals = data['Year'],
+                    tickformat='%Y',
+                    # tick0 = data['Year'][0] - 1,
+                    # dtick ='M6',
+                    # categoryorder = 'array',
+                    # categoryarray = data['Year'],
+                    mirror=True,
+                    showline=True,
+                    linecolor='#b0c4de',
+                    linewidth=.5,
+                    gridwidth=.5,
+                    showgrid=True,
+                    gridcolor='#b0c4de',
+                    zeroline=False,
+                    # range = add_years
+                    ),   
+                legend=dict(
+                    orientation='h'
                 ),
-            plot_bgcolor='white',
-            xaxis = dict(
+                hovermode='x unified',
+                height=400,
+                legend_title='',
+            )
+
+            # NOTE: Range is set at 0-100% for IREAD; everything else is 0-50%. At higher ranges, the values
+            # compress together and are hard to read (unfortunately).
+            if "IREAD Proficiency (Grade 3 only)" in data.columns:
+                range_vals = [0,1]
+            else:
+                range_vals = [0,.5]
+
+            fig.update_yaxes(
                 title='',
-                type='date',
-                # tickmode = 'array',
-                # tickmode = 'linear',
-                tickvals = data['Year'],
-                tickformat='%Y',
-                # tick0 = data['Year'][0] - 1,
-                # dtick ='M6',
-                # categoryorder = 'array',
-                # categoryarray = data['Year'],
                 mirror=True,
                 showline=True,
                 linecolor='#b0c4de',
@@ -405,151 +436,136 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 showgrid=True,
                 gridcolor='#b0c4de',
                 zeroline=False,
-                # range = add_years
-                ),   
-            legend=dict(
-                orientation='h'
-            ),
-            hovermode='x unified',
-            height=400,
-            legend_title='',
-        )
+                range=range_vals, 
+                dtick=.2,
+                tickformat=',.0%',
+            )
 
-        # NOTE: Range is set at 0-100% for IREAD; everything else is 0-50%. At higher ranges, the values
-        # compress together and are hard to read (unfortunately).
-        if "IREAD Proficiency (Grade 3 only)" in data.columns:
-            range_vals = [0,1]
-        else:
-            range_vals = [0,.5]
+            if nsize_string and no_data_string:
 
-        fig.update_yaxes(
-            title='',
-            mirror=True,
-            showline=True,
-            linecolor='#b0c4de',
-            linewidth=.5,
-            gridwidth=.5,
-            showgrid=True,
-            gridcolor='#b0c4de',
-            zeroline=False,
-            range=range_vals, 
-            dtick=.2,
-            tickformat=',.0%',
-        )
-
-        if nsize_string and no_data_string:
-            
-            fig_layout = [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                            html.Label(label, className = 'header_label'),
-                            dcc.Graph(figure = fig, config={'displayModeBar': False})
-                            ],
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.P(
-                                            children=[
-                                            html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
-                                            html.Span(no_data_string, className = 'no_data_string'),
-                                            ],
-                                        ),
-                                        html.P(
-                                            children=[
-                                            html.Span('Insufficient n-size:', className = 'nsize_string_label'),
-                                            html.Span(nsize_string, className = 'nsize_string'),
-                                            ],
-                                        ),
-                                    ],
-                                    className = 'close_clean_container twelve columns'
-                                )
+                fig_layout = [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                html.Label(label, className = 'header_label'),
+                                dcc.Graph(figure = fig, config={'displayModeBar': False})
+                                ],
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.P(
+                                                children=[
+                                                html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
+                                                html.Span(no_data_string, className = 'no_data_string'),
+                                                ],
+                                            ),
+                                            html.P(
+                                                children=[
+                                                html.Span('Insufficient n-size:', className = 'nsize_string_label'),
+                                                html.Span(nsize_string, className = 'nsize_string'),
+                                                ],
+                                            ),
+                                        ],
+                                        className = 'close_clean_container twelve columns'
+                                    )
                                 ],
                                 className='row'
                             ),
-                    ]
-                )
-            ]
+                        ]
+                    )
+                ]
 
-        elif nsize_string and not no_data_string:
+            elif nsize_string and not no_data_string:
 
-            fig_layout = [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                            html.Label(label, className = 'header_label'),
-                            dcc.Graph(figure = fig, config={'displayModeBar': False})
-                            ],
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [                              
-                                        html.P(
-                                            children=[
-                                            html.Span('Insufficient n-size:', className = 'nsize_string_label'),
-                                            html.Span(nsize_string, className = 'nsize_string'),
-                                            ],
-                                        ),
-                                    ],
-                                    className = 'close_clean_container twelve columns'
-                                )
+                fig_layout = [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                html.Label(label, className = 'header_label'),
+                                dcc.Graph(figure = fig, config={'displayModeBar': False})
+                                ],
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [                              
+                                            html.P(
+                                                children=[
+                                                html.Span('Insufficient n-size:', className = 'nsize_string_label'),
+                                                html.Span(nsize_string, className = 'nsize_string'),
+                                                ],
+                                            ),
+                                        ],
+                                        className = 'close_clean_container twelve columns'
+                                    )
                                 ],
                                 className='row'
                             ),
-                    ]
-                )
-            ]
+                        ]
+                    )
+                ]
 
-        elif no_data_string and not nsize_string:
-
-            fig_layout = [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                            html.Label(label, className = 'header_label'),
-                            dcc.Graph(figure = fig, config={'displayModeBar': False})
-                            ],
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.P(
-                                            children=[
-                                            html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
-                                            html.Span(no_data_string, className = 'no_data_string'),
-                                            ],
-                                        ),
-                                    ],
-                                    className = 'close_clean_container twelve columns'
-                                )
+            elif no_data_string and not nsize_string:
+                
+                fig_layout = [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                html.Label(label, className = 'header_label'),
+                                dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
-                                className='row'
                             ),
-                    ]
-                )
-            ]
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.P(
+                                                children=[
+                                                html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
+                                                html.Span(no_data_string, className = 'no_data_string'),
+                                                ],
+                                            ),
+                                        ],
+                                        className = 'close_clean_container twelve columns'
+                                    )
+                                    ],
+                                    className='row'
+                                ),
+                        ]
+                    )
+                ]
 
-        else:  
-            
-            fig_layout = [
-                html.Div(
-                    [
-                    html.Label(label, className = 'header_label'),
-                    dcc.Graph(figure = fig, config={'displayModeBar': False})
-                    ],
-                )
-            ]
+            else:  
+
+                fig_layout = [
+                    html.Div(
+                        [
+                        html.Label(label, className = 'header_label'),
+                        dcc.Graph(figure = fig, config={'displayModeBar': False})
+                        ],
+                    )
+                ]
 
     else:
-
-        fig_layout = no_data_fig_blank()
+        # data is empty
+        fig = no_data_fig_blank()
+        fig_layout = [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                            html.Label(label, className = 'header_label'),
+                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            ],
+                        ),
+                        ]
+                    )
+            ]
 
     print(f'Processing line chart: ' + str(time.process_time() - t9)) #( ' + label + ' )
     
