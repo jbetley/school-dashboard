@@ -290,10 +290,40 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     data.columns = data.columns.str.split('|').str[0]
     cols=[i for i in data.columns if i not in ['School Name','Year']]
 
+# TODO: NEED TO ACCOUNT FOR SITUATION WHERE ONLY DATA IN DF IS '***' (See Ace Prep 2019)
+# TODO: Prob shouldnt display anything.
     # create chart only if data exists
     if (len(cols)) > 0:
 
-        # returns a string if there are categories with a '***' value; otherwise empty
+        # Identify and drop rows with no or insufficient data ('***' or NaN/None)
+        tmp = data.copy()
+        tmp = tmp.drop('School Name', axis=1)
+        tmp = tmp.set_index('Year')
+
+        # the nunique test will always be true for a single column (e.g., IREAD). so we
+        # need to test one column dataframes separately
+        if len(tmp.columns) == 1:
+
+# TODO: Turn this into function as well(?). Cant drop row until after it returns
+            # the safest way is to coerce all strings to numeric and then test for null
+            tmp[tmp.columns[0]] = pd.to_numeric(tmp[tmp.columns[0]], errors='coerce')
+            no_data_years = tmp.index[tmp[tmp.columns[0]].isnull()].values.tolist()
+        
+        else:
+            no_data_years = tmp[tmp.apply(pd.Series.nunique, axis=1) == 1].index.values.tolist()
+
+        if no_data_years:
+            data = data[~data['Year'].isin(no_data_years)]
+            
+            if len(no_data_years) > 1:
+                no_data_string = ', '.join(no_data_years) + '.'
+            else:
+                no_data_string = no_data_years[0] + '.'
+        
+        else:
+            no_data_string =''
+
+        # Get string of categories with a '***' value; if none, string is empty
         nsize_string = get_insufficient_n_size(data)
 
         for col in cols:
@@ -407,7 +437,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             tickformat=',.0%',
         )
 
-        if nsize_string:
+        if nsize_string and no_data_string:
             
             fig_layout = [
                 html.Div(
@@ -424,8 +454,76 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                                     [
                                         html.P(
                                             children=[
+                                            html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
+                                            html.Span(no_data_string, className = 'no_data_string'),
+                                            ],
+                                        ),
+                                        html.P(
+                                            children=[
                                             html.Span('Insufficient n-size:', className = 'nsize_string_label'),
                                             html.Span(nsize_string, className = 'nsize_string'),
+                                            ],
+                                        ),
+                                    ],
+                                    className = 'close_clean_container twelve columns'
+                                )
+                                ],
+                                className='row'
+                            ),
+                    ]
+                )
+            ]
+
+        elif nsize_string and not no_data_string:
+
+            fig_layout = [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                            html.Label(label, className = 'header_label'),
+                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            ],
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [                              
+                                        html.P(
+                                            children=[
+                                            html.Span('Insufficient n-size:', className = 'nsize_string_label'),
+                                            html.Span(nsize_string, className = 'nsize_string'),
+                                            ],
+                                        ),
+                                    ],
+                                    className = 'close_clean_container twelve columns'
+                                )
+                                ],
+                                className='row'
+                            ),
+                    ]
+                )
+            ]
+
+        elif no_data_string and not nsize_string:
+
+            fig_layout = [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                            html.Label(label, className = 'header_label'),
+                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            ],
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.P(
+                                            children=[
+                                            html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
+                                            html.Span(no_data_string, className = 'no_data_string'),
                                             ],
                                         ),
                                     ],

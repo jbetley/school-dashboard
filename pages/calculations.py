@@ -275,11 +275,11 @@ def get_insufficient_n_size(data: pd.DataFrame) -> str:
     Returns:
         _type_: string
     """
-    
+
     #  returns the indices of elements in a tuple of arrays where the condition is satisfied
     insufficient_n_size = np.where(data == '***')
 
-    # creates a dataframe from the respective indicies
+    # creates a new dataframe from the respective indicies
     df = pd.DataFrame(np.column_stack(insufficient_n_size),columns=['Year','Category'])
 
     if len(df.index) > 0:
@@ -316,7 +316,7 @@ def get_insufficient_n_size(data: pd.DataFrame) -> str:
 
         # Finally combine all rows into a single string.
         int_string = [', '.join(val) for val in df.astype(str).values.tolist()]
-        df_string = '; '.join(int_string)
+        df_string = '; '.join(int_string) + '.'
 
         # clean up extra comma
         df_string = df_string.replace(", (", " (" )
