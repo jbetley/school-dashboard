@@ -11,7 +11,7 @@ import numpy as np
 import textwrap
 import plotly.graph_objects as go
 from dash import html, dcc
-
+from .calculations import get_insufficient_n_size
 # Colors
 # https://codepen.io/ctf0/pen/BwLezW
 
@@ -148,6 +148,7 @@ def no_data_fig_blank() -> dict:
 
     return fig
 
+## Helper Functions ##
 # create wrapped text using html tags based on the specified width.
 # add two spaces before <br> to ensure the words at the end of each
 # break have the same spacing as 'ticksuffix' in make_stacked_bar()
@@ -166,6 +167,7 @@ def customwrap(s: str,width: int = 16):
 
     return '  <br>'.join(textwrap.wrap(s,width=width))
 
+## Charting Functions
 def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     """Create a layout with a 100% stacked bar chart showing proficiency percentages for
     all academic categories
@@ -190,7 +192,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     # This adds 'percentage_x' and 'percentage_y' columns.
     # 'percentage_y' is equal to the Total Tested Values
     data = pd.merge(data, total_tested[['Category','Percentage']], on=['Category'], how='left')
-
 
     # rename the columns (percentage_x to Percentage & percentage_y to Total Tested)
     data.columns = ['Category','Percentage','Proficiency','Total Tested']
@@ -270,7 +271,8 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     return fig_layout
 
 import time
-# create a basic line (scatter) plot
+
+# create a basic line (scatter) plot with label and additional text if there are '***' values
 def make_line_chart(values: pd.DataFrame, label: str) -> list:
     """Creates a layout containg a label and a basic line (scatter) plot (px.line)
 
@@ -279,23 +281,59 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         label (str): title of the figure
 
     Returns:
-        list: a plotly dash html layout in the form of a list containing string and px.line figure
-    """    """"""
+        list: a plotly dash html layout in the form of a list containing a string, a px.line figure,
+        and another string if certain conditions are met.
+    """
     t9 = time.process_time()
     data = values.copy()
 
     data.columns = data.columns.str.split('|').str[0]
     cols=[i for i in data.columns if i not in ['School Name','Year']]
 
+# TODO: NEED TO ACCOUNT FOR SITUATION WHERE ONLY DATA IN DF IS '***' (See Ace Prep 2019)
+# TODO: Prob shouldnt display anything.
     # create chart only if data exists
     if (len(cols)) > 0:
 
+        # Identify and drop rows with no or insufficient data ('***' or NaN/None)
+        tmp = data.copy()
+        tmp = tmp.drop('School Name', axis=1)
+        tmp = tmp.set_index('Year')
+
+        # the nunique test will always be true for a single column (e.g., IREAD). so we
+        # need to test one column dataframes separately
+        if len(tmp.columns) == 1:
+
+# TODO: Turn this into function as well(?). Cant drop row until after it returns
+            # the safest way is to coerce all strings to numeric and then test for null
+            tmp[tmp.columns[0]] = pd.to_numeric(tmp[tmp.columns[0]], errors='coerce')
+            no_data_years = tmp.index[tmp[tmp.columns[0]].isnull()].values.tolist()
+        
+        else:
+            no_data_years = tmp[tmp.apply(pd.Series.nunique, axis=1) == 1].index.values.tolist()
+
+        if no_data_years:
+            data = data[~data['Year'].isin(no_data_years)]
+            
+            if len(no_data_years) > 1:
+                no_data_string = ', '.join(no_data_years) + '.'
+            else:
+                no_data_string = no_data_years[0] + '.'
+        
+        else:
+            no_data_string =''
+
+        # Get string of categories with a '***' value; if none, string is empty
+        nsize_string = get_insufficient_n_size(data)
+
         for col in cols:
             data[col]=pd.to_numeric(data[col], errors='coerce')
-        
+
         data.sort_values('Year', inplace=True)
+
         data = data.reset_index(drop=True)
 
+        # NOTE: These are attempts to fix irregular axis lines
         # data_years = data['Year'].astype(int).tolist()
         
         #add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
@@ -319,17 +357,28 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         #         )
         #         data.at[data.index[-1], 'Year'] = y
 
+
+        # NOTE: More axis experiments
+        # fig.update_xaxes(constrain='domain')
+        # fig.update_xaxes(autorange='reversed')
+        # fig.update_xaxes(range=[2021, 2022])
+        # fig.update_xaxes(constraintoward='center')
+        # fig.update_xaxes(anchor='free')
+        # fig.update_yaxes(position=.5)
+
         fig = px.line(
             data,
             x='Year',
             y=cols,
             markers=True,
             color_discrete_sequence=color,
+            # custom_data = ['N_size']
         )
 
-        fig.update_traces(mode='markers+lines', hovertemplate=None)
+        # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
+        fig.update_traces(hovertemplate=None)
         fig.update_layout(
-            margin=dict(l=40, r=40, t=40, b=60),
+            margin=dict(l=40, r=40, t=40, b=0),
             title_x=0.5,
             font = dict(
                 family = 'Jost, sans-serif',
@@ -358,28 +407,21 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 zeroline=False,
                 # range = add_years
                 ),   
-            legend=dict(orientation='h'),         
+            legend=dict(
+                orientation='h'
+            ),
             hovermode='x unified',
             height=400,
             legend_title='',
         )
 
-        # NOTE: More experiments
-        # fig.update_xaxes(constrain='domain')
-        # fig.update_xaxes(autorange='reversed')
-        # fig.update_xaxes(range=[2021, 2022])
-        # fig.update_xaxes(constraintoward='center')
-        # fig.update_xaxes(anchor='free')
-        # fig.update_yaxes(position=.5)
+        # NOTE: Range is set at 0-100% for IREAD; everything else is 0-50%. At higher ranges, the values
+        # compress together and are hard to read (unfortunately).
+        if "IREAD Proficiency (Grade 3 only)" in data.columns:
+            range_vals = [0,1]
+        else:
+            range_vals = [0,.5]
 
-        # NOTE: The range is currently fixed at between 0 - 50% - at 100% everything is to compressed (sadly),
-        # may need to consider some kind of sliding range based on the max value
-        #TODO: if category is IREAD then range [0,1] else [0,.5]
-        print(data.columns[data.columns.str.contains('IREAD')])
-        if ~data.columns[data.columns.str.contains('IREAD')].empty:
-        # if 'IREAD' in data.columns:
-            print('IREAD!')
-        print(data)
         fig.update_yaxes(
             title='',
             mirror=True,
@@ -390,26 +432,127 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             showgrid=True,
             gridcolor='#b0c4de',
             zeroline=False,
-            range=[0, .5], 
+            range=range_vals, 
             dtick=.2,
             tickformat=',.0%',
         )
 
+        if nsize_string and no_data_string:
+            
+            fig_layout = [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                            html.Label(label, className = 'header_label'),
+                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            ],
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.P(
+                                            children=[
+                                            html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
+                                            html.Span(no_data_string, className = 'no_data_string'),
+                                            ],
+                                        ),
+                                        html.P(
+                                            children=[
+                                            html.Span('Insufficient n-size:', className = 'nsize_string_label'),
+                                            html.Span(nsize_string, className = 'nsize_string'),
+                                            ],
+                                        ),
+                                    ],
+                                    className = 'close_clean_container twelve columns'
+                                )
+                                ],
+                                className='row'
+                            ),
+                    ]
+                )
+            ]
+
+        elif nsize_string and not no_data_string:
+
+            fig_layout = [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                            html.Label(label, className = 'header_label'),
+                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            ],
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [                              
+                                        html.P(
+                                            children=[
+                                            html.Span('Insufficient n-size:', className = 'nsize_string_label'),
+                                            html.Span(nsize_string, className = 'nsize_string'),
+                                            ],
+                                        ),
+                                    ],
+                                    className = 'close_clean_container twelve columns'
+                                )
+                                ],
+                                className='row'
+                            ),
+                    ]
+                )
+            ]
+
+        elif no_data_string and not nsize_string:
+
+            fig_layout = [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                            html.Label(label, className = 'header_label'),
+                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            ],
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.P(
+                                            children=[
+                                            html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
+                                            html.Span(no_data_string, className = 'no_data_string'),
+                                            ],
+                                        ),
+                                    ],
+                                    className = 'close_clean_container twelve columns'
+                                )
+                                ],
+                                className='row'
+                            ),
+                    ]
+                )
+            ]
+
+        else:  
+            
+            fig_layout = [
+                html.Div(
+                    [
+                    html.Label(label, className = 'header_label'),
+                    dcc.Graph(figure = fig, config={'displayModeBar': False})
+                    ],
+                )
+            ]
+
     else:
 
-        fig = no_data_fig_blank()
+        fig_layout = no_data_fig_blank()
 
-    fig_layout = [
-        html.Div(
-            [
-            html.Label(label, className = 'header_label'),
-            dcc.Graph(figure = fig, config={'displayModeBar': False})
-            ]
-        )
-    ]
-
-    print(f'Processing line chart( ' + label + ' ): ' + str(time.process_time() - t9))
-
+    print(f'Processing line chart: ' + str(time.process_time() - t9)) #( ' + label + ' )
+    
     return fig_layout
 
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
@@ -559,7 +702,8 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
 
     data_set.reset_index(drop=True, inplace=True)
 
-    # Create text values for display. NOTE: This can be 99.9% done by setting 'text_auto=True'
+    # Create text values for display.
+    # NOTE: This can be 99.9% done by setting 'text_auto=True'
     # in 'fig' without setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
     # that is displayed for ''. This converts the series to a string in the proper format
     # and replaces nan with ''    
@@ -603,13 +747,9 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         linecolor='#b0c4de'
     )
 
-    # NOTE: right now, we are adding a negative bottomMargin to each fig in the layout to
-    # reduce the distance between the fig and the table. Is there a way to reduce the 
-    # margin within the fig itself? (fig.update_layout(yaxis=dict(range=[0, ymax*3])))
-
     fig.update_layout(
         title_x=0.5,
-        margin=dict(l=40, r=40, t=40, b=40),
+        margin=dict(l=40, r=40, t=40, b=10),
         font = dict(
             family='Open Sans, sans-serif',
             color='steelblue',

@@ -257,6 +257,75 @@ def round_percentages(percentages: list) -> list:
     # return just the percentage
     return [percentage[0] for percentage in result]
 
+# Take a dataframe, find the Categories and Years  where there are '***' (insufficient n-size) values,
+# and turn the results into a single string, grouped by year, where duplicates have one or more years
+# in parenthesis. E.g., 'White (2021, 2022); Hispanic, Multiracial (2019)'
+# NOTE: This turned out to be complicated. The below solution seems overly convoluted, but works. Felt
+# cute, may refactor later.
+def get_insufficient_n_size(data: pd.DataFrame) -> str:
+    """
+    Takes a dataframe, finds the Categories and Years where the value is equal
+    to '***'(insufficient n-size), and turns the results into a single string,
+    grouped by year, where duplicates have one or more years in parenthesis.
+    E.g., 'White (2021, 2022); Hispanic, Multiracial (2019)'
+
+    Args:
+        data (_type_): pd.DataFrame
+
+    Returns:
+        _type_: string
+    """
+
+    #  returns the indices of elements in a tuple of arrays where the condition is satisfied
+    insufficient_n_size = np.where(data == '***')
+
+    # creates a new dataframe from the respective indicies
+    df = pd.DataFrame(np.column_stack(insufficient_n_size),columns=['Year','Category'])
+
+    if len(df.index) > 0:
+        # use map, in conjunction with mask, to replace the index values in the dataframes with the Year
+        # and Category values
+        df['Category'] = df['Category'].mask(df['Category'] >= 0, df['Category'].map(dict(enumerate(data.columns.tolist()))))
+        df['Year'] = df['Year'].mask(df['Year'] >= 0, df['Year'].map(dict(enumerate(data['Year'].tolist()))))
+        
+        # strip everything after '|'
+        df["Category"] = (df["Category"].str.replace('\|.*$', '', regex=True))
+
+        # sort so earliest year is first
+        df = df.sort_values(by=['Year'], ascending=True)
+
+        # Shift the Year column one unit down then compare the shifted column with the
+        # non-shifted one to create a boolean mask which can be used to identify the
+        # boundaries between adjacent duplicate rows. then take the cumulative sum on
+        # the boolean mask to identify the blocks of rows where the value stays the same
+        c = df['Category'].ne(df['Category'].shift()).cumsum()
+
+        # group the dataframe on the above identfied blocks and aggregate the Year column
+        # using first and Message using .join
+        df = df.groupby(c, as_index=False).agg({'Category': 'first', 'Year': ', '.join})    
+
+        # then do the same thing for year
+        y = df['Year'].ne(df['Year'].shift()).cumsum()
+        df = df.groupby(y, as_index=False).agg({'Year': 'first', 'Category': ', '.join})   
+        
+        # reverse order of columns
+        df = df[df.columns[::-1]]
+        
+        # add parentheses around year values
+        df['Year'] = '(' + df['Year'].astype(str) + ')'
+
+        # Finally combine all rows into a single string.
+        int_string = [', '.join(val) for val in df.astype(str).values.tolist()]
+        df_string = '; '.join(int_string) + '.'
+
+        # clean up extra comma
+        df_string = df_string.replace(", (", " (" )
+
+    else:
+        df_string = ''
+
+    return df_string
+
 def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.ndarray:
     """
     Based on https://stackoverflow.com/q/43020919/190597
@@ -360,10 +429,6 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # NOTE: A more precise fix would be to keep all columns (including those with
     # no value in grant columns), but ignore/except (N/A) any calculation that requires
     # either grant revenue or adm. Need to test
-
-# TODO: Excel Elkhart Crashing here
-# TODO: The pre-opening data is crashing - after it strips out the first year there is any empty dataframe
-# TODO: THINK IVE SCREWED UP SOME OF THE LEN() CHECKS BYLEAVING OFF INDEX. CHECK
 
     operating_data = data.loc[:,~(data.iloc[1]==0)].copy()
 

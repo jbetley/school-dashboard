@@ -102,7 +102,7 @@ def get_excluded_years(year):
     for i in range(excluded_academic_years):
         excluded_year = int(current_academic_year) - i
         excluded_years.append(excluded_year)
-    
+
     return excluded_years
 
 def get_attendance_data(data, year):
@@ -299,10 +299,12 @@ def calculate_proficiency(values):
 # NaN, all associated columns are dropped
     data = values.copy()
 
+    # print(data.T)
     # Get a list of all 'Total Tested' columns except those for ELA & Math
     tested_categories = data[data.columns[data.columns.str.contains(r'Total Tested')]].columns.tolist()
     tested_categories = [i for i in tested_categories if 'ELA and Math' not in i]
 
+    # print(tested_categories)
     for total_tested in tested_categories:
         if total_tested in data.columns:
             
@@ -326,20 +328,17 @@ def calculate_proficiency(values):
 ### End Helper Functions ###
 
 ### Dataframe Formatting Functions ###
-def process_k8_academic_data(all_data, year, school):
-    
+def process_k8_academic_data(data, year, school):
+
     school_information = get_school_index(school)
 
     # use these to determine if data belongs to school or corporation
     school_geo_code = school_information["GEO Corp"].values[0]
-    data_geo_code = all_data['Corporation ID'][0]
 
-    excluded_years = get_excluded_years(year)
+    # Ensure geo_code is always at index 0
+    data = data.reset_index(drop = True)
 
-    if excluded_years:
-        data = all_data[~all_data["Year"].isin(excluded_years)].copy()
-    else:
-        data = all_data.copy()
+    data_geo_code = data['Corporation ID'][0]
 
     # school data has School Name column, corp data does not
     if len(data.index) != 0:
@@ -362,9 +361,29 @@ def process_k8_academic_data(all_data, year, school):
             for col in data.columns:
                 data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
-        # NOTE: Apparently we cannot filter columns by substring with SQLite because
-        # it does not allow dynamic SQL - so we filter here
+        # Filter and clean the dataframe
         data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+
+        # Drop 'ELA and Math'
+        data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]].copy()
+      
+        # Drop all columns for a Category if the value of 'Total Tested' for that Category is '0'
+        # This method works even if data is inconsistent, e.g., where no data could be (and is)
+        # alternately represented by NULL, None, or '0'
+        tested_cols = data.filter(regex='Total Tested').columns.tolist()
+
+        # TODO: Can i use this for the proficiency shite in academic info too?
+        drop_columns=[]
+        for col in tested_cols:
+            if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
+
+                match_string = ' Total Tested'
+                matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(match_string)[0])]
+                drop_columns.append(matching_cols.tolist())   
+
+        drop_all = [i for sub_list in drop_columns for i in sub_list]
+
+        data = data.drop(drop_all, axis=1).copy()
 
         if "School Total|ELA Total Tested" in data.columns:
 
@@ -416,66 +435,71 @@ def process_k8_academic_data(all_data, year, school):
     return data
 
 def filter_high_school_academic_data(data):
-# Iterates over all 'Total Tested' columns - if the value of 'Total Tested' for a
-# particular 'Category' and 'Subject' (e.g., 'Multiracial|Math) is 0, drop all
-# columns (e.g., 'Approaching Benchmark', 'At Benchmark', etc.) for that 'Category'
-# and 'Subject'
-    if len(data) > 0:
+    # NOTE: Drop columns without data. Generally, we want to keep 'result' (e.g., 'Graduates', 'Pass N',
+    # 'Benchmark') columns with '0' values if the 'tested' (e.g., 'Cohort Count', 'Total Tested',
+    # 'Test N') values are greater than '0'. The data is pretty shitty as well, using blank, null,
+    # and '0' interchangeably depending on the type. This makes it difficult to simply use dropna() or
+    # masking with any() because they may erroneously drop a 0 value that we want to keep. So we need to
+    # iterate through each tested category, if it is NaN or 0, we drop it and all associate categories.
+
+# TODO: Just move this filtration to its own function for all academic data
+    if len(data.index) > 0:
         data = data.replace({"^": "***"})
 
         # school data: coerce to numeric but keep strings ('***')
         for col in data.columns:
             data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
-        # Separate SAT data categories and Other data categories into separate dfs
-        sat_data = data[data.columns[data.columns.str.contains(r'Year|Benchmark|Total Tested')]].copy()
-        other_data = data[data.columns[~data.columns.str.contains(r'Benchmark|Total Tested')]].copy()
-        
-        # clean SAT data
-        tested_cols = sat_data.filter(like='Total Tested').columns.tolist()
+        # Drop: 'Graduation Rate', 'Percent Pass', 'ELA and Math' (never need these)
+        data = data[data.columns[~data.columns.str.contains(r'Graduation Rate|Percent Pass|ELA and Math')]].copy()
+
+        # Drop: all SAT related columns ('Approaching Benchmark', 'At Benchmark', etc.)
+        # for a Category if the value of 'Total Tested' for that Category is '0'
+        # sat_tested_cols = data.filter(like='Total Tested').columns.tolist()
+
+        tested_cols = data.filter(regex='Total Tested|Cohort Count|Test N').columns.tolist()
+
         drop_columns=[]
         for col in tested_cols:
-            if sat_data[col].values[0] == 0:
-                matching_cols = sat_data.columns[pd.Series(sat_data.columns).str.startswith(col.split(' Total')[0])]
-                drop_columns.append(matching_cols.tolist())                     
+            if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
+                
+                if 'Total Tested' in col:
+                    match_string = ' Total Tested'
+                elif 'Cohort Count' in col:
+                    match_string = '|Cohort Count'
+                elif 'Test N' in col:
+                    match_string = ' Test N'
+
+                matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(match_string)[0])]
+                drop_columns.append(matching_cols.tolist())   
 
         drop_all = [i for sub_list in drop_columns for i in sub_list]
 
-        sat_data = sat_data.drop(drop_all, axis=1).copy()
+        # ALT: data = data.loc[:,~data.columns.str.contains(drop_all, case=False)] 
+        data = data.drop(drop_all, axis=1).copy()
 
-        # clean 'other' data
-        # NOTE: Need to do this separately because we want to keep '0' values for SAT
-        # Categories with Tested students.
-        valid_column_mask = other_data.any()
-        # valid_mask = ~pd.isnull(data[data.columns]).all()        
+        final_data = data.copy()
 
-        other_data = other_data[other_data.columns[valid_column_mask]]
-        
-        final_data = other_data.merge(sat_data, how = 'outer')
-    
     else:
         final_data = pd.DataFrame()
 
     return final_data
     
-def process_high_school_academic_data(all_data, year, school):
+def process_high_school_academic_data(data, year, school):
 
     school_information = get_school_index(school)
 
     # use these to determine if data belongs to school or corporation
     school_geo_code = school_information["GEO Corp"].values[0]
-    data_geo_code = all_data['Corporation ID'][0]
 
-    excluded_years = get_excluded_years(year)
+    # Ensure geo_code is always at index 0
+    data = data.reset_index(drop = True)
 
-    if excluded_years:
-        data = all_data[~all_data["Year"].isin(excluded_years)].copy()
-    else:
-        data = all_data.copy()
+    data_geo_code = data['Corporation ID'][0]
 
     school_type = data["School Type"].values[0]
 
-    if len(data.index) != 0:
+    if len(data.index) > 0:
         # We identify 'corp' data where the value of 'Corporation ID' in the df is equal
         # to the value of the school's 'GEO Corp'.
         if data_geo_code == school_geo_code:
@@ -493,11 +517,6 @@ def process_high_school_academic_data(all_data, year, school):
 
         # remove 'ELA and Math' columns (NOTE: Comment this out to retain 'ELA and Math' columns)
         data = data.drop(list(data.filter(regex="ELA and Math")), axis=1)
-
-        # mask of valid columns only
-        # valid_mask = data.any()
-        # valid_mask = ~pd.isnull(data[data.columns]).all()
-        # data = data[data.columns[valid_mask]]
 
         if data_geo_code == school_geo_code:
 
@@ -573,16 +592,13 @@ def process_high_school_academic_data(all_data, year, school):
 
     return data
 
-
 ### Calculate Accountability Metrics ###
 
-def calculate_adult_high_school_metrics(school):
-    # AHS metrics is such a small subset of all metrics, instead of pulling in entire HS DF, we just pull the three
-    # datapoints we need directly from the DB.
+def calculate_adult_high_school_metrics(school, data):
+    # AHS metrics is such a small subset of all metrics, instead of pulling in the
+    # entire HS DF, we just pull the three datapoints we need directly from the DB.
 
-    data = get_adult_high_school_metric_data(school)
-
-    if len(data) > 0:
+    if len(data.index) > 0:
         data.columns = data.columns.astype(str)
 
         data["CCR Percentage"] = pd.to_numeric(data["AHS|CCR"]) / pd.to_numeric(data["AHS|Grad All"])
