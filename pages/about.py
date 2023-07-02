@@ -55,7 +55,7 @@ def update_about_page(year: str, school: str):
     school_name = selected_school['School Name'].values[0]
     headers = ['Category','Description']
 
-    # selected_school.columns shows additional values that can be displayed
+    # see selected_school.columns for additional values that can be displayed
     info = selected_school[['City','Principal','Opening Year']]
 
     school_info = info.T
@@ -123,8 +123,7 @@ def update_about_page(year: str, school: str):
 
     else:
 
-        # Build enrollment table
-
+        # Enrollment table
         corp_id = str(selected_school['GEO Corp'].values[0])
         corp_demographics = get_demographic_data(corp_id)
 
@@ -139,7 +138,6 @@ def update_about_page(year: str, school: str):
         subgroup_title = 'Enrollment by Subgroup ' + '(' + year_string + ')'
 
         if len(school_demographics.index) == 0:
-
             enroll_table = no_data_table(enroll_title)
 
         else:
@@ -202,7 +200,6 @@ def update_about_page(year: str, school: str):
 
         # State grades and Federal ratings table
         if len(school_letter_grades.index) == 0:
-
             letter_grade_table = no_data_table('State and Federal Ratings')
 
         else:

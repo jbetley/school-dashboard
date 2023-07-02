@@ -530,7 +530,6 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         metric_grid['Days Cash Metric'] = \
             metric_grid.apply(lambda x: days_cash_metric_calc(x['Days Cash on Hand'], x['Days Cash Trend']), axis=1)
 
-
         # Annual Enrollment Change calculation
         metric_grid['Annual Enrollment Change'] = \
             (metrics['ADM Average'].shift(1) - metrics['ADM Average']) / metrics['ADM Average']
@@ -572,13 +571,14 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         # Assets Margin for the most recent year is positive. For schools in their first and
         # second year of operation, the cumulative Change in Net Assets Margin must be positive.
         def asset_margin_calc(chcur,agcur,diff):
-            return 'MS' if ((
-                (chcur > 0) & (agcur > 0)) | \
-                (((chcur > 0) & (agcur > .015)) & (diff == True)) \
+            return 'MS' if (
+                ((chcur > 0) & (agcur > 0)) | 
+                (((chcur > 0) & (agcur > .015)) & (diff == True))
             ) else 'DNMS'
 
         metric_grid['Aggregated Three-Year Margin Metric'] = \
             metric_grid.apply(lambda x: asset_margin_calc(x['Change in Net Assets Margin'], x['Aggregated Three-Year Margin'],x['AgMar Trend']), axis=1)
+        
         metric_grid['Change in Net Assets Margin Metric'] = \
             metric_grid.apply(lambda x: asset_margin_calc(x['Change in Net Assets Margin'], x['Aggregated Three-Year Margin'],x['AgMar Trend']), axis=1)
         
@@ -653,7 +653,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         else:
             metric_grid.loc[metric_grid.index[-1],'Cash Flow Metric'] = 'DNMS'
 
-        # CHNM Metric is 'MS' if first + second year value is > 0
+        # Metric is 'MS' if first + second year value is > 0
         # Only test if there are at least 2 years of data
         if len(metric_grid.index) >= 2:        
             if (metric_grid.loc[metric_grid.index[-1],'Cash Flow'] > 0) & (metric_grid.loc[metric_grid.index[-2],'Cash Flow'] > 0):
@@ -661,7 +661,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
             else:
                 metric_grid.loc[metric_grid.index[-2],'Cash Flow Metric'] = 'DNMS'
 
-        # if Multi-Year Cash Flow is NaN (no calculation is possible), Multi-Year Cash FlowMetric should be N/A
+        # if Multi-Year Cash Flow is NaN (no calculation is possible), Multi-Year Cash Flow Metric should be N/A
         metric_grid.loc[metric_grid['Multi-Year Cash Flow'].isnull(), 'Multi-Year Cash Flow Metric'] = 'N/A'
 
         # Debt Service Coverage Ratio
@@ -748,6 +748,6 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     
         # force year columns to numeric and round
         for col in year_cols:
-            final_grid[col] = pd.to_numeric(final_grid[col], errors='coerce').round(2) #.fillna(final_grid[col])
+            final_grid[col] = pd.to_numeric(final_grid[col], errors='coerce').round(2)
 
     return final_grid

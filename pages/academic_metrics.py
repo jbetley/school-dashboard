@@ -21,12 +21,13 @@ pd.set_option('display.max_rows', None)
 from .table_helpers import no_data_page, no_data_table, create_metric_table, \
     set_table_layout, get_svg_circle, create_key
 from .subnav import subnav_academic
-from .load_data import school_index, ethnicity, subgroup, grades_all, process_k8_academic_data, \
+from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data, \
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
         calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
         calculate_adult_high_school_metrics, filter_high_school_academic_data, get_excluded_years, \
         get_adult_high_school_metric_data
-from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_high_school_corporation_academic_data
+from .load_db import get_school_index, get_k8_school_academic_data, get_high_school_academic_data, \
+    get_high_school_corporation_academic_data
 
 dash.register_page(__name__,  path = '/academic_metrics', order=5)
 
@@ -72,9 +73,11 @@ def update_academic_metrics(school: str, year: str):
     empty_container = {'display': 'none'}
     no_data_to_display = no_data_page('Academic Metrics')    
 
-    selected_school = school_index.loc[school_index['School ID'] == school]
+    # selected_school = school_index.loc[school_index['School ID'] == school]
+    # selected_school_type = selected_school['School Type'].values[0]
+    selected_school = get_school_index(school)
     selected_school_type = selected_school['School Type'].values[0]
-        
+      
      # Adult High School Academic Metrics
     if selected_school_type == 'AHS':
 

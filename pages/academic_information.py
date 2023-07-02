@@ -94,9 +94,9 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
     empty_growth_container = {'display': 'none'}
     no_growth_data_to_display = no_data_page('Academic Growth')
 
-    selected_school_info = get_school_index(school)
-    selected_school_type = selected_school_info['School Type'].values[0]
-    selected_school_id = int(selected_school_info['School ID'].values[0])
+    selected_school = get_school_index(school)
+    selected_school_type = selected_school['School Type'].values[0]
+    selected_school_id = int(selected_school['School ID'].values[0])
 
     ## Proficiency Tables ##
     if radio_value == 'proficiency':

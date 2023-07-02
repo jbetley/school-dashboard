@@ -18,7 +18,7 @@ from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, ma
 from .table_helpers import create_comparison_table, no_data_page, no_data_table, create_school_label, \
     process_chart_data, process_table_data, create_school_label, create_chart_label
 from .subnav import subnav_academic
-from .load_data import all_academic_data_k8, ethnicity, subgroup, ethnicity, info_categories, \
+from .load_data import ethnicity, subgroup, ethnicity, info_categories, \
    process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency, get_excluded_years
 from .load_db import get_k8_school_academic_data, get_school_index, \
     get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
@@ -257,14 +257,13 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
     else:
 
-
         selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
         clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, numeric_year, school)
-
+        
         print(f'Time to load and process K8 data: ' + str(time.process_time() - t1))
         
-        t2 = time.process_time()        
+        t2 = time.process_time()
         
         raw_comparison_data = calculate_k8_comparison_metrics(clean_school_data, numeric_year, school)
 
@@ -329,7 +328,8 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             # Chart 1: Year over Year ELA Proficiency by Grade (1.4.a)
             fig14a_data = yearly_school_data.filter(regex = r'^Grade \d\|ELA|^School Name$|^Year$',axis=1)
             
-            # NOTE: make_line_chart() returns a layout as a list (either a chart with data or an empty chart)
+            # NOTE: make_line_chart() returns a list (plotly dash html layout), it either
+            # contains a chart (if data) or a empty no data fig
             fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
 
             # Chart 2: Year over Year Math Proficiency by Grade (1.4.b)
@@ -393,8 +393,11 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             current_school_data['School Name'] = school_name
 
             # Grade range data is used for the chart 'hovertemplate'
-            current_school_data['Low Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == string_year)]['Low Grade'].values[0]
-            current_school_data['High Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == string_year)]['High Grade'].values[0]
+            # current_school_data['Low Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == string_year)]['Low Grade'].values[0]
+            # current_school_data['High Grade'] = all_academic_data_k8.loc[(all_academic_data_k8['School ID'] == school) & (all_academic_data_k8['Year'] == string_year)]['High Grade'].values[0]
+            
+            current_school_data['Low Grade'] =  selected_raw_k8_school_data.loc[(selected_raw_k8_school_data['Year'] == numeric_year), 'Low Grade'].values[0]
+            current_school_data['High Grade'] =  selected_raw_k8_school_data.loc[(selected_raw_k8_school_data['Year'] == numeric_year), 'High Grade'].values[0]
 
             t4 = time.process_time()
 

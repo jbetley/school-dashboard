@@ -23,14 +23,14 @@ pd.set_option('display.max_rows', None)
 print("#### Loading Data. . . . . ####")
 
 # NOTE: No K8 academic data exists for 2020
-school_index = pd.read_csv(r"data/school_index.csv", dtype=str)
-school_academic_data_k8 = pd.read_csv(r"data/school_data_k8.csv", dtype=str)
-all_academic_data_hs = pd.read_csv(r"data/academic_data_hs.csv", dtype=str)
-all_academic_data_k8 = pd.read_csv(r"data/academic_data_k8.csv", dtype=str)
-corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
-all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
+# school_index = pd.read_csv(r"data/school_index.csv", dtype=str)
+# school_academic_data_k8 = pd.read_csv(r"data/school_data_k8.csv", dtype=str)
+# all_academic_data_hs = pd.read_csv(r"data/academic_data_hs.csv", dtype=str)
+# all_academic_data_k8 = pd.read_csv(r"data/academic_data_k8.csv", dtype=str)
+# corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
+# all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
 
-financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
+# financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
 
 # global integers
 current_academic_year = get_current_year()
@@ -130,7 +130,8 @@ def get_attendance_data(data, year):
 
 def get_attendance_metrics(school, year):
 
-    selected_school = school_index.loc[school_index["School ID"] == school]
+    # selected_school = school_index.loc[school_index["School ID"] == school]
+    selected_school = get_school_index(school)    
     corp_id = selected_school['GEO Corp'].values[0]
 
     corp_demographics = get_demographic_data(corp_id)
@@ -355,7 +356,7 @@ def process_k8_academic_data(data, year, school):
        
         else:
        
-            school_info = data[["School Name"]].copy()
+            school_info = data[['School Name','Low Grade','High Grade']].copy()
             
             # school data: coerce, but keep strings ('***' and '^')
             for col in data.columns:
@@ -816,6 +817,9 @@ def calculate_high_school_metrics(merged_data):
 def calculate_k8_yearly_metrics(data):
     
     data.columns = data.columns.astype(str)
+    
+    # drop low/high grade rows
+    data = data[(data["Category"] != 'Low Grade') & (data["Category"] != 'High Grade')]
     
     category_header = data["Category"]
     data = data.drop("Category", axis=1)

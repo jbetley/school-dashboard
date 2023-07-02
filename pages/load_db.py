@@ -245,19 +245,6 @@ def get_adult_high_school_metric_data(*args):
     
     return run_query(q, params)
 
-# Get ADM
-# Input: school_id
-# def get_adm(school_id):
-#     params = dict(id=school_id)
-#     q = text('''
-#         SELECT school_index.SchoolName, icsb_school_adm.*
-#             FROM school_index
-#             INNER JOIN icsb_school_adm ON school_index.SchoolID=icsb_school_adm.SchoolID
-#             WHERE school_index.SchoolID = :id
-#         ''')
-#     return run_query(q, params)
-
-
 # School Academic Data (k8)
 def get_k8_school_academic_data(*args):
     keys = ['id']
@@ -312,7 +299,6 @@ def get_high_school_corporation_academic_data(*args):
         ''')
     return run_query(q, params)
 
-
 def get_school_coordinates(*args):
     keys = ['year']
     params = dict(zip(keys, args))
@@ -349,13 +335,13 @@ def get_comparable_schools(*args):
 
 # Input: school_id
 
-def get_comparison_data(school_list):
-    params = dict(id=school_list)
-    q = text('''
-        SELECT *
-            FROM all_k8_data
-            WHERE SchoolID IN :school_list)
-    ''')
-    return run_query(q, params)
+# def get_comparison_data(school_list):
+#     params = dict(id=school_list)
+#     q = text('''
+#         SELECT *
+#             FROM all_k8_data
+#             WHERE SchoolID IN :school_list)
+#     ''')
+#     return run_query(q, params)
 
 # TODO: Missing: financial_ratios?
