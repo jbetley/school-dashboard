@@ -13,15 +13,15 @@ import time
 
 # import local functions
 from .calculations import find_nearest, filter_grades
-from .chart_helpers import no_data_fig_label, make_line_chart,make_bar_chart, make_group_bar_chart, \
+from .chart_helpers import no_data_fig_label, make_line_chart, make_bar_chart, make_group_bar_chart, \
     combine_barchart_and_table
 from .table_helpers import create_comparison_table, no_data_page, no_data_table, create_school_label, \
     process_chart_data, process_table_data, create_school_label, create_chart_label
 from .subnav import subnav_academic
-from .load_data import ethnicity, subgroup, ethnicity, info_categories, \
-   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency, get_excluded_years
-from .load_db import get_k8_school_academic_data, get_school_index, \
-    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
+from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_excluded_years, \
+   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency
+from .load_db import get_k8_school_academic_data, get_school_index, get_school_coordinates, \
+    get_comparable_schools, get_k8_corporation_academic_data
 
 dash.register_page(__name__, path = '/academic_analysis', order=6)
 
@@ -42,7 +42,6 @@ def set_dropdown_options(school, year, comparison_schools):
     string_year = '2019' if year == '2020' else year
     numeric_year = int(string_year)
 
-# TODO: Clean up all of the return empties  [],[],[]  
     t0 = time.process_time()
 
     # clear the list of comparison_schools when a new school is
@@ -55,113 +54,117 @@ def set_dropdown_options(school, year, comparison_schools):
     selected_school = get_school_index(school)
     selected_school_type = selected_school['School Type'].values[0]
 
-    #prevents HS and AHS from generating a list of comparable schools.
+    # There is some time cost for running this function (typically ~0.8 - 1.2s), so
+    # we want to exit out as early as possible if we know it isn't necessary
+    # HS and AHS should never generate a list of comparable schools.
     if (selected_school_type == 'HS' or selected_school_type == 'AHS'):
         return [],[],[]
     
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
     schools_by_distance = get_school_coordinates(numeric_year)
 
-    # drop schools with no grade overlap with selected school by getting school grade span and filtering
-    # if it is a year when the school didnt exist, return empty
-    if int(school) in schools_by_distance['School ID'].values:
+    # drop schools with no grade overlap with selected school by getting
+    # school grade span and filtering
+    
+    # It is a year when the school didnt exist
+    if int(school) not in schools_by_distance['School ID'].values:
+        return [],[],[]
+    
+    else:
         school_grade_span = schools_by_distance.loc[schools_by_distance['School ID'] == int(school)][['Low Grade','High Grade']].values[0].astype(str).tolist()
         school_grade_span = [s.replace('KG', '1').replace('PK', '0') for s in school_grade_span]
         school_grade_span = [int(i) for i in school_grade_span]
-    else:
-        return [],[],[]
 
-    # ignore PreK(0) and K(1)
-    low_bound = 3 if school_grade_span[0] < 3 else school_grade_span[0]
-    school_grade_range = list(range(low_bound,(school_grade_span[1]+1)))
+        # ignore PreK(0) and K(1)
+        low_bound = 3 if school_grade_span[0] < 3 else school_grade_span[0]
+        school_grade_range = list(range(low_bound,(school_grade_span[1]+1)))
 
-    # PK and KG are not tested grades
-    schools_by_distance = schools_by_distance.replace({'Low Grade' : { 'PK' : 0, 'KG' : 1}})
+        # PK and KG are not tested grades
+        schools_by_distance = schools_by_distance.replace({'Low Grade' : { 'PK' : 0, 'KG' : 1}})
 
-    grade_mask = schools_by_distance.apply(filter_grades, compare=school_grade_range, axis=1)
-    schools_by_distance = schools_by_distance[grade_mask]
+        grade_mask = schools_by_distance.apply(filter_grades, compare=school_grade_range, axis=1)
+        schools_by_distance = schools_by_distance[grade_mask]
+        
+        # reset index and make a copy to re-add School Names after distance sort
+        schools_by_distance = schools_by_distance.reset_index(drop = True)
+        all_schools = schools_by_distance.copy()
+
+        # get school index
+        school_idx = schools_by_distance[schools_by_distance['School ID'] == int(school)].index
+
+        # NOTE: This should never ever happen because we've already determined that the school exists in
+        # the check above. However, it did happen once, somehow, so we leave this in here just in case.
+        if school_idx.size == 0:
+            return [],[],[]
+        
+        # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
+        index_array, dist_array = find_nearest(school_idx,schools_by_distance)
+
+        index_list = index_array[0].tolist()
+        distance_list = dist_array[0].tolist()
+
+        # Match School ID with indexes
+        closest_schools = pd.DataFrame()
+        closest_schools['School ID'] = schools_by_distance[schools_by_distance.index.isin(index_list)]['School ID']
+
+        # Merge the index and distances lists into a dataframe
+        distances = pd.DataFrame({'index':index_list, 'y':distance_list})
+        distances = distances.set_index(list(distances)[0])
+
+        # Merge School ID with Distances by index
+        combined = closest_schools.join(distances)
+
+        # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
+        comparison_set = pd.merge(combined, all_schools, on='School ID', how='inner')
+        comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
     
-    # reset index and make a copy to re-add School Names after distance sort
-    schools_by_distance = schools_by_distance.reset_index(drop = True)
-    all_schools = schools_by_distance.copy()
+        # drop selected school (so it cannot be selected in the dropdown)
+        comparison_set = comparison_set.drop(comparison_set[comparison_set['School ID'] == int(school)].index)
 
-    # get school index
-    school_idx = schools_by_distance[schools_by_distance['School ID'] == int(school)].index
+        # limit maximum dropdown to the [n] closest schools
+        num_schools_expanded = 20
 
-    # if school doesn't exist in the datafile for some reason dropdown is empty
-    if school_idx.size == 0:
-        return [],[],[]
-    
-    # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
-    index_array, dist_array = find_nearest(school_idx,schools_by_distance)
+        comparison_set = comparison_set.sort_values(by=['Distance'], ascending=True)
 
-    index_list = index_array[0].tolist()
-    distance_list = dist_array[0].tolist()
+        comparison_dropdown = comparison_set.head(num_schools_expanded)
 
-    # Match School ID with indexes
-    closest_schools = pd.DataFrame()
-    closest_schools['School ID'] = schools_by_distance[schools_by_distance.index.isin(index_list)]['School ID']
+        comparison_dict = dict(zip(comparison_dropdown['School Name'], comparison_dropdown['School ID']))
 
-    # Merge the index and distances lists into a dataframe
-    distances = pd.DataFrame({'index':index_list, 'y':distance_list})
-    distances = distances.set_index(list(distances)[0])
+        # final list will be displayed in order of increasing distance from selected school
+        comparison_list = dict(comparison_dict.items())
 
-    # Merge School ID with Distances by index
-    combined = closest_schools.join(distances)
+        # Set default display selections to all schools in the list and
+        # the number of options to be pre-selected to 4
+        default_options = [{'label':name,'value':id} for name, id in comparison_list.items()]
+        options = default_options
 
-    # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
-    comparison_set = pd.merge(combined, all_schools, on='School ID', how='inner')
-    comparison_set = comparison_set.rename(columns = {'y': 'Distance'})
- 
-    # drop selected school (so it cannot be selected in the dropdown)
-    comparison_set = comparison_set.drop(comparison_set[comparison_set['School ID'] == int(school)].index)
+        # value for number of default display selections and maximum
+        # display selections (because of zero indexing, max should be
+        # 1 less than actual desired number)
+        default_num_to_display = 4
+        max_num_to_display = 7
 
-    # limit maximum dropdown to the [n] closest schools
-    num_schools_expanded = 20
+        # used to display message if the number of selections exceeds the max
+        input_warning = None
 
-    comparison_set = comparison_set.sort_values(by=['Distance'], ascending=True)
+        # if list is None or empty ([]), use the default options
+        if not comparison_schools:
+            comparison_schools = [d['value'] for d in options[:default_num_to_display]]
 
-    comparison_dropdown = comparison_set.head(num_schools_expanded)
+        else:
+            if len(comparison_schools) > max_num_to_display:
+                input_warning = html.P(
+                    id='input-warning',
+                    children='Limit reached (Maximum of ' + str(max_num_to_display+1) + ' schools).',
+                )
+                options = [
+                    {'label': option['label'], 'value': option['value'], 'disabled': True}
+                    for option in default_options
+                ]
+        
+        print(f'Time to create dropdown: ' + str(time.process_time() - t0))
 
-    comparison_dict = dict(zip(comparison_dropdown['School Name'], comparison_dropdown['School ID']))
-
-    # final list will be displayed in order of increasing distance from selected school
-    comparison_list = dict(comparison_dict.items())
-
-    # Set default display selections to all schools in the list and
-    # the number of options to be pre-selected to 4
-    default_options = [{'label':name,'value':id} for name, id in comparison_list.items()]
-    options = default_options
-
-    # value for number of default display selections and maximum
-    # display selections (because of zero indexing, max should be
-    # 1 less than actual desired number)
-    default_num_to_display = 4
-    max_num_to_display = 7
-
-    # the following tracks the number of selections and disables all remaining
-    # selections once 8 schools have been selected
-    input_warning = None
-
-    # if list is None or empty ([]), use the default options
-    if not comparison_schools:
-        comparison_schools = [d['value'] for d in options[:default_num_to_display]]
-
-    else:
-
-        if len(comparison_schools) > max_num_to_display:
-            input_warning = html.P(
-                id='input-warning',
-                children='Limit reached (Maximum of ' + str(max_num_to_display+1) + ' schools).',
-            )
-            options = [
-                {'label': option['label'], 'value': option['value'], 'disabled': True}
-                for option in default_options
-            ]
-    
-    print(f'Time to create dropdown: ' + str(time.process_time() - t0))
-
-    return options, input_warning, comparison_schools
+        return options, input_warning, comparison_schools
 
 @callback(
     Output('fig14a', 'children'),

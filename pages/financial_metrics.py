@@ -306,6 +306,13 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                                     'text-decoration': 'underline',
                                                     'fontWeight': 'bold'
                                                 },
+                                                {
+                                                    'if': {
+                                                        'state': 'selected'
+                                                    },
+                                                    'backgroundColor': 'rgba(112,128,144, .3)',
+                                                    'border': 'thin solid silver'
+                                                }                                                
                                             ],
                                             style_header={
                                                 'height': '20px',
@@ -417,7 +424,15 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                                             'row_index': 'odd'
                                                         },
                                                         'backgroundColor': '#eeeeee',
-                                                    },
+                                                    }
+                                                ] + [
+                                                    {
+                                                        'if': {
+                                                            'state': 'selected'
+                                                        },
+                                                        'backgroundColor': 'rgba(112,128,144, .3)',
+                                                        'border': 'thin solid silver'
+                                                    }
                                                 ] + [
                                                     {
                                                         'if': {
@@ -521,6 +536,13 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                             },
                                             'borderTop': '.75px solid rgb(103,131,169)'
                                         },
+                                        {
+                                            'if': {
+                                                'state': 'selected'
+                                            },
+                                            'backgroundColor': 'rgba(112,128,144, .3)',
+                                            'border': 'thin solid silver'
+                                        }                                        
                                     ],
                                     style_header={
                                         'backgroundColor': '#ffffff',

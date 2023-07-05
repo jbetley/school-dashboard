@@ -156,6 +156,7 @@ app = dash.Dash(
     use_pages=True,
     external_stylesheets=external_stylesheets,
     suppress_callback_exceptions=True,
+    compress=False,
     meta_tags=[
     {
         "name": "viewport",
@@ -220,7 +221,7 @@ def set_dropdown_value(charter_options):
     Input("year-dropdown", "value"),
     Input('current-page', 'href'),
 )
-def set_year_dropdown_options(school_id, year, current_page):
+def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
     # TODO: Change to 5 years in 2023
     max_dropdown_years = 4
@@ -248,7 +249,7 @@ def set_year_dropdown_options(school_id, year, current_page):
     # for the school
     if year is None:
         year_value = str(current_academic_year)
-    elif int(year) < first_available_year:
+    elif int(year) < int(first_available_year):
         year_value = str(first_available_year)
     else:
         year_value = str(year)
@@ -269,6 +270,7 @@ app.layout = html.Div(
         # the next two components are used by the year dropdown callback to determine the current url
         dcc.Location(id='current-page', refresh=False),
         html.Div(id='hidden', style={"display": "none"}),
+        
         html.Div(
             [
                 html.Div(

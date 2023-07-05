@@ -359,9 +359,9 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                 'if': {
                     'state': 'selected'
                 },
-                'backgroundColor': 'rgba(0, 116, 217, 0.3)',
-                'border': 'none',
-            }     
+                'backgroundColor': 'rgba(112,128,144, .3)',
+                'border': 'thin solid silver'
+            } 
         ]
 
         data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
@@ -448,9 +448,9 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                 'if': {
                     'state': 'selected'
                 },
-                'backgroundColor': 'rgba(0, 116, 217, 0.3)',
-                'border': 'none',
-            },            
+                'backgroundColor': 'rgba(112,128,144, .3)',
+                'border': 'thin solid silver'
+            },
             {
                 'if': {
                     'row_index': 'odd'
@@ -809,8 +809,8 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
                 'if': {
                     'state': 'selected'
                 },
-                'backgroundColor': 'rgba(0, 116, 217, 0.3)',
-                'border': 'none',
+                'backgroundColor': 'rgba(112,128,144, .3)',
+                'border': 'thin solid silver'
             }
         ],
         style_header={
@@ -938,8 +938,8 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                         'if': {
                             'state': 'selected'
                         },
-                        'backgroundColor': 'rgba(0, 116, 217, 0.3)',
-                        'border': 'none',
+                        'backgroundColor': 'rgba(112,128,144, .3)',
+                        'border': 'thin solid silver'
                     }
                 ],
                 style_header =  {

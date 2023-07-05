@@ -23,9 +23,7 @@ def subnav_finance():
                 if page["path"].startswith('/financial')
             ],
             className='sub-tabs',
-            style={
-                "marginTop": "-40px",
-    }
+            style={"marginTop": "-40px"}
         )
     )
 
@@ -43,8 +41,6 @@ def subnav_academic():
                 if page["path"].startswith("/academic")
             ],
             className='sub-tabs',
-                        style={
-                "marginTop": "-40px",
-    }
+            style={"marginTop": "-40px"}
         )
     )    

@@ -16,7 +16,7 @@
 /* header a img{
   width: 134px;
   margin-top: 4px;
-} */ */
+} */
 .login-page {
   width: 360px;
   padding: 8% 0 0;
@@ -85,6 +85,21 @@
 
 } */
 </style>
+<!-- <script>
+document.addEventListener("DOMContentLoaded", function() {
+  $(function() {
+  let pageName = location.pathname.split('/').slice(-1)[0];
+  console.log(pageName)
+  let currentLink = $('.navbar-nav .nav-item a[href="' + pageName + '"]');
+  if (currentLink) {
+  
+    $('.navbar-nav .nav-item').removeClass('active');
+    currentLink.parent().addClass('active');
+  }
+});
+});
+
+</script> -->
 </head>
 <!-- <header>
   <div class="login-image" style="text-align: center">

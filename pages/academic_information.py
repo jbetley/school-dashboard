@@ -92,7 +92,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
     
     main_growth_container = {'display': 'block'}
     empty_growth_container = {'display': 'none'}
-    no_growth_data_to_display = no_data_page('Academic Growth')
+    no_growth_data_to_display = no_data_page('Federal Growth Calculations')
 
     selected_school = get_school_index(school)
     selected_school_type = selected_school['School Type'].values[0]

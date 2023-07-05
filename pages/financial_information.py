@@ -308,6 +308,13 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                                                 },
                                                 'borderTop': '.5px solid #6783a9'
                                             },
+                                            {
+                                                'if': {
+                                                    'state': 'selected'
+                                                },
+                                                'backgroundColor': 'rgba(112,128,144, .3)',
+                                                'border': 'thin solid silver'
+                                            }
                                         ],
                                         style_header={
                                             'backgroundColor': '#ffffff',

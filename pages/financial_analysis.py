@@ -505,6 +505,13 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                             },
                             'borderTop': '.5px solid #4682b4',
                         },
+                        {
+                            'if': {
+                                'state': 'selected'
+                            },
+                            'backgroundColor': 'rgba(112,128,144, .3)',
+                            'border': 'thin solid silver'
+                        }                        
                     ],
                     style_header = table_header,
                     style_header_conditional = table_header_conditional,
@@ -564,6 +571,13 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                             },
                             'borderTop': '.5px solid #6783a9',
                         },
+                        {
+                            'if': {
+                                'state': 'selected'
+                            },
+                            'backgroundColor': 'rgba(112,128,144, .3)',
+                            'border': 'thin solid silver'
+                        }                        
                     ],
                     style_header = table_header,
                     style_header_conditional = table_header_conditional,
@@ -631,6 +645,13 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                             },
                             'borderTop': '.5px solid #6783a9',
                         },
+                        {
+                            'if': {
+                                'state': 'selected'
+                            },
+                            'backgroundColor': 'rgba(112,128,144, .3)',
+                            'border': 'thin solid silver'
+                        }                        
                     ],
                     style_header = table_header,
                     style_header_conditional = table_header_conditional,
@@ -779,6 +800,13 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                                     },
                                     'borderTop': '.5px solid #6783a9',
                                 },
+                                {
+                                    'if': {
+                                        'state': 'selected'
+                                    },
+                                    'backgroundColor': 'rgba(112,128,144, .3)',
+                                    'border': 'thin solid silver'
+                                }                                
                             ],
                             style_header = table_header,
                             style_header_conditional = table_header_conditional,

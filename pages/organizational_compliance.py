@@ -8,7 +8,7 @@ import dash
 from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 
-from .table_helpers import get_svg_circle, no_data_table
+from .table_helpers import get_svg_circle, no_data_table, create_key
 from .load_db import get_financial_data
 
 dash.register_page(__name__, top_nav=True, order=7)
@@ -95,7 +95,15 @@ def update_organizational_compliance(school, year):
                                         'row_index': 'odd'
                                     },
                                     'backgroundColor': '#eeeeee',
-                                },
+                                }
+                            ] + [
+                                {
+                                    'if': {
+                                        'state': 'selected'
+                                    },
+                                    'backgroundColor': 'rgba(112,128,144, .3)',
+                                    'border': 'thin solid silver'
+                                }      
                             ] + [
                                 {
                                     'if': {
@@ -221,6 +229,13 @@ def update_organizational_compliance(school, year):
                     },
                     'borderTop': '.5px solid #6783a9'
                 },
+                {
+                    'if': {
+                        'state': 'selected'
+                    },
+                    'backgroundColor': 'rgba(112,128,144, .3)',
+                    'border': 'thin solid silver'
+                }                  
             ],
             style_header={
                 'height': '20px',
@@ -257,6 +272,23 @@ def update_organizational_compliance(school, year):
 
 layout = html.Div(
                 [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Label('Key', className = 'header_label'),
+                                            html.Div(create_key()),
+                                        ],
+                                        className = 'pretty_container six columns'
+                                    ),
+                                ],
+                                className = 'bare_container twelve columns'
+                            ),
+                        ],
+                        className = 'row',
+                    ),
                     html.Div(
                         [
                             html.Div(

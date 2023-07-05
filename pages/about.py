@@ -11,11 +11,12 @@ from dash.exceptions import PreventUpdate
 import plotly.express as px
 import pandas as pd
 import numpy as np
+import time
 
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
-from .load_data import ethnicity, subgroup, max_display_years, current_academic_year
 from .load_db import get_school_index, get_financial_data, get_demographic_data, get_letter_grades
+from .load_data import ethnicity, subgroup, max_display_years, current_academic_year
 
 dash.register_page(__name__, path='/', order=0, top_nav=True)
 
@@ -81,6 +82,13 @@ def update_about_page(year: str, school: str):
                     },
                     'borderRight': '.5px solid #6783a9',
                 },
+                {
+                    'if': {
+                        'state': 'selected'
+                    },
+                    'backgroundColor': 'rgba(112,128,144, .3)',
+                    'border': 'thin solid silver'
+                }                
             ],
             style_header={
                 'display': 'none',
@@ -96,18 +104,21 @@ def update_about_page(year: str, school: str):
         )
     ]
 
-    school_demographics = get_demographic_data(school)
+    t1 = time.process_time()
+
+    demographic_data = get_demographic_data(school)
     financial_data = get_financial_data(school)
-    school_letter_grades = get_letter_grades(school)
-    
+    letter_grades = get_letter_grades(school)
+
+    print(f'Time to load and process info data: ' + str(time.process_time() - t1))    
+
+    t2 = time.process_time()
     # clean up
     financial_data = financial_data.drop(['School ID','School Name'], axis=1)
     financial_data = financial_data.dropna(axis=1, how='all')
 
-    school_financial_data = financial_data.copy()
-
-    if len(school_letter_grades.columns) <= 1 and (len(school_demographics.columns) <= 1 & \
-          len(school_financial_data.columns) <= 0):
+    if len(letter_grades.columns) <= 1 and (len(demographic_data.columns) <= 1 & \
+          len(financial_data.columns) <= 0):
         
         letter_grade_table = {}
         enroll_title = {}
@@ -127,25 +138,25 @@ def update_about_page(year: str, school: str):
         corp_id = str(selected_school['GEO Corp'].values[0])
         corp_demographics = get_demographic_data(corp_id)
 
-        selected_year = str(year)
-        current_year = selected_year
+        string_year = str(year)
+        current_year = string_year
         previous_year = int(current_year) - 1
-        year_string = str(previous_year) + '-' + str(current_year)[-2:]
+        year_title = str(previous_year) + '-' + str(current_year)[-2:]
 
         # Build figure titles
-        enroll_title = 'Enrollment ' + '(' + year_string + ')'
-        ethnicity_title = 'Enrollment by Ethnicity ' + '(' + year_string + ')'
-        subgroup_title = 'Enrollment by Subgroup ' + '(' + year_string + ')'
+        enroll_title = 'Enrollment ' + '(' + year_title + ')'
+        ethnicity_title = 'Enrollment by Ethnicity ' + '(' + year_title + ')'
+        subgroup_title = 'Enrollment by Subgroup ' + '(' + year_title + ')'
 
-        if len(school_demographics.index) == 0:
+        if len(demographic_data.index) == 0:
             enroll_table = no_data_table(enroll_title)
 
         else:
 
-            school_demographics = school_demographics.loc[school_demographics["Year"] == int(year)]
+            demographic_data = demographic_data.loc[demographic_data["Year"] == int(year)]
             corp_demographics = corp_demographics.loc[corp_demographics["Year"] == int(year)]
 
-            enrollment_filter = school_demographics.filter(regex = r'^Grade \d{1}|[1-9]\d{1}$;|^Pre-K$|^Kindergarten$|^Total Enrollment$',axis=1)
+            enrollment_filter = demographic_data.filter(regex = r'^Grade \d{1}|[1-9]\d{1}$;|^Pre-K$|^Kindergarten$|^Total Enrollment$',axis=1)
             enrollment_filter = enrollment_filter[[c for c in enrollment_filter if c not in ['Total Enrollment']] + ['Total Enrollment']]
             enrollment_filter = enrollment_filter.dropna(axis=1, how='all')
 
@@ -182,7 +193,14 @@ def update_about_page(year: str, school: str):
                                 'filter_query': '{index} eq "Total"'
                             },
                             'borderTop': '.5px solid #6783a9',
-                        }
+                        },
+                        {
+                            'if': {
+                                'state': 'selected'
+                            },
+                            'backgroundColor': 'rgba(112,128,144, .3)',
+                            'border': 'thin solid silver'
+                        }                        
                     ],
                     style_header={
                         'display': 'none',
@@ -199,25 +217,28 @@ def update_about_page(year: str, school: str):
             ]
 
         # State grades and Federal ratings table
-        if len(school_letter_grades.index) == 0:
+        if len(letter_grades.index) == 0:
             letter_grade_table = no_data_table('State and Federal Ratings')
 
         else:
 
-            school_letter_grades = (school_letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+            letter_grades = (letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
-            # hide 2018 grades
-            year_columns = [str(i) for i in school_letter_grades.columns if i not in ['Category','2018']]
+            # For table, drop invalid years, but keep 'Category'
+            letter_grade_columns = [str(i) for i in letter_grades.columns if i not in [2018,int(current_year)+1]]
+            
+            # For hold_harmless string, drop invalid years and 'Category'
+            hold_harmless_columns = [str(i) for i in letter_grades.columns if i not in ['Category',2018,int(current_year)+1]]
 
             # schools have been held harmless by the State of Indiana since
             # 2019, and continue to be held harmless (2019-2023). This builds
             # a list of all hold harmless years for the table tooltip.
             # NOTE: This will need to be re-configured once (if) the State
             # ever begins holding schools accountable again.
-            if year_columns:
-                year_columns.reverse()
-                last_year = year_columns[-1]
-                hold_harmless_years = year_columns.copy()
+            if hold_harmless_columns:
+                hold_harmless_columns.reverse()
+                last_year = hold_harmless_columns[-1]
+                hold_harmless_years = hold_harmless_columns.copy()
                 hold_harmless_years.remove(last_year)
 
                 if hold_harmless_years:
@@ -233,8 +254,8 @@ def update_about_page(year: str, school: str):
 
             letter_grade_table = [
                 dash_table.DataTable(
-                    school_letter_grades.to_dict('records'),
-                    columns = [{'name': str(i), 'id': str(i)} for i in school_letter_grades.columns],
+                    letter_grades.to_dict('records'),
+                    columns = [{'name': str(i), 'id': str(i)} for i in letter_grade_columns],
                     style_table={
                         'height': '20vh'
                     },
@@ -257,6 +278,13 @@ def update_about_page(year: str, school: str):
                             },
                             'backgroundColor': '#eeeeee'
                         },
+                        {
+                            'if': {
+                                'state': 'selected'
+                            },
+                            'backgroundColor': 'rgba(112,128,144, .3)',
+                            'border': 'thin solid silver'
+                        }                        
                     ],
                     style_header={
                         'height': '20px',
@@ -295,7 +323,7 @@ def update_about_page(year: str, school: str):
                                 'value': hold_harmless_string
                             }
                         ]
-                        for col in year_columns
+                        for col in hold_harmless_columns
                     },
                     css=[{
                     'selector': '.dash-table-tooltip',
@@ -305,14 +333,17 @@ def update_about_page(year: str, school: str):
                 )
             ]
 
-        # ADM chart
-        if len(school_financial_data.columns) <= 1:
+        print(f'Time to make About tables: ' + str(time.process_time() - t2))  
 
+        t3 = time.process_time()
+        
+        # ADM chart
+        if len(financial_data.columns) <= 1:
             adm_fig = no_data_fig_label('Average Daily Membership History',400)
         
         else:
 
-            adm_values = school_financial_data[school_financial_data['Category'].str.contains('ADM Average')]
+            adm_values = financial_data[financial_data['Category'].str.contains('ADM Average')]
             adm_values = adm_values.drop('Category', axis=1)
             adm_values = adm_values.reset_index(drop=True)
 
@@ -391,9 +422,10 @@ def update_about_page(year: str, school: str):
                 plot_bgcolor='rgba(0,0,0,0)'
             )
 
-        # Build enrollment by ethnicity chart
-
-        ethnicity_school = school_demographics.loc[:, (school_demographics.columns.isin(ethnicity)) | (school_demographics.columns.isin(['Corporation Name','Total Enrollment']))].copy()
+        print(f'Time to make ADM Chart: ' + str(time.process_time() - t3))  
+        t4 = time.process_time()
+        # Enrollment by ethnicity chart
+        ethnicity_school = demographic_data.loc[:, (demographic_data.columns.isin(ethnicity)) | (demographic_data.columns.isin(['Corporation Name','Total Enrollment']))].copy()
         ethnicity_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(ethnicity)) | (corp_demographics.columns.isin(['Corporation Name','Total Enrollment']))].copy()
 
         if not ethnicity_school.empty:
@@ -490,9 +522,10 @@ def update_about_page(year: str, school: str):
                 font=dict(size=10, color='#6783a9'),
                 align='left'
             )
-
+            print(f'Time to process Ethnicity Enrollment: ' + str(time.process_time() - t4))
+            t5 = time.process_time()
             # Enrollment by subgroup chart
-            subgroup_school = school_demographics.loc[:, (school_demographics.columns.isin(subgroup)) | (school_demographics.columns.isin(['Corporation Name','Total Enrollment']))]
+            subgroup_school = demographic_data.loc[:, (demographic_data.columns.isin(subgroup)) | (demographic_data.columns.isin(['Corporation Name','Total Enrollment']))]
             subgroup_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(subgroup)) | (corp_demographics.columns.isin(['Corporation Name','Total Enrollment']))]
             subgroup_data = pd.concat([subgroup_school,subgroup_corp])
 
@@ -536,9 +569,10 @@ def update_about_page(year: str, school: str):
             # add text traces
             subgroup_fig.update_traces(textposition='outside')
 
-            # Want to distinguish between null (no data) and '0'
-            # so loop through data and only color text traces when the value of x (t.x) is not NaN
-            # display all: subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
+            # NOTE: In order to distinguish between null (no data) and '0' values,  loop through
+            # the data and only color text traces when the value of x (t.x) is not NaN
+            # Use this to display all:
+            # subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
             subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=np.where(~np.isnan(t.x),t.marker.color, 'white'),textfont_size=11))
 
             subgroup_fig.update_traces(hovertemplate = None, hoverinfo='skip')
@@ -587,6 +621,7 @@ def update_about_page(year: str, school: str):
                     align='left'
                 )
 
+            print(f'Time to process Subgroup enrollment: ' + str(time.process_time() - t5))
         else:
             subgroup_fig = no_data_fig_label('Enrollment by Subgroup', 400)
             ethnicity_fig = no_data_fig_label('Enrollment by Ethnicity', 400)
@@ -596,8 +631,7 @@ def update_about_page(year: str, school: str):
         subgroup_title, subgroup_fig, main_container, empty_container, school_name,\
         info_table, no_data_to_display
 
-layout = \
-    html.Div(
+layout = html.Div(
         [
             html.Div(
                 [

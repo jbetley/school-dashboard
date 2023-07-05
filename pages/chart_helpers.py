@@ -179,7 +179,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     Returns:
         list: a plotly dash html layout in the form of a list containing a string and a stacked bar chart figure (px.bar)
     """
-
+    t12 = time.process_time()
     data = values.copy()
     stacked_color = ['#df8f2d', '#ebbb81', '#96b8db', '#74a2d7']
     # In order to get the total_tested value into hovertemplate
@@ -267,7 +267,8 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
             ]
         )
     ]
-    
+
+    print(f'Time to process stacked bar chart: ' + str(time.process_time() - t12))    
     return fig_layout
 
 import time
@@ -419,12 +420,16 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 legend_title='',
             )
 
-            # NOTE: Range is set at 0-100% for IREAD; everything else is 0-50%. At higher ranges, the values
-            # compress together and are hard to read (unfortunately).
+            # NOTE: Set the range based on the highest single value in the dataframe. IREAD is set to 100%.
+            # At higher ranges, the values compress together and are hard to read (unfortunately).
+            data_max = data.max(numeric_only=True).max()
+
             if "IREAD Proficiency (Grade 3 only)" in data.columns:
                 range_vals = [0,1]
-            else:
+            elif data_max < .5:
                 range_vals = [0,.5]
+            else:
+                range_vals = [0,data_max + .1]
 
             fig.update_yaxes(
                 title='',
