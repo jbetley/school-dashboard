@@ -86,7 +86,7 @@ def no_data_page(label: str) -> list:
                             className = 'pretty_container eight columns'
                         ),
                     ],
-                    className = 'bare_container twelve columns',
+                    className = 'bare_container_center twelve columns',
                 ),
             ],
             className = 'empty_table',
@@ -136,7 +136,7 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
         table_layout = [
                 html.Div(
                     table1,
-                    className = 'bare_container twelve columns',
+                    className = 'bare_container_center twelve columns',
                 )
         ]
 
@@ -146,11 +146,11 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
             table_layout = [
                     html.Div(
                         table1,
-                        className = 'bare_container twelve columns',
+                        className = 'bare_container_center twelve columns',
                     ),
                     html.Div(
                         table2,
-                        className = 'bare_container twelve columns',
+                        className = 'bare_container_center twelve columns',
                     ),
             ]
 
@@ -162,7 +162,7 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
                             table1[0],
                             table2[0],
                         ],
-                        className = 'bare_container twelve columns',
+                        className = 'bare_container_center twelve columns',
                     ),
             ]
 

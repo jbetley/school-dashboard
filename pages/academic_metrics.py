@@ -592,7 +592,7 @@ def layout():
                             [
                                 html.Div(subnav_academic(),className='tabs'),
                             ],
-                            className='bare_container twelve columns'
+                            className='bare_container_center twelve columns'
                         ),
                     ],
                     className='row'
@@ -609,7 +609,7 @@ def layout():
                                     className = 'pretty_container six columns'
                                 ),
                             ],
-                            className = 'bare_container twelve columns'
+                            className = 'bare_container_center twelve columns'
                         ),
                         # Display attendance data in div outside of the metrics containers, because
                         # individual schools may have attendance data even if they have no academic data

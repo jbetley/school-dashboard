@@ -237,12 +237,13 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             financial_data = financial_data.dropna(axis=1, how='all')
             financial_data = financial_data.reset_index(drop=True)
 
-            # Force correct format for display of df in datatable (accounting, no '$')
+            # Force correct format for display of df in datatable (accounting, no decimals, no '$')
+
             for year in years:
-                financial_data[year] = pd.Series(['{:,.2f}'.format(val) for val in financial_data[year]], index = financial_data.index)
+                financial_data[year] = pd.Series(['{:,.0f}'.format(val) for val in financial_data[year]], index = financial_data.index)
 
             # clean file for display, replacing nan and 0.00 with ''
-            financial_data.replace([0.0, '0.0',0.00,'0.00', 'nan', np.nan], '', inplace=True)
+            financial_data.replace([0, '0', 0.0, '0.0',0.00,'0.00', 'nan', np.nan], '', inplace=True)
 
             year_headers = [i for i in financial_data.columns if i not in ['Category']]
 
@@ -360,7 +361,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                             className = class_name,
                         ),
                     ],
-                    className = 'bare_container twelve columns',
+                    className = 'bare_container_center twelve columns',
                 )
             ]
     else:
@@ -380,7 +381,7 @@ def layout():
                             [
                                 html.Div(subnav_finance(),className='tabs'),
                             ],
-                            className='bare_container twelve columns'
+                            className='bare_container_center twelve columns'
                         ),
                     ],
                     className='row'
@@ -401,7 +402,7 @@ def layout():
                                     id = 'radio-finance-info-display',
                                 ),
                             ],
-                            className = 'bare_container twelve columns',
+                            className = 'bare_container_center twelve columns',
                         ),
                     ],
                     className = 'row',

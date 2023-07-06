@@ -284,7 +284,7 @@ layout = html.Div(
                                         className = 'pretty_container six columns'
                                     ),
                                 ],
-                                className = 'bare_container twelve columns'
+                                className = 'bare_container_center twelve columns'
                             ),
                         ],
                         className = 'row',
@@ -302,7 +302,7 @@ layout = html.Div(
                                         className = 'pretty_container ten columns',
                                     ),
                                 ],
-                                className = 'bare_container twelve columns'
+                                className = 'bare_container_center twelve columns'
                             ),
                         ],
                         className = 'row',
@@ -319,7 +319,7 @@ layout = html.Div(
                                         className = 'pretty_container ten columns'
                                     ),
                                 ],
-                                className = 'bare_container twelve columns',
+                                className = 'bare_container_center twelve columns',
                             )
                         ],
                         className = 'row'

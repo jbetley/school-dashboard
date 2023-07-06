@@ -788,79 +788,108 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 def layout():
     layout = html.Div(
                 [
-
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(subnav_academic(),className='tabs'),
+                                ],
+                                className='bare_container_center twelve columns'
+                            ),
+                        ],
+                        className='row'
+                    ),
+                    dcc.Loading(
+                        id='loading',
+                        type='circle',
+                        fullscreen = True,
+                        style={
+                            'position': 'absolute',
+                            'align-self': 'center',
+                            'background-color': '#F2F2F2',
+                        },
+                        children=[                                
                                 html.Div(
                                     [
                                         html.Div(
-                                            [
-                                                html.Div(subnav_academic(),className='tabs'),
-                                            ],
-                                            className='bare_container twelve columns'
-                                        ),
-                                    ],
-                                    className='row'
-                                ),
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [
+                                            [                                            
                                                 html.Div(
                                                     [
-                                                        html.Div(id='fig14a', children=[])
+                                                        html.Div(
+                                                            [
+                                                                html.Div(id='fig14a', children=[])
+                                                            ],
+                                                            className = 'pretty_container six columns'
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                html.Div(id='fig14b', children=[])
+                                                            ],
+                                                            className = 'pretty_container six columns'
+                                                        )
                                                     ],
-                                                    className = 'pretty_container six columns'
+                                                    className='bare_container_center twelve columns',
                                                 ),
-                                                html.Div(
-                                                    [
-                                                        html.Div(id='fig14b', children=[])
-                                                    ],
-                                                    className = 'pretty_container six columns'
-                                                )
-                                            ],
-                                            className='row'
-                                        ),
-                                        html.Div(
-                                            [
-                                                html.Div(
-                                                    [
-                                                        html.Div(id='fig16c1', children=[])
-                                                    ],
-                                                    className = 'pretty_container six columns'
-                                                ),
-                                                html.Div(
-                                                    [
-                                                        html.Div(id='fig16d1', children=[])
-                                                    ],
-                                                    className = 'pretty_container six columns'
-                                                )
-                                            ],
-                                            className='row'
-                                        ),
-                                        html.Div(
-                                            [
-                                                html.Div(
-                                                    [
-                                                        html.Div(id='fig16c2', children=[])        
-                                                    ],
-                                                    className = 'pretty_container six columns'
-                                                ),
-                                                html.Div(
-                                                    [
-                                                        html.Div(id='fig16d2', children=[])
-                                                    ],
-                                                    className = 'pretty_container six columns'
-                                                )
                                             ],
                                             className='row',
-                                        ),
+                                        ),                                            
+                                        html.Div(
+                                            [                                            
+                                                html.Div(
+                                                    [
+                                                        html.Div(
+                                                            [
+                                                                html.Div(id='fig16c1', children=[])
+                                                            ],
+                                                            className = 'pretty_container six columns'
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                html.Div(id='fig16d1', children=[])
+                                                            ],
+                                                            className = 'pretty_container six columns'
+                                                        )
+                                                    ],
+                                                    className='bare_container_center twelve columns',
+                                                ),
+                                            ],
+                                            className='row',
+                                        ),                                              
+                                        html.Div(
+                                            [                                        
+                                                html.Div(
+                                                    [
+                                                        html.Div(
+                                                            [
+                                                                html.Div(id='fig16c2', children=[])        
+                                                            ],
+                                                            className = 'pretty_container six columns'
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                html.Div(id='fig16d2', children=[])
+                                                            ],
+                                                            className = 'pretty_container six columns'
+                                                        )
+                                                    ],
+                                                    className='bare_container_center twelve columns',
+                                                ),
+                                            ],
+                                            className='row',
+                                        ),                  
                                         html.Div(
                                             [
                                                 html.Div(
                                                     [
-                                                        html.Div(id='fig14g', children=[])
+                                                        html.Div(
+                                                            [
+                                                                html.Div(id='fig14g', children=[])
+                                                            ],
+                                                            className = 'pretty_container six columns'
+                                                        ),
                                                     ],
-                                                    className = 'pretty_container six columns'
-                                                ),
+                                                    className='bare_container twelve columns',
+                                                )
                                             ],
                                             className='row',
                                         ),
@@ -927,6 +956,7 @@ def layout():
                                     id = 'academic-analysis-main-container',
                                     style= {'display': 'none'}, 
                                 ),
+                                ]),
                                 html.Div(
                                     [
                                         html.Div(id='academic-analysis-no-data'),

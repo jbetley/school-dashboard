@@ -6,7 +6,7 @@
 # date:     5/22/23
 
 import dash
-from dash import html, Input, Output, callback
+from dash import dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import numpy as np
@@ -1031,13 +1031,13 @@ def layout():
                         [
                             html.Div(subnav_academic(), className='tabs'),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                 ],
                 className='row',
             ),
             html.Div(
-                [        
+                [    
                     html.Div(
                         [
                             html.Div(
@@ -1058,7 +1058,7 @@ def layout():
                                 className = 'pretty_container seven columns'
                             ),
                         ],
-                        className = 'bare_container twelve columns'
+                        className = 'bare_container_center twelve columns'
                     ),
                 ],
                 className = 'row',
@@ -1087,13 +1087,23 @@ def layout():
                                 className='radio-group',
                             ),
                         ],
-                        className = 'bare_container twelve columns',
+                        className = 'bare_container_center twelve columns',
                     ),
                 ],
                 className = 'row',
             ),
             html.Div(
-                [    
+                [
+                dcc.Loading(
+                    id='loading',
+                    type='circle',
+                    fullscreen = True,
+                    style={
+                        'position': 'absolute',
+                        'align-self': 'center',
+                        'background-color': '#F2F2F2',
+                        },
+                    children=[
                     html.Div(
                         [
                             html.Div(
@@ -1105,7 +1115,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1122,7 +1132,7 @@ def layout():
                                         className='pretty_container four columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1133,7 +1143,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1150,7 +1160,7 @@ def layout():
                                         className='pretty_container four columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1161,7 +1171,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1178,7 +1188,7 @@ def layout():
                                         className='pretty_container four columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1189,7 +1199,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1200,7 +1210,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                         ],
                         id='k8-table-container',
@@ -1216,7 +1226,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1227,7 +1237,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1238,7 +1248,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1249,7 +1259,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1260,7 +1270,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1271,7 +1281,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),                            
                             html.Div(
                                 [
@@ -1282,7 +1292,7 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -1293,11 +1303,12 @@ def layout():
                                         className='pretty_container six columns',
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className='bare_container_center twelve columns',
                             ),
                         ],
                         id='hs-table-container',
                     ),
+                    ]),
                 ],
                 id = 'academic-information-main-container',
             ),
@@ -1318,7 +1329,7 @@ def layout():
                                 className='pretty_container five columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [
@@ -1329,7 +1340,7 @@ def layout():
                                 className='pretty_container five columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [
@@ -1340,7 +1351,7 @@ def layout():
                                 className='pretty_container four columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [
@@ -1351,7 +1362,7 @@ def layout():
                                 className='pretty_container four columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [
@@ -1362,7 +1373,7 @@ def layout():
                                 className='pretty_container four columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [                                  
@@ -1373,7 +1384,7 @@ def layout():
                                 className='pretty_container six columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),                                      
                     html.Div(
                         [
@@ -1384,7 +1395,7 @@ def layout():
                                 className='pretty_container six columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [
@@ -1395,7 +1406,7 @@ def layout():
                                 className='pretty_container five columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [                                                                
@@ -1406,7 +1417,7 @@ def layout():
                                 className='pretty_container four columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [        
@@ -1417,7 +1428,7 @@ def layout():
                                 className='pretty_container six columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [
@@ -1428,7 +1439,7 @@ def layout():
                                 className='pretty_container four columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [
@@ -1439,7 +1450,7 @@ def layout():
                                 className='pretty_container four columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [
@@ -1450,7 +1461,7 @@ def layout():
                                 className='pretty_container five columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                     html.Div(
                         [
@@ -1461,7 +1472,7 @@ def layout():
                                 className='pretty_container five columns',
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_center twelve columns',
                     ),
                 ],
                 id = 'academic-growth-main-container',

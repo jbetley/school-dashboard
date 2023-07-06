@@ -32,8 +32,12 @@ import dash_bootstrap_components as dbc
 
 from dotenv import load_dotenv
 
+# from werkzeug.middleware.profiler import ProfilerMiddleware
+
 # load data and global variables
 # TODO: REMOVE STATIC VARIABLES
+# TODO: SPEED?
+# https://community.plotly.com/t/dash-layout-and-dash-update-component-waiting/35573/7
 from pages.load_data import current_academic_year
 
 from pages.load_db import get_school_index, get_academic_dropdown_years, \
@@ -156,7 +160,7 @@ app = dash.Dash(
     use_pages=True,
     external_stylesheets=external_stylesheets,
     suppress_callback_exceptions=True,
-    compress=False,
+    # compress=False, # testing
     meta_tags=[
     {
         "name": "viewport",
@@ -279,7 +283,7 @@ app.layout = html.Div(
                             [
                                 html.A("logout", href="../logout", className="logout-button"),
                             ],
-                            className="bare_container one columns",
+                            className="bare_container_center one columns",
                         ),
                         html.Div(
                             [
@@ -354,7 +358,7 @@ app.layout = html.Div(
                                     className="tabs",
                                 ),
                             ],
-                            className="bare_container twelve columns",
+                            className="bare_container_center twelve columns",
                                 style={
                                     "padding": "50px",
                                     "paddingBottom": "60px",
@@ -370,6 +374,14 @@ app.layout = html.Div(
     ],
 )
 
+# if __name__ == "__main__":
+#     if os.getenv("PROFILER", None):
+#         app.server.config["PROFILE"] = True
+#         app.server.wsgi_app = ProfilerMiddleware(
+#             app.server.wsgi_app, sort_by=("cumtime", "tottime"), restrictions=[50]
+#         )
+#         print(app.server.config)
+#     app.run_server(debug=True)
 if __name__ == "__main__":
     app.run_server(debug=True)
-#    application.run(host='0.0.0.0', port='8080')
+# #    application.run(host='0.0.0.0', port='8080')

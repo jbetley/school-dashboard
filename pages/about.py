@@ -148,74 +148,6 @@ def update_about_page(year: str, school: str):
         ethnicity_title = 'Enrollment by Ethnicity ' + '(' + year_title + ')'
         subgroup_title = 'Enrollment by Subgroup ' + '(' + year_title + ')'
 
-        if len(demographic_data.index) == 0:
-            enroll_table = no_data_table(enroll_title)
-
-        else:
-
-            demographic_data = demographic_data.loc[demographic_data["Year"] == int(year)]
-            corp_demographics = corp_demographics.loc[corp_demographics["Year"] == int(year)]
-
-            enrollment_filter = demographic_data.filter(regex = r'^Grade \d{1}|[1-9]\d{1}$;|^Pre-K$|^Kindergarten$|^Total Enrollment$',axis=1)
-            enrollment_filter = enrollment_filter[[c for c in enrollment_filter if c not in ['Total Enrollment']] + ['Total Enrollment']]
-            enrollment_filter = enrollment_filter.dropna(axis=1, how='all')
-
-            school_enrollment = enrollment_filter.T
-            school_enrollment.rename(columns={school_enrollment.columns[0]:'Enrollment'}, inplace=True)
-            school_enrollment.rename(index={'Total Enrollment':'Total'},inplace=True)
-
-            school_enrollment = school_enrollment.reset_index()
-      
-            enroll_table = [
-                dash_table.DataTable(
-                    school_enrollment.to_dict('records'),
-                    columns = [{'name': i, 'id': i} for i in school_enrollment.columns],
-                    style_data={
-                        'fontSize': '12px',
-                        'fontFamily': 'Jost, sans-serif',
-                        'border': 'none'
-                    },
-                    style_data_conditional=[
-                        {
-                            'if': {
-                                'row_index': 'odd'
-                            },
-                            'backgroundColor': '#eeeeee'
-                        },
-                        {
-                            'if': {
-                                'column_id': 'index',
-                            },
-                            'borderRight': '.5px solid #6783a9',
-                        },
-                        {
-                            'if': {
-                                'filter_query': '{index} eq "Total"'
-                            },
-                            'borderTop': '.5px solid #6783a9',
-                        },
-                        {
-                            'if': {
-                                'state': 'selected'
-                            },
-                            'backgroundColor': 'rgba(112,128,144, .3)',
-                            'border': 'thin solid silver'
-                        }                        
-                    ],
-                    style_header={
-                        'display': 'none',
-                        'border': 'none',
-                    },
-                    style_cell={
-                        'whiteSpace': 'normal',
-                        'height': 'auto',
-                        'textAlign': 'center',
-                        'color': '#6783a9',
-                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
-                    },
-                )
-            ]
-
         # State grades and Federal ratings table
         if len(letter_grades.index) == 0:
             letter_grade_table = no_data_table('State and Federal Ratings')
@@ -333,6 +265,75 @@ def update_about_page(year: str, school: str):
                 )
             ]
 
+        # Enrollment Table
+        if len(demographic_data.index) == 0:
+            enroll_table = no_data_table(enroll_title)
+
+        else:
+
+            demographic_data = demographic_data.loc[demographic_data["Year"] == int(year)]
+            corp_demographics = corp_demographics.loc[corp_demographics["Year"] == int(year)]
+
+            enrollment_filter = demographic_data.filter(regex = r'^Grade \d{1}|[1-9]\d{1}$;|^Pre-K$|^Kindergarten$|^Total Enrollment$',axis=1)
+            enrollment_filter = enrollment_filter[[c for c in enrollment_filter if c not in ['Total Enrollment']] + ['Total Enrollment']]
+            enrollment_filter = enrollment_filter.dropna(axis=1, how='all')
+
+            school_enrollment = enrollment_filter.T
+            school_enrollment.rename(columns={school_enrollment.columns[0]:'Enrollment'}, inplace=True)
+            school_enrollment.rename(index={'Total Enrollment':'Total'},inplace=True)
+
+            school_enrollment = school_enrollment.reset_index()
+      
+            enroll_table = [
+                dash_table.DataTable(
+                    school_enrollment.to_dict('records'),
+                    columns = [{'name': i, 'id': i} for i in school_enrollment.columns],
+                    style_data={
+                        'fontSize': '12px',
+                        'fontFamily': 'Jost, sans-serif',
+                        'border': 'none'
+                    },
+                    style_data_conditional=[
+                        {
+                            'if': {
+                                'row_index': 'odd'
+                            },
+                            'backgroundColor': '#eeeeee'
+                        },
+                        {
+                            'if': {
+                                'column_id': 'index',
+                            },
+                            'borderRight': '.5px solid #6783a9',
+                        },
+                        {
+                            'if': {
+                                'filter_query': '{index} eq "Total"'
+                            },
+                            'borderTop': '.5px solid #6783a9',
+                        },
+                        {
+                            'if': {
+                                'state': 'selected'
+                            },
+                            'backgroundColor': 'rgba(112,128,144, .3)',
+                            'border': 'thin solid silver'
+                        }                        
+                    ],
+                    style_header={
+                        'display': 'none',
+                        'border': 'none',
+                    },
+                    style_cell={
+                        'whiteSpace': 'normal',
+                        'height': 'auto',
+                        'textAlign': 'center',
+                        'color': '#6783a9',
+                        # 'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                    },
+                )
+            ]
+
         print(f'Time to make About tables: ' + str(time.process_time() - t2))  
 
         t3 = time.process_time()
@@ -424,6 +425,7 @@ def update_about_page(year: str, school: str):
 
         print(f'Time to make ADM Chart: ' + str(time.process_time() - t3))  
         t4 = time.process_time()
+        
         # Enrollment by ethnicity chart
         ethnicity_school = demographic_data.loc[:, (demographic_data.columns.isin(ethnicity)) | (demographic_data.columns.isin(['Corporation Name','Total Enrollment']))].copy()
         ethnicity_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(ethnicity)) | (corp_demographics.columns.isin(['Corporation Name','Total Enrollment']))].copy()
@@ -631,8 +633,20 @@ def update_about_page(year: str, school: str):
         subgroup_title, subgroup_fig, main_container, empty_container, school_name,\
         info_table, no_data_to_display
 
+# NOTE: https://dash.plotly.com/loading-states
+# https://stackoverflow.com/questions/68188107/how-to-add-create-a-custom-loader-with-dash-plotly
 layout = html.Div(
         [
+            dcc.Loading(
+                id='loading',
+                type='circle',
+                fullscreen = True,
+                style={
+                    'position': 'absolute',
+                    'align-self': 'center',
+                    'background-color': '#F2F2F2',
+                    },
+                children=[
             html.Div(
                 [
                     html.Div(
@@ -644,7 +658,7 @@ layout = html.Div(
                                             html.Label(id='school-name', className = 'header_label'),
                                             html.Div(id='info-table'),
                                         ],
-                                        className='pretty_container six columns'
+                                        className='pretty_container_left six columns',
                                     ),
                                     html.Div(
                                         [
@@ -654,7 +668,7 @@ layout = html.Div(
                                         className='pretty_container six columns'
                                     ),
                                 ],
-                                className='bare_container twelve columns'
+                                className='bare_container_no_center twelve columns'
                             ),
                         ],
                         className = 'row',
@@ -668,7 +682,7 @@ layout = html.Div(
                                             html.Label(id='enroll-title', className = 'header_label'),
                                             html.Div(id='enroll-table')
                                         ],
-                                        className='pretty_container six columns'
+                                        className='pretty_container_left six columns',
                                     ),
                                     html.Div(
                                         [
@@ -678,7 +692,7 @@ layout = html.Div(
                                         className = 'pretty_container six columns'
                                     ),
                                 ],
-                                className='bare_container_no_center twelve columns',
+                                className='bare_container twelve columns',
                             ),
                         ],
                         className = 'row',
@@ -690,7 +704,7 @@ layout = html.Div(
                                     html.Label(id='subgroup-title', className = 'header_label'),
                                     dcc.Graph(id='subgroup-fig', figure = loading_fig(),config={'displayModeBar': False})
                                 ],
-                                className = 'pretty_container six columns'
+                                className = 'pretty_container_left six columns'
                             ),
                             html.Div(
                                 [
@@ -700,10 +714,11 @@ layout = html.Div(
                                 className = 'pretty_container six columns'
                             ),
                         ],
-                        className='bare_container twelve columns',
+                        className='bare_container_no_center twelve columns',
                     ),
                 ],
                 id = 'about-main-container',
+            )],
             ),
             html.Div(
                 [
@@ -717,7 +732,7 @@ layout = html.Div(
                                 className='pretty_container eight columns'
                             ),
                         ],
-                        className = 'bare_container twelve columns',
+                        className = 'bare_container_center twelve columns',
                     ),
                     html.Div(id='about-no-data'),
                 ],

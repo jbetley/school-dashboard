@@ -926,7 +926,7 @@ def layout():
                                 [
                                     html.Div(subnav_finance(), className='tabs'),
                                 ],
-                                className='bare_container twelve columns'
+                                className='bare_container_center twelve columns'
                             ),
                         ],
                         className='row'
@@ -942,6 +942,16 @@ def layout():
                         ],
                         id = 'radio-finance-analysis-display',
                     ),
+            dcc.Loading(
+                id='loading',
+                type='circle',
+                fullscreen = True,
+                style={
+                    'position': 'absolute',
+                    'align-self': 'center',
+                    'background-color': '#F2F2F2',
+                    },
+                children=[                    
                     html.Div(
                         [                    
                             html.Div(
@@ -961,7 +971,7 @@ def layout():
                                         className = 'pretty_container six columns'
                                     )
                                 ],
-                                className='row'
+                                className='bare_container_no_center twelve columns',
                             ),
                             html.Div(
                                 [
@@ -971,7 +981,7 @@ def layout():
                                             html.P(''),
                                             html.Div(id='financial-position-table')
                                         ],
-                                        className = 'pretty_container six columns'
+                                        className = 'pretty_container_left six columns'
                                     ),
                                     html.Div(
                                         [
@@ -982,7 +992,7 @@ def layout():
                                         className = 'pretty_container six columns',
                                     ),
                                 ],
-                                className = 'row',
+                                className = 'bare_container twelve columns',
                             ),
                             # html.Div(
                             #     [
@@ -998,7 +1008,7 @@ def layout():
                                         [                    
                                             html.Div(id='financial-ratios-table', children=[]),
                                         ],
-                                        className = 'pretty_container six columns',                                        
+                                        className = 'pretty_container_left six columns',                                        
                                     ),
                                     html.Div(
                                         [
@@ -1009,11 +1019,12 @@ def layout():
                                         className = 'pretty_container six columns',
                                     ),
                                 ],
-                                className = 'row',
+                                className = 'bare_container twelve columns',
                             ),
                         ],
                         id = 'financial-analysis-main-container',
                     ),
+                ]),
                     html.Div(
                         [
                             html.Div(id='financial-analysis-no-data'),

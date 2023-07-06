@@ -331,6 +331,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                                 'textAlign': 'center',
                                                 'color': '#6783a9',
                                                 'boxShadow': '0 0',
+                                                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'                                                
                                             },
                                             style_cell_conditional=[
                                                 {
@@ -369,7 +370,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                 className = class_name,
                             ),
                         ],
-                        className = 'bare_container twelve columns',
+                        className = 'bare_container_center twelve columns',
                     )
                 ]
 
@@ -486,7 +487,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                     className = 'pretty_container eight columns',
                                 ),
                             ],
-                            className = 'bare_container twelve columns',
+                            className = 'bare_container_center twelve columns',
                         )
                     ]
             
@@ -576,7 +577,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                 className = 'pretty_container eight columns',
                             ),
                         ],
-                        className = 'bare_container twelve columns',
+                        className = 'bare_container_center twelve columns',
                     )
                 ]
     else:
@@ -599,7 +600,7 @@ def layout():
                             [
                                 html.Div(subnav_finance(),className='tabs'),
                             ],
-                            className='bare_container twelve columns'
+                            className='bare_container_center twelve columns'
                         ),
                     ],
                     className='row'
@@ -616,7 +617,7 @@ def layout():
                                     className = 'pretty_container six columns'
                                 ),
                             ],
-                            className = 'bare_container twelve columns'
+                            className = 'bare_container_center twelve columns'
                         ),
                     ],
                     className = 'row',
@@ -637,7 +638,7 @@ def layout():
                                     id = 'radio-finance-metrics-display',
                                 ),
                             ],
-                            className = 'bare_container twelve columns',
+                            className = 'bare_container_center twelve columns',
                         ),
                     ],
                     className = 'row',
