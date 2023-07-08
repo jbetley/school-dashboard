@@ -202,7 +202,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 financial_metrics = get_svg_circle(financial_metrics)
 
                 financial_metrics = financial_metrics.fillna('')
-
+            
                 # Force correct format for display of df in datatable
                 for x in range(1,len(financial_metrics.columns),2):
                     if financial_metrics.iat[3,x]:

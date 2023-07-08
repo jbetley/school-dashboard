@@ -349,6 +349,12 @@ def process_k8_academic_data(data, year, school):
         if data_geo_code == school_geo_code:
             school_info = data[["Corporation Name"]].copy()
 
+            # Filter and clean the dataframe
+            data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+
+            # Drop 'ELA and Math'
+            data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]].copy()
+
             # corporation data: coerce strings ('***' and '^') to NaN (for
             # both masking and groupby.sum() purposes)
             for col in data.columns:
@@ -357,10 +363,24 @@ def process_k8_academic_data(data, year, school):
         else:
        
             school_info = data[['School Name','Low Grade','High Grade']].copy()
-            
+
             # school data: coerce, but keep strings ('***' and '^')
-            for col in data.columns:
-                data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
+            # NOTE: This slow (~.6s) - need better way
+            data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+            # Drop 'ELA and Math'
+            data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]]
+            
+            t4 = time.process_time()
+            # for col in data.columns:
+            #     data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
+
+            # update is twice as fast as fillna?? (.35s vs .6s)
+            data.update(data.apply(pd.to_numeric, errors='coerce'))
+            print(f'Time to update: ' + str(time.process_time() - t4))
+            # diff = data.compare(tst)
+
+            # print(diff)
+# df.values[df.isna()] = 'b'
 
         # Filter and clean the dataframe
         data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)

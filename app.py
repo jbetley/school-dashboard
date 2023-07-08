@@ -268,7 +268,9 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
     return year_options, year_value, current_page
 
-app.layout = html.Div(
+# app.layout = html.Div(
+def layout():
+    return html.Div(
     [
         dcc.Store(id="dash-session", storage_type="session"),
         # the next two components are used by the year dropdown callback to determine the current url
@@ -373,6 +375,8 @@ app.layout = html.Div(
         )
     ],
 )
+
+app.layout = layout
 
 # if __name__ == "__main__":
 #     if os.getenv("PROFILER", None):

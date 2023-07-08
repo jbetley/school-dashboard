@@ -71,19 +71,45 @@ def set_dropdown_options(school, year, comparison_schools):
         return [],[],[]
     
     else:
-        school_grade_span = schools_by_distance.loc[schools_by_distance['School ID'] == int(school)][['Low Grade','High Grade']].values[0].astype(str).tolist()
-        school_grade_span = [s.replace('KG', '1').replace('PK', '0') for s in school_grade_span]
-        school_grade_span = [int(i) for i in school_grade_span]
+
+
+###
+        # NOTE: Before we do the distance check, we reduce the size of the df by removing
+        # schools where there is no, or only one grade overlap between the comparison schools.
+        # 'span' determines the minimum overlap (a value of '1' means 2 grade overlap, '2'
+        # means 3 grade overlap, etc.). Currently set to '1'
+
+        schools_by_distance = schools_by_distance.replace({'Low Grade' : { 'PK' : 0, 'KG' : 1}})
+        schools_by_distance['Low Grade'] = schools_by_distance['Low Grade'].astype(int)
+        schools_by_distance['High Grade'] = schools_by_distance['High Grade'].astype(int)
+        school_grade_span = schools_by_distance.loc[schools_by_distance['School ID'] == int(school)][['Low Grade','High Grade']].values[0].tolist()
+        school_low = school_grade_span[0]
+        school_high = school_grade_span[1]
+
+        span = 1
+        schools_by_distance = schools_by_distance.loc[
+            (
+                (schools_by_distance['Low Grade'] <= school_low) & \
+                (schools_by_distance['High Grade'] - school_low >= span)
+            ) | \
+            (
+                (schools_by_distance['Low Grade'] >= school_low) & \
+                (school_high - schools_by_distance['Low Grade']  >= span)
+            ), :]
+###
+        # school_grade_span = schools_by_distance.loc[schools_by_distance['School ID'] == int(school)][['Low Grade','High Grade']].values[0].astype(str).tolist()
+        # school_grade_span = [s.replace('KG', '1').replace('PK', '0') for s in school_grade_span]
+        # school_grade_span = [int(i) for i in school_grade_span]
 
         # ignore PreK(0) and K(1)
-        low_bound = 3 if school_grade_span[0] < 3 else school_grade_span[0]
-        school_grade_range = list(range(low_bound,(school_grade_span[1]+1)))
+        # low_bound = 3 if school_grade_span[0] < 3 else school_grade_span[0]
+        # school_grade_range = list(range(low_bound,(school_grade_span[1]+1)))
 
-        # PK and KG are not tested grades
-        schools_by_distance = schools_by_distance.replace({'Low Grade' : { 'PK' : 0, 'KG' : 1}})
+        # # PK and KG are not tested grades
+        # schools_by_distance = schools_by_distance.replace({'Low Grade' : { 'PK' : 0, 'KG' : 1}})
 
-        grade_mask = schools_by_distance.apply(filter_grades, compare=school_grade_range, axis=1)
-        schools_by_distance = schools_by_distance[grade_mask]
+        # grade_mask = schools_by_distance.apply(filter_grades, compare=school_grade_range, axis=1)
+        # schools_by_distance = schools_by_distance[grade_mask]
         
         # reset index and make a copy to re-add School Names after distance sort
         schools_by_distance = schools_by_distance.reset_index(drop = True)

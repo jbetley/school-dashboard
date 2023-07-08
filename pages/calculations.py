@@ -398,7 +398,7 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
     # as the selected school already exists in the 'data' df,
     # just pass in index and use that to find it
     for col in data.columns:
-                data[col] = pd.to_numeric(data[col], errors="coerce")
+        data[col] = pd.to_numeric(data[col], errors="coerce")
     
     phi = np.deg2rad(data['Lat'])
     theta = np.deg2rad(data['Lon'])
@@ -414,6 +414,7 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
 
     return index, distance
 
+# NOTE: Not used, is quite slow.
 def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:
     """
     Takes two dataframes, one, a single row of data for the selected
