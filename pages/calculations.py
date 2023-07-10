@@ -13,10 +13,10 @@ def calculate_percentage(numerator: str, denominator: str) -> float|None|str:
     """
     Calculates a percentage given a numerator and a denominator, while account for two
     special case: a string representing insufficent n-size ('***') and certain conditions
-    where a '0' value result has a different result. The function does the following:
+    where a '0' value has a different result. The function does the following:
         1) When either the numerator or the denominator is equal to '***', the function returns '****'
         2) When either the numerator or the denominator is null/nan, the function returns 'None'
-        3) When the numerator is null/nan, but the denominatir is not, the function returns '0'
+        3) When the numerator is null/nan, but the denominator is not, the function returns '0'
         4) if none of the above are true, the function divides the numerator by the denominator.
     Args:
         numerator (str): numerator (is a str to account for special cases)

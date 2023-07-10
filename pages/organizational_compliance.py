@@ -1,8 +1,8 @@
 ##############################################
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
-# version:  1.03
-# date:     5/22/23
+# version:  1.04
+# date:     07/10/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -58,12 +58,6 @@ def update_organizational_compliance(school, year):
             organizational_indicators = organizational_indicators.drop(columns=['Standard','Description'])
             organizational_indicators.insert(loc=0, column='Description', value = description)
             organizational_indicators.insert(loc=0, column='Standard', value = standard)
-
-            # import pandas as pd
-            # pd.set_option('display.max_columns', None)
-            # pd.set_option('display.max_rows', None)
-            # pd.get_option('display.width', None)
-            # print(organizational_indicators['Description'][51])
 
             # convert ratings to colored circles
             organizational_indicators = get_svg_circle(organizational_indicators)

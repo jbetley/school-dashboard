@@ -39,6 +39,7 @@ pd.set_option('display.max_columns', None)
 )
 def set_dropdown_options(school, year, comparison_schools):
 
+#TODO: USE PARTIAL UPDATE TO AVOID LOADING SPINNER WHEN UPDATING DROPDOWN.
     string_year = '2019' if year == '2020' else year
     numeric_year = int(string_year)
 

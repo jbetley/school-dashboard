@@ -23,24 +23,15 @@ pd.set_option('display.max_rows', None)
 print("#### Loading Data. . . . . ####")
 
 # NOTE: No K8 academic data exists for 2020
-# school_index = pd.read_csv(r"data/school_index.csv", dtype=str)
-# school_academic_data_k8 = pd.read_csv(r"data/school_data_k8.csv", dtype=str)
-# all_academic_data_hs = pd.read_csv(r"data/academic_data_hs.csv", dtype=str)
-# all_academic_data_k8 = pd.read_csv(r"data/academic_data_k8.csv", dtype=str)
-# corporation_rates = pd.read_csv(r"data/corporate_rates.csv", dtype=str)
-# all_demographic_data = pd.read_csv(r"data/demographic_data.csv", dtype=str)
-
-# financial_ratios = pd.read_csv(r'data/financial_ratios.csv', dtype=str)
 
 # global integers
 current_academic_year = get_current_year()
-
 max_display_years = 5
 
 # global strings
 subject = ["Math", "ELA"]
 
-info_categories = ['School Name','Low Grade','High Grade']
+# info_categories = ['School Name','Low Grade','High Grade']
 
 ethnicity = [
     "American Indian",
@@ -90,9 +81,9 @@ grades_ordinal = [
     '8th'
 ]
 
-### Start Helper Functions ###
+### Helper Functions ###
 
-def get_excluded_years(year):
+def get_excluded_years(year: str) -> list:
     # 'excluded years' is a list of year strings (format YYYY) of all years
     # that are more recent than the selected year. it is used to filter data
     excluded_years = []
@@ -105,7 +96,7 @@ def get_excluded_years(year):
 
     return excluded_years
 
-def get_attendance_data(data, year):
+def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
 
     excluded_years = get_excluded_years(year)
 
@@ -128,9 +119,8 @@ def get_attendance_data(data, year):
 
     return attendance_rate
 
-def get_attendance_metrics(school, year):
+def get_attendance_metrics(school: str, year: str) -> pd.DataFrame:
 
-    # selected_school = school_index.loc[school_index["School ID"] == school]
     selected_school = get_school_index(school)    
     corp_id = selected_school['GEO Corp'].values[0]
 
@@ -208,7 +198,7 @@ def get_attendance_metrics(school, year):
 
     return attendance_metrics
 
-def calculate_graduation_rate(values):
+def calculate_graduation_rate(values: pd.DataFrame) -> pd.DataFrame:
     
     data = values.copy()
 
@@ -220,27 +210,16 @@ def calculate_graduation_rate(values):
             cat_sub = cohort.split('|Cohort Count')[0]
             data[cat_sub + " Graduation Rate"] = calculate_percentage(data[cat_sub + "|Graduates"], data[cohort])
 
-    # NOTE: Orig Code
-    # grad_categories = ethnicity + subgroup + ["Total"]
-    
-    # for g in grad_categories:
-    #     new_col = g + " Graduation Rate"
-    #     graduates = g + "|Graduates"
-    #     cohort = g + "|Cohort Count"
-
-    #     if cohort in data.columns:
-    #         data[new_col] = calculate_percentage(data[graduates], data[cohort])
-
     return data
 
-def calculate_strength_of_diploma(data):
+def calculate_strength_of_diploma(data: pd.DataFrame) -> pd.DataFrame:
     # NOTE: Not Currently Used
     data["Strength of Diploma"] = pd.to_numeric((data["Non Waiver|Cohort Count"] * 1.08)) \
          / pd.to_numeric(data["Total|Cohort Count"])
 
     return data
 
-def calculate_eca_rate(values):
+def calculate_eca_rate(values: pd.DataFrame) -> pd.DataFrame:
     data = values.copy()
 
     tested = data[data.columns[data.columns.str.contains(r'Test N')]].columns.tolist()
@@ -250,20 +229,10 @@ def calculate_eca_rate(values):
             # get Category + Subject string
             cat_sub = test.split(' Test N')[0]
             data[cat_sub + " Pass Rate"] = calculate_percentage(data[cat_sub + " Pass N"], data[test])
-
-    # NOTE: Original Code
-    # eca_categories = ["Grade 10|ELA", "Grade 10|Math"]
-
-    # for e in eca_categories:
-    #     new_col = e + " Pass Rate"
-    #     passN = e + " Pass N"
-    #     testN = e + " Test N"
-
-    #     data[new_col] = calculate_percentage(data[passN], data[testN])
     
     return data
 
-def calculate_sat_rate(values):
+def calculate_sat_rate(values: pd.DataFrame) -> pd.DataFrame:
 # NOTE: All nulls should have already been filtered out by filter_high_school_academic_data()
     data = values.copy()
 
@@ -276,36 +245,21 @@ def calculate_sat_rate(values):
             cat_sub = test.split(' Total Tested')[0]
             data[cat_sub + ' Benchmark %'] = calculate_percentage(data[cat_sub + ' At Benchmark'], data[test])
 
-    ## NOTE: Original Code
-    # sat_categories = ethnicity + subgroup + ["School Total"]
-    # sat_subject = ['EBRW','Math','Both']
-
-    # for ss in sat_subject:
-    #     for sc in sat_categories:
-    #         new_col = sc + "|" + ss + " Benchmark %"
-    #         at_benchmark = sc + "|" + ss + " At Benchmark"
-    #         total_tested = sc + "|" + ss + " Total Tested"
-
-    #         if total_tested in data.columns:
-    #             data[new_col] = calculate_percentage(data[at_benchmark], data[total_tested])
-
     return data
 
 # TODO: This is slow. Refactor
 import time
 
-def calculate_proficiency(values):
+def calculate_proficiency(values: pd.DataFrame) -> pd.DataFrame:
 
 # Calculates proficiency. If Total Tested == 0 or NaN or if Total Tested > 0, but Total Proficient is
 # NaN, all associated columns are dropped
     data = values.copy()
 
-    # print(data.T)
     # Get a list of all 'Total Tested' columns except those for ELA & Math
     tested_categories = data[data.columns[data.columns.str.contains(r'Total Tested')]].columns.tolist()
     tested_categories = [i for i in tested_categories if 'ELA and Math' not in i]
 
-    # print(tested_categories)
     for total_tested in tested_categories:
         if total_tested in data.columns:
             
@@ -328,8 +282,8 @@ def calculate_proficiency(values):
 
 ### End Helper Functions ###
 
-### Dataframe Formatting Functions ###
-def process_k8_academic_data(data, year, school):
+### Dataframe Processing Functions ###
+def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.DataFrame:
 
     school_information = get_school_index(school)
 
@@ -365,22 +319,19 @@ def process_k8_academic_data(data, year, school):
             school_info = data[['School Name','Low Grade','High Grade']].copy()
 
             # school data: coerce, but keep strings ('***' and '^')
-            # NOTE: This slow (~.6s) - need better way
+
+
             data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+            
             # Drop 'ELA and Math'
             data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]]
             
             t4 = time.process_time()
-            # for col in data.columns:
-            #     data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
+# TODO: This slow (~.6s) - need better way - STILL?
             # update is twice as fast as fillna?? (.35s vs .6s)
             data.update(data.apply(pd.to_numeric, errors='coerce'))
             print(f'Time to update: ' + str(time.process_time() - t4))
-            # diff = data.compare(tst)
-
-            # print(diff)
-# df.values[df.isna()] = 'b'
 
         # Filter and clean the dataframe
         data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
@@ -393,7 +344,7 @@ def process_k8_academic_data(data, year, school):
         # alternately represented by NULL, None, or '0'
         tested_cols = data.filter(regex='Total Tested').columns.tolist()
 
-        # TODO: Can i use this for the proficiency shite in academic info too?
+        # TODO: Can i use this for the proficiency shite in academic info too? [later me- not sure what this means]
         drop_columns=[]
         for col in tested_cols:
             if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
@@ -455,7 +406,7 @@ def process_k8_academic_data(data, year, school):
 
     return data
 
-def filter_high_school_academic_data(data):
+def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     # NOTE: Drop columns without data. Generally, we want to keep 'result' (e.g., 'Graduates', 'Pass N',
     # 'Benchmark') columns with '0' values if the 'tested' (e.g., 'Cohort Count', 'Total Tested',
     # 'Test N') values are greater than '0'. The data is pretty shitty as well, using blank, null,
@@ -481,6 +432,7 @@ def filter_high_school_academic_data(data):
         tested_cols = data.filter(regex='Total Tested|Cohort Count|Test N').columns.tolist()
 
         drop_columns=[]
+        
         for col in tested_cols:
             if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
                 
@@ -506,7 +458,7 @@ def filter_high_school_academic_data(data):
 
     return final_data
     
-def process_high_school_academic_data(data, year, school):
+def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.DataFrame:
 
     school_information = get_school_index(school)
 
@@ -543,6 +495,7 @@ def process_high_school_academic_data(data, year, school):
 
             # group corp dataframe by year and sum all rows for each category
             data = data.groupby(["Year"]).sum(numeric_only=True)
+            
             # reverse order of rows (Year) and reset index to bring Year back as column
             data = data.loc[::-1].reset_index()
 
@@ -556,7 +509,7 @@ def process_high_school_academic_data(data, year, school):
         # cohort, there were no 'waiver' graduates (which means no Non Waiver data).
         # so we replace 0 with NaN (to ensure a NaN result rather than 0)
         # if "Non Waiver|Cohort Count" in data.columns:
-        #     data = calculate_nonwaiver_graduation_rate(data)
+        # data = calculate_nonwaiver_graduation_rate(data)
 
         # Calculate ECA (Grade 10) Rate #
         if "Grade 10|ELA Test N" in data.columns:
@@ -569,7 +522,7 @@ def process_high_school_academic_data(data, year, school):
         # Calculate AHS Only Data #
         # NOTE: All other values pulled from HS dataframe required for AHS calculations should go here        
 
-        # CCR Rate #
+        # CCR Rate
         if school_type == "AHS":
 
             if 'AHS|CCR' in data.columns:
@@ -580,8 +533,6 @@ def process_high_school_academic_data(data, year, school):
 
             if {'AHS|CCR','AHS|Grad All'}.issubset(data.columns):
                 data["CCR Percentage"] = (data["AHS|CCR"] / data["AHS|Grad All"])
-
-        # Prepare final dataframe #
 
         # filter
         data = data.filter(
@@ -615,7 +566,7 @@ def process_high_school_academic_data(data, year, school):
 
 ### Calculate Accountability Metrics ###
 
-def calculate_adult_high_school_metrics(school, data):
+def calculate_adult_high_school_metrics(school: str, data: pd.DataFrame) -> pd.DataFrame:
     # AHS metrics is such a small subset of all metrics, instead of pulling in the
     # entire HS DF, we just pull the three datapoints we need directly from the DB.
 
@@ -692,7 +643,7 @@ def calculate_adult_high_school_metrics(school, data):
 
     return ahs_data
 
-def merge_high_school_data(all_school_data, all_corp_data, year):
+def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.DataFrame, year: str) -> pd.DataFrame:
 
     all_school_data.columns = all_school_data.columns.astype(str)
     all_corp_data.columns = all_corp_data.columns.astype(str)
@@ -722,7 +673,7 @@ def merge_high_school_data(all_school_data, all_corp_data, year):
     all_school_data = (all_school_data.set_index(["Category"]).add_suffix("School").reset_index())
 
     # last bit of cleanup is to drop 'Corporation Name' Category from corp df
-    # all_corp_data = all_corp_data[all_corp_data['Category'] != 'Corporation Name']
+
     all_corp_data = all_corp_data.drop(all_corp_data.loc[all_corp_data['Category']=='Corporation Name'].index).reset_index(drop=True)
 
     # Create list of alternating columns by year
@@ -767,7 +718,7 @@ def merge_high_school_data(all_school_data, all_corp_data, year):
 
     return final_hs_academic_data
 
-def calculate_high_school_metrics(merged_data):
+def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
 
     data = merged_data.copy()
 
@@ -824,8 +775,10 @@ def calculate_high_school_metrics(merged_data):
 
     # combine dataframes and rename categories
     combined_grad_metrics = pd.concat([state_grad_metric, local_grad_metric], ignore_index=True)
+    
     combined_grad_metrics.loc[combined_grad_metrics["Category"] == "Average State Graduation Rate","Category",
     ] = "1.7.a 4 year graduation rate compared with the State average"
+    
     combined_grad_metrics.loc[combined_grad_metrics["Category"] == "Total Graduation Rate", "Category",
     ] = "1.7.b 4 year graduation rate compared with school corporation average"
 
@@ -834,7 +787,7 @@ def calculate_high_school_metrics(merged_data):
 
     return combined_grad_metrics
 
-def calculate_k8_yearly_metrics(data):
+def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     
     data.columns = data.columns.astype(str)
     
@@ -903,7 +856,7 @@ def calculate_k8_yearly_metrics(data):
     # function assigns a rating based on the '+/-' difference value (either year over year
     # or as compared to corp). For the year over year comparison it is possible to get a
     # rating of 'Approaches Standard' for a '+/-' value of '0.00%' when the yearly ratings
-    # are both '0'; and there is no case where we want a school to receive anything other
+    # are both '0'. There is no case where we want a school to receive anything other
     # than a 'DNMS' for a 0% proficiency. However, the set_academic_rating() function does
     # not have access to the values used to calculate the difference value (so it cannot
     # tell if a 0 value is the result of a 0 proficiency). So we need to manually replace
@@ -913,7 +866,6 @@ def calculate_k8_yearly_metrics(data):
     # column, the way we do this is to create a list of tuples (a list of year and rating
     # column pairs), e.g., [('2022School', '2022Rating3')], and then iterate over the column pair
 
-    # create the list of tuples
     # NOTE: the zip function stops at the end of the shortest list which automatically drops
     # the single 'Initial Year' column from the list. It returns an empty list if
     # school_years_cols only contains the Initial Year columns (because rating_cols will be empty)
@@ -930,11 +882,11 @@ def calculate_k8_yearly_metrics(data):
 
     return data
 
-def calculate_k8_comparison_metrics(school_data, year, school):
+def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school: str) -> pd.DataFrame:
 
     # TODO: Instead of passing school_data, should we just recalculate it?
     # TODO: will change error handling if the initial check as to whether there is data or not is in function
-
+    # TODO: Whichever way is faster, make sure both hs/ahs and k8 are the same
     excluded_years = get_excluded_years(year)
 
     all_corporation_data = get_k8_corporation_academic_data(school)
@@ -944,7 +896,6 @@ def calculate_k8_comparison_metrics(school_data, year, school):
     school_data.columns = school_data.columns.astype(str)
     corporation_data.columns = corporation_data.columns.astype(str)
 
-    # convert to numeric, but keep strings ('***')
     for col in school_data:
         school_data[col] = pd.to_numeric(school_data[col], errors='coerce').fillna(school_data[col])
 
@@ -963,7 +914,7 @@ def calculate_k8_comparison_metrics(school_data, year, school):
     # and store in a new column
     corporation_data = calculate_proficiency(corporation_data)
 
-    # replace 'Totals' with calculation taking the masking step into account
+#TODO: What masking step?
     # The masking step above removes grades from the corp_rate dataframe
     # that are not also in the school dataframe (e.g., if school only has data
     # for grades 3, 4, & 5, only those grades will remain in corp_rate df).
@@ -1064,7 +1015,7 @@ def calculate_k8_comparison_metrics(school_data, year, school):
 
     return final_k8_academic_data
 
-def calculate_iread_metrics(data):
+def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
     
     iread_limits = [0.9, 0.8, 0.7, 0.7] 
 
@@ -1088,4 +1039,3 @@ def calculate_iread_metrics(data):
     data.columns = data.columns.astype(str)
 
     return data
-

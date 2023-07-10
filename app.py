@@ -2,8 +2,8 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.04
+# date:     07/10/23
 
 ## NOTE: Because of the way data is store and presented by IDOE, there are
 # cases in which data points need to be manually calculated that the school
@@ -25,32 +25,27 @@ from flask import Flask, url_for, redirect, request, render_template, session, j
 from flask_login import login_user, LoginManager, UserMixin, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from dotenv import load_dotenv
 
 import dash
 from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
 
-from dotenv import load_dotenv
-
-# from werkzeug.middleware.profiler import ProfilerMiddleware
-
-# load data and global variables
-# TODO: REMOVE STATIC VARIABLES
-# TODO: SPEED?
-# https://community.plotly.com/t/dash-layout-and-dash-update-component-waiting/35573/7
-from pages.load_data import current_academic_year
-
 from pages.load_db import get_school_index, get_academic_dropdown_years, \
      get_operational_dropdown_years, get_school_dropdown_list
+from pages.load_data import current_academic_year
 
-# from pages.load_db import engine
+# load data and global variables
+
+# TODO: SPEED?
+# https://community.plotly.com/t/dash-layout-and-dash-update-component-waiting/35573/7
+
 # This is used solely to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Jost:400", FONT_AWESOME]
 
 # NOTE: Cannot get static folder to work (images do not load and give 302 Found error)
-
 server = Flask(__name__, static_folder="static")
 
 load_dotenv()
@@ -170,7 +165,7 @@ app = dash.Dash(
 )
 
 # Dropdown shows single school if school login is used
-# It shows all schools if admin login is used.
+# shows all schools if admin login is used.
 # NOTE: 'application-state' is a dummy input
 @callback(
     Output("charter-dropdown", "options"),
@@ -209,13 +204,13 @@ def set_dropdown_options(app_state):
 def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
             
+
 # year options are the range of:
 #   max = current_academic_year
 #   min = the earliest year for which the school has adm (is open)
 #   limit = typically a limit of 5 years (currently and
 #   temporarily 4 years so that 2018 academic data is not shown)
-
-# Input current-page and Output hidden are used to track the currently
+# NOTE: Input current-page and Output hidden are used to track the currently
 # selected url (Tab)
 @callback(
     Output("year-dropdown", "options"),
@@ -235,6 +230,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     selected_school = get_school_index(school_id)    
     school_type = selected_school['School Type'].values[0]
 
+    # source of available years depends on selected tab
     if 'academic' in current_page:
         years = get_academic_dropdown_years(school_id,school_type)
 
@@ -253,8 +249,10 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     # for the school
     if year is None:
         year_value = str(current_academic_year)
+    
     elif int(year) < int(first_available_year):
         year_value = str(first_available_year)
+    
     else:
         year_value = str(year)
 
@@ -268,7 +266,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
     return year_options, year_value, current_page
 
-# app.layout = html.Div(
+# app.layout = html.Div(    # NOTE: Test to see if it impacts speed
 def layout():
     return html.Div(
     [
@@ -306,7 +304,7 @@ def layout():
                                     clearable=False,
                                     className="school_dash_control",
                                 ),
-                                # NOTE: Dummy input for dropdown
+                                # Dummy input for dropdown
                                 html.Div(id="application-state", style={"display": "none"}),
                             ],
                             className="pretty_container five columns",
@@ -376,16 +374,8 @@ def layout():
     ],
 )
 
-app.layout = layout
+app.layout = layout # testing layout as a function - not sure its faster
 
-# if __name__ == "__main__":
-#     if os.getenv("PROFILER", None):
-#         app.server.config["PROFILE"] = True
-#         app.server.wsgi_app = ProfilerMiddleware(
-#             app.server.wsgi_app, sort_by=("cumtime", "tottime"), restrictions=[50]
-#         )
-#         print(app.server.config)
-#     app.run_server(debug=True)
 if __name__ == "__main__":
     app.run_server(debug=True)
 # #    application.run(host='0.0.0.0', port='8080')

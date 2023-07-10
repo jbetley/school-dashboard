@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.04
+# date:     07/10/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -155,7 +155,8 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         # a value for any State Grants (the school is in Pre-Opening)
 
         # NOTE: To show schools in Pre-Opening year, remove the 'or' condition
-        # (also need to modify the financial metric calculation function)
+        # (you would also need to modify the financial metric calculation function, so
+        # maybe think twice before doing it)
         
         if (len(financial_data.columns) <= 1) | ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == '0')):
                 financial_metrics_table = {}
@@ -175,7 +176,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             financial_data.loc['Change in Net Assets'] = financial_data.loc['Operating Revenues'] - financial_data.loc['Operating Expenses']        
             financial_data = financial_data.reset_index()
 
-            # Ensure only 'max_display_years' (currently 5) of financial data
+            # Ensure only 'max_display_years' of financial data
             # is displayed (add +1 to max_display_years to account for the
             # category column). To show all financial data, comment out this
             # line. This may cause unexpected errors elsewhere.
@@ -219,7 +220,6 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
                 headers = financial_metrics.columns.tolist()
 
-                # NOTE: Consider turning table_size into a function()
                 # input: table_size
                 # output: col_width, category_width, rating_width, and year_width,
                 #  (difference_width, corporation_width)
@@ -240,6 +240,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 # column based on the size on the dataframe
                 table_size = len(financial_metrics.columns)
 
+                # NOTE: Consider turning this table_size into a function()
                 if table_size <= 3:
                     col_width = 'four'
                     category_width = 70
@@ -392,7 +393,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 financial_indicators.insert(loc=0, column='Description', value = description)
                 financial_indicators.insert(loc=0, column='Standard', value = standard)
 
-                # convert ratings to colored circles
+                # convert ratings to svg circles
                 financial_indicators = get_svg_circle(financial_indicators)
 
                 headers = financial_indicators.columns.tolist()

@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Information #
 ##########################################
 # author:   jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.04
+# date:     07/10/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -184,8 +184,8 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             for col in financial_data.columns[1:]:
                 financial_data[col]=pd.to_numeric(financial_data[col], errors='coerce')
 
-            # NOTE: certain categories in dataframe are pre-calculated ('Total Grants',
-            # 'Net Asset Position', and 'Change in Net Assets'). However, rather than
+            # NOTE: there are certain calculated categories already in the df ('Total Grants',
+            # 'Net Asset Position', and 'Change in Net Assets'). Rather than
             # rely on these pre-calculated categories, we calculate them from the 
             # underlying data: 1) 'Total Grants' = 'State Grants' + 'Federal Grants';
             # 2) 'Net Asset Position' = 'Total Assets' - 'Total Liabilities'; and
@@ -202,9 +202,9 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             # reset index, which shifts Category back to column one
             financial_data = financial_data.reset_index()
 
-            # Ensure that only the 'max_display_years' number of years (currently 5)
-            # worth of financial data is displayed (add +1 to max_display_years to
-            # account for the category column). To show all years of data, comment out this line.
+            # Ensure that only the 'max_display_years' number of years worth of financial
+            # data is displayed (add +1 to max_display_years to account for the category
+            # column). To show all years of data, comment out this line.
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
             years=financial_data.columns.tolist()
@@ -214,11 +214,10 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             # remove audit and other indicator data (it is displayed on the financial metrics page)
             financial_data = financial_data.drop(financial_data.index[41:])
 
-            # Each column in the financial_information df must have at least 12 values
-            # to be valid. To avoid a situation where there is a column that only contains
-            # financial ratio data (e.g., where a school existed prior to being required
-            # to report financial data to ICSB), drop any column where more than 31 rows
-            # contain empty strings (df has 43 total rows)
+            # Each column (year) in the df must have at least 12 values to be valid. To avoid the
+            # situation where there is a column that only contains financial ratio data (e.g., 
+            # when a school existed prior to being required to report financial data to ICSB),
+            # drop any column where more than 31 rows contain empty strings (df has 43 total rows)
             for c in financial_data.columns:
                 if len(financial_data[financial_data[c] == ''].index) > 31:
                     financial_data.drop([c], inplace=True, axis=1)
@@ -267,8 +266,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                 category_width = 15
 
             data_width = 100 - category_width
-            data_col_width = data_width / (table_size - 1)
-            year_width = data_col_width
+            year_width = data_width / (table_size - 1)
 
             class_name = 'pretty_container ' + col_width + ' columns'
 

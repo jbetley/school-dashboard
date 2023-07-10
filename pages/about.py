@@ -2,8 +2,8 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.04
+# date:     07/10/23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -11,7 +11,6 @@ from dash.exceptions import PreventUpdate
 import plotly.express as px
 import pandas as pd
 import numpy as np
-import time
 
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
@@ -39,9 +38,14 @@ dash.register_page(__name__, path='/', order=0, top_nav=True)
     Input('year-dropdown', 'value'),
     Input('charter-dropdown', 'value'),
 )
-def update_about_page(year: str, school: str):
+def update_about_page(year_string: str, school: str):
     if not school:
         raise PreventUpdate
+
+    current_year_string = year_string
+    current_year_numeric = int(current_year_string)
+    previous_year_numeric = current_year_numeric - 1
+    previous_year_string = str(previous_year_numeric)
 
     # see color list in chart_helpers.py
     linecolor = ['#df8f2d']
@@ -104,16 +108,10 @@ def update_about_page(year: str, school: str):
         )
     ]
 
-    t1 = time.process_time()
-
     demographic_data = get_demographic_data(school)
     financial_data = get_financial_data(school)
     letter_grades = get_letter_grades(school)
 
-    print(f'Time to load and process info data: ' + str(time.process_time() - t1))    
-
-    t2 = time.process_time()
-    # clean up
     financial_data = financial_data.drop(['School ID','School Name'], axis=1)
     financial_data = financial_data.dropna(axis=1, how='all')
 
@@ -138,10 +136,7 @@ def update_about_page(year: str, school: str):
         corp_id = str(selected_school['GEO Corp'].values[0])
         corp_demographics = get_demographic_data(corp_id)
 
-        string_year = str(year)
-        current_year = string_year
-        previous_year = int(current_year) - 1
-        year_title = str(previous_year) + '-' + str(current_year)[-2:]
+        year_title = previous_year_string + '-' + current_year_string[-2:]
 
         # Build figure titles
         enroll_title = 'Enrollment ' + '(' + year_title + ')'
@@ -157,10 +152,10 @@ def update_about_page(year: str, school: str):
             letter_grades = (letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
             # For table, drop invalid years, but keep 'Category'
-            letter_grade_columns = [str(i) for i in letter_grades.columns if i not in [2018,int(current_year)+1]]
+            letter_grade_columns = [str(i) for i in letter_grades.columns if i not in [2018, current_year_numeric+1]]
             
             # For hold_harmless string, drop invalid years and 'Category'
-            hold_harmless_columns = [str(i) for i in letter_grades.columns if i not in ['Category',2018,int(current_year)+1]]
+            hold_harmless_columns = [str(i) for i in letter_grades.columns if i not in ['Category',2018, current_year_numeric+1]]
 
             # schools have been held harmless by the State of Indiana since
             # 2019, and continue to be held harmless (2019-2023). This builds
@@ -271,8 +266,8 @@ def update_about_page(year: str, school: str):
 
         else:
 
-            demographic_data = demographic_data.loc[demographic_data["Year"] == int(year)]
-            corp_demographics = corp_demographics.loc[corp_demographics["Year"] == int(year)]
+            demographic_data = demographic_data.loc[demographic_data["Year"] == current_year_numeric]
+            corp_demographics = corp_demographics.loc[corp_demographics["Year"] == current_year_numeric]
 
             enrollment_filter = demographic_data.filter(regex = r'^Grade \d{1}|[1-9]\d{1}$;|^Pre-K$|^Kindergarten$|^Total Enrollment$',axis=1)
             enrollment_filter = enrollment_filter[[c for c in enrollment_filter if c not in ['Total Enrollment']] + ['Total Enrollment']]
@@ -333,10 +328,6 @@ def update_about_page(year: str, school: str):
                     },
                 )
             ]
-
-        print(f'Time to make About tables: ' + str(time.process_time() - t2))  
-
-        t3 = time.process_time()
         
         # ADM chart
         if len(financial_data.columns) <= 1:
@@ -374,7 +365,7 @@ def update_about_page(year: str, school: str):
                 # 'excluded years' is a list of YYYY strings (all years more
                 # recent than selected year) that can be used to filter data
                 # that should not be displayed
-                excluded_academic_years = current_academic_year - int(year)
+                excluded_academic_years = current_academic_year - current_year_numeric
                 
                 excluded_years = []
                 
@@ -422,9 +413,6 @@ def update_about_page(year: str, school: str):
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)'
             )
-
-        print(f'Time to make ADM Chart: ' + str(time.process_time() - t3))  
-        t4 = time.process_time()
         
         # Enrollment by ethnicity chart
         ethnicity_school = demographic_data.loc[:, (demographic_data.columns.isin(ethnicity)) | (demographic_data.columns.isin(['Corporation Name','Total Enrollment']))].copy()
@@ -524,8 +512,7 @@ def update_about_page(year: str, school: str):
                 font=dict(size=10, color='#6783a9'),
                 align='left'
             )
-            print(f'Time to process Ethnicity Enrollment: ' + str(time.process_time() - t4))
-            t5 = time.process_time()
+
             # Enrollment by subgroup chart
             subgroup_school = demographic_data.loc[:, (demographic_data.columns.isin(subgroup)) | (demographic_data.columns.isin(['Corporation Name','Total Enrollment']))]
             subgroup_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(subgroup)) | (corp_demographics.columns.isin(['Corporation Name','Total Enrollment']))]
@@ -623,7 +610,6 @@ def update_about_page(year: str, school: str):
                     align='left'
                 )
 
-            print(f'Time to process Subgroup enrollment: ' + str(time.process_time() - t5))
         else:
             subgroup_fig = no_data_fig_label('Enrollment by Subgroup', 400)
             ethnicity_fig = no_data_fig_label('Enrollment by Ethnicity', 400)
@@ -633,8 +619,6 @@ def update_about_page(year: str, school: str):
         subgroup_title, subgroup_fig, main_container, empty_container, school_name,\
         info_table, no_data_to_display
 
-# NOTE: https://dash.plotly.com/loading-states
-# https://stackoverflow.com/questions/68188107/how-to-add-create-a-custom-loader-with-dash-plotly
 layout = html.Div(
         [
             dcc.Loading(
