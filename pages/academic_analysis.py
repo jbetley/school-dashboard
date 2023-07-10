@@ -12,7 +12,7 @@ import pandas as pd
 import time
 
 # import local functions
-from .calculations import find_nearest, filter_grades
+from .calculations import find_nearest
 from .chart_helpers import no_data_fig_label, make_line_chart, make_bar_chart, make_group_bar_chart, \
     combine_barchart_and_table
 from .table_helpers import create_comparison_table, no_data_page, no_data_table, create_school_label, \

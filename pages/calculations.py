@@ -2,11 +2,12 @@
 # ICSB Dashboard - Calculation Functions #
 ##########################################
 # author:   jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.07
+# date:     07/10/23
 
 import pandas as pd
 import numpy as np
+from typing import Tuple
 import scipy.spatial as spatial
 
 def calculate_percentage(numerator: str, denominator: str) -> float|None|str:
@@ -64,22 +65,31 @@ def calculate_difference(value1: str, value2: str) -> float|None|str:
         ),
     )
 
-# NOTE: Calculating year-over-year values is complicated by the fact that we need
-# to track, not ignore, insufficent n-size ('***'), a non-numeric value- . This is
-# used when there is available data, but not enough of it to show under privacy laws.
 
-# 1) If both the current_year and previous_year values are '***' -> the result is '***'
-# 2) If the previous year is either NaN or '***' and the current_year is 0 (that is 0% of students
-#    were proficient) -> the result is '-***", which is a special flag used for accountability
-#    purposes (a '-***' is generally treated as a Did Not Meet Standard rather than a No Rating).
-#   Thus:
-#   if None in Either Column -> None
-#   if *** in either column -> ***
-#   if # -> subtract
-#   if first value = 0 and second value is *** -> -***
-#   if first value = 0 and second value is NaN -> -***
+# TODO: Confirm types
+def calculate_year_over_year(current_year: str|float, previous_year: str|float) -> str|float|None:
+    """
+    Calculates year_over_year differences, accounting for string representation ('***')
+    of insufficent n-size (there is available data, but not enough of it to show under privacy laws).
+        1) If both the current_year and previous_year values are '***' -> the result is '***'
+        2) If the previous year is either NaN or '***' and the current_year is 0 (that is 0% of students
+           were proficient) -> the result is '-***", which is a special flag used for accountability
+           purposes (a '-***' is generally treated as a Did Not Meet Standard rather than a No Rating).
+    Thus:
+        if None in Either Column -> None
+        if *** in either column -> ***
+        if # -> subtract
+        if first value = 0 and second value is *** -> -***
+        if first value = 0 and second value is NaN -> -***
 
-def calculate_year_over_year(current_year, previous_year):
+    Args:
+        current_year (float|str): current year value
+        previous_year (float|str): previous year value
+
+    Returns:
+        float|str: Either the differnece between the current and previous year values, None, 
+        or a string ('***')
+    """
     return np.where(
         (current_year == 0) & ((previous_year.isna()) | (previous_year == "***")), "-***",
         np.where(
@@ -107,10 +117,11 @@ def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str
         flag (int): a integer
 
     Returns:
-        str: _description_
+        str: metric rating
     """
 
     # NOTE: The order of these operations matters
+
     # if data is a string
     if data == "***" or data == "No Grade":
         indicator = "NA"
@@ -188,9 +199,10 @@ def round_nearest(df: pd.DataFrame, step: int) -> int:
 
     Args:
         df (pd.DataFrame): pandas dataframe
-        step (int): an integer
+        step (int): the 'number' of ticks we ultimately want
+    
     Returns:
-        _type_: an integer
+        int: an integer representing the tick amount
     """
     
     max_val = df.melt().value.max()
@@ -221,7 +233,7 @@ def round_percentages(percentages: list) -> list:
         percentages (list): a list of floats
 
     Returns:
-        _type_: a list of integers
+        list: a list of integers
     """
 
     # if numbers are in decimal format (e.g. .57, .90) then the sum
@@ -257,16 +269,17 @@ def round_percentages(percentages: list) -> list:
     # return just the percentage
     return [percentage[0] for percentage in result]
 
-def check_for_no_data(data: pd.DataFrame) -> str:
+def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     """
     Takes a dataframe, finds the Years where all values are '***', nan, or none
     and turns the results into a single string of the year(s)
 
     Args:
-        data (_type_): pd.DataFrame
+        data (pd.DataFrame): dataframe of academic proficiency values
 
     Returns:
-        _type_: string
+        string: a single string of all years of missing data. and a dataframe where the years of missing
+        data (rows) have been dropped.
     """
     # Identify and drop rows with no or insufficient data ('***' or NaN/None)
     tmp = data.copy()
@@ -309,10 +322,10 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
     E.g., 'White (2021, 2022); Hispanic, Multiracial (2019)'
 
     Args:
-        data (_type_): pd.DataFrame
+        data(pd.DataFrame): dataframe of academic proficiency values
 
     Returns:
-        _type_: string
+        string: A single string listing all years (rows) for which there is insufficient data
     """
 
     #  returns the indices of elements in a tuple of arrays where the condition is satisfied
@@ -365,15 +378,14 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
 
     return df_string
 
-def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.ndarray:
+def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray|np.ndarray:
     """
     Based on https://stackoverflow.com/q/43020919/190597
     https://stackoverflow.com/questions/45127141/find-the-nearest-point-in-distance-for-all-the-points-in-the-dataset-python
     https://stackoverflow.com/questions/43020919/scipy-how-to-convert-kd-tree-distance-from-query-to-kilometers-python-pandas
     https://kanoki.org/2020/08/05/find-nearest-neighbor-using-kd-tree/
 
-        Used to find the [20] nearest schools to the
-    selected school
+    Used to find the [20] nearest schools to the selected school.
  
     Takes a dataframe of schools and their Lat and Lon coordinates and the index of the
     selected school within that list. Calculates the distances of all schools in the
@@ -413,35 +425,6 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray | np.nd
     distance, index = tree.query(data.iloc[school_idx][['x', 'y','z']], k = num_hits)
 
     return index, distance
-
-# NOTE: Not used, is quite slow.
-def filter_grades(row: pd.DataFrame, compare: pd.DataFrame) -> bool:
-    """
-    Takes two dataframes, one, a single row of data for the selected
-    school, and another multiple rows of comparison school data that
-    includes the Low and High Grades for each. Creates a boolean
-    mask of the comparison schools where there is a grade overlap
-    based on an integer list created from the Low Grade and High
-    Grade values.
-    
-    If there is a grade range overlap, the function returns True,
-    If there is no grade range overlap, the function returns False.
-    
-    Args:
-        row (pd.DataFrame): a dataFrame with data of the selected school
-        comparison (pd.DataFrame): a dataframe with data from one or more other schools
-
-    Returns:
-        boolean: True|False
-    """
-
-    row[['Low Grade', 'High Grade']] = row[['Low Grade', 'High Grade']].astype(int)
-    row_grade_range = list(range(row['Low Grade'], row['High Grade']+1))
-
-    if (set(compare) & set(row_grade_range)):
-        return True
-    else:
-        return False
 
 # Caclulate metrics based on ICSB Accountability System financial framework
 # NOTE: This was refactored (03.01.23) to use vectorized operations. Not sure

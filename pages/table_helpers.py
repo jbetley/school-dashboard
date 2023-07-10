@@ -2,8 +2,8 @@
 # ICSB Dashboard - DataTable Functions #
 ########################################
 # author:   jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.04
+# date:     07/10/23
 
 import numpy as np
 import pandas as pd
@@ -54,6 +54,7 @@ def no_data_page(label: str) -> list:
     Returns:
         list: dash DataTable
     """
+
     empty_dict = [{"": ""}]
     table_layout = [
         html.Div(
@@ -96,9 +97,10 @@ def no_data_page(label: str) -> list:
     return table_layout
 
 def hidden_table() -> list:
-    """ Creates empty table with no cells. Will be automatically hidden
-        ('display': 'none') by css selector chaining for pretty_container.
-        see stylesheet.css
+    """
+    Creates empty table with no cells. Will be automatically hidden
+    ('display': 'none') by css selector chaining for pretty_container.
+    See stylesheet.css
 
     Args:
         None
@@ -119,8 +121,9 @@ def hidden_table() -> list:
     return table_layout
 
 def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
-    """ Determines table layout depending on the size (# of cols) of the tables,
-        either side by side or on an individual row
+    """
+    Determines table layout depending on the size (# of cols) of the tables,
+    either side by side or on an individual row
 
     Args:
         table1 (list): dash DataTable
@@ -169,11 +172,12 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
     return table_layout
 
 def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
-    """Takes a Pandas Dataframe and replaces text with svg circles coded
-        the correct colors based on rating text.
-        https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
-        https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
-        https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
+    """
+    Takes a Pandas Dataframe and replaces text with svg circles coded
+    the correct colors based on rating text. See:
+    https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
+    https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
+    https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
 
     Args:
         val (pd.Dataframe): Pandas dataframe with metric Rating columns
@@ -194,10 +198,9 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     return result
 
 def create_metric_table(label: str, content: pd.DataFrame) -> list:
-    """Takes a dataframe consisting of Rating and Metric
-    Columns and returns a list dash DataTable object
-    NOTE: could possibly be less complicated than it is, or
-    maybe not - gonna leave it up to future me
+    """
+    Takes a dataframe consisting of Rating and Metric Columns and returns a list dash DataTable object
+    NOTE: could possibly be less complicated than it is, or maybe not - gonna leave it up to future me
 
     Args:
         label (String): Table title
@@ -259,7 +262,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # calculation from calculateMetrics(), but am leaving it in for now in case
         # we ultimately choose to display it
 
-        # NOTE: Order of these operations matters
+        # NOTE: The Order of these operations matters
 
         # remove all Corp Rate / Corp Avg columns
         data = data.loc[:, ~data.columns.str.contains('Corp')]
@@ -267,6 +270,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # rename '+/-' columns
         data.columns = data.columns.str.replace('\+/-', 'Diff', regex=True)
 
+# TODO: THis is in at least three places - need to functionize it
         # determines the col_width class and width of the category column based
         # on the size (# of cols) of the dataframe
         if table_size <= 3:
@@ -571,6 +575,15 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
     return table
 
 def create_chart_label(final_data: pd.DataFrame) -> str:
+    """
+    Takes a dataframe of academic data and creates a chart label
+
+    Args:
+        final_data (pd.DataFrame): dataframe of academic data
+
+    Returns:
+        str: chart label
+    """
 
     final_data_columns = final_data.columns.tolist()
 
@@ -590,7 +603,17 @@ def create_chart_label(final_data: pd.DataFrame) -> str:
 
     return label
     
-def create_school_label(data):
+def create_school_label(data: pd.DataFrame) -> str:
+    """
+    Takes a dataframe of academic data and creates a label for each school with
+    its gradespan.
+
+    Args:
+        final_data (pd.DataFrame): dataframe of academic data
+
+    Returns:
+        str: school label with name and gradespan
+    """
 
     label = data['School Name'] + ' (' + data['Low Grade'].fillna('').astype(str) + \
         '-' + data['High Grade'].fillna('').astype(str) + ')'
@@ -602,16 +625,16 @@ def create_school_label(data):
     return label
 
 def process_table_data(data: pd.DataFrame) -> pd.DataFrame:
-    # Create a series that merges school name and grade spans and drop the grade span columns 
-    # from the dataframe (they are not charted)
+    """
+    Creates a series that merges school name and grade spans and drop the grade span columns 
+    from the dataframe (they are not charted)
 
-    
-    # school_names = data['School Name'] + ' (' + data['Low Grade'].fillna('').astype(str) + '-' \
-    # + data['High Grade'].fillna('').astype(str) + ')'
+    Args:
+        data (pd.DataFrame): dataframe of academic data
 
-    # # removes extraneous string from School Corporation Data
-    # school_names = school_names.str.replace("\(-\)", '',regex=True)
-
+    Returns:
+        pd.DataFrame: processed dataframe
+    """    
     school_names = create_school_label(data)
 
     data = data.drop(['Low Grade', 'High Grade'], axis = 1)
@@ -626,6 +649,7 @@ def process_table_data(data: pd.DataFrame) -> pd.DataFrame:
     
     return data
 
+# TODO: docstring
 def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: str, corp_name: str) -> Tuple[pd.DataFrame, str, str]:
     
     all_categories = categories + info_categories
@@ -1024,8 +1048,11 @@ def create_key() -> dash_table.DataTable:
     """Creates a dash datatable 'key' using proficiency ratings and
     the Font Awesome circle icon
 
+    Args: 
+        None
+
     Returns:
-        _type_: a dash DataTable
+        dash.DataTable: definition key 
     """
     rating_icon = '<span style="font-size: 1em;"><i class="fa fa-circle"></i></span>'
 

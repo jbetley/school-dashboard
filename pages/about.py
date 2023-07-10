@@ -17,51 +17,51 @@ from .table_helpers import no_data_table, no_data_page
 from .load_db import get_school_index, get_financial_data, get_demographic_data, get_letter_grades
 from .load_data import ethnicity, subgroup, max_display_years, current_academic_year
 
-dash.register_page(__name__, path='/', order=0, top_nav=True)
+dash.register_page(__name__, path="/", order=0, top_nav=True)
 
 @callback(
-    Output('school-name', 'children'),
-    Output('info-table', 'children'),
-    Output('letter-grade-table', 'children'),
-    Output('enroll-title', 'children'),
-    Output('enroll-table', 'children'),
-    Output('adm_fig', 'figure'),
-    Output('ethnicity-title', 'children'),
-    Output('ethnicity-fig', 'figure'),
-    Output('subgroup-title', 'children'),
-    Output('subgroup-fig', 'figure'),
-    Output('about-main-container', 'style'),
-    Output('about-empty-container', 'style'),
-    Output('school-name-no-data', 'children'),
-    Output('info-table-no-data', 'children'),    
-    Output('about-no-data', 'children'),
-    Input('year-dropdown', 'value'),
-    Input('charter-dropdown', 'value'),
+    Output("school-name", "children"),
+    Output("info-table", "children"),
+    Output("letter-grade-table", "children"),
+    Output("enroll-title", "children"),
+    Output("enroll-table", "children"),
+    Output("adm_fig", "figure"),
+    Output("ethnicity-title", "children"),
+    Output("ethnicity-fig", "figure"),
+    Output("subgroup-title", "children"),
+    Output("subgroup-fig", "figure"),
+    Output("about-main-container", "style"),
+    Output("about-empty-container", "style"),
+    Output("school-name-no-data", "children"),
+    Output("info-table-no-data", "children"),    
+    Output("about-no-data", "children"),
+    Input("year-dropdown", "value"),
+    Input("charter-dropdown", "value"),
 )
-def update_about_page(year_string: str, school: str):
+def update_about_page(year: str, school: str):
     if not school:
         raise PreventUpdate
 
-    current_year_string = year_string
-    current_year_numeric = int(current_year_string)
-    previous_year_numeric = current_year_numeric - 1
+    selected_year_string = year
+    selected_year_numeric = int(selected_year_string)
+    previous_year_numeric = selected_year_numeric - 1
     previous_year_string = str(previous_year_numeric)
 
     # see color list in chart_helpers.py
-    linecolor = ['#df8f2d']
-    bar_colors = ['#74a2d7', '#df8f2d']
+    linecolor = ["#df8f2d"]
+    bar_colors = ["#74a2d7", "#df8f2d"]
 
-    main_container = {'display': 'block'}
-    empty_container = {'display': 'none'}
-    no_data_to_display = no_data_page('School Enrollment & Demographics')
+    main_container = {"display": "block"}
+    empty_container = {"display": "none"}
+    no_data_to_display = no_data_page("School Enrollment & Demographics")
 
     selected_school = get_school_index(school)
 
-    school_name = selected_school['School Name'].values[0]
-    headers = ['Category','Description']
+    school_name = selected_school["School Name"].values[0]
+    headers = ["Category","Description"]
 
     # see selected_school.columns for additional values that can be displayed
-    info = selected_school[['City','Principal','Opening Year']]
+    info = selected_school[["City","Principal","Opening Year"]]
 
     school_info = info.T
     school_info = school_info.reset_index()
@@ -69,41 +69,41 @@ def update_about_page(year_string: str, school: str):
 
     info_table = [
         dash_table.DataTable(
-            school_info.to_dict('records'),
-            columns = [{'name': i, 'id': i} for i in school_info.columns],
+            school_info.to_dict("records"),
+            columns = [{"name": i, "id": i} for i in school_info.columns],
             style_table={
-                'height': '20vh'
+                "height": "20vh"
             },            
             style_data={
-                'fontSize': '12px',
-                'fontFamily': 'Jost, sans-serif',
-                'border': 'none'
+                "fontSize": "12px",
+                "fontFamily": "Jost, sans-serif",
+                "border": "none"
             },
             style_data_conditional=[
                 {
-                    'if': {
-                        'column_id': 'Category',
+                    "if": {
+                        "column_id": "Category",
                     },
-                    'borderRight': '.5px solid #6783a9',
+                    "borderRight": ".5px solid #6783a9",
                 },
                 {
-                    'if': {
-                        'state': 'selected'
+                    "if": {
+                        "state": "selected"
                     },
-                    'backgroundColor': 'rgba(112,128,144, .3)',
-                    'border': 'thin solid silver'
+                    "backgroundColor": "rgba(112,128,144, .3)",
+                    "border": "thin solid silver"
                 }                
             ],
             style_header={
-                'display': 'none',
-                'border': 'none',
+                "display": "none",
+                "border": "none",
             },
             style_cell={
-                'whiteSpace': 'normal',
-                'height': 'auto',
-                'textAlign': 'center',
-                'color': '#6783a9',
-                'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                "whiteSpace": "normal",
+                "height": "auto",
+                "textAlign": "center",
+                "color": "#6783a9",
+                "minWidth": "25px", "width": "25px", "maxWidth": "25px"
             },
         )
     ]
@@ -112,8 +112,8 @@ def update_about_page(year_string: str, school: str):
     financial_data = get_financial_data(school)
     letter_grades = get_letter_grades(school)
 
-    financial_data = financial_data.drop(['School ID','School Name'], axis=1)
-    financial_data = financial_data.dropna(axis=1, how='all')
+    financial_data = financial_data.drop(["School ID","School Name"], axis=1)
+    financial_data = financial_data.dropna(axis=1, how="all")
 
     if len(letter_grades.columns) <= 1 and (len(demographic_data.columns) <= 1 & \
           len(financial_data.columns) <= 0):
@@ -127,35 +127,35 @@ def update_about_page(year_string: str, school: str):
         subgroup_title = {}
         subgroup_fig = {}
 
-        main_container = {'display': 'none'}
-        empty_container = {'display': 'block'}
+        main_container = {"display": "none"}
+        empty_container = {"display": "block"}
 
     else:
 
         # Enrollment table
-        corp_id = str(selected_school['GEO Corp'].values[0])
+        corp_id = str(selected_school["GEO Corp"].values[0])
         corp_demographics = get_demographic_data(corp_id)
 
-        year_title = previous_year_string + '-' + current_year_string[-2:]
+        year_title = previous_year_string + "-" + selected_year_string[-2:]
 
         # Build figure titles
-        enroll_title = 'Enrollment ' + '(' + year_title + ')'
-        ethnicity_title = 'Enrollment by Ethnicity ' + '(' + year_title + ')'
-        subgroup_title = 'Enrollment by Subgroup ' + '(' + year_title + ')'
+        enroll_title = "Enrollment " + "(" + year_title + ")"
+        ethnicity_title = "Enrollment by Ethnicity " + "(" + year_title + ")"
+        subgroup_title = "Enrollment by Subgroup " + "(" + year_title + ")"
 
         # State grades and Federal ratings table
         if len(letter_grades.index) == 0:
-            letter_grade_table = no_data_table('State and Federal Ratings')
+            letter_grade_table = no_data_table("State and Federal Ratings")
 
         else:
 
             letter_grades = (letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
-            # For table, drop invalid years, but keep 'Category'
-            letter_grade_columns = [str(i) for i in letter_grades.columns if i not in [2018, current_year_numeric+1]]
+            # For table, drop invalid years, but keep "Category"
+            letter_grade_columns = [str(i) for i in letter_grades.columns if i not in [2018, selected_year_numeric+1]]
             
-            # For hold_harmless string, drop invalid years and 'Category'
-            hold_harmless_columns = [str(i) for i in letter_grades.columns if i not in ['Category',2018, current_year_numeric+1]]
+            # For hold_harmless string, drop invalid years and "Category"
+            hold_harmless_columns = [str(i) for i in letter_grades.columns if i not in ["Category",2018, selected_year_numeric+1]]
 
             # schools have been held harmless by the State of Indiana since
             # 2019, and continue to be held harmless (2019-2023). This builds
@@ -169,92 +169,92 @@ def update_about_page(year_string: str, school: str):
                 hold_harmless_years.remove(last_year)
 
                 if hold_harmless_years:
-                    hold_harmless_year_string = ', '.join(hold_harmless_years) + ', and ' + last_year
+                    hold_harmless_year_string = ", ".join(hold_harmless_years) + ", and " + last_year
                 else:
                     hold_harmless_year_string = last_year
 
-                hold_harmless_string = 'Schools were \'Held Harmless\' by the State in ' \
-                    + hold_harmless_year_string + '. Under Hold Harmless, a school cannot receive a \
-                    lower A-F grade than what it received for the previous school year.'
+                hold_harmless_string = "Schools were \"Held Harmless\" by the State in " \
+                    + hold_harmless_year_string + ". Under Hold Harmless, a school cannot receive a \
+                    lower A-F grade than what it received for the previous school year."
             else:
-                hold_harmless_string =''
+                hold_harmless_string =""
 
             letter_grade_table = [
                 dash_table.DataTable(
-                    letter_grades.to_dict('records'),
-                    columns = [{'name': str(i), 'id': str(i)} for i in letter_grade_columns],
+                    letter_grades.to_dict("records"),
+                    columns = [{"name": str(i), "id": str(i)} for i in letter_grade_columns],
                     style_table={
-                        'height': '20vh'
+                        "height": "20vh"
                     },
                     style_data={
-                        'fontSize': '12px',
-                        'fontFamily': 'Jost, sans-serif',
-                        'border': 'none',
+                        "fontSize": "12px",
+                        "fontFamily": "Jost, sans-serif",
+                        "border": "none",
                     },
                     style_data_conditional=[
                         {
-                            'if': {
-                                'row_index': 0,
-                                'column_id': 'Category'
+                            "if": {
+                                "row_index": 0,
+                                "column_id": "Category"
                             },
-                            'borderTop': '.5px solid #6783a9',
+                            "borderTop": ".5px solid #6783a9",
                         },
                         {
-                            'if': {
-                                'row_index': 'odd'
+                            "if": {
+                                "row_index": "odd"
                             },
-                            'backgroundColor': '#eeeeee'
+                            "backgroundColor": "#eeeeee"
                         },
                         {
-                            'if': {
-                                'state': 'selected'
+                            "if": {
+                                "state": "selected"
                             },
-                            'backgroundColor': 'rgba(112,128,144, .3)',
-                            'border': 'thin solid silver'
+                            "backgroundColor": "rgba(112,128,144, .3)",
+                            "border": "thin solid silver"
                         }                        
                     ],
                     style_header={
-                        'height': '20px',
-                        'backgroundColor': '#ffffff',
-                        'border': 'none',
-                        'borderBottom': '.5px solid #6783a9',
-                        'fontSize': '12px',
-                        'fontFamily': 'Jost, sans-serif',
-                        'color': '#6783a9',
-                        'textAlign': 'center',
-                        'fontWeight': 'bold'
+                        "height": "20px",
+                        "backgroundColor": "#ffffff",
+                        "border": "none",
+                        "borderBottom": ".5px solid #6783a9",
+                        "fontSize": "12px",
+                        "fontFamily": "Jost, sans-serif",
+                        "color": "#6783a9",
+                        "textAlign": "center",
+                        "fontWeight": "bold"
                     },
                     style_cell={
-                        'whiteSpace': 'normal',
-                        'textAlign': 'center',
-                        'color': '#6783a9',
-                        'fontFamily': 'Jost, sans-serif',
-                        'boxShadow': '0 0',
-                        'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                        "whiteSpace": "normal",
+                        "textAlign": "center",
+                        "color": "#6783a9",
+                        "fontFamily": "Jost, sans-serif",
+                        "boxShadow": "0 0",
+                        "minWidth": "25px", "width": "25px", "maxWidth": "25px"
                     },
                     style_cell_conditional=[
                         {
-                            'if': {
-                                'column_id': 'Category'
+                            "if": {
+                                "column_id": "Category"
                             },
-                            'textAlign': 'left',
-                            'fontWeight': '500',
-                            'paddingLeft': '20px',
-                            'width': '35%',
+                            "textAlign": "left",
+                            "fontWeight": "500",
+                            "paddingLeft": "20px",
+                            "width": "35%",
                         },
                     ],
                     tooltip_header={
                         col: [
                             {
-                                'type': 'markdown',
-                                'value': hold_harmless_string
+                                "type": "markdown",
+                                "value": hold_harmless_string
                             }
                         ]
                         for col in hold_harmless_columns
                     },
                     css=[{
-                    'selector': '.dash-table-tooltip',
-                    'rule': 'background-color: grey; font-family: Jost, sans-serif; color: white'
+                    "selector": ".dash-table-tooltip",
+                    "rule": "background-color: grey; font-family: Jost, sans-serif; color: white"
                     }],
                     style_as_list_view=True
                 )
@@ -266,77 +266,77 @@ def update_about_page(year_string: str, school: str):
 
         else:
 
-            demographic_data = demographic_data.loc[demographic_data["Year"] == current_year_numeric]
-            corp_demographics = corp_demographics.loc[corp_demographics["Year"] == current_year_numeric]
+            demographic_data = demographic_data.loc[demographic_data["Year"] == selected_year_numeric]
+            corp_demographics = corp_demographics.loc[corp_demographics["Year"] == selected_year_numeric]
 
-            enrollment_filter = demographic_data.filter(regex = r'^Grade \d{1}|[1-9]\d{1}$;|^Pre-K$|^Kindergarten$|^Total Enrollment$',axis=1)
-            enrollment_filter = enrollment_filter[[c for c in enrollment_filter if c not in ['Total Enrollment']] + ['Total Enrollment']]
-            enrollment_filter = enrollment_filter.dropna(axis=1, how='all')
+            enrollment_filter = demographic_data.filter(regex = r"^Grade \d{1}|[1-9]\d{1}$;|^Pre-K$|^Kindergarten$|^Total Enrollment$",axis=1)
+            enrollment_filter = enrollment_filter[[c for c in enrollment_filter if c not in ["Total Enrollment"]] + ["Total Enrollment"]]
+            enrollment_filter = enrollment_filter.dropna(axis=1, how="all")
 
             school_enrollment = enrollment_filter.T
-            school_enrollment.rename(columns={school_enrollment.columns[0]:'Enrollment'}, inplace=True)
-            school_enrollment.rename(index={'Total Enrollment':'Total'},inplace=True)
+            school_enrollment.rename(columns={school_enrollment.columns[0]:"Enrollment"}, inplace=True)
+            school_enrollment.rename(index={"Total Enrollment":"Total"},inplace=True)
 
             school_enrollment = school_enrollment.reset_index()
       
             enroll_table = [
                 dash_table.DataTable(
-                    school_enrollment.to_dict('records'),
-                    columns = [{'name': i, 'id': i} for i in school_enrollment.columns],
+                    school_enrollment.to_dict("records"),
+                    columns = [{"name": i, "id": i} for i in school_enrollment.columns],
                     style_data={
-                        'fontSize': '12px',
-                        'fontFamily': 'Jost, sans-serif',
-                        'border': 'none'
+                        "fontSize": "12px",
+                        "fontFamily": "Jost, sans-serif",
+                        "border": "none"
                     },
                     style_data_conditional=[
                         {
-                            'if': {
-                                'row_index': 'odd'
+                            "if": {
+                                "row_index": "odd"
                             },
-                            'backgroundColor': '#eeeeee'
+                            "backgroundColor": "#eeeeee"
                         },
                         {
-                            'if': {
-                                'column_id': 'index',
+                            "if": {
+                                "column_id": "index",
                             },
-                            'borderRight': '.5px solid #6783a9',
+                            "borderRight": ".5px solid #6783a9",
                         },
                         {
-                            'if': {
-                                'filter_query': '{index} eq "Total"'
+                            "if": {
+                                "filter_query": "{index} eq 'Total'"
                             },
-                            'borderTop': '.5px solid #6783a9',
+                            "borderTop": ".5px solid #6783a9",
                         },
                         {
-                            'if': {
-                                'state': 'selected'
+                            "if": {
+                                "state": "selected"
                             },
-                            'backgroundColor': 'rgba(112,128,144, .3)',
-                            'border': 'thin solid silver'
+                            "backgroundColor": "rgba(112,128,144, .3)",
+                            "border": "thin solid silver"
                         }                        
                     ],
                     style_header={
-                        'display': 'none',
-                        'border': 'none',
+                        "display": "none",
+                        "border": "none",
                     },
                     style_cell={
-                        'whiteSpace': 'normal',
-                        'height': 'auto',
-                        'textAlign': 'center',
-                        'color': '#6783a9',
-                        # 'minWidth': '25px', 'width': '25px', 'maxWidth': '25px'
+                        "whiteSpace": "normal",
+                        "height": "auto",
+                        "textAlign": "center",
+                        "color": "#6783a9",
+                        # "minWidth": "25px", "width": "25px", "maxWidth": "25px"
                     },
                 )
             ]
         
         # ADM chart
         if len(financial_data.columns) <= 1:
-            adm_fig = no_data_fig_label('Average Daily Membership History',400)
+            adm_fig = no_data_fig_label("Average Daily Membership History",400)
         
         else:
 
-            adm_values = financial_data[financial_data['Category'].str.contains('ADM Average')]
-            adm_values = adm_values.drop('Category', axis=1)
+            adm_values = financial_data[financial_data["Category"].str.contains("ADM Average")]
+            adm_values = adm_values.drop("Category", axis=1)
             adm_values = adm_values.reset_index(drop=True)
 
             for col in adm_values.columns:
@@ -349,7 +349,7 @@ def update_about_page(year_string: str, school: str):
             # file exists, but there is no adm data
             if (int(adm_values.sum(axis=1).values[0]) == 0):
 
-                adm_fig = no_data_fig_label('Average Daily Membership History',400)
+                adm_fig = no_data_fig_label("Average Daily Membership History",400)
             
             else:
 
@@ -362,10 +362,10 @@ def update_about_page(year_string: str, school: str):
                 if operating_years_by_adm > max_display_years:
                     adm_values = adm_values.drop(columns = adm_values.columns[: (operating_years_by_adm - max_display_years)],axis=1)
 
-                # 'excluded years' is a list of YYYY strings (all years more
+                # "excluded years" is a list of YYYY strings (all years more
                 # recent than selected year) that can be used to filter data
                 # that should not be displayed
-                excluded_academic_years = current_academic_year - current_year_numeric
+                excluded_academic_years = current_academic_year - selected_year_numeric
                 
                 excluded_years = []
                 
@@ -374,7 +374,7 @@ def update_about_page(year_string: str, school: str):
                     excluded_years.append(str(excluded_year))
                 
                 # if the display year is less than current year
-                # drop columns where year matches any years in 'excluded years' list
+                # drop columns where year matches any years in "excluded years" list
                 if excluded_years:
                     adm_values = adm_values.loc[
                         :, ~adm_values.columns.str.contains("|".join(excluded_years))
@@ -382,7 +382,7 @@ def update_about_page(year_string: str, school: str):
 
             # drop any columns with partial year data (e.g., 2023 (Q2)) because
             # they generally do not have reliable adm data.
-            adm_values = adm_values[adm_values.columns.drop(list(adm_values.filter(regex='Q')))]
+            adm_values = adm_values[adm_values.columns.drop(list(adm_values.filter(regex="Q")))]
             
             # turn single row dataframe into two lists (column headers and data)
             adm_data=adm_values.iloc[0].tolist()
@@ -395,47 +395,47 @@ def update_about_page(year_string: str, school: str):
                 markers=True,
                 color_discrete_sequence=linecolor,
             )
-            adm_fig.update_traces(mode='markers+lines', hovertemplate=None)
-            adm_fig['data'][0]['showlegend']=True
-            adm_fig['data'][0]['name']='ADM Average'
-            adm_fig.update_yaxes(title='', showgrid=True, gridcolor='#b0c4de')
-            adm_fig.update_xaxes(ticks='outside', tickcolor='#b0c4de', title='')
+            adm_fig.update_traces(mode="markers+lines", hovertemplate=None)
+            adm_fig["data"][0]["showlegend"]=True
+            adm_fig["data"][0]["name"]="ADM Average"
+            adm_fig.update_yaxes(title="", showgrid=True, gridcolor="#b0c4de")
+            adm_fig.update_xaxes(ticks="outside", tickcolor="#b0c4de", title="")
 
             adm_fig.update_layout(
                 margin=dict(l=40, r=40, t=40, b=40),
                 font = dict(
-                    family='Jost, sans-serif',
-                    color='#6783a9',
+                    family="Jost, sans-serif",
+                    color="#6783a9",
                     size=12
                     ),
-                hovermode='x unified',
+                hovermode="x unified",
                 height=400,
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)"
             )
         
         # Enrollment by ethnicity chart
-        ethnicity_school = demographic_data.loc[:, (demographic_data.columns.isin(ethnicity)) | (demographic_data.columns.isin(['Corporation Name','Total Enrollment']))].copy()
-        ethnicity_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(ethnicity)) | (corp_demographics.columns.isin(['Corporation Name','Total Enrollment']))].copy()
+        ethnicity_school = demographic_data.loc[:, (demographic_data.columns.isin(ethnicity)) | (demographic_data.columns.isin(["Corporation Name","Total Enrollment"]))].copy()
+        ethnicity_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(ethnicity)) | (corp_demographics.columns.isin(["Corporation Name","Total Enrollment"]))].copy()
 
         if not ethnicity_school.empty:
 
-            ethnicity_school.rename(columns = {'Native Hawaiian or Other Pacific Islander': 'Pacific Islander'}, inplace = True)
-            ethnicity_corp.rename(columns = {'Native Hawaiian or Other Pacific Islander': 'Pacific Islander'}, inplace = True)
+            ethnicity_school.rename(columns = {"Native Hawaiian or Other Pacific Islander": "Pacific Islander"}, inplace = True)
+            ethnicity_corp.rename(columns = {"Native Hawaiian or Other Pacific Islander": "Pacific Islander"}, inplace = True)
 
             ethnicity_data = pd.concat([ethnicity_school,ethnicity_corp])
 
             # Only need to calculate total enrollment once
-            total_enrollment=ethnicity_data['Total Enrollment'].tolist()
+            total_enrollment=ethnicity_data["Total Enrollment"].tolist()
             total_enrollment = [int(i) for i in total_enrollment]
-            ethnicity_data.drop('Total Enrollment',axis=1,inplace=True)
+            ethnicity_data.drop("Total Enrollment",axis=1,inplace=True)
 
-            cols = [i for i in ethnicity_data.columns if i not in ['Corporation Name']]
+            cols = [i for i in ethnicity_data.columns if i not in ["Corporation Name"]]
 
             for col in cols:
-                ethnicity_data[col]=pd.to_numeric(ethnicity_data[col], errors='coerce')
+                ethnicity_data[col]=pd.to_numeric(ethnicity_data[col], errors="coerce")
 
-            ethnicity_data_t = ethnicity_data.set_index('Corporation Name').T
+            ethnicity_data_t = ethnicity_data.set_index("Corporation Name").T
 
             # Calculate Percentage
             for i in range(0, 2): 
@@ -443,7 +443,7 @@ def update_about_page(year_string: str, school: str):
 
             # Find rows where percentage is < .005 (1% after rounding) - and create string for annotation purposes
             no_show = ethnicity_data_t[((ethnicity_data_t.iloc[:, 0] < .005) | (pd.isnull(ethnicity_data_t.iloc[:, 0])) & (ethnicity_data_t.iloc[:, 1] < .005) | (pd.isnull(ethnicity_data_t.iloc[:, 1])))]
-            ethnicity_anno_txt = ', '.join(no_show.index.values.astype(str))
+            ethnicity_anno_txt = ", ".join(no_show.index.values.astype(str))
 
             # Drop rows that meet the above condition
             ethnicity_data_t = ethnicity_data_t.drop(ethnicity_data_t[((ethnicity_data_t.iloc[:, 0] < .005) | (pd.isnull(ethnicity_data_t.iloc[:, 0])) & (ethnicity_data_t.iloc[:, 1] < .005) | (pd.isnull(ethnicity_data_t.iloc[:, 1])))].index)
@@ -463,80 +463,80 @@ def update_about_page(year_string: str, school: str):
                 text_auto=True,
                 color_discrete_map=trace_color,
                 opacity = 0.9,
-                orientation = 'h',
-                barmode = 'group'
+                orientation = "h",
+                barmode = "group"
             )
-            ethnicity_fig.update_xaxes(ticks='outside', tickcolor='#a9a9a9', range=[0, 1], dtick=0.2, tickformat=',.0%', title='')
-            ethnicity_fig.update_yaxes(ticks='outside', tickcolor='#a9a9a9', title='')
-            ethnicity_fig.update_traces(textposition='outside')
+            ethnicity_fig.update_xaxes(ticks="outside", tickcolor="#a9a9a9", range=[0, 1], dtick=0.2, tickformat=",.0%", title="")
+            ethnicity_fig.update_yaxes(ticks="outside", tickcolor="#a9a9a9", title="")
+            ethnicity_fig.update_traces(textposition="outside")
             ethnicity_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
-            ethnicity_fig.update_traces(hovertemplate = None, hoverinfo='skip')
+            ethnicity_fig.update_traces(hovertemplate = None, hoverinfo="skip")
 
             # Uncomment to add hover
-            #ethnicity_fig['data'][0]['hovertemplate'] = ethnicity_fig['data'][0]['name'] + ': %{x}<extra></extra>'
-            #ethnicity_fig['data'][1]['hovertemplate'] = ethnicity_fig['data'][1]['name'] + ': %{x}<extra></extra>'
+            #ethnicity_fig["data"][0]["hovertemplate"] = ethnicity_fig["data"][0]["name"] + ": %{x}<extra></extra>"
+            #ethnicity_fig["data"][1]["hovertemplate"] = ethnicity_fig["data"][1]["name"] + ": %{x}<extra></extra>"
 
             ethnicity_fig.update_layout(
                 margin=dict(l=10, r=40, t=60, b=70,pad=0),
                 font = dict(
-                    family='Jost, sans-serif',
-                    color='#6783a9',
+                    family="Jost, sans-serif",
+                    color="#6783a9",
                     size=11
                     ),
                 legend=dict(
-                    yanchor='top',
-                    xanchor= 'center',
-                    orientation='h',
+                    yanchor="top",
+                    xanchor= "center",
+                    orientation="h",
                     x=.4,
                     y=1.2
                 ),
                 bargap=.15,
                 bargroupgap=0,
                 height=400,
-                legend_title='',
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
+                legend_title="",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)"
             )
 
             ethnicity_fig.add_annotation(
-                text = (f'Less than .05% of student population: ' + ethnicity_anno_txt + '.'),
+                text = (f"Less than .05% of student population: " + ethnicity_anno_txt + "."),
                 showarrow=False,
                 x = -0.1,
                 y = -0.25,
-                xref='paper',
-                yref='paper',
-                xanchor='left',
-                yanchor='bottom',
+                xref="paper",
+                yref="paper",
+                xanchor="left",
+                yanchor="bottom",
                 xshift=-1,
                 yshift=-5,
-                font=dict(size=10, color='#6783a9'),
-                align='left'
+                font=dict(size=10, color="#6783a9"),
+                align="left"
             )
 
             # Enrollment by subgroup chart
-            subgroup_school = demographic_data.loc[:, (demographic_data.columns.isin(subgroup)) | (demographic_data.columns.isin(['Corporation Name','Total Enrollment']))]
-            subgroup_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(subgroup)) | (corp_demographics.columns.isin(['Corporation Name','Total Enrollment']))]
+            subgroup_school = demographic_data.loc[:, (demographic_data.columns.isin(subgroup)) | (demographic_data.columns.isin(["Corporation Name","Total Enrollment"]))]
+            subgroup_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(subgroup)) | (corp_demographics.columns.isin(["Corporation Name","Total Enrollment"]))]
             subgroup_data = pd.concat([subgroup_school,subgroup_corp])
 
-            total_enrollment=subgroup_data['Total Enrollment'].tolist()
+            total_enrollment=subgroup_data["Total Enrollment"].tolist()
             total_enrollment = [int(i) for i in total_enrollment]
-            subgroup_data.drop('Total Enrollment',axis=1,inplace=True)
+            subgroup_data.drop("Total Enrollment",axis=1,inplace=True)
 
-            cols=[i for i in subgroup_data.columns if i not in ['Corporation Name']]
+            cols=[i for i in subgroup_data.columns if i not in ["Corporation Name"]]
             for col in cols:
-                subgroup_data[col]=pd.to_numeric(subgroup_data[col], errors='coerce')
+                subgroup_data[col]=pd.to_numeric(subgroup_data[col], errors="coerce")
 
             # store categories with no data (NaN)
             subgroup_no_data = subgroup_data[subgroup_data.columns[subgroup_data.isna().any()]].columns.tolist()
 
-            subgroup_data_t = subgroup_data.set_index('Corporation Name').T
+            subgroup_data_t = subgroup_data.set_index("Corporation Name").T
 
             # Calculate Percentage
             for i in range(0, 2):
                 subgroup_data_t.iloc[:,i] = subgroup_data_t.iloc[:,i] / total_enrollment[i]
 
             # force categories to wrap
-            categories_wrap=['English<br>Language<br>Learners', 'Special<br>Education', 'Free or Reduced<br>Price Meals', 'Paid Meals']
+            categories_wrap=["English<br>Language<br>Learners", "Special<br>Education", "Free or Reduced<br>Price Meals", "Paid Meals"]
 
             elements = subgroup_data_t.columns.tolist()
 
@@ -549,70 +549,70 @@ def update_about_page(year_string: str, school: str):
                 text_auto=True,
                 color_discrete_map=trace_color,
                 opacity = 0.9,
-                orientation = 'h',
-                barmode = 'group',
+                orientation = "h",
+                barmode = "group",
             )
-            subgroup_fig.update_xaxes(ticks='outside', tickcolor='#a9a9a9', range=[0, 1], dtick=0.2, tickformat=',.0%', title='')
-            subgroup_fig.update_yaxes(ticks='outside', tickcolor='#a9a9a9', title='')
+            subgroup_fig.update_xaxes(ticks="outside", tickcolor="#a9a9a9", range=[0, 1], dtick=0.2, tickformat=",.0%", title="")
+            subgroup_fig.update_yaxes(ticks="outside", tickcolor="#a9a9a9", title="")
 
             # add text traces
-            subgroup_fig.update_traces(textposition='outside')
+            subgroup_fig.update_traces(textposition="outside")
 
-            # NOTE: In order to distinguish between null (no data) and '0' values,  loop through
+            # NOTE: In order to distinguish between null (no data) and "0" values,  loop through
             # the data and only color text traces when the value of x (t.x) is not NaN
             # Use this to display all:
             # subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
-            subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=np.where(~np.isnan(t.x),t.marker.color, 'white'),textfont_size=11))
+            subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=np.where(~np.isnan(t.x),t.marker.color, "white"),textfont_size=11))
 
-            subgroup_fig.update_traces(hovertemplate = None, hoverinfo='skip')
+            subgroup_fig.update_traces(hovertemplate = None, hoverinfo="skip")
 
             # Uncomment to add hover
-            #subgroup_fig['data'][0]['hovertemplate'] = subgroup_fig['data'][0]['name'] + ': %{x}<extra></extra>'
-            #subgroup_fig['data'][1]['hovertemplate'] = subgroup_fig['data'][1]['name'] + ': %{x}<extra></extra>'
+            #subgroup_fig["data"][0]["hovertemplate"] = subgroup_fig["data"][0]["name"] + ": %{x}<extra></extra>"
+            #subgroup_fig["data"][1]["hovertemplate"] = subgroup_fig["data"][1]["name"] + ": %{x}<extra></extra>"
 
             subgroup_fig.update_layout(
                 margin=dict(l=10, r=40, t=60, b=70,pad=0),
                 font = dict(
-                    family='Jost, sans-serif',
-                    color='#6783a9',
+                    family="Jost, sans-serif",
+                    color="#6783a9",
                     size=11
                     ),
                 legend=dict(
-                    yanchor='top',
-                    xanchor= 'center',
-                    orientation='h',
+                    yanchor="top",
+                    xanchor= "center",
+                    orientation="h",
                     x=.4,
                     y=1.2
                 ),
                 bargap=.15,
                 bargroupgap=0,
                 height=400,
-                legend_title='',
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)'
+                legend_title="",
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)"
             )
 
             if subgroup_no_data:
-                subgroup_anno_txt = ', '.join(subgroup_no_data)
+                subgroup_anno_txt = ", ".join(subgroup_no_data)
 
                 subgroup_fig.add_annotation(
-                    text = (f'Data not available: ' + subgroup_anno_txt + '.'),
+                    text = (f"Data not available: " + subgroup_anno_txt + "."),
                     showarrow=False,
                     x = -0.1,
                     y = -0.25,
-                    xref='paper',
-                    yref='paper',
-                    xanchor='left',
-                    yanchor='bottom',
+                    xref="paper",
+                    yref="paper",
+                    xanchor="left",
+                    yanchor="bottom",
                     xshift=-1,
                     yshift=-5,
-                    font=dict(size=10, color='#6783a9'),
-                    align='left'
+                    font=dict(size=10, color="#6783a9"),
+                    align="left"
                 )
 
         else:
-            subgroup_fig = no_data_fig_label('Enrollment by Subgroup', 400)
-            ethnicity_fig = no_data_fig_label('Enrollment by Ethnicity', 400)
+            subgroup_fig = no_data_fig_label("Enrollment by Subgroup", 400)
+            ethnicity_fig = no_data_fig_label("Enrollment by Ethnicity", 400)
 
     return school_name, info_table, letter_grade_table, \
         enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, \
@@ -622,13 +622,13 @@ def update_about_page(year_string: str, school: str):
 layout = html.Div(
         [
             dcc.Loading(
-                id='loading',
-                type='circle',
+                id="loading",
+                type="circle",
                 fullscreen = True,
                 style={
-                    'position': 'absolute',
-                    'align-self': 'center',
-                    'background-color': '#F2F2F2',
+                    "position": "absolute",
+                    "align-self": "center",
+                    "background-color": "#F2F2F2",
                     },
                 children=[
             html.Div(
@@ -639,23 +639,23 @@ layout = html.Div(
                                 [     
                                     html.Div(
                                         [
-                                            html.Label(id='school-name', className = 'header_label'),
-                                            html.Div(id='info-table'),
+                                            html.Label(id="school-name", className = "header_label"),
+                                            html.Div(id="info-table"),
                                         ],
-                                        className='pretty_container_left six columns',
+                                        className="pretty_container_left six columns",
                                     ),
                                     html.Div(
                                         [
-                                            html.Label('State and Federal Ratings', className = 'header_label'),
-                                            html.Div(id='letter-grade-table'),
+                                            html.Label("State and Federal Ratings", className = "header_label"),
+                                            html.Div(id="letter-grade-table"),
                                         ],
-                                        className='pretty_container six columns'
+                                        className="pretty_container six columns"
                                     ),
                                 ],
-                                className='bare_container_no_center twelve columns'
+                                className="bare_container_no_center twelve columns"
                             ),
                         ],
-                        className = 'row',
+                        className = "row",
                     ),
                     html.Div(
                         [
@@ -663,45 +663,45 @@ layout = html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Label(id='enroll-title', className = 'header_label'),
-                                            html.Div(id='enroll-table')
+                                            html.Label(id="enroll-title", className = "header_label"),
+                                            html.Div(id="enroll-table")
                                         ],
-                                        className='pretty_container_left six columns',
+                                        className="pretty_container_left six columns",
                                     ),
                                     html.Div(
                                         [
-                                            html.Label('Average Daily Membership History', className = 'header_label'),
-                                            dcc.Graph(id='adm_fig', figure = loading_fig(),config={'displayModeBar': False})
+                                            html.Label("Average Daily Membership History", className = "header_label"),
+                                            dcc.Graph(id="adm_fig", figure = loading_fig(),config={"displayModeBar": False})
                                         ],
-                                        className = 'pretty_container six columns'
+                                        className = "pretty_container six columns"
                                     ),
                                 ],
-                                className='bare_container twelve columns',
+                                className="bare_container twelve columns",
                             ),
                         ],
-                        className = 'row',
+                        className = "row",
                     ),                    
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    html.Label(id='subgroup-title', className = 'header_label'),
-                                    dcc.Graph(id='subgroup-fig', figure = loading_fig(),config={'displayModeBar': False})
+                                    html.Label(id="subgroup-title", className = "header_label"),
+                                    dcc.Graph(id="subgroup-fig", figure = loading_fig(),config={"displayModeBar": False})
                                 ],
-                                className = 'pretty_container_left six columns'
+                                className = "pretty_container_left six columns"
                             ),
                             html.Div(
                                 [
-                                    html.Label(id='ethnicity-title', className = 'header_label'),
-                                    dcc.Graph(id='ethnicity-fig', figure = loading_fig(),config={'displayModeBar': False})
+                                    html.Label(id="ethnicity-title", className = "header_label"),
+                                    dcc.Graph(id="ethnicity-fig", figure = loading_fig(),config={"displayModeBar": False})
                                 ],
-                                className = 'pretty_container six columns'
+                                className = "pretty_container six columns"
                             ),
                         ],
-                        className='bare_container_no_center twelve columns',
+                        className="bare_container_no_center twelve columns",
                     ),
                 ],
-                id = 'about-main-container',
+                id = "about-main-container",
             )],
             ),
             html.Div(
@@ -710,18 +710,18 @@ layout = html.Div(
                         [    
                             html.Div(
                                 [
-                                    html.Label(id='school-name-no-data', className = 'header_label'),
-                                    html.Div(id='info-table-no-data'),
+                                    html.Label(id="school-name-no-data", className = "header_label"),
+                                    html.Div(id="info-table-no-data"),
                                 ],
-                                className='pretty_container eight columns'
+                                className="pretty_container eight columns"
                             ),
                         ],
-                        className = 'bare_container_center twelve columns',
+                        className = "bare_container_center twelve columns",
                     ),
-                    html.Div(id='about-no-data'),
+                    html.Div(id="about-no-data"),
                 ],
-                id = 'about-empty-container',
+                id = "about-empty-container",
             ),
         ],
-        id='mainContainer'
+        id="mainContainer"
     )

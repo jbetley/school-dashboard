@@ -31,7 +31,7 @@ max_display_years = 5
 # global strings
 subject = ["Math", "ELA"]
 
-# info_categories = ['School Name','Low Grade','High Grade']
+info_categories = ['School Name','Low Grade','High Grade']
 
 ethnicity = [
     "American Indian",
@@ -344,7 +344,7 @@ def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.D
         # alternately represented by NULL, None, or '0'
         tested_cols = data.filter(regex='Total Tested').columns.tolist()
 
-        # TODO: Can i use this for the proficiency shite in academic info too? [later me- not sure what this means]
+        # TODO: Can i use this for the proficiency shite in academic info too?
         drop_columns=[]
         for col in tested_cols:
             if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():

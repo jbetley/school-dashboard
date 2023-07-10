@@ -37,10 +37,9 @@ from pages.load_data import current_academic_year
 
 # load data and global variables
 
-# TODO: SPEED?
 # https://community.plotly.com/t/dash-layout-and-dash-update-component-waiting/35573/7
 
-# This is used solely to generate metric rating svg circles
+# Used solely to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Jost:400", FONT_AWESOME]
