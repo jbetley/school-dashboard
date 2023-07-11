@@ -59,9 +59,27 @@ def update_academic_metrics(school: str, year: str):
     
     excluded_years = get_excluded_years(year)
 
-###TODO###
-    tst_growth = get_growth_data(school)
-    print(tst_growth)
+### TODO - Add Growth Data both to Academic Information and Metrics ###
+# Percentage of students achieving “typical” or “high” growth on the state assessment in ELA/Math
+# Median SGP of students achieving 'adequate and sufficient growth' on the state assessment in ELA/Math
+
+    growth_data = get_growth_data(school)
+
+    # NOTE: Dropped from DB File
+    # remove Unknown values and Grade 3 (no growth data possible)
+    # growth_data = growth_data[(growth_data['ILEARNGrowth Level'] != 'Unknown') & (growth_data['Grade Level'] != 'Grade 3')]
+
+    # percentage of students receiving adequate/not adequate grouped by Year, Grade, and Subject
+    percentage_growth = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
+
+    print(percentage_growth)
+    # median SGP of students achieving adequate growth grouped by Year, Grade, and Subject
+    # for ALL students, run median_sgp with full growth_data file
+    adequate_growth_data = growth_data[growth_data['ILEARNGrowth Level'] == 'Adequate Growth']
+    median_sgp = adequate_growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
+
+    print(median_sgp)
+
     # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
     # group by Year, Subject and Grade Level?
     # Also: Ethnicity, Socio Economic Status Category, English Learner Status Category, Special Ed Status Category

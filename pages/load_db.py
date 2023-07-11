@@ -278,7 +278,6 @@ def get_growth_data(*args):
         ''')
     return run_query(q, params)
     
-#TODO: How is this different from one directly below?
 def get_high_school_academic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
@@ -291,6 +290,7 @@ def get_high_school_academic_data(*args):
     return run_query(q, params)
 
 # NOTE: gets corp level data - all other tables have school level data
+# TODO: Is there corp level data in this table?
 def get_high_school_corporation_academic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
