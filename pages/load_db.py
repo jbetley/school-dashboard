@@ -267,6 +267,17 @@ def get_k8_corporation_academic_data(*args):
         ''')
     return run_query(q, params)
 
+def get_growth_data(*args):
+    keys = ['id']
+    params = dict(zip(keys, args))
+
+    q = text('''
+        SELECT *
+	        FROM growth
+	        WHERE TestedSchoolID = :id
+        ''')
+    return run_query(q, params)
+    
 #TODO: How is this different from one directly below?
 def get_high_school_academic_data(*args):
     keys = ['id']
@@ -320,3 +331,4 @@ def get_comparable_schools(*args):
     q = text(query_string)
 
     return run_query(q, params)
+

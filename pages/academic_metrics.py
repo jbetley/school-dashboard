@@ -20,7 +20,7 @@ from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data
         calculate_adult_high_school_metrics, filter_high_school_academic_data, get_excluded_years, \
         get_adult_high_school_metric_data
 from .load_db import get_school_index, get_k8_school_academic_data, get_high_school_academic_data, \
-    get_high_school_corporation_academic_data
+    get_high_school_corporation_academic_data, get_growth_data
 
 dash.register_page(__name__,  path = "/academic_metrics", order=5)
 
@@ -59,6 +59,14 @@ def update_academic_metrics(school: str, year: str):
     
     excluded_years = get_excluded_years(year)
 
+###TODO###
+    tst_growth = get_growth_data(school)
+    print(tst_growth)
+    # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
+    # group by Year, Subject and Grade Level?
+    # Also: Ethnicity, Socio Economic Status Category, English Learner Status Category, Special Ed Status Category
+    # Homeless Status Category, High Ability Status Category
+    
     # default styles
     display_attendance = {}
     display_k8_metrics = {}
