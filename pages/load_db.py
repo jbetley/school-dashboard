@@ -274,8 +274,8 @@ def get_growth_data(*args):
     q = text('''
         SELECT *
 	        FROM growth
-	        WHERE TestedSchoolID = :id
-        ''')
+	        WHERE MajorityEnrolledSchoolID = :id
+        ''')    # WHERE TestedSchoolID = :id
     return run_query(q, params)
     
 def get_high_school_academic_data(*args):
