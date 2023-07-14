@@ -256,6 +256,12 @@ def calculate_proficiency(values: pd.DataFrame) -> pd.DataFrame:
 # NaN, all associated columns are dropped
     data = values.copy()
 
+# NOTE: Adding 2023 somehow screwed up how this processes data. WTF happens to '***' here?
+    # # TESTING
+    # for col in data.columns:
+    #     data[col] = pd.to_numeric(data[col], errors='coerce')
+    # # TESTING
+
     # Get a list of all 'Total Tested' columns except those for ELA & Math
     tested_categories = data[data.columns[data.columns.str.contains(r'Total Tested')]].columns.tolist()
     tested_categories = [i for i in tested_categories if 'ELA and Math' not in i]
@@ -271,13 +277,17 @@ def calculate_proficiency(values: pd.DataFrame) -> pd.DataFrame:
             # ('Total Tested' > 0 and 'Total Proficient' is NaN. A 'Total Proficient'
             # value of NaN means it was a '***' before being converted to numeric
             # we use sum/all because there could be one or many columns
-            if (data[total_tested].sum() == 0 or pd.isna(data[total_tested]).all()) | \
-                (data[total_tested].sum() > 0 and pd.isna(data[total_proficient]).all()):
+
+            # if (data[total_tested].sum() == 0 or pd.isna(data[total_tested]).all()) | \
+            #     (data[total_tested].sum() > 0 and pd.isna(data[total_proficient]).all()):
+# TODO: This works to stop the float > str error - but does it give us what we want?
+            if (pd.to_numeric(data[total_tested], errors='coerce').sum() == 0 or pd.isna(data[total_tested]).all()) | \
+                (pd.to_numeric(data[total_tested], errors='coerce').sum() > 0 and pd.isna(data[total_proficient]).all()):
 
                 data = data.drop([total_tested, total_proficient], axis=1)
             else:
                 data[proficiency] = calculate_percentage(data[total_proficient], data[total_tested])
-
+  
     return data
 
 ### End Helper Functions ###
@@ -320,7 +330,6 @@ def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.D
 
             # school data: coerce, but keep strings ('***' and '^')
 
-
             data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
             
             # Drop 'ELA and Math'
@@ -328,11 +337,12 @@ def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.D
             
             t4 = time.process_time()
 
-# TODO: This slow (~.6s) - need better way - STILL?
-            # update is twice as fast as fillna?? (.35s vs .6s)
+            # NOTE: update is twice as fast as fillna?? (.35s vs .6s)
+            # for col in data.columns:
+            #     data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
             data.update(data.apply(pd.to_numeric, errors='coerce'))
+         
             print(f'Time to update: ' + str(time.process_time() - t4))
-
         # Filter and clean the dataframe
         data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
 

@@ -150,8 +150,13 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
                 all_k8_school_data["Category"] = (all_k8_school_data["Category"].str.replace(" Proficient %", "").str.strip())
 
+#TODO: THIS ISNT WORKING TO REVERSE ALL BUT FIRST
                 all_k8_school_data.loc[all_k8_school_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
-
+                print(all_k8_school_data.columns)
+                print(list(all_k8_school_data.columns[:1]))
+                print(list(all_k8_school_data.columns[:1:-1]))
+                all_k8_school_data = all_k8_school_data[list(all_k8_school_data.columns[:1]) + list(all_k8_school_data.columns[:1:-1])]
+                print(all_k8_school_data)
                 years_by_grade = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(grades_all))]
 
                 if not years_by_grade.empty:

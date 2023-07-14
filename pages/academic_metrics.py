@@ -114,11 +114,11 @@ def update_academic_metrics(school: str, year: str):
         sped_percentage_growth_162  = growth_data_162.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
 
     # percentage of students with adequate/not adequate growth grouped by Year, Grade, and Subject
-    grades_percentage_growth = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-    ethnicity_percentage_growth = growth_data.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-    ses_percentage_growth  = growth_data.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-    el_percentage_growth  = growth_data.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-    sped_percentage_growth  = growth_data.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
+    grades_percentage_growth = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+    ethnicity_percentage_growth = growth_data.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+    ses_percentage_growth  = growth_data.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+    el_percentage_growth  = growth_data.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+    sped_percentage_growth  = growth_data.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
 
     # median SGP for ALL tested students grouped by Year, Grade, and Subject
     median_sgp_all = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
@@ -131,7 +131,11 @@ def update_academic_metrics(school: str, year: str):
     adequate_growth_data_162 = growth_data_162[growth_data_162['ILEARNGrowth Level'] == 'Adequate Growth']
     median_sgp_adequate_162 = adequate_growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
 
-
+    # print(median_sgp_adequate)
+    print(grades_percentage_growth)
+    ela_grades_percentage_growth = grades_percentage_growth[grades_percentage_growth['Subject'] == 'ELA']
+    print(ela_grades_percentage_growth)
+    # print(ethnicity_percentage_growth)
 
     # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
     # group by Year, Subject and Grade Level?
