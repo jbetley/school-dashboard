@@ -239,19 +239,25 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     # set year_value and year_options
     number_of_years_to_display = len(years) if len(years) <= max_dropdown_years else max_dropdown_years
     dropdown_years = years[0:number_of_years_to_display]
-    first_available_year = dropdown_years[-1]
+    first_available_year = dropdown_years[0]
+    earliest_available_year = dropdown_years[-1]
 
     # 'year' represents the State of the year-dropdown when a school is selected.
-    # This sets the current year_value equal to: current_academic_year (when app
-    # is first opened); current_year state (if the school has available data for
-    # that year), or to the next earliest year of academic data that is available
-    # for the school
+    # Current value is set to:
+    #   1) current_academic year (when app is first opened);
+    #   2) the earliest_available_year (if the selected year is earlier);
+    #   3) the first_available_year (if the selected year is later); or
+    #   4) the selected year.
+    
     if year is None:
         year_value = str(current_academic_year)
     
-    elif int(year) < int(first_available_year):
+    elif int(year) < int(earliest_available_year):
+        year_value = str(earliest_available_year)
+
+    elif int(year) > int(first_available_year):
         year_value = str(first_available_year)
-    
+
     else:
         year_value = str(year)
 

@@ -101,6 +101,7 @@ def get_academic_dropdown_years(*args):
     result = run_query(q, params)
     
     years = result['Year'].tolist()
+    years.sort(reverse=True)
     
     return years
 
@@ -251,7 +252,11 @@ def get_k8_school_academic_data(*args):
             FROM academic_data_k8
 	        WHERE SchoolID = :id
         ''')
-    return run_query(q, params)
+    
+    results = run_query(q, params)
+    results = results.sort_values(by = 'Year',ascending = False)
+
+    return results
 
 def get_k8_corporation_academic_data(*args):
     keys = ['id']
@@ -259,13 +264,36 @@ def get_k8_corporation_academic_data(*args):
 
     q = text('''
         SELECT *
-	        FROM corporation_k8_data
+	        FROM corporation_data_k8
 	        WHERE CorporationID = (
 		        SELECT GEOCorp
 			        FROM school_index
 			        WHERE SchoolID = :id)
         ''')
-    return run_query(q, params)
+
+    results = run_query(q, params)
+    results = results.sort_values(by = 'Year',ascending = False)
+
+    return results
+
+# TODO: Table does not exist yet
+def get_hs_corporation_academic_data(*args):
+    keys = ['id']
+    params = dict(zip(keys, args))
+
+    q = text('''
+        SELECT *
+	        FROM corporation_data_hs
+	        WHERE CorporationID = (
+		        SELECT GEOCorp
+			        FROM school_index
+			        WHERE SchoolID = :id)
+        ''')
+
+    results = run_query(q, params)
+    results = results.sort_values(by = 'Year',ascending = False)
+
+    return results
 
 def get_growth_data(*args):
     keys = ['id']
@@ -287,23 +315,29 @@ def get_high_school_academic_data(*args):
             FROM academic_data_hs
 	        WHERE SchoolID = :id
         ''')
+#    results = run_query(q, params)
+#    results = results.sort_values(by = 'Year',ascending = False)
+#    return results    
     return run_query(q, params)
 
 # NOTE: gets corp level data - all other tables have school level data
-# TODO: Is there corp level data in this table?
-def get_high_school_corporation_academic_data(*args):
-    keys = ['id']
-    params = dict(zip(keys, args))
 
-    q = text('''
-        SELECT *
-	        FROM academic_data_hs
-	        WHERE CorporationID = (
-		        SELECT GEOCorp
-			        FROM school_index
-			        WHERE SchoolID = :id)
-        ''')
-    return run_query(q, params)
+# # TODO: Is there corp level data in this table? NO! Save all Corp level HS data in corporation_data_k8
+# # use generic get corporation_academic_data_k8
+# # and get corporation_academic_data_hs
+# def get_high_school_corporation_academic_data(*args):
+#     keys = ['id']
+#     params = dict(zip(keys, args))
+
+#     q = text('''
+#         SELECT *
+# 	        FROM academic_data_hs
+# 	        WHERE CorporationID = (
+# 		        SELECT GEOCorp
+# 			        FROM school_index
+# 			        WHERE SchoolID = :id)
+#         ''')
+#     return run_query(q, params)
 
 def get_school_coordinates(*args):
     keys = ['year']

@@ -13,7 +13,7 @@ import numpy as np
 import itertools
 from .load_db import get_current_year, get_school_index, get_k8_school_academic_data, get_demographic_data, \
     get_high_school_academic_data, get_k8_corporation_academic_data, get_graduation_data, \
-        get_high_school_corporation_academic_data, get_letter_grades, get_adult_high_school_metric_data
+        get_hs_corporation_academic_data, get_letter_grades, get_adult_high_school_metric_data
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating
 
@@ -364,10 +364,9 @@ def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.D
             data = calculate_proficiency(data)
 
         if "IREAD Pass N" in data.columns:
-            print(data.T)
             data["IREAD Pass %"] = pd.to_numeric(data["IREAD Pass N"], errors="coerce") \
                 / pd.to_numeric(data["IREAD Test N"], errors="coerce")
-            print(data.T)
+
             # If either Test or Pass category had a '***' value, the resulting value will be 
             # NaN - we want it to display '***', so we just fillna
             data["IREAD Pass %"] = data["IREAD Pass %"].fillna("***")

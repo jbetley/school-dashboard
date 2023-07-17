@@ -20,7 +20,7 @@ from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data
         calculate_adult_high_school_metrics, filter_high_school_academic_data, get_excluded_years, \
         get_adult_high_school_metric_data
 from .load_db import get_school_index, get_k8_school_academic_data, get_high_school_academic_data, \
-    get_high_school_corporation_academic_data, get_growth_data
+    get_hs_corporation_academic_data, get_growth_data
 
 dash.register_page(__name__,  path = "/academic_metrics", order=5)
 
@@ -71,78 +71,6 @@ def update_academic_metrics(school: str, year: str):
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
 
-
-
-
-### TODO - Add Growth Data both to Academic Information and Metrics ###
-# NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
-# 162 days. "Majority Enrolled" is misleading. It actually means "Greatest Number of Days." So the actual
-# number of days could easily be less than 82 if, for example, a student transferred a few times, or
-# was out of the system for most of the year. "Tested School" is where the student actually took the
-# test. IDOE uses "Majority Enrolled" for their calculations
-
-# Percentage of students achieving “typical” or “high” growth on the state assessment in ELA/Math
-# Median SGP of students achieving 'adequate and sufficient growth' on the state assessment in ELA/Math
-
-    # dataset is all students who are coded as 'Majority Enrolled' at the school
-    growth_data = get_growth_data(school)
-    
-    # filter dataset to those students who have been at school for at least 162 days
-    growth_data_162 = growth_data[growth_data['Day 162'] == 'TRUE']
-
-    # find the difference between the count of Majority Enrolled and 162-Day students by Year
-    counts_growth = growth_data.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (Majority Enrolled)")
-    counts_growth_162 = growth_data_162.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (162 Days)")
-
-    counts_growth['School Name'] = selected_school["School Name"].values[0]
-    counts_growth['Count (162 Days)'] = counts_growth_162['Count (162 Days)']
-    counts_growth['Difference'] = counts_growth['Count (Majority Enrolled)'] - counts_growth['Count (162 Days)']
-
-    print(counts_growth)
-
-    diff_threshold = abs(len(growth_data.index) - len(growth_data_162.index))
-
-    print(f'Percentage difference: ' + str(diff_threshold / len(growth_data.index)))
-
-    if diff_threshold / len(growth_data.index) > .05:
-        print('Difference Trigger:')
-
-        grades_percentage_growth_162 = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-        ethnicity_percentage_growth_162 = growth_data_162.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-        ses_percentage_growth_162  = growth_data_162.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-        el_percentage_growth_162  = growth_data_162.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-        sped_percentage_growth_162  = growth_data_162.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-
-    # percentage of students with adequate/not adequate growth grouped by Year, Grade, and Subject
-    grades_percentage_growth = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
-    ethnicity_percentage_growth = growth_data.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
-    ses_percentage_growth  = growth_data.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
-    el_percentage_growth  = growth_data.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
-    sped_percentage_growth  = growth_data.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
-
-    # median SGP for ALL tested students grouped by Year, Grade, and Subject
-    median_sgp_all = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
-    median_sgp_all_162 = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
-
-    # median SGP of students achieving adequate growth grouped by Year, Grade, and Subject
-    adequate_growth_data = growth_data[growth_data['ILEARNGrowth Level'] == 'Adequate Growth']
-    median_sgp_adequate = adequate_growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
-
-    adequate_growth_data_162 = growth_data_162[growth_data_162['ILEARNGrowth Level'] == 'Adequate Growth']
-    median_sgp_adequate_162 = adequate_growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
-
-    # print(median_sgp_adequate)
-    print(grades_percentage_growth)
-    ela_grades_percentage_growth = grades_percentage_growth[grades_percentage_growth['Subject'] == 'ELA']
-    print(ela_grades_percentage_growth)
-    # print(ethnicity_percentage_growth)
-
-    # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
-    # group by Year, Subject and Grade Level?
-    # Also: Ethnicity, Socio Economic Status Category, English Learner Status Category, Special Ed Status Category
-    # Homeless Status Category, High Ability Status Category
-    
-
      # Adult High School Academic Metrics
     if selected_school_type == "AHS":
 
@@ -173,6 +101,10 @@ def update_academic_metrics(school: str, year: str):
         if len(selected_raw_ahs_metrics.index) > 0:
             
             ahs_metric_data_113 = calculate_adult_high_school_metrics(school, selected_raw_ahs_metrics)
+
+            # reverse column order of year columns
+            # yrs = [i for i in ahs_metric_data_113.columns if 'Category' not in i]
+            # ahs_metric_data_113 = ahs_metric_data_113[list(ahs_metric_data_113.columns[:1]) + yrs[::-1]]
 
             ahs_metric_data_113["Category"] = ahs_metric_data_113["Metric"] + " " + ahs_metric_data_113["Category"]
             
@@ -257,7 +189,7 @@ def update_academic_metrics(school: str, year: str):
 
                 raw_hs_school_data = filter_high_school_academic_data(raw_hs_school_data)
                 
-                raw_hs_corp_data = get_high_school_corporation_academic_data(school)
+                raw_hs_corp_data = get_hs_corporation_academic_data(school)
 
                 for col in raw_hs_corp_data.columns:
                     raw_hs_corp_data[col] = pd.to_numeric(raw_hs_corp_data[col], errors="coerce")
@@ -430,6 +362,74 @@ def update_academic_metrics(school: str, year: str):
                     table_container_14g = no_data_table("1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.")
 
                 ## TODO: Move Growth Metric tab from Academic Info page here (or to its own page)
+                ### TODO - Add Growth Data both to Academic Information and Metrics ###
+                # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
+                # 162 days. "Majority Enrolled" is misleading. It actually means "Greatest Number of Days." So the actual
+                # number of days could easily be less than 82 if, for example, a student transferred a few times, or
+                # was out of the system for most of the year. "Tested School" is where the student actually took the
+                # test. IDOE uses "Majority Enrolled" for their calculations
+
+                # Percentage of students achieving “typical” or “high” growth on the state assessment in ELA/Math
+                # Median SGP of students achieving 'adequate and sufficient growth' on the state assessment in ELA/Math
+
+                # dataset is all students who are coded as 'Majority Enrolled' at the school
+                growth_data = get_growth_data(school)
+
+                if len(growth_data.index) > 0:
+                    # filter dataset to those students who have been at school for at least 162 days
+                    growth_data_162 = growth_data[growth_data['Day 162'] == 'TRUE']
+
+                    # find the difference between the count of Majority Enrolled and 162-Day students by Year
+                    counts_growth = growth_data.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (Majority Enrolled)")
+                    counts_growth_162 = growth_data_162.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (162 Days)")
+
+                    counts_growth['School Name'] = selected_school["School Name"].values[0]
+                    counts_growth['Count (162 Days)'] = counts_growth_162['Count (162 Days)']
+                    counts_growth['Difference'] = counts_growth['Count (Majority Enrolled)'] - counts_growth['Count (162 Days)']
+
+                    # print(counts_growth)
+
+                    diff_threshold = abs(len(growth_data.index) - len(growth_data_162.index))
+
+                    print(f'Percentage difference: ' + str(diff_threshold / len(growth_data.index)))
+
+                    if diff_threshold / len(growth_data.index) > .05:
+                        print('Difference Trigger:')
+
+                        grades_percentage_growth_162 = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
+                        ethnicity_percentage_growth_162 = growth_data_162.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
+                        ses_percentage_growth_162  = growth_data_162.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
+                        el_percentage_growth_162  = growth_data_162.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
+                        sped_percentage_growth_162  = growth_data_162.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
+
+                    # percentage of students with adequate/not adequate growth grouped by Year, Grade, and Subject
+                    grades_percentage_growth = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+                    ethnicity_percentage_growth = growth_data.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+                    ses_percentage_growth  = growth_data.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+                    el_percentage_growth  = growth_data.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+                    sped_percentage_growth  = growth_data.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+
+                    # median SGP for ALL tested students grouped by Year, Grade, and Subject
+                    median_sgp_all = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
+                    median_sgp_all_162 = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
+
+                    # median SGP of students achieving adequate growth grouped by Year, Grade, and Subject
+                    adequate_growth_data = growth_data[growth_data['ILEARNGrowth Level'] == 'Adequate Growth']
+                    median_sgp_adequate = adequate_growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
+
+                    adequate_growth_data_162 = growth_data_162[growth_data_162['ILEARNGrowth Level'] == 'Adequate Growth']
+                    median_sgp_adequate_162 = adequate_growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
+
+                    # print(median_sgp_adequate)
+                    # print(grades_percentage_growth)
+                    ela_grades_percentage_growth = grades_percentage_growth[grades_percentage_growth['Subject'] == 'ELA']
+                    # print(ela_grades_percentage_growth)
+                    # print(ethnicity_percentage_growth)
+
+                    # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
+                    # group by Year, Subject and Grade Level?
+                    # Also: Ethnicity, Socio Economic Status Category, English Learner Status Category, Special Ed Status Category
+                    # Homeless Status Category, High Ability Status Category                
                 # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
                 growth_metrics_empty = pd.DataFrame(columns = simple_cols)
                 growth_metrics_dict = {

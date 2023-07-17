@@ -153,8 +153,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 all_k8_school_data.loc[all_k8_school_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
 
                 # reverse column order of year columns
-                yrs = [i for i in all_k8_school_data.columns if 'Category' not in i]
-                all_k8_school_data = all_k8_school_data[list(all_k8_school_data.columns[:1]) + yrs[::-1]]
+                # yrs = [i for i in all_k8_school_data.columns if 'Category' not in i]
+                # all_k8_school_data = all_k8_school_data[list(all_k8_school_data.columns[:1]) + yrs[::-1]]
 
                 years_by_grade = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(grades_all))]
 
