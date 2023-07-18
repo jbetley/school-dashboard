@@ -276,6 +276,20 @@ def get_k8_corporation_academic_data(*args):
 
     return results
 
+def get_high_school_academic_data(*args):
+    keys = ['id']
+    params = dict(zip(keys, args))
+
+    q = text('''
+        SELECT *
+            FROM academic_data_hs
+	        WHERE SchoolID = :id
+        ''')
+#    results = run_query(q, params)
+#    results = results.sort_values(by = 'Year',ascending = False)
+#    return results    
+    return run_query(q, params)
+
 # TODO: Table does not exist yet
 def get_hs_corporation_academic_data(*args):
     keys = ['id']
@@ -306,19 +320,7 @@ def get_growth_data(*args):
         ''')    # WHERE TestedSchoolID = :id
     return run_query(q, params)
     
-def get_high_school_academic_data(*args):
-    keys = ['id']
-    params = dict(zip(keys, args))
 
-    q = text('''
-        SELECT *
-            FROM academic_data_hs
-	        WHERE SchoolID = :id
-        ''')
-#    results = run_query(q, params)
-#    results = results.sort_values(by = 'Year',ascending = False)
-#    return results    
-    return run_query(q, params)
 
 # NOTE: gets corp level data - all other tables have school level data
 

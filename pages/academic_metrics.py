@@ -269,10 +269,10 @@ def update_academic_metrics(school: str, year: str):
 
                 selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
+                # TODO: Testing removing this to avoid dropping valid '0' values
                 # keep only school columns with non-null data.
-                valid_column_mask = selected_raw_k8_school_data.any()
-
-                selected_raw_k8_school_data = selected_raw_k8_school_data[selected_raw_k8_school_data.columns[valid_column_mask]]
+                # valid_column_mask = selected_raw_k8_school_data.any()
+                # selected_raw_k8_school_data = selected_raw_k8_school_data[selected_raw_k8_school_data.columns[valid_column_mask]]
 
                 # TODO: Does this need to be moved to calculate_comparison function?
                 # # Find the common columns between the two dataframes - need to do this because
@@ -286,6 +286,7 @@ def update_academic_metrics(school: str, year: str):
                 # # TODO: and should only be called if school data is not null.
                 # clean_corp_data = process_k8_academic_data(raw_corp_data, year, school)
            
+                # print(clean_school_data)
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
                 combined_delta = calculate_k8_comparison_metrics(clean_school_data, selected_year_string, school)
 

@@ -337,7 +337,7 @@ def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.D
         
         # Filter and clean the dataframe
         data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
-
+        
         # Drop 'ELA and Math'
         data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]].copy()
       
@@ -434,10 +434,10 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         tested_cols = data.filter(regex='Total Tested|Cohort Count|Test N').columns.tolist()
 
         drop_columns=[]
-        
+
         for col in tested_cols:
             if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
-                
+
                 if 'Total Tested' in col:
                     match_string = ' Total Tested'
                 elif 'Cohort Count' in col:
@@ -472,7 +472,7 @@ def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str
 
     data_geo_code = data['Corporation ID'][0]
 
-    school_type = data["School Type"].values[0]
+    school_type = school_information["School Type"].values[0]
 
     if len(data.index) > 0:
         # We identify 'corp' data where the value of 'Corporation ID' in the df is equal
@@ -523,7 +523,7 @@ def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str
 
         # Calculate AHS Only Data #
         # NOTE: All other values pulled from HS dataframe required for AHS calculations should go here        
-
+        # print(data.T)
         # CCR Rate
         if school_type == "AHS":
 
@@ -662,6 +662,12 @@ def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.Data
     all_corp_data = pd.concat([all_corp_data, state_grad_average], axis=0, ignore_index=True)
 
     # add to school data by making a copy, renaming the category, and concatenating
+    # If a school doesn't have a 'Total Graduation Rate' row, we need to create it
+    if 'Total Graduation Rate' not in all_school_data['Category'].values:
+        # add row of all nan (by enlargement) and set Category value
+        all_school_data.loc[len(all_school_data)] = np.nan
+        all_school_data.loc[all_school_data.index[-1],'Category'] = 'Total Graduation Rate'
+
     duplicate_row = all_school_data[all_school_data['Category'] == 'Total Graduation Rate'].copy()
     duplicate_row['Category'] = 'State Graduation Average'
     all_school_data = pd.concat([all_school_data, duplicate_row], axis=0, ignore_index=True)
@@ -729,7 +735,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
     grad_limits_state = [0, 0.05, 0.15, 0.15]
 
     state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
-
+    
     [
         state_grad_metric.insert(
             i,
@@ -747,7 +753,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
         )
         for i in range(state_grad_metric.shape[1], 1, -3)
     ]
-
+ 
     grad_limits_local = [0, 0.05, 0.10, 0.10]
     local_grad_metric = data[data["Category"].isin(["Total Graduation Rate", "Non Waiver Graduation Rate"])]
 
@@ -822,6 +828,7 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # Add first_year data back
     data[first_year.columns] = first_year
 
+    # print(data)
     # Create clean col lists - (YYYY + 'School') and (YYYY + '+/-')
     school_years_cols = list(data.columns[1:])
     
@@ -843,6 +850,8 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
         )
         for i in range(data.shape[1], 1, -2)
     ]
+
+    # print(data)
 
     data = data.fillna("No Data")
 

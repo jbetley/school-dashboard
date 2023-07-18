@@ -248,7 +248,9 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     #   2) the earliest_available_year (if the selected year is earlier);
     #   3) the first_available_year (if the selected year is later); or
     #   4) the selected year.
-    
+    print(first_available_year)
+    print(earliest_available_year)
+    print(year)
     if year is None:
         year_value = str(current_academic_year)
     
@@ -261,6 +263,8 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     else:
         year_value = str(year)
 
+    print(year_value)
+
     if not dropdown_years:
         raise Exception("There is simply no way that you can be seeing this error message.")
     
@@ -269,6 +273,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
         for y in dropdown_years
     ]
 
+    print(year_options)
     return year_options, year_value, current_page
 
 # app.layout = html.Div(    # NOTE: Test to see if it impacts speed
