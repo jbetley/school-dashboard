@@ -851,8 +851,6 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
         for i in range(data.shape[1], 1, -2)
     ]
 
-    # print(data)
-
     data = data.fillna("No Data")
 
     data.columns = data.columns.astype(str)
@@ -925,22 +923,61 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     # and store in a new column
     corporation_data = calculate_proficiency(corporation_data)
 
-#TODO: What masking step?
-    # The masking step above removes grades from the corp_rate dataframe
-    # that are not also in the school dataframe (e.g., if school only has data
-    # for grades 3, 4, & 5, only those grades will remain in corp_rate df).
-    # However, the 'Corporation Total' for proficiency in a subject is
-    # calculated using ALL grades. So we need to recalculate the 'Corporation Total'
-    # rate manually to ensure it includes only the included grades.
+    # we want to recalculate the Corporation Total in a Subject to only use the Grades that are
+    # available in the School. So we find the grades in the school and use them to recalculate
+    # Corporation Total Proficiency
+    # get school grade categories
+
+    # school_grades_ela = school_data['Category'][school_data['Category'].str.contains(r"Grade.+?ELA", regex=True)].to_list()
+    # school_grades_math = school_data['Category'][school_data['Category'].str.contains(r"Grade.+?Math", regex=True)].to_list()
+    # school_grades_ela_proficient = [i.split(' Proficient %')[0] + " Total Proficient" for i in school_grades_ela]
+    # school_grades_ela_tested = [i.split(' Proficient %')[0] + " Total Tested" for i in school_grades_ela]
+    # school_grades_math_proficient = [i.split(' Proficient %')[0] + " Total Proficient" for i in school_grades_math]
+    # school_grades_math_tested = [i.split(' Proficient %')[0] + " Total Tested" for i in school_grades_ela]
+    # # import re
+    # school_grades_ela_tst = [re.findall("\d+", school_grades_ela[i])[0] for i in range(len(school_grades_ela))]
+    # school_grades_ela_tst2 = [re.findall("\d+", category_list[i]) for i in range(len(category_list))]
+    # # list(map(int, re.findall('\d+', school_grades_ela[0])))
+    # print(school_grades_ela_tst)
+    # print(school_grades_ela_tst2)
+    # print(school_grades_ela_proficient)
+    # print(school_grades_ela_tested)
+    # print(school_grades_math_proficient)
+    # print(school_grades_math_tested)
+    # category_list = school_data['Category'].to_list()
+
+    #TODO: GTETTING CLOOOOSSSEEERRR THIS IS A PARTY!
+    # This: 1) extracts all digits values from each row of column category, 2) turns it into a list;
+    # 3) turns it into a set to get unique values; 4) turns it back into a list;
+    # we then remove the nans
+    tst = list(set(school_data['Category'].str.extract('(\d+)')[0].to_list()))
+    school_grades = [x for x in tst if str(x) != 'nan']
+
+    print(school_grades)
+
+    print('REDONE')
+    #TODO Now need to use the above list to calculate teh proficiencies using regex and the variables
+    # TODO: e.g., turn the list into a string and insert into regex.
+    # # print(' Total Proficient|'.join(school_grades_ela))
+    # print(corporation_data.filter(regex='|'.join(school_grades_ela_proficient)))
+    # print(corporation_data.filter(regex='\\|ELA Total Tested|'.join(school_grades_ela)))
+    # tst = corporation_data.update(corporation_data.filter(regex=' Total Proficient|'.join(school_grades_ela)).sum(axis=1) \
+    #            / corporation_data.filter(regex=' Total Tested|'.join(school_grades_ela)).sum(axis=1))
+    # print(tst)
     adjusted_corporation_math_proficient = corporation_data.filter(regex=r"Grade.+?Math Total Proficient")
+    # adjusted_corporation_math_proficient = corporation_data.filter(regex='|'.join(school_grades_ela))
+
     adjusted_corporation_math_tested = corporation_data.filter(regex=r"Grade.+?Math Total Tested")
 
     corporation_data["School Total|Math Proficient %"] = adjusted_corporation_math_proficient.sum(axis=1) \
     / adjusted_corporation_math_tested.sum(axis=1)
 
+    # print(corporation_data["School Total|Math Proficient %"])
     adjusted_corporation_ela_proficient = corporation_data.filter(regex=r"Grade.+?ELA Total Proficient")
     adjusted_corporation_ela_tested = corporation_data.filter(regex=r"Grade.+?ELA Total Tested")
 
+    # print('ORIG')
+    # print(adjusted_corporation_ela_proficient.sum(axis=1))
     corporation_data["School Total|ELA Proficient %"] = adjusted_corporation_ela_proficient.sum(axis=1) \
         / adjusted_corporation_ela_tested.sum(axis=1)
 

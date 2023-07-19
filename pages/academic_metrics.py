@@ -362,8 +362,8 @@ def update_academic_metrics(school: str, year: str):
                 else:
                     table_container_14g = no_data_table("1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.")
 
-                ## TODO: Move Growth Metric tab from Academic Info page here (or to its own page)
-                ### TODO - Add Growth Data both to Academic Information and Metrics ###
+    ## TODO: Move Growth Metric tab from Academic Info page here (or to its own page)
+    ### TODO - Add Growth Data both to Academic Information and Metrics ###
                 # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
                 # 162 days. "Majority Enrolled" is misleading. It actually means "Greatest Number of Days." So the actual
                 # number of days could easily be less than 82 if, for example, a student transferred a few times, or
@@ -388,27 +388,55 @@ def update_academic_metrics(school: str, year: str):
                     counts_growth['Count (162 Days)'] = counts_growth_162['Count (162 Days)']
                     counts_growth['Difference'] = counts_growth['Count (Majority Enrolled)'] - counts_growth['Count (162 Days)']
 
-                    # print(counts_growth)
+                    print('Count Difference')
+                    print(counts_growth)
 
                     diff_threshold = abs(len(growth_data.index) - len(growth_data_162.index))
 
                     print(f'Percentage difference: ' + str(diff_threshold / len(growth_data.index)))
+                    # TODO: Test: If the difference is greater than 5% then switch to using 162-day data
+                    # NOTE: Do we want to just display both sets? Is there any value? Maybe to show that
+                    # schools do better with kids that are with them longer? YES!
 
-                    if diff_threshold / len(growth_data.index) > .05:
-                        print('Difference Trigger:')
+                    # step 1: find the percentage of students with Adequate vs Not Adequate growth using 162-Day measure
+                    # for each category
+                    grades_percentage_growth = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
+                    ethnicity_percentage_growth = growth_data_162.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
+                    ses_percentage_growth  = growth_data_162.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
+                    el_percentage_growth  = growth_data_162.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
+                    sped_percentage_growth  = growth_data_162.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
 
-                        grades_percentage_growth_162 = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-                        ethnicity_percentage_growth_162 = growth_data_162.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-                        ses_percentage_growth_162  = growth_data_162.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-                        el_percentage_growth_162  = growth_data_162.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
-                        sped_percentage_growth_162  = growth_data_162.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True)
+                    # step 2: find the percentage of students with Adequate vs Not Adequate growth using Majority Enrolled measure
+                    # for each category
+                    grades_percentage_growth_ME = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
+                    ethnicity_percentage_growth_ME = growth_data.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
+                    ses_percentage_growth_ME  = growth_data.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
+                    el_percentage_growth_ME  = growth_data.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
+                    sped_percentage_growth_ME  = growth_data.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
 
-                    # percentage of students with adequate/not adequate growth grouped by Year, Grade, and Subject
-                    grades_percentage_growth = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
-                    ethnicity_percentage_growth = growth_data.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
-                    ses_percentage_growth  = growth_data.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
-                    el_percentage_growth  = growth_data.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
-                    sped_percentage_growth  = growth_data.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage')
+                    # step 3: add the ME column to the original df. NOTE: There is almost certainly a shorter way of doing this by
+                    # combining first and second step, but it was getting too complicated and hard to read. e.g.,
+                    # grades_percentage_growth_162['Percentage (ME)'] = grades_percentage_growth.index.to_series().map(growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True))
+                    # grades_percentage_growth['Percentage (ME)'] = grades_percentage_growth['index'].map(growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True))
+
+                    grades_percentage_growth['Percentage (ME)'] = grades_percentage_growth_ME['Percentage (ME)']
+                    ethnicity_percentage_growth['Percentage (ME)'] = ethnicity_percentage_growth_ME['Percentage (ME)']
+                    ses_percentage_growth['Percentage (ME)'] = ses_percentage_growth_ME['Percentage (ME)']
+                    el_percentage_growth['Percentage (ME)'] = el_percentage_growth_ME['Percentage (ME)']
+                    sped_percentage_growth['Percentage (ME)'] = sped_percentage_growth_ME['Percentage (ME)']
+                    
+                    # step 4: add the difference between the two columns to df
+                    grades_percentage_growth['Difference'] = grades_percentage_growth['Percentage (162)'] - grades_percentage_growth_ME['Percentage (ME)']
+                    ethnicity_percentage_growth['Difference'] = ethnicity_percentage_growth['Percentage (162)'] - ethnicity_percentage_growth_ME['Percentage (ME)']
+                    ses_percentage_growth['Difference'] = ses_percentage_growth['Percentage (162)'] - ses_percentage_growth_ME['Percentage (ME)']
+                    el_percentage_growth['Difference'] = el_percentage_growth['Percentage (162)'] - el_percentage_growth_ME['Percentage (ME)']
+                    sped_percentage_growth['Difference'] = sped_percentage_growth['Percentage (162)'] - sped_percentage_growth_ME['Percentage (ME)']
+
+                    # print(grades_percentage_growth)
+                    # print(ethnicity_percentage_growth)
+                    # print(ses_percentage_growth)
+                    # print(el_percentage_growth)
+                    # print(sped_percentage_growth)
 
                     # median SGP for ALL tested students grouped by Year, Grade, and Subject
                     median_sgp_all = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
@@ -423,7 +451,7 @@ def update_academic_metrics(school: str, year: str):
 
                     # print(median_sgp_adequate)
                     # print(grades_percentage_growth)
-                    ela_grades_percentage_growth = grades_percentage_growth[grades_percentage_growth['Subject'] == 'ELA']
+                    ela_grades_percentage_growth = grades_percentage_growth_ME[grades_percentage_growth_ME['Subject'] == 'ELA']
                     # print(ela_grades_percentage_growth)
                     # print(ethnicity_percentage_growth)
 
@@ -431,6 +459,8 @@ def update_academic_metrics(school: str, year: str):
                     # group by Year, Subject and Grade Level?
                     # Also: Ethnicity, Socio Economic Status Category, English Learner Status Category, Special Ed Status Category
                     # Homeless Status Category, High Ability Status Category                
+
+
                 # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
                 growth_metrics_empty = pd.DataFrame(columns = simple_cols)
                 growth_metrics_dict = {
