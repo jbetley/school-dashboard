@@ -13,7 +13,7 @@ import pandas as pd
 # import local functions
 from .subnav import subnav_academic
 from .table_helpers import no_data_page, no_data_table, create_metric_table, \
-    set_table_layout, get_svg_circle, create_key
+    set_table_layout, get_svg_circle, create_key, create_growth_table
 from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data, \
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
         calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
@@ -364,6 +364,9 @@ def update_academic_metrics(school: str, year: str):
 
     ## TODO: Move Growth Metric tab from Academic Info page here (or to its own page)
     ### TODO - Add Growth Data both to Academic Information and Metrics ###
+
+                # Growth Data
+
                 # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
                 # 162 days. "Majority Enrolled" is misleading. It actually means "Greatest Number of Days." So the actual
                 # number of days could easily be less than 82 if, for example, a student transferred a few times, or
@@ -373,155 +376,108 @@ def update_academic_metrics(school: str, year: str):
                 # Percentage of students achieving “typical” or “high” growth on the state assessment in ELA/Math
                 # Median SGP of students achieving 'adequate and sufficient growth' on the state assessment in ELA/Math
 
-                # dataset is all students who are coded as 'Majority Enrolled' at the school
-                growth_data = get_growth_data(school)
-
-                if len(growth_data.index) > 0:
-                    # filter dataset to those students who have been at school for at least 162 days
-                    growth_data_162 = growth_data[growth_data['Day 162'] == 'TRUE']
-
-                    # find the difference between the count of Majority Enrolled and 162-Day students by Year
-                    counts_growth = growth_data.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (Majority Enrolled)")
-                    counts_growth_162 = growth_data_162.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (162 Days)")
-
-                    counts_growth['School Name'] = selected_school["School Name"].values[0]
-                    counts_growth['Count (162 Days)'] = counts_growth_162['Count (162 Days)']
-                    counts_growth['Difference'] = counts_growth['Count (Majority Enrolled)'] - counts_growth['Count (162 Days)']
-
-                    print('Count Difference')
-                    print(counts_growth)
-
-                    diff_threshold = abs(len(growth_data.index) - len(growth_data_162.index))
-
-                    print(f'Percentage difference: ' + str(diff_threshold / len(growth_data.index)))
-                    # TODO: Test: If the difference is greater than 5% then switch to using 162-day data
-                    # NOTE: Do we want to just display both sets? Is there any value? Maybe to show that
-                    # schools do better with kids that are with them longer? YES!
-# TODO: MOVE to FUNCTION
-                    # step 1: find the percentage of students with Adequate vs Not Adequate growth using 162-Day measure
-                    # for each category, create category by merging with Subject, drop 'Not Adequate' rows, and drop
-                    # non-display columns
-                    grades_growth = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
-                    grades_growth['Category'] = grades_growth['Grade Level'] + "|" + grades_growth['Subject']
-                    grades_growth = grades_growth[grades_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-                    grades_growth = grades_growth.drop(['Grade Level', 'Subject','ILEARNGrowth Level'], axis=1)
-
-                    ethnicity_growth = growth_data_162.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
-                    ethnicity_growth['Category'] = ethnicity_growth['Ethnicity'] + "|" + ethnicity_growth['Subject']
-                    ethnicity_growth = ethnicity_growth[ethnicity_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-                    ethnicity_growth = ethnicity_growth.drop(['Ethnicity', 'Subject','ILEARNGrowth Level'], axis=1)
-                    
-                    ses_growth  = growth_data_162.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
-                    ses_growth['Category'] = ses_growth['Socioeconomic Status'] + "|" + ses_growth['Subject']
-                    ses_growth = ses_growth[ses_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-                    ses_growth = ses_growth.drop(['Socioeconomic Status', 'Subject','ILEARNGrowth Level'], axis=1)
-                    
-                    el_growth  = growth_data_162.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
-                    el_growth['Category'] = el_growth['English Learner Status'] + "|" + el_growth['Subject']
-                    el_growth = el_growth[el_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-                    el_growth = el_growth.drop(['English Learner Status', 'Subject','ILEARNGrowth Level'], axis=1)
-                    
-                    sped_growth  = growth_data_162.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
-                    sped_growth['Category'] = sped_growth['Special Education Status'] + "|" + sped_growth['Subject']
-                    sped_growth = sped_growth[sped_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-                    sped_growth = sped_growth.drop(['Special Education Status', 'Subject','ILEARNGrowth Level'], axis=1)
-                    
-                    # step 2: find the percentage of students with Adequate vs Not Adequate growth using Majority Enrolled measure
-                    # for each category
-                    grades_growth_ME = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
-                    ethnicity_growth_ME = growth_data.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
-                    ses_growth_ME  = growth_data.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
-                    el_growth_ME  = growth_data.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
-                    sped_growth_ME  = growth_data.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
-
-                    # step 3: add the ME column to the original df. NOTE: There is almost certainly a shorter way of doing this by
-                    # combining first and second step, but it was getting too complicated and hard to read. e.g.,
-                    # grades_growth_162['Majority Enrolled'] = grades_growth.index.to_series().map(growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True))
-                    # grades_growth['Majority Enrolled'] = grades_growth['index'].map(growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True))
-
-                    grades_growth['Majority Enrolled'] = grades_growth_ME['Majority Enrolled']
-                    ethnicity_growth['Majority Enrolled'] = ethnicity_growth_ME['Majority Enrolled']
-                    ses_growth['Majority Enrolled'] = ses_growth_ME['Majority Enrolled']
-                    el_growth['Majority Enrolled'] = el_growth_ME['Majority Enrolled']
-                    sped_growth['Majority Enrolled'] = sped_growth_ME['Majority Enrolled']
-                    
-                    # step 4: add the difference between the two columns to df
-                    grades_growth['Difference'] = grades_growth['162 Days'] - grades_growth['Majority Enrolled']
-                    ethnicity_growth['Difference'] = ethnicity_growth['162 Days'] - ethnicity_growth['Majority Enrolled']
-                    ses_growth['Difference'] = ses_growth['162 Days'] - ses_growth['Majority Enrolled']
-                    el_growth['Difference'] = el_growth['162 Days'] - el_growth['Majority Enrolled']
-                    sped_growth['Difference'] = sped_growth['162 Days'] - sped_growth['Majority Enrolled']
-
-                    ## Get data into proper format for multi-header DataTable
-
-                    # Need a specific column order for each df. sort_index wont work here
-                    cols = []
-                    yrs = list(set(grades_growth['Test Year'].to_list()))
-                    yrs.sort(reverse=True)
-                    for y in yrs:
-                        cols.append(str(y) + '162 Days')
-                        cols.append(str(y) + 'Majority Enrolled')
-                        cols.append(str(y) + 'Difference')
-
-                    # pivot df from wide to long' add years to each column name; move year to
-                    # front of column name; sort and reset_index
-                    grades_growth=grades_growth.pivot(index=['Category'], columns='Test Year')
-                    grades_growth.columns = grades_growth.columns.map(lambda x: ''.join(map(str, x)))
-                    grades_growth.columns = grades_growth.columns.map(lambda x: x[-4:] + x[:-4])
-                    grades_growth = grades_growth[cols]
-                    grades_growth = grades_growth.reset_index()
-                    print(grades_growth)
-
-                    ethnicity_growth=ethnicity_growth.pivot(index=['Category'], columns='Test Year')
-                    ethnicity_growth.columns = ethnicity_growth.columns.map(lambda x: ''.join(map(str, x)))
-                    ethnicity_growth.columns = ethnicity_growth.columns.map(lambda x: x[-4:] + x[:-4])
-                    ethnicity_growth = ethnicity_growth[cols]
-                    ethnicity_growth = ethnicity_growth.reset_index()
-                    print(ethnicity_growth)
-
-                    ses_growth=ses_growth.pivot(index=['Category'], columns='Test Year')
-                    ses_growth.columns = ses_growth.columns.map(lambda x: ''.join(map(str, x)))
-                    ses_growth.columns = ses_growth.columns.map(lambda x: x[-4:] + x[:-4])
-                    ses_growth = ses_growth[cols]
-                    ses_growth = ses_growth.reset_index()
-                    print(ses_growth)
-
-                    el_growth=el_growth.pivot(index=['Category'], columns='Test Year')
-                    el_growth.columns = el_growth.columns.map(lambda x: ''.join(map(str, x)))
-                    el_growth.columns = el_growth.columns.map(lambda x: x[-4:] + x[:-4])
-                    el_growth = el_growth[cols]
-                    el_growth = el_growth.reset_index()
-                    print(el_growth)
-
-                    sped_growth=sped_growth.pivot(index=['Category'], columns='Test Year')
-                    sped_growth.columns = sped_growth.columns.map(lambda x: ''.join(map(str, x)))
-                    sped_growth.columns = sped_growth.columns.map(lambda x: x[-4:] + x[:-4])
-                    sped_growth = sped_growth[cols]
-                    sped_growth = sped_growth.reset_index()
-                    print(sped_growth)
-
-                    # median SGP for ALL tested students grouped by Year, Grade, and Subject
-                    median_sgp_all = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
-                    median_sgp_all_162 = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
-
-                    # median SGP of students achieving adequate growth grouped by Year, Grade, and Subject
-                    adequate_growth_data = growth_data[growth_data['ILEARNGrowth Level'] == 'Adequate Growth']
-                    median_sgp_adequate = adequate_growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
-
-                    adequate_growth_data_162 = growth_data_162[growth_data_162['ILEARNGrowth Level'] == 'Adequate Growth']
-                    median_sgp_adequate_162 = adequate_growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
-
-                    # print(median_sgp_adequate)
-                    # print(grades_growth)
-                    ela_grades_growth = grades_growth_ME[grades_growth_ME['Subject'] == 'ELA']
-                    # print(ela_grades_growth)
-                    # print(ethnicity_growth)
 
                     # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
                     # group by Year, Subject and Grade Level?
                     # Also: Ethnicity, Socio Economic Status Category, English Learner Status Category, Special Ed Status Category
-                    # Homeless Status Category, High Ability Status Category                
+                    # Homeless Status Category, High Ability Status Category    
 
+                # dataset is all students who are coded as 'Majority Enrolled' at the school
+                growth_data = get_growth_data(school)
+
+                if len(growth_data.index) > 0:
+                    
+                    # TODO: Do we want to add the # of students difference?
+                    # find the difference between the count of Majority Enrolled and 162-Day students by Year
+                    # counts_growth = growth_data.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (Majority Enrolled)")
+                    # counts_growth_162 = growth_data_162.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (162 Days)")
+
+                    # counts_growth['School Name'] = selected_school["School Name"].values[0]
+                    # counts_growth['Count (162 Days)'] = counts_growth_162['Count (162 Days)']
+                    # counts_growth['Difference'] = counts_growth['Count (Majority Enrolled)'] - counts_growth['Count (162 Days)']
+
+                    # print('Count Difference')
+                    # print(counts_growth)
+
+                    # diff_threshold = abs(len(growth_data.index) - len(growth_data_162.index))
+
+                    # print(f'Percentage difference: ' + str(diff_threshold / len(growth_data.index)))
+
+                    def process_growth_data(df: pd.DataFrame, category: str, calculation: str) -> pd.DataFrame:
+
+                        # step 1: find the percentage of students with Adequate growth using
+                        # 'Majority Enrolled' students (all available data) and the percentage
+                        # of students with Adequate growth using the set of students enrolled for
+                        # '162 Days' (a subset of available data)
+
+                        data_162 = df[df['Day 162'] == 'TRUE']
+                        data = df.copy()
+
+                        if calculation == 'growth':
+                            data = df.groupby(['Test Year', category, 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
+                            data_162 = data_162.groupby(['Test Year',category, 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
+                        
+                        elif calculation == 'sgp':
+                            data = df.groupby(['Test Year', category, 'Subject'])['ILEARNGrowth Percentile'].median().reset_index(name='Majority Enrolled')
+                            data_162 = data_162.groupby(['Test Year', category, 'Subject'])['ILEARNGrowth Percentile'].median().reset_index(name='162 Days')
+                        
+                        # step 3: add ME column to df and calculate difference
+                        data['162 Days'] = data_162['162 Days']
+                        data['Difference'] = data['162 Days'] - data['Majority Enrolled']
+
+                        # step 4: get into proper format for display as multi-header DataTable
+                        
+                        # create final category
+                        data['Category'] = data[category] + "|" + data['Subject']
+                        
+                        # drop unused rows and columns
+                        if calculation == 'growth':
+                            data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
+                            data = data.drop([category, 'Subject','ILEARNGrowth Level'], axis=1)                        
+                        elif calculation == 'sgp':
+                            data = data.drop([category, 'Subject'], axis=1)
+                        
+                        # create specific column order. sort_index does not work
+                        cols = []
+                        yrs = list(set(data['Test Year'].to_list()))
+                        yrs.sort(reverse=True)
+                        for y in yrs:
+                            cols.append(str(y) + '162 Days')
+                            cols.append(str(y) + 'Majority Enrolled')
+                            cols.append(str(y) + 'Difference')
+
+                        # pivot df from wide to long' add years to each column name; move year to
+                        # front of column name; sort and reset_index
+                        data = data.pivot(index=['Category'], columns='Test Year')
+                        data.columns = data.columns.map(lambda x: ''.join(map(str, x)))
+                        data.columns = data.columns.map(lambda x: x[-4:] + x[:-4])
+                        data = data[cols]
+                        data = data.reset_index()
+
+                        return data
+
+                    # Percentage of students achieving 'Adequate Growth'
+                    grades_growth = process_growth_data(growth_data,'Grade Level','growth')
+                    ethnicity_growth = process_growth_data(growth_data,'Ethnicity','growth')
+                    ses_growth = process_growth_data(growth_data,'Socioeconomic Status','growth')
+                    el_growth = process_growth_data(growth_data,'English Learner Status','growth')
+                    sped_growth = process_growth_data(growth_data,'Special Education Status','growth')
+
+                    table_grades_growth = create_growth_table('Grades Growth Table', grades_growth)
+                    
+                    # Median SGP for 'all' students
+                    grades_sgp = process_growth_data(growth_data,'Grade Level','sgp')
+                    ethnicity_sgp = process_growth_data(growth_data,'Ethnicity','sgp')
+                    ses_sgp = process_growth_data(growth_data,'Socioeconomic Status','sgp')
+                    el_sgp = process_growth_data(growth_data,'English Learner Status','sgp')
+                    sped_sgp = process_growth_data(growth_data,'Special Education Status','sgp')
+
+                    # TODO: Do we want to limit to median SGP for those students achieving 'Adequate Growth'?
+                    # # median SGP for students achieving 'Adequate Growth' grouped by Year, Grade, and Subject
+                    # adequate_growth_data = growth_data[growth_data['ILEARNGrowth Level'] == 'Adequate Growth']
+                    # median_sgp_adequate = adequate_growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
+                    # adequate_growth_data_162 = growth_data_162[growth_data_162['ILEARNGrowth Level'] == 'Adequate Growth']
+                    # median_sgp_adequate_162 = adequate_growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
 
                 # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
                 growth_metrics_empty = pd.DataFrame(columns = simple_cols)

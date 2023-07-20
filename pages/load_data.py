@@ -1039,7 +1039,6 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     # leave it alone for now.
     final_k8_academic_data["Category"] = (final_k8_academic_data["Category"].str.replace(" Proficient %", "").str.strip())
 
-    print(final_k8_academic_data)
     # rename IREAD Category
     final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
 
