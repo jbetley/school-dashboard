@@ -44,7 +44,8 @@ dash.register_page(__name__,  path = "/academic_metrics", order=5)
     Output("display-ahs-metrics", "style"),
     Output("academic-metrics-main-container", "style"),
     Output("academic-metrics-empty-container", "style"),
-    Output("academic-metrics-no-data", "children"),  
+    Output("academic-metrics-no-data", "children"),
+    Output("table-growth-container1", "children"),      
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
 )
@@ -83,6 +84,7 @@ def update_academic_metrics(school: str, year: str):
         table_container_15abcd = {}
         table_container_16ab = {}
         table_container_16cd = {}
+        table_growth_container = {}
         display_k8_metrics = {"display": "none"}
 
         table_container_17ab = {}
@@ -175,6 +177,7 @@ def update_academic_metrics(school: str, year: str):
                 table_container_15abcd = {}
                 table_container_16ab = {}
                 table_container_16cd = {}
+                table_growth_container = {}                
                 display_k8_metrics = {"display": "none"}
 
             raw_hs_school_data = get_high_school_academic_data(school)
@@ -463,15 +466,27 @@ def update_academic_metrics(school: str, year: str):
                     el_growth = process_growth_data(growth_data,'English Learner Status','growth')
                     sped_growth = process_growth_data(growth_data,'Special Education Status','growth')
 
-                    table_grades_growth = create_growth_table('Grades Growth Table', grades_growth)
-                    
+                    # Tables
+                    # TODO: Either split growth % and SGP completely or run them together
+                    # TODO: Small line graphs/side by side/ %(solid) and SGP(dotted)/same color?
+                    grades_growth_ela = grades_growth[(grades_growth["Category"].str.contains("ELA"))]
+                    grades_growth_math= grades_growth[(grades_growth["Category"].str.contains("Math"))]                    
+                    table_grades_growth_ela = create_growth_table('Percentage of Students with Adequate Growth - by Grade (ELA)', grades_growth_ela,'growth')
+                    # table_grades_growth_math = create_growth_table('Percentage of Students with Adequate Growth - by Grade (Math)', grades_growth_math)
+
                     # Median SGP for 'all' students
                     grades_sgp = process_growth_data(growth_data,'Grade Level','sgp')
+                    grades_sgp_ela = grades_sgp[(grades_sgp["Category"].str.contains("ELA"))]
+                    table_grades_sgp_ela = create_growth_table('Median SGP - All Students By Grade (ELA)', grades_sgp_ela,'sgp')
+
+                    table_growth_container = set_table_layout(table_grades_growth_ela, table_grades_sgp_ela, grades_growth.columns)
+                    
                     ethnicity_sgp = process_growth_data(growth_data,'Ethnicity','sgp')
                     ses_sgp = process_growth_data(growth_data,'Socioeconomic Status','sgp')
                     el_sgp = process_growth_data(growth_data,'English Learner Status','sgp')
                     sped_sgp = process_growth_data(growth_data,'Special Education Status','sgp')
-
+                else:
+                    table_growth_container = {}
                     # TODO: Do we want to limit to median SGP for those students achieving 'Adequate Growth'?
                     # # median SGP for students achieving 'Adequate Growth' grouped by Year, Grade, and Subject
                     # adequate_growth_data = growth_data[growth_data['ILEARNGrowth Level'] == 'Adequate Growth']
@@ -543,6 +558,7 @@ def update_academic_metrics(school: str, year: str):
                 table_container_15abcd = {}
                 table_container_16ab = {}
                 table_container_16cd = {}
+                table_growth_container = {}                
                 display_k8_metrics = {"display": "none"}
 
                 main_container = {"display": "none"}
@@ -561,6 +577,7 @@ def update_academic_metrics(school: str, year: str):
         table_container_15abcd = {}
         table_container_16ab = {}
         table_container_16cd = {}
+        table_growth_container = {}        
         display_attendance = {"display": "none"}
         display_k8_metrics = {"display": "none"}
 
@@ -643,7 +660,7 @@ def update_academic_metrics(school: str, year: str):
         table_container_15abcd, table_container_16ab, table_container_16cd, display_k8_metrics, \
         table_container_17ab, table_container_17cd, display_hs_metrics, \
         ahs_table_container_113, ahs_table_container_1214, display_ahs_metrics, \
-        main_container, empty_container, no_data_to_display
+        main_container, empty_container, no_data_to_display, table_growth_container
 
 def layout():
     return html.Div(
@@ -691,6 +708,7 @@ def layout():
                                 html.Div(id="table-container-15abcd", children=[]),
                                 html.Div(id="table-container-16ab", children=[]),
                                 html.Div(id="table-container-16cd", children=[]),
+                                html.Div(id="table-growth-container1", children=[]),                                
                             ],
                             id = "display-k8-metrics",
                         ),
