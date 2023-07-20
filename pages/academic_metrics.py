@@ -397,46 +397,108 @@ def update_academic_metrics(school: str, year: str):
                     # TODO: Test: If the difference is greater than 5% then switch to using 162-day data
                     # NOTE: Do we want to just display both sets? Is there any value? Maybe to show that
                     # schools do better with kids that are with them longer? YES!
-
+# TODO: MOVE to FUNCTION
                     # step 1: find the percentage of students with Adequate vs Not Adequate growth using 162-Day measure
-                    # for each category
-                    grades_percentage_growth = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
-                    ethnicity_percentage_growth = growth_data_162.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
-                    ses_percentage_growth  = growth_data_162.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
-                    el_percentage_growth  = growth_data_162.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
-                    sped_percentage_growth  = growth_data_162.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (162)')
+                    # for each category, create category by merging with Subject, drop 'Not Adequate' rows, and drop
+                    # non-display columns
+                    grades_growth = growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
+                    grades_growth['Category'] = grades_growth['Grade Level'] + "|" + grades_growth['Subject']
+                    grades_growth = grades_growth[grades_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
+                    grades_growth = grades_growth.drop(['Grade Level', 'Subject','ILEARNGrowth Level'], axis=1)
 
+                    ethnicity_growth = growth_data_162.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
+                    ethnicity_growth['Category'] = ethnicity_growth['Ethnicity'] + "|" + ethnicity_growth['Subject']
+                    ethnicity_growth = ethnicity_growth[ethnicity_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
+                    ethnicity_growth = ethnicity_growth.drop(['Ethnicity', 'Subject','ILEARNGrowth Level'], axis=1)
+                    
+                    ses_growth  = growth_data_162.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
+                    ses_growth['Category'] = ses_growth['Socioeconomic Status'] + "|" + ses_growth['Subject']
+                    ses_growth = ses_growth[ses_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
+                    ses_growth = ses_growth.drop(['Socioeconomic Status', 'Subject','ILEARNGrowth Level'], axis=1)
+                    
+                    el_growth  = growth_data_162.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
+                    el_growth['Category'] = el_growth['English Learner Status'] + "|" + el_growth['Subject']
+                    el_growth = el_growth[el_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
+                    el_growth = el_growth.drop(['English Learner Status', 'Subject','ILEARNGrowth Level'], axis=1)
+                    
+                    sped_growth  = growth_data_162.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
+                    sped_growth['Category'] = sped_growth['Special Education Status'] + "|" + sped_growth['Subject']
+                    sped_growth = sped_growth[sped_growth["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
+                    sped_growth = sped_growth.drop(['Special Education Status', 'Subject','ILEARNGrowth Level'], axis=1)
+                    
                     # step 2: find the percentage of students with Adequate vs Not Adequate growth using Majority Enrolled measure
                     # for each category
-                    grades_percentage_growth_ME = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
-                    ethnicity_percentage_growth_ME = growth_data.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
-                    ses_percentage_growth_ME  = growth_data.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
-                    el_percentage_growth_ME  = growth_data.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
-                    sped_percentage_growth_ME  = growth_data.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Percentage (ME)')
+                    grades_growth_ME = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
+                    ethnicity_growth_ME = growth_data.groupby(['Test Year','Ethnicity', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
+                    ses_growth_ME  = growth_data.groupby(['Test Year','Socioeconomic Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
+                    el_growth_ME  = growth_data.groupby(['Test Year','English Learner Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
+                    sped_growth_ME  = growth_data.groupby(['Test Year','Special Education Status', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
 
                     # step 3: add the ME column to the original df. NOTE: There is almost certainly a shorter way of doing this by
                     # combining first and second step, but it was getting too complicated and hard to read. e.g.,
-                    # grades_percentage_growth_162['Percentage (ME)'] = grades_percentage_growth.index.to_series().map(growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True))
-                    # grades_percentage_growth['Percentage (ME)'] = grades_percentage_growth['index'].map(growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True))
+                    # grades_growth_162['Majority Enrolled'] = grades_growth.index.to_series().map(growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True))
+                    # grades_growth['Majority Enrolled'] = grades_growth['index'].map(growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True))
 
-                    grades_percentage_growth['Percentage (ME)'] = grades_percentage_growth_ME['Percentage (ME)']
-                    ethnicity_percentage_growth['Percentage (ME)'] = ethnicity_percentage_growth_ME['Percentage (ME)']
-                    ses_percentage_growth['Percentage (ME)'] = ses_percentage_growth_ME['Percentage (ME)']
-                    el_percentage_growth['Percentage (ME)'] = el_percentage_growth_ME['Percentage (ME)']
-                    sped_percentage_growth['Percentage (ME)'] = sped_percentage_growth_ME['Percentage (ME)']
+                    grades_growth['Majority Enrolled'] = grades_growth_ME['Majority Enrolled']
+                    ethnicity_growth['Majority Enrolled'] = ethnicity_growth_ME['Majority Enrolled']
+                    ses_growth['Majority Enrolled'] = ses_growth_ME['Majority Enrolled']
+                    el_growth['Majority Enrolled'] = el_growth_ME['Majority Enrolled']
+                    sped_growth['Majority Enrolled'] = sped_growth_ME['Majority Enrolled']
                     
                     # step 4: add the difference between the two columns to df
-                    grades_percentage_growth['Difference'] = grades_percentage_growth['Percentage (162)'] - grades_percentage_growth_ME['Percentage (ME)']
-                    ethnicity_percentage_growth['Difference'] = ethnicity_percentage_growth['Percentage (162)'] - ethnicity_percentage_growth_ME['Percentage (ME)']
-                    ses_percentage_growth['Difference'] = ses_percentage_growth['Percentage (162)'] - ses_percentage_growth_ME['Percentage (ME)']
-                    el_percentage_growth['Difference'] = el_percentage_growth['Percentage (162)'] - el_percentage_growth_ME['Percentage (ME)']
-                    sped_percentage_growth['Difference'] = sped_percentage_growth['Percentage (162)'] - sped_percentage_growth_ME['Percentage (ME)']
+                    grades_growth['Difference'] = grades_growth['162 Days'] - grades_growth['Majority Enrolled']
+                    ethnicity_growth['Difference'] = ethnicity_growth['162 Days'] - ethnicity_growth['Majority Enrolled']
+                    ses_growth['Difference'] = ses_growth['162 Days'] - ses_growth['Majority Enrolled']
+                    el_growth['Difference'] = el_growth['162 Days'] - el_growth['Majority Enrolled']
+                    sped_growth['Difference'] = sped_growth['162 Days'] - sped_growth['Majority Enrolled']
 
-                    # print(grades_percentage_growth)
-                    # print(ethnicity_percentage_growth)
-                    # print(ses_percentage_growth)
-                    # print(el_percentage_growth)
-                    # print(sped_percentage_growth)
+                    ## Get data into proper format for multi-header DataTable
+
+                    # Need a specific column order for each df. sort_index wont work here
+                    cols = []
+                    yrs = list(set(grades_growth['Test Year'].to_list()))
+                    yrs.sort(reverse=True)
+                    for y in yrs:
+                        cols.append(str(y) + '162 Days')
+                        cols.append(str(y) + 'Majority Enrolled')
+                        cols.append(str(y) + 'Difference')
+
+                    # pivot df from wide to long' add years to each column name; move year to
+                    # front of column name; sort and reset_index
+                    grades_growth=grades_growth.pivot(index=['Category'], columns='Test Year')
+                    grades_growth.columns = grades_growth.columns.map(lambda x: ''.join(map(str, x)))
+                    grades_growth.columns = grades_growth.columns.map(lambda x: x[-4:] + x[:-4])
+                    grades_growth = grades_growth[cols]
+                    grades_growth = grades_growth.reset_index()
+                    print(grades_growth)
+
+                    ethnicity_growth=ethnicity_growth.pivot(index=['Category'], columns='Test Year')
+                    ethnicity_growth.columns = ethnicity_growth.columns.map(lambda x: ''.join(map(str, x)))
+                    ethnicity_growth.columns = ethnicity_growth.columns.map(lambda x: x[-4:] + x[:-4])
+                    ethnicity_growth = ethnicity_growth[cols]
+                    ethnicity_growth = ethnicity_growth.reset_index()
+                    print(ethnicity_growth)
+
+                    ses_growth=ses_growth.pivot(index=['Category'], columns='Test Year')
+                    ses_growth.columns = ses_growth.columns.map(lambda x: ''.join(map(str, x)))
+                    ses_growth.columns = ses_growth.columns.map(lambda x: x[-4:] + x[:-4])
+                    ses_growth = ses_growth[cols]
+                    ses_growth = ses_growth.reset_index()
+                    print(ses_growth)
+
+                    el_growth=el_growth.pivot(index=['Category'], columns='Test Year')
+                    el_growth.columns = el_growth.columns.map(lambda x: ''.join(map(str, x)))
+                    el_growth.columns = el_growth.columns.map(lambda x: x[-4:] + x[:-4])
+                    el_growth = el_growth[cols]
+                    el_growth = el_growth.reset_index()
+                    print(el_growth)
+
+                    sped_growth=sped_growth.pivot(index=['Category'], columns='Test Year')
+                    sped_growth.columns = sped_growth.columns.map(lambda x: ''.join(map(str, x)))
+                    sped_growth.columns = sped_growth.columns.map(lambda x: x[-4:] + x[:-4])
+                    sped_growth = sped_growth[cols]
+                    sped_growth = sped_growth.reset_index()
+                    print(sped_growth)
 
                     # median SGP for ALL tested students grouped by Year, Grade, and Subject
                     median_sgp_all = growth_data.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
@@ -450,10 +512,10 @@ def update_academic_metrics(school: str, year: str):
                     median_sgp_adequate_162 = adequate_growth_data_162.groupby(['Test Year','Grade Level', 'Subject'])['ILEARNGrowth Percentile'].median()
 
                     # print(median_sgp_adequate)
-                    # print(grades_percentage_growth)
-                    ela_grades_percentage_growth = grades_percentage_growth_ME[grades_percentage_growth_ME['Subject'] == 'ELA']
-                    # print(ela_grades_percentage_growth)
-                    # print(ethnicity_percentage_growth)
+                    # print(grades_growth)
+                    ela_grades_growth = grades_growth_ME[grades_growth_ME['Subject'] == 'ELA']
+                    # print(ela_grades_growth)
+                    # print(ethnicity_growth)
 
                     # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
                     # group by Year, Subject and Grade Level?
