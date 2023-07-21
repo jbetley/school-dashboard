@@ -297,8 +297,6 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     data.columns = data.columns.str.split('|').str[0]
     cols=[i for i in data.columns if i not in ['School Name','Year']]
 
-    print(data)
-    print(cols)
     # create chart only if data exists
     if (len(cols)) > 0:
 

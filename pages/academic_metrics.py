@@ -36,6 +36,8 @@ dash.register_page(__name__,  path = "/academic_metrics", order=5)
     Output("table-container-15abcd", "children"),
     Output("table-container-16ab", "children"),
     Output("table-container-16cd", "children"),
+    Output("tst-fig", "children"),
+    Output("tst-fig2", "children"),   
     Output("display-k8-metrics", "style"),
     Output("table-container-17ab", "children"),
     Output("table-container-17cd", "children"),
@@ -52,7 +54,7 @@ dash.register_page(__name__,  path = "/academic_metrics", order=5)
     Output("table-ethnicity-growth-math-container", "children"),
     Output("table-subgroup-growth-ela-container", "children"),
     Output("table-subgroup-growth-math-container", "children"),
-    Output("tst-fig", "figure"),
+
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
 )
@@ -572,31 +574,169 @@ def update_academic_metrics(school: str, year: str):
                     data_me_ela.columns = data_me_ela.columns.str.split('_').str[1]
                     data_me_math.columns = data_me_math.columns.str.split('_').str[1]
                     
+                    # TODO: TEST ONE
                     # TODO: Use px? How to organize legends? separate boxes?
-                    import plotly.graph_objects as go
+                    # import plotly.graph_objects as go
                     
-                    #sample dataframe defined into `df1`, `df2`
+                    # #sample dataframe defined into `df1`, `df2`
 
-                    layout=go.Layout(
-                        title= 'Plot_with_solidline_dashline',
-                        xaxis= dict(title= 'Iteration'),
-                        yaxis=dict(title= 'Accuracy'),
-                        showlegend= True
-                    )
-                    print(data_162_ela)
-                    print(data_me_ela)
-                    plot_df=[]
-                    for col in data_162_ela.columns:
-                        plot_df.append(
-                            go.Scatter(x=data_162_ela.index, y=data_162_ela[col], mode='lines', line={'dash': 'solid'}, name=col)
-                        )
-                        plot_df.append(
-                            go.Scatter(x=data_me_ela.index, y=data_me_ela[col], mode='lines', line={'dash': 'dash'}, name=col)
-                        )
+                    # layout=go.Layout(
+                    #     title= 'Plot_with_solidline_dashline',
+                    #     xaxis= dict(title= 'Iteration'),
+                    #     yaxis=dict(title= 'Accuracy'),
+                    #     showlegend= True
+                    # )
 
-                    tst_fig= go.Figure(data=plot_df, layout=layout)
+                    # plot_df=[]
+                    # for col in data_162_ela.columns:
+                    #     plot_df.append(
+                    #         go.Scatter(x=data_162_ela.index, y=data_162_ela[col], mode='lines', line={'dash': 'solid'}, name=col)
+                    #     )
+                    #     plot_df.append(
+                    #         go.Scatter(x=data_me_ela.index, y=data_me_ela[col], mode='lines', line={'dash': 'dash'}, name=col)
+                    #     )
+
+                    # tst_fig= go.Figure(data=plot_df, layout=layout)
 
                     # tst_fig = make_growth_line_chart(fig_data_grades_growth,'Year over Year ELA Proficiency by Grade')
+                    # TODO: TEST TWO
+                    import plotly.graph_objects as go
+                    from plotly.subplots import make_subplots
+
+                    # Create figure with secondary y-axis
+                    fig_grade = make_subplots() #specs=[[{"secondary_y": False}]]
+                    # TODO: Color not working
+                    color1 =['#F16745', '#FFC65D', '#7BC8A4', '#4CC3D9', '#93648D', '#404040']
+                    color2 = ['#d93810','#ffab11','#49ae7f','#269db3','#93648d','#050505']
+                    # Add traces
+                    for col in data_162_ela.columns:
+                        fig_grade.add_trace(
+                            go.Scatter(x=data_me_ela.index, y=data_me_ela[col], mode='lines', marker=dict(color=color1),line={'dash': 'solid'}, name=col),
+                            secondary_y=False,
+                        )
+
+                        fig_grade.add_trace(
+                            go.Scatter(x=data_162_ela.index, y=data_162_ela[col], name=col, marker=dict(color=color2), mode="markers"),
+                            secondary_y=False,
+                        )
+
+                    # Add figure title
+                    fig_grade.update_layout(
+                        margin=dict(l=40, r=40, t=40, b=0),
+                        title_x=0.5,
+                        font = dict(
+                            family = 'Jost, sans-serif',
+                            color = 'steelblue',
+                            size = 10
+                            ),
+                        plot_bgcolor='white',
+                        xaxis = dict(
+                            title='',
+                            type='date',
+                            tickvals = data_162_ela.index,
+                            tickformat='%Y',
+                            # mirror=True,
+                            showline=True,
+                            linecolor='#b0c4de',
+                            linewidth=.5,
+                            gridwidth=.5,
+                            showgrid=True,
+                            gridcolor='#b0c4de',
+                            zeroline=False,
+                            # range = add_years
+                            ),   
+                        legend=dict(
+                            orientation='h'
+                        ),
+                        hovermode='x unified',
+                        height=300,
+                        # width=400,
+                        legend_title='',
+                    )                    
+                    fig_grade.update_traces(
+                        marker=dict(
+                            size=6,
+                            symbol="diamond",
+                        )
+                    )
+
+                    fig_grade.update_yaxes(title_text="Adequate Growth %", secondary_y=False)
+
+                    tst_fig = [
+                            html.Div(
+                                [
+                                # html.Label(label, className = 'header_label'),
+                                dcc.Graph(figure = fig_grade, config={'displayModeBar': False})
+                                ],
+                            ),       
+                    ]
+
+                    # Create figure with secondary y-axis
+                    fig_grade2 = make_subplots() #specs=[[{"secondary_y": False}]]
+
+                    # Add traces
+                    for col in data_162_math.columns:
+                        fig_grade2.add_trace(
+                            go.Scatter(x=data_me_math.index, y=data_me_math[col], mode='lines', line={'dash': 'solid'}, name=col + ' (Maj. Enroll)'),
+                            secondary_y=False,
+                        )
+
+                        fig_grade2.add_trace(
+                            go.Scatter(x=data_162_math.index, y=data_162_math[col], name=col + " (162 Day)", mode="markers"),
+                            secondary_y=False,
+                        )
+
+                    # Add figure title
+                    fig_grade2.update_layout(
+                        margin=dict(l=40, r=40, t=40, b=0),
+                        title_x=0.5,
+                        font = dict(
+                            family = 'Jost, sans-serif',
+                            color = 'steelblue',
+                            size = 10
+                            ),
+                        plot_bgcolor='white',
+                        xaxis = dict(
+                            title='',
+                            type='date',
+                            tickvals = data_162_ela.index,
+                            tickformat='%Y',
+                            # mirror=True,
+                            showline=True,
+                            linecolor='#b0c4de',
+                            linewidth=.5,
+                            gridwidth=.5,
+                            showgrid=True,
+                            gridcolor='#b0c4de',
+                            zeroline=False,
+                            # range = add_years
+                            ),   
+                        legend=dict(
+                            orientation='h'
+                        ),
+                        hovermode='x unified',
+                        height=300,
+                        # width=400,
+                        legend_title='',
+                    )                    
+                    fig_grade2.update_traces(
+                        marker=dict(
+                            size=6,
+                            symbol="diamond",
+                        )
+                    )
+
+                    fig_grade2.update_yaxes(title_text="Adequate Growth %", secondary_y=False)
+
+                    tst_fig2 = [
+                            html.Div(
+                                [
+                                # html.Label(label, className = 'header_label'),
+                                dcc.Graph(figure = fig_grade2, config={'displayModeBar': False})
+                                ],
+                            ),       
+                    ]
+                         
                 else:
 
                     table_grades_growth_ela_container = {},
@@ -776,13 +916,13 @@ def update_academic_metrics(school: str, year: str):
      
     return table_container_11ab, display_attendance, table_container_11cd, table_container_14ab, \
         table_container_14cd, table_container_14ef, table_container_14g, \
-        table_container_15abcd, table_container_16ab, table_container_16cd, display_k8_metrics, \
+        table_container_15abcd, table_container_16ab, table_container_16cd, tst_fig, tst_fig2, display_k8_metrics, \
         table_container_17ab, table_container_17cd, display_hs_metrics, \
         ahs_table_container_113, ahs_table_container_1214, display_ahs_metrics, \
         main_container, empty_container, no_data_to_display, \
         table_grades_growth_ela_container, table_grades_growth_math_container, table_ethnicity_growth_ela_container, \
         table_ethnicity_growth_math_container, table_subgroup_growth_ela_container, table_subgroup_growth_math_container,\
-        tst_fig
+        
 
 def layout():
     return html.Div(
@@ -799,7 +939,32 @@ def layout():
                     className="row"
                 ),
                 html.Div(
-                    [                
+                    [
+                        ##
+                        html.Div(
+                            [                                            
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Div(id='tst-fig', children=[])
+                                            ],
+                                            className = 'pretty_container six columns'
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Div(id='tst-fig2', children=[])
+                                            ],
+                                            className = 'pretty_container six columns'
+                                        ),                                        
+                                    ],
+                                    className='bare_container_center twelve columns',
+                                ),
+                            ],
+                            className='row',
+                        ),
+                        ## 
+                                     
                         html.Div(
                             [
                                 html.Div(
@@ -819,7 +984,7 @@ def layout():
                                 html.Div(id="table-container-11ab", children=[]),
                             ],
                             id = "display-attendance",
-                        ),
+                        ),                         
                         html.Div(
                             [
                                 html.Div(id="table-container-11cd", children=[]),
@@ -829,14 +994,15 @@ def layout():
                                 html.Div(id="table-container-14g", children=[]),
                                 html.Div(id="table-container-15abcd", children=[]),
                                 html.Div(id="table-container-16ab", children=[]),
-                                html.Div(id="table-container-16cd", children=[]),
-                                dcc.Graph(id="tst-fig"),
+                                html.Div(id="table-container-16cd", children=[]),                                
+                                # html.Div(id="tst-fig", children=[]),
+                                # dcc.Graph(id="tst-fig"),
                                 html.Div(id="table-grades-growth-ela-container", children=[]),
                                 html.Div(id="table-grades-growth-math-container", children=[]),
                                 html.Div(id="table-ethnicity-growth-ela-container", children=[]),
                                 html.Div(id="table-ethnicity-growth-math-container", children=[]),
                                 html.Div(id="table-subgroup-growth-ela-container", children=[]),
-                                html.Div(id="table-subgroup-growth-math-container", children=[]),
+                                html.Div(id="table-subgroup-growth-math-container", children=[]),                               
                             ],
                             id = "display-k8-metrics",
                         ),
