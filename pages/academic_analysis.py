@@ -357,7 +357,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             # Chart 1: Year over Year ELA Proficiency by Grade (1.4.a)
             fig14a_data = yearly_school_data.filter(regex = r'^Grade \d\|ELA|^School Name$|^Year$',axis=1)
-            
+            print(fig14a_data)
             # NOTE: make_line_chart() returns a list (plotly dash html layout), it either
             # contains a chart (if data) or a empty no data fig
             fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')

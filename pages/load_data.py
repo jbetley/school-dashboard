@@ -206,7 +206,6 @@ def calculate_graduation_rate(values: pd.DataFrame) -> pd.DataFrame:
 
     for cohort in cohorts:
         if cohort in data.columns:
-            # get Category + Subject string
             cat_sub = cohort.split('|Cohort Count')[0]
             data[cat_sub + " Graduation Rate"] = calculate_percentage(data[cat_sub + "|Graduates"], data[cohort])
 
@@ -226,7 +225,6 @@ def calculate_eca_rate(values: pd.DataFrame) -> pd.DataFrame:
 
     for test in tested:
         if test in data.columns:
-            # get Category + Subject string
             cat_sub = test.split(' Test N')[0]
             data[cat_sub + " Pass Rate"] = calculate_percentage(data[cat_sub + " Pass N"], data[test])
     
@@ -911,10 +909,6 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     # do not want to retain strings ('***') for corporation_data
     for col in corporation_data:
         corporation_data[col] = pd.to_numeric(corporation_data[col], errors='coerce')       
-    
-    # corporation_data = corporation_data.filter(regex=r"Total Tested$|Total Proficient$|IREAD Pass N|IREAD Test N|Year",
-    #     axis=1,
-    # )
 
     # reset index as 'Year' for corp_rate data
     corporation_data = corporation_data.set_index("Year")
@@ -923,16 +917,16 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     # and store in a new column
     corporation_data = calculate_proficiency(corporation_data)
 
+    # Drop 'ELA and Math'
+    # corporation_data = corporation_data[corporation_data.columns[~corporation_data.columns.str.contains(r'ELA and Math')]]
+
     # Corporation 'School Total' is calculates using all grades. We need to recalculate it using only the
     # grades that are served by the school - this is messy because we need Total Proficient/Total Tested
     # for both ELA and Math for all matching grades and those specific columns do not exist in the school df
 
-    # Drop 'ELA and Math'
-    # corporation_data = corporation_data[corporation_data.columns[~corporation_data.columns.str.contains(r'ELA and Math')]]
-    
     school_grades = school_data.loc[school_data['Category'].str.contains(r"Grade.[345678]", regex=True), 'Category'].to_list()
     school_grades = [i.split('|')[0] for i in school_grades]
-    school_grades = list(set(school_grades)) #.iloc[0]
+    school_grades = list(set(school_grades))
 
     math_prof = [e + '|Math Total Proficient' for e in school_grades]
     math_test = [e + '|Math Total Tested' for e in school_grades]
@@ -947,17 +941,6 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     corporation_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
     corporation_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
 
-    # adjusted_corporation_math_proficient = corporation_data.filter(regex=r"Grade.+?Math Total Proficient")
-    # adjusted_corporation_math_tested = corporation_data.filter(regex=r"Grade.+?Math Total Tested")
-    # corporation_data["School Total|Math Proficient %"] = adjusted_corporation_math_proficient.sum(axis=1) \
-    # / adjusted_corporation_math_tested.sum(axis=1)
-
-    # adjusted_corporation_ela_proficient = corporation_data.filter(regex=r"Grade.+?ELA Total Proficient")
-    # adjusted_corporation_ela_tested = corporation_data.filter(regex=r"Grade.+?ELA Total Tested")
-    # corporation_data["School Total|ELA Proficient %"] = adjusted_corporation_ela_proficient.sum(axis=1) \
-    #     / adjusted_corporation_ela_tested.sum(axis=1)
-
-    # ensure corp data has same categories as school data
     column_list = school_data['Category'].tolist() + ['Year']
         
     # calculate IREAD Pass %
