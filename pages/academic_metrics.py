@@ -605,18 +605,35 @@ def update_academic_metrics(school: str, year: str):
 
                     # Create figure with secondary y-axis
                     fig_grade = make_subplots() #specs=[[{"secondary_y": False}]]
-                    # TODO: Color not working
-                    color1 =['#F16745', '#FFC65D', '#7BC8A4', '#4CC3D9', '#93648D', '#404040']
-                    color2 = ['#d93810','#ffab11','#49ae7f','#269db3','#93648d','#050505']
+
+                    color = ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
+
                     # Add traces
-                    for col in data_162_ela.columns:
+                    for i, col in enumerate(data_162_ela.columns):
                         fig_grade.add_trace(
-                            go.Scatter(x=data_me_ela.index, y=data_me_ela[col], mode='lines', marker=dict(color=color1),line={'dash': 'solid'}, name=col),
+                            go.Scatter(
+                                x=data_me_ela.index,
+                                y=data_me_ela[col],
+                                mode='lines',
+                                marker=dict(color=color[i]),
+                                line={'dash': 'solid'},
+                                name=col,
+                                # legendgroup = '1',
+                                # legendgrouptitle_text="Majority Enrolled"
+                            ),
                             secondary_y=False,
                         )
 
                         fig_grade.add_trace(
-                            go.Scatter(x=data_162_ela.index, y=data_162_ela[col], name=col, marker=dict(color=color2), mode="markers"),
+                            go.Scatter(
+                                x=data_162_ela.index,
+                                y=data_162_ela[col],
+                                mode="markers",
+                                marker=dict(color=color[i]),
+                                name=col,
+                                # legendgroup = '2',
+                                # legendgrouptitle_text="162 Days"
+                            ),
                             secondary_y=False,
                         )
 
@@ -644,14 +661,26 @@ def update_academic_metrics(school: str, year: str):
                             gridcolor='#b0c4de',
                             zeroline=False,
                             # range = add_years
-                            ),   
+                            ),
+                        yaxis = dict(
+                            title='',
+                            tickformat='.0%',
+                            showline=True,
+                            linecolor='#b0c4de',
+                            linewidth=.5,
+                            gridwidth=.5,
+                            showgrid=True,
+                            gridcolor='#b0c4de',
+                            zeroline=False,
+                            # range = add_years
+                            ),
                         legend=dict(
                             orientation='h'
                         ),
                         hovermode='x unified',
                         height=300,
                         # width=400,
-                        legend_title='',
+                        # legend_title='',
                     )                    
                     fig_grade.update_traces(
                         marker=dict(
@@ -659,13 +688,26 @@ def update_academic_metrics(school: str, year: str):
                             symbol="diamond",
                         )
                     )
-
+# diamond - &#9670;	&#x25C6;
+# weak line - &#9644; &#x25AC;
+                    fig_grade.add_annotation(
+                        text="Students Enrolled For: <b>&#9670;: 162 Days ┃: A Majority</b>",
+                        align="left",
+                        showarrow=False,
+                        xref="paper",
+                        yref="paper",
+                        font=dict(color="steelblue", size=9),
+                        bgcolor="rgba(0,0,0,0)",
+                        y=1.15,
+                        x=.5,
+                        xanchor="center",
+                    )
                     fig_grade.update_yaxes(title_text="Adequate Growth %", secondary_y=False)
 
                     tst_fig = [
                             html.Div(
                                 [
-                                # html.Label(label, className = 'header_label'),
+                                html.Label("Percentage of Students Achieving Adequate Growth in ELA by Grade", className = 'header_label'),
                                 dcc.Graph(figure = fig_grade, config={'displayModeBar': False})
                                 ],
                             ),       
@@ -675,17 +717,33 @@ def update_academic_metrics(school: str, year: str):
                     fig_grade2 = make_subplots() #specs=[[{"secondary_y": False}]]
 
                     # Add traces
-                    for col in data_162_math.columns:
+                    for i, col in enumerate(data_162_math.columns):
                         fig_grade2.add_trace(
-                            go.Scatter(x=data_me_math.index, y=data_me_math[col], mode='lines', line={'dash': 'solid'}, name=col + ' (Maj. Enroll)'),
+                            go.Scatter(
+                                x=data_me_math.index,
+                                y=data_me_math[col],
+                                mode='lines',
+                                marker=dict(color=color[i]),
+                                line={'dash': 'solid'},
+                                name=col,
+                                # legendgroup=1,
+                                # legendgrouptitle_text="Majority Enrolled"
+                            ),
                             secondary_y=False,
                         )
 
                         fig_grade2.add_trace(
-                            go.Scatter(x=data_162_math.index, y=data_162_math[col], name=col + " (162 Day)", mode="markers"),
+                            go.Scatter(
+                                x=data_162_math.index,
+                                y=data_162_math[col],
+                                mode="markers",
+                                marker=dict(color=color[i]),
+                                name=col,
+                                # legendgroup=2,
+                                # legendgrouptitle_text="162 Days"
+                            ),
                             secondary_y=False,
                         )
-
                     # Add figure title
                     fig_grade2.update_layout(
                         margin=dict(l=40, r=40, t=40, b=0),
@@ -699,7 +757,7 @@ def update_academic_metrics(school: str, year: str):
                         xaxis = dict(
                             title='',
                             type='date',
-                            tickvals = data_162_ela.index,
+                            tickvals = data_162_math.index,
                             tickformat='%Y',
                             # mirror=True,
                             showline=True,
@@ -727,11 +785,23 @@ def update_academic_metrics(school: str, year: str):
                     )
 
                     fig_grade2.update_yaxes(title_text="Adequate Growth %", secondary_y=False)
-
+# diamond - &#9670;	&#x25C6;
+                    fig_grade2.add_annotation(
+                        text="Students Enrolled For: <b>◆: 162 Days ┃: A Majority</b>",
+                        align="left",
+                        showarrow=False,
+                        xref="paper",
+                        yref="paper",
+                        font=dict(color="steelblue", size=9),
+                        bgcolor="rgba(0,0,0,0)",
+                        y=1.15,
+                        x=.5,
+                        xanchor="center",
+                    )
                     tst_fig2 = [
                             html.Div(
                                 [
-                                # html.Label(label, className = 'header_label'),
+                                html.Label("Percentage of Students Achieving Adequate Growth in Math by Grade", className = 'header_label'),
                                 dcc.Graph(figure = fig_grade2, config={'displayModeBar': False})
                                 ],
                             ),       
