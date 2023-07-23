@@ -496,9 +496,11 @@ def update_academic_metrics(school: str, year: str):
 
                     # combine subgroups
                     table_data_subgroup_growth = pd.concat([table_data_ses_growth, table_data_el_growth, table_data_sped_growth])
-                    
-                    table_data_subgroup_sgp = pd.concat([table_data_ses_sgp, table_data_el_sgp, table_data_sped_sgp])
+                    fig_data_subgroup_growth = pd.concat([fig_data_ses_growth, fig_data_el_growth, fig_data_sped_growth], axis=1)
 
+                    table_data_subgroup_sgp = pd.concat([table_data_ses_sgp, table_data_el_sgp, table_data_sped_sgp])
+                    fig_data_subgroup_sgp = pd.concat([fig_data_ses_sgp, fig_data_el_sgp, fig_data_sped_sgp], axis=1)
+                    
                     # Tables
 
                     # by grade
@@ -556,257 +558,205 @@ def update_academic_metrics(school: str, year: str):
                     # table_subgroup_growth_ela_container = {},
                     # table_subgroup_growth_math_container = {}
 
-
-
-                    # print(tst2)
-                # Figures
-# fig_data_grades_growth,fig_data_ethnicity_growth,fig_data_ses_growth,fig_data_el_growth,fig_data_sped_growth,
-# fig_data_grades_sgp,fig_data_ethnicity_sgp,fig_data_ses_sgp,fig_data_el_sgp,fig_data_sped_sgp,
-
+                ## Figures
 
                     # Growth by Grade (Both ME and 162)
-                    data_162_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('162')) & (fig_data_grades_growth.columns.str.contains('ELA'))]
-                    data_162_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('162')) & (fig_data_grades_growth.columns.str.contains('Math'))]
-                    data_me_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('Majority Enrolled')) & (fig_data_grades_growth.columns.str.contains('ELA'))]
-                    data_me_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('Majority Enrolled')) & (fig_data_grades_growth.columns.str.contains('Math'))]
-                    data_162_ela.columns = data_162_ela.columns.str.split('_').str[1]
-                    data_162_math.columns = data_162_math.columns.str.split('_').str[1]
-                    data_me_ela.columns = data_me_ela.columns.str.split('_').str[1]
-                    data_me_math.columns = data_me_math.columns.str.split('_').str[1]
+                    growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('162')) & (fig_data_grades_growth.columns.str.contains('ELA'))]
+                    growth_data_162_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('162')) & (fig_data_grades_growth.columns.str.contains('Math'))]
+                    growth_data_me_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('Majority Enrolled')) & (fig_data_grades_growth.columns.str.contains('ELA'))]
+                    growth_data_me_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('Majority Enrolled')) & (fig_data_grades_growth.columns.str.contains('Math'))]
                     
-                    # TODO: TEST ONE
-                    # TODO: Use px? How to organize legends? separate boxes?
-                    # import plotly.graph_objects as go
+                    growth_data_162_grades_ela.columns = growth_data_162_grades_ela.columns.str.split('_').str[1]
+                    growth_data_162_grades_math.columns = growth_data_162_grades_math.columns.str.split('_').str[1]
+                    growth_data_me_grades_ela.columns = growth_data_me_grades_ela.columns.str.split('_').str[1]
+                    growth_data_me_grades_math.columns = growth_data_me_grades_math.columns.str.split('_').str[1]
+
+                    # Growth by Ethnicity (Both ME and 162)
+                    growth_data_162_ethnicity_ela = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('162')) & (fig_data_ethnicity_growth.columns.str.contains('ELA'))]
+                    growth_data_162_ethnicity_math = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('162')) & (fig_data_ethnicity_growth.columns.str.contains('Math'))]
+                    growth_data_me_ethnicity_ela = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_growth.columns.str.contains('ELA'))]
+                    growth_data_me_ethnicity_math = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_growth.columns.str.contains('Math'))]
                     
-                    # #sample dataframe defined into `df1`, `df2`
+                    growth_data_162_ethnicity_ela.columns = growth_data_162_ethnicity_ela.columns.str.split('_').str[1]
+                    growth_data_162_ethnicity_math.columns = growth_data_162_ethnicity_math.columns.str.split('_').str[1]
+                    growth_data_me_ethnicity_ela.columns = growth_data_me_ethnicity_ela.columns.str.split('_').str[1]
+                    growth_data_me_ethnicity_math.columns = growth_data_me_ethnicity_math.columns.str.split('_').str[1]
+            
+                    # Growth by Subgroup (Both ME and 162)                     
+                    growth_data_162_subgroup_ela = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('162')) & (fig_data_subgroup_growth.columns.str.contains('ELA'))]
+                    growth_data_162_subgroup_math = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('162')) & (fig_data_subgroup_growth.columns.str.contains('Math'))]
+                    growth_data_me_subgroup_ela = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_growth.columns.str.contains('ELA'))]
+                    growth_data_me_subgroup_math = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_growth.columns.str.contains('Math'))]
+                    
+                    growth_data_162_subgroup_ela.columns = growth_data_162_subgroup_ela.columns.str.split('_').str[1]
+                    growth_data_162_subgroup_math.columns = growth_data_162_subgroup_math.columns.str.split('_').str[1]
+                    growth_data_me_subgroup_ela.columns = growth_data_me_subgroup_ela.columns.str.split('_').str[1]
+                    growth_data_me_subgroup_math.columns = growth_data_me_subgroup_math.columns.str.split('_').str[1]
 
-                    # layout=go.Layout(
-                    #     title= 'Plot_with_solidline_dashline',
-                    #     xaxis= dict(title= 'Iteration'),
-                    #     yaxis=dict(title= 'Accuracy'),
-                    #     showlegend= True
-                    # )
+                    # SGP by Grade (Both ME and 162)
+                    sgp_data_162_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('162')) & (fig_data_grades_sgp.columns.str.contains('ELA'))]
+                    sgp_data_162_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('162')) & (fig_data_grades_sgp.columns.str.contains('Math'))]
+                    sgp_data_me_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_grades_sgp.columns.str.contains('ELA'))]
+                    sgp_data_me_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_grades_sgp.columns.str.contains('Math'))]
+                    
+                    sgp_data_162_grades_ela.columns = sgp_data_162_grades_ela.columns.str.split('_').str[1]
+                    sgp_data_162_grades_math.columns = sgp_data_162_grades_math.columns.str.split('_').str[1]
+                    sgp_data_me_grades_ela.columns = sgp_data_me_grades_ela.columns.str.split('_').str[1]
+                    sgp_data_me_grades_math.columns = sgp_data_me_grades_math.columns.str.split('_').str[1]
 
-                    # plot_df=[]
-                    # for col in data_162_ela.columns:
-                    #     plot_df.append(
-                    #         go.Scatter(x=data_162_ela.index, y=data_162_ela[col], mode='lines', line={'dash': 'solid'}, name=col)
-                    #     )
-                    #     plot_df.append(
-                    #         go.Scatter(x=data_me_ela.index, y=data_me_ela[col], mode='lines', line={'dash': 'dash'}, name=col)
-                    #     )
+                    # SGP by Ethnicity (Both ME and 162)
+                    sgp_data_162_ethnicity_ela = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('162')) & (fig_data_ethnicity_sgp.columns.str.contains('ELA'))]
+                    sgp_data_162_ethnicity_math = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('162')) & (fig_data_ethnicity_sgp.columns.str.contains('Math'))]
+                    sgp_data_me_ethnicity_ela = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_sgp.columns.str.contains('ELA'))]
+                    sgp_data_me_ethnicity_math = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_sgp.columns.str.contains('Math'))]
+                    
+                    sgp_data_162_ethnicity_ela.columns = sgp_data_162_ethnicity_ela.columns.str.split('_').str[1]
+                    sgp_data_162_ethnicity_math.columns = sgp_data_162_ethnicity_math.columns.str.split('_').str[1]
+                    sgp_data_me_ethnicity_ela.columns = sgp_data_me_ethnicity_ela.columns.str.split('_').str[1]
+                    sgp_data_me_ethnicity_math.columns = sgp_data_me_ethnicity_math.columns.str.split('_').str[1]
 
-                    # tst_fig= go.Figure(data=plot_df, layout=layout)
+                    # SGP by Subgroup (Both ME and 162)                     
+                    sgp_data_162_subgroup_ela = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('162')) & (fig_data_subgroup_sgp.columns.str.contains('ELA'))]
+                    sgp_data_162_subgroup_math = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('162')) & (fig_data_subgroup_sgp.columns.str.contains('Math'))]
+                    sgp_data_me_subgroup_ela = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_sgp.columns.str.contains('ELA'))]
+                    sgp_data_me_subgroup_math = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_sgp.columns.str.contains('Math'))]
+                    
+                    sgp_data_162_subgroup_ela.columns = sgp_data_162_subgroup_ela.columns.str.split('_').str[1]
+                    sgp_data_162_subgroup_math.columns = sgp_data_162_subgroup_math.columns.str.split('_').str[1]
+                    sgp_data_me_subgroup_ela.columns = sgp_data_me_subgroup_ela.columns.str.split('_').str[1]
+                    sgp_data_me_subgroup_math.columns = sgp_data_me_subgroup_math.columns.str.split('_').str[1]
 
-                    # tst_fig = make_growth_line_chart(fig_data_grades_growth,'Year over Year ELA Proficiency by Grade')
-                    # TODO: TEST TWO
+                    # Fig Test
                     import plotly.graph_objects as go
                     from plotly.subplots import make_subplots
-
-                    # Create figure with secondary y-axis
-                    fig_grade = make_subplots() #specs=[[{"secondary_y": False}]]
-
+                    
                     color = ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
+                    
+                    def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str) -> list:
 
-                    # Add traces
-                    for i, col in enumerate(data_162_ela.columns):
-                        fig_grade.add_trace(
-                            go.Scatter(
-                                x=data_me_ela.index,
-                                y=data_me_ela[col],
-                                mode='lines',
-                                marker=dict(color=color[i]),
-                                line={'dash': 'solid'},
-                                name=col,
-                                # legendgroup = '1',
-                                # legendgrouptitle_text="Majority Enrolled"
+                        fig = make_subplots() #specs=[[{"secondary_y": False}]]
+
+                        # Add traces
+                        for i, col in enumerate(data_me.columns):
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=data_me.index,
+                                    y=data_me[col],
+                                    mode='markers+lines',
+                                    marker=dict(color=color[i], symbol = 'square'),
+                                    line={'dash': 'solid'},
+                                    name=col,
+                                    # legendgroup = '1',
+                                    # legendgrouptitle_text="Majority Enrolled"
+                                ),
+                                secondary_y=False,
+                            )
+
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=data_162.index,
+                                    y=data_162[col],
+                                    # mode="markers",
+                                    mode='markers+lines',                                
+                                    line={'dash': 'dash'},
+                                    marker=dict(color=color[i], symbol = 'diamond'),
+                                    name=col,
+                                    # legendgroup = '2',
+                                    # legendgrouptitle_text="162 Days"
+                                ),
+                                secondary_y=False,
+                            )
+
+                        # TODO: Need to differentiate between SGP #s and Growth %s by label (SGP or Growth in string)
+                        if 'Growth' in label:
+                            print('GROWUP!')
+                            ytick ='.0%'
+                            pass
+                        elif 'SGP' in label:
+                            print('SGOOP')
+                            ytick ='.1f'                            
+                            pass
+
+                        # Add figure title
+                        fig.update_layout(
+                            margin=dict(l=40, r=40, t=40, b=0),
+                            title_x=0.5,
+                            font = dict(
+                                family = 'Jost, sans-serif',
+                                color = 'steelblue',
+                                size = 10
+                                ),
+                            plot_bgcolor='white',
+                            xaxis = dict(
+                                title='',
+                                type='date',
+                                tickvals = data_162.index,
+                                tickformat='%Y',
+                                # mirror=True,
+                                showline=True,
+                                linecolor='#b0c4de',
+                                linewidth=.5,
+                                gridwidth=.5,
+                                showgrid=True,
+                                gridcolor='#b0c4de',
+                                zeroline=False,
+                                # range = add_years
+                                ),
+                            yaxis = dict(
+                                title='',
+                                tickformat=ytick, #'.0%',
+                                showline=True,
+                                linecolor='#b0c4de',
+                                linewidth=.5,
+                                gridwidth=.5,
+                                showgrid=True,
+                                gridcolor='#b0c4de',
+                                zeroline=False,
+                                # range = add_years
+                                ),
+                            legend=dict(
+                                orientation='h'
                             ),
-                            secondary_y=False,
+                            hovermode='x unified',
+                            height=300,
+                            # width=400,
+                            # legend_title='',
+                        )                    
+
+                        # diamond - &#9670;	&#x25C6;
+                        # square - &#9632;	&#x25A0;
+                        fig.add_annotation(
+                            text="Students Enrolled For: <b>&#9670;: 162 Days &#9632;: Majority Enrolled</b>",
+                            align="left",
+                            showarrow=False,
+                            xref="paper",
+                            yref="paper",
+                            font=dict(color="steelblue", size=9),
+                            bgcolor="rgba(0,0,0,0)",
+                            y=1.15,
+                            x=.5,
+                            xanchor="center",
                         )
+                        fig.update_yaxes(title_text="Adequate Growth %", secondary_y=False)
 
-                        fig_grade.add_trace(
-                            go.Scatter(
-                                x=data_162_ela.index,
-                                y=data_162_ela[col],
-                                mode="markers",
-                                marker=dict(color=color[i]),
-                                name=col,
-                                # legendgroup = '2',
-                                # legendgrouptitle_text="162 Days"
-                            ),
-                            secondary_y=False,
-                        )
+                        fig_layout = [
+                                html.Div(
+                                    [
+                                    html.Label(label, className = 'header_label'),
+                                    dcc.Graph(figure = fig, config={'displayModeBar': False})
+                                    ],
+                                ),       
+                        ]
+                   
+                        return fig_layout
+                    
+                    # TODO: Samples of each - 4 for each 'category' so 12 charts (grade, ethnicity, subgroup)
+                    lbl ="Percentage of Students Achieving Adequate Growth in ELA by Grade"
+                    tst_fig = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, lbl)
 
-                    # Add figure title
-                    fig_grade.update_layout(
-                        margin=dict(l=40, r=40, t=40, b=0),
-                        title_x=0.5,
-                        font = dict(
-                            family = 'Jost, sans-serif',
-                            color = 'steelblue',
-                            size = 10
-                            ),
-                        plot_bgcolor='white',
-                        xaxis = dict(
-                            title='',
-                            type='date',
-                            tickvals = data_162_ela.index,
-                            tickformat='%Y',
-                            # mirror=True,
-                            showline=True,
-                            linecolor='#b0c4de',
-                            linewidth=.5,
-                            gridwidth=.5,
-                            showgrid=True,
-                            gridcolor='#b0c4de',
-                            zeroline=False,
-                            # range = add_years
-                            ),
-                        yaxis = dict(
-                            title='',
-                            tickformat='.0%',
-                            showline=True,
-                            linecolor='#b0c4de',
-                            linewidth=.5,
-                            gridwidth=.5,
-                            showgrid=True,
-                            gridcolor='#b0c4de',
-                            zeroline=False,
-                            # range = add_years
-                            ),
-                        legend=dict(
-                            orientation='h'
-                        ),
-                        hovermode='x unified',
-                        height=300,
-                        # width=400,
-                        # legend_title='',
-                    )                    
-                    fig_grade.update_traces(
-                        marker=dict(
-                            size=6,
-                            symbol="diamond",
-                        )
-                    )
-# diamond - &#9670;	&#x25C6;
-# weak line - &#9644; &#x25AC;
-                    fig_grade.add_annotation(
-                        text="Students Enrolled For: <b>&#9670;: 162 Days ┃: A Majority</b>",
-                        align="left",
-                        showarrow=False,
-                        xref="paper",
-                        yref="paper",
-                        font=dict(color="steelblue", size=9),
-                        bgcolor="rgba(0,0,0,0)",
-                        y=1.15,
-                        x=.5,
-                        xanchor="center",
-                    )
-                    fig_grade.update_yaxes(title_text="Adequate Growth %", secondary_y=False)
-
-                    tst_fig = [
-                            html.Div(
-                                [
-                                html.Label("Percentage of Students Achieving Adequate Growth in ELA by Grade", className = 'header_label'),
-                                dcc.Graph(figure = fig_grade, config={'displayModeBar': False})
-                                ],
-                            ),       
-                    ]
-
-                    # Create figure with secondary y-axis
-                    fig_grade2 = make_subplots() #specs=[[{"secondary_y": False}]]
-
-                    # Add traces
-                    for i, col in enumerate(data_162_math.columns):
-                        fig_grade2.add_trace(
-                            go.Scatter(
-                                x=data_me_math.index,
-                                y=data_me_math[col],
-                                mode='lines',
-                                marker=dict(color=color[i]),
-                                line={'dash': 'solid'},
-                                name=col,
-                                # legendgroup=1,
-                                # legendgrouptitle_text="Majority Enrolled"
-                            ),
-                            secondary_y=False,
-                        )
-
-                        fig_grade2.add_trace(
-                            go.Scatter(
-                                x=data_162_math.index,
-                                y=data_162_math[col],
-                                mode="markers",
-                                marker=dict(color=color[i]),
-                                name=col,
-                                # legendgroup=2,
-                                # legendgrouptitle_text="162 Days"
-                            ),
-                            secondary_y=False,
-                        )
-                    # Add figure title
-                    fig_grade2.update_layout(
-                        margin=dict(l=40, r=40, t=40, b=0),
-                        title_x=0.5,
-                        font = dict(
-                            family = 'Jost, sans-serif',
-                            color = 'steelblue',
-                            size = 10
-                            ),
-                        plot_bgcolor='white',
-                        xaxis = dict(
-                            title='',
-                            type='date',
-                            tickvals = data_162_math.index,
-                            tickformat='%Y',
-                            # mirror=True,
-                            showline=True,
-                            linecolor='#b0c4de',
-                            linewidth=.5,
-                            gridwidth=.5,
-                            showgrid=True,
-                            gridcolor='#b0c4de',
-                            zeroline=False,
-                            # range = add_years
-                            ),   
-                        legend=dict(
-                            orientation='h'
-                        ),
-                        hovermode='x unified',
-                        height=300,
-                        # width=400,
-                        legend_title='',
-                    )                    
-                    fig_grade2.update_traces(
-                        marker=dict(
-                            size=6,
-                            symbol="diamond",
-                        )
-                    )
-
-                    fig_grade2.update_yaxes(title_text="Adequate Growth %", secondary_y=False)
-# diamond - &#9670;	&#x25C6;
-                    fig_grade2.add_annotation(
-                        text="Students Enrolled For: <b>◆: 162 Days ┃: A Majority</b>",
-                        align="left",
-                        showarrow=False,
-                        xref="paper",
-                        yref="paper",
-                        font=dict(color="steelblue", size=9),
-                        bgcolor="rgba(0,0,0,0)",
-                        y=1.15,
-                        x=.5,
-                        xanchor="center",
-                    )
-                    tst_fig2 = [
-                            html.Div(
-                                [
-                                html.Label("Percentage of Students Achieving Adequate Growth in Math by Grade", className = 'header_label'),
-                                dcc.Graph(figure = fig_grade2, config={'displayModeBar': False})
-                                ],
-                            ),       
-                    ]
-                         
+                    lbl2 ="Median SGP in ELA by Grade"
+                    tst_fig2 = make_growth_chart(sgp_data_me_grades_ela, sgp_data_162_grades_ela, lbl2)
+     
                 else:
 
                     table_grades_growth_ela_container = {},
