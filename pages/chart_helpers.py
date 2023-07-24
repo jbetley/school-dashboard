@@ -686,12 +686,12 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
     fig.update_yaxes(title_text=ytitle, secondary_y=False)
 
     fig_layout = [
-            html.Div(
-                [
-                html.Label(label, className = 'header_label'),
-                dcc.Graph(figure = fig, config={'displayModeBar': False})
-                ],
-            ),       
+                html.Div(
+                    [
+                    html.Label(label, className = 'header_label'),
+                    dcc.Graph(figure = fig, config={'displayModeBar': False})
+                    ],      
+                )
     ]
 
     return fig_layout
