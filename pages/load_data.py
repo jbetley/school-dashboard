@@ -8,6 +8,7 @@
 # TODO: Explore serverside disk caching for data loading
 #https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
 
+from typing import Tuple
 import pandas as pd
 import numpy as np
 import itertools
@@ -1026,6 +1027,72 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
 
     return final_k8_academic_data
+
+def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+    # step 1: find the percentage of students with Adequate growth using
+    # 'Majority Enrolled' students (all available data) and the percentage
+    # of students with Adequate growth using the set of students enrolled for
+    # '162 Days' (a subset of available data)
+
+    data_162 = data[data['Day 162'] == 'TRUE']
+
+    if calculation == 'growth':
+        data = data.groupby(['Test Year', category, 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
+        data_162 = data_162.groupby(['Test Year',category, 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
+    
+    elif calculation == 'sgp':
+        data = data.groupby(['Test Year', category, 'Subject'])['ILEARNGrowth Percentile'].median().reset_index(name='Majority Enrolled')
+        data_162 = data_162.groupby(['Test Year', category, 'Subject'])['ILEARNGrowth Percentile'].median().reset_index(name='162 Days')
+    
+    # step 3: add ME column to df and calculate difference
+    data['162 Days'] = data_162['162 Days']
+    data['Difference'] = data['162 Days'] - data['Majority Enrolled']
+
+    # step 4: get into proper format for display as multi-header DataTable
+    
+    # create final category
+    data['Category'] = data[category] + "|" + data['Subject']
+    
+    # drop unused rows and columns
+    if calculation == 'growth':
+        data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
+        data = data.drop([category, 'Subject','ILEARNGrowth Level'], axis=1)
+
+    elif calculation == 'sgp':
+        data = data.drop([category, 'Subject'], axis=1)
+
+    # create fig data
+    fig_data = data.copy()
+    fig_data = fig_data.drop('Difference', axis=1)
+    fig_data = fig_data.pivot(index=['Test Year'], columns='Category')
+    fig_data.columns = fig_data.columns.map(lambda x: '_'.join(map(str, x)))
+
+    # create table data
+    table_data = data.copy()
+
+    # Need specific column order. sort_index does not work
+    cols = []
+    yrs = list(set(table_data['Test Year'].to_list()))
+    yrs.sort(reverse=True)
+    for y in yrs:
+        cols.append(str(y) + '162 Days')
+        cols.append(str(y) + 'Majority Enrolled')
+        cols.append(str(y) + 'Difference')
+
+
+    # pivot df from wide to long' add years to each column name; move year to
+    # front of column name; sort and reset_index
+    table_data = table_data.pivot(index=['Category'], columns='Test Year')
+
+    table_data.columns = table_data.columns.map(lambda x: ''.join(map(str, x)))
+    table_data.columns = table_data.columns.map(lambda x: x[-4:] + x[:-4])
+    table_data = table_data[cols]
+    table_data = table_data.reset_index()
+
+    return fig_data, table_data
+
+
 
 def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
     

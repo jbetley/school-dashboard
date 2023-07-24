@@ -18,10 +18,10 @@ from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
         calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
         calculate_adult_high_school_metrics, filter_high_school_academic_data, get_excluded_years, \
-        get_adult_high_school_metric_data
+        get_adult_high_school_metric_data, process_growth_data
 from .load_db import get_school_index, get_k8_school_academic_data, get_high_school_academic_data, \
     get_hs_corporation_academic_data, get_growth_data
-from .chart_helpers import make_line_chart
+from .chart_helpers import make_growth_chart
 
 dash.register_page(__name__,  path = "/academic_metrics", order=5)
 
@@ -36,8 +36,8 @@ dash.register_page(__name__,  path = "/academic_metrics", order=5)
     Output("table-container-15abcd", "children"),
     Output("table-container-16ab", "children"),
     Output("table-container-16cd", "children"),
-    Output("tst-fig", "children"),
-    Output("tst-fig2", "children"),   
+    # Output("tst-fig", "children"),
+    # Output("tst-fig2", "children"),   
     Output("display-k8-metrics", "style"),
     Output("table-container-17ab", "children"),
     Output("table-container-17cd", "children"),
@@ -48,12 +48,12 @@ dash.register_page(__name__,  path = "/academic_metrics", order=5)
     Output("academic-metrics-main-container", "style"),
     Output("academic-metrics-empty-container", "style"),
     Output("academic-metrics-no-data", "children"),
-    Output("table-grades-growth-ela-container", "children"),
-    Output("table-grades-growth-math-container", "children"),
-    Output("table-ethnicity-growth-ela-container", "children"),
-    Output("table-ethnicity-growth-math-container", "children"),
-    Output("table-subgroup-growth-ela-container", "children"),
-    Output("table-subgroup-growth-math-container", "children"),
+    # Output("table-grades-growth-ela-container", "children"),
+    # Output("table-grades-growth-math-container", "children"),
+    # Output("table-ethnicity-growth-ela-container", "children"),
+    # Output("table-ethnicity-growth-math-container", "children"),
+    # Output("table-subgroup-growth-ela-container", "children"),
+    # Output("table-subgroup-growth-math-container", "children"),
 
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
@@ -395,376 +395,187 @@ def update_academic_metrics(school: str, year: str):
                     # Homeless Status Category, High Ability Status Category    
 
                 # dataset is all students who are coded as 'Majority Enrolled' at the school
-                growth_data = get_growth_data(school)
+                # growth_data = get_growth_data(school)
 
-                if len(growth_data.index) > 0:
+                # if len(growth_data.index) > 0:
                     
-                    # NOTE: This calculates the student difference
-                    # find the difference between the count of Majority Enrolled and 162-Day students by Year
-                    # counts_growth = growth_data.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (Majority Enrolled)")
-                    # counts_growth_162 = growth_data_162.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (162 Days)")
+                #     # NOTE: This calculates the student difference
+                #     # find the difference between the count of Majority Enrolled and 162-Day students by Year
+                #     # counts_growth = growth_data.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (Majority Enrolled)")
+                #     # counts_growth_162 = growth_data_162.groupby('Test Year')['Test Year'].count().reset_index(name = "Count (162 Days)")
 
-                    # counts_growth['School Name'] = selected_school["School Name"].values[0]
-                    # counts_growth['Count (162 Days)'] = counts_growth_162['Count (162 Days)']
-                    # counts_growth['Difference'] = counts_growth['Count (Majority Enrolled)'] - counts_growth['Count (162 Days)']
+                #     # counts_growth['School Name'] = selected_school["School Name"].values[0]
+                #     # counts_growth['Count (162 Days)'] = counts_growth_162['Count (162 Days)']
+                #     # counts_growth['Difference'] = counts_growth['Count (Majority Enrolled)'] - counts_growth['Count (162 Days)']
 
-                    # print('Count Difference')
-                    # print(counts_growth)
+                #     # print('Count Difference')
+                #     # print(counts_growth)
 
-                    # diff_threshold = abs(len(growth_data.index) - len(growth_data_162.index))
+                #     # diff_threshold = abs(len(growth_data.index) - len(growth_data_162.index))
 
-                    # print(f'Percentage difference: ' + str(diff_threshold / len(growth_data.index)))
-                    from typing import Tuple
-                    def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+                #     # print(f'Percentage difference: ' + str(diff_threshold / len(growth_data.index)))
 
-                        # step 1: find the percentage of students with Adequate growth using
-                        # 'Majority Enrolled' students (all available data) and the percentage
-                        # of students with Adequate growth using the set of students enrolled for
-                        # '162 Days' (a subset of available data)
+                #     # Percentage of students achieving 'Adequate Growth'
+                #     fig_data_grades_growth, table_data_grades_growth = process_growth_data(growth_data,'Grade Level','growth')
+                #     fig_data_ethnicity_growth, table_data_ethnicity_growth = process_growth_data(growth_data,'Ethnicity','growth')
+                #     fig_data_ses_growth, table_data_ses_growth = process_growth_data(growth_data,'Socioeconomic Status','growth')
+                #     fig_data_el_growth, table_data_el_growth = process_growth_data(growth_data,'English Learner Status','growth')
+                #     fig_data_sped_growth, table_data_sped_growth = process_growth_data(growth_data,'Special Education Status','growth')
 
-                        data_162 = data[data['Day 162'] == 'TRUE']
-                        # data = df.copy()
+                #     # Median SGP for 'all' students
+                #     fig_data_grades_sgp, table_data_grades_sgp = process_growth_data(growth_data,'Grade Level','sgp')
+                #     fig_data_ethnicity_sgp, table_data_ethnicity_sgp = process_growth_data(growth_data,'Ethnicity','sgp')
+                #     fig_data_ses_sgp, table_data_ses_sgp = process_growth_data(growth_data,'Socioeconomic Status','sgp')
+                #     fig_data_el_sgp, table_data_el_sgp = process_growth_data(growth_data,'English Learner Status','sgp')
+                #     fig_data_sped_sgp, table_data_sped_sgp = process_growth_data(growth_data,'Special Education Status','sgp')
 
-                        if calculation == 'growth':
-                            data = data.groupby(['Test Year', category, 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='Majority Enrolled')
-                            data_162 = data_162.groupby(['Test Year',category, 'Subject'])['ILEARNGrowth Level'].value_counts(normalize=True).reset_index(name='162 Days')
-                        
-                        elif calculation == 'sgp':
-                            data = data.groupby(['Test Year', category, 'Subject'])['ILEARNGrowth Percentile'].median().reset_index(name='Majority Enrolled')
-                            data_162 = data_162.groupby(['Test Year', category, 'Subject'])['ILEARNGrowth Percentile'].median().reset_index(name='162 Days')
-                        
-                        # step 3: add ME column to df and calculate difference
-                        data['162 Days'] = data_162['162 Days']
-                        data['Difference'] = data['162 Days'] - data['Majority Enrolled']
+                #     # combine subgroups
+                #     table_data_subgroup_growth = pd.concat([table_data_ses_growth, table_data_el_growth, table_data_sped_growth])
+                #     fig_data_subgroup_growth = pd.concat([fig_data_ses_growth, fig_data_el_growth, fig_data_sped_growth], axis=1)
 
-                        # step 4: get into proper format for display as multi-header DataTable
-                        
-                        # create final category
-                        data['Category'] = data[category] + "|" + data['Subject']
-                        
-                        # drop unused rows and columns
-                        if calculation == 'growth':
-                            data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-                            data = data.drop([category, 'Subject','ILEARNGrowth Level'], axis=1)
-
-                        elif calculation == 'sgp':
-                            data = data.drop([category, 'Subject'], axis=1)
-
-                        # create fig data
-                        fig_data = data.copy()
-                        fig_data = fig_data.drop('Difference', axis=1)
-                        fig_data = fig_data.pivot(index=['Test Year'], columns='Category')
-                        fig_data.columns = fig_data.columns.map(lambda x: '_'.join(map(str, x)))
-
-                        # create table data
-                        table_data = data.copy()
-
-                        # Need specific column order. sort_index does not work
-                        cols = []
-                        yrs = list(set(table_data['Test Year'].to_list()))
-                        yrs.sort(reverse=True)
-                        for y in yrs:
-                            cols.append(str(y) + '162 Days')
-                            cols.append(str(y) + 'Majority Enrolled')
-                            cols.append(str(y) + 'Difference')
-
-
-                        # pivot df from wide to long' add years to each column name; move year to
-                        # front of column name; sort and reset_index
-                        table_data = table_data.pivot(index=['Category'], columns='Test Year')
-
-                        table_data.columns = table_data.columns.map(lambda x: ''.join(map(str, x)))
-                        table_data.columns = table_data.columns.map(lambda x: x[-4:] + x[:-4])
-                        table_data = table_data[cols]
-                        table_data = table_data.reset_index()
-
-                        return fig_data, table_data
-
-                    # Percentage of students achieving 'Adequate Growth'
-                    fig_data_grades_growth, table_data_grades_growth = process_growth_data(growth_data,'Grade Level','growth')
-                    fig_data_ethnicity_growth, table_data_ethnicity_growth = process_growth_data(growth_data,'Ethnicity','growth')
-                    fig_data_ses_growth, table_data_ses_growth = process_growth_data(growth_data,'Socioeconomic Status','growth')
-                    fig_data_el_growth, table_data_el_growth = process_growth_data(growth_data,'English Learner Status','growth')
-                    fig_data_sped_growth, table_data_sped_growth = process_growth_data(growth_data,'Special Education Status','growth')
-
-                    # Median SGP for 'all' students
-                    fig_data_grades_sgp, table_data_grades_sgp = process_growth_data(growth_data,'Grade Level','sgp')
-                    fig_data_ethnicity_sgp, table_data_ethnicity_sgp = process_growth_data(growth_data,'Ethnicity','sgp')
-                    fig_data_ses_sgp, table_data_ses_sgp = process_growth_data(growth_data,'Socioeconomic Status','sgp')
-                    fig_data_el_sgp, table_data_el_sgp = process_growth_data(growth_data,'English Learner Status','sgp')
-                    fig_data_sped_sgp, table_data_sped_sgp = process_growth_data(growth_data,'Special Education Status','sgp')
-
-                    # combine subgroups
-                    table_data_subgroup_growth = pd.concat([table_data_ses_growth, table_data_el_growth, table_data_sped_growth])
-                    fig_data_subgroup_growth = pd.concat([fig_data_ses_growth, fig_data_el_growth, fig_data_sped_growth], axis=1)
-
-                    table_data_subgroup_sgp = pd.concat([table_data_ses_sgp, table_data_el_sgp, table_data_sped_sgp])
-                    fig_data_subgroup_sgp = pd.concat([fig_data_ses_sgp, fig_data_el_sgp, fig_data_sped_sgp], axis=1)
+                #     table_data_subgroup_sgp = pd.concat([table_data_ses_sgp, table_data_el_sgp, table_data_sped_sgp])
+                #     fig_data_subgroup_sgp = pd.concat([fig_data_ses_sgp, fig_data_el_sgp, fig_data_sped_sgp], axis=1)
                     
-                    # Tables
+                #     # Tables
 
-                    # by grade
-                    table_data_grades_growth_ela = table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("ELA"))]
-                    table_data_grades_growth_math= table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("Math"))]                    
-                    table_data_grades_sgp_ela = table_data_grades_sgp[(table_data_grades_sgp["Category"].str.contains("ELA"))]                    
-                    table_data_grades_sgp_math = table_data_grades_sgp[(table_data_grades_sgp["Category"].str.contains("Math"))]
+                #     # by grade
+                #     table_data_grades_growth_ela = table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("ELA"))]
+                #     table_data_grades_growth_math= table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("Math"))]                    
+                #     table_data_grades_sgp_ela = table_data_grades_sgp[(table_data_grades_sgp["Category"].str.contains("ELA"))]                    
+                #     table_data_grades_sgp_math = table_data_grades_sgp[(table_data_grades_sgp["Category"].str.contains("Math"))]
 
-                    table_grades_growth_ela = create_growth_table('Percentage of Students with Adequate Growth - by Grade (ELA)', table_data_grades_growth_ela,'growth')
-                    table_grades_sgp_ela = create_growth_table('Median SGP - All Students By Grade (ELA)', table_data_grades_sgp_ela,'sgp')
+                #     table_grades_growth_ela = create_growth_table('Percentage of Students with Adequate Growth - by Grade (ELA)', table_data_grades_growth_ela,'growth')
+                #     table_grades_sgp_ela = create_growth_table('Median SGP - All Students By Grade (ELA)', table_data_grades_sgp_ela,'sgp')
 
-                    table_grades_growth_ela_container = set_table_layout(table_grades_growth_ela, table_grades_sgp_ela, table_data_grades_growth.columns)
+                #     table_grades_growth_ela_container = set_table_layout(table_grades_growth_ela, table_grades_sgp_ela, table_data_grades_growth.columns)
 
-                    table_grades_growth_math = create_growth_table('Percentage of Students with Adequate Growth - by Grade (Math)', table_data_grades_growth_math,'growth')
-                    table_grades_sgp_math = create_growth_table('Median SGP - All Students By Grade (Math)', table_data_grades_sgp_math,'sgp')
+                #     table_grades_growth_math = create_growth_table('Percentage of Students with Adequate Growth - by Grade (Math)', table_data_grades_growth_math,'growth')
+                #     table_grades_sgp_math = create_growth_table('Median SGP - All Students By Grade (Math)', table_data_grades_sgp_math,'sgp')
 
-                    table_grades_growth_math_container = set_table_layout(table_grades_growth_math, table_grades_sgp_math, table_data_grades_growth.columns)
+                #     table_grades_growth_math_container = set_table_layout(table_grades_growth_math, table_grades_sgp_math, table_data_grades_growth.columns)
 
-                    # by ethnicity
-                    table_data_ethnicity_growth_ela = table_data_ethnicity_growth[(table_data_ethnicity_growth["Category"].str.contains("ELA"))]
-                    table_data_ethnicity_growth_math= table_data_ethnicity_growth[(table_data_ethnicity_growth["Category"].str.contains("Math"))]                    
-                    table_data_ethnicity_sgp_ela = table_data_ethnicity_sgp[(table_data_ethnicity_sgp["Category"].str.contains("ELA"))]                    
-                    table_data_ethnicity_sgp_math = table_data_ethnicity_sgp[(table_data_ethnicity_sgp["Category"].str.contains("Math"))]
+                #     # by ethnicity
+                #     table_data_ethnicity_growth_ela = table_data_ethnicity_growth[(table_data_ethnicity_growth["Category"].str.contains("ELA"))]
+                #     table_data_ethnicity_growth_math= table_data_ethnicity_growth[(table_data_ethnicity_growth["Category"].str.contains("Math"))]                    
+                #     table_data_ethnicity_sgp_ela = table_data_ethnicity_sgp[(table_data_ethnicity_sgp["Category"].str.contains("ELA"))]                    
+                #     table_data_ethnicity_sgp_math = table_data_ethnicity_sgp[(table_data_ethnicity_sgp["Category"].str.contains("Math"))]
 
-                    table_ethnicity_growth_ela = create_growth_table('Percentage of Students with Adequate Growth - by Ethnicity (ELA)', table_data_ethnicity_growth_ela,'growth')
-                    table_ethnicity_sgp_ela = create_growth_table('Median SGP - All Students By Ethnicity (ELA)', table_data_ethnicity_sgp_ela,'sgp')
+                #     table_ethnicity_growth_ela = create_growth_table('Percentage of Students with Adequate Growth - by Ethnicity (ELA)', table_data_ethnicity_growth_ela,'growth')
+                #     table_ethnicity_sgp_ela = create_growth_table('Median SGP - All Students By Ethnicity (ELA)', table_data_ethnicity_sgp_ela,'sgp')
 
-                    table_ethnicity_growth_ela_container = set_table_layout(table_ethnicity_growth_ela, table_ethnicity_sgp_ela, table_data_ethnicity_growth.columns)
+                #     table_ethnicity_growth_ela_container = set_table_layout(table_ethnicity_growth_ela, table_ethnicity_sgp_ela, table_data_ethnicity_growth.columns)
 
-                    table_ethnicity_growth_math = create_growth_table('Percentage of Students with Adequate Growth - by Ethnicity (Math)', table_data_ethnicity_growth_math,'growth')
-                    table_ethnicity_sgp_math = create_growth_table('Median SGP - All Students By Ethnicity (Math)', table_data_ethnicity_sgp_math,'sgp')
+                #     table_ethnicity_growth_math = create_growth_table('Percentage of Students with Adequate Growth - by Ethnicity (Math)', table_data_ethnicity_growth_math,'growth')
+                #     table_ethnicity_sgp_math = create_growth_table('Median SGP - All Students By Ethnicity (Math)', table_data_ethnicity_sgp_math,'sgp')
 
-                    table_ethnicity_growth_math_container = set_table_layout(table_ethnicity_growth_math, table_ethnicity_sgp_math, table_data_ethnicity_growth.columns)
+                #     table_ethnicity_growth_math_container = set_table_layout(table_ethnicity_growth_math, table_ethnicity_sgp_math, table_data_ethnicity_growth.columns)
 
-                    # by subgroup
-                    table_data_subgroup_growth_ela = table_data_subgroup_growth[(table_data_subgroup_growth["Category"].str.contains("ELA"))]
-                    table_data_subgroup_growth_math= table_data_subgroup_growth[(table_data_subgroup_growth["Category"].str.contains("Math"))]                    
-                    table_data_subgroup_sgp_ela = table_data_subgroup_sgp[(table_data_subgroup_sgp["Category"].str.contains("ELA"))]                    
-                    table_data_subgroup_sgp_math = table_data_subgroup_sgp[(table_data_subgroup_sgp["Category"].str.contains("Math"))]
+                #     # by subgroup
+                #     table_data_subgroup_growth_ela = table_data_subgroup_growth[(table_data_subgroup_growth["Category"].str.contains("ELA"))]
+                #     table_data_subgroup_growth_math= table_data_subgroup_growth[(table_data_subgroup_growth["Category"].str.contains("Math"))]                    
+                #     table_data_subgroup_sgp_ela = table_data_subgroup_sgp[(table_data_subgroup_sgp["Category"].str.contains("ELA"))]                    
+                #     table_data_subgroup_sgp_math = table_data_subgroup_sgp[(table_data_subgroup_sgp["Category"].str.contains("Math"))]
 
-                    table_subgroup_growth_ela = create_growth_table('Percentage of Students with Adequate Growth - by Ethnicity (ELA)', table_data_subgroup_growth_ela,'growth')
-                    table_subgroup_sgp_ela = create_growth_table('Median SGP - All Students By Ethnicity (ELA)', table_data_subgroup_sgp_ela,'sgp')
+                #     table_subgroup_growth_ela = create_growth_table('Percentage of Students with Adequate Growth - by Ethnicity (ELA)', table_data_subgroup_growth_ela,'growth')
+                #     table_subgroup_sgp_ela = create_growth_table('Median SGP - All Students By Ethnicity (ELA)', table_data_subgroup_sgp_ela,'sgp')
 
-                    table_subgroup_growth_ela_container = set_table_layout(table_subgroup_growth_ela, table_subgroup_sgp_ela, table_data_subgroup_growth.columns)
+                #     table_subgroup_growth_ela_container = set_table_layout(table_subgroup_growth_ela, table_subgroup_sgp_ela, table_data_subgroup_growth.columns)
 
-                    table_subgroup_growth_math = create_growth_table('Percentage of Students with Adequate Growth - by Ethnicity (Math)', table_data_subgroup_growth_math,'growth')
-                    table_subgroup_sgp_math = create_growth_table('Median SGP - All Students By Ethnicity (Math)', table_data_subgroup_sgp_math,'sgp')
+                #     table_subgroup_growth_math = create_growth_table('Percentage of Students with Adequate Growth - by Ethnicity (Math)', table_data_subgroup_growth_math,'growth')
+                #     table_subgroup_sgp_math = create_growth_table('Median SGP - All Students By Ethnicity (Math)', table_data_subgroup_sgp_math,'sgp')
 
-                    table_subgroup_growth_math_container = set_table_layout(table_subgroup_growth_math, table_subgroup_sgp_math, table_data_subgroup_growth.columns)
+                #     table_subgroup_growth_math_container = set_table_layout(table_subgroup_growth_math, table_subgroup_sgp_math, table_data_subgroup_growth.columns)
 
-                    # table_grades_growth_ela_container = {},
-                    # table_grades_growth_math_container = {},
-                    # table_ethnicity_growth_ela_container = {},
-                    # table_ethnicity_growth_math_container = {},
-                    # table_subgroup_growth_ela_container = {},
-                    # table_subgroup_growth_math_container = {}
+                #     # table_grades_growth_ela_container = {},
+                #     # table_grades_growth_math_container = {},
+                #     # table_ethnicity_growth_ela_container = {},
+                #     # table_ethnicity_growth_math_container = {},
+                #     # table_subgroup_growth_ela_container = {},
+                #     # table_subgroup_growth_math_container = {}
 
-                ## Figures
+                # ## Figures
 
-                    # Growth by Grade (Both ME and 162)
-                    growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('162')) & (fig_data_grades_growth.columns.str.contains('ELA'))]
-                    growth_data_162_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('162')) & (fig_data_grades_growth.columns.str.contains('Math'))]
-                    growth_data_me_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('Majority Enrolled')) & (fig_data_grades_growth.columns.str.contains('ELA'))]
-                    growth_data_me_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('Majority Enrolled')) & (fig_data_grades_growth.columns.str.contains('Math'))]
+                #     # Growth by Grade (Both ME and 162)
+                #     growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('162')) & (fig_data_grades_growth.columns.str.contains('ELA'))]
+                #     growth_data_162_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('162')) & (fig_data_grades_growth.columns.str.contains('Math'))]
+                #     growth_data_me_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('Majority Enrolled')) & (fig_data_grades_growth.columns.str.contains('ELA'))]
+                #     growth_data_me_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains('Majority Enrolled')) & (fig_data_grades_growth.columns.str.contains('Math'))]
                     
-                    growth_data_162_grades_ela.columns = growth_data_162_grades_ela.columns.str.split('_').str[1]
-                    growth_data_162_grades_math.columns = growth_data_162_grades_math.columns.str.split('_').str[1]
-                    growth_data_me_grades_ela.columns = growth_data_me_grades_ela.columns.str.split('_').str[1]
-                    growth_data_me_grades_math.columns = growth_data_me_grades_math.columns.str.split('_').str[1]
+                #     growth_data_162_grades_ela.columns = growth_data_162_grades_ela.columns.str.split('_').str[1]
+                #     growth_data_162_grades_math.columns = growth_data_162_grades_math.columns.str.split('_').str[1]
+                #     growth_data_me_grades_ela.columns = growth_data_me_grades_ela.columns.str.split('_').str[1]
+                #     growth_data_me_grades_math.columns = growth_data_me_grades_math.columns.str.split('_').str[1]
 
-                    # Growth by Ethnicity (Both ME and 162)
-                    growth_data_162_ethnicity_ela = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('162')) & (fig_data_ethnicity_growth.columns.str.contains('ELA'))]
-                    growth_data_162_ethnicity_math = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('162')) & (fig_data_ethnicity_growth.columns.str.contains('Math'))]
-                    growth_data_me_ethnicity_ela = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_growth.columns.str.contains('ELA'))]
-                    growth_data_me_ethnicity_math = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_growth.columns.str.contains('Math'))]
+                #     # Growth by Ethnicity (Both ME and 162)
+                #     growth_data_162_ethnicity_ela = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('162')) & (fig_data_ethnicity_growth.columns.str.contains('ELA'))]
+                #     growth_data_162_ethnicity_math = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('162')) & (fig_data_ethnicity_growth.columns.str.contains('Math'))]
+                #     growth_data_me_ethnicity_ela = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_growth.columns.str.contains('ELA'))]
+                #     growth_data_me_ethnicity_math = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_growth.columns.str.contains('Math'))]
                     
-                    growth_data_162_ethnicity_ela.columns = growth_data_162_ethnicity_ela.columns.str.split('_').str[1]
-                    growth_data_162_ethnicity_math.columns = growth_data_162_ethnicity_math.columns.str.split('_').str[1]
-                    growth_data_me_ethnicity_ela.columns = growth_data_me_ethnicity_ela.columns.str.split('_').str[1]
-                    growth_data_me_ethnicity_math.columns = growth_data_me_ethnicity_math.columns.str.split('_').str[1]
+                #     growth_data_162_ethnicity_ela.columns = growth_data_162_ethnicity_ela.columns.str.split('_').str[1]
+                #     growth_data_162_ethnicity_math.columns = growth_data_162_ethnicity_math.columns.str.split('_').str[1]
+                #     growth_data_me_ethnicity_ela.columns = growth_data_me_ethnicity_ela.columns.str.split('_').str[1]
+                #     growth_data_me_ethnicity_math.columns = growth_data_me_ethnicity_math.columns.str.split('_').str[1]
             
-                    # Growth by Subgroup (Both ME and 162)                     
-                    growth_data_162_subgroup_ela = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('162')) & (fig_data_subgroup_growth.columns.str.contains('ELA'))]
-                    growth_data_162_subgroup_math = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('162')) & (fig_data_subgroup_growth.columns.str.contains('Math'))]
-                    growth_data_me_subgroup_ela = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_growth.columns.str.contains('ELA'))]
-                    growth_data_me_subgroup_math = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_growth.columns.str.contains('Math'))]
+                #     # Growth by Subgroup (Both ME and 162)                     
+                #     growth_data_162_subgroup_ela = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('162')) & (fig_data_subgroup_growth.columns.str.contains('ELA'))]
+                #     growth_data_162_subgroup_math = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('162')) & (fig_data_subgroup_growth.columns.str.contains('Math'))]
+                #     growth_data_me_subgroup_ela = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_growth.columns.str.contains('ELA'))]
+                #     growth_data_me_subgroup_math = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_growth.columns.str.contains('Math'))]
                     
-                    growth_data_162_subgroup_ela.columns = growth_data_162_subgroup_ela.columns.str.split('_').str[1]
-                    growth_data_162_subgroup_math.columns = growth_data_162_subgroup_math.columns.str.split('_').str[1]
-                    growth_data_me_subgroup_ela.columns = growth_data_me_subgroup_ela.columns.str.split('_').str[1]
-                    growth_data_me_subgroup_math.columns = growth_data_me_subgroup_math.columns.str.split('_').str[1]
+                #     growth_data_162_subgroup_ela.columns = growth_data_162_subgroup_ela.columns.str.split('_').str[1]
+                #     growth_data_162_subgroup_math.columns = growth_data_162_subgroup_math.columns.str.split('_').str[1]
+                #     growth_data_me_subgroup_ela.columns = growth_data_me_subgroup_ela.columns.str.split('_').str[1]
+                #     growth_data_me_subgroup_math.columns = growth_data_me_subgroup_math.columns.str.split('_').str[1]
 
-                    # SGP by Grade (Both ME and 162)
-                    sgp_data_162_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('162')) & (fig_data_grades_sgp.columns.str.contains('ELA'))]
-                    sgp_data_162_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('162')) & (fig_data_grades_sgp.columns.str.contains('Math'))]
-                    sgp_data_me_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_grades_sgp.columns.str.contains('ELA'))]
-                    sgp_data_me_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_grades_sgp.columns.str.contains('Math'))]
+                #     # SGP by Grade (Both ME and 162)
+                #     sgp_data_162_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('162')) & (fig_data_grades_sgp.columns.str.contains('ELA'))]
+                #     sgp_data_162_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('162')) & (fig_data_grades_sgp.columns.str.contains('Math'))]
+                #     sgp_data_me_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_grades_sgp.columns.str.contains('ELA'))]
+                #     sgp_data_me_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_grades_sgp.columns.str.contains('Math'))]
                     
-                    sgp_data_162_grades_ela.columns = sgp_data_162_grades_ela.columns.str.split('_').str[1]
-                    sgp_data_162_grades_math.columns = sgp_data_162_grades_math.columns.str.split('_').str[1]
-                    sgp_data_me_grades_ela.columns = sgp_data_me_grades_ela.columns.str.split('_').str[1]
-                    sgp_data_me_grades_math.columns = sgp_data_me_grades_math.columns.str.split('_').str[1]
+                #     sgp_data_162_grades_ela.columns = sgp_data_162_grades_ela.columns.str.split('_').str[1]
+                #     sgp_data_162_grades_math.columns = sgp_data_162_grades_math.columns.str.split('_').str[1]
+                #     sgp_data_me_grades_ela.columns = sgp_data_me_grades_ela.columns.str.split('_').str[1]
+                #     sgp_data_me_grades_math.columns = sgp_data_me_grades_math.columns.str.split('_').str[1]
 
-                    # SGP by Ethnicity (Both ME and 162)
-                    sgp_data_162_ethnicity_ela = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('162')) & (fig_data_ethnicity_sgp.columns.str.contains('ELA'))]
-                    sgp_data_162_ethnicity_math = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('162')) & (fig_data_ethnicity_sgp.columns.str.contains('Math'))]
-                    sgp_data_me_ethnicity_ela = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_sgp.columns.str.contains('ELA'))]
-                    sgp_data_me_ethnicity_math = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_sgp.columns.str.contains('Math'))]
+                #     # SGP by Ethnicity (Both ME and 162)
+                #     sgp_data_162_ethnicity_ela = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('162')) & (fig_data_ethnicity_sgp.columns.str.contains('ELA'))]
+                #     sgp_data_162_ethnicity_math = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('162')) & (fig_data_ethnicity_sgp.columns.str.contains('Math'))]
+                #     sgp_data_me_ethnicity_ela = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_sgp.columns.str.contains('ELA'))]
+                #     sgp_data_me_ethnicity_math = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_ethnicity_sgp.columns.str.contains('Math'))]
                     
-                    sgp_data_162_ethnicity_ela.columns = sgp_data_162_ethnicity_ela.columns.str.split('_').str[1]
-                    sgp_data_162_ethnicity_math.columns = sgp_data_162_ethnicity_math.columns.str.split('_').str[1]
-                    sgp_data_me_ethnicity_ela.columns = sgp_data_me_ethnicity_ela.columns.str.split('_').str[1]
-                    sgp_data_me_ethnicity_math.columns = sgp_data_me_ethnicity_math.columns.str.split('_').str[1]
+                #     sgp_data_162_ethnicity_ela.columns = sgp_data_162_ethnicity_ela.columns.str.split('_').str[1]
+                #     sgp_data_162_ethnicity_math.columns = sgp_data_162_ethnicity_math.columns.str.split('_').str[1]
+                #     sgp_data_me_ethnicity_ela.columns = sgp_data_me_ethnicity_ela.columns.str.split('_').str[1]
+                #     sgp_data_me_ethnicity_math.columns = sgp_data_me_ethnicity_math.columns.str.split('_').str[1]
 
-                    # SGP by Subgroup (Both ME and 162)                     
-                    sgp_data_162_subgroup_ela = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('162')) & (fig_data_subgroup_sgp.columns.str.contains('ELA'))]
-                    sgp_data_162_subgroup_math = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('162')) & (fig_data_subgroup_sgp.columns.str.contains('Math'))]
-                    sgp_data_me_subgroup_ela = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_sgp.columns.str.contains('ELA'))]
-                    sgp_data_me_subgroup_math = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_sgp.columns.str.contains('Math'))]
+                #     # SGP by Subgroup (Both ME and 162)                     
+                #     sgp_data_162_subgroup_ela = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('162')) & (fig_data_subgroup_sgp.columns.str.contains('ELA'))]
+                #     sgp_data_162_subgroup_math = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('162')) & (fig_data_subgroup_sgp.columns.str.contains('Math'))]
+                #     sgp_data_me_subgroup_ela = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_sgp.columns.str.contains('ELA'))]
+                #     sgp_data_me_subgroup_math = fig_data_subgroup_sgp.loc[:,(fig_data_subgroup_sgp.columns.str.contains('Majority Enrolled')) & (fig_data_subgroup_sgp.columns.str.contains('Math'))]
                     
-                    sgp_data_162_subgroup_ela.columns = sgp_data_162_subgroup_ela.columns.str.split('_').str[1]
-                    sgp_data_162_subgroup_math.columns = sgp_data_162_subgroup_math.columns.str.split('_').str[1]
-                    sgp_data_me_subgroup_ela.columns = sgp_data_me_subgroup_ela.columns.str.split('_').str[1]
-                    sgp_data_me_subgroup_math.columns = sgp_data_me_subgroup_math.columns.str.split('_').str[1]
-
-                    # Fig Test
-                    import plotly.graph_objects as go
-                    from plotly.subplots import make_subplots
+                #     sgp_data_162_subgroup_ela.columns = sgp_data_162_subgroup_ela.columns.str.split('_').str[1]
+                #     sgp_data_162_subgroup_math.columns = sgp_data_162_subgroup_math.columns.str.split('_').str[1]
+                #     sgp_data_me_subgroup_ela.columns = sgp_data_me_subgroup_ela.columns.str.split('_').str[1]
+                #     sgp_data_me_subgroup_math.columns = sgp_data_me_subgroup_math.columns.str.split('_').str[1]
                     
-                    color = ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
-                    
-                    def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str) -> list:
+                #     # TODO: Samples of each - 4 for each 'category' so 12 charts (grade, ethnicity, subgroup)
+                #     lbl ="Percentage of Students Achieving Adequate Growth in ELA by Grade"
+                #     tst_fig = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, lbl)
 
-                        fig = make_subplots() #specs=[[{"secondary_y": False}]]
-
-                        # Add traces
-                        for i, col in enumerate(data_me.columns):
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=data_me.index,
-                                    y=data_me[col],
-                                    mode='markers+lines',
-                                    marker=dict(color=color[i], symbol = 'square'),
-                                    line={'dash': 'solid'},
-                                    name=col,
-                                    # legendgroup = '1',
-                                    # legendgrouptitle_text="Majority Enrolled"
-                                ),
-                                secondary_y=False,
-                            )
-
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=data_162.index,
-                                    y=data_162[col],
-                                    # mode="markers",
-                                    mode='markers+lines',                                
-                                    line={'dash': 'dash'},
-                                    marker=dict(color=color[i], symbol = 'diamond'),
-                                    name=col,
-                                    # legendgroup = '2',
-                                    # legendgrouptitle_text="162 Days"
-                                ),
-                                secondary_y=False,
-                            )
-
-                        # TODO: Need to differentiate between SGP #s and Growth %s by label (SGP or Growth in string)
-                        if 'Growth' in label:
-                            print('GROWUP!')
-                            ytick ='.0%'
-                            pass
-                        elif 'SGP' in label:
-                            print('SGOOP')
-                            ytick ='.1f'                            
-                            pass
-
-                        # Add figure title
-                        fig.update_layout(
-                            margin=dict(l=40, r=40, t=40, b=0),
-                            title_x=0.5,
-                            font = dict(
-                                family = 'Jost, sans-serif',
-                                color = 'steelblue',
-                                size = 10
-                                ),
-                            plot_bgcolor='white',
-                            xaxis = dict(
-                                title='',
-                                type='date',
-                                tickvals = data_162.index,
-                                tickformat='%Y',
-                                # mirror=True,
-                                showline=True,
-                                linecolor='#b0c4de',
-                                linewidth=.5,
-                                gridwidth=.5,
-                                showgrid=True,
-                                gridcolor='#b0c4de',
-                                zeroline=False,
-                                # range = add_years
-                                ),
-                            yaxis = dict(
-                                title='',
-                                tickformat=ytick, #'.0%',
-                                showline=True,
-                                linecolor='#b0c4de',
-                                linewidth=.5,
-                                gridwidth=.5,
-                                showgrid=True,
-                                gridcolor='#b0c4de',
-                                zeroline=False,
-                                # range = add_years
-                                ),
-                            legend=dict(
-                                orientation='h'
-                            ),
-                            hovermode='x unified',
-                            height=300,
-                            # width=400,
-                            # legend_title='',
-                        )                    
-
-                        # diamond - &#9670;	&#x25C6;
-                        # square - &#9632;	&#x25A0;
-                        fig.add_annotation(
-                            text="Students Enrolled For: <b>&#9670;: 162 Days &#9632;: Majority Enrolled</b>",
-                            align="left",
-                            showarrow=False,
-                            xref="paper",
-                            yref="paper",
-                            font=dict(color="steelblue", size=9),
-                            bgcolor="rgba(0,0,0,0)",
-                            y=1.15,
-                            x=.5,
-                            xanchor="center",
-                        )
-                        fig.update_yaxes(title_text="Adequate Growth %", secondary_y=False)
-
-                        fig_layout = [
-                                html.Div(
-                                    [
-                                    html.Label(label, className = 'header_label'),
-                                    dcc.Graph(figure = fig, config={'displayModeBar': False})
-                                    ],
-                                ),       
-                        ]
-                   
-                        return fig_layout
-                    
-                    # TODO: Samples of each - 4 for each 'category' so 12 charts (grade, ethnicity, subgroup)
-                    lbl ="Percentage of Students Achieving Adequate Growth in ELA by Grade"
-                    tst_fig = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, lbl)
-
-                    lbl2 ="Median SGP in ELA by Grade"
-                    tst_fig2 = make_growth_chart(sgp_data_me_grades_ela, sgp_data_162_grades_ela, lbl2)
+                #     lbl2 ="Median SGP in ELA by Grade"
+                #     tst_fig2 = make_growth_chart(sgp_data_me_grades_ela, sgp_data_162_grades_ela, lbl2)
      
-                else:
+                # else:
 
-                    table_grades_growth_ela_container = {},
-                    table_grades_growth_math_container = {},
-                    table_ethnicity_growth_ela_container = {},
-                    table_ethnicity_growth_math_container = {},
-                    table_subgroup_growth_ela_container = {},
-                    table_subgroup_growth_math_container = {}
+                #     table_grades_growth_ela_container = {},
+                #     table_grades_growth_math_container = {},
+                #     table_ethnicity_growth_ela_container = {},
+                #     table_ethnicity_growth_math_container = {},
+                #     table_subgroup_growth_ela_container = {},
+                #     table_subgroup_growth_math_container = {}
 
                     # TODO: Do we want to limit to median SGP for those students achieving 'Adequate Growth'?
                     # # median SGP for students achieving 'Adequate Growth' grouped by Year, Grade, and Subject
@@ -934,15 +745,17 @@ def update_academic_metrics(school: str, year: str):
     # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
     metric_11cd_label = "End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate."
      
-    return table_container_11ab, display_attendance, table_container_11cd, table_container_14ab, \
-        table_container_14cd, table_container_14ef, table_container_14g, \
-        table_container_15abcd, table_container_16ab, table_container_16cd, tst_fig, tst_fig2, display_k8_metrics, \
-        table_container_17ab, table_container_17cd, display_hs_metrics, \
-        ahs_table_container_113, ahs_table_container_1214, display_ahs_metrics, \
-        main_container, empty_container, no_data_to_display, \
-        table_grades_growth_ela_container, table_grades_growth_math_container, table_ethnicity_growth_ela_container, \
-        table_ethnicity_growth_math_container, table_subgroup_growth_ela_container, table_subgroup_growth_math_container,\
-        
+    return (
+        table_container_11ab, display_attendance, table_container_11cd, table_container_14ab,
+        table_container_14cd, table_container_14ef, table_container_14g,
+        table_container_15abcd, table_container_16ab, table_container_16cd, display_k8_metrics,
+        table_container_17ab, table_container_17cd, display_hs_metrics,
+        ahs_table_container_113, ahs_table_container_1214, display_ahs_metrics,
+        main_container, empty_container, no_data_to_display
+    )
+        # table_grades_growth_ela_container, table_grades_growth_math_container, table_ethnicity_growth_ela_container, \
+        # table_ethnicity_growth_math_container, table_subgroup_growth_ela_container, table_subgroup_growth_math_container,\
+        #tst_fig, tst_fig2,
 
 def layout():
     return html.Div(
@@ -1017,12 +830,12 @@ def layout():
                                 html.Div(id="table-container-16cd", children=[]),                                
                                 # html.Div(id="tst-fig", children=[]),
                                 # dcc.Graph(id="tst-fig"),
-                                html.Div(id="table-grades-growth-ela-container", children=[]),
-                                html.Div(id="table-grades-growth-math-container", children=[]),
-                                html.Div(id="table-ethnicity-growth-ela-container", children=[]),
-                                html.Div(id="table-ethnicity-growth-math-container", children=[]),
-                                html.Div(id="table-subgroup-growth-ela-container", children=[]),
-                                html.Div(id="table-subgroup-growth-math-container", children=[]),                               
+                                # html.Div(id="table-grades-growth-ela-container", children=[]),
+                                # html.Div(id="table-grades-growth-math-container", children=[]),
+                                # html.Div(id="table-ethnicity-growth-ela-container", children=[]),
+                                # html.Div(id="table-ethnicity-growth-math-container", children=[]),
+                                # html.Div(id="table-subgroup-growth-ela-container", children=[]),
+                                # html.Div(id="table-subgroup-growth-math-container", children=[]),                               
                             ],
                             id = "display-k8-metrics",
                         ),
