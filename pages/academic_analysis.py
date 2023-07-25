@@ -351,13 +351,14 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
         ## Make Line Charts
 
-            t3 = time.process_time()   
+            t3 = time.process_time()
+            ## Year over Year data
             yearly_school_data = display_academic_data.copy()
             yearly_school_data['School Name'] = school_name
 
             # Chart 1: Year over Year ELA Proficiency by Grade (1.4.a)
             fig14a_data = yearly_school_data.filter(regex = r'^Grade \d\|ELA|^School Name$|^Year$',axis=1)
-            print(fig14a_data)
+
             # NOTE: make_line_chart() returns a list (plotly dash html layout), it either
             # contains a chart (if data) or a empty no data fig
             fig14a = make_line_chart(fig14a_data,'Year over Year ELA Proficiency by Grade')
@@ -410,7 +411,8 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             print(f'Time to make line charts: ' + str(time.process_time() - t3))
 
-            ## Current School Data ##
+            ## Comparison data ##
+            # from dash import Patch
             current_school_data = display_academic_data.loc[display_academic_data['Year'] == string_year].copy()
 
             # NOTE: We lose strings to NaN here
@@ -826,7 +828,19 @@ def layout():
                         ],
                         className='row'
                     ),
-                    dcc.Loading(
+                    # dcc.Loading(
+                    #     id='loading',
+                    #     type='circle',
+                    #     fullscreen = True,
+                    #     style={
+                    #         'position': 'absolute',
+                    #         'align-self': 'center',
+                    #         'background-color': '#F2F2F2',
+                    #     },
+                    #     children=[
+                                html.Div(
+                                    [
+                   dcc.Loading(
                         id='loading',
                         type='circle',
                         fullscreen = True,
@@ -835,9 +849,7 @@ def layout():
                             'align-self': 'center',
                             'background-color': '#F2F2F2',
                         },
-                        children=[                                
-                                html.Div(
-                                    [
+                        children=[                                        
                                         html.Div(
                                             [                                            
                                                 html.Div(
@@ -920,6 +932,7 @@ def layout():
                                             ],
                                             className='row',
                                         ),
+                                ]),                                        
                                         # Comparison Charts
                                         html.Div(
                                             [                                        
@@ -983,7 +996,7 @@ def layout():
                                     id = 'academic-analysis-main-container',
                                     style= {'display': 'none'}, 
                                 ),
-                                ]),
+                                # ]),
                                 html.Div(
                                     [
                                         html.Div(id='academic-analysis-no-data'),

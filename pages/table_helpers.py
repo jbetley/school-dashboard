@@ -264,7 +264,6 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
 
     else:
 
-        # TODO: THis is in at least four places - need to functionize it
         # determines the col_width class and width of the category column based
         # on the size (# of cols) of the dataframe
         if num_cols <= 3:
@@ -566,7 +565,6 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # rename '+/-' columns
         data.columns = data.columns.str.replace('\+/-', 'Diff', regex=True)
 
-# TODO: THis is in at least three places - need to functionize it
         # determines the col_width class and width of the category column based
         # on the size (# of cols) of the dataframe
         if table_size <= 3:
@@ -946,8 +944,25 @@ def process_table_data(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 # TODO: docstring
-def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: str, corp_name: str) -> Tuple[pd.DataFrame, str, str]:
-    
+def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: list, corp_name: str) -> Tuple[pd.DataFrame, str, str]:
+    """
+    Processes several dataframes for display in comparison tables while tracking both schools that are missing data for 
+    a particulary category (category_string) and schools that are missing data for all categories (school_string).
+
+    Args:
+        school_data (pd.DataFrame): academic data from the selected school
+        corporation_data (pd.DataFrame): academic data from the school corporation where the school is located
+        comparison_data (pd.DataFrame): academic data from comparable schools (may or may not be in school corp)
+        categories (list): a list of academic categories
+        corp_name (str): the name of the school corporation
+
+    Returns:
+        Tuple[
+            final_data (pd.DataFrame): all dataframes cleaned up and combined
+            category_string (str): a string of categories for which the selected school has no data. 
+            school_string (str): a string of schools which have no data
+        ]
+    """
     all_categories = categories + info_categories
 
     school_columns = [i for i in categories if i in school_data.columns]
@@ -1065,10 +1080,10 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
 
     Args:
         label (String): Table title
-        content (pd.DataTable): dash dataTable
+        data (pd.DataTable): dash dataTable
 
     Returns:
-        list: Formatted dash DataTable
+        table_layout (list): dash DataTable wrapped in dash html components
     """
     # find the index of the row containing the school name
     school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
@@ -1204,7 +1219,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
         table_type (String): type of table.
 
     Returns:
-        list: Formatted dash DataTable
+        table_layout (list): dash DataTable wrapped in dash html components
     """
 
     if table_type == 'proficiency':
@@ -1348,7 +1363,7 @@ def create_key() -> dash_table.DataTable:
         None
 
     Returns:
-        dash.DataTable: definition key 
+        key_table (dict): dash DataTable
     """
     rating_icon = '<span style="font-size: 1em;"><i class="fa fa-circle"></i></span>'
 
