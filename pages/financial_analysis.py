@@ -139,8 +139,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         else:
             financial_data = {}
 
-        # financial_data_json = json.loads(data["16"])
-
         RandE_title = "Revenue and Expenses (" + financial_data["School Name"][0] + ")"
         AandL_title = "Assets and Liabilities (" + financial_data["School Name"][0] + ")"
         FP_title = "2-Year Financial Position (" + financial_data["School Name"][0] + ")"
@@ -151,7 +149,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         # school financial data
         financial_data = get_financial_data(school)
 
-        # don"t display school name in title if the school isn"t part of a network
+        # don't display school name in title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
             RandE_title = "Revenue and Expenses"
             AandL_title = "Assets and Liabilities"
@@ -169,6 +167,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     if len(financial_data.columns) > 1:
 
+# TODO: Add note that analysis displays only the most recent year of fully audited data
+# TODO: Deal with situation where you go from 2022 in fin_anal to 2023 in fin_info
         # NOTE: Drop partial year data (financial data with a "Q#" in column header).
         # may eventually want to implement for Q4 data, but the display quickly gets
         # too confusing with incomplete data.

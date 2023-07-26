@@ -105,7 +105,7 @@ def get_academic_dropdown_years(*args):
     
     return years
 
-def get_operational_dropdown_years(school_id):
+def get_financial_info_dropdown_years(school_id):
     params = dict(id=school_id)
     q = text('''
         SELECT * 
@@ -121,7 +121,7 @@ def get_operational_dropdown_years(school_id):
 
         adm_index = results.index[results['Category'] == 'ADM Average'].values[0]
 
-        results = results.filter(regex='^\d{4}$')
+        results = results.filter(regex='^\d{4}') # adding '$' to the end of the regex will skip (Q#) years
 
         for col in results.columns:
             results[col] = pd.to_numeric(results[col], errors='coerce')
@@ -130,8 +130,43 @@ def get_operational_dropdown_years(school_id):
 
         results = results.loc[:, mask]
 
-        years = results.columns.to_list()
+        # trim excess info (Q#) if present
+        years = [x[:4] for x in results.columns.to_list()]
+
+    else:
+        years = []
+
+    return years
+
+def get_financial_analysis_dropdown_years(school_id):
+    params = dict(id=school_id)
+    q = text('''
+        SELECT * 
+        FROM financial_data 
+        WHERE SchoolID = :id
+    ''')
     
+    results = run_query(q, params)
+
+    # Processes financial df and returns a list of Year column names for
+    # each year for which ADM Average is greater than '0'
+    if len(results.columns) > 3:
+
+        adm_index = results.index[results['Category'] == 'ADM Average'].values[0]
+
+        # adding '$' to the end of the regex skips (Q#) years
+        results = results.filter(regex='^\d{4}$') 
+
+        for col in results.columns:
+            results[col] = pd.to_numeric(results[col], errors='coerce')
+
+        mask = results.iloc[adm_index] > 0
+
+        results = results.loc[:, mask]
+
+        # trim excess info (Q#) if present
+        years = results.columns.to_list()
+
     else:
         years = []
 
@@ -367,4 +402,3 @@ def get_comparable_schools(*args):
     q = text(query_string)
 
     return run_query(q, params)
-

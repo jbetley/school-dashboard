@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Information #
 ##########################################
 # author:   jbetley
-# version:  1.04
-# date:     07/10/23
+# version:  1.08
+# date:     08/01/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -136,7 +136,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         # school financial data
         financial_data = get_financial_data(school)
 
-        # don"t display the school name in table title if the school isn"t part of a network
+        # don't display the school name in table title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
             table_title = "Audited Financial Information"
         else:
@@ -157,20 +157,18 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         # financial data (Q1, Q2, Q3, Q4). If "(Q#)" is not in the string,
         # it means the data in the column is audited data.
 
-        # get most recent finance year - slicing to remove the quarter
-        # information (Q#).
+        # get most recent finance year - slicing the first 4 characters
+        # to remove any quarter information (Q#).
         most_recent_finance_year = int(financial_data.columns[1][:4])
 
-        # drop any years that are later in time than the selected year
+        # get the number of years to exclude
         years_to_exclude = most_recent_finance_year -  selected_year_numeric
 
-        # if the selected year is less than the most recent academic year,
-        # drop all financial years more recent than the selected year
-        # this has the effect of displaying any financial year more
-        # recent than the current academic year if it is present in the
-        # dataframe
-        if  selected_year_numeric < current_academic_year:
-            financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
+        # if selected_year is less than most_recent_finance_year,
+        # drop all financial years more recent than the selected_year
+# TODO: Monitor this. Changes are in load_db (get_operational_dropdown_years)
+        if  selected_year_numeric < most_recent_finance_year:
+            financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
 
         # financial file exists, but is empty
         if len(financial_data.columns) <= 1:
@@ -187,13 +185,13 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
             # NOTE: there are certain calculated categories already in the df ("Total Grants",
             # "Net Asset Position", and "Change in Net Assets"). Rather than
-            # rely on these pre-calculated categories, we calculate them from the 
+            # rely on pre-calculated categories, we (re)calculate them from the 
             # underlying data: 1) "Total Grants" = "State Grants" + "Federal Grants";
             # 2) "Net Asset Position" = "Total Assets" - "Total Liabilities"; and
             # 3) "Change in Net Assets" = "Operating Revenues" - "Operating Expenses"
 
             # Because the rows already exist in the dataframe, we set Category as index
-            # (so we can use .loc):
+            # (so we can use .loc with the Category names):
 
             financial_data = financial_data.set_index(["Category"])
             financial_data.loc["Total Grants"] = financial_data.loc["State Grants"] + financial_data.loc["Federal Grants"]
@@ -206,6 +204,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             # Ensure that only the "max_display_years" number of years worth of financial
             # data is displayed (add +1 to max_display_years to account for the category
             # column). To show all years of data, comment out this line.
+
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
             string_years=financial_data.columns.tolist()
@@ -213,7 +212,8 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             string_years.reverse()
 
             # remove audit and other indicator data (it is displayed on the financial metrics page)
-            financial_data = financial_data.drop(financial_data.index[41:])
+            # financial_data = financial_data.drop(financial_data.index[41:])
+            financial_data = financial_data.loc[:(financial_data["Category"] == "Audit Information").idxmax()-1]
 
             # Each column (year) in the df must have at least 12 values to be valid. To avoid the
             # situation where there is a column that only contains financial ratio data (e.g., 

@@ -2,8 +2,8 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley
-# version:  1.04
-# date:     07/10/23
+# version:  1.08
+# date:     08/01/23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -324,7 +324,6 @@ def update_about_page(year: str, school: str):
                         "height": "auto",
                         "textAlign": "center",
                         "color": "#6783a9",
-                        # "minWidth": "25px", "width": "25px", "maxWidth": "25px"
                     },
                 )
             ]
@@ -560,10 +559,10 @@ def update_about_page(year: str, school: str):
 
             # NOTE: In order to distinguish between null (no data) and "0" values,  loop through
             # the data and only color text traces when the value of x (t.x) is not NaN
-            # Use this to display all:
-            # subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
             subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=np.where(~np.isnan(t.x),t.marker.color, "white"),textfont_size=11))
-
+            # Use this to display all instead:
+            # subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
+            
             subgroup_fig.update_traces(hovertemplate = None, hoverinfo="skip")
 
             # Uncomment to add hover

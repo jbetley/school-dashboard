@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley
-# version:  1.04
-# date:     07/10/23
+# version:  1.08
+# date:     08/01/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -157,7 +157,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
         # NOTE: To show schools in Pre-Opening year, remove the "or" condition
         # (you would also need to modify the financial metric calculation function, so
-        # maybe think twice before doing it)
+        # maybe think twice (or three times) before doing it)
         
         if (len(financial_data.columns) <= 1) | ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == "0")):
                 financial_metrics_table = {}
@@ -184,7 +184,8 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
             # remove audit and other indicator data (it is displayed on the financial metrics page)
-            financial_values = financial_data.drop(financial_data.index[41:])
+            financial_values = financial_data.loc[:(financial_data["Category"] == "Audit Information").idxmax()-1]
+            # financial_values = financial_data.drop(financial_data.index[41:])
 
             # Release The Hounds!
             financial_metrics = calculate_financial_metrics(financial_values)
@@ -214,6 +215,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                     if financial_metrics.iat[10,x]:
                         financial_metrics.iat[10,x] = "{:,.2f}".format(financial_metrics.iat[10,x])
 
+                # TODO: Monitor whether this was affected by the get_op_years change
                 # Add financial quarter back to financial header for display purposes (if partial
                 # year is being displayed)
                 if int(financial_metrics.columns[1]) > current_academic_year:
@@ -225,7 +227,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 # output: col_width, category_width, rating_width, and year_width,
                 #  (difference_width, corporation_width)
                 # Problem: variable number of return items. table_size adjustments
-                #  are differente between financial metrics table and academic metrics table
+                #  are different between financial metrics table and academic metrics table
 
                 clean_headers = []
                 for i, x in enumerate (headers):

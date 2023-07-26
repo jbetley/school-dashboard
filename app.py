@@ -32,7 +32,7 @@ from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
 
 from pages.load_db import get_school_index, get_academic_dropdown_years, \
-     get_operational_dropdown_years, get_school_dropdown_list
+     get_financial_info_dropdown_years, get_school_dropdown_list, get_financial_analysis_dropdown_years
 from pages.load_data import current_academic_year
 
 # load data and global variables
@@ -221,8 +221,7 @@ def set_dropdown_value(charter_options):
 )
 def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
-    # TODO: Change to 5 years in 2023
-    max_dropdown_years = 4
+    max_dropdown_years = 5
 
     current_page = current_page.rsplit('/', 1)[-1]
 
@@ -232,9 +231,10 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     # source of available years depends on selected tab
     if 'academic' in current_page:
         years = get_academic_dropdown_years(school_id,school_type)
-
-    else:
-        years = get_operational_dropdown_years(school_id)
+    elif 'financial_analysis' in current_page:
+        years = get_financial_analysis_dropdown_years(school_id)
+    else:        
+        years = get_financial_info_dropdown_years(school_id)
 
     # set year_value and year_options
     number_of_years_to_display = len(years) if len(years) <= max_dropdown_years else max_dropdown_years
@@ -242,6 +242,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     first_available_year = dropdown_years[0]
     earliest_available_year = dropdown_years[-1]
 
+#TODO: Account for situation where fin_anal year is 2022 but school actually has 2023 data
     # 'year' represents the State of the year-dropdown when a school is selected.
     # Current value is set to:
     #   1) current_academic year (when app is first opened);
