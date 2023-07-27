@@ -203,7 +203,6 @@ def set_dropdown_options(app_state):
 def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
             
-
 # year options are the range of:
 #   max = current_academic_year
 #   min = the earliest year for which the school has adm (is open)
@@ -231,8 +230,10 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     # source of available years depends on selected tab
     if 'academic' in current_page:
         years = get_academic_dropdown_years(school_id,school_type)
+
     elif 'financial_analysis' in current_page:
         years = get_financial_analysis_dropdown_years(school_id)
+
     else:        
         years = get_financial_info_dropdown_years(school_id)
 
@@ -242,7 +243,8 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     first_available_year = dropdown_years[0]
     earliest_available_year = dropdown_years[-1]
 
-#TODO: Account for situation where fin_anal year is 2022 but school actually has 2023 data
+#TODO: Account for situation where fin_anal year is 2022 but school actually has 2023 data - not sure way to do this
+
     # 'year' represents the State of the year-dropdown when a school is selected.
     # Current value is set to:
     #   1) current_academic year (when app is first opened);
