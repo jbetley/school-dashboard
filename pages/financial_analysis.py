@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley
-# version:  1.04
-# date:     07/10/23
+# version:  1.08
+# date:     08/01/23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -42,6 +42,7 @@ dash.register_page(__name__, path = "/financial_analysis", order=3)
     Output("financial-analysis-main-container", "style"),
     Output("financial-analysis-empty-container", "style"),
     Output("financial-analysis-no-data", "children"),
+    Output("financial-analysis-notes-string", "children"),    
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input(component_id="radio-button-finance-analysis", component_property="value")
@@ -62,8 +63,9 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     # ensure consistent data display throughout
     display_years = [year] + [str(previous_year_numeric)]
-    default_headers = ["Category"] + display_years
     
+    financial_analysis_notes_string = "Only the most recent years of audited data are shown."
+
     # See financial_information.py for comments
     if selected_school["Network"].values[0] != "None":
         if radio_value == "network-analysis":
@@ -167,8 +169,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     if len(financial_data.columns) > 1:
 
-# TODO: Add note that analysis displays only the most recent year of fully audited data
-# TODO: Deal with situation where you go from 2022 in fin_anal to 2023 in fin_info
         # NOTE: Drop partial year data (financial data with a "Q#" in column header).
         # may eventually want to implement for Q4 data, but the display quickly gets
         # too confusing with incomplete data.
@@ -197,7 +197,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
         else:
 
-            # NOTE: see list in chart_helpers.py for full list of colors
+            # NOTE: see chart_helpers.py for full list of colors
             color=["#74a2d7", "#df8f2d"]
             
             for col in financial_data.columns:
@@ -212,12 +212,14 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
-            # tables display missing years as blank, figs do not display them at all.
+            # tables display missing years as blank, figs do not display them at all so we need
+            # a copy of the df at this point for figs.
             financial_data_fig = financial_data.copy()
 
             # Network financial data typically lags behind school data by at
-            # least a year. So drop any column that doesn"t have at least 31
-            # values not equal to 0 (the min to be valid).
+            # least a year. So drop any column (year) that doesn't have at least 31
+            # values not equal to 0 (the min # of values to be valid). this prevents
+            # empty columns from being displayed
             for c in financial_data_fig.columns:
                 if len(financial_data_fig[financial_data_fig[c] == 0].index) > 31:
                     financial_data_fig.drop([c], inplace=True, axis=1)
@@ -252,7 +254,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 barmode="group",
             )
 
-            # revenue and expense data can vary widely (from 5 to 7 digits) from school to
+            # revenue and expense data can vary widely (from 5 to 7 figures) from school to
             # school and from year to year. Use round_nearest() to determine tick value
             # based on the max value in a dataframe.
 
@@ -338,7 +340,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 barmode="group",
             )
             
-            step = 6
             tick_val = round_nearest(assets_liabilities_data, step)
 
             assets_liabilities_bar_fig.update_xaxes(showline=False, linecolor="#a9a9a9",ticks="outside", tickcolor="#a9a9a9", title="")
@@ -383,7 +384,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             assets_liabilities_fig["data"][0]["hovertemplate"]="Net Asset Position<br>$ %{y:,.2f}<extra></extra>"
 
         ## Two Year Finance Tables (Financial Position and Financial Activities)
-
+            
+            # display years is a list of [CY, PY]
+            default_headers = ["Category"] + display_years
+            
             # default table styles
             table_data = {
                 "fontSize": "12px",
@@ -438,7 +442,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             # there may be columns with no or partial data at beginning or ending of dataframe,
             # this deletes any column where more than 80% of the columns values are == 0
             # (otherwise empty columns may have some data, eg., ADM)
-            # NOTE: This could be more precise.
+            # NOTE: This could probably be more precise.
             financial_data = financial_data.loc[:, (financial_data==0).mean() < .7]
 
             # if all of the years to display (+ Category) exist in (are a subset of) the dataframe,
@@ -692,7 +696,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
                 non_duplicate_cols = ["Category"] + [i for i in default_df.columns.to_list() if i not in financial_ratios_data.columns.to_list()]
 
-
                 final_ratios_data = default_df.combine_first(default_df[non_duplicate_cols].merge(financial_ratios_data, "left"))
                 final_ratios_data = final_ratios_data[default_headers]
 
@@ -882,7 +885,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     return revenue_expenses_fig, assets_liabilities_fig, financial_position_table,\
         financial_activities_table, radio_content, display_radio, RandE_title, \
         AandL_title, FP_title, FA_title, financial_ratios_table, per_student_table, \
-        main_container, empty_container, no_data_to_display # audit_findings_table,
+        main_container, empty_container, no_data_to_display, financial_analysis_notes_string # audit_findings_table,
 
 def layout():
     return html.Div(
@@ -898,7 +901,7 @@ def layout():
                             ),
                         ],
                         className="row"
-                    ),
+                    ),                   
                     html.Div(
                         [
                             html.Div(
@@ -910,6 +913,33 @@ def layout():
                         ],
                         id = "radio-finance-analysis-display",
                     ),
+                    # html.Div(
+                    #     [    
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Label("Notes:", className="header_label"),
+                                            html.P(""),
+                                                html.P(id="financial-analysis-notes-string",
+                                                    style={
+                                                            "textAlign": "Center",
+                                                            "color": "#6783a9",
+                                                            "fontSize": 12,
+                                                            "marginLeft": "10px",
+                                                            "marginRight": "10px",
+                                                            "marginTop": "10px",
+                                                    }
+                                                ),
+                                        ],
+                                        className = "pretty_container five columns",
+                                    ),
+                                ],
+                                className = "bare_container_center twelve columns"
+                            ),
+                    #     ],
+                    #     className = "row",
+                    # ),                    
             dcc.Loading(
                 id="loading",
                 type="circle",
@@ -921,7 +951,7 @@ def layout():
                     },
                 children=[                    
                     html.Div(
-                        [                    
+                        [     
                             html.Div(
                                 [
                                     html.Div(

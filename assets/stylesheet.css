@@ -211,7 +211,8 @@ body {
   div.dash-table-container td,
   div.js-plotly-plot,
   div.dash-dropdown,
-  p#notes-string)) {
+  p#academic-information-notes-string,
+  p#financial-analysis-notes-string)) {
   display: none;
 }
 

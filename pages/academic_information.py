@@ -91,7 +91,7 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("state-growth-no-data", "children"),
     Output("growth-values-table", "children"),    
     Output("growth-values-table-container", "style"),
-    Output("notes-string", "children"),
+    Output("academic-information-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input(component_id="radio-button-academic-info", component_property="value")
@@ -1267,14 +1267,14 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
     # Add notes string based on school type
     if radio_value == "proficiency":
         if selected_school_type == "AHS":
-            notes_string = "Adult High Schools enroll students who are over the age of 18, under credited, \
+            academic_information_notes_string = "Adult High Schools enroll students who are over the age of 18, under credited, \
                 dropped out of high school for a variety of reasons, and are typically out of cohort from \
                 their original graduation year. Because graduation rate is calculated at the end of the school \
                 year regardless of the length of time a student is enrolled at a school, it is not comparable to \
                 the graduation rate of a traditional high school."
             
         elif (selected_school_type == "K8" or selected_school_type == "K12" or selected_school_type == "HS"):
-            notes_string = "There are a number of factors that make it difficult to make valid and reliable \
+            academic_information_notes_string = "There are a number of factors that make it difficult to make valid and reliable \
                 comparisons between test scores from 2019 to 2022. For example, ILEARN was administered for \
                 the first time during the 2018-19 SY and represented an entirely new type and mode of \
                 assessment (adaptive and online-only). No State assessment was administered  in 2020 because \
@@ -1282,10 +1282,10 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 testing school for 162 days, while the 2021 and 2022 data sets included all tested students. \
                 Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
         else:
-            notes_string = ""
+            academic_information_notes_string = ""
 
     if radio_value == "growth":
-        notes_string = "State growth data comes from IDOE's LINK. Identifying information is scrubbed and data is aggregated \
+        academic_information_notes_string = "State growth data comes from IDOE's LINK. Identifying information is scrubbed and data is aggregated \
             Federal Growth Data comes from IDOE's School Report Card Summaries of Federal Growth indicators. \
             While the data represented here is an accurate representation of the data present in the Summaries, \
             it has not been otherwise reconciled with the raw data used to produce the Summaries. It is presented \
@@ -1305,7 +1305,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         fig_subgroup_sgp_ela, fig_subgroup_growth_math, fig_subgroup_sgp_math, federal_growth_main_container,
         federal_growth_empty_container, no_federal_growth_data_to_display, state_growth_main_container,
         state_growth_empty_container, no_state_growth_data_to_display, growth_values_table, growth_values_table_container,
-        notes_string
+        academic_information_notes_string
     )
 
 def layout():
@@ -1330,7 +1330,7 @@ def layout():
                                 [
                                     html.Label("Notes:", className="header_label"),
                                     html.P(""),
-                                        html.P(id="notes-string",
+                                        html.P(id="academic-information-notes-string",
                                             style={
                                                     "textAlign": "Left",
                                                     "color": "#6783a9",
