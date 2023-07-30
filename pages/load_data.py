@@ -897,6 +897,7 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     # TODO: Whichever way is faster, make sure both hs/ahs and k8 are the same
     excluded_years = get_excluded_years(year)
 
+    # this function is only called here
     all_corporation_data = get_k8_corporation_academic_data(school)
     
     corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)].copy()
@@ -925,6 +926,7 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     # grades that are served by the school - this is messy because we need Total Proficient/Total Tested
     # for both ELA and Math for all matching grades and those specific columns do not exist in the school df
 
+# TODO: This is used elsewhere. TEST which algo is faster. This one or 491 in Academic Analysi and 377 in this script
     school_grades = school_data.loc[school_data['Category'].str.contains(r"Grade.[345678]", regex=True), 'Category'].to_list()
     school_grades = [i.split('|')[0] for i in school_grades]
     school_grades = list(set(school_grades))

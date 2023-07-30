@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Information #
 #########################################
 # author:   jbetley
-# version:  1.07
-# date:     07/25/23
+# version:  1.08
+# date:     08/01/23
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -265,20 +265,15 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
                 all_proficiency_data = school_k8_proficiency_data.copy()
                 
-                proficiency_rating = [
-                    "Below Proficiency",
-                    "Approaching Proficiency",
-                    "At Proficiency",
-                    "Above Proficiency"
-                ]
+                proficiency_rating = ["Below Proficiency", "Approaching Proficiency", "At Proficiency", "Above Proficiency"]
 
                 # NOTE: This may seem kludgy, but runs consistently around .15s
                 # for each category, create a proficiency_columns list of columns using the strings in
                 # "proficiency_rating" and then divide each column by "Total Tested"
                 categories = grades_all + ethnicity + subgroup
 
-                # create dataframe to hold annotations (Categories missing data)
-                # Annotations are currently not used
+                # create dataframe to hold annotations (categories & missing data)
+                # NOTE: Annotations are currently not used
                 annotations = pd.DataFrame(columns= ["Category","Total Tested","Status"])
 
                 for c in categories:
@@ -491,7 +486,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             k8_subgroup_ela_fig = {}
             k8_subgroup_math_fig = {}
 
-        # NOTE: There is a special exception here for Christel House South - prior to 2021,
+        # NOTE: There is a special exception for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
         # Christel House Watanabe Manual HS
         if (selected_school_type == "HS" or selected_school_type == "AHS" or selected_school_type == "K12"
@@ -511,13 +506,9 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
                 all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, selected_year_string, school)
 
-                # Graduation Rate
-                grad_overview_categories = [
-                    "Total",
-                    "Non Waiver",
-                    "State Average"
-                    # "Strength of Diploma",    # Not currently displayed
-                ]
+            # Graduation Rate Tables
+                grad_overview_categories = ["Total", "Non Waiver", "State Average"] # "Strength of Diploma" (not currently displayed)
+
 
                 if selected_school_type == "AHS":
                     grad_overview_categories.append("CCR Percentage")
@@ -562,7 +553,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 else:
                     hs_grad_subgroup_table = no_data_table("Graduation Rate by Subgroup")
 
-                # SAT Benchmark Tables
+            # SAT Benchmark Tables
                 sat_table_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Benchmark %")].copy()
 
                 # drop "Graduation Rate" from all "Category" rows and remove whitespace
@@ -610,8 +601,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
     # Growth Tab #
 
-        # if "Growth" Tab is selected, set all proficiency tables to null
-        # and containers to display: none
+        # set all proficiency tables to null and containers to display: none
         hs_grad_overview_table = {}
         hs_grad_ethnicity_table = {}
         hs_grad_subgroup_table = {}
@@ -646,12 +636,14 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         # test. IDOE uses "Majority Enrolled" for their calculations
 
         # Percentage of students achieving “typical” or “high” growth on the state assessment in ELA/Math
+        # NOTE: Typical/high designations are no longer used.
+
         # Median SGP of students achieving "adequate and sufficient growth" on the state assessment in ELA/Math
 
-            # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
-            # group by Year, Subject and Grade Level?
-            # Also: Ethnicity, Socio Economic Status Category, English Learner Status Category, Special Ed Status Category
-            # Homeless Status Category, High Ability Status Category    
+        # Data shown:
+        # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
+        # Group by Year, Subject and Grade Level,  Ethnicity, Socio Economic Status Category, English Learner Status Category, Special Ed Status Category
+        # Also avaiable: Homeless Status Category, High Ability Status Category    
 
         # dataset is all students who are coded as "Majority Enrolled" at the school
         all_growth_data = get_growth_data(school)
@@ -667,8 +659,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             growth_values_table = [html.Img(src="assets/growth_table.jpg", hidden=False)]
             growth_values_table_container = {"display": "block"}
 
-            # NOTE: This calculates the student difference
-            # find the difference between the count of Majority Enrolled and 162-Day students by Year
+            # NOTE: This calculates the difference between the count of Majority Enrolled and 162-Day students by Year
             # counts_growth = growth_data.groupby("Test Year")["Test Year"].count().reset_index(name = "Count (Majority Enrolled)")
             # counts_growth_162 = growth_data_162.groupby("Test Year")["Test Year"].count().reset_index(name = "Count (162 Days)")
 
@@ -754,7 +745,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
             table_subgroup_growth_math_container = set_table_layout(table_subgroup_growth_math, table_subgroup_sgp_math, table_data_subgroup_growth.columns)
 
-        ## Figures
+        ## Growth figures
 
             # Growth by Grade (Both ME and 162)
             growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
@@ -821,7 +812,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             sgp_data_162_subgroup_math.columns = sgp_data_162_subgroup_math.columns.str.split("_").str[1]
             sgp_data_me_subgroup_ela.columns = sgp_data_me_subgroup_ela.columns.str.split("_").str[1]
             sgp_data_me_subgroup_math.columns = sgp_data_me_subgroup_math.columns.str.split("_").str[1]
-            
+
+
             label_grade_growth_ela="Percentage of Students Achieving Adequate Growth in ELA by Grade"
             fig_grade_growth_ela = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, label_grade_growth_ela)
 
@@ -885,14 +877,15 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             state_growth_main_container = {"display": "none"}
             state_growth_empty_container = {"display": "block"}
 
-            # TODO: Do we want to limit to median SGP for those students achieving "Adequate Growth"?
-            # # median SGP for students achieving "Adequate Growth" grouped by Year, Grade, and Subject
+            # NOTE: Currently showing median SGP for all students, the following code would give us for students
+            # achieving adequate growth. What is the value of using this metric instead?
             # adequate_growth_data = growth_data[growth_data["ILEARNGrowth Level"] == "Adequate Growth"]
             # median_sgp_adequate = adequate_growth_data.groupby(["Test Year","Grade Level", "Subject"])["ILEARNGrowth Percentile"].median()
             # adequate_growth_data_162 = growth_data_162[growth_data_162["ILEARNGrowth Level"] == "Adequate Growth"]
             # median_sgp_adequate_162 = adequate_growth_data_162.groupby(["Test Year","Grade Level", "Subject"])["ILEARNGrowth Percentile"].median()
 
         # Federal Growth #
+        # NOTE: Do we want to display this at all?
 
         # NOTE: Currently have a single year of growth data (2022). Therefore unless
         # the selected year is 2022, we show an empty table.
@@ -1196,7 +1189,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             federal_growth_main_container = {"display": "none"}
             federal_growth_empty_container = {"display": "block"}
     else:
-        # this should only trigger if radio_value somehow gets broken
+        # this should only trigger if radio_value is somehow anything other than proficiency or growth
 
         # growth
         table_grades_growth_ela_container = {}
@@ -1264,7 +1257,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
 
-    # Add notes string based on school type
+    # table notes
     if radio_value == "proficiency":
         if selected_school_type == "AHS":
             academic_information_notes_string = "Adult High Schools enroll students who are over the age of 18, under credited, \

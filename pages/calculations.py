@@ -10,6 +10,15 @@ import numpy as np
 from typing import Tuple
 import scipy.spatial as spatial
 
+def conditional_fill(data: pd.DataFrame) -> pd.DataFrame:
+    fill_with_na = [i for i in data.columns if 'Rate' in i]
+    data[fill_with_na] = data[fill_with_na].fillna(value="N/A")
+
+    fill_with_no_data = [i for i in data.columns if 'Rate' not in i]
+    data[fill_with_no_data] = data[fill_with_no_data].fillna(value="No Data")
+
+    return data
+
 def calculate_percentage(numerator: str, denominator: str) -> float|None|str:
     """
     Calculates a percentage given a numerator and a denominator, while account for two
