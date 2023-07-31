@@ -18,7 +18,8 @@ from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
         calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
         calculate_adult_high_school_metrics, filter_high_school_academic_data, get_excluded_years, \
-        get_adult_high_school_metric_data
+        get_adult_high_school_metric_data, get_k8_corporation_academic_data, process_k8_corp_academic_data
+
 from .load_db import get_school_index, get_k8_school_academic_data, get_high_school_academic_data, \
     get_hs_corporation_academic_data
 from .calculations import conditional_fill
@@ -266,7 +267,15 @@ def update_academic_metrics(school: str, year: str):
                 clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, school)
 
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
-                combined_delta = calculate_k8_comparison_metrics(clean_school_data, selected_year_string, school)
+
+                raw_corp_data = get_k8_corporation_academic_data(school)
+
+                corp_name = raw_corp_data["Corporation Name"].values[0]
+
+                clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
+
+                # combined_delta = calculate_k8_comparison_metrics(clean_school_data, selected_year_string, school)
+                combined_delta = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, selected_year_numeric)
 
                 category = ethnicity + subgroup
 

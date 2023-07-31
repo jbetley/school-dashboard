@@ -15,6 +15,7 @@ import itertools
 from .load_db import get_current_year, get_school_index, get_k8_school_academic_data, get_demographic_data, \
     get_high_school_academic_data, get_k8_corporation_academic_data, get_graduation_data, \
         get_hs_corporation_academic_data, get_letter_grades, get_adult_high_school_metric_data
+# from .load_data import 
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating, recalculate_total_proficiency
 
@@ -335,12 +336,6 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         
         print(f'Time to coerce using update : ' + str(time.process_time() - t4))
         
-        # Filter and clean the dataframe     
-        # data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
-        
-        # Drop 'ELA and Math'
-        # data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]].copy()
-
         # Drop all columns for a Category if the value of 'Total Tested' for that Category is '0'
         # This method works even if data is inconsistent, e.g., where no data could be (and is)
         # alternately represented by NULL, None, or '0'
@@ -358,37 +353,6 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         drop_all = [i for sub_list in drop_columns for i in sub_list]
 
         data = data.drop(drop_all, axis=1).copy()
-
-        # print(data.T)
-        # def recalculate_total_proficiency(data: pd.DataFrame) -> pd.DataFrame:
-        #     adjusted_total_math_proficient = data.filter(regex=r"Grade.+?Math Total Proficient")
-        #     adjusted_total_math_tested = data.filter(regex=r"Grade.+?Math Total Tested")
-
-        #     data["School Total|Math Proficient %"] = adjusted_total_math_proficient.sum(axis=1) \
-        #         / adjusted_total_math_tested.sum(axis=1)
-
-        #     adjusted_total_ela_proficient = data.filter(regex=r"Grade.+?ELA Total Proficient")
-        #     adjusted_total_ela_tested = data.filter(regex=r"Grade.+?ELA Total Tested")
-        #     data["School Total|ELA Proficient %"] = adjusted_total_ela_proficient.sum(axis=1) \
-        #         / adjusted_total_ela_tested.sum(axis=1)
-        
-        #     return data
-        
-        # if data_geo_code == school_geo_code:
-
-        #     data = recalculate_total_proficiency(data)
-
-            # adjusted_total_math_proficient = data.filter(regex=r"Grade.+?Math Total Proficient")
-            # adjusted_total_math_tested = data.filter(regex=r"Grade.+?Math Total Tested")
-
-            # data["School Total|Math Proficient %"] = adjusted_total_math_proficient.sum(axis=1) \
-            #     / adjusted_total_math_tested.sum(axis=1)
-
-            # adjusted_total_ela_proficient = data.filter(regex=r"Grade.+?ELA Total Proficient")
-            # adjusted_total_ela_tested = data.filter(regex=r"Grade.+?ELA Total Tested")
-            # data["School Total|ELA Proficient %"] = adjusted_total_ela_proficient.sum(axis=1) \
-            #     / adjusted_total_ela_tested.sum(axis=1)
-
 
         data = calculate_proficiency(data)
 
@@ -430,7 +394,6 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
     
     else:
 
-# TODO: Add Masking Step? It is in comparison data, do we need it elsewhere? Prob not
         corp_info = corp_data[["Corporation Name"]].copy()
 
         # Filter and clean the dataframe
@@ -973,7 +936,7 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def new_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.DataFrame, year: str) -> pd.DataFrame:
+def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.DataFrame, year: str) -> pd.DataFrame:
 
     excluded_years = get_excluded_years(year)
 
@@ -982,7 +945,7 @@ def new_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.DataFrame
 
     school_data.columns = school_data.columns.astype(str)
     corp_data.columns = corp_data.columns.astype(str)
-    
+
     category_list = school_data['Category'].tolist() + ['Year']
     
     # keep only corp Category rows that match school Category rows
@@ -990,8 +953,7 @@ def new_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.DataFrame
 
     # TODO: ADD MALE/FEMALE TO CORP_k8 file
     # TODO: UNTIL THEN, NEED TO REMOVE IT FROM SCHOOL FILE OR THROWS OFF CALCULATIONS
-    # TODO: DO WE NEED LOW GRADE HIGH GRADE IN SCHOOL FILE?
-    school_data = school_data[school_data["Category"].str.contains("Female|Male") == False]
+    school_data = school_data[school_data["Category"].str.contains("Female|Male|Low|High") == False]
 
     # reverse order of corp_data columns (ignoring 'Category') so current year is first and
     # get clean list of years
@@ -1054,150 +1016,146 @@ def new_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.DataFrame
 
     return final_k8_academic_data
 
-# TODO: REWORK USING NEW ONE
-def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school: str) -> pd.DataFrame:
+# def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school: str) -> pd.DataFrame:
 
-    # TODO: Instead of passing school_data, should we just recalculate it?
-    # TODO: will change error handling if the initial check as to whether there is data or not is in function
-    # TODO: Whichever way is faster, make sure both hs/ahs and k8 are the same
-    excluded_years = get_excluded_years(year)
+#     excluded_years = get_excluded_years(year)
 
-    # this function is only called here
-    all_corporation_data = get_k8_corporation_academic_data(school)
+#     # this function is only called here
+#     all_corporation_data = get_k8_corporation_academic_data(school)
     
-    corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)].copy()
+#     corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)].copy()
 
-    school_data.columns = school_data.columns.astype(str)
-    corporation_data.columns = corporation_data.columns.astype(str)
+#     school_data.columns = school_data.columns.astype(str)
+#     corporation_data.columns = corporation_data.columns.astype(str)
 
-    for col in school_data:
-        school_data[col] = pd.to_numeric(school_data[col], errors='coerce').fillna(school_data[col])
+#     for col in school_data:
+#         school_data[col] = pd.to_numeric(school_data[col], errors='coerce').fillna(school_data[col])
 
-    # do not want to retain strings ('***') for corporation_data
-    for col in corporation_data:
-        corporation_data[col] = pd.to_numeric(corporation_data[col], errors='coerce')       
+#     # do not want to retain strings ('***') for corporation_data
+#     for col in corporation_data:
+#         corporation_data[col] = pd.to_numeric(corporation_data[col], errors='coerce')       
 
-    # reset index as 'Year' for corp_rate data
-    corporation_data = corporation_data.set_index("Year")
+#     # reset index as 'Year' for corp_rate data
+#     corporation_data = corporation_data.set_index("Year")
 
-    # iterate over (non missing) columns, calculate the average,
-    # and store in a new column
-    corporation_data = calculate_proficiency(corporation_data)
+#     # iterate over (non missing) columns, calculate the average,
+#     # and store in a new column
+#     corporation_data = calculate_proficiency(corporation_data)
 
-    # Drop 'ELA and Math'
-    # corporation_data = corporation_data[corporation_data.columns[~corporation_data.columns.str.contains(r'ELA and Math')]]
+#     # Drop 'ELA and Math'
+#     # corporation_data = corporation_data[corporation_data.columns[~corporation_data.columns.str.contains(r'ELA and Math')]]
 
-    # Corporation 'School Total' is calculates using all grades. We need to recalculate it using only the
-    # grades that are served by the school - this is messy because we need Total Proficient/Total Tested
-    # for both ELA and Math for all matching grades and those specific columns do not exist in the school df
-    school_data2 = school_data.copy()
+#     # Corporation 'School Total' is calculates using all grades. We need to recalculate it using only the
+#     # grades that are served by the school - this is messy because we need Total Proficient/Total Tested
+#     # for both ELA and Math for all matching grades and those specific columns do not exist in the school df
+#     school_data2 = school_data.copy()
 
-    school_data2
-    t16 = time.process_time()
-# TODO: This is used elsewhere. TEST which algo is faster. This one or 491 in Academic Analysi and 377 in this script
-    school_grades = school_data.loc[school_data['Category'].str.contains(r"Grade.[345678]", regex=True), 'Category'].to_list()
-    school_grades = [i.split('|')[0] for i in school_grades]
-    school_grades = list(set(school_grades))
+#     school_data2
+#     t16 = time.process_time()
+# # TODO: This is used elsewhere. TEST which algo is faster. This one or 491 in Academic Analysi and 377 in this script
+#     school_grades = school_data.loc[school_data['Category'].str.contains(r"Grade.[345678]", regex=True), 'Category'].to_list()
+#     school_grades = [i.split('|')[0] for i in school_grades]
+#     school_grades = list(set(school_grades))
 
-    math_prof = [e + '|Math Total Proficient' for e in school_grades]
-    math_test = [e + '|Math Total Tested' for e in school_grades]
-    ela_prof = [e + '|ELA Total Proficient' for e in school_grades]
-    ela_test = [e + '|ELA Total Tested' for e in school_grades]
+#     math_prof = [e + '|Math Total Proficient' for e in school_grades]
+#     math_test = [e + '|Math Total Tested' for e in school_grades]
+#     ela_prof = [e + '|ELA Total Proficient' for e in school_grades]
+#     ela_test = [e + '|ELA Total Tested' for e in school_grades]
 
-    adj_corp_math_prof = corporation_data[corporation_data.columns.intersection(math_prof)]
-    adj_corp_math_test = corporation_data[corporation_data.columns.intersection(math_test)]
-    adj_corp_ela_prof = corporation_data[corporation_data.columns.intersection(ela_prof)]
-    adj_corp_ela_tst = corporation_data[corporation_data.columns.intersection(ela_test)]
+#     adj_corp_math_prof = corporation_data[corporation_data.columns.intersection(math_prof)]
+#     adj_corp_math_test = corporation_data[corporation_data.columns.intersection(math_test)]
+#     adj_corp_ela_prof = corporation_data[corporation_data.columns.intersection(ela_prof)]
+#     adj_corp_ela_tst = corporation_data[corporation_data.columns.intersection(ela_test)]
 
-    corporation_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
-    corporation_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
+#     corporation_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
+#     corporation_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
 
-    print(f"NEW way Total Calc: " + str(time.process_time() - t16))
-    column_list = school_data['Category'].tolist() + ['Year']
+#     print(f"NEW way Total Calc: " + str(time.process_time() - t16))
+#     column_list = school_data['Category'].tolist() + ['Year']
         
-    # calculate IREAD Pass %
-    if "IREAD Pass %" in column_list:
+#     # calculate IREAD Pass %
+#     if "IREAD Pass %" in column_list:
         
-        corporation_data["IREAD Pass %"] = (corporation_data["IREAD Pass N"] / corporation_data["IREAD Test N"])
+#         corporation_data["IREAD Pass %"] = (corporation_data["IREAD Pass N"] / corporation_data["IREAD Test N"])
 
-    # no drop because index was previous set to year
-    corporation_data = corporation_data.reset_index()
+#     # no drop because index was previous set to year
+#     corporation_data = corporation_data.reset_index()
 
-    # ensure columns headers are strings
-    corporation_data.columns = corporation_data.columns.astype(str)
+#     # ensure columns headers are strings
+#     corporation_data.columns = corporation_data.columns.astype(str)
     
-    # keep only corp columns that match school_columns
-    corporation_data = corporation_data[corporation_data.columns.intersection(column_list)]
+#     # keep only corp columns that match school_columns
+#     corporation_data = corporation_data[corporation_data.columns.intersection(column_list)]
 
-    # TODO: ADD MALE/FEMALE TO CORP_k8 file
-    # TODO: UNTIL THEN, NEED TO REMOVE IT FROM SCHOOL FILE OR THROWS OFF CALCULATIONS
-    # TODO: DO WE NEED LOW GRADE HIGH GRADE IN SCHOOL FILE?
-    school_data = school_data[school_data["Category"].str.contains("Female|Male") == False]
+#     # TODO: ADD MALE/FEMALE TO CORP_k8 file
+#     # TODO: UNTIL THEN, NEED TO REMOVE IT FROM SCHOOL FILE OR THROWS OFF CALCULATIONS
+#     # TODO: DO WE NEED LOW GRADE HIGH GRADE IN SCHOOL FILE?
+#     school_data = school_data[school_data["Category"].str.contains("Female|Male") == False]
 
-    corporation_data = corporation_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",axis=1)
+#     corporation_data = corporation_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",axis=1)
 
-    corporation_data = (corporation_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+#     corporation_data = (corporation_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
-    # reverse order of corp_data columns (ignoring 'Category') so current year is first and
-    # get clean list of years
-    k8_year_cols = list(school_data.columns[:0:-1])
-    k8_year_cols.reverse()
+#     # reverse order of corp_data columns (ignoring 'Category') so current year is first and
+#     # get clean list of years
+#     k8_year_cols = list(school_data.columns[:0:-1])
+#     k8_year_cols.reverse()
 
-    # add_suffix is applied to entire df. To hide columns we dont want
-    # renamed, set it as index and reset back after renaming.
-    corporation_data = (corporation_data.set_index(["Category"]).add_suffix("Corp Proficiency").reset_index())
-    school_data = (school_data.set_index(["Category"]).add_suffix("School").reset_index())
+#     # add_suffix is applied to entire df. To hide columns we dont want
+#     # renamed, set it as index and reset back after renaming.
+#     corporation_data = (corporation_data.set_index(["Category"]).add_suffix("Corp Proficiency").reset_index())
+#     school_data = (school_data.set_index(["Category"]).add_suffix("School").reset_index())
 
-    school_cols = list(school_data.columns[:0:-1])
-    school_cols.reverse()
+#     school_cols = list(school_data.columns[:0:-1])
+#     school_cols.reverse()
 
-    corp_cols = list(corporation_data.columns[:0:-1])
-    corp_cols.reverse()
+#     corp_cols = list(corporation_data.columns[:0:-1])
+#     corp_cols.reverse()
 
-    result_cols = [str(s) + "+/-" for s in k8_year_cols]
+#     result_cols = [str(s) + "+/-" for s in k8_year_cols]
 
-    final_cols = list(itertools.chain(*zip(school_cols, corp_cols, result_cols)))
+#     final_cols = list(itertools.chain(*zip(school_cols, corp_cols, result_cols)))
 
-    final_cols.insert(0, "Category")
+#     final_cols.insert(0, "Category")
 
-    merged_cols = [val for pair in zip(school_cols, corp_cols) for val in pair]
-    merged_cols.insert(0, "Category")
+#     merged_cols = [val for pair in zip(school_cols, corp_cols) for val in pair]
+#     merged_cols.insert(0, "Category")
 
-    merged_data = school_data.merge(corporation_data, on="Category", how="left")
-    merged_data = merged_data[merged_cols]
+#     merged_data = school_data.merge(corporation_data, on="Category", how="left")
+#     merged_data = merged_data[merged_cols]
 
-    tmp_category = school_data["Category"]
-    school_data = school_data.drop("Category", axis=1)
-    corporation_data = corporation_data.drop("Category", axis=1)
+#     tmp_category = school_data["Category"]
+#     school_data = school_data.drop("Category", axis=1)
+#     corporation_data = corporation_data.drop("Category", axis=1)
 
-    k8_result = pd.DataFrame()
+#     k8_result = pd.DataFrame()
 
-    for c in school_data.columns:
-        c = c[0:4]  # keeps only YYYY part of string
-        k8_result[c + "+/-"] = calculate_difference(
-            school_data[c + "School"], corporation_data[c + "Corp Proficiency"]
-        )
+#     for c in school_data.columns:
+#         c = c[0:4]  # keeps only YYYY part of string
+#         k8_result[c + "+/-"] = calculate_difference(
+#             school_data[c + "School"], corporation_data[c + "Corp Proficiency"]
+#         )
 
-    # add headers
-    k8_result = k8_result.set_axis(result_cols, axis=1)
-    k8_result.insert(loc=0, column="Category", value=tmp_category)
+#     # add headers
+#     k8_result = k8_result.set_axis(result_cols, axis=1)
+#     k8_result.insert(loc=0, column="Category", value=tmp_category)
 
-    # combined merged (school and corp) and result dataframes and reorder
-    # (according to result columns)
-    final_k8_academic_data = merged_data.merge(k8_result, on="Category", how="left")
+#     # combined merged (school and corp) and result dataframes and reorder
+#     # (according to result columns)
+#     final_k8_academic_data = merged_data.merge(k8_result, on="Category", how="left")
 
-    final_k8_academic_data = final_k8_academic_data[final_cols]
+#     final_k8_academic_data = final_k8_academic_data[final_cols]
 
-    # NOTE: Pretty sure this is redundant as we add 'Proficient %; suffix to totals
-    # above, then remove it here, then pass to academic_analysis page, and add it
-    # back. But I tried to fix it once and broke everything. So I'm just gonna
-    # leave it alone for now.
-    final_k8_academic_data["Category"] = (final_k8_academic_data["Category"].str.replace(" Proficient %", "").str.strip())
+#     # NOTE: Pretty sure this is redundant as we add 'Proficient %; suffix to totals
+#     # above, then remove it here, then pass to academic_analysis page, and add it
+#     # back. But I tried to fix it once and broke everything. So I'm just gonna
+#     # leave it alone for now.
+#     final_k8_academic_data["Category"] = (final_k8_academic_data["Category"].str.replace(" Proficient %", "").str.strip())
 
-    # rename IREAD Category
-    final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
+#     # rename IREAD Category
+#     final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
 
-    return final_k8_academic_data
+#     return final_k8_academic_data
 
 def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
 

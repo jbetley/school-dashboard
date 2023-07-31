@@ -2,8 +2,8 @@
 # ICSB Dashboard - Calculation Functions #
 ##########################################
 # author:   jbetley
-# version:  1.07
-# date:     07/10/23
+# version:  1.08
+# date:     08/01/23
 
 import pandas as pd
 import numpy as np
@@ -11,6 +11,15 @@ from typing import Tuple
 import scipy.spatial as spatial
 
 def conditional_fill(data: pd.DataFrame) -> pd.DataFrame:
+    """fillna, but conditional
+
+    Args:
+        data (pd.DataFrame): academic data dataframe
+
+    Returns:
+        pd.DataFrame: the same dataframe with the na's filled
+    """
+
     fill_with_na = [i for i in data.columns if 'Rate' in i]
     data[fill_with_na] = data[fill_with_na].fillna(value="N/A")
 
@@ -20,6 +29,20 @@ def conditional_fill(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
+    """
+        In order for an apples to apples comparison between aggregated school corporation academic
+        data and the academic data of the selected school, we need to recalculate Total School
+        Proficiency for both Math and ELA using only the grade levels for which we have school
+        data.
+
+    Args:
+        corp_data (pd.DataFrame):   aggregated academic data for the school corporation in which
+                                    the school is located
+        school_data (pd.DataFrame): school academic data
+
+    Returns:
+        pd.DataFrame: the corp_data dataframe after Total Proficiency is recalculated
+    """
 
     school_grades = school_data.loc[school_data['Category'].str.contains(r"Grade.[345678]", regex=True), 'Category'].to_list()
     school_grades = [i.split('|')[0] for i in school_grades]
@@ -42,7 +65,7 @@ def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataF
     
 def calculate_percentage(numerator: str, denominator: str) -> float|None|str:
     """
-    Calculates a percentage given a numerator and a denominator, while account for two
+    Calculates a percentage given a numerator and a denominator, while accounting for two
     special case: a string representing insufficent n-size ('***') and certain conditions
     where a '0' value has a different result. The function does the following:
         1) When either the numerator or the denominator is equal to '***', the function returns '****'
@@ -95,9 +118,7 @@ def calculate_difference(value1: str, value2: str) -> float|None|str:
         ),
     )
 
-
-# TODO: Confirm types
-def calculate_year_over_year(current_year: str|float, previous_year: str|float) -> str|float|None:
+def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) -> np.ndarray:
     """
     Calculates year_over_year differences, accounting for string representation ('***')
     of insufficent n-size (there is available data, but not enough of it to show under privacy laws).
@@ -113,11 +134,11 @@ def calculate_year_over_year(current_year: str|float, previous_year: str|float) 
         if first value = 0 and second value is NaN -> -***
 
     Args:
-        current_year (float|str): current year value
-        previous_year (float|str): previous year value
+        current_year (pd.Series): a series of current year values for all categories
+        previous_year (pd.Series): a series of previous year values for all categories
 
     Returns:
-        float|str: Either the differnece between the current and previous year values, None, 
+        np.ndarray: Either the difference between the current and previous year values, None, 
         or a string ('***')
     """
     return np.where(
@@ -134,7 +155,7 @@ def calculate_year_over_year(current_year: str|float, previous_year: str|float) 
             ),
         ),
     )
-    
+
 def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str:
     """
     Takes a value (which may be of type str, float, or None), a list (consisting of
@@ -219,23 +240,24 @@ def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str
 
     return indicator
 
-def round_nearest(df: pd.DataFrame, step: int) -> int:
-    """ Determine a tick value for a plotly chart based on the maximum value in a
+def round_nearest(data: pd.DataFrame, step: int) -> int:
+    """
+    Determine a tick value for a plotly chart based on the maximum value in a
     dataframe. The function divides the max valus by an arbitrarily determined 'step' value
     (which can be adjusted to increase/decrease of ticks). It then:
         a. sets a baseline tick amount (50,000 or 500,000) based on the proportionate value
         b. and then calculates a multipler that is the result of proportionate value
             divided by the baseline tick amount
+    NOTE: Currently only used in finacial_analysis.py
 
     Args:
-        df (pd.DataFrame): pandas dataframe
+        data (pd.DataFrame): pandas dataframe
         step (int): the 'number' of ticks we ultimately want
     
     Returns:
-        int: an integer representing the tick amount
+        int: an integer representing the value of each tick
     """
-    
-    max_val = df.melt().value.max()
+    max_val = data.melt().value.max()
     
     x = max_val / step
     if x > 1000000:
@@ -246,7 +268,7 @@ def round_nearest(df: pd.DataFrame, step: int) -> int:
     rnd = round(float(x)/num)
     multiplier = 1 if rnd < 1 else rnd
     tick = int(multiplier*num)
-
+    print(tick)
     return tick
     
 def round_percentages(percentages: list) -> list:
@@ -263,7 +285,7 @@ def round_percentages(percentages: list) -> list:
         percentages (list): a list of floats
 
     Returns:
-        list: a list of integers
+        list: a list of integers, rounded to whole numbers, adding up to 100
     """
 
     # if numbers are in decimal format (e.g. .57, .90) then the sum
@@ -302,13 +324,13 @@ def round_percentages(percentages: list) -> list:
 def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     """
     Takes a dataframe, finds the Years where all values are '***', nan, or none
-    and turns the results into a single string of the year(s)
+    and turns the results into a single string listing the year(s) meeting the condition
 
     Args:
         data (pd.DataFrame): dataframe of academic proficiency values
 
     Returns:
-        string: a single string of all years of missing data. and a dataframe where the years of missing
+        data (pd.DataFrame) & string (str): a single string of all years of missing data.\ and a dataframe where the years of missing
         data (rows) have been dropped.
     """
     # Identify and drop rows with no or insufficient data ('***' or NaN/None)
@@ -339,23 +361,20 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
 
     return data, string
 
-# Take a dataframe, find the Categories and Years  where there are '***' (insufficient n-size) values,
-# and turn the results into a single string, grouped by year, where duplicates have one or more years
-# in parenthesis. E.g., 'White (2021, 2022); Hispanic, Multiracial (2019)'
-# NOTE: This turned out to be complicated. The below solution seems overly convoluted, but works. Felt
-# cute, may refactor later.
 def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
     """
     Takes a dataframe, finds the Categories and Years where the value is equal
     to '***'(insufficient n-size), and turns the results into a single string,
     grouped by year, where duplicates have one or more years in parenthesis.
     E.g., 'White (2021, 2022); Hispanic, Multiracial (2019)'
+    NOTE: This turned out to be more complicated that I thought. The below solution
+    seems overly convoluted, but works. Felt cute, may refactor later.
 
     Args:
         data(pd.DataFrame): dataframe of academic proficiency values
 
     Returns:
-        string: A single string listing all years (rows) for which there is insufficient data
+        string (str): A single string listing all years (rows) for which there is insufficient data
     """
 
     #  returns the indices of elements in a tuple of arrays where the condition is satisfied
@@ -427,8 +446,10 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray|np.ndar
         data (pd.DataFrame): a dataframe of schools and their lat/lon coordinates
 
     Returns:
-        np.ndarray: an array of dataframe indexes and an array of distances (in miles)
+        index (np.ndarray) & distance (np.ndarray): an array of dataframe indexes
+        and an array of distances (in miles)
     """
+
     # number of schools to return (add 1 to account for the fact that the selected school
     # is included in the return set) - number needs to be high enough to ensure there are
     # enough left once non-comparable grades are filtered out.
@@ -456,22 +477,21 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray|np.ndar
 
     return index, distance
 
-# Caclulate metrics based on ICSB Accountability System financial framework
-# NOTE: This was refactored (03.01.23) to use vectorized operations. Not sure
-# that the refactored version is easier to comprehend than the previous
-# loop version. it is also longer.
-
 def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
-    """Takes a dataframe of float values and returns the same dataframe with one
+    """
+    Takes a dataframe of float values and returns the same dataframe with one
     extra 'Rating' column for each year of data. Ratings are calculated based
-    on specific thresholds and return either: MS, DNMS, or N/A (or null) 
+    on specific thresholds according to ICSB Accountability System (MS, DNMS, or N/A (or null)) 
+    NOTE: This was refactored (03.01.23) to use vectorized operations. Not sure
+    that the refactored version is easier to comprehend than the previous
+    loop version. it is also longer.
 
     Args:
         data (pd.DataFrame): a DataFrame object with a Category column and a variable
         number of year columns.
 
     Returns:
-        pd.DataFrame: a DataFrame object with additional columns
+        final_grid (pd.DataFrame): a DataFrame object with additional 'Rating' columns
     """
 
     # Some schools have 'pre-opening' financial activity before the school
@@ -516,7 +536,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         def ratio_metric_calc(cur,diff):
             return 'MS' if ((cur > 1.1) | ((cur > 1) & (diff == True))) else 'DNMS'
         
-        # NOTE: The vectorized way to run calculations between different rows of the
+        # The vectorized way to run calculations between different rows of the
         # same column is to shift a copy of the column either up or down using
         # shift. Shift(-1) moves the column up one row. Shift(1) moves the column
         # down one row. In some cases, this causes the calculated value to be offset by

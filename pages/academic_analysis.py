@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Analysis #
 ######################################
 # author:   jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.08
+# date:     08/01/23
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -19,7 +19,7 @@ from .table_helpers import create_comparison_table, no_data_page, no_data_table,
     process_chart_data, process_table_data, create_school_label, create_chart_label
 from .subnav import subnav_academic
 from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_excluded_years, \
-   process_k8_academic_data, new_k8_comparison_metrics, calculate_proficiency, process_k8_corp_academic_data
+   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency, process_k8_corp_academic_data
 from .load_db import get_k8_school_academic_data, get_school_index, get_school_coordinates, \
     get_comparable_schools, get_k8_corporation_academic_data
 
@@ -306,14 +306,13 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         
         t2 = time.process_time()
 
-# TODO: IREAD DATA NOT PROCESSING?
         raw_corp_data = get_k8_corporation_academic_data(school)
 
         corp_name = raw_corp_data["Corporation Name"].values[0]
 
         clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
         
-        raw_comparison_data = new_k8_comparison_metrics(clean_school_data, clean_corp_data, numeric_year)
+        raw_comparison_data = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, numeric_year)
 
         print(f"Time to process comparison metrics: " + str(time.process_time() - t2))        
         
@@ -343,35 +342,21 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
         else:
            
-            # Display selected school's year over year data
+        ## Year over Year data ##
 
             # keep only columns with "Category" or "School" in name
             school_academic_data = raw_comparison_data[[col for col in raw_comparison_data.columns if "School" in col or "Category" in col]].copy()
 
             school_academic_data.columns = school_academic_data.columns.str.replace(r"School$", "", regex=True)
 
-            # school_year_headers = [j for j in school_academic_data.columns if "Category" not in j]
-
-            # keep strings ("***") on conversion to that we can track them later
-            # for col in school_year_headers:
-            #     school_academic_data[col] = pd.to_numeric(school_academic_data[col], errors="coerce").fillna(school_academic_data[col])
-
-            # school_academic_data = school_academic_data.dropna(axis=1, how="all")
-
             # transpose the resulting dataframe (making Categories the column headers)
             display_academic_data = school_academic_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
-
-            # drop any Category where all values are NaN
-            # display_academic_data = display_academic_data.dropna(axis=1, how="all")
 
             # add suffix to certain Categories
             display_academic_data = display_academic_data.rename(columns={c: c + " Proficient %" for c in display_academic_data.columns if c not in ["Year", "School Name","IREAD Proficiency (Grade 3 only)"]})
 
-
-        ## Make Line Charts
-
             t3 = time.process_time()
-            ## Year over Year data
+
             yearly_school_data = display_academic_data.copy()
             yearly_school_data["School Name"] = school_name
 
@@ -431,7 +416,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             print(f"Time to make line charts: " + str(time.process_time() - t3))
 
         ## Comparison data ##
-# TODO: IREAD NOT WORKIGN PROPERLY FOR COMPARISON
+
             current_school_data = display_academic_data.loc[display_academic_data["Year"] == string_year].copy()
 
             # this time we want to force '***' to NaN
@@ -452,9 +437,8 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             t4 = time.process_time()
 
-        # Get processed corp data
-            corp_academic_data = raw_comparison_data[[col for col in raw_comparison_data.columns if "Corp" in col or "Category" in col]].copy()
 
+            corp_academic_data = raw_comparison_data[[col for col in raw_comparison_data.columns if "Corp" in col or "Category" in col]].copy()
             corp_academic_data.columns = corp_academic_data.columns.str.replace(r"Corp Proficiency$", "", regex=True)
 
             # transpose the resulting dataframe (making Categories the column headers)
@@ -462,23 +446,13 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             corp_academic_data = corp_academic_data.rename(columns={c: c + " Proficient %" for c in corp_academic_data.columns if c not in ["Year", "School Name","IREAD Proficiency (Grade 3 only)"]})
 
-            # corp_current_data = corp_academic_data.loc[corp_academic_data["Year"] == numeric_year]
             current_corp_data = corp_academic_data.loc[corp_academic_data["Year"] == string_year].copy()
 
             for col in current_corp_data.columns:
                 current_corp_data[col]=pd.to_numeric(current_corp_data[col], errors="coerce")
 
-            # # Re-transpose the corp df to get the Categories back to column headers
-            # current_corp_data = (
-            #     current_corp_data.set_index("Category")
-            #     .T.rename_axis("Year")
-            #     .rename_axis(None, axis=1)
-            #     .reset_index()
-            # )
-
             print(f"Time to get and process corp data: " + str(time.process_time() - t4))
 
-        # get academic data for comparison schools
             t5 = time.process_time()
 
             comparison_schools_filtered = get_comparable_schools(comparison_school_list, numeric_year)
@@ -494,36 +468,13 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 comparison_schools_filtered[col] = pd.to_numeric(comparison_schools_filtered[col], errors="coerce")
 
             comparison_schools = calculate_proficiency(comparison_schools_filtered)
-
-# # TODO: Redo this in the new way. wherever that is [Load Data] recalculate_proficiency func
-#             t15 = time.process_time()
-#             comp2 = comparison_schools.copy()
             comparison_schools = recalculate_total_proficiency(comparison_schools, clean_school_data)
-
-            # NOTE: The masking step above removes grades from the comparison dataframe that are
-            # not also in the school dataframe (e.g., if school only has data for grades 3, 4, & 5,
-            # only those grades will remain in comparison df). However, the "School Total" for
-            # proficiency in a subject that is in the raw data was calculated using ALL grades.
-            # # So we need to recalculate the "School Total" rate manually to ensure it includes only the included grades.
-            # all_grades_math_proficient_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Proficient")
-            # all_grades_math_tested_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Tested")
-            # comparison_schools["Total|Math Proficient %"] = all_grades_math_proficient_comp.sum(axis=1) / all_grades_math_tested_comp.sum(axis=1)
-
-            # all_grades_ela_proficient_comp = comparison_schools.filter(regex=r"Grade.+?ELA Total Proficient")
-            # all_grades_ela_tested_comp = comparison_schools.filter(regex=r"Grade.+?ELA Total Tested")
-
-            # comparison_schools["Total|ELA Proficient %"] = all_grades_ela_proficient_comp.sum(axis=1) / all_grades_ela_tested_comp.sum(axis=1)
-
-            # print(f"original way Total Calc: " + str(time.process_time() - t15))
-
-            # print(comparison_schools.T)
 
             # calculate IREAD Pass %
             if "IREAD Proficiency (Grade 3 only)" in current_school_data:
                 comparison_schools["IREAD Proficiency (Grade 3 only)"] = comparison_schools["IREAD Pass N"] / comparison_schools["IREAD Test N"]
 
-            # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
-
+            # remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
             comparison_schools = comparison_schools.filter(regex = r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficiency|^Year$",axis=1)
 
             # drop all columns from the comparison dataframe that aren"t in the school dataframe
@@ -606,7 +557,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             fig14c = combine_barchart_and_table(fig14c_chart,fig14c_table)
 
-        #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
+            #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
             category = "School Total|Math Proficient %"
 
             if category in current_school_data.columns:
@@ -661,7 +612,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 # fig_iread_comp_data = comparison_schools[["School Name","Low Grade","High Grade","Distance",category]]
                 
                 fig_iread_all_data = pd.concat([fig_iread_k8_school_data,fig_iread_comp_data])
-                
+
                 # save table data
                 fig_iread_table_data = fig_iread_all_data.copy()
 
@@ -727,8 +678,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 return layout
 
             t7 = time.process_time()
-# TODO: Why not process all categories for school, comparison schools, and corp at once and then just slice them
+
+# TODO: Could we process all categories for school, comparison schools, and corp at once and then just slice them
 # TODO: up instead of running the process_chart_data function over and over again on the same dataframes?
+
             # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
             headers_16a1 = []
             for e in ethnicity:
@@ -752,7 +705,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 fig16a1 = combine_group_barchart_and_table(fig16a1_chart,fig16a1_table,fig16a1_category_string,fig16a1_school_string)
                 
                 fig16a1_container = {"display": "block"}
-                dropdown_container={"display": "block"}
+                dropdown_container = {"display": "block"}
             else:
                 fig16a1 = no_data_fig_label("Comparison: ELA Proficiency by Ethnicity", 200)             
                 fig16a1_container = {"display": "none"}
@@ -779,7 +732,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 fig16b1 = combine_group_barchart_and_table(fig16b1_chart,fig16b1_table,fig16b1_category_string,fig16b1_school_string)
 
                 fig16b1_container = {"display": "block"}
-                dropdown_container={"display": "block"}                   
+                dropdown_container = {"display": "block"}                   
             else:
                 fig16b1 = no_data_fig_label("Comparison: Math Proficiency by Ethnicity", 200)
              
@@ -806,7 +759,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 
                 fig16a2 = combine_group_barchart_and_table(fig16a2_chart, fig16a2_table,fig16a2_category_string,fig16a2_school_string)
                 fig16a2_container = {"display": "block"}
-                dropdown_container={"display": "block"}                
+                dropdown_container = {"display": "block"}                
             else:
                 fig16a2 = no_data_fig_label("Comparison: ELA Proficiency by Subgroup", 200)                
                 fig16a2_container = {"display": "none"}
@@ -832,7 +785,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 fig16b2 = combine_group_barchart_and_table(fig16b2_chart, fig16b2_table,fig16b2_category_string,fig16b2_school_string)
                 fig16b2_container = {"display": "block"}
-                dropdown_container={"display": "block"}
+                dropdown_container = {"display": "block"}
             else:
                 fig16b2 = no_data_fig_label("Comparison: Math Proficiency by Subgroup", 200)            
                 fig16b2_container = {"display": "none"}
