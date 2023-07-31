@@ -16,7 +16,7 @@ from .load_db import get_current_year, get_school_index, get_k8_school_academic_
     get_high_school_academic_data, get_k8_corporation_academic_data, get_graduation_data, \
         get_hs_corporation_academic_data, get_letter_grades, get_adult_high_school_metric_data
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
-    set_academic_rating
+    set_academic_rating, recalculate_total_proficiency
 
 pd.set_option('display.max_rows', None)
 
@@ -283,63 +283,64 @@ def calculate_proficiency(values: pd.DataFrame) -> pd.DataFrame:
 ### End Helper Functions ###
 
 ### Dataframe Processing Functions ###
-def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.DataFrame:
+def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
 
-    school_information = get_school_index(school)
+    # school_information = get_school_index(school)
 
-    # use these to determine if data belongs to school or corporation
-    school_geo_code = school_information["GEO Corp"].values[0]
+    # # use these to determine if data belongs to school or corporation
+    # school_geo_code = school_information["GEO Corp"].values[0]
 
     # Ensure geo_code is always at index 0
     data = data.reset_index(drop = True)
 
-    data_geo_code = data['Corporation ID'][0]
+    # data_geo_code = data['Corporation ID'][0]
 
     # school data has School Name column, corp data does not
     if len(data.index) != 0:
 
         # it is 'corp' data where the value of 'Corporation ID' in the df is equal
         # to the value of the school's 'GEO Corp'.
-        if data_geo_code == school_geo_code:
-            school_info = data[["Corporation Name"]].copy()
-
-            # Filter and clean the dataframe
-            data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
-
-            # Drop 'ELA and Math'
-            data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]].copy()
-
-            # corporation data: coerce strings ('***' and '^') to NaN (for
-            # both masking and groupby.sum() purposes)
-            for col in data.columns:
-                data[col] = pd.to_numeric(data[col], errors='coerce')
-       
-        else:
-       
-            school_info = data[['School Name','Low Grade','High Grade']].copy()
-
-            # school data: coerce, but keep strings ('***' and '^')
-
-            data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+        # if data_geo_code == school_geo_code:
             
-            # Drop 'ELA and Math'
-            data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]]
-            
-            t4 = time.process_time()
 
-            # NOTE: update is twice as fast as fillna?? (.35s vs .6s)
-            # for col in data.columns:
-            #     data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
-            data.update(data.apply(pd.to_numeric, errors='coerce'))
-         
-            print(f'Time to update: ' + str(time.process_time() - t4))
-        
-        # Filter and clean the dataframe
+        #     school_info = data[["Corporation Name"]].copy()
+
+        #     # Filter and clean the dataframe
+        #     data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+
+        #     # Drop 'ELA and Math'
+        #     data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]].copy()
+
+        #     # corporation data: coerce strings ('***' and '^') to NaN (for
+        #     # both masking and groupby.sum() purposes)
+        #     for col in data.columns:
+        #         data[col] = pd.to_numeric(data[col], errors='coerce')
+
+        # else:
+       
+        school_info = data[['School Name','Low Grade','High Grade']].copy()
+
+        # school data: coerce, but keep strings ('***' and '^')
         data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
         
+        data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]]
+        
+        t4 = time.process_time()
+
+        # NOTE: update is twice as fast as fillna?? (.35s vs .6s)
+        # for col in data.columns:
+        #     data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
+
+        data.update(data.apply(pd.to_numeric, errors='coerce'))
+        
+        print(f'Time to coerce using update : ' + str(time.process_time() - t4))
+        
+        # Filter and clean the dataframe     
+        # data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+        
         # Drop 'ELA and Math'
-        data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]].copy()
-      
+        # data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]].copy()
+
         # Drop all columns for a Category if the value of 'Total Tested' for that Category is '0'
         # This method works even if data is inconsistent, e.g., where no data could be (and is)
         # alternately represented by NULL, None, or '0'
@@ -358,9 +359,38 @@ def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.D
 
         data = data.drop(drop_all, axis=1).copy()
 
-        if "School Total|ELA Total Tested" in data.columns:
+        # print(data.T)
+        # def recalculate_total_proficiency(data: pd.DataFrame) -> pd.DataFrame:
+        #     adjusted_total_math_proficient = data.filter(regex=r"Grade.+?Math Total Proficient")
+        #     adjusted_total_math_tested = data.filter(regex=r"Grade.+?Math Total Tested")
 
-            data = calculate_proficiency(data)
+        #     data["School Total|Math Proficient %"] = adjusted_total_math_proficient.sum(axis=1) \
+        #         / adjusted_total_math_tested.sum(axis=1)
+
+        #     adjusted_total_ela_proficient = data.filter(regex=r"Grade.+?ELA Total Proficient")
+        #     adjusted_total_ela_tested = data.filter(regex=r"Grade.+?ELA Total Tested")
+        #     data["School Total|ELA Proficient %"] = adjusted_total_ela_proficient.sum(axis=1) \
+        #         / adjusted_total_ela_tested.sum(axis=1)
+        
+        #     return data
+        
+        # if data_geo_code == school_geo_code:
+
+        #     data = recalculate_total_proficiency(data)
+
+            # adjusted_total_math_proficient = data.filter(regex=r"Grade.+?Math Total Proficient")
+            # adjusted_total_math_tested = data.filter(regex=r"Grade.+?Math Total Tested")
+
+            # data["School Total|Math Proficient %"] = adjusted_total_math_proficient.sum(axis=1) \
+            #     / adjusted_total_math_tested.sum(axis=1)
+
+            # adjusted_total_ela_proficient = data.filter(regex=r"Grade.+?ELA Total Proficient")
+            # adjusted_total_ela_tested = data.filter(regex=r"Grade.+?ELA Total Tested")
+            # data["School Total|ELA Proficient %"] = adjusted_total_ela_proficient.sum(axis=1) \
+            #     / adjusted_total_ela_tested.sum(axis=1)
+
+
+        data = calculate_proficiency(data)
 
         if "IREAD Pass N" in data.columns:
             data["IREAD Pass %"] = pd.to_numeric(data["IREAD Pass N"], errors="coerce") \
@@ -369,21 +399,6 @@ def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.D
             # If either Test or Pass category had a '***' value, the resulting value will be 
             # NaN - we want it to display '***', so we just fillna
             data["IREAD Pass %"] = data["IREAD Pass %"].fillna("***")
-
-        # re-calculate and replace total Math & ELA proficiency values using only the
-        # grades for which the school has data (after the masking step above). This
-        # ensures an apples to apples comparison with traditional school corporations.
-        if data_geo_code == school_geo_code:
-            adjusted_total_math_proficient = data.filter(regex=r"Grade.+?Math Total Proficient")
-            adjusted_total_math_tested = data.filter(regex=r"Grade.+?Math Total Tested")
-
-            data["School Total|Math Proficient %"] = adjusted_total_math_proficient.sum(axis=1) \
-                / adjusted_total_math_tested.sum(axis=1)
-
-            adjusted_total_ela_proficient = data.filter(regex=r"Grade.+?ELA Total Proficient")
-            adjusted_total_ela_tested = data.filter(regex=r"Grade.+?ELA Total Tested")
-            data["School Total|ELA Proficient %"] = adjusted_total_ela_proficient.sum(axis=1) \
-                / adjusted_total_ela_tested.sum(axis=1)
 
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         data = data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$", axis=1)
@@ -406,6 +421,73 @@ def process_k8_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.D
         data = pd.DataFrame()
 
     return data
+
+def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
+
+    if len(corp_data.index) == 0:
+
+        corp_data = pd.DataFrame()
+    
+    else:
+
+# TODO: Add Masking Step? It is in comparison data, do we need it elsewhere? Prob not
+        corp_info = corp_data[["Corporation Name"]].copy()
+
+        # Filter and clean the dataframe
+        corp_data = corp_data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+
+        # Drop 'ELA and Math'
+        corp_data = corp_data[corp_data.columns[~corp_data.columns.str.contains(r'ELA and Math')]].copy()
+
+        for col in corp_data.columns:
+            corp_data[col] = pd.to_numeric(corp_data[col], errors='coerce')
+
+        # Drop all columns for a Category if the value of 'Total Tested' for that Category is '0'
+        # This method works even if data is inconsistent, e.g., where no data could be (and is)
+        # alternately represented by NULL, None, or '0'
+        tested_cols = corp_data.filter(regex='Total Tested').columns.tolist()
+
+        drop_columns=[]
+        for col in tested_cols:
+            if pd.to_numeric(corp_data[col], errors='coerce').sum() == 0 or corp_data[col].isnull().all():
+
+                match_string = ' Total Tested'
+                matching_cols = corp_data.columns[pd.Series(corp_data.columns).str.startswith(col.split(match_string)[0])]
+                drop_columns.append(matching_cols.tolist())   
+
+        drop_all = [i for sub_list in drop_columns for i in sub_list]
+
+        corp_data = corp_data.drop(drop_all, axis=1).copy()
+
+        corp_data = calculate_proficiency(corp_data)
+        
+        corp_data = recalculate_total_proficiency(corp_data, school_data)        
+        
+        if "IREAD Pass N" in corp_data.columns:
+            corp_data["IREAD Pass %"] = pd.to_numeric(corp_data["IREAD Pass N"], errors="coerce") \
+                / pd.to_numeric(corp_data["IREAD Test N"], errors="coerce")
+
+            # If either Test or Pass category had a '***' value, the resulting value will be 
+            # NaN - we want it to display '***', so we just fillna
+            corp_data["IREAD Pass %"] = corp_data["IREAD Pass %"].fillna("***")
+
+        # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
+        corp_data = corp_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$", axis=1)
+
+        # add School Name column back
+        # school data has School Name column, corp data does not
+        if len(corp_info.index) > 0:
+            corp_data = pd.concat([corp_data, corp_info], axis=1, join="inner")
+
+        corp_data = corp_data.reset_index(drop=True)  #TODO: NEED THIS ONE?
+
+        # transpose dataframes and clean headers    
+        corp_data.columns = corp_data.columns.astype(str)
+        corp_data = (corp_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+        corp_data = corp_data[corp_data["Category"].str.contains("School Name") == False]
+        corp_data = corp_data.reset_index(drop=True)
+
+    return corp_data
 
 def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     # NOTE: Drop columns without data. Generally, we want to keep 'result' (e.g., 'Graduates', 'Pass N',
@@ -890,6 +972,89 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
+
+def new_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.DataFrame, year: str) -> pd.DataFrame:
+
+    excluded_years = get_excluded_years(year)
+
+    if excluded_years:
+        corp_data = corp_data.drop(columns = excluded_years)
+
+    school_data.columns = school_data.columns.astype(str)
+    corp_data.columns = corp_data.columns.astype(str)
+    
+    category_list = school_data['Category'].tolist() + ['Year']
+    
+    # keep only corp Category rows that match school Category rows
+    corp_data = corp_data[corp_data['Category'].isin(category_list)]
+
+    # TODO: ADD MALE/FEMALE TO CORP_k8 file
+    # TODO: UNTIL THEN, NEED TO REMOVE IT FROM SCHOOL FILE OR THROWS OFF CALCULATIONS
+    # TODO: DO WE NEED LOW GRADE HIGH GRADE IN SCHOOL FILE?
+    school_data = school_data[school_data["Category"].str.contains("Female|Male") == False]
+
+    # reverse order of corp_data columns (ignoring 'Category') so current year is first and
+    # get clean list of years
+    k8_year_cols = list(school_data.columns[:0:-1])
+    k8_year_cols.reverse()
+
+    # add_suffix is applied to entire df. To hide columns we dont want
+    # renamed, set it as index and reset back after renaming.
+    corp_data = (corp_data.set_index(["Category"]).add_suffix("Corp Proficiency").reset_index())
+    school_data = (school_data.set_index(["Category"]).add_suffix("School").reset_index())
+
+    school_cols = list(school_data.columns[:0:-1])
+    school_cols.reverse()
+
+    corp_cols = list(corp_data.columns[:0:-1])
+    corp_cols.reverse()
+
+    result_cols = [str(s) + "+/-" for s in k8_year_cols]
+
+    final_cols = list(itertools.chain(*zip(school_cols, corp_cols, result_cols)))
+
+    final_cols.insert(0, "Category")
+
+    merged_cols = [val for pair in zip(school_cols, corp_cols) for val in pair]
+    merged_cols.insert(0, "Category")
+
+    merged_data = school_data.merge(corp_data, on="Category", how="left")
+    merged_data = merged_data[merged_cols]
+
+    tmp_category = school_data["Category"]
+    school_data = school_data.drop("Category", axis=1)
+    corp_data = corp_data.drop("Category", axis=1)
+
+    k8_result = pd.DataFrame()
+
+    for c in school_data.columns:
+        c = c[0:4]  # keeps only YYYY part of string
+        k8_result[c + "+/-"] = calculate_difference(
+            school_data[c + "School"], corp_data[c + "Corp Proficiency"]
+        )
+
+    # add headers
+    k8_result = k8_result.set_axis(result_cols, axis=1)
+    k8_result.insert(loc=0, column="Category", value=tmp_category)
+
+    # combined merged (school and corp) and result dataframes and reorder
+    # (according to result columns)
+    final_k8_academic_data = merged_data.merge(k8_result, on="Category", how="left")
+
+    final_k8_academic_data = final_k8_academic_data[final_cols]
+
+    # NOTE: Pretty sure this is redundant as we add 'Proficient %; suffix to totals
+    # above, then remove it here, then pass to academic_analysis page, and add it
+    # back. But I tried to fix it once and broke everything. So I'm just gonna
+    # leave it alone for now.
+    final_k8_academic_data["Category"] = (final_k8_academic_data["Category"].str.replace(" Proficient %", "").str.strip())
+
+    # rename IREAD Category
+    final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
+
+    return final_k8_academic_data
+
+# TODO: REWORK USING NEW ONE
 def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school: str) -> pd.DataFrame:
 
     # TODO: Instead of passing school_data, should we just recalculate it?
@@ -925,7 +1090,10 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     # Corporation 'School Total' is calculates using all grades. We need to recalculate it using only the
     # grades that are served by the school - this is messy because we need Total Proficient/Total Tested
     # for both ELA and Math for all matching grades and those specific columns do not exist in the school df
+    school_data2 = school_data.copy()
 
+    school_data2
+    t16 = time.process_time()
 # TODO: This is used elsewhere. TEST which algo is faster. This one or 491 in Academic Analysi and 377 in this script
     school_grades = school_data.loc[school_data['Category'].str.contains(r"Grade.[345678]", regex=True), 'Category'].to_list()
     school_grades = [i.split('|')[0] for i in school_grades]
@@ -944,6 +1112,7 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school
     corporation_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
     corporation_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
 
+    print(f"NEW way Total Calc: " + str(time.process_time() - t16))
     column_list = school_data['Category'].tolist() + ['Year']
         
     # calculate IREAD Pass %

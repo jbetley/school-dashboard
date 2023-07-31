@@ -865,6 +865,16 @@ label > .label-body {
   margin-top: 0px;
   font-weight: normal;
 }
+/* Need Text Left */
+.no_data_string {
+  color: #6783a9;
+  font-size: 11px;
+  margin-left: 0px;
+  margin-right: 0px;
+  margin-top: 0px;
+  font-weight: normal;
+  text-align: left;
+}
 
 .nsize_string_label {
   color: #6783a9;

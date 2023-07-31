@@ -274,7 +274,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
 
 import time
 
-# TODO: add info strings to hover
+# TODO: add info strings to hover?
 # NOTE: Currently insufficient n-size and no data information is displayed below
 # the fig in the layout. Would prefer to somehow add this to the actual
 # trace (x-unified) hover, but it doesn't currently seem to be possible.

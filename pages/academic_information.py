@@ -196,7 +196,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             
             if len(selected_raw_k8_school_data.index) > 0:
             
-                all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data, selected_year_string, school)
+                all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data, school)
 
                 all_k8_school_data = all_k8_school_data.fillna("No Data")
                 all_k8_school_data = (all_k8_school_data.set_index(["Category"]).add_suffix("School").reset_index())

@@ -263,7 +263,7 @@ def update_academic_metrics(school: str, year: str):
 
                 selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
-                clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, selected_year_string, school)
+                clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, school)
 
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
                 combined_delta = calculate_k8_comparison_metrics(clean_school_data, selected_year_string, school)

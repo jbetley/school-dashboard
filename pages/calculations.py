@@ -19,6 +19,27 @@ def conditional_fill(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
+def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
+
+    school_grades = school_data.loc[school_data['Category'].str.contains(r"Grade.[345678]", regex=True), 'Category'].to_list()
+    school_grades = [i.split('|')[0] for i in school_grades]
+    school_grades = list(set(school_grades))
+
+    math_prof = [e + '|Math Total Proficient' for e in school_grades]
+    math_test = [e + '|Math Total Tested' for e in school_grades]
+    ela_prof = [e + '|ELA Total Proficient' for e in school_grades]
+    ela_test = [e + '|ELA Total Tested' for e in school_grades]
+
+    adj_corp_math_prof = corp_data[corp_data.columns.intersection(math_prof)]
+    adj_corp_math_test = corp_data[corp_data.columns.intersection(math_test)]
+    adj_corp_ela_prof = corp_data[corp_data.columns.intersection(ela_prof)]
+    adj_corp_ela_tst = corp_data[corp_data.columns.intersection(ela_test)]
+
+    corp_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
+    corp_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
+
+    return corp_data
+    
 def calculate_percentage(numerator: str, denominator: str) -> float|None|str:
     """
     Calculates a percentage given a numerator and a denominator, while account for two

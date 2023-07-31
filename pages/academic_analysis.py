@@ -12,14 +12,14 @@ import pandas as pd
 import time
 
 # import local functions
-from .calculations import find_nearest
+from .calculations import find_nearest, recalculate_total_proficiency
 from .chart_helpers import no_data_fig_label, make_line_chart, make_bar_chart, make_group_bar_chart, \
     combine_barchart_and_table
 from .table_helpers import create_comparison_table, no_data_page, no_data_table, create_school_label, \
     process_chart_data, process_table_data, create_school_label, create_chart_label
 from .subnav import subnav_academic
 from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_excluded_years, \
-   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency
+   process_k8_academic_data, new_k8_comparison_metrics, calculate_proficiency, process_k8_corp_academic_data
 from .load_db import get_k8_school_academic_data, get_school_index, get_school_coordinates, \
     get_comparable_schools, get_k8_corporation_academic_data
 
@@ -300,13 +300,20 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
         selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
-        clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, numeric_year, school)
+        clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, school)
         
         print(f"Time to load and process K8 data: " + str(time.process_time() - t1))
         
         t2 = time.process_time()
+
+# TODO: IREAD DATA NOT PROCESSING?
+        raw_corp_data = get_k8_corporation_academic_data(school)
+
+        corp_name = raw_corp_data["Corporation Name"].values[0]
+
+        clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
         
-        raw_comparison_data = calculate_k8_comparison_metrics(clean_school_data, numeric_year, school)
+        raw_comparison_data = new_k8_comparison_metrics(clean_school_data, clean_corp_data, numeric_year)
 
         print(f"Time to process comparison metrics: " + str(time.process_time() - t2))        
         
@@ -343,22 +350,23 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             school_academic_data.columns = school_academic_data.columns.str.replace(r"School$", "", regex=True)
 
-            school_year_headers = [j for j in school_academic_data.columns if "Category" not in j]
+            # school_year_headers = [j for j in school_academic_data.columns if "Category" not in j]
 
             # keep strings ("***") on conversion to that we can track them later
-            for col in school_year_headers:
-                school_academic_data[col] = pd.to_numeric(school_academic_data[col], errors="coerce").fillna(school_academic_data[col])
+            # for col in school_year_headers:
+            #     school_academic_data[col] = pd.to_numeric(school_academic_data[col], errors="coerce").fillna(school_academic_data[col])
 
-            school_academic_data = school_academic_data.dropna(axis=1, how="all")
+            # school_academic_data = school_academic_data.dropna(axis=1, how="all")
 
             # transpose the resulting dataframe (making Categories the column headers)
             display_academic_data = school_academic_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
 
             # drop any Category where all values are NaN
-            display_academic_data = display_academic_data.dropna(axis=1, how="all")
+            # display_academic_data = display_academic_data.dropna(axis=1, how="all")
 
             # add suffix to certain Categories
             display_academic_data = display_academic_data.rename(columns={c: c + " Proficient %" for c in display_academic_data.columns if c not in ["Year", "School Name","IREAD Proficiency (Grade 3 only)"]})
+
 
         ## Make Line Charts
 
@@ -380,7 +388,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             # Charts 3 & 4: See below
 
-# TODO: Should we just hard code these category strings? There are a finite #, but its a large number
             # Chart 5: Year over Year ELA Proficiency by Ethnicity (1.6.c)
             categories_16c1 = []
             for e in ethnicity:
@@ -424,8 +431,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             print(f"Time to make line charts: " + str(time.process_time() - t3))
 
         ## Comparison data ##
+# TODO: IREAD NOT WORKIGN PROPERLY FOR COMPARISON
             current_school_data = display_academic_data.loc[display_academic_data["Year"] == string_year].copy()
 
+            # this time we want to force '***' to NaN
             for col in current_school_data.columns:
                 current_school_data[col]=pd.to_numeric(current_school_data[col], errors="coerce")
 
@@ -437,35 +446,39 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             # Grade range data is used for the chart "hovertemplate"
             # current_school_data["Low Grade"] = all_academic_data_k8.loc[(all_academic_data_k8["School ID"] == school) & (all_academic_data_k8["Year"] == string_year)]["Low Grade"].values[0]
             # current_school_data["High Grade"] = all_academic_data_k8.loc[(all_academic_data_k8["School ID"] == school) & (all_academic_data_k8["Year"] == string_year)]["High Grade"].values[0]
-            
+           
             current_school_data["Low Grade"] =  selected_raw_k8_school_data.loc[(selected_raw_k8_school_data["Year"] == numeric_year), "Low Grade"].values[0]
             current_school_data["High Grade"] =  selected_raw_k8_school_data.loc[(selected_raw_k8_school_data["Year"] == numeric_year), "High Grade"].values[0]
 
             t4 = time.process_time()
 
-            raw_corp_data = get_k8_corporation_academic_data(school)
-            school_corporation_name = raw_corp_data["Corporation Name"].values[0]
+        # Get processed corp data
+            corp_academic_data = raw_comparison_data[[col for col in raw_comparison_data.columns if "Corp" in col or "Category" in col]].copy()
 
-            raw_corp_data = raw_corp_data.loc[raw_corp_data["Year"] == numeric_year]
+            corp_academic_data.columns = corp_academic_data.columns.str.replace(r"Corp Proficiency$", "", regex=True)
 
-            for col in raw_corp_data.columns:
-                raw_corp_data[col]=pd.to_numeric(raw_corp_data[col], errors="coerce")
+            # transpose the resulting dataframe (making Categories the column headers)
+            corp_academic_data = corp_academic_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
 
-            corp_current_data = process_k8_academic_data(raw_corp_data, numeric_year, school)
+            corp_academic_data = corp_academic_data.rename(columns={c: c + " Proficient %" for c in corp_academic_data.columns if c not in ["Year", "School Name","IREAD Proficiency (Grade 3 only)"]})
 
-            corp_current_data.loc[corp_current_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
+            # corp_current_data = corp_academic_data.loc[corp_academic_data["Year"] == numeric_year]
+            current_corp_data = corp_academic_data.loc[corp_academic_data["Year"] == string_year].copy()
 
-            # Re-transpose the corp df to get the Categories back to column headers
-            corp_current_data = (
-                corp_current_data.set_index("Category")
-                .T.rename_axis("Year")
-                .rename_axis(None, axis=1)
-                .reset_index()
-            )
+            for col in current_corp_data.columns:
+                current_corp_data[col]=pd.to_numeric(current_corp_data[col], errors="coerce")
+
+            # # Re-transpose the corp df to get the Categories back to column headers
+            # current_corp_data = (
+            #     current_corp_data.set_index("Category")
+            #     .T.rename_axis("Year")
+            #     .rename_axis(None, axis=1)
+            #     .reset_index()
+            # )
 
             print(f"Time to get and process corp data: " + str(time.process_time() - t4))
 
-            # get academic data for comparison schools
+        # get academic data for comparison schools
             t5 = time.process_time()
 
             comparison_schools_filtered = get_comparable_schools(comparison_school_list, numeric_year)
@@ -482,20 +495,28 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             comparison_schools = calculate_proficiency(comparison_schools_filtered)
 
-# TODO: Redo this in the new way. whereve that is
+# # TODO: Redo this in the new way. wherever that is [Load Data] recalculate_proficiency func
+#             t15 = time.process_time()
+#             comp2 = comparison_schools.copy()
+            comparison_schools = recalculate_total_proficiency(comparison_schools, clean_school_data)
+
             # NOTE: The masking step above removes grades from the comparison dataframe that are
             # not also in the school dataframe (e.g., if school only has data for grades 3, 4, & 5,
             # only those grades will remain in comparison df). However, the "School Total" for
             # proficiency in a subject that is in the raw data was calculated using ALL grades.
-            # So we need to recalculate the "School Total" rate manually to ensure it includes only the included grades.
-            all_grades_math_proficient_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Proficient")
-            all_grades_math_tested_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Tested")
-            comparison_schools["Total|Math Proficient %"] = all_grades_math_proficient_comp.sum(axis=1) / all_grades_math_tested_comp.sum(axis=1)
+            # # So we need to recalculate the "School Total" rate manually to ensure it includes only the included grades.
+            # all_grades_math_proficient_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Proficient")
+            # all_grades_math_tested_comp = comparison_schools.filter(regex=r"Grade.+?Math Total Tested")
+            # comparison_schools["Total|Math Proficient %"] = all_grades_math_proficient_comp.sum(axis=1) / all_grades_math_tested_comp.sum(axis=1)
 
-            all_grades_ela_proficient_comp = comparison_schools.filter(regex=r"Grade.+?ELA Total Proficient")
-            all_grades_ela_tested_comp = comparison_schools.filter(regex=r"Grade.+?ELA Total Tested")
+            # all_grades_ela_proficient_comp = comparison_schools.filter(regex=r"Grade.+?ELA Total Proficient")
+            # all_grades_ela_tested_comp = comparison_schools.filter(regex=r"Grade.+?ELA Total Tested")
 
-            comparison_schools["Total|ELA Proficient %"] = all_grades_ela_proficient_comp.sum(axis=1) / all_grades_ela_tested_comp.sum(axis=1)
+            # comparison_schools["Total|ELA Proficient %"] = all_grades_ela_proficient_comp.sum(axis=1) / all_grades_ela_tested_comp.sum(axis=1)
+
+            # print(f"original way Total Calc: " + str(time.process_time() - t15))
+
+            # print(comparison_schools.T)
 
             # calculate IREAD Pass %
             if "IREAD Proficiency (Grade 3 only)" in current_school_data:
@@ -553,7 +574,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 # add corp average for category to dataframe - the "","","N/A" are values for
                 # Low & High Grade and Distance columns
                 fig14c_k8_school_data.loc[len(fig14c_k8_school_data.index)] = \
-                    [school_corporation_name,"3","8",corp_current_data[category].values[0]]
+                    [corp_name,"3","8",current_corp_data[category].values[0]]
 
                 # Get comparable school values for the specific category
 
@@ -595,7 +616,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 # add corp average for category to dataframe - the "","","N/A" are values for
                 # Low & High Grade and Distance columns
                 fig14d_k8_school_data.loc[len(fig14d_k8_school_data.index)] = \
-                    [school_corporation_name, "3","8",corp_current_data[category].values[0]]
+                    [corp_name, "3","8",current_corp_data[category].values[0]]
 
                 # Get comparable school values for the specific category
                 fig14d_comp_data = comparison_schools[info_categories + [category]]
@@ -633,7 +654,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 # add corp average for category to dataframe - the "","","N/A" are values for
                 # Low & High Grade and Distance columns
                 fig_iread_k8_school_data.loc[len(fig_iread_k8_school_data.index)] = \
-                    [school_corporation_name, "3","8",corp_current_data[category].values[0]]
+                    [corp_name, "3","8",current_corp_data[category].values[0]]
                 
                 # Get comparable school values for the specific category
                 fig_iread_comp_data = comparison_schools[info_categories + [category]]
@@ -718,11 +739,11 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             # filter dataframe by categories
             fig16a1_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16a1))]
 
-            # process_chart_data(fig16a1_k8_school_data, corp_current_data, comparison_schools, headers_16a1, school_corporation_name)
+            # process_chart_data(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
             if len(fig16a1_k8_school_data.columns) > 3:
                 
                 fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = \
-                    process_chart_data(fig16a1_k8_school_data, corp_current_data, comparison_schools, headers_16a1, school_corporation_name)
+                    process_chart_data(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
                 fig16a1_label = create_chart_label(fig16a1_final_data)
                 fig16a1_chart = make_group_bar_chart(fig16a1_final_data, school_name, fig16a1_label)
                 fig16a1_table_data = process_table_data(fig16a1_final_data)
@@ -749,7 +770,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             if len(fig16b1_k8_school_data.columns) > 3:
                 
                 fig16b1_final_data, fig16b1_category_string, fig16b1_school_string = \
-                    process_chart_data(fig16b1_k8_school_data, corp_current_data, comparison_schools, headers_16b1, school_corporation_name)
+                    process_chart_data(fig16b1_k8_school_data, current_corp_data, comparison_schools, headers_16b1, corp_name)
                 fig16b1_label = create_chart_label(fig16b1_final_data)
                 fig16b1_chart = make_group_bar_chart(fig16b1_final_data, school_name, fig16b1_label)
                 fig16b1_table_data = process_table_data(fig16b1_final_data)
@@ -777,7 +798,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             if len(fig16a2_k8_school_data.columns) > 3:
     
                 fig16a2_final_data, fig16a2_category_string, fig16a2_school_string = \
-                    process_chart_data(fig16a2_k8_school_data, corp_current_data, comparison_schools, headers_16a2, school_corporation_name)
+                    process_chart_data(fig16a2_k8_school_data, current_corp_data, comparison_schools, headers_16a2, corp_name)
                 fig16a2_label = create_chart_label(fig16a2_final_data)
                 fig16a2_chart = make_group_bar_chart(fig16a2_final_data, school_name, fig16a2_label)
                 fig16a2_table_data = process_table_data(fig16a2_final_data)
@@ -803,7 +824,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             if len(fig16b2_k8_school_data.columns) > 3:
 
                 fig16b2_final_data, fig16b2_category_string, fig16b2_school_string = \
-                    process_chart_data(fig16b2_k8_school_data, corp_current_data, comparison_schools, headers_16b2, school_corporation_name)
+                    process_chart_data(fig16b2_k8_school_data, current_corp_data, comparison_schools, headers_16b2, corp_name)
                 fig16b2_label = create_chart_label(fig16b2_final_data)
                 fig16b2_chart = make_group_bar_chart(fig16b2_final_data, school_name, fig16b2_label)
                 fig16b2_table_data = process_table_data(fig16b2_final_data)
@@ -878,7 +899,7 @@ def layout():
                                                             className = "pretty_container six columns"
                                                         )
                                                     ],
-                                                    className="bare_container_center twelve columns",
+                                                    className="bare_container twelve columns",
                                                 ),
                                             ],
                                             className="row",
@@ -900,7 +921,7 @@ def layout():
                                                             className = "pretty_container six columns"
                                                         )
                                                     ],
-                                                    className="bare_container_center twelve columns",
+                                                    className="bare_container twelve columns",
                                                 ),
                                             ],
                                             className="row",
@@ -922,7 +943,7 @@ def layout():
                                                             className = "pretty_container six columns"
                                                         )
                                                     ],
-                                                    className="bare_container_center twelve columns",
+                                                    className="bare_container twelve columns",
                                                 ),
                                             ],
                                             className="row",
