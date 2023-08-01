@@ -2,8 +2,8 @@
 # ICSB Dashboard - Database Queries (SQLite #
 #############################################
 # author:   jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.08
+# date:     08/01/23
 
 # Resources:
 # https://realpython.com/python-sqlite-sqlalchemy/

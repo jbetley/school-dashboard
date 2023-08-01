@@ -692,7 +692,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             # filter dataframe by categories
             fig16a1_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16a1))]
 
-            # process_chart_data(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
             if len(fig16a1_k8_school_data.columns) > 3:
                 
                 fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = \
@@ -931,7 +930,7 @@ def layout():
                                                                 ),
                                                                 dcc.Dropdown(
                                                                     id="comparison-dropdown",
-                                                                    style={"fontSize": "85%"},
+                                                                    style={"fontSize": "100%"},
                                                                     multi = True,
                                                                     clearable = False,
                                                                     className="dcc_control"

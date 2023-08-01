@@ -2,8 +2,8 @@
 # ICSB Dashboard - DataTable Functions #
 ########################################
 # author:   jbetley
-# version:  1.04
-# date:     07/10/23
+# version:  1.08
+# date:     08/01/23
 
 import numpy as np
 import pandas as pd
@@ -14,14 +14,42 @@ import re
 from typing import Tuple
 from .load_data import ethnicity, subgroup, info_categories
 
+## Global table styles
+table_style = {
+    'fontSize': '12px',
+    'border': 'none',
+    'fontFamily': 'Jost, sans-serif',
+}
+
+table_cell = {
+    'whiteSpace': 'normal',
+    'height': 'auto',
+    'textAlign': 'center',
+    'color': '#6783a9',
+    'minWidth': '25px',
+    'width': '25px',
+    'maxWidth': '25px',
+}
+
+table_header = {
+    'backgroundColor': '#ffffff',
+    'fontSize': '12px',
+    'fontFamily': 'Jost, sans-serif',
+    'color': '#6783a9',
+    'textAlign': 'center',
+    'fontWeight': 'bold',
+    'border': 'none'
+}
+
 def no_data_table(label: str = 'No Data to Display') -> list:
-    """Creates single empty table with provided label
+    """
+    Creates single empty table with provided label
 
     Args:
         label (String): table label string
 
     Returns:
-        list: dash DataTable
+        table_layout (list): a dash html.Label object and html.Div object enclosing a dash DataTable
     """
 
     table_layout = [
@@ -46,13 +74,16 @@ def no_data_table(label: str = 'No Data to Display') -> list:
     return table_layout
 
 def no_data_page(label: str) -> list:
-    """Creates single empty table to be used as a full empty page with provided label
+    """
+    Creates single empty table which can be used in place of all tables to
+    show an empty page, with provided label
 
     Args:
         label (String): string label
 
     Returns:
-        list: dash DataTable
+        table_layout (list): dash html.Div objects enclosing a dash html.Label
+        object and a dash DataTable, with css classes
     """
 
     empty_dict = [{"": ""}]
@@ -98,7 +129,7 @@ def no_data_page(label: str) -> list:
 
 def hidden_table() -> list:
     """
-    Creates empty table with no cells. Will be automatically hidden
+    Creates an empty table with no cells. Will be automatically hidden
     ('display': 'none') by css selector chaining for pretty_container.
     See stylesheet.css
 
@@ -106,7 +137,7 @@ def hidden_table() -> list:
         None
 
     Returns:
-        list: dash DataTable
+        table_layout (list): a dash html.Div object enclosing a dash DataTable
     """
     table_layout = [
                 html.Div(
@@ -131,7 +162,7 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
         cols (pandas.core.indexes.Base.index): Pandas series of column headers
 
     Returns:
-        list: html Div enclosing dash DataTables and formatting
+        table_layout (list): an html Div enclosing dash DataTables and css formatting
     """
 
     # if same table is passed twice, we force single table layout
@@ -173,8 +204,8 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
 
 def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     """
-    Takes a Pandas Dataframe and replaces text with svg circles coded
-    the correct colors based on rating text. See:
+    Takes a Dataframe and replaces text with svg circles coded certain colors
+    based on the text. See:
     https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
     https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
     https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
@@ -187,7 +218,7 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     """
     result = val.copy()
 
-    # Use regex and beginning(^) and end-of-line ($) anchors to ensure exact matches only
+    # Use regex and beginning(^) and end-of-line ($) regex anchors to ensure exact matches only
     # NOTE: Using font-awesome circle icon.
     result = result.replace(["^DNMS$",'Does Not Meet Expectations'],'<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
     result = result.replace(["^AS$",'Approaches Expectations'],'<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
@@ -199,41 +230,17 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
 
 def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
     """
-    Takes a dataframe consisting and returns a list dash DataTable object
+    Takes a label, a dataframe, and a descriptive (type) string and creates a table
+    with academic growth and sgp data.
 
     Args:
-        label (String): Table title
+        label (str): Table title
         content (pd.DataTable): dash dataTable
-
+        kind (str): 'sgp|growth'
     Returns:
-        list: Formatted dash DataTable
+        table (list): dash html.Div enclosing html.Label and DataTable
     """
-
-    ## Global table styles
-    table_style = {
-        'fontSize': '11px',
-        'border': 'none',
-        'fontFamily': 'Jost, sans-serif',
-    }
-
-    table_cell = {
-        'whiteSpace': 'normal',
-        'height': 'auto',
-        'textAlign': 'center',
-        'color': '#6783a9',
-        'boxShadow': '0 0',
-    }
-
-    table_header = {
-        'backgroundColor': '#ffffff',
-        'fontSize': '11px',
-        'fontFamily': 'Jost, sans-serif',
-        'color': '#6783a9',
-        'textAlign': 'center',
-        'fontWeight': 'bold',
-        'border': 'none'
-    }
-    
+   
     data = content.copy()
 
     num_cols = len(data.columns)
@@ -342,7 +349,8 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
         # build multi-level headers
         name_cols = [['Category','']]
 
-        # NOTE: This removes the identifying number from the header for display purposes.
+        # Split columns into Year (top level) and "162 Days", "Majority Enrolled",
+        # "Difference" (second level)
         for item in all_cols:
             if item.startswith('20'):
                 if 'Rate' in item:
@@ -379,7 +387,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
 
         # formatting logic is different for multi-header table
         # borders are tricky to get correct
-        # also red/green color for difference column
+        # add red/green color for difference column
         table_data_conditional = [
             {
                 'if': {
@@ -455,14 +463,17 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
 
         if kind == 'sgp':
             col_format=[
-                {'name': col, 'id': all_cols[idx], 'type':'numeric',
+                {
+                'name': col, 'id': all_cols[idx], 'type':'numeric',
                 'format': Format()
                 }
                 for (idx, col) in enumerate(name_cols)
-            ]          
+            ]
+
         else:
             col_format=[
-                {'name': col, 'id': all_cols[idx], 'type':'numeric',
+                {
+                'name': col, 'id': all_cols[idx], 'type':'numeric',
                 'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
                 }
                 for (idx, col) in enumerate(name_cols)
@@ -494,31 +505,17 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
 
 def create_metric_table(label: str, content: pd.DataFrame) -> list:
     """
-    Takes a dataframe consisting of Rating and Metric Columns and returns a list dash DataTable object
-    NOTE: could possibly be less complicated than it is, or maybe not - gonna leave it up to future me
+    Takes a label and a dataframe consisting of Rating and Metric Columns and returns
+    a dash datatable. NOTE: could possibly be less complicated than it is, or maybe not-
+    gonna leave it up to future me
 
     Args:
         label (String): Table title
         content (pd.DataTable): dash dataTable
 
     Returns:
-        list: Formatted dash DataTable
+        table (list): dash html.Div enclosing html.Label and DataTable
     """
-
-## Global table styles
-    table_style = {
-        'fontSize': '11px',
-        'border': 'none',
-        'fontFamily': 'Jost, sans-serif',
-    }
-
-    table_cell = {
-        'whiteSpace': 'normal',
-        'height': 'auto',
-        'textAlign': 'center',
-        'color': '#6783a9',
-        'boxShadow': '0 0',
-    }
 
     data = content.copy()
 
@@ -557,8 +554,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # calculation from calculateMetrics(), but am leaving it in for now in case
         # we ultimately choose to display it
 
-        # NOTE: The Order of these operations matters
-
+        # NOTE: The order of these operations matters
         # remove all Corp Rate / Corp Avg columns
         data = data.loc[:, ~data.columns.str.contains('Corp')]
 
@@ -595,12 +591,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         average_headers = [y for y in data.columns.tolist() if 'Average' in y]
 
         # splits column width evenly for all columns other than 'Category'
-        # right now is even, but can finesse this by splitting data_width
-        # into unequal values for each 'data' category, e.g.:
-        #   rating_width = data_col_width + (data_col_width * .1)
-        #   remaining_width = data_width - rating_width
-        #   remaining_col_width = remaining_width / (table_size - 1)
-
+        # can adjust individual categories by adjusting formula
         data_width = 100 - category_width
         data_col_width = data_width / (table_size - 1)
         rating_width = year_width = difference_width = data_col_width
@@ -664,14 +655,14 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
 
         data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
 
-        # build multi-level headers
         # get list of +/- columns (used by datatable filter_query' to
         # ID columns for color formatting)
         format_cols = [k for k in headers if 'Diff' in k or 'Rate' in k]
 
         name_cols = [['Category','']]
 
-        # NOTE: This removes the identifying number from the header for display purposes.
+        # Build list of lists, top level and secondary level column names
+        # for multi-level headers
         for item in headers:
             if item.startswith('20'):
                 if 'Rate' in item:
@@ -679,19 +670,10 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
 
                 name_cols.append([item[:4],item[4:]])
 
-        # NOTE: The next two two styling blocks add a border to header_index:1
+        # NOTE: This add a border to header_index:1 for each category
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
         # and uncomment style_as_list in table declaration
-        table_header = {
-            'backgroundColor': '#ffffff',
-            'fontSize': '11px',
-            'fontFamily': 'Jost, sans-serif',
-            'color': '#6783a9',
-            'textAlign': 'center',
-            'fontWeight': 'bold',
-            'border': 'none'
-        }
 
         table_header_conditional = [
             {
@@ -740,7 +722,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             }
         ]
 
-        # formatting logic is different for multi-header table
+        # formatting logic is slightly different for a multi-header table
         table_data_conditional = [
             {
                 'if': {
@@ -870,13 +852,14 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
 
 def create_chart_label(final_data: pd.DataFrame) -> str:
     """
-    Takes a dataframe of academic data and creates a chart label
+    Takes a dataframe of academic data and creates a chart label based on
+    the df columns
 
     Args:
         final_data (pd.DataFrame): dataframe of academic data
 
     Returns:
-        str: chart label
+        label (str): chart label
     """
 
     final_data_columns = final_data.columns.tolist()
@@ -899,14 +882,14 @@ def create_chart_label(final_data: pd.DataFrame) -> str:
     
 def create_school_label(data: pd.DataFrame) -> str:
     """
-    Takes a dataframe of academic data and creates a label for each school with
-    its gradespan.
+    Takes a dataframe of academic data and creates a label for each school including
+    the school's gradespan.
 
     Args:
         final_data (pd.DataFrame): dataframe of academic data
 
     Returns:
-        str: school label with name and gradespan
+        label (str): school label with name and gradespan
     """
 
     label = data['School Name'] + ' (' + data['Low Grade'].fillna('').astype(str) + \
@@ -915,26 +898,25 @@ def create_school_label(data: pd.DataFrame) -> str:
     # removes empty parentheses from School Corp
     label = label.str.replace("\(-\)", '',regex=True)
 
-
     return label
 
 def process_table_data(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Creates a series that merges school name and grade spans and drop the grade span columns 
-    from the dataframe (they are not charted)
+    Creates a series that merges school name and grade spans and drops the
+    grade span columns from the dataframe (they are not charted)
 
     Args:
         data (pd.DataFrame): dataframe of academic data
 
     Returns:
-        pd.DataFrame: processed dataframe
+        data (pd.DataFrame): dataframe
     """    
     school_names = create_school_label(data)
 
     data = data.drop(['Low Grade', 'High Grade'], axis = 1)
 
     # shift the 'School Name' column to the first position and replace
-    # the values in 'School Name' column with the series we created earlier
+    # the values in 'School Name' column with the school_names series
     data = data.drop('School Name', axis = 1)
     data['School Name'] = school_names
 
@@ -943,7 +925,6 @@ def process_table_data(data: pd.DataFrame) -> pd.DataFrame:
     
     return data
 
-# TODO: docstring
 def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: list, corp_name: str) -> Tuple[pd.DataFrame, str, str]:
     """
     Processes several dataframes for display in comparison tables while tracking both schools that are missing data for 
@@ -1005,15 +986,15 @@ def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame
     # to build a list of schools that is made up of schools that are missing
     # all data + schools that are missing some data + what data they are
     # missing
-
     check_data = final_data.copy()
     check_data = check_data.drop(['Low Grade','High Grade'], axis = 1)
     check_data = check_data.reset_index(drop=True)
 
     # get a list of the categories that are missing from selected school data and
-    # strip everything following '|' delimeter. Use this to list the categories
-    # in an annotation
-# TODO: Add this concepto line charts with *** data    
+    # strip everything following '|' delimeter for annotation
+    # NOTE: this is doing a slightly different thing than the check_for_insufficient_n_size()
+    # & check_for_no_data() functions (calculations.py), but may want to check at some point
+    # to see which process is faster
     missing_categories = [i for i in categories if i not in check_data.columns]                
     missing_categories = [s.split('|')[0] for s in missing_categories]
 
@@ -1074,17 +1055,20 @@ def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame
     return final_data, category_string, school_string
         
 def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) -> list:
-    """ Takes a dataframe that is a column of schools and one or more columns
-        of data, school name, and table label. Uses the school name to find
-        the index of the selected school to highlight it in table
+    """
+    Takes a dataframe that is a column of schools and one or more columns
+    of data, school name, and table label. Uses the school name to find
+    the index of the selected school to highlight it in table
 
     Args:
-        label (String): Table title
-        data (pd.DataTable): dash dataTable
+        data (pd.DataFrame): dataframe of academic data
+        school_name (str): 
+        label (str): title of table
 
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
     """
+
     # find the index of the row containing the school name
     school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
 
@@ -1105,13 +1089,9 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     # simplify and clarify column names (remove everything between | & %)
     data.columns = data.columns.str.replace(r'\|(.*?)\%', '', regex=True)
 
-    # Not sure why these are here- they break the table selection logic below
-    # data.columns = data.columns.str.replace('Total', 'School', regex=True)
-    # data.columns = data.columns.str.replace(r'IREAD.*', 'School', regex=True)
-
-# NOTE: Try AG Grid ?
-# pip install dash-ag-grid==2.0.0
-# import dash_ag_grid as dag
+# NOTE: Try AG Grid for more responsive table
+#       pip install dash-ag-grid==2.0.0
+#       import dash_ag_grid as dag
 
     table = dash_table.DataTable(
         data.to_dict('records'),
@@ -1120,11 +1100,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         merge_duplicate_headers=True,
         style_as_list_view=True,
         id='tst-table',
-        style_data={
-            'fontSize': '10px',
-            'fontFamily': 'Arial, Helvetica, sans-serif',
-            'color': '#6783a9'
-        },
+        style_data = table_style,
         style_data_conditional=[
             {
                 'if': {
@@ -1148,17 +1124,18 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
                 'border': 'thin solid silver'
             }
         ],
-        style_header={
-            'height': '10px',
-            'backgroundColor': 'white',
-            'fontSize': '10px',
-            'fontFamily': 'Arial, Helvetica, sans-serif',
-            'color': '#6783a9',
-            'textAlign': 'center',
-            'fontWeight': 'bold',
-            'borderBottom': 'none',
-            'borderTop': 'none',
-        },
+        style_header = table_header,
+        # {
+        #     'height': '10px',
+        #     'backgroundColor': 'white',
+        #     'fontSize': '10px',
+        #     'fontFamily': 'Jost, sans-serif',
+        #     'color': '#6783a9',
+        #     'textAlign': 'center',
+        #     'fontWeight': 'bold',
+        #     'borderBottom': 'none',
+        #     'borderTop': 'none',
+        # },
         style_header_conditional=[
             {
                 'if': {
@@ -1167,13 +1144,16 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
                     'text-decoration': 'underline'
             },
         ],
-        style_cell={
-            'whiteSpace': 'normal',
-            'height': 'auto',
-            'textAlign': 'center',
-            'minWidth': '25px', 'width': '25px', 'maxWidth': '25px',
-            'border': 'none',
-        },
+        style_cell = table_cell,
+        # {
+        #     'whiteSpace': 'normal',
+        #     'height': 'auto',
+        #     'textAlign': 'center',
+        #     'color': '#6783a9',
+        #     'minWidth': '25px',
+        #     'width': '25px',
+        #     'maxWidth': '25px',
+        # },        
         style_cell_conditional=[
             {
                 'if': {
@@ -1209,10 +1189,12 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     return table_layout
 
 def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) -> list:
-    """ Generic table builder. Takes a dataframe of two or more columns, a label, and
-        a 'table_type' (either 'proficiency' or 'growth') and creates a basic table.
-        Proficiency type tables have a Category (string) column and one or more columns
-        of years of data. Growth tables are variable.
+    """
+    Generic table builder. Takes a dataframe of two or more columns, a label, and
+    a 'table_type' (either 'proficiency' or 'growth') and creates a basic table.
+    Proficiency type tables have a Category (string) column and one or more columns
+    of years of data. Growth tables are variable.
+    
     Args:
         label (String): Table title
         data (pd.DataTable): dash dataTable
@@ -1224,23 +1206,27 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
 
     if table_type == 'proficiency':
         table_cols = [
-                    {
-                        'name': col,
-                        'id': col,
-                        'type': 'numeric',
-                        'format': Format(
-                            scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
-                        ),
-                    }
-                    for (col) in data.columns
+                {
+                    'name': col,
+                    'id': col,
+                    'type': 'numeric',
+                    'format': Format(
+                        scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
+                    ),
+                }
+                for (col) in data.columns
         ]
 
     elif table_type == 'growth':
         table_cols = [
-                    {'name': col, 'id': col, 'presentation': 'markdown'}
-                    if 'Rat' in col or 'Weighted Points' in col # the second condition matches exactly one cell in entire site
-                    else {'name': col, 'id': col, 'type':'numeric',
-                    'format': Format(scheme=Scheme.fixed, precision=2)
+                {
+                    'name': col, 'id': col, 'presentation': 'markdown'
+                }
+                if 'Rat' in col or 'Weighted Points' in col # the second condition matches exactly one cell in entire site
+                
+                else
+                    {
+                        'name': col, 'id': col, 'type':'numeric', 'format': Format(scheme=Scheme.fixed, precision=2)
                     }
                     for (col) in data.columns
         ]   
@@ -1251,11 +1237,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
             dash_table.DataTable(
                 data.to_dict('records'),
                 columns = table_cols,
-                style_data = {
-                    'fontSize': '11px',
-                    'fontFamily': 'Jost, sans-serif',
-                    'border': 'none'
-                },
+                style_data = table_style,
                 style_data_conditional = [
                     {
                         'if': {
@@ -1288,22 +1270,23 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                     'textAlign': 'center',
                     'fontWeight': 'bold',
                 },
-                style_cell = {
-                    'whiteSpace': 'normal',
-                    'height': 'auto',
-                    'textAlign': 'center',
-                    'color': '#6783a9',
-                    'minWidth': '25px',
-                    'width': '25px',
-                    'maxWidth': '25px',
-                },
+                style_cell = table_cell,
+                # {
+                #     'whiteSpace': 'normal',
+                #     'height': 'auto',
+                #     'textAlign': 'center',
+                #     'color': '#6783a9',
+                #     'minWidth': '25px',
+                #     'width': '25px',
+                #     'maxWidth': '25px',
+                # },
                 style_header_conditional = [
                     {
                         'if': {'column_id': 'Category'},
                         'textAlign': 'left',
                         'paddingLeft': '10px',
                         'width': '35%',
-                        'fontSize': '11px',
+                        'fontSize': '12px',
                         'fontFamily': 'Jost, sans-serif',
                         'color': '#6783a9',
                         'fontWeight': 'bold',
@@ -1443,7 +1426,6 @@ def create_key() -> dash_table.DataTable:
                 'border': 'none',
                 'textAlign': 'right',
                 'color': '#6783a9',
-                'boxShadow': '0 0',
             },
             style_cell_conditional = [
                 {
