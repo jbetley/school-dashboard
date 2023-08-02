@@ -124,9 +124,10 @@ def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
 def get_attendance_metrics(school: str, year: str) -> pd.DataFrame:
 
     selected_school = get_school_index(school)    
-    corp_id = selected_school['GEO Corp'].values[0]
+    corp_id = int(selected_school['GEO Corp'].values[0])
 
     corp_demographics = get_demographic_data(corp_id)
+
     school_demographics = get_demographic_data(school)
     corp_attendance_rate = get_attendance_data(corp_demographics, year)
     school_attendance_rate = get_attendance_data(school_demographics, year)    
@@ -139,6 +140,7 @@ def get_attendance_metrics(school: str, year: str) -> pd.DataFrame:
     # concat the two df's and reorder so that the columns alternate
     attendance_metrics = pd.concat([school_attendance_rate, corp_attendance_rate], axis=1)
     reordered_cols = list(sum(zip(school_attendance_rate.columns, corp_attendance_rate.columns), ()))
+
     attendance_metrics = attendance_metrics[reordered_cols]
 
     # loops over dataframe calculating difference between a pair of columns, inserts the result in
@@ -220,17 +222,17 @@ def calculate_strength_of_diploma(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-def calculate_eca_rate(values: pd.DataFrame) -> pd.DataFrame:
-    data = values.copy()
+# def calculate_eca_rate(values: pd.DataFrame) -> pd.DataFrame:
+#     data = values.copy()
 
-    tested = data[data.columns[data.columns.str.contains(r'Test N')]].columns.tolist()
+#     tested = data[data.columns[data.columns.str.contains(r'Test N')]].columns.tolist()
 
-    for test in tested:
-        if test in data.columns:
-            cat_sub = test.split(' Test N')[0]
-            data[cat_sub + " Pass Rate"] = calculate_percentage(data[cat_sub + " Pass N"], data[test])
+#     for test in tested:
+#         if test in data.columns:
+#             cat_sub = test.split(' Test N')[0]
+#             data[cat_sub + " Pass Rate"] = calculate_percentage(data[cat_sub + " Pass N"], data[test])
     
-    return data
+#     return data
 
 def calculate_sat_rate(values: pd.DataFrame) -> pd.DataFrame:
 # NOTE: All nulls should have already been filtered out by filter_high_school_academic_data()
@@ -278,47 +280,21 @@ def calculate_proficiency(values: pd.DataFrame) -> pd.DataFrame:
                 data = data.drop([total_tested, total_proficient], axis=1)
             else:
                 data[proficiency] = calculate_percentage(data[total_proficient], data[total_tested])
-  
-    return data
 
-### End Helper Functions ###
+    # separately calculate IREAD Proficiency
+    if "IREAD Test N" in data.columns:
+        data["IREAD Pass %"] =  calculate_percentage(data["IREAD Pass N"],data["IREAD Test N"])
+
+    return data
 
 ### Dataframe Processing Functions ###
 def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
 
-    # school_information = get_school_index(school)
-
-    # # use these to determine if data belongs to school or corporation
-    # school_geo_code = school_information["GEO Corp"].values[0]
-
-    # Ensure geo_code is always at index 0
     data = data.reset_index(drop = True)
-
-    # data_geo_code = data['Corporation ID'][0]
 
     # school data has School Name column, corp data does not
     if len(data.index) != 0:
 
-        # it is 'corp' data where the value of 'Corporation ID' in the df is equal
-        # to the value of the school's 'GEO Corp'.
-        # if data_geo_code == school_geo_code:
-            
-
-        #     school_info = data[["Corporation Name"]].copy()
-
-        #     # Filter and clean the dataframe
-        #     data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
-
-        #     # Drop 'ELA and Math'
-        #     data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]].copy()
-
-        #     # corporation data: coerce strings ('***' and '^') to NaN (for
-        #     # both masking and groupby.sum() purposes)
-        #     for col in data.columns:
-        #         data[col] = pd.to_numeric(data[col], errors='coerce')
-
-        # else:
-       
         school_info = data[['School Name','Low Grade','High Grade']].copy()
 
         # school data: coerce, but keep strings ('***' and '^')
@@ -333,7 +309,7 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         #     data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
         data.update(data.apply(pd.to_numeric, errors='coerce'))
-        
+
         print(f'Time to coerce using update : ' + str(time.process_time() - t4))
         
         # Drop all columns for a Category if the value of 'Total Tested' for that Category is '0'
@@ -341,7 +317,6 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         # alternately represented by NULL, None, or '0'
         tested_cols = data.filter(regex='Total Tested').columns.tolist()
 
-        # TODO: Can i use this for the proficiency shite in academic info too?
         drop_columns=[]
         for col in tested_cols:
             if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
@@ -354,15 +329,13 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
 
         data = data.drop(drop_all, axis=1).copy()
 
+        # does not calculate IREAD proficiency
         data = calculate_proficiency(data)
 
-        if "IREAD Pass N" in data.columns:
-            data["IREAD Pass %"] = pd.to_numeric(data["IREAD Pass N"], errors="coerce") \
-                / pd.to_numeric(data["IREAD Test N"], errors="coerce")
-
-            # If either Test or Pass category had a '***' value, the resulting value will be 
-            # NaN - we want it to display '***', so we just fillna
-            data["IREAD Pass %"] = data["IREAD Pass %"].fillna("***")
+        # create new df with Total Tested Numbers
+        data_tested = data.filter(regex='Total Tested|Year', axis=1).copy()
+        data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+        data_tested = data_tested.rename(columns={c: str(c)+'N-Size' for c in data_tested.columns if c not in ['Category']})
 
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         data = data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$", axis=1)
@@ -379,12 +352,63 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
         data = data[data["Category"].str.contains("School Name") == False]
         data = data.reset_index(drop=True)
+        data = data.rename(columns={c: str(c)+'School' for c in data.columns if c not in ['Category']})
+
+        # temporarily store IREAD, Low Grade, and High Grade rows
+        # TODO: Until we get IREAD Tested Data
+        other_rows = data[data['Category'].str.contains(r'IREAD|Low|High')]
+
+        # Merge Total Tested DF with Proficiency DF based on substring match
+
+        # add new column with substring values and drop old Category column
+        data_tested['Substring'] = data_tested['Category'].str.replace(' Total Tested','')
+        data_tested = data_tested.drop('Category', axis=1)
+
+        # this cross-merge and substring match process takes about .3s
+        # must be a faster way
+        t20 = time.process_time()
+
+        final_data = data.merge(data_tested, how='cross')
+
+        # Need to temporarily rename 'English Learner' because otherwise it 
+        # will match both 'English' and 'Non English'
+        final_data = final_data.replace('Non English Language Learners','Temp1', regex=True)
+        final_data = final_data.replace('English Language Learners','Temp2', regex=True)
+
+        # keep only those rows where substring is in Category
+        final_data = final_data[[a in b for a, b in zip(final_data['Substring'], final_data['Category'])]]
+
+        final_data = final_data.replace('Temp1', 'Non English Language Learners', regex=True)
+        final_data = final_data.replace('Temp2', 'English Language Learners', regex=True)        
+
+        final_data = final_data.drop('Substring', axis=1)
+        final_data = final_data.reset_index(drop=True)
+
+        # reorder columns for display
+        school_cols = [e for e in final_data.columns if 'School' in e]
+        nsize_cols = [e for e in final_data.columns if 'N-Size' in e]
+        school_cols.sort(reverse=True)
+        nsize_cols.sort(reverse=True)
+
+        final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+        final_cols.insert(0, "Category")
+        final_data = final_data[final_cols]
+        
+        # Add IREAD, Low Grade, and High Grade rows back (missing cols will populate with NaN)
+        # TODO: Add Total Tested for IREAD
+        # df's should have different indexes, but just to be safe, we will reset them both
+        # otherwise could use:
+        # final_data = pd.concat([final_data, other_rows], axis=0).reset_index(drop=True)
+        final_data = pd.concat([final_data.reset_index(drop=True), other_rows.reset_index(drop=True)], axis=0).reset_index(drop=True)
+
+        # print(f'Time to Cross Merge : ' + str(time.process_time() - t20))        
+        print(final_data)        
 
     else:
     
-        data = pd.DataFrame()
+        final_data = pd.DataFrame()
 
-    return data
+    return final_data # data
 
 def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
 
@@ -532,7 +556,10 @@ def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str
 
         # Categories to keep: 'Total Tested', 'Below Benchmark', 'Approaching Benchmark', 'At Benchmark', & 'Benchmark %' (SAT);
         #   'Pass N' & 'Test N' (Grade 10 ECA); 'Cohort Count' & 'Graduates' (Graduation Rate); 'AHS|CCR' & 'AHS|Grad All' (AHS Grad Rate)
-        data = data.filter(regex=r"Cohort Count$|Graduates$|AHS|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
+        # data = data.filter(regex=r"Cohort Count$|Graduates$|AHS|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
+        
+        # No longer keeping Grade 10 data (TESTING)
+        data = data.filter(regex=r"Cohort Count$|Graduates$|AHS|Benchmark|Total Tested|^Year$", axis=1)
 
         # remove 'ELA and Math' columns (NOTE: Comment this out to retain 'ELA and Math' columns)
         data = data.drop(list(data.filter(regex="ELA and Math")), axis=1)
@@ -558,8 +585,8 @@ def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str
         # data = calculate_nonwaiver_graduation_rate(data)
 
         # Calculate ECA (Grade 10) Rate #
-        if "Grade 10|ELA Test N" in data.columns:
-            data = calculate_eca_rate(data)
+        # if "Grade 10|ELA Test N" in data.columns:
+        #     data = calculate_eca_rate(data)
 
         # Calculate SAT Rates #
         if "School Total|EBRW Total Tested" in data.columns:
@@ -935,7 +962,6 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-
 def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.DataFrame, year: str) -> pd.DataFrame:
 
     excluded_years = get_excluded_years(year)
@@ -1070,7 +1096,6 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
 #     corporation_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
 #     corporation_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
 
-#     print(f"NEW way Total Calc: " + str(time.process_time() - t16))
 #     column_list = school_data['Category'].tolist() + ['Year']
         
 #     # calculate IREAD Pass %
@@ -1209,7 +1234,6 @@ def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> 
         cols.append(str(y) + 'Majority Enrolled')
         cols.append(str(y) + 'Difference')
 
-
     # pivot df from wide to long' add years to each column name; move year to
     # front of column name; sort and reset_index
     table_data = table_data.pivot(index=['Category'], columns='Test Year')
@@ -1220,8 +1244,6 @@ def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> 
     table_data = table_data.reset_index()
 
     return fig_data, table_data
-
-
 
 def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
     

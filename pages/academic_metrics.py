@@ -9,6 +9,7 @@ import dash
 from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
+import itertools
 
 # import local functions
 from .subnav import subnav_academic
@@ -34,7 +35,7 @@ dash.register_page(__name__,  path = "/academic_metrics", order=5)
     Output("table-container-14cd", "children"),
     Output("table-container-14ef", "children"),
     Output("table-container-14g", "children"),
-    Output("table-container-15abcd", "children"),
+    # Output("table-container-15abcd", "children"),
     Output("table-container-16ab", "children"),
     Output("table-container-16cd", "children"),  
     Output("display-k8-metrics", "style"),
@@ -82,7 +83,7 @@ def update_academic_metrics(school: str, year: str):
         table_container_14cd = {}
         table_container_14ef = {}
         table_container_14g = {}
-        table_container_15abcd = {}
+        # table_container_15abcd = {}
         table_container_16ab = {}
         table_container_16cd = {}
         display_k8_metrics = {"display": "none"}
@@ -126,8 +127,8 @@ def update_academic_metrics(school: str, year: str):
             ahs_nocalc_dict = {
                 "Category": ["1.2.a. Students graduate from high school in 4 years.", 
                         "1.2.b. Students enrolled in grade 12 graduate within the school year being assessed.",
-                        "1.4.a. Students who graduate achieve proficiency on state assessments in English/Language Arts.",
-                        "1.4.b.Students who graduate achieve proficiency on state assessments in Math."
+                        # "1.4.a. Students who graduate achieve proficiency on state assessments in English/Language Arts.",
+                        # "1.4.b.Students who graduate achieve proficiency on state assessments in Math."
                     ]
                 }
             ahs_no_calc = pd.DataFrame(ahs_nocalc_dict)
@@ -171,7 +172,7 @@ def update_academic_metrics(school: str, year: str):
                 table_container_14cd = {}
                 table_container_14ef = {}
                 table_container_14g = {}
-                table_container_15abcd = {}
+                # table_container_15abcd = {}
                 table_container_16ab = {}
                 table_container_16cd = {}              
                 display_k8_metrics = {"display": "none"}
@@ -219,7 +220,7 @@ def update_academic_metrics(school: str, year: str):
                 grad_metrics_dict = {
                     "Category": [
                         "1.7.c. The percentage of students entering Grade 12 at beginning of year who graduated",
-                        "1.7.d. The percentage of graduating students planning to pursue collge or career."
+                        # "1.7.d. The percentage of graduating students planning to pursue college or career."
                     ]
                 }
                 grad_metrics = pd.DataFrame(grad_metrics_dict)
@@ -270,11 +271,10 @@ def update_academic_metrics(school: str, year: str):
 
                 raw_corp_data = get_k8_corporation_academic_data(school)
 
-                corp_name = raw_corp_data["Corporation Name"].values[0]
+                # corp_name = raw_corp_data["Corporation Name"].values[0]
 
                 clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
 
-                # combined_delta = calculate_k8_comparison_metrics(clean_school_data, selected_year_string, school)
                 combined_delta = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, selected_year_numeric)
 
                 category = ethnicity + subgroup
@@ -295,7 +295,7 @@ def update_academic_metrics(school: str, year: str):
 
                 metric_14c_data = combined_delta[(combined_delta["Category"].str.contains("|".join(grades_all))) & (combined_delta["Category"].str.contains("ELA"))]
                 metric_14c_label = ["1.4c Grade level proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " compared with traditional school corporation."]
-                
+
                 metric_14c_data = get_svg_circle(metric_14c_data)
                 table_14c = create_metric_table(metric_14c_label, metric_14c_data)
 
@@ -332,10 +332,32 @@ def update_academic_metrics(school: str, year: str):
 
                 # iread_data
                 iread_df = clean_school_data[clean_school_data["Category"] == "IREAD Pass %"]
+                iread_df.loc[iread_df["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
 
                 if len(iread_df) > 0:
 
-                    iread_data = calculate_iread_metrics(iread_df)
+                    iread_ratings = calculate_iread_metrics(iread_df)
+
+                    # get comparison data and merge
+                    iread_comparison = combined_delta[combined_delta["Category"] == "IREAD Proficiency (Grade 3 only)"]
+                    iread_comparison = iread_comparison.reset_index(drop=True)
+                    target_cols = ['Category'] + [e for e in iread_comparison if '+/-' in e]
+
+                    iread_comparison = iread_comparison[target_cols]
+
+                    result = pd.merge(iread_ratings, iread_comparison[target_cols], on=['Category'])
+
+                    # arrange columns for display
+                    diff_cols = [e for e in result if '+/-' in e]
+                    school_cols = [e for e in result if 'School' in e]
+                    rate_cols = [e for e in result if 'Rate' in e]
+                    diff_cols.sort(reverse=True)
+                    school_cols.sort(reverse=True)
+                    rate_cols.sort(reverse=True)
+
+                    final_cols = list(itertools.chain(*zip(school_cols, diff_cols, rate_cols)))
+                    final_cols.insert(0, "Category")
+                    iread_data = result[final_cols]
 
                     metric_14g_label = "1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment."
                     iread_data = get_svg_circle(iread_data)   
@@ -346,29 +368,29 @@ def update_academic_metrics(school: str, year: str):
                     table_container_14g = no_data_table("1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.")
 
                 # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
-                growth_metrics_empty = pd.DataFrame(columns = simple_cols)
-                growth_metrics_dict = {
-                    "Category": ["1.5.a Percentage of students achieving “typical” or “high” growth on the state assessment in \
-                        English Language Arts according to Indiana\'s Growth Model",
-                    "1.5.b Percentage of students achieving “typical” or “high” growth on the state assessment in \
-                        Math according to Indiana\'s Growth Model",
-                    "1.5.c. Median Student Growth Percentile ('SGP') of students achieving 'adequate and sufficient growth' \
-                        on the state assessment in English Language Arts according to Indiana\'s Growth Model",
-                    "1.5.d. Median SGP of students achieving 'adequate and sufficient growth' on the state assessment \
-                        in Math according to Indiana\'s Growth Model",
-                        ]
-                    }
-                growth_metrics = pd.DataFrame(growth_metrics_dict)
+                # growth_metrics_empty = pd.DataFrame(columns = simple_cols)
+                # growth_metrics_dict = {
+                #     "Category": ["1.5.a Percentage of students achieving “typical” or “high” growth on the state assessment in \
+                #         English Language Arts according to Indiana\'s Growth Model",
+                #     "1.5.b Percentage of students achieving “typical” or “high” growth on the state assessment in \
+                #         Math according to Indiana\'s Growth Model",
+                #     "1.5.c. Median Student Growth Percentile ('SGP') of students achieving 'adequate and sufficient growth' \
+                #         on the state assessment in English Language Arts according to Indiana\'s Growth Model",
+                #     "1.5.d. Median SGP of students achieving 'adequate and sufficient growth' on the state assessment \
+                #         in Math according to Indiana\'s Growth Model",
+                #         ]
+                #     }
+                # growth_metrics = pd.DataFrame(growth_metrics_dict)
 
-                metric_15abcd_data = pd.concat([growth_metrics_empty, growth_metrics], ignore_index = True)
-                metric_15abcd_data.reset_index()
+                # metric_15abcd_data = pd.concat([growth_metrics_empty, growth_metrics], ignore_index = True)
+                # metric_15abcd_data.reset_index()
 
-                metric_15abcd_data = conditional_fill(metric_15abcd_data)
+                # metric_15abcd_data = conditional_fill(metric_15abcd_data)
 
-                metric_15abcd_label = "Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d"
-                metric_15abcd_data = get_svg_circle(metric_15abcd_data)
-                table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
-                table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
+                # metric_15abcd_label = "Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d"
+                # metric_15abcd_data = get_svg_circle(metric_15abcd_data)
+                # table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
+                # table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
 
                 metric_16a_data = combined_delta[(combined_delta["Category"].str.contains("|".join(category))) & (combined_delta["Category"].str.contains("ELA"))]
                 metric_16a_label = ["1.6a Proficiency on the state assessment in ", html.U("English Language Arts"), html.Br(),"for each subgroup compared with traditional school corporation."]
@@ -402,7 +424,7 @@ def update_academic_metrics(school: str, year: str):
                 table_container_14cd = {}
                 table_container_14ef = {}
                 table_container_14g = {}
-                table_container_15abcd = {}
+                # table_container_15abcd = {}
                 table_container_16ab = {}
                 table_container_16cd = {}            
                 display_k8_metrics = {"display": "none"}
@@ -420,7 +442,7 @@ def update_academic_metrics(school: str, year: str):
         table_container_14cd = {}
         table_container_14ef = {}
         table_container_14g = {}
-        table_container_15abcd = {}
+        # table_container_15abcd = {}
         table_container_16ab = {}
         table_container_16cd = {}     
         display_attendance = {"display": "none"}
@@ -455,8 +477,8 @@ def update_academic_metrics(school: str, year: str):
         table_11ab = create_metric_table(metric_11ab_label, metric_11ab_data)
         table_container_11ab = set_table_layout(table_11ab, table_11ab, metric_11ab_data.columns)
 
-        student_retention_rate_dict = {"Category": ["1.1.c. Re-Enrollment Rate",
-            "1.1.d. Re-Enrollment Rate"]
+        student_retention_rate_dict = {"Category": ["1.1.c. End of Year to Beginning of Year Re-Enrollment Rate",
+            "1.1.d. Year over Year Re-Enrollment Rate"]
         }
         
         mock_columns = [i for i in attendance_data.columns if "Corp Avg" not in i]
@@ -489,11 +511,11 @@ def update_academic_metrics(school: str, year: str):
     return (
         table_container_11ab, display_attendance, table_container_11cd, table_container_14ab,
         table_container_14cd, table_container_14ef, table_container_14g,
-        table_container_15abcd, table_container_16ab, table_container_16cd, display_k8_metrics,
+        table_container_16ab, table_container_16cd, display_k8_metrics,
         table_container_17ab, table_container_17cd, display_hs_metrics,
         ahs_table_container_113, ahs_table_container_1214, display_ahs_metrics,
         main_container, empty_container, no_data_to_display
-    )
+    ) # table_container_15abcd, 
 
 def layout():
     return html.Div(
@@ -538,9 +560,9 @@ def layout():
                                 html.Div(id="table-container-14cd", children=[]),
                                 html.Div(id="table-container-14ef", children=[]),
                                 html.Div(id="table-container-14g", children=[]),
-                                html.Div(id="table-container-15abcd", children=[]),
+                                # html.Div(id="table-container-15abcd", children=[]),
+                                html.Div(id="table-container-16cd", children=[]),                                 
                                 html.Div(id="table-container-16ab", children=[]),
-                                html.Div(id="table-container-16cd", children=[]),                                                            
                             ],
                             id = "display-k8-metrics",
                         ),

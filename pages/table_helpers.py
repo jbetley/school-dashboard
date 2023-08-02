@@ -352,9 +352,10 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
         # Split columns into Year (top level) and "162 Days", "Majority Enrolled",
         # "Difference" (second level)
         for item in all_cols:
+
             if item.startswith('20'):
-                if 'Rate' in item:
-                    item = item[:8]
+                # if 'Rate' in item:
+                    # item = item[:8]
 
                 name_cols.append([item[:4],item[4:]])
 
@@ -1203,34 +1204,84 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
     """
+# TODO: Add SAT Total Tested
 
     if table_type == 'proficiency':
+
+        all_cols = data.columns.tolist()
+        # build multi-level headers
+        name_cols = [['Category','']]
+
+        # Split columns into two levels
+        for item in all_cols:
+            if item.startswith('20'):
+                # if 'Rate' in item:
+                #     item = item[:8]
+                name_cols.append([item[:4],item[4:]])
+
+        #     col_format=[
+        #         {
+        #         'name': col, 'id': all_cols[idx], 'type':'numeric',
+        #         'format': Format()
+        #         }
+        #         for (idx, col) in enumerate(name_cols)
+        #     ]
+
+        # else:
+        #     col_format=[
+        #         {
+        #         'name': col, 'id': all_cols[idx], 'type':'numeric',
+        #         'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
+        #         }
+        #         for (idx, col) in enumerate(name_cols)
+        #     ]
+        table_cols = [
+                {
+                    'name': col,
+                    'id': all_cols[idx],
+                    'type': 'numeric',
+                    'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses),
+                }
+                if 'School' in col      
+                
+                else
+                    {
+                        'name': col,
+                        'id': all_cols[idx],
+                        'type':'numeric',
+                        'format': Format()
+                    }
+                    for (idx, col) in enumerate(name_cols)
+
+                # {
+                #     'name': col,
+                #     'id': col,
+                #     'type': 'numeric',
+                #     'format': Format(
+                #         scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
+                #     ),
+                # }
+                # for (col) in data.columns
+        ]
+    elif table_type == 'growth':
         table_cols = [
                 {
                     'name': col,
                     'id': col,
-                    'type': 'numeric',
-                    'format': Format(
-                        scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
-                    ),
+                    'presentation': 'markdown'
                 }
-                for (col) in data.columns
-        ]
-
-    elif table_type == 'growth':
-        table_cols = [
-                {
-                    'name': col, 'id': col, 'presentation': 'markdown'
-                }
-                if 'Rat' in col or 'Weighted Points' in col # the second condition matches exactly one cell in entire site
+                if 'Rat' in col or 'Weighted Points' in col
                 
                 else
                     {
-                        'name': col, 'id': col, 'type':'numeric', 'format': Format(scheme=Scheme.fixed, precision=2)
+                        'name': col,
+                        'id': col,
+                        'type':'numeric',
+                        'format': Format(scheme=Scheme.fixed, precision=2)
                     }
                     for (col) in data.columns
         ]   
-        
+
     table_layout = [
         html.Label(label, className='header_label'),
         html.Div(
@@ -1271,15 +1322,6 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                     'fontWeight': 'bold',
                 },
                 style_cell = table_cell,
-                # {
-                #     'whiteSpace': 'normal',
-                #     'height': 'auto',
-                #     'textAlign': 'center',
-                #     'color': '#6783a9',
-                #     'minWidth': '25px',
-                #     'width': '25px',
-                #     'maxWidth': '25px',
-                # },
                 style_header_conditional = [
                     {
                         'if': {'column_id': 'Category'},
