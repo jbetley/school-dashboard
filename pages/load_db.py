@@ -325,7 +325,6 @@ def get_high_school_academic_data(*args):
 #    return results    
     return run_query(q, params)
 
-# TODO: Table does not exist yet
 def get_hs_corporation_academic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))

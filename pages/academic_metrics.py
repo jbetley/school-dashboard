@@ -127,8 +127,6 @@ def update_academic_metrics(school: str, year: str):
             ahs_nocalc_dict = {
                 "Category": ["1.2.a. Students graduate from high school in 4 years.", 
                         "1.2.b. Students enrolled in grade 12 graduate within the school year being assessed.",
-                        # "1.4.a. Students who graduate achieve proficiency on state assessments in English/Language Arts.",
-                        # "1.4.b.Students who graduate achieve proficiency on state assessments in Math."
                     ]
                 }
             ahs_no_calc = pd.DataFrame(ahs_nocalc_dict)
@@ -203,7 +201,7 @@ def update_academic_metrics(school: str, year: str):
                 clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, school)
                 clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, school)
 
-                hs_merged_data = merge_high_school_data(clean_hs_school_data, clean_hs_corp_data, selected_year_string)
+                hs_merged_data = merge_high_school_data(clean_hs_school_data, clean_hs_corp_data)
                 combined_grad_metrics_data = calculate_high_school_metrics(hs_merged_data)
 
                 metric_17ab_label = "High School Accountability Metrics 1.7.a & 1.7.b"
@@ -213,7 +211,8 @@ def update_academic_metrics(school: str, year: str):
 
                 # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
                 all_cols = combined_grad_metrics_data.columns.tolist()
-                simple_cols = [x for x in all_cols if (not x.endswith("+/-") and not x.endswith("Average"))]
+
+                simple_cols = [x for x in all_cols if (not x.endswith("+/-") and not x.endswith("N-Size"))]
 
                 grad_metrics_empty = pd.DataFrame(columns = simple_cols)
 
@@ -271,12 +270,10 @@ def update_academic_metrics(school: str, year: str):
 
                 raw_corp_data = get_k8_corporation_academic_data(school)
 
-                # corp_name = raw_corp_data["Corporation Name"].values[0]
-
                 clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
-
+#TODO: PROBLEM IS HERE
                 combined_delta = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, selected_year_numeric)
-
+                print(combined_delta)
                 category = ethnicity + subgroup
 
                 metric_14a_data = combined_years[(combined_years["Category"].str.contains("|".join(grades_all))) & (combined_years["Category"].str.contains("ELA"))]
@@ -309,7 +306,8 @@ def update_academic_metrics(school: str, year: str):
 
                 # Create placeholders (Accountability Metrics 1.4.e & 1.4.f)
                 all_cols = combined_years.columns.tolist()
-                simple_cols = [x for x in all_cols if not x.endswith("+/-")]
+
+                simple_cols = [x for x in all_cols if (not x.endswith("+/-") and not x.endswith("N-Size"))]
 
                 year_proficiency_empty = pd.DataFrame(columns = simple_cols)
 
@@ -329,7 +327,7 @@ def update_academic_metrics(school: str, year: str):
                 metric_14ef_data = get_svg_circle(metric_14ef_data)
                 table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
                 table_container_14ef = set_table_layout(table_14ef, table_14ef, metric_14ef_data.columns)
-
+                print('HEREERE???')
                 # iread_data
                 iread_df = clean_school_data[clean_school_data["Category"] == "IREAD Pass %"]
                 iread_df.loc[iread_df["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"

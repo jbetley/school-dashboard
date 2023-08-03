@@ -482,7 +482,7 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     # masking with any() because they may erroneously drop a 0 value that we want to keep. So we need to
     # iterate through each tested category, if it is NaN or 0, we drop it and all associate categories.
 
-# TODO: Just move this filtration to its own function for all academic data
+# TODO: Can move this filtration (?) to its own function for all academic data
     if len(data.index) > 0:
         data = data.replace({"^": "***"})
 
@@ -539,8 +539,8 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
     school_type = school_information["School Type"].values[0]
 
     if len(data.index) > 0:
-        # We identify 'corp' data where the value of 'Corporation ID' in the df is equal
-        # to the value of the school's 'GEO Corp'.
+        
+        # it is 'corp' data if 'Corporation ID' is equal to the value of the school's 'GEO Corp'.
         if data_geo_code == school_geo_code:
             school_info = data[["Corporation Name"]].copy()
         else:
@@ -550,16 +550,17 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
             for col in data.columns:
                 data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
-        # Categories to keep: 'Total Tested', 'Below Benchmark', 'Approaching Benchmark', 'At Benchmark', & 'Benchmark %' (SAT);
-        #   'Pass N' & 'Test N' (Grade 10 ECA); 'Cohort Count' & 'Graduates' (Graduation Rate); 'AHS|CCR' & 'AHS|Grad All' (AHS Grad Rate)
-        # data = data.filter(regex=r"Cohort Count$|Graduates$|AHS|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
-        
-        # create new df with Total Tested Numbers
-        data_tested = data.filter(regex='Total Tested|Year', axis=1).copy()
+        # Get N-Size data and store in separate dataframe.
+        data_tested = data.filter(regex='Total Tested|Cohort Count|Year', axis=1).copy()
         data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-        data_tested = data_tested.rename(columns={c: str(c)+'N-Size' for c in data_tested.columns if c not in ['Category']})
+        
+        # temp name N-Size cols in order to differentiate.
+        if data_geo_code == school_geo_code:
+            data_tested = data_tested.rename(columns={c: str(c)+'CN-Size' for c in data_tested.columns if c not in ['Category']})
+        else:
+            data_tested = data_tested.rename(columns={c: str(c)+'SN-Size' for c in data_tested.columns if c not in ['Category']})
 
-        # No longer keeping Grade 10 data (TESTING)
+        # Filter the proficiency df
         data = data.filter(regex=r"Cohort Count$|Graduates$|AHS|Benchmark|Total Tested|^Year$", axis=1)
 
         # remove 'ELA and Math' columns (NOTE: Comment this out to retain 'ELA and Math' columns)
@@ -608,7 +609,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
             if {'AHS|CCR','AHS|Grad All'}.issubset(data.columns):
                 data["CCR Percentage"] = (data["AHS|CCR"] / data["AHS|Grad All"])
 
-        # filter |Total Tested
+        # filter
         data = data.filter(
             regex=r"^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|^Year$", # ^Strength of Diploma
             axis=1,
@@ -627,57 +628,67 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         # State/Federal grade rows not used
         data = data[data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
 
-        data = data.rename(columns={c: str(c)+'School' for c in data.columns if c not in ['Category']})   
-
+        if data_geo_code == school_geo_code:
+            data = data.rename(columns={c: str(c)+'Corp' for c in data.columns if c not in ['Category']})   
+        else:
+            data = data.rename(columns={c: str(c)+'School' for c in data.columns if c not in ['Category']})  
+        
         data = data.reset_index(drop=True)
 
         # make sure there are no lingering NoneTypes 
         data = data.fillna(value=np.nan)
 
-        # # Merge Total Tested DF with Proficiency DF based on substring match
+        # Merge Total Tested DF with Proficiency DF based on substring match
 
-        # temporarily store Graduation Rate data
-        grad_data = data[data['Category'].str.contains('Graduation Rate')]
+        # # temporarily store Graduation Rate data
+        # grad_data = data[data['Category'].str.contains('Graduation Rate')]
 
         # add new column with substring values and drop old Category column
-        data_tested['Substring'] = data_tested['Category'].str.replace(' Total Tested','')
+        data_tested['Substring'] = data_tested['Category'].replace({" Total Tested": "", "\|Cohort Count": " Graduation"}, regex=True) #.str.replace(' Total Tested','')
+
         data_tested = data_tested.drop('Category', axis=1)
 
-        # # this cross-merge and substring match process takes about .3s
-        # # must be a faster way
-        # # t20 = time.process_time()
+        # this cross-merge and substring match process takes about .3s - must be a faster way
+        # t20 = time.process_time()
 
         final_data = data.merge(data_tested, how='cross')
 
-        # # Need to temporarily rename 'English Learner' because otherwise it 
-        # # will match both 'English' and 'Non English'
-        # final_data = final_data.replace('Non English Language Learners','Temp1', regex=True)
-        # final_data = final_data.replace('English Language Learners','Temp2', regex=True)
-
         # keep only those rows where substring is in Category
+        # Need to temporarily rename 'English Learner' because otherwise it 
+        # will match both 'English' and 'Non English'
+        final_data = final_data.replace('Non English Language Learners','Temp1', regex=True)
+        final_data = final_data.replace('English Language Learners','Temp2', regex=True)
+
         final_data = final_data[[a in b for a, b in zip(final_data['Substring'], final_data['Category'])]]
 
-        # final_data = final_data.replace('Temp1', 'Non English Language Learners', regex=True)
-        # final_data = final_data.replace('Temp2', 'English Language Learners', regex=True)        
+        final_data = final_data.replace('Temp1', 'Non English Language Learners', regex=True)
+        final_data = final_data.replace('Temp2', 'English Language Learners', regex=True)         
 
         final_data = final_data.drop('Substring', axis=1)
         final_data = final_data.reset_index(drop=True)
 
-        # # reorder columns for display
-        school_cols = [e for e in final_data.columns if 'School' in e]
-        nsize_cols = [e for e in final_data.columns if 'N-Size' in e]
+        # reorder columns for display
+        # NOTE: This final data keeps the Corp N-Size cols, which are not used
+        # currently. We drop them later in the merge_high_school_data() step.
+        if data_geo_code == school_geo_code:
+            school_cols = [e for e in final_data.columns if 'Corp' in e]
+            nsize_cols = [e for e in final_data.columns if 'CN-Size' in e]
+        else:
+            school_cols = [e for e in final_data.columns if 'School' in e]
+            nsize_cols = [e for e in final_data.columns if 'SN-Size' in e]
+
         school_cols.sort(reverse=True)
         nsize_cols.sort(reverse=True)
 
         final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+
         final_cols.insert(0, "Category")
         final_data = final_data[final_cols]
 
         # Add Graduation Data Back
-        # TODO: Add Total Tested for Grad Rate ?
         # df's should have different indexes, but just to be safe, we will reset them both
         # otherwise could remove the individual reset_index()
-        final_data = pd.concat([final_data.reset_index(drop=True), grad_data.reset_index(drop=True)], axis=0).reset_index(drop=True)
+        # final_data = pd.concat([final_data.reset_index(drop=True), grad_data.reset_index(drop=True)], axis=0).reset_index(drop=True)
 
     else:
 
@@ -764,61 +775,64 @@ def calculate_adult_high_school_metrics(school: str, data: pd.DataFrame) -> pd.D
 
     return ahs_data
 
-def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.DataFrame, year: str) -> pd.DataFrame:
+def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.DataFrame) -> pd.DataFrame:
 
     all_school_data.columns = all_school_data.columns.astype(str)
     all_corp_data.columns = all_corp_data.columns.astype(str)
 
-    # Add State Graduation Average to both dataframes
+    # Add State Graduation Average to Corp DataFrame
     state_grad_average = get_graduation_data()
     state_grad_average = state_grad_average.loc[::-1].reset_index(drop=True)
     
     # merge state_grad_average with corp_data
     state_grad_average = (state_grad_average.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
-    state_grad_average = state_grad_average.rename(columns={c: str(c)+'School' for c in state_grad_average.columns if c not in ['Category']})   
-    all_corp_data = pd.concat([all_corp_data.reset_index(drop=True), state_grad_average.reset_index(drop=True)], axis=0).reset_index(drop=True)
+    # rename columns and add state_grad average to corp df
+    state_grad_average_corp = state_grad_average.rename(columns={c: str(c)+'Corp' for c in state_grad_average.columns if c not in ['Category']})
+    all_corp_data = pd.concat([all_corp_data.reset_index(drop=True), state_grad_average_corp.reset_index(drop=True)], axis=0).reset_index(drop=True)
 
-    # add to school data by making a copy, renaming the category, and concatenating
-    # If a school doesn't have a 'Total Graduation Rate' row, we need to create it
+    # For the school we duplicate the school's Total Graduation rate and
+    # rename it "State Grad Average" - when the difference is calculated
+    # between the two data frames, the difference between the Total Graduation Rates
+    # will be School minus Corportion and the difference between State Grad Average Rates
+    # will be School minus State Average
 
+    # If no Total Graduation Rate Category exists for a school, we add it with all NaNs
     if 'Total Graduation Rate' not in all_school_data['Category'].values:
         # add row of all nan (by enlargement) and set Category value
         all_school_data.loc[len(all_school_data)] = np.nan
         all_school_data.loc[all_school_data.index[-1],'Category'] = 'Total Graduation Rate'
-    #TODO: MATCH SCHOOL DATA WITH CORP DATA AFTER ADDING TESTED
-    print('SCHOOL DATA')
-    print(all_school_data)
+
     duplicate_row = all_school_data[all_school_data['Category'] == 'Total Graduation Rate'].copy()
     duplicate_row['Category'] = 'State Graduation Average'
     all_school_data = pd.concat([all_school_data, duplicate_row], axis=0, ignore_index=True)
 
     # Clean up and merge school and corporation dataframes
-
     year_cols = list(all_school_data.columns[:0:-1])
-    year_cols.reverse()
-
-    all_corp_data = (all_corp_data.set_index(["Category"]).add_suffix("Corp Average").reset_index())
-    all_school_data = (all_school_data.set_index(["Category"]).add_suffix("School").reset_index())
+    year_cols = [c[0:4] for c in year_cols]  # keeps only YYYY part of string]
+    year_cols = list(set(year_cols))
+    year_cols.sort(reverse=True)
 
     # last bit of cleanup is to drop 'Corporation Name' Category from corp df
-
     all_corp_data = all_corp_data.drop(all_corp_data.loc[all_corp_data['Category']=='Corporation Name'].index).reset_index(drop=True)
 
-    # Create list of alternating columns by year
-    school_cols = list(all_school_data.columns[:0:-1])
-    school_cols.reverse()
-
-    corp_cols = list(all_corp_data.columns[:0:-1])
-    corp_cols.reverse()
+    # Create list of alternating columns
+    # we technically do not need the Corporation N-Size at this point, but
+    # we will keep it just in case. We drop it in the final df
+    corp_cols = [e for e in all_corp_data.columns if 'Corp' in e]
+    cnsize_cols = [e for e in all_corp_data.columns if 'CN-Size' in e]
+    school_cols = [e for e in all_school_data.columns if 'School' in e]
+    snsize_cols = [e for e in all_school_data.columns if 'SN-Size' in e]
+    school_cols.sort(reverse=True)
+    snsize_cols.sort(reverse=True) 
+    corp_cols.sort(reverse=True)
+    cnsize_cols.sort(reverse=True)
 
     result_cols = [str(s) + "+/-" for s in year_cols]
 
-    final_cols = list(itertools.chain(*zip(school_cols, corp_cols, result_cols)))
-    final_cols.insert(0, "Category")
-
-    merged_cols = [val for pair in zip(school_cols, corp_cols) for val in pair]
+    merged_cols = list(itertools.chain(*zip(school_cols, snsize_cols, corp_cols, cnsize_cols)))
     merged_cols.insert(0, "Category")
+
     hs_merged_data = all_school_data.merge(all_corp_data, on="Category", how="left")
     hs_merged_data = hs_merged_data[merged_cols]
 
@@ -835,10 +849,16 @@ def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.Data
 
     for y in year_cols:
         hs_results[y] = calculate_difference(
-            all_school_data[y + "School"], all_corp_data[y + "Corp Average"]
+            all_school_data[y + "School"], all_corp_data[y + "Corp"]
         )
 
-    # add headers
+    # Create final column order
+    # NOTE: We drop the corp avg and corp N-Size cols (by not including them in the list)
+    # because we do not display them
+    # final_cols = list(itertools.chain(*zip(school_cols, snsize_cols, corp_cols, cnsize_cols, result_cols)))
+    final_cols = list(itertools.chain(*zip(school_cols, snsize_cols, result_cols)))    
+    final_cols.insert(0, "Category")    
+
     hs_results = hs_results.set_axis(result_cols, axis=1)
     hs_results.insert(loc=0, column="Category", value=tmp_category)
 
@@ -851,12 +871,10 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
 
     data = merged_data.copy()
 
-    data.columns = data.columns.str.replace(r"Corp Average", "Average")
-
     grad_limits_state = [0, 0.05, 0.15, 0.15]
 
     state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
-    
+
     [
         state_grad_metric.insert(
             i,
@@ -874,7 +892,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
         )
         for i in range(state_grad_metric.shape[1], 1, -3)
     ]
- 
+
     grad_limits_local = [0, 0.05, 0.10, 0.10]
     local_grad_metric = data[data["Category"].isin(["Total Graduation Rate", "Non Waiver Graduation Rate"])]
 
@@ -896,28 +914,28 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
         for i in range(local_grad_metric.shape[1], 1, -3)
     ]
 
+    # NOTE: Strength of Diploma is not currently displayed
     strength_diploma = data[data["Category"] == "Strength of Diploma"]
     strength_diploma = strength_diploma[[col for col in strength_diploma.columns if "School" in col or "Category" in col]]
-
-    # NOTE: Strength of Diploma is not currently displayed
     strength_diploma.loc[strength_diploma["Category"] == "Strength of Diploma", "Category"] = "1.7.e The school's strength of diploma indicator."
 
     # combine dataframes and rename categories
     combined_grad_metrics = pd.concat([state_grad_metric, local_grad_metric], ignore_index=True)
     
-    combined_grad_metrics.loc[combined_grad_metrics["Category"] == "Average State Graduation Rate","Category",
+    combined_grad_metrics.loc[combined_grad_metrics["Category"] == "State Graduation Average","Category",
     ] = "1.7.a 4 year graduation rate compared with the State average"
     
     combined_grad_metrics.loc[combined_grad_metrics["Category"] == "Total Graduation Rate", "Category",
     ] = "1.7.b 4 year graduation rate compared with school corporation average"
 
-    combined_grad_metrics.loc[ combined_grad_metrics["Category"] == "Non-Waiver Graduation Rate", "Category",
+    combined_grad_metrics.loc[ combined_grad_metrics["Category"] == "Non Waiver Graduation Rate", "Category",
     ] = "1.7.b 4 year non-waiver graduation rate  with school corporation average"
 
     return combined_grad_metrics
 
 def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
-    
+
+#TODO: CHECK TO SEE WHERE ACADEMIC RATING IS BEING SET - CURRENTLY THERE IS NONE FOR COMP METRICS!    
     data.columns = data.columns.astype(str)
     
     # drop low/high grade rows
@@ -1032,31 +1050,37 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
 
     # reverse order of corp_data columns (ignoring 'Category') so current year is first and
     # get clean list of years
-    k8_year_cols = list(school_data.columns[:0:-1])
-    k8_year_cols.reverse()
+    # k8_year_cols = list(school_data.columns[:0:-1])
+    # k8_year_cols.reverse()
 
+    # Clean up and merge school and corporation dataframes
+    year_cols = list(school_data.columns[:0:-1])
+    year_cols = [c[0:4] for c in year_cols]  # keeps only YYYY part of string]
+    year_cols = list(set(year_cols))
+    year_cols.sort(reverse=True)
+    
     # add_suffix is applied to entire df. To hide columns we dont want
     # renamed, set it as index and reset back after renaming.
     corp_data = (corp_data.set_index(["Category"]).add_suffix("Corp Proficiency").reset_index())
-    school_data = (school_data.set_index(["Category"]).add_suffix("School").reset_index())
+    # school_data = (school_data.set_index(["Category"]).add_suffix("School").reset_index())
 
-    school_cols = list(school_data.columns[:0:-1])
-    school_cols.reverse()
+    # Use column list to merge
+    corp_cols = [e for e in corp_data.columns if 'Corp' in e]
+    school_cols = [e for e in school_data.columns if 'School' in e]
+    nsize_cols = [e for e in school_data.columns if 'N-Size' in e]
+    school_cols.sort(reverse=True)
+    corp_cols.sort(reverse=True)
+    nsize_cols.sort(reverse=True)
 
-    corp_cols = list(corp_data.columns[:0:-1])
-    corp_cols.reverse()
+    result_cols = [str(s) + "+/-" for s in year_cols]
 
-    result_cols = [str(s) + "+/-" for s in k8_year_cols]
-
-    final_cols = list(itertools.chain(*zip(school_cols, corp_cols, result_cols)))
-
-    final_cols.insert(0, "Category")
-
-    merged_cols = [val for pair in zip(school_cols, corp_cols) for val in pair]
+    merged_cols = list(itertools.chain(*zip(school_cols, corp_cols, nsize_cols)))
     merged_cols.insert(0, "Category")
 
     merged_data = school_data.merge(corp_data, on="Category", how="left")
     merged_data = merged_data[merged_cols]
+
+    school_data = school_data.reset_index(drop=True)
 
     tmp_category = school_data["Category"]
     school_data = school_data.drop("Category", axis=1)
@@ -1071,6 +1095,9 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
         )
 
     # add headers
+    final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
+    final_cols.insert(0, "Category")
+
     k8_result = k8_result.set_axis(result_cols, axis=1)
     k8_result.insert(loc=0, column="Category", value=tmp_category)
 
@@ -1090,146 +1117,6 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
     final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
 
     return final_k8_academic_data
-
-# def calculate_k8_comparison_metrics(school_data: pd.DataFrame, year: str, school: str) -> pd.DataFrame:
-
-#     excluded_years = get_excluded_years(year)
-
-#     # this function is only called here
-#     all_corporation_data = get_k8_corporation_academic_data(school)
-    
-#     corporation_data = all_corporation_data[~all_corporation_data["Year"].isin(excluded_years)].copy()
-
-#     school_data.columns = school_data.columns.astype(str)
-#     corporation_data.columns = corporation_data.columns.astype(str)
-
-#     for col in school_data:
-#         school_data[col] = pd.to_numeric(school_data[col], errors='coerce').fillna(school_data[col])
-
-#     # do not want to retain strings ('***') for corporation_data
-#     for col in corporation_data:
-#         corporation_data[col] = pd.to_numeric(corporation_data[col], errors='coerce')       
-
-#     # reset index as 'Year' for corp_rate data
-#     corporation_data = corporation_data.set_index("Year")
-
-#     # iterate over (non missing) columns, calculate the average,
-#     # and store in a new column
-#     corporation_data = calculate_proficiency(corporation_data)
-
-#     # Drop 'ELA and Math'
-#     # corporation_data = corporation_data[corporation_data.columns[~corporation_data.columns.str.contains(r'ELA and Math')]]
-
-#     # Corporation 'School Total' is calculates using all grades. We need to recalculate it using only the
-#     # grades that are served by the school - this is messy because we need Total Proficient/Total Tested
-#     # for both ELA and Math for all matching grades and those specific columns do not exist in the school df
-#     school_data2 = school_data.copy()
-
-#     school_data2
-#     t16 = time.process_time()
-# # TODO: This is used elsewhere. TEST which algo is faster. This one or 491 in Academic Analysi and 377 in this script
-#     school_grades = school_data.loc[school_data['Category'].str.contains(r"Grade.[345678]", regex=True), 'Category'].to_list()
-#     school_grades = [i.split('|')[0] for i in school_grades]
-#     school_grades = list(set(school_grades))
-
-#     math_prof = [e + '|Math Total Proficient' for e in school_grades]
-#     math_test = [e + '|Math Total Tested' for e in school_grades]
-#     ela_prof = [e + '|ELA Total Proficient' for e in school_grades]
-#     ela_test = [e + '|ELA Total Tested' for e in school_grades]
-
-#     adj_corp_math_prof = corporation_data[corporation_data.columns.intersection(math_prof)]
-#     adj_corp_math_test = corporation_data[corporation_data.columns.intersection(math_test)]
-#     adj_corp_ela_prof = corporation_data[corporation_data.columns.intersection(ela_prof)]
-#     adj_corp_ela_tst = corporation_data[corporation_data.columns.intersection(ela_test)]
-
-#     corporation_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
-#     corporation_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
-
-#     column_list = school_data['Category'].tolist() + ['Year']
-        
-#     # calculate IREAD Pass %
-#     if "IREAD Pass %" in column_list:
-        
-#         corporation_data["IREAD Pass %"] = (corporation_data["IREAD Pass N"] / corporation_data["IREAD Test N"])
-
-#     # no drop because index was previous set to year
-#     corporation_data = corporation_data.reset_index()
-
-#     # ensure columns headers are strings
-#     corporation_data.columns = corporation_data.columns.astype(str)
-    
-#     # keep only corp columns that match school_columns
-#     corporation_data = corporation_data[corporation_data.columns.intersection(column_list)]
-
-#     # TODO: ADD MALE/FEMALE TO CORP_k8 file
-#     # TODO: UNTIL THEN, NEED TO REMOVE IT FROM SCHOOL FILE OR THROWS OFF CALCULATIONS
-#     # TODO: DO WE NEED LOW GRADE HIGH GRADE IN SCHOOL FILE?
-#     school_data = school_data[school_data["Category"].str.contains("Female|Male") == False]
-
-#     corporation_data = corporation_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$",axis=1)
-
-#     corporation_data = (corporation_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-
-#     # reverse order of corp_data columns (ignoring 'Category') so current year is first and
-#     # get clean list of years
-#     k8_year_cols = list(school_data.columns[:0:-1])
-#     k8_year_cols.reverse()
-
-#     # add_suffix is applied to entire df. To hide columns we dont want
-#     # renamed, set it as index and reset back after renaming.
-#     corporation_data = (corporation_data.set_index(["Category"]).add_suffix("Corp Proficiency").reset_index())
-#     school_data = (school_data.set_index(["Category"]).add_suffix("School").reset_index())
-
-#     school_cols = list(school_data.columns[:0:-1])
-#     school_cols.reverse()
-
-#     corp_cols = list(corporation_data.columns[:0:-1])
-#     corp_cols.reverse()
-
-#     result_cols = [str(s) + "+/-" for s in k8_year_cols]
-
-#     final_cols = list(itertools.chain(*zip(school_cols, corp_cols, result_cols)))
-
-#     final_cols.insert(0, "Category")
-
-#     merged_cols = [val for pair in zip(school_cols, corp_cols) for val in pair]
-#     merged_cols.insert(0, "Category")
-
-#     merged_data = school_data.merge(corporation_data, on="Category", how="left")
-#     merged_data = merged_data[merged_cols]
-
-#     tmp_category = school_data["Category"]
-#     school_data = school_data.drop("Category", axis=1)
-#     corporation_data = corporation_data.drop("Category", axis=1)
-
-#     k8_result = pd.DataFrame()
-
-#     for c in school_data.columns:
-#         c = c[0:4]  # keeps only YYYY part of string
-#         k8_result[c + "+/-"] = calculate_difference(
-#             school_data[c + "School"], corporation_data[c + "Corp Proficiency"]
-#         )
-
-#     # add headers
-#     k8_result = k8_result.set_axis(result_cols, axis=1)
-#     k8_result.insert(loc=0, column="Category", value=tmp_category)
-
-#     # combined merged (school and corp) and result dataframes and reorder
-#     # (according to result columns)
-#     final_k8_academic_data = merged_data.merge(k8_result, on="Category", how="left")
-
-#     final_k8_academic_data = final_k8_academic_data[final_cols]
-
-#     # NOTE: Pretty sure this is redundant as we add 'Proficient %; suffix to totals
-#     # above, then remove it here, then pass to academic_analysis page, and add it
-#     # back. But I tried to fix it once and broke everything. So I'm just gonna
-#     # leave it alone for now.
-#     final_k8_academic_data["Category"] = (final_k8_academic_data["Category"].str.replace(" Proficient %", "").str.strip())
-
-#     # rename IREAD Category
-#     final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
-
-#     return final_k8_academic_data
 
 def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
 

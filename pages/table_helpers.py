@@ -523,6 +523,8 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
     cols = data.columns
     table_size = len(cols)
 
+    # print('TABLING!')
+    # print(data)
     if len(data.index) == 0 or table_size == 1:
         table = [
             html.Div(
@@ -655,8 +657,8 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         ]
 
         data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
-        print('TST')
-        print(data['Category'])
+        # print('TST')
+        # print(data['Category'])
         # get list of +/- columns (used by datatable filter_query' to
         # ID columns for color formatting)
         format_cols = [k for k in headers if 'Diff' in k or 'Rate' in k]
@@ -672,6 +674,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
 
                 name_cols.append([item[:4],item[4:]])
 
+        # print(name_cols)
         # NOTE: This add a border to header_index:1 for each category
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
