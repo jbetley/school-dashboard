@@ -159,8 +159,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             if len(selected_raw_k8_school_data.index) > 0:
             
                 all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data, school)
-# TODO: Here - to add N-Size data to academic info tables
-                # print(all_k8_school_data)
+
                 all_k8_school_data = all_k8_school_data.fillna("No Data")
                 all_k8_school_data = (all_k8_school_data.set_index(["Category"]).add_suffix("School").reset_index())
 
@@ -314,6 +313,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 #     inplace=True,
                 # )
                 # TODO: Is it necessary to drop anything here?
+                # TODO: determine if possible to add Total Tested to Bar Charts
                 # drop columns used for calculation that we dont want to chart (keeping Total Tested)
                 all_proficiency_data.drop(list(all_proficiency_data.filter(regex="Total Proficient|ELA and Math")),
                     axis=1,
@@ -474,7 +474,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             if len(selected_raw_hs_school_data.index) > 0:
 
                 selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
-                all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, selected_year_string, school)
+                all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
 
             # Graduation Rate Tables
                 grad_overview_categories = ["Total", "Non Waiver", "State Average"] # "Strength of Diploma" (not currently displayed)
@@ -484,14 +484,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     grad_overview_categories.append("CCR Percentage")
 
                 all_hs_school_data.columns = all_hs_school_data.columns.astype(str)
-
-                # eca_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Grade 10")].copy()
-                # eca_data = eca_data.dropna(axis=1,how="all")
-                
-                # if len(eca_data.columns) > 1:       
-                #     hs_eca_table = create_academic_info_table(eca_data,"End of Course Assessments","proficiency")            
-                # else:
-                #     hs_eca_table = no_data_table("End of Course Assessments")
 
                 # Graduation Rate Tables
                 graduation_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Graduation")].copy()

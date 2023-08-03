@@ -330,33 +330,33 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         data = data.drop(drop_all, axis=1).copy()
 
         # does not calculate IREAD proficiency
-        data = calculate_proficiency(data)
+        data_proficiency = calculate_proficiency(data)
 
         # create new df with Total Tested Numbers
-        data_tested = data.filter(regex='Total Tested|Year', axis=1).copy()
+        data_tested = data_proficiency.filter(regex='Total Tested|Year', axis=1).copy()
         data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
         data_tested = data_tested.rename(columns={c: str(c)+'N-Size' for c in data_tested.columns if c not in ['Category']})
 
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
-        data = data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$", axis=1)
+        data_proficiency = data_proficiency.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Pass %|^Year$", axis=1)
 
         # add School Name column back
         # school data has School Name column, corp data does not
         if len(school_info.index) > 0:
-            data = pd.concat([data, school_info], axis=1, join="inner")
+            data_proficiency = pd.concat([data_proficiency, school_info], axis=1, join="inner")
 
-        data = data.reset_index(drop=True)  #TODO: NEED THIS ONE?
+        data_proficiency = data_proficiency.reset_index(drop=True)  #TODO: NEED THIS ONE?
 
         # transpose dataframes and clean headers    
-        data.columns = data.columns.astype(str)
-        data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-        data = data[data["Category"].str.contains("School Name") == False]
-        data = data.reset_index(drop=True)
-        data = data.rename(columns={c: str(c)+'School' for c in data.columns if c not in ['Category']})
+        data_proficiency.columns = data_proficiency.columns.astype(str)
+        data_proficiency = (data_proficiency.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+        data_proficiency = data_proficiency[data_proficiency["Category"].str.contains("School Name") == False]
+        data_proficiency = data_proficiency.reset_index(drop=True)
+        data_proficiency = data_proficiency.rename(columns={c: str(c)+'School' for c in data_proficiency.columns if c not in ['Category']})
 
         # temporarily store IREAD, Low Grade, and High Grade rows
         # TODO: Until we get IREAD Tested Data
-        other_rows = data[data['Category'].str.contains(r'IREAD|Low|High')]
+        other_rows = data_proficiency[data_proficiency['Category'].str.contains(r'IREAD|Low|High')]
 
         # Merge Total Tested DF with Proficiency DF based on substring match
 
@@ -366,9 +366,9 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
 
         # this cross-merge and substring match process takes about .3s
         # must be a faster way
-        t20 = time.process_time()
+        # t20 = time.process_time()
 
-        final_data = data.merge(data_tested, how='cross')
+        final_data = data_proficiency.merge(data_tested, how='cross')
 
         # Need to temporarily rename 'English Learner' because otherwise it 
         # will match both 'English' and 'Non English'
@@ -397,18 +397,16 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         # Add IREAD, Low Grade, and High Grade rows back (missing cols will populate with NaN)
         # TODO: Add Total Tested for IREAD
         # df's should have different indexes, but just to be safe, we will reset them both
-        # otherwise could use:
-        # final_data = pd.concat([final_data, other_rows], axis=0).reset_index(drop=True)
+        # otherwise could remove the individual reset_index()
         final_data = pd.concat([final_data.reset_index(drop=True), other_rows.reset_index(drop=True)], axis=0).reset_index(drop=True)
 
-        # print(f'Time to Cross Merge : ' + str(time.process_time() - t20))        
-        print(final_data)        
+        # print(f'Time to Cross Merge : ' + str(time.process_time() - t20))    
 
     else:
     
         final_data = pd.DataFrame()
 
-    return final_data # data
+    return final_data
 
 def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
 
@@ -521,14 +519,12 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         # ALT: data = data.loc[:,~data.columns.str.contains(drop_all, case=False)] 
         data = data.drop(drop_all, axis=1).copy()
 
-        final_data = data.copy()
-
     else:
-        final_data = pd.DataFrame()
+        data = pd.DataFrame()
 
-    return final_data
+    return data
     
-def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str) -> pd.DataFrame:
+def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
 
     school_information = get_school_index(school)
 
@@ -558,6 +554,11 @@ def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str
         #   'Pass N' & 'Test N' (Grade 10 ECA); 'Cohort Count' & 'Graduates' (Graduation Rate); 'AHS|CCR' & 'AHS|Grad All' (AHS Grad Rate)
         # data = data.filter(regex=r"Cohort Count$|Graduates$|AHS|Pass N|Test N|Benchmark|Total Tested|^Year$", axis=1)
         
+        # create new df with Total Tested Numbers
+        data_tested = data.filter(regex='Total Tested|Year', axis=1).copy()
+        data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+        data_tested = data_tested.rename(columns={c: str(c)+'N-Size' for c in data_tested.columns if c not in ['Category']})
+
         # No longer keeping Grade 10 data (TESTING)
         data = data.filter(regex=r"Cohort Count$|Graduates$|AHS|Benchmark|Total Tested|^Year$", axis=1)
 
@@ -594,7 +595,7 @@ def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str
 
         # Calculate AHS Only Data #
         # NOTE: All other values pulled from HS dataframe required for AHS calculations should go here        
-        # print(data.T)
+
         # CCR Rate
         if school_type == "AHS":
 
@@ -607,9 +608,9 @@ def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str
             if {'AHS|CCR','AHS|Grad All'}.issubset(data.columns):
                 data["CCR Percentage"] = (data["AHS|CCR"] / data["AHS|Grad All"])
 
-        # filter
+        # filter |Total Tested
         data = data.filter(
-            regex=r"^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|Total Tested|^Year$", # ^Strength of Diploma
+            regex=r"^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|^Year$", # ^Strength of Diploma
             axis=1,
         )
 
@@ -625,17 +626,64 @@ def process_high_school_academic_data(data: pd.DataFrame, year: str, school: str
 
         # State/Federal grade rows not used
         data = data[data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
-        
+
+        data = data.rename(columns={c: str(c)+'School' for c in data.columns if c not in ['Category']})   
+
         data = data.reset_index(drop=True)
 
         # make sure there are no lingering NoneTypes 
         data = data.fillna(value=np.nan)
 
+        # # Merge Total Tested DF with Proficiency DF based on substring match
+
+        # temporarily store Graduation Rate data
+        grad_data = data[data['Category'].str.contains('Graduation Rate')]
+
+        # add new column with substring values and drop old Category column
+        data_tested['Substring'] = data_tested['Category'].str.replace(' Total Tested','')
+        data_tested = data_tested.drop('Category', axis=1)
+
+        # # this cross-merge and substring match process takes about .3s
+        # # must be a faster way
+        # # t20 = time.process_time()
+
+        final_data = data.merge(data_tested, how='cross')
+
+        # # Need to temporarily rename 'English Learner' because otherwise it 
+        # # will match both 'English' and 'Non English'
+        # final_data = final_data.replace('Non English Language Learners','Temp1', regex=True)
+        # final_data = final_data.replace('English Language Learners','Temp2', regex=True)
+
+        # keep only those rows where substring is in Category
+        final_data = final_data[[a in b for a, b in zip(final_data['Substring'], final_data['Category'])]]
+
+        # final_data = final_data.replace('Temp1', 'Non English Language Learners', regex=True)
+        # final_data = final_data.replace('Temp2', 'English Language Learners', regex=True)        
+
+        final_data = final_data.drop('Substring', axis=1)
+        final_data = final_data.reset_index(drop=True)
+
+        # # reorder columns for display
+        school_cols = [e for e in final_data.columns if 'School' in e]
+        nsize_cols = [e for e in final_data.columns if 'N-Size' in e]
+        school_cols.sort(reverse=True)
+        nsize_cols.sort(reverse=True)
+
+        final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+        final_cols.insert(0, "Category")
+        final_data = final_data[final_cols]
+
+        # Add Graduation Data Back
+        # TODO: Add Total Tested for Grad Rate ?
+        # df's should have different indexes, but just to be safe, we will reset them both
+        # otherwise could remove the individual reset_index()
+        final_data = pd.concat([final_data.reset_index(drop=True), grad_data.reset_index(drop=True)], axis=0).reset_index(drop=True)
+
     else:
 
-        data = pd.DataFrame()
+        final_data = pd.DataFrame()
 
-    return data
+    return final_data
 
 ### Calculate Accountability Metrics ###
 
@@ -725,20 +773,22 @@ def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.Data
     state_grad_average = get_graduation_data()
     state_grad_average = state_grad_average.loc[::-1].reset_index(drop=True)
     
-    # add to corp data by transposing, mirroring the columns, dropping the 'Year' row, and
-    # concatenating together
-    state_grad_average = state_grad_average.T.reset_index()
-    state_grad_average = state_grad_average.drop(0)
-    state_grad_average.columns = all_corp_data.columns
-    all_corp_data = pd.concat([all_corp_data, state_grad_average], axis=0, ignore_index=True)
+    # merge state_grad_average with corp_data
+    state_grad_average = (state_grad_average.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+    state_grad_average = state_grad_average.rename(columns={c: str(c)+'School' for c in state_grad_average.columns if c not in ['Category']})   
+    all_corp_data = pd.concat([all_corp_data.reset_index(drop=True), state_grad_average.reset_index(drop=True)], axis=0).reset_index(drop=True)
 
     # add to school data by making a copy, renaming the category, and concatenating
     # If a school doesn't have a 'Total Graduation Rate' row, we need to create it
+
     if 'Total Graduation Rate' not in all_school_data['Category'].values:
         # add row of all nan (by enlargement) and set Category value
         all_school_data.loc[len(all_school_data)] = np.nan
         all_school_data.loc[all_school_data.index[-1],'Category'] = 'Total Graduation Rate'
-
+    #TODO: MATCH SCHOOL DATA WITH CORP DATA AFTER ADDING TESTED
+    print('SCHOOL DATA')
+    print(all_school_data)
     duplicate_row = all_school_data[all_school_data['Category'] == 'Total Graduation Rate'].copy()
     duplicate_row['Category'] = 'State Graduation Average'
     all_school_data = pd.concat([all_school_data, duplicate_row], axis=0, ignore_index=True)
@@ -899,7 +949,6 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # Add first_year data back
     data[first_year.columns] = first_year
 
-    # print(data)
     # Create clean col lists - (YYYY + 'School') and (YYYY + '+/-')
     school_years_cols = list(data.columns[1:])
     

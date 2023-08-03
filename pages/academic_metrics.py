@@ -200,8 +200,8 @@ def update_academic_metrics(school: str, year: str):
                 common_cols = [col for col in set(raw_hs_school_data.columns).intersection(raw_hs_corp_data.columns)]
                 raw_hs_corp_data = raw_hs_corp_data[common_cols]
 
-                clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, selected_year_string, school)
-                clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, selected_year_string, school)
+                clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, school)
+                clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, school)
 
                 hs_merged_data = merge_high_school_data(clean_hs_school_data, clean_hs_corp_data, selected_year_string)
                 combined_grad_metrics_data = calculate_high_school_metrics(hs_merged_data)

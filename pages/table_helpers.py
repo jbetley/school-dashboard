@@ -655,7 +655,8 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         ]
 
         data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
-
+        print('TST')
+        print(data['Category'])
         # get list of +/- columns (used by datatable filter_query' to
         # ID columns for color formatting)
         format_cols = [k for k in headers if 'Diff' in k or 'Rate' in k]
@@ -1215,26 +1216,8 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
         # Split columns into two levels
         for item in all_cols:
             if item.startswith('20'):
-                # if 'Rate' in item:
-                #     item = item[:8]
                 name_cols.append([item[:4],item[4:]])
 
-        #     col_format=[
-        #         {
-        #         'name': col, 'id': all_cols[idx], 'type':'numeric',
-        #         'format': Format()
-        #         }
-        #         for (idx, col) in enumerate(name_cols)
-        #     ]
-
-        # else:
-        #     col_format=[
-        #         {
-        #         'name': col, 'id': all_cols[idx], 'type':'numeric',
-        #         'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
-        #         }
-        #         for (idx, col) in enumerate(name_cols)
-        #     ]
         table_cols = [
                 {
                     'name': col,
@@ -1252,17 +1235,8 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                         'format': Format()
                     }
                     for (idx, col) in enumerate(name_cols)
-
-                # {
-                #     'name': col,
-                #     'id': col,
-                #     'type': 'numeric',
-                #     'format': Format(
-                #         scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
-                #     ),
-                # }
-                # for (col) in data.columns
         ]
+    
     elif table_type == 'growth':
         table_cols = [
                 {
@@ -1282,6 +1256,132 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                     for (col) in data.columns
         ]   
 
+    # set column widths
+    headers = data.columns.tolist()
+
+    table_size = len(data.columns)
+    year_headers = [y for y in data.columns.tolist() if 'School' in y]
+    nsize_headers = [y for y in data.columns.tolist() if 'N-Size' in y]
+
+    category_width = 30
+    data_width = 100 - category_width
+    data_col_width = data_width / (table_size - 1)
+
+    print(data)
+    # table styles
+    table_cell_conditional = [
+        {
+            'if': {
+                'column_id': 'Category'
+            },
+            'textAlign': 'left',
+            'paddingLeft': '20px',
+            'fontWeight': '500',
+            'width': str(category_width) + '%'
+        },
+    ] + [
+        {
+            'if': {
+                'column_id': year
+            },
+            'textAlign': 'center',
+            'fontWeight': '500',
+            'width': str(data_col_width) + '%',
+        } for year in year_headers
+    ]  + [
+        {   'if': {
+            'column_id': nsize
+        },
+            'textAlign': 'center',
+            'fontWeight': '600',
+            'width': str(data_col_width) + '%'
+        } for nsize in nsize_headers
+    ]
+
+    table_header_conditional = [
+        {
+            'if': {
+                'column_id': year,
+                'header_index': 1,
+            },
+            'borderLeft': '.5px solid #b2bdd4',
+            'borderTop': '.5px solid #b2bdd4',
+            'borderBottom': '.5px solid #b2bdd4',
+        } for year in year_headers
+    ] + [
+        {   'if': {
+            'column_id': nsize,
+            'header_index': 1,
+        },
+            'borderTop': '.5px solid #b2bdd4',
+            'borderBottom': '.5px solid #b2bdd4',
+    } for nsize in nsize_headers
+    ] + [
+        # Use 'headers[-1]' and 'borderRight' for each subheader to have full border
+        # Use 'headers[1]' and 'borderLeft' to leave first and last columns open on
+        # right and left
+        {   'if': {
+            'column_id': headers[-1],
+        #    'column_id': headers[1],
+            'header_index': 1,
+        },
+        'borderRight': '.5px solid #b2bdd4',
+        }
+    ]
+
+    table_data_conditional = [
+        {
+            'if': {
+                'state': 'selected'
+            },
+            'backgroundColor': 'rgba(112,128,144, .3)',
+            'border': 'thin solid silver'
+        },
+        {
+            'if': {
+                'row_index': 'odd'
+            },
+            'backgroundColor': '#eeeeee'
+        }
+    ] + [
+        {
+            'if': {
+                'column_id': headers[-1],
+            },
+            'borderRight': '.5px solid #b2bdd4',
+        },
+    ] + [
+        {
+            'if': {
+                'row_index': 0
+            },
+            'paddingTop': '5px'
+        }
+    ] + [
+        {
+            'if': {
+                'row_index': len(data)-1
+            },
+            'borderBottom': '.5px solid #b2bdd4',
+        }
+    ] + [
+        {
+            'if': {
+                'column_id': 'Category',
+            },
+            'borderRight': '.5px solid #b2bdd4',
+            'borderBottom': 'none',
+        },
+    ] + [
+        {
+            'if': {
+                'column_id': nsize,
+            },
+            'borderRight': '.5px solid #b2bdd4',
+            'textAlign': 'center',
+        } for nsize in nsize_headers
+    ]
+
     table_layout = [
         html.Label(label, className='header_label'),
         html.Div(
@@ -1289,27 +1389,28 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                 data.to_dict('records'),
                 columns = table_cols,
                 style_data = table_style,
-                style_data_conditional = [
-                    {
-                        'if': {
-                            'row_index': 'odd'
-                        },
-                        'backgroundColor': '#eeeeee'},
-                    {
-                        'if': {
-                            'row_index': 0,
-                            'column_id': 'Category'
-                        },
-                        'borderTop': '.5px solid #6783a9',
-                    },
-                    {
-                        'if': {
-                            'state': 'selected'
-                        },
-                        'backgroundColor': 'rgba(112,128,144, .3)',
-                        'border': 'thin solid silver'
-                    }
-                ],
+                style_data_conditional = table_data_conditional,
+                # [
+                #     {
+                #         'if': {
+                #             'row_index': 'odd'
+                #         },
+                #         'backgroundColor': '#eeeeee'},
+                #     {
+                #         'if': {
+                #             'row_index': 0,
+                #             'column_id': 'Category'
+                #         },
+                #         'borderTop': '.5px solid #6783a9',
+                #     },
+                #     {
+                #         'if': {
+                #             'state': 'selected'
+                #         },
+                #         'backgroundColor': 'rgba(112,128,144, .3)',
+                #         'border': 'thin solid silver'
+                #     }
+                # ],
                 style_header =  {
                     'height': '20px',
                     'backgroundColor': '#ffffff',
@@ -1322,55 +1423,57 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                     'fontWeight': 'bold',
                 },
                 style_cell = table_cell,
-                style_header_conditional = [
-                    {
-                        'if': {'column_id': 'Category'},
-                        'textAlign': 'left',
-                        'paddingLeft': '10px',
-                        'width': '35%',
-                        'fontSize': '12px',
-                        'fontFamily': 'Jost, sans-serif',
-                        'color': '#6783a9',
-                        'fontWeight': 'bold',
-                    },
-                ],                
-                style_cell_conditional = [
-                    {
-                        'if': {'column_id': 'Category'},
-                        'textAlign': 'left',
-                        'fontWeight': '500',
-                        'paddingLeft': '10px',
-                        'width': '40%'
-                    },
-                    {
-                        'if': {'column_id': 'Subject Area'},
-                        'textAlign': 'left',
-                        'fontWeight': '500',
-                        'paddingLeft': '10px',
-                        'width': '25%'
-                    },
-                    {
-                        'if': {'column_id': 'Indicator'},
-                        'textAlign': 'left',
-                        'fontWeight': '500',
-                        'paddingLeft': '10px',
-                        'width': '30%'
-                    },
-                                    {
-                        'if': {'column_id': 'Subgroup'},
-                        'textAlign': 'left',
-                        'fontWeight': '500',
-                        'paddingLeft': '10px',
-                        'width': '30%'
-                    } ,
-                                    {
-                        'if': {'column_id': 'Grade Span'},
-                        'textAlign': 'left',
-                        'fontWeight': '500',
-                        'paddingLeft': '10px',
-                        'width': '20%'
-                    }                                    
-                ],
+                style_header_conditional = table_header_conditional,
+                # [
+                #     {
+                #         'if': {'column_id': 'Category'},
+                #         'textAlign': 'left',
+                #         'paddingLeft': '10px',
+                #         'width': '35%',
+                #         'fontSize': '12px',
+                #         'fontFamily': 'Jost, sans-serif',
+                #         'color': '#6783a9',
+                #         'fontWeight': 'bold',
+                #     },
+                # ],                
+                style_cell_conditional = table_cell_conditional,
+                # [
+                #     {
+                #         'if': {'column_id': 'Category'},
+                #         'textAlign': 'left',
+                #         'fontWeight': '500',
+                #         'paddingLeft': '10px',
+                #         'width': '40%'
+                #     },
+                #     {
+                #         'if': {'column_id': 'Subject Area'},
+                #         'textAlign': 'left',
+                #         'fontWeight': '500',
+                #         'paddingLeft': '10px',
+                #         'width': '25%'
+                #     },
+                #     {
+                #         'if': {'column_id': 'Indicator'},
+                #         'textAlign': 'left',
+                #         'fontWeight': '500',
+                #         'paddingLeft': '10px',
+                #         'width': '30%'
+                #     },
+                #                     {
+                #         'if': {'column_id': 'Subgroup'},
+                #         'textAlign': 'left',
+                #         'fontWeight': '500',
+                #         'paddingLeft': '10px',
+                #         'width': '30%'
+                #     } ,
+                #                     {
+                #         'if': {'column_id': 'Grade Span'},
+                #         'textAlign': 'left',
+                #         'fontWeight': '500',
+                #         'paddingLeft': '10px',
+                #         'width': '20%'
+                #     }                                    
+                # ],
                 merge_duplicate_headers=True,
                 markdown_options={'html': True},
                 style_as_list_view=True,
