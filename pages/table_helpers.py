@@ -304,7 +304,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
 
         data_cols = [col for col in all_cols if 'Category' not in col]
         first_cols = [col for col in all_cols if 'Days' in col]
-        difference_cols = [col for col in all_cols if 'Diff' in col]
+        diff_cols = [col for col in all_cols if 'Diff' in col]
 
         table_cell_conditional = [
             {
@@ -350,7 +350,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
         name_cols = [['Category','']]
 
         # Split columns into Year (top level) and "162 Days", "Majority Enrolled",
-        # "Difference" (second level)
+        # "diff" (second level)
         for item in all_cols:
 
             if item.startswith('20'):
@@ -388,7 +388,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
 
         # formatting logic is different for multi-header table
         # borders are tricky to get correct
-        # add red/green color for difference column
+        # add red/green color for diff column
         table_data_conditional = [
             {
                 'if': {
@@ -439,7 +439,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
                 },
                 'borderRight': '.5px solid #b2bdd4',
                 'textAlign': 'center',
-            } for col in difference_cols
+            } for col in diff_cols
         ] + [
             {
                 'if': {
@@ -449,7 +449,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
                 'fontWeight': 'bold',
                 'color': '#b44655',
                 'fontSize': '10px',
-            } for col in difference_cols
+            } for col in diff_cols
         ] + [
             {
                 'if': {
@@ -459,7 +459,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
                 'fontWeight': 'bold',
                 'color': '#81b446',
                 'fontSize': '10px',
-            } for col in difference_cols
+            } for col in diff_cols
         ]
 
         if kind == 'sgp':
@@ -520,8 +520,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
 
     data = content.copy()
 
-    cols = data.columns
-    table_size = len(cols)
+    table_size = len(data.columns)
 
     if len(data.index) == 0 or table_size == 1:
         table = [
@@ -552,15 +551,12 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # NOTE: Testing a version of the table comparing school and corporation rates
         # that does not include the corp rate, only the difference. This is in order
         # to decrease the number of columns. Eventually may want to remove the
-        # calculation from calculateMetrics(), but am leaving it in for now in case
+        # calculation from calculateMetrics(), but leaving it in for now in case
         # we ultimately choose to display it
 
         # NOTE: The order of these operations matters
         # remove all Corp Rate / Corp Avg columns
         data = data.loc[:, ~data.columns.str.contains('Corp')]
-
-        # rename '+/-' columns
-        data.columns = data.columns.str.replace('\+/-', 'Diff', regex=True)
 
         # determines the col_width class and width of the category column based
         # on the size (# of cols) of the dataframe
@@ -586,23 +582,30 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             col_width = 'ten'
             category_width = 15
 
-        # print('TABLING!')
-        # print(data)
-        year_headers = [y for y in data.columns.tolist() if 'School' in y]
-        rating_headers = [y for y in data.columns.tolist() if 'Rate' in y]
-        difference_headers = [y for y in data.columns.tolist() if 'Diff' in y]
-        nsize_headers = [y for y in data.columns.tolist() if 'N-Size' in y]
-        average_headers = [y for y in data.columns.tolist() if 'N-Size' in y]
+        list_cols = data.columns.tolist()
+        # used for formatting purposes
+        year_headers = [y for y in list_cols if 'School' in y]
+        rating_headers = [y for y in list_cols if 'Rate' in y]
+        diff_headers = [y for y in list_cols if 'Diff' in y]
+
+        # rename n_size before getting col list
+        data.columns = data.columns.str.replace('N-Size', 'n', regex=True)
+        nsize_headers = [y for y in data.columns.tolist() if 'n' in y]
+
+        # get new col list after renaming N-Size
+        all_cols = data.columns.tolist()
+
+        format_cols = rating_headers + diff_headers
 
         # splits column width evenly for all columns other than 'Category'
         # can adjust individual categories by adjusting formula
-        nsize_width = 5
+        nsize_width = 1
         data_width = 100 - category_width - nsize_width
 
         data_col_width = data_width / (table_size - 1)
         rating_width = data_col_width/2
         year_width = data_col_width + data_col_width/4
-        difference_width = data_col_width + data_col_width/4
+        diff_width = data_col_width + data_col_width/4
 
         print('leftoverw')
         print(data_width)
@@ -613,12 +616,10 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         print(len(year_headers))
         print(year_width)
         print('dw')
-        print(len(difference_headers))
-        print(difference_width)
+        print(len(diff_headers))
+        print(diff_width)
 
         class_name = 'pretty_container ' + col_width + ' columns'
-
-        headers = data.columns.tolist()
 
         table_cell_conditional = [
             {
@@ -641,6 +642,15 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             } for year in year_headers
         ]  + [
             {   'if': {
+                'column_id': nsize
+            },
+                'textAlign': 'center',
+                'fontWeight': '300',
+                'fontSize': '8px',
+                'width': str(nsize_width) + '%'
+            } for nsize in nsize_headers
+        ]  + [            
+            {   'if': {
                 'column_id': rating
             },
                 'textAlign': 'center',
@@ -649,48 +659,27 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             } for rating in rating_headers
         ]  + [
             {   'if': {
-                'column_id': difference
+                'column_id': diff
             },
                 'textAlign': 'center',
                 'fontWeight': '500',
-                'width': str(difference_width) + '%'
-            } for difference in difference_headers
+                'width': str(diff_width) + '%'
+            } for diff in diff_headers
         ]
-        table_data_conditional =  [
-            {
-                'if': {
-                    'row_index': 'odd'
-                },
-                'backgroundColor': '#eeeeee',
-            },
-            {
-                'if': {
-                    'state': 'selected'
-                },
-                'backgroundColor': 'rgba(112,128,144, .3)',
-                'border': 'thin solid silver'
-            } 
-        ]
-
+ 
         data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
-        # print('TST')
-        # print(data['Category'])
-        # get list of +/- columns (used by datatable filter_query' to
-        # ID columns for color formatting)
-        format_cols = [k for k in headers if 'Diff' in k or 'Rate' in k]
 
         name_cols = [['Category','']]
 
         # Build list of lists, top level and secondary level column names
         # for multi-level headers
-        for item in headers:
+        for item in all_cols:
             if item.startswith('20'):
                 if 'Rate' in item:
                     item = item[:8]
 
                 name_cols.append([item[:4],item[4:]])
 
-        # print(name_cols)
         # NOTE: This add a border to header_index:1 for each category
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
@@ -716,26 +705,27 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         } for rating in rating_headers
         ]  + [
             {   'if': {
-                'column_id': difference,
+                'column_id': diff,
                 'header_index': 1,
             },
                 'borderTop': '.5px solid #b2bdd4',
                 'borderBottom': '.5px solid #b2bdd4',
-        } for difference in difference_headers
+        } for diff in diff_headers
         ]  + [
             {   'if': {
-                'column_id': average_headers,
+                'column_id': nsize,
                 'header_index': 1,
             },
+                'textAlign': 'center',
                 'borderTop': '.5px solid #b2bdd4',
                 'borderBottom': '.5px solid #b2bdd4',
-        }
+        } for nsize in nsize_headers
         ] + [
             # Use 'headers[-1]' and 'borderRight' for each subheader to have full border
             # Use 'headers[1]' and 'borderLeft' to leave first and last columns open on
             # right and left
             {   'if': {
-                'column_id': headers[-1],
+                'column_id': all_cols[-1],
             #    'column_id': headers[1],
                 'header_index': 1,
             },
@@ -761,7 +751,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         ] + [
             {
                 'if': {
-                    'column_id': headers[-1],
+                    'column_id': all_cols[-1],
                 },
                 'borderRight': '.5px solid #b2bdd4',
             },
@@ -788,6 +778,14 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                 'borderBottom': 'none',
             },
         ] + [
+            {   # NOTE: This doesn't work as cell_conditional - is it because its markdown?
+                'if': {
+                    'column_id': nsize,
+                },
+                'fontSize': '10px',
+                'textAlign': 'center',
+            } for nsize in nsize_headers
+        ] + [
             {
                 'if': {
                     'column_id': rating,
@@ -801,7 +799,6 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                     'filter_query': '{{{col}}} < 0'.format(col=col),
                     'column_id': col
                 },
-
                 'fontWeight': 'bold',
                 'color': '#b44655',
                 'fontSize': '10px',
@@ -828,6 +825,32 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             } for col in format_cols
         ]
 
+        table_columns = [
+            {
+                'name': col,
+                'id': all_cols[idx],
+                'presentation': 'markdown'
+            }
+            if 'Rate' in col or 'n' in col
+
+            # NOTE: Cannot figure out how to have three different col formatting conditions   
+            # { 
+            #     'name': col,
+            #     'id': headers[idx],
+            #     'type':'numeric',
+            #     'format': Format()
+            # }
+            # if 'n' in col
+
+            else {
+                'name': col,
+                'id': all_cols[idx],
+                'type':'numeric',
+                'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
+            }
+            for (idx, col) in enumerate(name_cols)
+        ]
+
         table = [
             html.Div(
                 [
@@ -835,14 +858,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict('records'),
-                            columns=[
-                                {'name': col, 'id': headers[idx], 'presentation': 'markdown'}
-                                if 'Rate' in col
-                                else {'name': col, 'id': headers[idx], 'type':'numeric',
-                                'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
-                                }
-                                for (idx, col) in enumerate(name_cols)
-                            ],
+                            columns = table_columns,
                             style_data = table_style,
                             style_data_conditional = table_data_conditional,
                             style_header = table_header,
@@ -869,6 +885,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                 className = class_name
             )
         ]
+
     return table
 
 def create_chart_label(final_data: pd.DataFrame) -> str:
@@ -1224,11 +1241,142 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
     """
-# TODO: Add SAT Total Tested
+
+    table_size = len(data.columns)
+
+    year_headers = [y for y in data.columns.tolist() if 'School' in y]
+
+    # rename n_size before getting n col list
+    data.columns = data.columns.str.replace('N-Size', 'n', regex=True)
+    nsize_headers = [y for y in data.columns if 'n' in y]
+
+    # get new list of cols after replacing N-Size
+    all_cols = data.columns.tolist()
+
+    # set column widths
+    category_width = 20
+    nsize_width = 1
+    data_width = 100 - category_width - nsize_width
+    year_width = data_width / (table_size - 1)
+    
+    # formatting logic is slightly different for a multi-header table
+    table_cell_conditional = [
+        {
+            'if': {
+                'column_id': 'Category'
+            },
+            'textAlign': 'left',
+            'paddingLeft': '20px',
+            'fontWeight': '500',
+            'width': str(category_width) + '%'
+        },
+    ] + [
+        {
+            'if': {
+                'column_id': year
+            },
+            'textAlign': 'center',
+            'fontWeight': '500',
+            'width': str(year_width) + '%',
+        } for year in year_headers
+    ]  + [
+        {   'if': {
+            'column_id': nsize
+        },
+            'textAlign': 'center',
+            'fontWeight': '300',
+            'fontSize': '8px',
+            'width': str(nsize_width) + '%'
+        } for nsize in nsize_headers
+    ]
+
+# TODO: Side borders are not working and I have no idea why!!
+    table_header_conditional = [
+        {
+            'if': {
+                'column_id': year,
+                'header_index': 1,
+            },
+            'borderLeft': '.5px solid #b2bdd4',
+            'borderTop': '.5px solid #b2bdd4',
+            'borderBottom': '.5px solid #b2bdd4'
+        } for year in year_headers
+    ] + [
+        {   'if': {
+            'column_id': nsize,
+            'header_index': 1,
+        },
+            'borderTop': '.5px solid #b2bdd4',
+            'borderBottom': '.5px solid #b2bdd4'
+    } for nsize in nsize_headers
+    ] + [
+        # Use 'headers[-1]' and 'borderRight' for each subheader to have full border
+        # Use 'headers[1]' and 'borderLeft' to leave first and last columns open on
+        # right and left
+        {   'if': {
+            'column_id': all_cols[-1],
+        #    'column_id': headers[1],
+            'header_index': 1,
+        },
+        'borderRight': '.5px solid #b2bdd4',
+        }
+    ]
+
+    table_data_conditional = [
+        {
+            'if': {
+                'state': 'selected'
+            },
+            'backgroundColor': 'rgba(112,128,144, .3)',
+            'border': 'thin solid silver'
+        },
+        {
+            'if': {
+                'row_index': 'odd'
+            },
+            'backgroundColor': '#eeeeee'
+        }
+    ] + [
+        {   # add right border to right end of table header
+            'if': {
+                'column_id': all_cols[-1],
+            },
+            'borderRight': '.5px solid #b2bdd4',
+        },
+    ] + [
+        {
+            'if': {
+                'row_index': 0
+            },
+            'paddingTop': '5px'
+        }
+    ] + [
+        {
+            'if': {
+                'row_index': len(data)-1
+            },
+            'borderBottom': '.5px solid #b2bdd4',
+        }
+    ] + [
+        {
+            'if': {
+                'column_id': 'Category',
+            },
+            'borderRight': '.5px solid #b2bdd4',
+            'borderBottom': 'none',
+        },
+    ] + [
+        { 
+            'if': {
+                'column_id': nsize,
+            },
+            'fontSize': '10px',
+            'textAlign': 'center',
+        } for nsize in nsize_headers
+    ]
 
     if table_type == 'proficiency':
 
-        all_cols = data.columns.tolist()
         # build multi-level headers
         name_cols = [['Category','']]
 
@@ -1257,13 +1405,14 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
         ]
     
     elif table_type == 'growth':
+
         table_cols = [
                 {
                     'name': col,
                     'id': col,
                     'presentation': 'markdown'
                 }
-                if 'Rat' in col or 'Weighted Points' in col
+                if 'Rat' in col
                 
                 else
                     {
@@ -1275,132 +1424,6 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                     for (col) in data.columns
         ]   
 
-    # set column widths
-    headers = data.columns.tolist()
-
-    table_size = len(data.columns)
-    year_headers = [y for y in data.columns.tolist() if 'School' in y]
-    nsize_headers = [y for y in data.columns.tolist() if 'N-Size' in y]
-
-    category_width = 30
-    data_width = 100 - category_width
-    data_col_width = data_width / (table_size - 1)
-
-    print(data)
-    # table styles
-    table_cell_conditional = [
-        {
-            'if': {
-                'column_id': 'Category'
-            },
-            'textAlign': 'left',
-            'paddingLeft': '20px',
-            'fontWeight': '500',
-            'width': str(category_width) + '%'
-        },
-    ] + [
-        {
-            'if': {
-                'column_id': year
-            },
-            'textAlign': 'center',
-            'fontWeight': '500',
-            'width': str(data_col_width) + '%',
-        } for year in year_headers
-    ]  + [
-        {   'if': {
-            'column_id': nsize
-        },
-            'textAlign': 'center',
-            'fontWeight': '600',
-            'width': str(data_col_width) + '%'
-        } for nsize in nsize_headers
-    ]
-
-    table_header_conditional = [
-        {
-            'if': {
-                'column_id': year,
-                'header_index': 1,
-            },
-            'borderLeft': '.5px solid #b2bdd4',
-            'borderTop': '.5px solid #b2bdd4',
-            'borderBottom': '.5px solid #b2bdd4',
-        } for year in year_headers
-    ] + [
-        {   'if': {
-            'column_id': nsize,
-            'header_index': 1,
-        },
-            'borderTop': '.5px solid #b2bdd4',
-            'borderBottom': '.5px solid #b2bdd4',
-    } for nsize in nsize_headers
-    ] + [
-        # Use 'headers[-1]' and 'borderRight' for each subheader to have full border
-        # Use 'headers[1]' and 'borderLeft' to leave first and last columns open on
-        # right and left
-        {   'if': {
-            'column_id': headers[-1],
-        #    'column_id': headers[1],
-            'header_index': 1,
-        },
-        'borderRight': '.5px solid #b2bdd4',
-        }
-    ]
-
-    table_data_conditional = [
-        {
-            'if': {
-                'state': 'selected'
-            },
-            'backgroundColor': 'rgba(112,128,144, .3)',
-            'border': 'thin solid silver'
-        },
-        {
-            'if': {
-                'row_index': 'odd'
-            },
-            'backgroundColor': '#eeeeee'
-        }
-    ] + [
-        {
-            'if': {
-                'column_id': headers[-1],
-            },
-            'borderRight': '.5px solid #b2bdd4',
-        },
-    ] + [
-        {
-            'if': {
-                'row_index': 0
-            },
-            'paddingTop': '5px'
-        }
-    ] + [
-        {
-            'if': {
-                'row_index': len(data)-1
-            },
-            'borderBottom': '.5px solid #b2bdd4',
-        }
-    ] + [
-        {
-            'if': {
-                'column_id': 'Category',
-            },
-            'borderRight': '.5px solid #b2bdd4',
-            'borderBottom': 'none',
-        },
-    ] + [
-        {
-            'if': {
-                'column_id': nsize,
-            },
-            'borderRight': '.5px solid #b2bdd4',
-            'textAlign': 'center',
-        } for nsize in nsize_headers
-    ]
-
     table_layout = [
         html.Label(label, className='header_label'),
         html.Div(
@@ -1409,92 +1432,12 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                 columns = table_cols,
                 style_data = table_style,
                 style_data_conditional = table_data_conditional,
-                # [
-                #     {
-                #         'if': {
-                #             'row_index': 'odd'
-                #         },
-                #         'backgroundColor': '#eeeeee'},
-                #     {
-                #         'if': {
-                #             'row_index': 0,
-                #             'column_id': 'Category'
-                #         },
-                #         'borderTop': '.5px solid #6783a9',
-                #     },
-                #     {
-                #         'if': {
-                #             'state': 'selected'
-                #         },
-                #         'backgroundColor': 'rgba(112,128,144, .3)',
-                #         'border': 'thin solid silver'
-                #     }
-                # ],
-                style_header =  {
-                    'height': '20px',
-                    'backgroundColor': '#ffffff',
-                    'border': 'none',
-                    'borderBottom': '.5px solid #6783a9',
-                    'fontSize': '12px',
-                    'fontFamily': 'Jost, sans-serif',
-                    'color': '#6783a9',
-                    'textAlign': 'center',
-                    'fontWeight': 'bold',
-                },
+                style_header = table_header,
                 style_cell = table_cell,
                 style_header_conditional = table_header_conditional,
-                # [
-                #     {
-                #         'if': {'column_id': 'Category'},
-                #         'textAlign': 'left',
-                #         'paddingLeft': '10px',
-                #         'width': '35%',
-                #         'fontSize': '12px',
-                #         'fontFamily': 'Jost, sans-serif',
-                #         'color': '#6783a9',
-                #         'fontWeight': 'bold',
-                #     },
-                # ],                
                 style_cell_conditional = table_cell_conditional,
-                # [
-                #     {
-                #         'if': {'column_id': 'Category'},
-                #         'textAlign': 'left',
-                #         'fontWeight': '500',
-                #         'paddingLeft': '10px',
-                #         'width': '40%'
-                #     },
-                #     {
-                #         'if': {'column_id': 'Subject Area'},
-                #         'textAlign': 'left',
-                #         'fontWeight': '500',
-                #         'paddingLeft': '10px',
-                #         'width': '25%'
-                #     },
-                #     {
-                #         'if': {'column_id': 'Indicator'},
-                #         'textAlign': 'left',
-                #         'fontWeight': '500',
-                #         'paddingLeft': '10px',
-                #         'width': '30%'
-                #     },
-                #                     {
-                #         'if': {'column_id': 'Subgroup'},
-                #         'textAlign': 'left',
-                #         'fontWeight': '500',
-                #         'paddingLeft': '10px',
-                #         'width': '30%'
-                #     } ,
-                #                     {
-                #         'if': {'column_id': 'Grade Span'},
-                #         'textAlign': 'left',
-                #         'fontWeight': '500',
-                #         'paddingLeft': '10px',
-                #         'width': '20%'
-                #     }                                    
-                # ],
                 merge_duplicate_headers=True,
-                markdown_options={'html': True},
+                # markdown_options={'html': True},
                 style_as_list_view=True,
             ),
         )
