@@ -935,7 +935,6 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
 
 def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
-#TODO: CHECK TO SEE WHERE ACADEMIC RATING IS BEING SET - CURRENTLY THERE IS NONE FOR COMP METRICS!    
     data.columns = data.columns.astype(str)
     
     # drop low/high grade rows
@@ -949,17 +948,19 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     first_year = pd.DataFrame()
     first_year[data.columns[-1]] = data[data.columns[-1]]
 
-    # loops over dataframe calculating difference between col (Year) and col+1 (Previous Year)
+    # loops over dataframe calculating difference between col (Year) and col+2 (Previous Year)
     # and insert the result into the dataframe at every third index position
-    z = 1
+    z = 2
     x = 0
-    for y in range(0, (len(data.columns)-1)):
-        values = calculate_year_over_year(data.iloc[:, x], data.iloc[:, x + 1])
-        data.insert(loc = z, column = data.columns[x] + '+/-', value = values)
-        z+=2
-        x+=2
-    
-    data.columns = [i + 'School' if '+/-' not in i else i for i in data.columns]
+    num_loops = int((len(data.columns) - 2) / 2)
+
+    for y in range(0, num_loops): #(len(data.columns)-1)):
+        values = calculate_year_over_year(data.iloc[:, x], data.iloc[:, x + 2])
+        data.insert(loc = z, column = data.columns[x][0:4] + 'Diff', value = values)
+        z+=3
+        x+=3
+
+    # data.columns = [i + 'School' if '+/-' not in i else i for i in data.columns]
 
     data.insert(loc=0, column="Category", value=category_header)
     data["Category"] = (data["Category"].str.replace(" Proficient %", "").str.strip())
@@ -972,6 +973,20 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     
     # thresholds for academic ratings
     years_limits = [0.05, 0.02, 0, 0]
+
+# TODO: ADJUST TO NEW NORMAL SCH NSIZE DIFF
+# size 11 - from index 10 to 0 - want 8,5,2
+# size 14 - from index 13 to 0 - want 11, 8, 5, 2
+    #   1) the loop ('for i in range(attendance_data_metrics.shape[1], 1, -3)')
+    #   counts backwards by -3, beginning with the index of the last column in
+    #   the dataframe ('attendance_data_metrics.shape[1]') to '1' (actually '2'
+    #   as range does not include the last number). These are indexes, so the
+    #   loop stops at the third column (which has an index of 2);
+    #   2) for each step, the code inserts a new column, at index 'i'. The column
+    #   header is a string that is equal to 'the year (YYYY) part of the column
+    #   string (attendance_data_metrics.columns[i-1])[:7 - 3]) + 'Rating' + 'i'
+    #   (the value of 'i' doesn't matter other than to differentiate the columns) +
+    #   the accountability value, a string returned by the set_academic_rating() function.
 
     [
         data.insert(
@@ -986,8 +1001,11 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
                 axis=1,
             ),
         )
-        for i in range(data.shape[1], 1, -2)
+        for i in range(data.shape[1], 1, -3)
     ]
+
+#TODO: REORDER TO SCHOOL/NSIZE/DIFF/RATE AND THEN ADJUST BELOW
+    print(data)
 
     data = data.fillna("No Data")
 
@@ -1115,6 +1133,24 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
 
     # rename IREAD Category
     final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
+
+    # Add metric ratings. See get_attendance_metrics() for a description
+    delta_limits = [0.1, 0.02, 0, 0]  
+    [
+        final_k8_academic_data.insert(
+            i,
+            str(final_k8_academic_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
+            final_k8_academic_data.apply(
+                lambda x: set_academic_rating(
+                    x[final_k8_academic_data.columns[i - 1]], delta_limits, 1
+                ),
+                axis=1,
+            ),
+        )
+        for i in range(final_k8_academic_data.shape[1], 1, -3)
+    ]
+ 
+    data = data.fillna("No Data")
 
     return final_k8_academic_data
 

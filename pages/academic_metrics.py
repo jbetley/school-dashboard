@@ -273,7 +273,7 @@ def update_academic_metrics(school: str, year: str):
                 clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
 #TODO: PROBLEM IS HERE
                 combined_delta = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, selected_year_numeric)
-                print(combined_delta)
+
                 category = ethnicity + subgroup
 
                 metric_14a_data = combined_years[(combined_years["Category"].str.contains("|".join(grades_all))) & (combined_years["Category"].str.contains("ELA"))]

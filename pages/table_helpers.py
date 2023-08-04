@@ -523,8 +523,6 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
     cols = data.columns
     table_size = len(cols)
 
-    # print('TABLING!')
-    # print(data)
     if len(data.index) == 0 or table_size == 1:
         table = [
             html.Div(
@@ -588,17 +586,35 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
             col_width = 'ten'
             category_width = 15
 
+        # print('TABLING!')
+        # print(data)
         year_headers = [y for y in data.columns.tolist() if 'School' in y]
         rating_headers = [y for y in data.columns.tolist() if 'Rate' in y]
         difference_headers = [y for y in data.columns.tolist() if 'Diff' in y]
-        average_headers = [y for y in data.columns.tolist() if 'Average' in y]
+        nsize_headers = [y for y in data.columns.tolist() if 'N-Size' in y]
+        average_headers = [y for y in data.columns.tolist() if 'N-Size' in y]
 
         # splits column width evenly for all columns other than 'Category'
         # can adjust individual categories by adjusting formula
-        data_width = 100 - category_width
+        nsize_width = 5
+        data_width = 100 - category_width - nsize_width
+
         data_col_width = data_width / (table_size - 1)
-        rating_width = year_width = difference_width = data_col_width
-        rating_width=rating_width/2
+        rating_width = data_col_width/2
+        year_width = data_col_width + data_col_width/4
+        difference_width = data_col_width + data_col_width/4
+
+        print('leftoverw')
+        print(data_width)
+        print('rw')
+        print(len(rating_headers))
+        print(rating_width)
+        print('yw')
+        print(len(year_headers))
+        print(year_width)
+        print('dw')
+        print(len(difference_headers))
+        print(difference_width)
 
         class_name = 'pretty_container ' + col_width + ' columns'
 
