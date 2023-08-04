@@ -289,16 +289,8 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
         data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]]
         
-        t4 = time.process_time()
-
-        print(data.T)
-        # NOTE: update is twice as fast as fillna?? (.35s vs .6s)
-        # for col in data.columns:
-        #     data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
-
+        # NOTE: update is twice as fast as fillna?? (.015s vs .045s)
         data.update(data.apply(pd.to_numeric, errors='coerce'))
-        print(data.T)
-        print(f'Time to coerce using update : ' + str(time.process_time() - t4))
         
         # Drop all columns for a Category if the value of 'Total Tested' for that Category is '0'
         # This method works even if data is inconsistent, e.g., where no data could be (and is)
@@ -320,8 +312,8 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         # does not calculate IREAD proficiency
         data_proficiency = calculate_proficiency(data)
 
-        # create new df with Total Tested Numbers
-        data_tested = data_proficiency.filter(regex='Total Tested|Year', axis=1).copy()
+        # create new df with Total Tested and Test N (IREAD) values
+        data_tested = data_proficiency.filter(regex='Total Tested|Test N|Year', axis=1).copy()
         data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
         data_tested = data_tested.rename(columns={c: str(c)+'N-Size' for c in data_tested.columns if c not in ['Category']})
 
@@ -333,7 +325,7 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         if len(school_info.index) > 0:
             data_proficiency = pd.concat([data_proficiency, school_info], axis=1, join="inner")
 
-        data_proficiency = data_proficiency.reset_index(drop=True)  #TODO: NEED THIS ONE?
+        data_proficiency = data_proficiency.reset_index(drop=True)
 
         # transpose dataframes and clean headers    
         data_proficiency.columns = data_proficiency.columns.astype(str)
@@ -342,14 +334,13 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         data_proficiency = data_proficiency.reset_index(drop=True)
         data_proficiency = data_proficiency.rename(columns={c: str(c)+'School' for c in data_proficiency.columns if c not in ['Category']})
 
-        # temporarily store IREAD, Low Grade, and High Grade rows
-        # TODO: Until we get IREAD Tested Data
-        other_rows = data_proficiency[data_proficiency['Category'].str.contains(r'IREAD|Low|High')]
+        # temporarily store Low Grade, and High Grade rows
+        other_rows = data_proficiency[data_proficiency['Category'].str.contains(r'Low|High')]
 
         # Merge Total Tested DF with Proficiency DF based on substring match
 
         # add new column with substring values and drop old Category column
-        data_tested['Substring'] = data_tested['Category'].str.replace(' Total Tested','')
+        data_tested['Substring'] = data_tested['Category'].replace({" Total Tested": "", " Test N": ""}, regex=True)
         data_tested = data_tested.drop('Category', axis=1)
 
         # this cross-merge and substring match process takes about .3s
@@ -360,14 +351,16 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
 
         # Need to temporarily rename 'English Learner' because otherwise it 
         # will match both 'English' and 'Non English'
-        final_data = final_data.replace('Non English Language Learners','Temp1', regex=True)
-        final_data = final_data.replace('English Language Learners','Temp2', regex=True)
+        final_data = final_data.replace({"Non English Language Learners": "Temp1", "English Language Learners": "Temp2"}, regex=True)
+        # final_data = final_data.replace('Non English Language Learners','Temp1', regex=True)
+        # final_data = final_data.replace('English Language Learners','Temp2', regex=True)
 
-        # keep only those rows where substring is in Category
+        # Filter rows - keeping only those rows where a substring is in Category
         final_data = final_data[[a in b for a, b in zip(final_data['Substring'], final_data['Category'])]]
 
-        final_data = final_data.replace('Temp1', 'Non English Language Learners', regex=True)
-        final_data = final_data.replace('Temp2', 'English Language Learners', regex=True)        
+        final_data = final_data.replace({"Temp1": "Non English Language Learners", "Temp2": "English Language Learners"}, regex=True)
+        # final_data = final_data.replace('Temp1', 'Non English Language Learners', regex=True)
+        # final_data = final_data.replace('Temp2', 'English Language Learners', regex=True)        
 
         final_data = final_data.drop('Substring', axis=1)
         final_data = final_data.reset_index(drop=True)
@@ -380,10 +373,10 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
 
         final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
         final_cols.insert(0, "Category")
+        
         final_data = final_data[final_cols]
         
-        # Add IREAD, Low Grade, and High Grade rows back (missing cols will populate with NaN)
-        # TODO: Add Total Tested for IREAD
+        # Add Low Grade, and High Grade rows back (missing cols will populate with NaN)
         # df's should have different indexes, but just to be safe, we will reset them both
         # otherwise could remove the individual reset_index()
         final_data = pd.concat([final_data.reset_index(drop=True), other_rows.reset_index(drop=True)], axis=0).reset_index(drop=True)
@@ -399,11 +392,9 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
 def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
 
     if len(corp_data.index) == 0:
-
         corp_data = pd.DataFrame()
     
     else:
-
         corp_info = corp_data[["Corporation Name"]].copy()
 
         # Filter and clean the dataframe
@@ -434,6 +425,7 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
 
         corp_data = calculate_proficiency(corp_data)
         
+        # recalculate total proficiency numbers using only school grades
         corp_data = recalculate_total_proficiency(corp_data, school_data)        
         
         if "IREAD Pass N" in corp_data.columns:
@@ -452,7 +444,7 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
         if len(corp_info.index) > 0:
             corp_data = pd.concat([corp_data, corp_info], axis=1, join="inner")
 
-        corp_data = corp_data.reset_index(drop=True)  #TODO: NEED THIS ONE?
+        corp_data = corp_data.reset_index(drop=True)
 
         # transpose dataframes and clean headers    
         corp_data.columns = corp_data.columns.astype(str)
@@ -470,7 +462,8 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     # masking with any() because they may erroneously drop a 0 value that we want to keep. So we need to
     # iterate through each tested category, if it is NaN or 0, we drop it and all associate categories.
 
-# TODO: Can move this filtration (?) to its own function for all academic data
+# TODO: Can move this SAT filtration (?) to its own function for all academic data because we
+# TODO: DO the same thing with the school data
     if len(data.index) > 0:
         data = data.replace({"^": "***"})
 
@@ -484,9 +477,7 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         # Drop: all SAT related columns ('Approaching Benchmark', 'At Benchmark', etc.)
         # for a Category if the value of 'Total Tested' for that Category is '0'
         # sat_tested_cols = data.filter(like='Total Tested').columns.tolist()
-
         tested_cols = data.filter(regex='Total Tested|Cohort Count|Test N').columns.tolist()
-
         drop_columns=[]
 
         for col in tested_cols:
@@ -538,7 +529,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
             for col in data.columns:
                 data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
-        # Get N-Size data and store in separate dataframe.
+        # Get 'Total Tested' & 'Cohort Count' (nsize) data and store in separate dataframe.
         data_tested = data.filter(regex='Total Tested|Cohort Count|Year', axis=1).copy()
         data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
         
@@ -573,10 +564,6 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         # so we replace 0 with NaN (to ensure a NaN result rather than 0)
         # if "Non Waiver|Cohort Count" in data.columns:
         # data = calculate_nonwaiver_graduation_rate(data)
-
-        # Calculate ECA (Grade 10) Rate #
-        # if "Grade 10|ELA Test N" in data.columns:
-        #     data = calculate_eca_rate(data)
 
         # Calculate SAT Rates #
         if "School Total|EBRW Total Tested" in data.columns:
@@ -632,7 +619,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         # grad_data = data[data['Category'].str.contains('Graduation Rate')]
 
         # add new column with substring values and drop old Category column
-        data_tested['Substring'] = data_tested['Category'].replace({" Total Tested": "", "\|Cohort Count": " Graduation"}, regex=True) #.str.replace(' Total Tested','')
+        data_tested['Substring'] = data_tested['Category'].replace({" Total Tested": "", "\|Cohort Count": " Graduation"}, regex=True)
 
         data_tested = data_tested.drop('Category', axis=1)
 
@@ -644,17 +631,19 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         # keep only those rows where substring is in Category
         # Need to temporarily rename 'English Learner' because otherwise it 
         # will match both 'English' and 'Non English'
-        final_data = final_data.replace('Non English Language Learners','Temp1', regex=True)
-        final_data = final_data.replace('English Language Learners','Temp2', regex=True)
+        final_data = final_data.replace({"Non English Language Learners": "Temp1", "English Language Learners": "Temp2"}, regex=True)
+        # final_data = final_data.replace('Non English Language Learners','Temp1', regex=True)
+        # final_data = final_data.replace('English Language Learners','Temp2', regex=True)
 
         final_data = final_data[[a in b for a, b in zip(final_data['Substring'], final_data['Category'])]]
-
-        final_data = final_data.replace('Temp1', 'Non English Language Learners', regex=True)
-        final_data = final_data.replace('Temp2', 'English Language Learners', regex=True)         
+        
+        final_data = final_data.replace({"Temp1": "Non English Language Learners", "Temp2": "English Language Learners"}, regex=True)        
+        # final_data = final_data.replace('Temp1', 'Non English Language Learners', regex=True)
+        # final_data = final_data.replace('Temp2', 'English Language Learners', regex=True)         
 
         final_data = final_data.drop('Substring', axis=1)
         final_data = final_data.reset_index(drop=True)
-
+#TODO: HERE - KEEP CORP NSIZE?
         # reorder columns for display
         # NOTE: This final data keeps the Corp N-Size cols, which are not used
         # currently. We drop them later in the merge_high_school_data() step.
