@@ -151,7 +151,7 @@ def get_attendance_metrics(school: str, year: str) -> pd.DataFrame:
 
     for x in range(0, end):
         values = calculate_year_over_year(attendance_metrics.iloc[:, y], attendance_metrics.iloc[:, y + 1])
-        attendance_metrics.insert(loc = z, column = attendance_metrics.columns[y][0:4] + '+/-', value = values)
+        attendance_metrics.insert(loc = z, column = attendance_metrics.columns[y][0:4] + 'Diff', value = values)
         y+=3
         z+=3
 
@@ -180,7 +180,7 @@ def get_attendance_metrics(school: str, year: str) -> pd.DataFrame:
     #   ('MS', 'DNMS', 'N/A', etc) taking as args:
     #       i) the 'value' to be rated. this will be from the 'School' column, if
     #       the value itself is rated (e.g., iread performance), or the difference
-    #       ('+/-') column, if there is an additional calculation required (e.g.,
+    #       ('Diff') column, if there is an additional calculation required (e.g.,
     #       year over year or compared to corp);
     #       ii) a list of the threshold 'limits' to be used in the calculation; and
     #       iii) an integer 'flag' which tells the function which calculation to use.
@@ -221,18 +221,6 @@ def calculate_strength_of_diploma(data: pd.DataFrame) -> pd.DataFrame:
          / pd.to_numeric(data["Total|Cohort Count"])
 
     return data
-
-# def calculate_eca_rate(values: pd.DataFrame) -> pd.DataFrame:
-#     data = values.copy()
-
-#     tested = data[data.columns[data.columns.str.contains(r'Test N')]].columns.tolist()
-
-#     for test in tested:
-#         if test in data.columns:
-#             cat_sub = test.split(' Test N')[0]
-#             data[cat_sub + " Pass Rate"] = calculate_percentage(data[cat_sub + " Pass N"], data[test])
-    
-#     return data
 
 def calculate_sat_rate(values: pd.DataFrame) -> pd.DataFrame:
 # NOTE: All nulls should have already been filtered out by filter_high_school_academic_data()
@@ -297,19 +285,19 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
 
         school_info = data[['School Name','Low Grade','High Grade']].copy()
 
-        # school data: coerce, but keep strings ('***' and '^')
+        # filter (and drop ELA and Math Subject Category)
         data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
-        
         data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]]
         
         t4 = time.process_time()
 
+        print(data.T)
         # NOTE: update is twice as fast as fillna?? (.35s vs .6s)
         # for col in data.columns:
         #     data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
         data.update(data.apply(pd.to_numeric, errors='coerce'))
-
+        print(data.T)
         print(f'Time to coerce using update : ' + str(time.process_time() - t4))
         
         # Drop all columns for a Category if the value of 'Total Tested' for that Category is '0'
@@ -828,7 +816,7 @@ def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.Data
     corp_cols.sort(reverse=True)
     cnsize_cols.sort(reverse=True)
 
-    result_cols = [str(s) + "+/-" for s in year_cols]
+    result_cols = [str(s) + "Diff" for s in year_cols]
 
     merged_cols = list(itertools.chain(*zip(school_cols, snsize_cols, corp_cols, cnsize_cols)))
     merged_cols.insert(0, "Category")
@@ -845,8 +833,8 @@ def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.Data
     all_corp_data = all_corp_data.fillna(value=np.nan)
 
     # calculate difference between two dataframes
+    # NOTE: yes a for-loop, but almost instantaneous
     hs_results = pd.DataFrame()
-
     for y in year_cols:
         hs_results[y] = calculate_difference(
             all_school_data[y + "School"], all_corp_data[y + "Corp"]
@@ -948,19 +936,18 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     first_year = pd.DataFrame()
     first_year[data.columns[-1]] = data[data.columns[-1]]
 
+    # NOTE: different take on the for-loop- but still almost instantaneous
     # loops over dataframe calculating difference between col (Year) and col+2 (Previous Year)
     # and insert the result into the dataframe at every third index position
     z = 2
     x = 0
     num_loops = int((len(data.columns) - 2) / 2)
-
+  
     for y in range(0, num_loops): #(len(data.columns)-1)):
         values = calculate_year_over_year(data.iloc[:, x], data.iloc[:, x + 2])
         data.insert(loc = z, column = data.columns[x][0:4] + 'Diff', value = values)
         z+=3
         x+=3
-
-    # data.columns = [i + 'School' if '+/-' not in i else i for i in data.columns]
 
     data.insert(loc=0, column="Category", value=category_header)
     data["Category"] = (data["Category"].str.replace(" Proficient %", "").str.strip())
@@ -968,26 +955,24 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # Add first_year data back
     data[first_year.columns] = first_year
 
-    # Create clean col lists - (YYYY + 'School') and (YYYY + '+/-')
+    # Create clean col lists - (YYYY + 'School') and (YYYY + 'Diff')
     school_years_cols = list(data.columns[1:])
     
     # thresholds for academic ratings
     years_limits = [0.05, 0.02, 0, 0]
 
-# TODO: ADJUST TO NEW NORMAL SCH NSIZE DIFF
-# size 11 - from index 10 to 0 - want 8,5,2
-# size 14 - from index 13 to 0 - want 11, 8, 5, 2
-    #   1) the loop ('for i in range(attendance_data_metrics.shape[1], 1, -3)')
-    #   counts backwards by -3, beginning with the index of the last column in
-    #   the dataframe ('attendance_data_metrics.shape[1]') to '1' (actually '2'
-    #   as range does not include the last number). These are indexes, so the
+    # Slightly different formula for this one:
+    #   1) the loop 'for i in range(data.shape[1]-2, 1, -3)' counts backwards by -3,
+    #   beginning with 2 minus the index of the last column in the dataframe
+    #   ('data.shape[1]-2') to '1.' This ignores the last two columns which will always
+    #   be "first year" data and "first year" n-size. These are indexes, so the
     #   loop stops at the third column (which has an index of 2);
+    #   e.g., 12 col dataframe - from index 11 to 0 - we want to get rating of 9,6,3
     #   2) for each step, the code inserts a new column, at index 'i'. The column
     #   header is a string that is equal to 'the year (YYYY) part of the column
-    #   string (attendance_data_metrics.columns[i-1])[:7 - 3]) + 'Rating' + 'i'
+    #   string (attendance_data_metrics.columns[i-1])[:7 - 3]) + 'Rate' + 'i'
     #   (the value of 'i' doesn't matter other than to differentiate the columns) +
     #   the accountability value, a string returned by the set_academic_rating() function.
-
     [
         data.insert(
             i,
@@ -1001,11 +986,8 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
                 axis=1,
             ),
         )
-        for i in range(data.shape[1], 1, -3)
+        for i in range(data.shape[1]-2, 1, -3)
     ]
-
-#TODO: REORDER TO SCHOOL/NSIZE/DIFF/RATE AND THEN ADJUST BELOW
-    print(data)
 
     data = data.fillna("No Data")
 
@@ -1014,13 +996,13 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # for the year_over_year df, drop the 'Rating' column for the last year_data column
     # and rename it - we don't use last Rating column becase we cannot calculate a 'year
     # over year'calculation for the baseline (first) year
-    data = data.iloc[:, :-2]
-    data.columns.values[-1] = (data.columns.values[-1] + " (Initial Data Year)")
+    # data = data.iloc[:, :-2]
+    # data.columns.values[-1] = (data.columns.values[-1] + " (Initial Data Year)")
 
     # one last processing step is needed to ensure proper ratings. The set_academic_rating()
-    # function assigns a rating based on the '+/-' difference value (either year over year
+    # function assigns a rating based on the 'Diff' difference value (either year over year
     # or as compared to corp). For the year over year comparison it is possible to get a
-    # rating of 'Approaches Standard' for a '+/-' value of '0.00%' when the yearly ratings
+    # rating of 'Approaches Standard' for a 'Diff' value of '0.00%' when the yearly ratings
     # are both '0'. There is no case where we want a school to receive anything other
     # than a 'DNMS' for a 0% proficiency. However, the set_academic_rating() function does
     # not have access to the values used to calculate the difference value (so it cannot
@@ -1066,21 +1048,14 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
     # TODO: UNTIL THEN, NEED TO REMOVE IT FROM SCHOOL FILE OR THROWS OFF CALCULATIONS
     school_data = school_data[school_data["Category"].str.contains("Female|Male|Low|High") == False]
 
-    # reverse order of corp_data columns (ignoring 'Category') so current year is first and
-    # get clean list of years
-    # k8_year_cols = list(school_data.columns[:0:-1])
-    # k8_year_cols.reverse()
-
     # Clean up and merge school and corporation dataframes
     year_cols = list(school_data.columns[:0:-1])
-    year_cols = [c[0:4] for c in year_cols]  # keeps only YYYY part of string]
+    year_cols = [c[0:4] for c in year_cols]
     year_cols = list(set(year_cols))
     year_cols.sort(reverse=True)
     
-    # add_suffix is applied to entire df. To hide columns we dont want
-    # renamed, set it as index and reset back after renaming.
-    corp_data = (corp_data.set_index(["Category"]).add_suffix("Corp Proficiency").reset_index())
-    # school_data = (school_data.set_index(["Category"]).add_suffix("School").reset_index())
+    # add_suffix to year cols
+    corp_data = (corp_data.set_index(["Category"]).add_suffix("Corp").reset_index())
 
     # Use column list to merge
     corp_cols = [e for e in corp_data.columns if 'Corp' in e]
@@ -1090,8 +1065,9 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
     corp_cols.sort(reverse=True)
     nsize_cols.sort(reverse=True)
 
-    result_cols = [str(s) + "+/-" for s in year_cols]
+    result_cols = [str(s) + "Diff" for s in year_cols]
 
+    # temporarily place school and corp cols next to each other
     merged_cols = list(itertools.chain(*zip(school_cols, corp_cols, nsize_cols)))
     merged_cols.insert(0, "Category")
 
@@ -1105,22 +1081,20 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
     corp_data = corp_data.drop("Category", axis=1)
 
     k8_result = pd.DataFrame()
-
     for c in school_data.columns:
         c = c[0:4]  # keeps only YYYY part of string
-        k8_result[c + "+/-"] = calculate_difference(
-            school_data[c + "School"], corp_data[c + "Corp Proficiency"]
+        k8_result[c + "Diff"] = calculate_difference(
+            school_data[c + "School"], corp_data[c + "Corp"]
         )
 
-    # add headers
+    # organize headers
     final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
     final_cols.insert(0, "Category")
 
     k8_result = k8_result.set_axis(result_cols, axis=1)
     k8_result.insert(loc=0, column="Category", value=tmp_category)
 
-    # combined merged (school and corp) and result dataframes and reorder
-    # (according to result columns)
+    # merge and reorder cols
     final_k8_academic_data = merged_data.merge(k8_result, on="Category", how="left")
 
     final_k8_academic_data = final_k8_academic_data[final_cols]
