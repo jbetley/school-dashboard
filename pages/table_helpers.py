@@ -238,7 +238,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
         content (pd.DataTable): dash dataTable
         kind (str): 'sgp|growth'
     Returns:
-        table (list): dash html.Div enclosing html.Label and DataTable
+        table_layout (list): dash html.Div enclosing html.Label and DataTable
     """
    
     data = content.copy()
@@ -246,7 +246,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
     num_cols = len(data.columns)
 
     if len(data.index) == 0 or num_cols == 1:
-        table = [
+        table_layout = [
             html.Div(
                 [
                     html.Label(label, className='header_label'),
@@ -480,7 +480,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
                 for (idx, col) in enumerate(name_cols)
             ]
 
-        table = [
+        table_layout = [
             html.Div(
                 [
                     html.Label(label, className='header_label'),
@@ -502,7 +502,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
             )
         ]
 
-    return table
+    return table_layout
 
 def create_metric_table(label: str, content: pd.DataFrame) -> list:
     """
@@ -684,7 +684,6 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
         # and uncomment style_as_list in table declaration
-
         table_header_conditional = [
             {
                 'if': {
@@ -1040,7 +1039,7 @@ def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame
     idx, idy = np.where(pd.isnull(check_data))
 
     # np.where returns an index for each column, resulting in duplicate
-    #  indexes for schools missing multiple categories. But we only need one
+    # indexes for schools missing multiple categories. But we only need one
     # unique value for each school that is missing data
     schools_with_missing = np.unique(idx, axis=0)
 
@@ -1163,18 +1162,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
             }
         ],
         style_header = table_header,
-        # {
-        #     'height': '10px',
-        #     'backgroundColor': 'white',
-        #     'fontSize': '10px',
-        #     'fontFamily': 'Jost, sans-serif',
-        #     'color': '#6783a9',
-        #     'textAlign': 'center',
-        #     'fontWeight': 'bold',
-        #     'borderBottom': 'none',
-        #     'borderTop': 'none',
-        # },
-        style_header_conditional=[
+        style_header_conditional = [
             {
                 'if': {
                     'header_index': 0,
@@ -1183,16 +1171,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
             },
         ],
         style_cell = table_cell,
-        # {
-        #     'whiteSpace': 'normal',
-        #     'height': 'auto',
-        #     'textAlign': 'center',
-        #     'color': '#6783a9',
-        #     'minWidth': '25px',
-        #     'width': '25px',
-        #     'maxWidth': '25px',
-        # },        
-        style_cell_conditional=[
+        style_cell_conditional = [
             {
                 'if': {
                     'column_id': ''
@@ -1226,10 +1205,118 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
 
     return table_layout
 
+# TODO: Make row # agnostic.
+def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
+    """
+    Takes a dataframe of two or more columns and a label and creates a single
+    header table with borders around each cell. If more rows are added, need
+    to adjust logic to remove horizontal borders between rows.
+    
+    Args:
+        label (String): Table title
+        data (pd.DataTable): dash dataTable
+        table_type (String): type of table.
+
+    Returns:
+        table_layout (list): dash DataTable wrapped in dash html components
+    """
+
+    table_size = len(data.columns)
+    year_headers = [y for y in data.columns.tolist() if 'School' in y]
+
+    # set column widths
+    category_width = 20
+    data_width = 100 - category_width
+    year_width = data_width / (table_size - 1)
+    
+    table_cell_conditional = [
+        {
+            'if': {
+                'column_id': 'Category'
+            },
+            'textAlign': 'left',
+            'paddingLeft': '20px',
+            'fontWeight': '500',
+            'width': str(category_width) + '%'
+        }
+    ] + [
+        {
+            'if': {
+                'column_id': year
+            },
+            'textAlign': 'center',
+            'fontWeight': '500',
+            'width': str(year_width) + '%',
+        } for year in year_headers
+    ]
+
+    table_data_conditional = [
+        {
+            'if': {
+                'state': 'selected'
+            },
+            'backgroundColor': 'rgba(112,128,144, .3)',
+            'border': 'thin solid silver'
+        },
+        {
+            'if': {
+                'row_index': 'odd'
+            },
+            'backgroundColor': '#eeeeee'
+        }
+    ] + [
+        {
+            'if': {
+                'row_index': 0
+            },
+            'paddingTop': '5px'
+        }
+    ] + [
+        {
+            'if': {
+                'column_id': 'Category',
+            },
+            'borderRight': '.5px solid #b2bdd4',
+            'borderBottom': 'none',
+            'borderLeft': 'none',
+            'borderTop': 'none',                        
+        },
+    ]
+
+    table_layout = [
+        html.Label(label, className='header_label'),
+        html.Div(
+            dash_table.DataTable(
+                data.to_dict('records'),
+                columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
+                style_data = {
+                    'fontSize': '12px',
+                    'fontFamily': 'Jost, sans-serif',
+                },    
+                style_header = table_header,
+                style_cell = {
+                    'whiteSpace': 'normal',
+                    'height': 'auto',
+                    'textAlign': 'center',
+                    'color': '#6783a9',
+                    'minWidth': '25px',
+                    'width': '25px',
+                    'maxWidth': '25px',
+                    'border': '.5px solid #b2bdd4',
+                },
+                style_data_conditional = table_data_conditional,
+                style_cell_conditional = table_cell_conditional,
+                merge_duplicate_headers=True
+            ),
+        )
+    ]
+
+    return table_layout
+
 def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) -> list:
     """
-    Generic table builder. Takes a dataframe of two or more columns, a label, and
-    a 'table_type' (either 'proficiency' or 'growth') and creates a basic table.
+    Takes a dataframe of two or more columns, a label, and a 'table_type' (either
+    'proficiency' or 'growth') and creates a table with multi-headers.
     Proficiency type tables have a Category (string) column and one or more columns
     of years of data. Growth tables are variable.
     
@@ -1247,7 +1334,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
     year_headers = [y for y in data.columns.tolist() if 'School' in y]
 
     # rename n_size before getting n col list
-    data.columns = data.columns.str.replace('N-Size', 'n', regex=True)
+    data.columns = data.columns.str.replace('N-Size|SN-Size', 'n', regex=True)
     nsize_headers = [y for y in data.columns if 'n' in y]
 
     # get new list of cols after replacing N-Size
@@ -1290,7 +1377,6 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
         } for nsize in nsize_headers
     ]
 
-# TODO: Side borders are not working and I have no idea why!!
     table_header_conditional = [
         {
             'if': {
@@ -1306,16 +1392,13 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
             'column_id': nsize,
             'header_index': 1,
         },
+            'borderRight': '.5px solid #b2bdd4',
             'borderTop': '.5px solid #b2bdd4',
             'borderBottom': '.5px solid #b2bdd4'
     } for nsize in nsize_headers
     ] + [
-        # Use 'headers[-1]' and 'borderRight' for each subheader to have full border
-        # Use 'headers[1]' and 'borderLeft' to leave first and last columns open on
-        # right and left
         {   'if': {
             'column_id': all_cols[-1],
-        #    'column_id': headers[1],
             'header_index': 1,
         },
         'borderRight': '.5px solid #b2bdd4',
@@ -1372,6 +1455,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
             },
             'fontSize': '10px',
             'textAlign': 'center',
+            'borderRight': '.5px solid #b2bdd4',
         } for nsize in nsize_headers
     ]
 
@@ -1436,9 +1520,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
                 style_cell = table_cell,
                 style_header_conditional = table_header_conditional,
                 style_cell_conditional = table_cell_conditional,
-                merge_duplicate_headers=True,
-                # markdown_options={'html': True},
-                style_as_list_view=True,
+                merge_duplicate_headers=True
             ),
         )
     ]
@@ -1446,7 +1528,8 @@ def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) 
     return table_layout
 
 def create_key() -> dash_table.DataTable:
-    """Creates a dash datatable 'key' using proficiency ratings and
+    """
+    Creates a dash datatable 'key' using proficiency ratings and
     the Font Awesome circle icon
 
     Args: 

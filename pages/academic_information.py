@@ -16,7 +16,7 @@ import os
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, hidden_table, create_academic_info_table, get_svg_circle, \
-    create_growth_table, set_table_layout
+    create_growth_table, set_table_layout, create_basic_info_table
 from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart
 from .calculations import round_percentages
 from .subnav import subnav_academic
@@ -202,7 +202,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 if len(attendance_rate.index) == 0:
                     k8_other_table = no_data_table("Attendance Data")
                 else:
-                    k8_other_table = create_academic_info_table(attendance_rate,"Attendance Data","proficiency")
+                    k8_other_table = create_basic_info_table(attendance_rate,"Attendance Data")
 
                 ## Proficiency Breakdown ##
                 proficiency_data = selected_raw_k8_school_data.copy()
