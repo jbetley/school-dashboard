@@ -540,6 +540,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         else:
             data_tested = data_tested.rename(columns={c: str(c)+'SN-Size' for c in data_tested.columns if c not in ['Category']})
 
+        print(data_tested)
         # Filter the proficiency df
         data = data.filter(regex=r"Cohort Count$|Graduates$|AHS|Benchmark|Total Tested|^Year$", axis=1)
 

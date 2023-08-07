@@ -248,7 +248,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
         hoverinfo='none',
     )
 
-    fig.update_xaxes(title='')
+    fig.update_xaxes(title='', showticklabels=False)
 
     # ticksuffix increases the space between the end of the tick label and the chart
     fig.update_yaxes(title='',ticksuffix = '  ')
@@ -571,7 +571,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                     )
             ]
 
-    print(f'Processing line chart: ' + str(time.process_time() - t9)) #( ' + label + ' )
+    print(f'Processing line chart: ' + str(time.process_time() - t9))
     
     return fig_layout
 
@@ -606,25 +606,25 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
 # NOTE: the legendgroup variable separates each dataframe into a separate legend group, which is
 # greate because it allows you to turn on and off each group. However, it looks bad because it does
 # not currently allow you to display the legends horizontally. Matter of preference
-                legendgroup = '1',    
-                legendgrouptitle_text="Majority Enrolled"
+                # legendgroup = '1',    
+                # legendgrouptitle_text="Majority Enrolled"
             ),
             secondary_y=False,
         )
 
-        fig.add_trace(
-            go.Scatter(
-                x=data_162.index,
-                y=data_162[col],
-                mode='markers+lines',                                
-                line={'dash': 'dash'},
-                marker=dict(color=color[i], symbol = 'diamond'),
-                name=col,
-                legendgroup = '2',
-                legendgrouptitle_text="162 Days"
-            ),
-            secondary_y=False,
-        )
+        # fig.add_trace(
+        #     go.Scatter(
+        #         x=data_162.index,
+        #         y=data_162[col],
+        #         mode='markers+lines',                                
+        #         line={'dash': 'dash'},
+        #         marker=dict(color=color[i], symbol = 'diamond'),
+        #         name=col,
+        #         legendgroup = '2',
+        #         legendgrouptitle_text="162 Days"
+        #     ),
+        #     secondary_y=False,
+        # )
 
     if 'Growth' in label:
         ytick ='.0%'
@@ -646,7 +646,7 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
         xaxis = dict(
             title='',
             type='date',
-            tickvals = data_162.index,
+            tickvals = data_me.index,
             tickformat='%Y',
             showline=True,
             linecolor='#b0c4de',
@@ -680,18 +680,19 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
 
     # diamond - &#9670;	&#x25C6;
     # square - &#9632;	&#x25A0;
-    fig.add_annotation(
-        text="Students Enrolled For: <b>&#9670;: 162 Days &#9632;: Majority Enrolled</b>",
-        align="left",
-        showarrow=False,
-        xref="paper",
-        yref="paper",
-        font=dict(color="steelblue", size = 11),
-        bgcolor="rgba(0,0,0,0)",
-        y=1.15,
-        x=.5,
-        xanchor="center",
-    )
+    # fig.add_annotation(
+    #     text="Students Enrolled For: <b>&#9670;: 162 Days &#9632;: Majority Enrolled</b>",
+    #     align="left",
+    #     showarrow=False,
+    #     xref="paper",
+    #     yref="paper",
+    #     font=dict(color="steelblue", size = 11),
+    #     bgcolor="rgba(0,0,0,0)",
+    #     y=1.15,
+    #     x=.5,
+    #     xanchor="center",
+    # )
+
     fig.update_yaxes(title_text=ytitle, secondary_y=False)
 
     fig_layout = [

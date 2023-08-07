@@ -817,16 +817,42 @@ def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
-    data = pd.concat([data]*3, ignore_index=True)
-
     table_size = len(data.columns)
+
+    # determines the col_width class and width of the category column based
+    # on the size (# of cols) of the dataframe
+    if table_size <= 3:
+        col_width = 'four'
+        category_width = 35
+    if table_size > 3 and table_size <=5:
+        col_width = 'four'
+        category_width = 25
+    elif table_size > 5 and table_size <= 7:
+        col_width = 'five'
+        category_width = 20
+    elif table_size > 7 and table_size <= 9:
+        col_width = 'six'
+        category_width = 20
+    elif table_size >= 10 and table_size <= 13:
+        col_width = 'seven'
+        category_width = 15
+    elif table_size > 13 and table_size <=17:
+        col_width = 'nine'
+        category_width = 15
+    elif table_size > 17:
+        col_width = 'ten'
+        category_width = 15
+
+    class_name = 'pretty_container ' + col_width + ' columns'
+
     year_headers = [y for y in data.columns.tolist() if 'Category' not in y]
 
     # set column widths
-    category_width = 20
+    # category_width = 20
+    category_width = category_width + 10
     data_width = 100 - category_width
     year_width = data_width / (table_size - 1)
-    
+
     table_cell_conditional = [
         {
             'if': {
@@ -922,33 +948,39 @@ def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
         } for year in year_headers
     ]
 
+
     table_layout = [
-        html.Label(label, className='header_label'),
         html.Div(
-            dash_table.DataTable(
-                data.to_dict('records'),
-                columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
-                style_data = {
-                    'fontSize': '12px',
-                    'fontFamily': 'Jost, sans-serif',
-                    'border': 'none'                    
-                },    
-                style_header = table_header,
-                style_cell = {
-                    'whiteSpace': 'normal',
-                    'height': 'auto',
-                    'textAlign': 'center',
-                    'color': '#6783a9',
-                    'minWidth': '25px',
-                    'width': '25px',
-                    'maxWidth': '25px',
-                },
-                style_data_conditional = table_data_conditional,
-                style_header_conditional = table_header_conditional,
-                style_cell_conditional = table_cell_conditional,
-                merge_duplicate_headers=True
-            ),
-        )
+            [
+                html.Label(label, className='header_label'),
+                html.Div(
+                    dash_table.DataTable(
+                        data.to_dict('records'),
+                        columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
+                        style_data = {
+                            'fontSize': '12px',
+                            'fontFamily': 'Jost, sans-serif',
+                            'border': 'none'                    
+                        },    
+                        style_header = table_header,
+                        style_cell = {
+                            'whiteSpace': 'normal',
+                            'height': 'auto',
+                            'textAlign': 'center',
+                            'color': '#6783a9',
+                            'minWidth': '25px',
+                            'width': '25px',
+                            'maxWidth': '25px',
+                        },
+                        style_data_conditional = table_data_conditional,
+                        style_header_conditional = table_header_conditional,
+                        style_cell_conditional = table_cell_conditional,
+                        merge_duplicate_headers=True
+                    ),
+                ),
+            ],
+            className = class_name
+        )        
     ]
 
     return table_layout
@@ -967,18 +999,43 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
     table_size = len(data.columns)
 
-    year_headers = [y for y in data.columns.tolist() if 'School' in y]
+    # determines the col_width class and width of the category column based
+    # on the size (# of cols) of the dataframe
+    if table_size <= 3:
+        col_width = 'four'
+        category_width = 35
+    if table_size > 3 and table_size <=5:
+        col_width = 'four'
+        category_width = 25
+    elif table_size > 5 and table_size <= 7:
+        col_width = 'five'
+        category_width = 20
+    elif table_size > 7 and table_size <= 9:
+        col_width = 'six'
+        category_width = 20
+    elif table_size >= 10 and table_size <= 13:
+        col_width = 'seven'
+        category_width = 15
+    elif table_size > 13 and table_size <=17:
+        col_width = 'nine'
+        category_width = 15
+    elif table_size > 17:
+        col_width = 'ten'
+        category_width = 15
 
-    # rename n_size before getting n col list
-    data.columns = data.columns.str.replace('N-Size|SN-Size', 'n', regex=True)
-    nsize_headers = [y for y in data.columns if 'n' in y]
+    class_name = 'pretty_container ' + col_width + ' columns'
+
+    # rename columns n_size before getting n col list
+    data.columns = data.columns.str.replace('N-Size|SN-Size', 'Tested', regex=True)
+    data.columns = data.columns.str.replace('School', 'Proficiency', regex=True)
+    nsize_headers = [y for y in data.columns if 'Tested' in y]
+    year_headers = [y for y in data.columns if 'Proficiency' in y]
 
     # get new list of cols after replacing N-Size
     all_cols = data.columns.tolist()
 
     # set column widths
-    category_width = 20
-    nsize_width = 1
+    nsize_width = 4
     data_width = 100 - category_width - nsize_width
     year_width = data_width / (table_size - 1)
     
@@ -1028,6 +1085,9 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
             'column_id': nsize,
             'header_index': 1,
         },
+            'textAlign': 'center',
+            'fontWeight': '400',
+            'fontSize': '10px',
             'borderRight': '.5px solid #b2bdd4',
             'borderTop': '.5px solid #b2bdd4',
             'borderBottom': '.5px solid #b2bdd4'
@@ -1103,14 +1163,14 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
         if item.startswith('20'):
             name_cols.append([item[:4],item[4:]])
 
-    table_cols = [
+    table_columns = [
             {
                 'name': col,
                 'id': all_cols[idx],
                 'type': 'numeric',
                 'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses),
             }
-            if 'School' in col      
+            if 'Proficiency' in col      
             
             else
                 {
@@ -1123,19 +1183,24 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
     ]
 
     table_layout = [
-        html.Label(label, className='header_label'),
         html.Div(
-            dash_table.DataTable(
-                data.to_dict('records'),
-                columns = table_cols,
-                style_data = table_style,
-                style_data_conditional = table_data_conditional,
-                style_header = table_header,
-                style_cell = table_cell,
-                style_header_conditional = table_header_conditional,
-                style_cell_conditional = table_cell_conditional,
-                merge_duplicate_headers=True
-            ),
+            [
+                html.Label(label, className='header_label'),
+                html.Div(
+                    dash_table.DataTable(
+                        data.to_dict('records'),
+                        columns = table_columns,
+                        style_data = table_style,
+                        style_data_conditional = table_data_conditional,
+                        style_header = table_header,
+                        style_cell = table_cell,
+                        style_header_conditional = table_header_conditional,
+                        style_cell_conditional = table_cell_conditional,
+                        merge_duplicate_headers=True
+                    ),
+                )
+            ],
+            className = class_name
         )
     ]
 

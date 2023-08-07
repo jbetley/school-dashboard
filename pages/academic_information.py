@@ -177,9 +177,10 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
                 if not years_by_grade.empty:
                     k8_grade_table = create_academic_info_table(years_by_grade,"Proficiency by Grade")
-                
                 else:
                     k8_grade_table = no_data_table("Proficiency by Grade")
+
+                k8_grade_table = set_table_layout(k8_grade_table, k8_grade_table, years_by_grade.columns)
 
                 years_by_subgroup = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(subgroup))]
 
@@ -188,6 +189,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 else:
                     k8_subgroup_table = no_data_table("Proficiency by Subgroup")
 
+                k8_subgroup_table = set_table_layout(k8_subgroup_table, k8_subgroup_table, years_by_subgroup.columns)
+
                 years_by_ethnicity = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(ethnicity))]
 
                 if not years_by_ethnicity.empty:            
@@ -195,15 +198,19 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 else:
                     k8_ethnicity_table = no_data_table("Proficiency by Ethnicity")
 
+                k8_ethnicity_table = set_table_layout(k8_ethnicity_table, k8_ethnicity_table, years_by_ethnicity.columns)
+
                 # Attendance rate
                 school_demographic_data = get_demographic_data(school)
                 attendance_rate = get_attendance_data(school_demographic_data, selected_year_string)
 
-                if len(attendance_rate.index) == 0:
-                    k8_other_table = no_data_table("Attendance Data")
+                if len(attendance_rate.index) != 0:
+                    k8_other_table = create_basic_info_table(attendance_rate,"Attendance Data") 
                 else:
-                    k8_other_table = create_basic_info_table(attendance_rate,"Attendance Data")
+                    k8_other_table = no_data_table("Attendance Data")
 
+                k8_other_table = set_table_layout(k8_other_table, k8_other_table, attendance_rate.columns)
+                
                 ## Proficiency Breakdown ##
                 proficiency_data = selected_raw_k8_school_data.copy()
 
@@ -499,6 +506,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 else:
                     hs_grad_overview_table = no_data_table("Graduation Rate Overview")
 
+                hs_grad_overview_table = set_table_layout(hs_grad_overview_table, hs_grad_overview_table, grad_overview.columns)
+
                 grad_ethnicity = graduation_data[graduation_data["Category"].str.contains("|".join(ethnicity))]
                 grad_ethnicity = grad_ethnicity.dropna(axis=1,how="all")
 
@@ -507,6 +516,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 else:
                     hs_grad_ethnicity_table = no_data_table("Graduation Rate by Ethnicity")
 
+                hs_grad_ethnicity_table = set_table_layout(hs_grad_ethnicity_table, hs_grad_ethnicity_table, grad_ethnicity.columns)
+                
                 grad_subgroup = graduation_data[graduation_data["Category"].str.contains("|".join(subgroup))]
                 grad_subgroup = grad_subgroup.dropna(axis=1,how="all")
 
@@ -514,7 +525,9 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     hs_grad_subgroup_table = create_academic_info_table(grad_subgroup,"Graduation Rate by Subgroup")
                 else:
                     hs_grad_subgroup_table = no_data_table("Graduation Rate by Subgroup")
-
+                
+                hs_grad_subgroup_table = set_table_layout(hs_grad_subgroup_table, hs_grad_subgroup_table, grad_subgroup.columns)
+            
             # SAT Benchmark Tables
                 sat_table_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Benchmark %")].copy()
 
@@ -529,6 +542,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 else:
                     sat_overview_table = no_data_table("SAT Overview")
 
+                sat_overview_table = set_table_layout(sat_overview_table, sat_overview_table, sat_overview.columns) 
+                
                 sat_ethnicity = sat_table_data[sat_table_data["Category"].str.contains("|".join(ethnicity))]
                 sat_ethnicity = sat_ethnicity.dropna(axis=1,how="all")
 
@@ -537,6 +552,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 else:
                     sat_ethnicity_table = no_data_table("SAT Benchmarks by Ethnicity")
 
+                sat_ethnicity_table = set_table_layout(sat_ethnicity_table, sat_ethnicity_table, sat_ethnicity.columns) 
+                
                 sat_subgroup = sat_table_data[sat_table_data["Category"].str.contains("|".join(subgroup))]
                 sat_subgroup = sat_subgroup.dropna(axis=1,how="all")
 
@@ -544,6 +561,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     sat_subgroup_table = create_academic_info_table(sat_subgroup,"SAT Benchmarks by Subgroup")
                 else:
                     sat_subgroup_table = no_data_table("SAT Benchmarks by Subgroup")
+
+                sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
 
             else:
                 # selected type is HS, AHS, K12, or CHS < 2021, but there is no data
@@ -708,7 +727,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             table_subgroup_growth_math_container = set_table_layout(table_subgroup_growth_math, table_subgroup_sgp_math, table_data_subgroup_growth.columns)
 
         ## Growth figures
-
+        # NOTE: Currently only displaying Majority Enrolled Data (162 in tooltip)
             # Growth by Grade (Both ME and 162)
             growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
             growth_data_162_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("Math"))]
@@ -774,7 +793,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             sgp_data_162_subgroup_math.columns = sgp_data_162_subgroup_math.columns.str.split("_").str[1]
             sgp_data_me_subgroup_ela.columns = sgp_data_me_subgroup_ela.columns.str.split("_").str[1]
             sgp_data_me_subgroup_math.columns = sgp_data_me_subgroup_math.columns.str.split("_").str[1]
-
 
             label_grade_growth_ela="Percentage of Students Achieving Adequate Growth in ELA by Grade"
             fig_grade_growth_ela = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, label_grade_growth_ela)
@@ -1033,17 +1051,17 @@ def layout():
                     children=[
                     html.Div(
                         [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-grade-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
+                            # html.Div(
+                            #     [   
+                                    # html.Div(
+                                    #     [
+                                            html.Div(id="k8-grade-table", children=[]),
+                                    #     ],
+                                    #     className="pretty_container six columns",
+                                    # ),
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),
                             html.Div(
                                 [
                                     html.Div(
@@ -1061,17 +1079,17 @@ def layout():
                                 ],
                                 className="bare_container_center twelve columns",
                             ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-ethnicity-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
+                            # html.Div(
+                            #     [
+                                    # html.Div(
+                                    #     [
+                                            html.Div(id="k8-ethnicity-table", children=[]),
+                                    #     ],
+                                    #     className="pretty_container six columns",
+                                    # ),
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),
                             html.Div(
                                 [
                                     html.Div(
@@ -1089,17 +1107,17 @@ def layout():
                                 ],
                                 className="bare_container_center twelve columns",
                             ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-subgroup-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
+                            # html.Div(
+                            #     [
+                                    # html.Div(
+                                    #     [
+                                            html.Div(id="k8-subgroup-table", children=[]),
+                                    #     ],
+                                    #     className="pretty_container six columns",
+                                    # ),
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),
                             html.Div(
                                 [
                                     html.Div(
@@ -1117,88 +1135,88 @@ def layout():
                                 ],
                                 className="bare_container_center twelve columns",
                             ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-other-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
+                            # html.Div(
+                                # [
+                                #     html.Div(
+                                #         [
+                                            html.Div(id="k8-other-table", children=[]),
+                        #                 ],
+                        #                 className="pretty_container six columns",
+                        #             ),
+                        #         ],
+                        #         className="bare_container_center twelve columns",
+                        #     ),
                         ],
                         id="k8-table-container",
                     ),
                     html.Div(
                         [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
                                             html.Div(id="hs-grad-overview-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
+                            #             ],
+                            #             className="pretty_container six columns",
+                            #         ),
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
                                             html.Div(id="hs-grad-ethnicity-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
+                            #             ],
+                            #             className="pretty_container six columns",
+                            #         ),
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
                                             html.Div(id="hs-grad-subgroup-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
+                            #             ],
+                            #             className="pretty_container six columns",
+                            #         ),
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
                                             html.Div(id="sat-overview-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
+                            #             ],
+                            #             className="pretty_container six columns",
+                            #         ),
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
                                             html.Div(id="sat-ethnicity-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
+                            #             ],
+                            #             className="pretty_container six columns",
+                            #         ),
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
                                             html.Div(id="sat-subgroup-table"),
-                                        ],
-                                        className="pretty_container six columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),                            
+                            #             ],
+                            #             className="pretty_container six columns",
+                            #         ),
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),                            
                             # html.Div(
                             #     [
                             #         html.Div(
