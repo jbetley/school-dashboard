@@ -14,7 +14,7 @@ import itertools
 # import local functions
 from .subnav import subnav_academic
 from .table_helpers import no_data_page, no_data_table, create_metric_table, \
-    set_table_layout, get_svg_circle, create_key
+    set_table_layout, get_svg_circle, create_proficiency_key
 from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data, \
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
         calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
@@ -536,7 +536,7 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label("Key", className = "header_label"),        
-                                        html.Div(create_key()),
+                                        html.Div(create_proficiency_key()),
                                     ],
                                     className = "pretty_container six columns"
                                 ),

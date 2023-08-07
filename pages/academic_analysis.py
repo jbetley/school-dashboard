@@ -40,11 +40,10 @@ dash.register_page(__name__, path = "/academic_analysis", order=6)
 )
 def set_dropdown_options(school, year, comparison_schools):
 
-#TODO: USE PARTIAL UPDATE TO AVOID LOADING SPINNER WHEN UPDATING DROPDOWN.
+#TODO: Spinner issue. Currently refreshes entire page when comparison school dropdown is triggered
+# Don't want this- right now have isolated spinner to all charts prior to comparison charts- so 
+# comparison charts aren't triggered, but its a kludge.
 # See: https://stackoverflow.com/questions/68116540/dcc-loading-on-first-load-only-python
-
-# Right now have isolated spinner to all charts prior to comparison charts- so spinner
-# isn't triggering when data is changed.
 
     string_year = "2019" if year == "2020" else year
     numeric_year = int(string_year)
@@ -437,21 +436,14 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             t4 = time.process_time()
 
-
-            corp_academic_data = raw_comparison_data[[col for col in raw_comparison_data.columns if "Corp" in col or "Category" in col]].copy()
-            corp_academic_data.columns = corp_academic_data.columns.str.replace(r"Corp Proficiency$", "", regex=True)
-
-            # transpose the resulting dataframe (making Categories the column headers)
-            corp_academic_data = corp_academic_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
-
-            corp_academic_data = corp_academic_data.rename(columns={c: c + " Proficient %" for c in corp_academic_data.columns if c not in ["Year", "School Name","IREAD Proficiency (Grade 3 only)"]})
-
+            # process academic data for the school corporation in which the selected school is located
+            corp_academic_data = clean_corp_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
             current_corp_data = corp_academic_data.loc[corp_academic_data["Year"] == string_year].copy()
 
             for col in current_corp_data.columns:
                 current_corp_data[col]=pd.to_numeric(current_corp_data[col], errors="coerce")
 
-            print(f"Time to get and process corp data: " + str(time.process_time() - t4))
+            print(f"Time to process corp data: " + str(time.process_time() - t4))
 
             t5 = time.process_time()
 
@@ -522,10 +514,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 fig14c_k8_school_data = current_school_data[info_categories + [category]].copy()
 
-                # add corp average for category to dataframe - the "","","N/A" are values for
-                # Low & High Grade and Distance columns
+                # add corp average for category to dataframe - note we are using 'clean_corp_data'
+                # because the 'Corp' values have been dropped from raw_comparison_data
                 fig14c_k8_school_data.loc[len(fig14c_k8_school_data.index)] = \
-                    [corp_name,"3","8",current_corp_data[category].values[0]]
+                    [corp_name,"3","8",clean_corp_data[clean_corp_data['Category'] == category][year].values[0]]
 
                 # Get comparable school values for the specific category
 
@@ -564,10 +556,9 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 fig14d_k8_school_data = current_school_data[info_categories + [category]].copy()
 
-                # add corp average for category to dataframe - the "","","N/A" are values for
-                # Low & High Grade and Distance columns
+                # add corp average for category to dataframe
                 fig14d_k8_school_data.loc[len(fig14d_k8_school_data.index)] = \
-                    [corp_name, "3","8",current_corp_data[category].values[0]]
+                    [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][year].values[0]]
 
                 # Get comparable school values for the specific category
                 fig14d_comp_data = comparison_schools[info_categories + [category]]
@@ -602,10 +593,9 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 fig_iread_k8_school_data = current_school_data[info_categories + [category]].copy()
                 
-                # add corp average for category to dataframe - the "","","N/A" are values for
-                # Low & High Grade and Distance columns
+                # add corp average for category to dataframe
                 fig_iread_k8_school_data.loc[len(fig_iread_k8_school_data.index)] = \
-                    [corp_name, "3","8",current_corp_data[category].values[0]]
+                    [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][year].values[0]]
                 
                 # Get comparable school values for the specific category
                 fig_iread_comp_data = comparison_schools[info_categories + [category]]

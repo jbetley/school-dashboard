@@ -8,7 +8,7 @@ import dash
 from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 
-from .table_helpers import get_svg_circle, no_data_table, create_key
+from .table_helpers import get_svg_circle, no_data_table, create_proficiency_key
 from .load_db import get_financial_data
 
 dash.register_page(__name__, top_nav=True, order=7)
@@ -273,7 +273,7 @@ layout = html.Div(
                                     html.Div(
                                         [
                                             html.Label("Key", className = "header_label"),
-                                            html.Div(create_key()),
+                                            html.Div(create_proficiency_key()),
                                         ],
                                         className = "pretty_container six columns"
                                     ),

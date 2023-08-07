@@ -14,7 +14,7 @@ import re
 from typing import Tuple
 from .load_data import ethnicity, subgroup, info_categories
 
-## Global table styles
+# Global styles
 table_style = {
     'fontSize': '12px',
     'border': 'none',
@@ -40,6 +40,181 @@ table_header = {
     'fontWeight': 'bold',
     'border': 'none'
 }
+
+def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes a Dataframe and replaces text with svg circles coded certain colors
+    based on the text. See:
+    https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
+    https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
+    https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
+
+    Args:
+        val (pd.Dataframe): Pandas dataframe with metric Rating columns
+
+    Returns:
+        pd.Dataframe: returns the same dataframe with svg circles in place of text
+    """
+    result = val.copy()
+
+    # Use regex and beginning(^) and end-of-line ($) regex anchors to ensure exact matches only
+    # NOTE: Using font-awesome circle icon.
+    result = result.replace(["^DNMS$",'Does Not Meet Expectations'],'<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(["^AS$",'Approaches Expectations'],'<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(["^MS$",'Meets Expectations'],'<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(["^ES$",'Exceeds Expectations'],'<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
+    result = result.replace(['N/A','NA','No Rating',np.nan],'', regex=True)
+
+    return result
+
+def create_proficiency_key() -> dash_table.DataTable:
+    """
+    Creates a dash datatable 'key' using proficiency ratings and
+    the Font Awesome circle icon
+
+    Args: 
+        None
+
+    Returns:
+        key_table (dict): dash DataTable
+    """
+    rating_icon = '<span style="font-size: 1em;"><i class="fa fa-circle"></i></span>'
+
+    proficiency_key = pd.DataFrame(
+        dict(
+            [
+                (
+                    'Rate',
+                    [
+                        'Exceeds Standard',
+                    ],
+                ),
+                ('icon', [rating_icon]),
+                (
+                    'Rate2',
+                    [
+                        'Meets Standard',
+                    ],
+                ),
+                ('icon2', [rating_icon]),
+                (
+                    'Rate3',
+                    [
+                        'Approaches Standard',
+                    ],
+                ),
+                ('icon3', [rating_icon]),
+                (
+                    'Rate4',
+                    [
+                        'Does Not Meet Standard',
+                    ],
+                ),
+                ('icon4', [rating_icon]),
+                (
+                    'Rate5',
+                    [
+                        'No Rating',
+                    ],
+                ),
+                ('icon5', [rating_icon]),
+            ]
+        )
+    )
+
+    rating_headers = proficiency_key.columns.tolist()
+    rating_cols = list(col for col in proficiency_key.columns if 'Rate' in col)
+    icon_cols = list(col for col in proficiency_key.columns if 'icon' in col)
+
+    key_table = [ 
+        dash_table.DataTable(
+            css=[dict(selector='tr:first-child', rule='display: none')],
+            data=proficiency_key.to_dict('records'),
+            cell_selectable=False,
+            columns=[
+                {'id': 'icon', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate', 'name': '', 'presentation': 'markdown'},
+                {'id': 'icon2', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate2', 'name': '', 'presentation': 'markdown'},
+                {'id': 'icon3', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate3', 'name': '', 'presentation': 'markdown'},
+                {'id': 'icon4', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate4', 'name': '', 'presentation': 'markdown'},
+                {'id': 'icon5', 'name': '', 'presentation': 'markdown'},
+                {'id': 'Rate5', 'name': '', 'presentation': 'markdown'},
+            ],
+            markdown_options={'html': True},
+            style_table={
+                'paddingTop': '15px',
+                'fontSize': '.75em',
+                'border': 'none',
+                'fontFamily': 'Jost, sans-serif',
+            },
+            style_cell = {
+                'whiteSpace': 'normal',
+                'height': 'auto',
+                'border': 'none',
+                'textAlign': 'right',
+                'color': '#6783a9',
+            },
+            style_cell_conditional = [
+                {
+                    'if': {
+                        'column_id': rating
+                    },
+                    'textAlign': 'right',
+                } for rating in rating_cols
+            ] + [
+                {
+                    'if': {
+                        'column_id': icon
+                    },
+                    'textAlign': 'left',
+                    'width': '2%',
+                } for icon in icon_cols
+            ],
+            style_data_conditional=[
+                {
+                    'if': {
+                        'filter_query': '{Rate} = "Exceeds Standard"',
+                        'column_id': 'icon',
+                    },
+                    'color': '#b33dc6',
+                },
+                {
+                    'if': {'filter_query': '{Rate2} = "Meets Standard"',
+                        'column_id': 'icon2'
+                    },
+                    'color': '#87bc45',
+                },
+                {
+                    'if': {'filter_query': '{Rate3} = "Approaches Standard"',
+                        'column_id': 'icon3'
+                    },
+                    'color': '#ede15b',
+                },
+                {
+                    'if': {'filter_query': '{Rate4} = "Does Not Meet Standard"',
+                        'column_id': 'icon4'
+                    },
+                    'color': '#ea5545',
+                },
+                {
+                    'if': {'filter_query': '{Rate5} = "No Rating"',
+                        'column_id': 'icon5'
+                    },
+                    'color': '#a4a2a8',
+                },
+                {
+                'if': {
+                    'column_id': rating_headers[1],
+                },
+                'marginLeft':'10px',
+                },
+            ],
+        )
+    ]
+    return key_table
 
 def no_data_table(label: str = 'No Data to Display') -> list:
     """
@@ -75,8 +250,8 @@ def no_data_table(label: str = 'No Data to Display') -> list:
 
 def no_data_page(label: str) -> list:
     """
-    Creates single empty table which can be used in place of all tables to
-    show an empty page, with provided label
+    Creates a layout with a single empty table to be used as a replacement for an entire
+    page without data for any tables/figs, with provided label
 
     Args:
         label (String): string label
@@ -127,6 +302,7 @@ def no_data_page(label: str) -> list:
 
     return table_layout
 
+# NOTE: Not currently used
 def hidden_table() -> list:
     """
     Creates an empty table with no cells. Will be automatically hidden
@@ -151,87 +327,61 @@ def hidden_table() -> list:
     
     return table_layout
 
-def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
+def create_chart_label(final_data: pd.DataFrame) -> str:
     """
-    Determines table layout depending on the size (# of cols) of the tables,
-    either side by side or on an individual row
+    Takes a dataframe of academic data and creates a chart label based on
+    the df columns
 
     Args:
-        table1 (list): dash DataTable
-        table2 (list): dash DataTable
-        cols (pandas.core.indexes.Base.index): Pandas series of column headers
+        final_data (pd.DataFrame): dataframe of academic data
 
     Returns:
-        table_layout (list): an html Div enclosing dash DataTables and css formatting
+        label (str): chart label
     """
 
-    # if same table is passed twice, we force single table layout
-    if table1 == table2:
-        table_layout = [
-                html.Div(
-                    table1,
-                    className = 'bare_container_center twelve columns',
-                )
-        ]
+    final_data_columns = final_data.columns.tolist()
 
-    else:
+    # the list returns any strings in final_data_columns that are in the
+    # ethnicity list or subgroup list. Label is based on whichever list
+    # of substrings matches the column list
+    if len([i for e in ethnicity for i in final_data_columns if e in i]) > 0:
+        label_category = ' Proficiency by Ethnicity'
 
-        if len(cols) >= 4:
-            table_layout = [
-                    html.Div(
-                        table1,
-                        className = 'bare_container_center twelve columns',
-                    ),
-                    html.Div(
-                        table2,
-                        className = 'bare_container_center twelve columns',
-                    ),
-            ]
+    elif len([i for e in subgroup for i in final_data_columns if e in i]) > 0:
+        label_category = ' Proficiency by Subgroup'                      
 
-        else:
+    # get the subject using regex
+    label_subject = re.search(r'(?<=\|)(.*?)(?=\s)',final_data_columns[0]).group()
+    
+    label = 'Comparison: ' + label_subject + label_category
 
-            table_layout = [
-                    html.Div(
-                        [
-                            table1[0],
-                            table2[0],
-                        ],
-                        className = 'bare_container_center twelve columns',
-                    ),
-            ]
-
-    return table_layout
-
-def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
+    print(label)
+    return label
+    
+def create_school_label(data: pd.DataFrame) -> str:
     """
-    Takes a Dataframe and replaces text with svg circles coded certain colors
-    based on the text. See:
-    https://stackoverflow.com/questions/19554834/how-to-center-a-circle-in-an-svg
-    https://stackoverflow.com/questions/65778593/insert-shape-in-dash-datatable
-    https://community.plotly.com/t/adding-markdown-image-in-dashtable/53894/2
+    Takes a dataframe of academic data and creates a label for each school including
+    the school's gradespan.
 
     Args:
-        val (pd.Dataframe): Pandas dataframe with metric Rating columns
+        final_data (pd.DataFrame): dataframe of academic data
 
     Returns:
-        pd.Dataframe: returns the same dataframe with svg circles in place of text
+        label (str): school label with name and gradespan
     """
-    result = val.copy()
 
-    # Use regex and beginning(^) and end-of-line ($) regex anchors to ensure exact matches only
-    # NOTE: Using font-awesome circle icon.
-    result = result.replace(["^DNMS$",'Does Not Meet Expectations'],'<span style="font-size: 1em; color: #ea5545;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
-    result = result.replace(["^AS$",'Approaches Expectations'],'<span style="font-size: 1em; color: #ede15b;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
-    result = result.replace(["^MS$",'Meets Expectations'],'<span style="font-size: 1em; color: #87bc45;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
-    result = result.replace(["^ES$",'Exceeds Expectations'],'<span style="font-size: 1em; color: #b33dc6;"><i class="fa fa-circle center-icon"></i></span>', regex=True)
-    result = result.replace(['N/A','NA','No Rating',np.nan],'', regex=True)
+    label = data['School Name'] + ' (' + data['Low Grade'].fillna('').astype(str) + \
+        '-' + data['High Grade'].fillna('').astype(str) + ')'
+    
+    # removes empty parentheses from School Corp
+    label = label.str.replace("\(-\)", '',regex=True)
 
-    return result
+    return label
 
 def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
     """
-    Takes a label, a dataframe, and a descriptive (type) string and creates a table
-    with academic growth and sgp data.
+    Takes a label, a dataframe, and a descriptive (type) string and creates a multi-header
+    table with academic growth and sgp data.
 
     Args:
         label (str): Table title
@@ -354,9 +504,6 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
         for item in all_cols:
 
             if item.startswith('20'):
-                # if 'Rate' in item:
-                    # item = item[:8]
-
                 name_cols.append([item[:4],item[4:]])
 
         table_header_conditional = [
@@ -377,7 +524,7 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
                 'borderBottom': '.5px solid #b2bdd4',
         } for col in data_cols
         ] + [
-            {   # need border right on the last column
+            {
                 'if': {
                     'column_id': data_cols[-1],
                     'header_index': 1,
@@ -386,9 +533,6 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
             }
         ]
 
-        # formatting logic is different for multi-header table
-        # borders are tricky to get correct
-        # add red/green color for diff column
         table_data_conditional = [
             {
                 'if': {
@@ -501,6 +645,499 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
                 className = class_name
             )
         ]
+
+    return table_layout
+
+def process_table_data(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Creates a series that merges school name and grade spans and drops the
+    grade span columns from the dataframe (they are not charted)
+
+    Args:
+        data (pd.DataFrame): dataframe of academic data
+
+    Returns:
+        data (pd.DataFrame): dataframe
+    """    
+    school_names = create_school_label(data)
+
+    data = data.drop(['Low Grade', 'High Grade'], axis = 1)
+
+    # shift the 'School Name' column to the first position and replace
+    # the values in 'School Name' column with the school_names series
+    data = data.drop('School Name', axis = 1)
+    data['School Name'] = school_names
+
+    first_column = data.pop('School Name')
+    data.insert(0, 'School Name', first_column)
+    
+    return data
+
+def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: list, corp_name: str) -> Tuple[pd.DataFrame, str, str]:
+    """
+    Processes several dataframes for display in comparison tables while tracking both schools that are missing data for 
+    a particulary category (category_string) and schools that are missing data for all categories (school_string).
+
+    Args:
+        school_data (pd.DataFrame): academic data from the selected school
+        corporation_data (pd.DataFrame): academic data from the school corporation where the school is located
+        comparison_data (pd.DataFrame): academic data from comparable schools (may or may not be in school corp)
+        categories (list): a list of academic categories
+        corp_name (str): the name of the school corporation
+
+    Returns:
+        Tuple[
+            final_data (pd.DataFrame): all dataframes cleaned up and combined
+            category_string (str): a string of categories for which the selected school has no data. 
+            school_string (str): a string of schools which have no data
+        ]
+    """
+    all_categories = categories + info_categories
+
+    school_columns = [i for i in categories if i in school_data.columns]
+
+    # sort corp data by the school columns (this excludes any categories
+    # not in the school data)
+    corporation_data = corporation_data.loc[:, (corporation_data.columns.isin(school_columns))].copy()
+
+    # add the school corporation name
+    corporation_data['School Name'] = corp_name
+
+    # concatenate the school and corporation dataframes, filling empty values (e.g., Low and High Grade) with ''
+    first_merge_data = pd.concat([school_data, corporation_data], sort=False).fillna('')
+
+    # filter comparable schools
+    comparison_data = comparison_data.loc[:, comparison_data.columns.isin(all_categories)].copy()
+
+    # concatenate school/corp and comparison dataframes
+    combined_data = pd.concat([first_merge_data,comparison_data])
+    combined_data = combined_data.reset_index(drop=True)
+
+    # make a copy (used for comparison purposes)
+    final_data = combined_data.copy()
+
+    # get a list of all of the Categories (each one a column)
+    school_categories = [ele for ele in school_columns if ele not in info_categories]
+
+    # test all school columns and drop any where all columns (proficiency data) is nan/null
+    final_data = final_data.dropna(subset=school_categories, how='all')  
+
+    # replace any blanks with NaN
+    final_data = final_data.replace(r'^\s*$', np.nan, regex=True)
+
+    # get the names of the schools that have no data by comparing the
+    # column sets before and after the drop
+    missing_schools = list(set(combined_data['School Name']) - set(final_data['School Name']))
+
+    # Now comes the hard part. Get the names and categories of schools that
+    # have data for some categories and not others. In the end we want
+    # to build a list of schools that is made up of schools that are missing
+    # all data + schools that are missing some data + what data they are
+    # missing
+    check_data = final_data.copy()
+    check_data = check_data.drop(['Low Grade','High Grade'], axis = 1)
+    check_data = check_data.reset_index(drop=True)
+
+    # get a list of the categories that are missing from selected school data and
+    # strip everything following '|' delimeter for annotation
+    # NOTE: this is doing a slightly different thing than the check_for_insufficient_n_size()
+    # & check_for_no_data() functions (calculations.py), but may want to check at some point
+    # to see which process is faster
+    missing_categories = [i for i in categories if i not in check_data.columns]                
+    missing_categories = [s.split('|')[0] for s in missing_categories]
+
+    # get index and columns where there are null values (numpy array)
+    idx, idy = np.where(pd.isnull(check_data))
+
+    # np.where returns an index for each column, resulting in duplicate
+    # indexes for schools missing multiple categories. But we only need one
+    # unique value for each school that is missing data
+    schools_with_missing = np.unique(idx, axis=0)
+
+    schools_with_missing_list = []
+    if schools_with_missing.size != 0:
+        for i in schools_with_missing:
+
+            schools_with_missing_name = check_data.iloc[i]['School Name']
+
+            # get missing categories as a list, remove everything
+            # after the '|', and filter down to unique categories
+            with_missing_categories = list(check_data.columns[idy])
+            with_missing_categories = [s.split('|')[0] for s in with_missing_categories]
+            unique__missing_categories = list(set(with_missing_categories))
+
+            # create a list of ['School Name (Cat 1, Cat2)']
+            schools_with_missing_list.append(schools_with_missing_name + ' (' + ', '.join(unique__missing_categories) + ')')
+
+    else:
+        schools_with_missing_list = []
+
+    # create the string. Yes this is ugly, and i will probably fix it later, but
+    # we need to make sure that all conditions match proper punctuation.
+    if len(schools_with_missing_list) != 0:
+        if len(schools_with_missing_list) > 1:
+            schools_with_missing_list = ', '.join(schools_with_missing_list)
+        else:
+            schools_with_missing_list = schools_with_missing_list[0]
+
+        if missing_schools:
+            missing_schools = [i + ' (All)' for i in missing_schools]
+            school_string = ', '.join(list(map(str, missing_schools))) + '.'
+            school_string = schools_with_missing_list + ', ' + school_string
+        else:
+            school_string = schools_with_missing_list + '.'
+    else:
+        if missing_schools:
+            missing_schools = [i + ' (All)' for i in missing_schools]
+            school_string = ', '.join(list(map(str, missing_schools))) + '.'
+        else:
+            school_string = 'None.'
+
+    # Create string for categories for which the selected school has
+    # no data. These categories are not shown at all.
+    if missing_categories:
+        category_string = ', '.join(list(map(str, missing_categories))) + '.'
+    else:
+        category_string = 'None.'
+
+    return final_data, category_string, school_string
+
+def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
+    """
+    Takes a dataframe of two or more columns and a label and creates a single
+    header table with borders around each cell. If more rows are added, need
+    to adjust logic to remove horizontal borders between rows.
+    
+    Args:
+        label (String): Table title
+        data (pd.DataTable): dash dataTable
+        table_type (String): type of table.
+
+    Returns:
+        table_layout (list): dash DataTable wrapped in dash html components
+    """
+
+    data = pd.concat([data]*3, ignore_index=True)
+
+    table_size = len(data.columns)
+    year_headers = [y for y in data.columns.tolist() if 'Category' not in y]
+
+    # set column widths
+    category_width = 20
+    data_width = 100 - category_width
+    year_width = data_width / (table_size - 1)
+    
+    table_cell_conditional = [
+        {
+            'if': {
+                'column_id': 'Category'
+            },
+            'textAlign': 'left',
+            'paddingLeft': '20px',
+            'fontWeight': '500',
+            'width': str(category_width) + '%'
+        }
+    ] + [
+        {
+            'if': {
+                'column_id': year
+            },
+            'textAlign': 'center',
+            'fontWeight': '500',
+            'width': str(year_width) + '%',
+            'borderRight': '.5px solid #b2bdd4',
+            'borderLeft': '.5px solid #b2bdd4',  
+        } for year in year_headers
+    ]
+
+    table_header_conditional = [
+        {
+            'if': {
+                'column_id': year,
+            },
+            'borderBottom': '.5px solid #b2bdd4'
+        } for year in year_headers
+    ]
+
+    table_data_conditional = [
+        {
+            'if': {
+                'state': 'selected'
+            },
+            'backgroundColor': 'rgba(112,128,144, .3)',
+            'border': 'thin solid silver'
+        },
+        {
+            'if': {
+                'row_index': 'odd'
+            },
+            'backgroundColor': '#eeeeee'
+        }
+    ] + [
+        {
+            'if': {
+                'row_index': 0
+            },
+            'paddingTop': '5px'
+        }
+    ] + [
+        {
+            'if': {
+                'column_id': data.columns[-1],
+            },
+            'borderRight': '.5px solid #b2bdd4',
+        },
+    ] + [
+        {
+            'if': {
+                'row_index': 0
+            },
+            'paddingTop': '5px'
+        }
+    ] + [
+        {
+            'if': {
+                'row_index': len(data)-1
+            },
+            'borderBottom': '.5px solid #b2bdd4',
+        }
+    ] + [        
+        {
+            'if': {
+                'column_id': 'Category',
+            },
+            'borderRight': '.5px solid #b2bdd4',
+            'borderBottom': 'none',
+            'borderLeft': 'none',
+            'borderTop': 'none',                        
+        },
+    ] + [
+        { 
+            'if': {
+                'column_id': year,
+            },
+            'fontSize': '10px',
+            'textAlign': 'center',
+            'borderLeft': '.5px solid #b2bdd4',
+        } for year in year_headers
+    ]
+
+    table_layout = [
+        html.Label(label, className='header_label'),
+        html.Div(
+            dash_table.DataTable(
+                data.to_dict('records'),
+                columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
+                style_data = {
+                    'fontSize': '12px',
+                    'fontFamily': 'Jost, sans-serif',
+                    'border': 'none'                    
+                },    
+                style_header = table_header,
+                style_cell = {
+                    'whiteSpace': 'normal',
+                    'height': 'auto',
+                    'textAlign': 'center',
+                    'color': '#6783a9',
+                    'minWidth': '25px',
+                    'width': '25px',
+                    'maxWidth': '25px',
+                },
+                style_data_conditional = table_data_conditional,
+                style_header_conditional = table_header_conditional,
+                style_cell_conditional = table_cell_conditional,
+                merge_duplicate_headers=True
+            ),
+        )
+    ]
+
+    return table_layout
+
+def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
+    """
+    Takes a dataframe of two or more columns and a label, and creates a table with multi-headers.
+    
+    Args:
+        label (String): Table title
+        data (pd.DataTable): dash dataTable
+
+    Returns:
+        table_layout (list): dash DataTable wrapped in dash html components
+    """
+
+    table_size = len(data.columns)
+
+    year_headers = [y for y in data.columns.tolist() if 'School' in y]
+
+    # rename n_size before getting n col list
+    data.columns = data.columns.str.replace('N-Size|SN-Size', 'n', regex=True)
+    nsize_headers = [y for y in data.columns if 'n' in y]
+
+    # get new list of cols after replacing N-Size
+    all_cols = data.columns.tolist()
+
+    # set column widths
+    category_width = 20
+    nsize_width = 1
+    data_width = 100 - category_width - nsize_width
+    year_width = data_width / (table_size - 1)
+    
+    # formatting logic is slightly different for a multi-header table
+    table_cell_conditional = [
+        {
+            'if': {
+                'column_id': 'Category'
+            },
+            'textAlign': 'left',
+            'paddingLeft': '20px',
+            'fontWeight': '500',
+            'width': str(category_width) + '%'
+        },
+    ] + [
+        {
+            'if': {
+                'column_id': year
+            },
+            'textAlign': 'center',
+            'fontWeight': '500',
+            'width': str(year_width) + '%',
+        } for year in year_headers
+    ]  + [
+        {   'if': {
+            'column_id': nsize
+        },
+            'textAlign': 'center',
+            'fontWeight': '300',
+            'fontSize': '8px',
+            'width': str(nsize_width) + '%'
+        } for nsize in nsize_headers
+    ]
+
+    table_header_conditional = [
+        {
+            'if': {
+                'column_id': year,
+                'header_index': 1,
+            },
+            'borderLeft': '.5px solid #b2bdd4',
+            'borderTop': '.5px solid #b2bdd4',
+            'borderBottom': '.5px solid #b2bdd4'
+        } for year in year_headers
+    ] + [
+        {   'if': {
+            'column_id': nsize,
+            'header_index': 1,
+        },
+            'borderRight': '.5px solid #b2bdd4',
+            'borderTop': '.5px solid #b2bdd4',
+            'borderBottom': '.5px solid #b2bdd4'
+    } for nsize in nsize_headers
+    ] + [
+        {   'if': {
+            'column_id': all_cols[-1],
+            'header_index': 1,
+        },
+        'borderRight': '.5px solid #b2bdd4',
+        }
+    ]
+
+    table_data_conditional = [
+        {
+            'if': {
+                'state': 'selected'
+            },
+            'backgroundColor': 'rgba(112,128,144, .3)',
+            'border': 'thin solid silver'
+        },
+        {
+            'if': {
+                'row_index': 'odd'
+            },
+            'backgroundColor': '#eeeeee'
+        }
+    ] + [
+        {
+            'if': {
+                'column_id': all_cols[-1],
+            },
+            'borderRight': '.5px solid #b2bdd4',
+        },
+    ] + [
+        {
+            'if': {
+                'row_index': 0
+            },
+            'paddingTop': '5px'
+        }
+    ] + [
+        {
+            'if': {
+                'row_index': len(data)-1
+            },
+            'borderBottom': '.5px solid #b2bdd4',
+        }
+    ] + [
+        {
+            'if': {
+                'column_id': 'Category',
+            },
+            'borderRight': '.5px solid #b2bdd4',
+            'borderBottom': 'none',
+        },
+    ] + [
+        { 
+            'if': {
+                'column_id': nsize,
+            },
+            'fontSize': '10px',
+            'textAlign': 'center',
+            'borderRight': '.5px solid #b2bdd4',
+        } for nsize in nsize_headers
+    ]
+
+    # build multi-level headers
+    name_cols = [['Category','']]
+
+    # Split columns into two levels
+    for item in all_cols:
+        if item.startswith('20'):
+            name_cols.append([item[:4],item[4:]])
+
+    table_cols = [
+            {
+                'name': col,
+                'id': all_cols[idx],
+                'type': 'numeric',
+                'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses),
+            }
+            if 'School' in col      
+            
+            else
+                {
+                    'name': col,
+                    'id': all_cols[idx],
+                    'type':'numeric',
+                    'format': Format()
+                }
+                for (idx, col) in enumerate(name_cols)
+    ]
+
+    table_layout = [
+        html.Label(label, className='header_label'),
+        html.Div(
+            dash_table.DataTable(
+                data.to_dict('records'),
+                columns = table_cols,
+                style_data = table_style,
+                style_data_conditional = table_data_conditional,
+                style_header = table_header,
+                style_cell = table_cell,
+                style_header_conditional = table_header_conditional,
+                style_cell_conditional = table_cell_conditional,
+                merge_duplicate_headers=True
+            ),
+        )
+    ]
 
     return table_layout
 
@@ -887,210 +1524,58 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
 
     return table
 
-def create_chart_label(final_data: pd.DataFrame) -> str:
+
+def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
     """
-    Takes a dataframe of academic data and creates a chart label based on
-    the df columns
+    Determines table layout depending on the size (# of cols) of the tables,
+    either side by side or on an individual row
 
     Args:
-        final_data (pd.DataFrame): dataframe of academic data
+        table1 (list): dash DataTable
+        table2 (list): dash DataTable
+        cols (pandas.core.indexes.Base.index): Pandas series of column headers
 
     Returns:
-        label (str): chart label
+        table_layout (list): an html Div enclosing dash DataTables and css formatting
     """
 
-    final_data_columns = final_data.columns.tolist()
-
-    # the list returns any strings in final_data_columns that are in the
-    # ethnicity list or subgroup list. Label is based on whichever list
-    # of substrings matches the column list
-    if len([i for e in ethnicity for i in final_data_columns if e in i]) > 0:
-        label_category = ' Proficiency by Ethnicity'
-
-    elif len([i for e in subgroup for i in final_data_columns if e in i]) > 0:
-        label_category = ' Proficiency by Subgroup'                      
-
-    # get the subject using regex
-    label_subject = re.search(r'(?<=\|)(.*?)(?=\s)',final_data_columns[0]).group()
-    
-    label = 'Comparison: ' + label_subject + label_category
-
-    return label
-    
-def create_school_label(data: pd.DataFrame) -> str:
-    """
-    Takes a dataframe of academic data and creates a label for each school including
-    the school's gradespan.
-
-    Args:
-        final_data (pd.DataFrame): dataframe of academic data
-
-    Returns:
-        label (str): school label with name and gradespan
-    """
-
-    label = data['School Name'] + ' (' + data['Low Grade'].fillna('').astype(str) + \
-        '-' + data['High Grade'].fillna('').astype(str) + ')'
-    
-    # removes empty parentheses from School Corp
-    label = label.str.replace("\(-\)", '',regex=True)
-
-    return label
-
-def process_table_data(data: pd.DataFrame) -> pd.DataFrame:
-    """
-    Creates a series that merges school name and grade spans and drops the
-    grade span columns from the dataframe (they are not charted)
-
-    Args:
-        data (pd.DataFrame): dataframe of academic data
-
-    Returns:
-        data (pd.DataFrame): dataframe
-    """    
-    school_names = create_school_label(data)
-
-    data = data.drop(['Low Grade', 'High Grade'], axis = 1)
-
-    # shift the 'School Name' column to the first position and replace
-    # the values in 'School Name' column with the school_names series
-    data = data.drop('School Name', axis = 1)
-    data['School Name'] = school_names
-
-    first_column = data.pop('School Name')
-    data.insert(0, 'School Name', first_column)
-    
-    return data
-
-def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: list, corp_name: str) -> Tuple[pd.DataFrame, str, str]:
-    """
-    Processes several dataframes for display in comparison tables while tracking both schools that are missing data for 
-    a particulary category (category_string) and schools that are missing data for all categories (school_string).
-
-    Args:
-        school_data (pd.DataFrame): academic data from the selected school
-        corporation_data (pd.DataFrame): academic data from the school corporation where the school is located
-        comparison_data (pd.DataFrame): academic data from comparable schools (may or may not be in school corp)
-        categories (list): a list of academic categories
-        corp_name (str): the name of the school corporation
-
-    Returns:
-        Tuple[
-            final_data (pd.DataFrame): all dataframes cleaned up and combined
-            category_string (str): a string of categories for which the selected school has no data. 
-            school_string (str): a string of schools which have no data
+    # if same table is passed twice, we force single table layout
+    if table1 == table2:
+        table_layout = [
+                html.Div(
+                    table1,
+                    className = 'bare_container_center twelve columns',
+                )
         ]
-    """
-    all_categories = categories + info_categories
-
-    school_columns = [i for i in categories if i in school_data.columns]
-
-    # sort corp data by the school columns (this excludes any categories
-    # not in the school data)
-    corporation_data = corporation_data.loc[:, (corporation_data.columns.isin(school_columns))].copy()
-
-    # add the school corporation name
-    corporation_data['School Name'] = corp_name
-
-    # concatenate the school and corporation dataframes, filling empty values (e.g., Low and High Grade) with ''
-    first_merge_data = pd.concat([school_data, corporation_data], sort=False).fillna('')
-
-    # filter comparable schools
-    comparison_data = comparison_data.loc[:, comparison_data.columns.isin(all_categories)].copy()
-
-    # concatenate school/corp and comparison dataframes
-    combined_data = pd.concat([first_merge_data,comparison_data])
-    combined_data = combined_data.reset_index(drop=True)
-
-    # make a copy (used for comparison purposes)
-    final_data = combined_data.copy()
-
-    # get a list of all of the Categories (each one a column)
-    school_categories = [ele for ele in school_columns if ele not in info_categories]
-
-    # test all school columns and drop any where all columns (proficiency data) is nan/null
-    final_data = final_data.dropna(subset=school_categories, how='all')  
-
-    # replace any blanks with NaN
-    final_data = final_data.replace(r'^\s*$', np.nan, regex=True)
-
-    # get the names of the schools that have no data by comparing the
-    # column sets before and after the drop
-    missing_schools = list(set(combined_data['School Name']) - set(final_data['School Name']))
-
-    # Now comes the hard part. Get the names and categories of schools that
-    # have data for some categories and not others. In the end we want
-    # to build a list of schools that is made up of schools that are missing
-    # all data + schools that are missing some data + what data they are
-    # missing
-    check_data = final_data.copy()
-    check_data = check_data.drop(['Low Grade','High Grade'], axis = 1)
-    check_data = check_data.reset_index(drop=True)
-
-    # get a list of the categories that are missing from selected school data and
-    # strip everything following '|' delimeter for annotation
-    # NOTE: this is doing a slightly different thing than the check_for_insufficient_n_size()
-    # & check_for_no_data() functions (calculations.py), but may want to check at some point
-    # to see which process is faster
-    missing_categories = [i for i in categories if i not in check_data.columns]                
-    missing_categories = [s.split('|')[0] for s in missing_categories]
-
-    # get index and columns where there are null values (numpy array)
-    idx, idy = np.where(pd.isnull(check_data))
-
-    # np.where returns an index for each column, resulting in duplicate
-    # indexes for schools missing multiple categories. But we only need one
-    # unique value for each school that is missing data
-    schools_with_missing = np.unique(idx, axis=0)
-
-    schools_with_missing_list = []
-    if schools_with_missing.size != 0:
-        for i in schools_with_missing:
-
-            schools_with_missing_name = check_data.iloc[i]['School Name']
-
-            # get missing categories as a list, remove everything
-            # after the '|', and filter down to unique categories
-            with_missing_categories = list(check_data.columns[idy])
-            with_missing_categories = [s.split('|')[0] for s in with_missing_categories]
-            unique__missing_categories = list(set(with_missing_categories))
-
-            # create a list of ['School Name (Cat 1, Cat2)']
-            schools_with_missing_list.append(schools_with_missing_name + ' (' + ', '.join(unique__missing_categories) + ')')
 
     else:
-        schools_with_missing_list = []
 
-    # create the string. Yes this is ugly, and i will probably fix it later, but
-    # we need to make sure that all conditions match proper punctuation.
-    if len(schools_with_missing_list) != 0:
-        if len(schools_with_missing_list) > 1:
-            schools_with_missing_list = ', '.join(schools_with_missing_list)
+        if len(cols) >= 4:
+            table_layout = [
+                    html.Div(
+                        table1,
+                        className = 'bare_container_center twelve columns',
+                    ),
+                    html.Div(
+                        table2,
+                        className = 'bare_container_center twelve columns',
+                    ),
+            ]
+
         else:
-            schools_with_missing_list = schools_with_missing_list[0]
 
-        if missing_schools:
-            missing_schools = [i + ' (All)' for i in missing_schools]
-            school_string = ', '.join(list(map(str, missing_schools))) + '.'
-            school_string = schools_with_missing_list + ', ' + school_string
-        else:
-            school_string = schools_with_missing_list + '.'
-    else:
-        if missing_schools:
-            missing_schools = [i + ' (All)' for i in missing_schools]
-            school_string = ', '.join(list(map(str, missing_schools))) + '.'
-        else:
-            school_string = 'None.'
+            table_layout = [
+                    html.Div(
+                        [
+                            table1[0],
+                            table2[0],
+                        ],
+                        className = 'bare_container_center twelve columns',
+                    ),
+            ]
 
-    # Create string for categories for which the selected school has
-    # no data. These categories are not shown at all.
-    if missing_categories:
-        category_string = ', '.join(list(map(str, missing_categories))) + '.'
-    else:
-        category_string = 'None.'
+    return table_layout
 
-    return final_data, category_string, school_string
-        
 def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) -> list:
     """
     Takes a dataframe that is a column of schools and one or more columns
@@ -1204,474 +1689,3 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         ]
 
     return table_layout
-
-# TODO: Make row # agnostic.
-def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
-    """
-    Takes a dataframe of two or more columns and a label and creates a single
-    header table with borders around each cell. If more rows are added, need
-    to adjust logic to remove horizontal borders between rows.
-    
-    Args:
-        label (String): Table title
-        data (pd.DataTable): dash dataTable
-        table_type (String): type of table.
-
-    Returns:
-        table_layout (list): dash DataTable wrapped in dash html components
-    """
-
-    table_size = len(data.columns)
-    year_headers = [y for y in data.columns.tolist() if 'School' in y]
-
-    # set column widths
-    category_width = 20
-    data_width = 100 - category_width
-    year_width = data_width / (table_size - 1)
-    
-    table_cell_conditional = [
-        {
-            'if': {
-                'column_id': 'Category'
-            },
-            'textAlign': 'left',
-            'paddingLeft': '20px',
-            'fontWeight': '500',
-            'width': str(category_width) + '%'
-        }
-    ] + [
-        {
-            'if': {
-                'column_id': year
-            },
-            'textAlign': 'center',
-            'fontWeight': '500',
-            'width': str(year_width) + '%',
-        } for year in year_headers
-    ]
-
-    table_data_conditional = [
-        {
-            'if': {
-                'state': 'selected'
-            },
-            'backgroundColor': 'rgba(112,128,144, .3)',
-            'border': 'thin solid silver'
-        },
-        {
-            'if': {
-                'row_index': 'odd'
-            },
-            'backgroundColor': '#eeeeee'
-        }
-    ] + [
-        {
-            'if': {
-                'row_index': 0
-            },
-            'paddingTop': '5px'
-        }
-    ] + [
-        {
-            'if': {
-                'column_id': 'Category',
-            },
-            'borderRight': '.5px solid #b2bdd4',
-            'borderBottom': 'none',
-            'borderLeft': 'none',
-            'borderTop': 'none',                        
-        },
-    ]
-
-    table_layout = [
-        html.Label(label, className='header_label'),
-        html.Div(
-            dash_table.DataTable(
-                data.to_dict('records'),
-                columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
-                style_data = {
-                    'fontSize': '12px',
-                    'fontFamily': 'Jost, sans-serif',
-                },    
-                style_header = table_header,
-                style_cell = {
-                    'whiteSpace': 'normal',
-                    'height': 'auto',
-                    'textAlign': 'center',
-                    'color': '#6783a9',
-                    'minWidth': '25px',
-                    'width': '25px',
-                    'maxWidth': '25px',
-                    'border': '.5px solid #b2bdd4',
-                },
-                style_data_conditional = table_data_conditional,
-                style_cell_conditional = table_cell_conditional,
-                merge_duplicate_headers=True
-            ),
-        )
-    ]
-
-    return table_layout
-
-def create_academic_info_table(data: pd.DataFrame, label: str, table_type: str) -> list:
-    """
-    Takes a dataframe of two or more columns, a label, and a 'table_type' (either
-    'proficiency' or 'growth') and creates a table with multi-headers.
-    Proficiency type tables have a Category (string) column and one or more columns
-    of years of data. Growth tables are variable.
-    
-    Args:
-        label (String): Table title
-        data (pd.DataTable): dash dataTable
-        table_type (String): type of table.
-
-    Returns:
-        table_layout (list): dash DataTable wrapped in dash html components
-    """
-
-    table_size = len(data.columns)
-
-    year_headers = [y for y in data.columns.tolist() if 'School' in y]
-
-    # rename n_size before getting n col list
-    data.columns = data.columns.str.replace('N-Size|SN-Size', 'n', regex=True)
-    nsize_headers = [y for y in data.columns if 'n' in y]
-
-    # get new list of cols after replacing N-Size
-    all_cols = data.columns.tolist()
-
-    # set column widths
-    category_width = 20
-    nsize_width = 1
-    data_width = 100 - category_width - nsize_width
-    year_width = data_width / (table_size - 1)
-    
-    # formatting logic is slightly different for a multi-header table
-    table_cell_conditional = [
-        {
-            'if': {
-                'column_id': 'Category'
-            },
-            'textAlign': 'left',
-            'paddingLeft': '20px',
-            'fontWeight': '500',
-            'width': str(category_width) + '%'
-        },
-    ] + [
-        {
-            'if': {
-                'column_id': year
-            },
-            'textAlign': 'center',
-            'fontWeight': '500',
-            'width': str(year_width) + '%',
-        } for year in year_headers
-    ]  + [
-        {   'if': {
-            'column_id': nsize
-        },
-            'textAlign': 'center',
-            'fontWeight': '300',
-            'fontSize': '8px',
-            'width': str(nsize_width) + '%'
-        } for nsize in nsize_headers
-    ]
-
-    table_header_conditional = [
-        {
-            'if': {
-                'column_id': year,
-                'header_index': 1,
-            },
-            'borderLeft': '.5px solid #b2bdd4',
-            'borderTop': '.5px solid #b2bdd4',
-            'borderBottom': '.5px solid #b2bdd4'
-        } for year in year_headers
-    ] + [
-        {   'if': {
-            'column_id': nsize,
-            'header_index': 1,
-        },
-            'borderRight': '.5px solid #b2bdd4',
-            'borderTop': '.5px solid #b2bdd4',
-            'borderBottom': '.5px solid #b2bdd4'
-    } for nsize in nsize_headers
-    ] + [
-        {   'if': {
-            'column_id': all_cols[-1],
-            'header_index': 1,
-        },
-        'borderRight': '.5px solid #b2bdd4',
-        }
-    ]
-
-    table_data_conditional = [
-        {
-            'if': {
-                'state': 'selected'
-            },
-            'backgroundColor': 'rgba(112,128,144, .3)',
-            'border': 'thin solid silver'
-        },
-        {
-            'if': {
-                'row_index': 'odd'
-            },
-            'backgroundColor': '#eeeeee'
-        }
-    ] + [
-        {   # add right border to right end of table header
-            'if': {
-                'column_id': all_cols[-1],
-            },
-            'borderRight': '.5px solid #b2bdd4',
-        },
-    ] + [
-        {
-            'if': {
-                'row_index': 0
-            },
-            'paddingTop': '5px'
-        }
-    ] + [
-        {
-            'if': {
-                'row_index': len(data)-1
-            },
-            'borderBottom': '.5px solid #b2bdd4',
-        }
-    ] + [
-        {
-            'if': {
-                'column_id': 'Category',
-            },
-            'borderRight': '.5px solid #b2bdd4',
-            'borderBottom': 'none',
-        },
-    ] + [
-        { 
-            'if': {
-                'column_id': nsize,
-            },
-            'fontSize': '10px',
-            'textAlign': 'center',
-            'borderRight': '.5px solid #b2bdd4',
-        } for nsize in nsize_headers
-    ]
-
-    if table_type == 'proficiency':
-
-        # build multi-level headers
-        name_cols = [['Category','']]
-
-        # Split columns into two levels
-        for item in all_cols:
-            if item.startswith('20'):
-                name_cols.append([item[:4],item[4:]])
-
-        table_cols = [
-                {
-                    'name': col,
-                    'id': all_cols[idx],
-                    'type': 'numeric',
-                    'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses),
-                }
-                if 'School' in col      
-                
-                else
-                    {
-                        'name': col,
-                        'id': all_cols[idx],
-                        'type':'numeric',
-                        'format': Format()
-                    }
-                    for (idx, col) in enumerate(name_cols)
-        ]
-    
-    elif table_type == 'growth':
-
-        table_cols = [
-                {
-                    'name': col,
-                    'id': col,
-                    'presentation': 'markdown'
-                }
-                if 'Rat' in col
-                
-                else
-                    {
-                        'name': col,
-                        'id': col,
-                        'type':'numeric',
-                        'format': Format(scheme=Scheme.fixed, precision=2)
-                    }
-                    for (col) in data.columns
-        ]   
-
-    table_layout = [
-        html.Label(label, className='header_label'),
-        html.Div(
-            dash_table.DataTable(
-                data.to_dict('records'),
-                columns = table_cols,
-                style_data = table_style,
-                style_data_conditional = table_data_conditional,
-                style_header = table_header,
-                style_cell = table_cell,
-                style_header_conditional = table_header_conditional,
-                style_cell_conditional = table_cell_conditional,
-                merge_duplicate_headers=True
-            ),
-        )
-    ]
-
-    return table_layout
-
-def create_key() -> dash_table.DataTable:
-    """
-    Creates a dash datatable 'key' using proficiency ratings and
-    the Font Awesome circle icon
-
-    Args: 
-        None
-
-    Returns:
-        key_table (dict): dash DataTable
-    """
-    rating_icon = '<span style="font-size: 1em;"><i class="fa fa-circle"></i></span>'
-
-    proficiency_key = pd.DataFrame(
-        dict(
-            [
-                (
-                    'Rate',
-                    [
-                        'Exceeds Standard',
-                    ],
-                ),
-                ('icon', [rating_icon]),
-                (
-                    'Rate2',
-                    [
-                        'Meets Standard',
-                    ],
-                ),
-                ('icon2', [rating_icon]),
-                (
-                    'Rate3',
-                    [
-                        'Approaches Standard',
-                    ],
-                ),
-                ('icon3', [rating_icon]),
-                (
-                    'Rate4',
-                    [
-                        'Does Not Meet Standard',
-                    ],
-                ),
-                ('icon4', [rating_icon]),
-                (
-                    'Rate5',
-                    [
-                        'No Rating',
-                    ],
-                ),
-                ('icon5', [rating_icon]),
-            ]
-        )
-    )
-
-    rating_headers = proficiency_key.columns.tolist()
-    rating_cols = list(col for col in proficiency_key.columns if 'Rate' in col)
-    icon_cols = list(col for col in proficiency_key.columns if 'icon' in col)
-
-    key_table = [ 
-        dash_table.DataTable(
-            css=[dict(selector='tr:first-child', rule='display: none')],
-            data=proficiency_key.to_dict('records'),
-            cell_selectable=False,
-            columns=[
-                {'id': 'icon', 'name': '', 'presentation': 'markdown'},
-                {'id': 'Rate', 'name': '', 'presentation': 'markdown'},
-                {'id': 'icon2', 'name': '', 'presentation': 'markdown'},
-                {'id': 'Rate2', 'name': '', 'presentation': 'markdown'},
-                {'id': 'icon3', 'name': '', 'presentation': 'markdown'},
-                {'id': 'Rate3', 'name': '', 'presentation': 'markdown'},
-                {'id': 'icon4', 'name': '', 'presentation': 'markdown'},
-                {'id': 'Rate4', 'name': '', 'presentation': 'markdown'},
-                {'id': 'icon5', 'name': '', 'presentation': 'markdown'},
-                {'id': 'Rate5', 'name': '', 'presentation': 'markdown'},
-            ],
-            markdown_options={'html': True},
-            style_table={
-                'paddingTop': '15px',
-                'fontSize': '.75em',
-                'border': 'none',
-                'fontFamily': 'Jost, sans-serif',
-            },
-            style_cell = {
-                'whiteSpace': 'normal',
-                'height': 'auto',
-                'border': 'none',
-                'textAlign': 'right',
-                'color': '#6783a9',
-            },
-            style_cell_conditional = [
-                {
-                    'if': {
-                        'column_id': rating
-                    },
-                    'textAlign': 'right',
-                } for rating in rating_cols
-            ] + [
-                {
-                    'if': {
-                        'column_id': icon
-                    },
-                    'textAlign': 'left',
-                    'width': '2%',
-                } for icon in icon_cols
-            ],
-            style_data_conditional=[
-                {
-                    'if': {
-                        'filter_query': '{Rate} = "Exceeds Standard"',
-                        'column_id': 'icon',
-                    },
-                    'color': '#b33dc6',
-                },
-                {
-                    'if': {'filter_query': '{Rate2} = "Meets Standard"',
-                        'column_id': 'icon2'
-                    },
-                    'color': '#87bc45',
-                },
-                {
-                    'if': {'filter_query': '{Rate3} = "Approaches Standard"',
-                        'column_id': 'icon3'
-                    },
-                    'color': '#ede15b',
-                },
-                {
-                    'if': {'filter_query': '{Rate4} = "Does Not Meet Standard"',
-                        'column_id': 'icon4'
-                    },
-                    'color': '#ea5545',
-                },
-                {
-                    'if': {'filter_query': '{Rate5} = "No Rating"',
-                        'column_id': 'icon5'
-                    },
-                    'color': '#a4a2a8',
-                },
-                {
-                'if': {
-                    'column_id': rating_headers[1],
-                },
-                'marginLeft':'10px',
-                },
-            ],
-        )
-    ]
-    return key_table

@@ -15,8 +15,8 @@ import re
 import os
 
 # import local functions
-from .table_helpers import no_data_page, no_data_table, hidden_table, create_academic_info_table, get_svg_circle, \
-    create_growth_table, set_table_layout, create_basic_info_table
+from .table_helpers import no_data_page, no_data_table, create_academic_info_table, \
+    create_growth_table, set_table_layout, create_basic_info_table # hidden_table, get_svg_circle,
 from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart
 from .calculations import round_percentages
 from .subnav import subnav_academic
@@ -176,7 +176,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 years_by_grade = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(grades_all))]
 
                 if not years_by_grade.empty:
-                    k8_grade_table = create_academic_info_table(years_by_grade,"Proficiency by Grade","proficiency")
+                    k8_grade_table = create_academic_info_table(years_by_grade,"Proficiency by Grade")
                 
                 else:
                     k8_grade_table = no_data_table("Proficiency by Grade")
@@ -184,14 +184,14 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 years_by_subgroup = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(subgroup))]
 
                 if not years_by_subgroup.empty:            
-                    k8_subgroup_table = create_academic_info_table(years_by_subgroup,"Proficiency by Subgroup","proficiency")
+                    k8_subgroup_table = create_academic_info_table(years_by_subgroup,"Proficiency by Subgroup")
                 else:
                     k8_subgroup_table = no_data_table("Proficiency by Subgroup")
 
                 years_by_ethnicity = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(ethnicity))]
 
                 if not years_by_ethnicity.empty:            
-                    k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,"Proficiency by Ethnicity","proficiency")
+                    k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,"Proficiency by Ethnicity")
                 else:
                     k8_ethnicity_table = no_data_table("Proficiency by Ethnicity")
 
@@ -495,7 +495,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 grad_overview = grad_overview.dropna(axis=1,how="all")
 
                 if len(grad_overview.columns) > 1:
-                    hs_grad_overview_table = create_academic_info_table(grad_overview,"Graduation Rate Overview","proficiency")
+                    hs_grad_overview_table = create_academic_info_table(grad_overview,"Graduation Rate Overview")
                 else:
                     hs_grad_overview_table = no_data_table("Graduation Rate Overview")
 
@@ -503,7 +503,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 grad_ethnicity = grad_ethnicity.dropna(axis=1,how="all")
 
                 if len(grad_ethnicity.columns) > 1:                
-                    hs_grad_ethnicity_table = create_academic_info_table(grad_ethnicity,"Graduation Rate by Ethnicity","proficiency")
+                    hs_grad_ethnicity_table = create_academic_info_table(grad_ethnicity,"Graduation Rate by Ethnicity")
                 else:
                     hs_grad_ethnicity_table = no_data_table("Graduation Rate by Ethnicity")
 
@@ -511,7 +511,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 grad_subgroup = grad_subgroup.dropna(axis=1,how="all")
 
                 if len(grad_subgroup.columns) > 1:
-                    hs_grad_subgroup_table = create_academic_info_table(grad_subgroup,"Graduation Rate by Subgroup","proficiency")
+                    hs_grad_subgroup_table = create_academic_info_table(grad_subgroup,"Graduation Rate by Subgroup")
                 else:
                     hs_grad_subgroup_table = no_data_table("Graduation Rate by Subgroup")
 
@@ -525,7 +525,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 sat_overview = sat_overview.dropna(axis=1,how="all")
 
                 if len(sat_overview.columns) > 1:
-                    sat_overview_table = create_academic_info_table(sat_overview,"SAT Overview","proficiency")
+                    sat_overview_table = create_academic_info_table(sat_overview,"SAT Overview")
                 else:
                     sat_overview_table = no_data_table("SAT Overview")
 
@@ -533,7 +533,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 sat_ethnicity = sat_ethnicity.dropna(axis=1,how="all")
 
                 if len(sat_ethnicity.columns) > 1:
-                    sat_ethnicity_table = create_academic_info_table(sat_ethnicity,"SAT Benchmarks by Ethnicity","proficiency")
+                    sat_ethnicity_table = create_academic_info_table(sat_ethnicity,"SAT Benchmarks by Ethnicity")
                 else:
                     sat_ethnicity_table = no_data_table("SAT Benchmarks by Ethnicity")
 
@@ -541,7 +541,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 sat_subgroup = sat_subgroup.dropna(axis=1,how="all")
 
                 if len(sat_subgroup.columns) > 1:                
-                    sat_subgroup_table = create_academic_info_table(sat_subgroup,"SAT Benchmarks by Subgroup","proficiency")
+                    sat_subgroup_table = create_academic_info_table(sat_subgroup,"SAT Benchmarks by Subgroup")
                 else:
                     sat_subgroup_table = no_data_table("SAT Benchmarks by Subgroup")
 

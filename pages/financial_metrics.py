@@ -13,7 +13,7 @@ import pandas as pd
 
 # import local functions
 from .calculations import calculate_financial_metrics
-from .table_helpers import no_data_page, get_svg_circle, create_key
+from .table_helpers import no_data_page, get_svg_circle, create_proficiency_key
 from .subnav import subnav_finance
 from .load_data import max_display_years, current_academic_year
 from .load_db import get_school_index, get_financial_data
@@ -616,7 +616,7 @@ def layout():
                                 html.Div(
                                     [
                                         html.Label("Key", className = "header_label"),
-                                        html.Div(create_key()),
+                                        html.Div(create_proficiency_key()),
                                     ],
                                     className = "pretty_container six columns"
                                 ),

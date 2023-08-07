@@ -993,7 +993,7 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
             school_data[c + "School"], corp_data[c + "Corp"]
         )
 
-    # organize headers
+    # reorganize headers
     final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
     final_cols.insert(0, "Category")
 
