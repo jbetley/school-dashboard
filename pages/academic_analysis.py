@@ -16,7 +16,7 @@ from .calculations import find_nearest, recalculate_total_proficiency
 from .chart_helpers import no_data_fig_label, make_line_chart, make_bar_chart, make_group_bar_chart, \
     combine_barchart_and_table
 from .table_helpers import create_comparison_table, no_data_page, no_data_table, create_school_label, \
-    process_chart_data, process_table_data, create_school_label, create_chart_label
+    process_chart_data, process_table_data, create_school_label, create_chart_label, combine_group_barchart_and_table
 from .subnav import subnav_academic
 from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_excluded_years, \
    process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency, process_k8_corp_academic_data
@@ -310,7 +310,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         corp_name = raw_corp_data["Corporation Name"].values[0]
 
         clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
-        
+
         raw_comparison_data = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, numeric_year)
 
         print(f"Time to process comparison metrics: " + str(time.process_time() - t2))        
@@ -352,8 +352,9 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             display_academic_data = school_academic_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
 
             # add suffix to certain Categories
-            display_academic_data = display_academic_data.rename(columns={c: c + " Proficient %" for c in display_academic_data.columns if c not in ["Year", "School Name","IREAD Proficiency (Grade 3 only)"]})
-
+            print(display_academic_data)
+            display_academic_data = display_academic_data.rename(columns={c: c + " Proficient %" for c in display_academic_data.columns if c not in ["Year", "School Name"]})
+            print(display_academic_data)
             t3 = time.process_time()
 
             yearly_school_data = display_academic_data.copy()
@@ -407,7 +408,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             fig16d2 = make_line_chart(fig16d2_data,"Year over Year Math Proficiency by Subgroup")
 
             # Chart 9 - IREAD Year over Year
-            category_iread = "IREAD Proficiency (Grade 3 only)"
+            category_iread = "IREAD Proficient %"
 
             fig14g_data = yearly_school_data.loc[:, (yearly_school_data.columns == category_iread) | (yearly_school_data.columns.isin(["School Name","Year"]))]         
             fig14g = make_line_chart(fig14g_data, category_iread)
@@ -463,11 +464,11 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             comparison_schools = recalculate_total_proficiency(comparison_schools, clean_school_data)
 
             # calculate IREAD Pass %
-            if "IREAD Proficiency (Grade 3 only)" in current_school_data:
-                comparison_schools["IREAD Proficiency (Grade 3 only)"] = comparison_schools["IREAD Pass N"] / comparison_schools["IREAD Test N"]
+            if "IREAD Proficient %" in current_school_data:
+                comparison_schools["IREAD Proficient %"] = comparison_schools["IREAD Pass N"] / comparison_schools["IREAD Test N"]
 
             # remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
-            comparison_schools = comparison_schools.filter(regex = r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficiency|^Year$",axis=1)
+            comparison_schools = comparison_schools.filter(regex = r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$",axis=1)
 
             # drop all columns from the comparison dataframe that aren"t in the school dataframe
             # because the school file has already been processed, column names will not directly
@@ -506,6 +507,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             # hs_comparison_data.columns = hs_comparison_data.columns.astype(str)
 
             t6 = time.process_time()
+            
+            # Ensure cols are strings after transposition for matching
+            clean_corp_data.columns = clean_corp_data.columns.astype(str)
+            
             #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
             category = "School Total|ELA Proficient %"
 
@@ -516,11 +521,11 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 # add corp average for category to dataframe - note we are using 'clean_corp_data'
                 # because the 'Corp' values have been dropped from raw_comparison_data
+
                 fig14c_k8_school_data.loc[len(fig14c_k8_school_data.index)] = \
-                    [corp_name,"3","8",clean_corp_data[clean_corp_data['Category'] == category][year].values[0]]
+                    [corp_name,"3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
 
                 # Get comparable school values for the specific category
-
                 fig14c_comp_data = comparison_schools[info_categories + [category]]
 
                 # Combine data, fix dtypes, and send to chart function
@@ -558,7 +563,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 # add corp average for category to dataframe
                 fig14d_k8_school_data.loc[len(fig14d_k8_school_data.index)] = \
-                    [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][year].values[0]]
+                    [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
 
                 # Get comparable school values for the specific category
                 fig14d_comp_data = comparison_schools[info_categories + [category]]
@@ -587,16 +592,16 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             fig14d = combine_barchart_and_table(fig14d_chart,fig14d_table)
 
             #### Current Year IREAD Proficiency Compared to Similar Schools #
-            category = "IREAD Proficiency (Grade 3 only)"
+            category = "IREAD Proficient %"
 
             if category in current_school_data.columns:
 
                 fig_iread_k8_school_data = current_school_data[info_categories + [category]].copy()
-                
+
                 # add corp average for category to dataframe
                 fig_iread_k8_school_data.loc[len(fig_iread_k8_school_data.index)] = \
-                    [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][year].values[0]]
-                
+                    [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
+
                 # Get comparable school values for the specific category
                 fig_iread_comp_data = comparison_schools[info_categories + [category]]
                 # fig_iread_comp_data = comparison_schools[["School Name","Low Grade","High Grade","Distance",category]]
@@ -622,50 +627,50 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 fig_iread_table = no_data_table("Proficiency")
 
             fig_iread = combine_barchart_and_table(fig_iread_chart,fig_iread_table)
-
+            print('HERE')
             print(f"Time to make single subject bar charts: " + str(time.process_time() - t6))
 
-            def combine_group_barchart_and_table(fig,table,category_string,school_string):
+            # def combine_group_barchart_and_table(fig,table,category_string,school_string):
 
-                layout = [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(fig, style={"marginBottom": "-20px"})
-                                ],
-                                className = "pretty_close_container twelve columns",
-                            ),
-                        ],
-                        className="row"
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(table),
-                                    html.P(
-                                        children=[
-                                        html.Span("Categories with no data to display:", className = "category_string_label"),
-                                        html.Span(category_string, className = "category_string"),
-                                        ],
-                                        style={"marginTop": -10, "marginBottom": -10}
-                                    ),
-                                    html.P(
-                                        children=[
-                                        html.Span("School Categories with insufficient n-size or no data:",className = "school_string_label"),
-                                        html.Span(school_string, className = "school_string"),
-                                        ],
+            #     layout = [
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         html.Div(fig, style={"marginBottom": "-20px"})
+            #                     ],
+            #                     className = "pretty_close_container twelve columns",
+            #                 ),
+            #             ],
+            #             className="row"
+            #         ),
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         html.Div(table),
+            #                         html.P(
+            #                             children=[
+            #                             html.Span("Categories with no data to display:", className = "category_string_label"),
+            #                             html.Span(category_string, className = "category_string"),
+            #                             ],
+            #                             style={"marginTop": -10, "marginBottom": -10}
+            #                         ),
+            #                         html.P(
+            #                             children=[
+            #                             html.Span("School Categories with insufficient n-size or no data:",className = "school_string_label"),
+            #                             html.Span(school_string, className = "school_string"),
+            #                             ],
                                         
-                                    ),
-                                ],
-                                className = "close_container twelve columns"
-                            )
-                            ],
-                            className="row"
-                        )
-                ]
-                return layout
+            #                         ),
+            #                     ],
+            #                     className = "close_container twelve columns"
+            #                 )
+            #                 ],
+            #                 className="row"
+            #             )
+            #     ]
+            #     return layout
 
             t7 = time.process_time()
 

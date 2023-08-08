@@ -9,7 +9,6 @@ import dash
 from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
-import itertools
 
 # import local functions
 from .subnav import subnav_academic
@@ -17,12 +16,12 @@ from .table_helpers import no_data_page, no_data_table, create_metric_table, \
     set_table_layout, get_svg_circle, create_proficiency_key
 from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data, \
     process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
-        calculate_iread_metrics, get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
-        calculate_adult_high_school_metrics, filter_high_school_academic_data, get_excluded_years, \
-        get_adult_high_school_metric_data, get_k8_corporation_academic_data, process_k8_corp_academic_data
+    get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
+    calculate_adult_high_school_metrics, filter_high_school_academic_data, get_excluded_years,\
+    process_k8_corp_academic_data
 
 from .load_db import get_school_index, get_k8_school_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data
+    get_hs_corporation_academic_data, get_adult_high_school_metric_data, get_k8_corporation_academic_data
 from .calculations import conditional_fill
 
 dash.register_page(__name__,  path = "/academic_metrics", order=5)
@@ -271,7 +270,7 @@ def update_academic_metrics(school: str, year: str):
                 raw_corp_data = get_k8_corporation_academic_data(school)
 
                 clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
-#TODO: PROBLEM IS HERE
+
                 combined_delta = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, selected_year_numeric)
 
                 category = ethnicity + subgroup
@@ -327,35 +326,16 @@ def update_academic_metrics(school: str, year: str):
                 metric_14ef_data = get_svg_circle(metric_14ef_data)
                 table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
                 table_container_14ef = set_table_layout(table_14ef, table_14ef, metric_14ef_data.columns)
-                print('HEREERE???')
+
                 # iread_data
-                iread_df = clean_school_data[clean_school_data["Category"] == "IREAD Pass %"]
-                iread_df.loc[iread_df["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
+                iread_data = combined_delta[combined_delta["Category"] == "IREAD"]
 
-                if len(iread_df) > 0:
+                if len(iread_data.columns) > 1:
 
-                    iread_ratings = calculate_iread_metrics(iread_df)
+                    iread_data = combined_delta[combined_delta["Category"] == "IREAD"]
+                    iread_data.loc[iread_data["Category"] == "IREAD", "Category"] = "IREAD Proficient %"
 
-                    # get comparison data and merge
-                    iread_comparison = combined_delta[combined_delta["Category"] == "IREAD Proficiency (Grade 3 only)"]
-                    iread_comparison = iread_comparison.reset_index(drop=True)
-                    target_cols = ['Category'] + [e for e in iread_comparison if '+/-' in e]
-
-                    iread_comparison = iread_comparison[target_cols]
-
-                    result = pd.merge(iread_ratings, iread_comparison[target_cols], on=['Category'])
-
-                    # arrange columns for display
-                    diff_cols = [e for e in result if '+/-' in e]
-                    school_cols = [e for e in result if 'School' in e]
-                    rate_cols = [e for e in result if 'Rate' in e]
-                    diff_cols.sort(reverse=True)
-                    school_cols.sort(reverse=True)
-                    rate_cols.sort(reverse=True)
-
-                    final_cols = list(itertools.chain(*zip(school_cols, diff_cols, rate_cols)))
-                    final_cols.insert(0, "Category")
-                    iread_data = result[final_cols]
+                    iread_data = iread_data.reset_index(drop=True)
 
                     metric_14g_label = "1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment."
                     iread_data = get_svg_circle(iread_data)   

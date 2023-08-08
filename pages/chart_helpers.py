@@ -18,6 +18,7 @@ import time
 
 # Colors
 # https://codepen.io/ctf0/pen/BwLezW
+
 # Steelblue
 #color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
@@ -153,7 +154,7 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> d
 
     return fig_layout
 
-def customwrap(s: str,width: int = 16):
+def customwrap(s: str, width: int = 16) -> str:
     """
     Creates wrapped text using html tags based on the specified width.
     Adds two spaces before <br> to ensure the words at the end of each
@@ -180,7 +181,9 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     Returns:
         list: a plotly dash html layout in the form of a list containing a string and a stacked bar chart figure (px.bar)
     """
+
     t12 = time.process_time()
+
     data = values.copy()
     stacked_color = ['#df8f2d', '#ebbb81', '#96b8db', '#74a2d7']
     
@@ -286,13 +289,14 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
         fig_layout (list): a plotly dash html layout in the form of a list containing a string, a px.line figure,
         and another string(s) if certain conditions are met.
     """
+
     t9 = time.process_time()
+    
     data = values.copy()
 
     data.columns = data.columns.str.split('|').str[0]
     cols=[i for i in data.columns if i not in ['School Name','Year']]
 
-    # create chart only if data exists
     if (len(cols)) > 0:
 
         # NOTE: Currently insufficient n-size and no data information is displayed below
@@ -339,8 +343,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
 
             # TODO: Fix irregular axis lines (why is this so hard??)
             # NOTE: Plotly displays two years of data with the year axis near the edges, which is ugly
-            
-            # Here are some attempts to fix irregular axis lines
+            # have tried numerous things to fix it, but none of them are satisfactory
             
             # attempt #1
             # when we only have 2 years of data, we add two additiona blank years on either side
@@ -557,7 +560,9 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 ]
 
     else:
+
         fig = no_data_fig_blank()
+        
         fig_layout = [
                 html.Div(
                     [
@@ -575,6 +580,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     
     return fig_layout
 
+# TODO: Move 162-Day data to fig hovertemplates
 def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str) -> list:
     """
     Creates a dash html.Div layout with a label, and a multi-line (scatter) plot (px.line) representing
@@ -603,15 +609,17 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
                 marker=dict(color=color[i], symbol = 'square'),
                 line={'dash': 'solid'},
                 name=col,
-# NOTE: the legendgroup variable separates each dataframe into a separate legend group, which is
-# greate because it allows you to turn on and off each group. However, it looks bad because it does
-# not currently allow you to display the legends horizontally. Matter of preference
+                # NOTE: the legendgroup variable separates each dataframe into a separate
+                # legend group, which is great because it allows you to turn on and off each
+                # group. However, it looks bad because it does not currently allow you to display
+                # the legends horizontally. Matter of preference
                 # legendgroup = '1',    
                 # legendgrouptitle_text="Majority Enrolled"
             ),
             secondary_y=False,
         )
 
+        # NOTE: This adds scatter traces for the 162-Day data
         # fig.add_trace(
         #     go.Scatter(
         #         x=data_162.index,
@@ -678,6 +686,7 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
         # legend_title='',
     )                    
 
+    # NOTE: annotation used to identify 162-day vs 162-ME scatter lines
     # diamond - &#9670;	&#x25C6;
     # square - &#9632;	&#x25A0;
     # fig.add_annotation(
@@ -712,7 +721,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
 
     Args:
         values (pd.DataFrame): a dataframe with a list of schools and proficiency values
-         for a given category
+            for a given category
         category (str): the category being compared
         school_name (str): the name of the selected school
         label (str): the title of the figure
@@ -809,7 +818,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
 
     Args:
         values (pd.DataFrame): a dataframe with a list of schools and proficiency values
-         for a given subject and category group (e.g., Math by Ethnicity)
+            for a given subject and category group (e.g., Math by Ethnicity)
         school_name (str): the name of the selected school
         label (str): the title of the figure
 
@@ -856,6 +865,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     data_set.reset_index(drop=True, inplace=True)
 
     # Create text values for display.
+    
     # NOTE: This can be 99.9% done by setting 'text_auto=True'
     # in 'fig' without setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
     # that is displayed for ''. So this code converts the series to a string in the proper format

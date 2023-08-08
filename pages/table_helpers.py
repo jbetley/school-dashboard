@@ -355,7 +355,6 @@ def create_chart_label(final_data: pd.DataFrame) -> str:
     
     label = 'Comparison: ' + label_subject + label_category
 
-    print(label)
     return label
     
 def create_school_label(data: pd.DataFrame) -> str:
@@ -1309,17 +1308,17 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         year_width = data_col_width + data_col_width/4
         diff_width = data_col_width + data_col_width/4
 
-        print('leftoverw')
-        print(data_width)
-        print('rw')
-        print(len(rating_headers))
-        print(rating_width)
-        print('yw')
-        print(len(year_headers))
-        print(year_width)
-        print('dw')
-        print(len(diff_headers))
-        print(diff_width)
+        # print('leftoverw')
+        # print(data_width)
+        # print('rw')
+        # print(len(rating_headers))
+        # print(rating_width)
+        # print('yw')
+        # print(len(year_headers))
+        # print(year_width)
+        # print('dw')
+        # print(len(diff_headers))
+        # print(diff_width)
 
         class_name = 'pretty_container ' + col_width + ' columns'
 
@@ -1754,3 +1753,45 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         ]
 
     return table_layout
+
+def combine_group_barchart_and_table(fig,table,category_string,school_string):
+
+    layout = [
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(fig, style={"marginBottom": "-20px"})
+                    ],
+                    className = "pretty_close_container twelve columns",
+                ),
+            ],
+            className="row"
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(table),
+                        html.P(
+                            children=[
+                            html.Span("Categories with no data to display:", className = "category_string_label"),
+                            html.Span(category_string, className = "category_string"),
+                            ],
+                            style={"marginTop": -10, "marginBottom": -10}
+                        ),
+                        html.P(
+                            children=[
+                            html.Span("School Categories with insufficient n-size or no data:",className = "school_string_label"),
+                            html.Span(school_string, className = "school_string"),
+                            ],
+                            
+                        ),
+                    ],
+                    className = "close_container twelve columns"
+                )
+                ],
+                className="row"
+            )
+    ]
+    return layout

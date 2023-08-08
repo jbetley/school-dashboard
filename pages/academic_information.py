@@ -12,11 +12,10 @@ import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
 import re
-import os
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, create_academic_info_table, \
-    create_growth_table, set_table_layout, create_basic_info_table # hidden_table, get_svg_circle,
+    create_growth_table, set_table_layout, create_basic_info_table
 from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart
 from .calculations import round_percentages
 from .subnav import subnav_academic
@@ -167,13 +166,11 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
                 all_k8_school_data["Category"] = (all_k8_school_data["Category"].str.replace(" Proficient %", "").str.strip())
 
-                all_k8_school_data.loc[all_k8_school_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
+                all_k8_school_data.loc[all_k8_school_data["Category"] == "IREAD", "Category"] = "IREAD Proficiency (Grade 3)"
 
-                # reverse column order of year columns
-                # yrs = [i for i in all_k8_school_data.columns if "Category" not in i]
-                # all_k8_school_data = all_k8_school_data[list(all_k8_school_data.columns[:1]) + yrs[::-1]]
+                grades_iread = grades_all + ["IREAD Proficiency (Grade 3)"]
 
-                years_by_grade = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(grades_all))]
+                years_by_grade = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(grades_iread))]
 
                 if not years_by_grade.empty:
                     k8_grade_table = create_academic_info_table(years_by_grade,"Proficiency by Grade")
