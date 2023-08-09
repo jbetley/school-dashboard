@@ -46,6 +46,7 @@ print('Database Engine Created . . .')
 
 # TODO: Can refactor, everything should passed in as a tuple of a dict for named placeholders, even if only a single
 # TODO: value, so type should always be dict
+# NOTE: if no data matches query, run_query returns an empty dataframe
 def run_query(q, *args):
     conditions = None
 

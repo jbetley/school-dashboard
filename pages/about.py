@@ -14,15 +14,12 @@ import numpy as np
 
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
-from .load_db import get_school_index, get_financial_data, get_demographic_data, get_letter_grades
-from .load_data import ethnicity, subgroup, max_display_years, current_academic_year
+from .load_db import get_school_index, get_financial_data, get_demographic_data
+from .load_data import ethnicity, subgroup, max_display_years, current_academic_year, get_excluded_years
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
 
 @callback(
-    Output("school-name", "children"),
-    Output("info-table", "children"),
-    Output("letter-grade-table", "children"),
     Output("enroll-title", "children"),
     Output("enroll-table", "children"),
     Output("adm_fig", "figure"),
@@ -31,9 +28,7 @@ dash.register_page(__name__, path="/", order=0, top_nav=True)
     Output("subgroup-title", "children"),
     Output("subgroup-fig", "figure"),
     Output("about-main-container", "style"),
-    Output("about-empty-container", "style"),
-    Output("school-name-no-data", "children"),
-    Output("info-table-no-data", "children"),    
+    Output("about-empty-container", "style"),   
     Output("about-no-data", "children"),
     Input("year-dropdown", "value"),
     Input("charter-dropdown", "value"),
@@ -47,7 +42,14 @@ def update_about_page(year: str, school: str):
     previous_year_numeric = selected_year_numeric - 1
     previous_year_string = str(previous_year_numeric)
 
-    # see color list in chart_helpers.py
+    year_title = previous_year_string + "-" + selected_year_string[-2:]
+    enroll_title = "Enrollment " + "(" + year_title + ")"
+    ethnicity_title = "Enrollment by Ethnicity " + "(" + year_title + ")"
+    subgroup_title = "Enrollment by Subgroup " + "(" + year_title + ")"
+    
+    excluded_years = get_excluded_years(selected_year_string)
+
+    # see full color list in chart_helpers.py
     linecolor = ["#df8f2d"]
     bar_colors = ["#74a2d7", "#df8f2d"]
 
@@ -57,68 +59,11 @@ def update_about_page(year: str, school: str):
 
     selected_school = get_school_index(school)
 
-    school_name = selected_school["School Name"].values[0]
-    headers = ["Category","Description"]
-
-    # see selected_school.columns for additional values that can be displayed
-    info = selected_school[["City","Principal","Opening Year"]]
-
-    school_info = info.T
-    school_info = school_info.reset_index()
-    school_info.columns = headers
-
-    info_table = [
-        dash_table.DataTable(
-            school_info.to_dict("records"),
-            columns = [{"name": i, "id": i} for i in school_info.columns],
-            style_table={
-                "height": "20vh"
-            },            
-            style_data={
-                "fontSize": "12px",
-                "fontFamily": "Jost, sans-serif",
-                "border": "none"
-            },
-            style_data_conditional=[
-                {
-                    "if": {
-                        "column_id": "Category",
-                    },
-                    "borderRight": ".5px solid #6783a9",
-                },
-                {
-                    "if": {
-                        "state": "selected"
-                    },
-                    "backgroundColor": "rgba(112,128,144, .3)",
-                    "border": "thin solid silver"
-                }                
-            ],
-            style_header={
-                "display": "none",
-                "border": "none",
-            },
-            style_cell={
-                "whiteSpace": "normal",
-                "height": "auto",
-                "textAlign": "center",
-                "color": "#6783a9",
-                "minWidth": "25px", "width": "25px", "maxWidth": "25px"
-            },
-        )
-    ]
-
     demographic_data = get_demographic_data(school)
     financial_data = get_financial_data(school)
-    letter_grades = get_letter_grades(school)
 
-    financial_data = financial_data.drop(["School ID","School Name"], axis=1)
-    financial_data = financial_data.dropna(axis=1, how="all")
-
-    if len(letter_grades.columns) <= 1 and (len(demographic_data.columns) <= 1 & \
-          len(financial_data.columns) <= 0):
-        
-        letter_grade_table = {}
+    if (len(demographic_data.index) == 0 or demographic_data.empty) and \
+        (len(financial_data.columns) <= 1 or financial_data.empty):
         enroll_title = {}
         enroll_table = {}
         adm_fig = {}
@@ -132,139 +77,19 @@ def update_about_page(year: str, school: str):
 
     else:
 
-        # Enrollment table
-        corp_id = str(selected_school["GEO Corp"].values[0])
-        corp_demographics = get_demographic_data(corp_id)
+        if excluded_years:
+            demographic_data = demographic_data[~demographic_data["Year"].isin(excluded_years)]
 
-        year_title = previous_year_string + "-" + selected_year_string[-2:]
-
-        # Build figure titles
-        enroll_title = "Enrollment " + "(" + year_title + ")"
-        ethnicity_title = "Enrollment by Ethnicity " + "(" + year_title + ")"
-        subgroup_title = "Enrollment by Subgroup " + "(" + year_title + ")"
-
-        # State grades and Federal ratings table
-        if len(letter_grades.index) == 0:
-            letter_grade_table = no_data_table("State and Federal Ratings")
-
-        else:
-
-            letter_grades = (letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-
-            # For table, drop invalid years, but keep "Category"
-            letter_grade_columns = [str(i) for i in letter_grades.columns if i not in [2018, selected_year_numeric+1]]
-            
-            # For hold_harmless string, drop invalid years and "Category"
-            hold_harmless_columns = [str(i) for i in letter_grades.columns if i not in ["Category",2018, selected_year_numeric+1]]
-
-            # schools have been held harmless by the State of Indiana since
-            # 2019, and continue to be held harmless (2019-2023). This builds
-            # a list of all hold harmless years for the table tooltip.
-            # NOTE: This will need to be re-configured once (if) the State
-            # ever begins holding schools accountable again.
-            if hold_harmless_columns:
-                hold_harmless_columns.reverse()
-                last_year = hold_harmless_columns[-1]
-                hold_harmless_years = hold_harmless_columns.copy()
-                hold_harmless_years.remove(last_year)
-
-                if hold_harmless_years:
-                    hold_harmless_year_string = ", ".join(hold_harmless_years) + ", and " + last_year
-                else:
-                    hold_harmless_year_string = last_year
-
-                hold_harmless_string = "Schools were \"Held Harmless\" by the State in " \
-                    + hold_harmless_year_string + ". Under Hold Harmless, a school cannot receive a \
-                    lower A-F grade than what it received for the previous school year."
-            else:
-                hold_harmless_string =""
-
-            letter_grade_table = [
-                dash_table.DataTable(
-                    letter_grades.to_dict("records"),
-                    columns = [{"name": str(i), "id": str(i)} for i in letter_grade_columns],
-                    style_table={
-                        "height": "20vh"
-                    },
-                    style_data={
-                        "fontSize": "12px",
-                        "fontFamily": "Jost, sans-serif",
-                        "border": "none",
-                    },
-                    style_data_conditional=[
-                        {
-                            "if": {
-                                "row_index": 0,
-                                "column_id": "Category"
-                            },
-                            "borderTop": ".5px solid #6783a9",
-                        },
-                        {
-                            "if": {
-                                "row_index": "odd"
-                            },
-                            "backgroundColor": "#eeeeee"
-                        },
-                        {
-                            "if": {
-                                "state": "selected"
-                            },
-                            "backgroundColor": "rgba(112,128,144, .3)",
-                            "border": "thin solid silver"
-                        }                        
-                    ],
-                    style_header={
-                        "height": "20px",
-                        "backgroundColor": "#ffffff",
-                        "border": "none",
-                        "borderBottom": ".5px solid #6783a9",
-                        "fontSize": "12px",
-                        "fontFamily": "Jost, sans-serif",
-                        "color": "#6783a9",
-                        "textAlign": "center",
-                        "fontWeight": "bold"
-                    },
-                    style_cell={
-                        "whiteSpace": "normal",
-                        "textAlign": "center",
-                        "color": "#6783a9",
-                        "fontFamily": "Jost, sans-serif",
-                        "boxShadow": "0 0",
-                        "minWidth": "25px", "width": "25px", "maxWidth": "25px"
-                    },
-                    style_cell_conditional=[
-                        {
-                            "if": {
-                                "column_id": "Category"
-                            },
-                            "textAlign": "left",
-                            "fontWeight": "500",
-                            "paddingLeft": "20px",
-                            "width": "35%",
-                        },
-                    ],
-                    tooltip_header={
-                        col: [
-                            {
-                                "type": "markdown",
-                                "value": hold_harmless_string
-                            }
-                        ]
-                        for col in hold_harmless_columns
-                    },
-                    css=[{
-                    "selector": ".dash-table-tooltip",
-                    "rule": "background-color: grey; font-family: Jost, sans-serif; color: white"
-                    }],
-                    style_as_list_view=True
-                )
-            ]
-
-        # Enrollment Table
         if len(demographic_data.index) == 0:
             enroll_table = no_data_table(enroll_title)
+            subgroup_fig = no_data_fig_label("Enrollment by Subgroup", 400)
+            ethnicity_fig = no_data_fig_label("Enrollment by Ethnicity", 400)
 
         else:
+
+            # Enrollment table
+            corp_id = str(selected_school["GEO Corp"].values[0])
+            corp_demographics = get_demographic_data(corp_id)
 
             demographic_data = demographic_data.loc[demographic_data["Year"] == selected_year_numeric]
             corp_demographics = corp_demographics.loc[corp_demographics["Year"] == selected_year_numeric]
@@ -327,93 +152,8 @@ def update_about_page(year: str, school: str):
                     },
                 )
             ]
-        
-        # ADM chart
-        if len(financial_data.columns) <= 1:
-            adm_fig = no_data_fig_label("Average Daily Membership History",400)
-        
-        else:
 
-            adm_values = financial_data[financial_data["Category"].str.contains("ADM Average")]
-            adm_values = adm_values.drop("Category", axis=1)
-            adm_values = adm_values.reset_index(drop=True)
-
-            for col in adm_values.columns:
-                adm_values[col] = pd.to_numeric(adm_values[col], errors="coerce")
-            
-            adm_values = adm_values.loc[:, (adm_values != 0).any(axis=0)]
-
-            adm_values = adm_values[adm_values.columns[::-1]]
-
-            # file exists, but there is no adm data
-            if (int(adm_values.sum(axis=1).values[0]) == 0):
-
-                adm_fig = no_data_fig_label("Average Daily Membership History",400)
-            
-            else:
-
-                # ADM dataset can be longer than five years (maximum display), so
-                # need to filter both the selected year (the year to display) and the
-                # total # of years
-                operating_years_by_adm = len(adm_values.columns)
-
-                # if number of available years exceeds year_limit, drop excess columns (years)
-                if operating_years_by_adm > max_display_years:
-                    adm_values = adm_values.drop(columns = adm_values.columns[: (operating_years_by_adm - max_display_years)],axis=1)
-
-                # "excluded years" is a list of YYYY strings (all years more
-                # recent than selected year) that can be used to filter data
-                # that should not be displayed
-                excluded_academic_years = current_academic_year - selected_year_numeric
-                
-                excluded_years = []
-                
-                for i in range(excluded_academic_years):
-                    excluded_year = current_academic_year - i
-                    excluded_years.append(str(excluded_year))
-                
-                # if the display year is less than current year
-                # drop columns where year matches any years in "excluded years" list
-                if excluded_years:
-                    adm_values = adm_values.loc[
-                        :, ~adm_values.columns.str.contains("|".join(excluded_years))
-                    ]
-
-            # drop any columns with partial year data (e.g., 2023 (Q2)) because
-            # they generally do not have reliable adm data.
-            adm_values = adm_values[adm_values.columns.drop(list(adm_values.filter(regex="Q")))]
-            
-            # turn single row dataframe into two lists (column headers and data)
-            adm_data=adm_values.iloc[0].tolist()
-            years=adm_values.columns.tolist()
-
-            # create chart
-            adm_fig = px.line(
-                x=years,
-                y=adm_data,
-                markers=True,
-                color_discrete_sequence=linecolor,
-            )
-            adm_fig.update_traces(mode="markers+lines", hovertemplate=None)
-            adm_fig["data"][0]["showlegend"]=True
-            adm_fig["data"][0]["name"]="ADM Average"
-            adm_fig.update_yaxes(title="", showgrid=True, gridcolor="#b0c4de")
-            adm_fig.update_xaxes(ticks="outside", tickcolor="#b0c4de", title="")
-
-            adm_fig.update_layout(
-                margin=dict(l=40, r=40, t=40, b=40),
-                font = dict(
-                    family="Jost, sans-serif",
-                    color="#6783a9",
-                    size=12
-                    ),
-                hovermode="x unified",
-                height=400,
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)"
-            )
-        
-        # Enrollment by ethnicity chart
+        # Enrollment by ethnicity fig
         ethnicity_school = demographic_data.loc[:, (demographic_data.columns.isin(ethnicity)) | (demographic_data.columns.isin(["Corporation Name","Total Enrollment"]))].copy()
         ethnicity_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(ethnicity)) | (corp_demographics.columns.isin(["Corporation Name","Total Enrollment"]))].copy()
 
@@ -425,7 +165,7 @@ def update_about_page(year: str, school: str):
             ethnicity_data = pd.concat([ethnicity_school,ethnicity_corp])
 
             # Only need to calculate total enrollment once
-            total_enrollment=ethnicity_data["Total Enrollment"].tolist()
+            total_enrollment = ethnicity_data["Total Enrollment"].tolist()
             total_enrollment = [int(i) for i in total_enrollment]
             ethnicity_data.drop("Total Enrollment",axis=1,inplace=True)
 
@@ -512,12 +252,12 @@ def update_about_page(year: str, school: str):
                 align="left"
             )
 
-            # Enrollment by subgroup chart
+            # Enrollment by subgroup fig
             subgroup_school = demographic_data.loc[:, (demographic_data.columns.isin(subgroup)) | (demographic_data.columns.isin(["Corporation Name","Total Enrollment"]))]
             subgroup_corp = corp_demographics.loc[:, (corp_demographics.columns.isin(subgroup)) | (corp_demographics.columns.isin(["Corporation Name","Total Enrollment"]))]
             subgroup_data = pd.concat([subgroup_school,subgroup_corp])
 
-            total_enrollment=subgroup_data["Total Enrollment"].tolist()
+            total_enrollment = subgroup_data["Total Enrollment"].tolist()
             total_enrollment = [int(i) for i in total_enrollment]
             subgroup_data.drop("Total Enrollment",axis=1,inplace=True)
 
@@ -560,6 +300,7 @@ def update_about_page(year: str, school: str):
             # NOTE: In order to distinguish between null (no data) and "0" values,  loop through
             # the data and only color text traces when the value of x (t.x) is not NaN
             subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=np.where(~np.isnan(t.x),t.marker.color, "white"),textfont_size=11))
+            
             # Use this to display all instead:
             # subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
             
@@ -609,14 +350,109 @@ def update_about_page(year: str, school: str):
                     align="left"
                 )
 
-        else:
-            subgroup_fig = no_data_fig_label("Enrollment by Subgroup", 400)
-            ethnicity_fig = no_data_fig_label("Enrollment by Ethnicity", 400)
+        # Get ADM Data
+        # exclude all years more recent than selected year
+        financial_data = financial_data.drop(["School ID","School Name"], axis=1)
+        financial_data = financial_data.dropna(axis=1, how="all")
 
-    return school_name, info_table, letter_grade_table, \
-        enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, \
-        subgroup_title, subgroup_fig, main_container, empty_container, school_name,\
-        info_table, no_data_to_display
+        available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
+        available_years = [int(c[:4]) for c in available_years]
+        most_recent_finance_year = max(available_years)
+
+        years_to_exclude = most_recent_finance_year -  selected_year_numeric
+
+        if selected_year_numeric < most_recent_finance_year:
+            financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
+
+        if len(financial_data.columns) <= 1:
+            adm_fig = no_data_fig_label("Average Daily Membership History",400)
+        
+        else:
+
+            # ADM chart
+            adm_values = financial_data[financial_data["Category"].str.contains("ADM Average")]
+            adm_values = adm_values.drop("Category", axis=1)
+            adm_values = adm_values.reset_index(drop=True)
+
+            for col in adm_values.columns:
+                adm_values[col] = pd.to_numeric(adm_values[col], errors="coerce")
+            
+            adm_values = adm_values.loc[:, (adm_values != 0).any(axis=0)]
+
+            adm_values = adm_values[adm_values.columns[::-1]]
+
+            # file exists, but there is no adm data
+            if (int(adm_values.sum(axis=1).values[0]) == 0):
+
+                adm_fig = no_data_fig_label("Average Daily Membership History",400)
+            
+            else:
+
+                # ADM dataset can be longer than five years (maximum display), so
+                # need to filter both the selected year (the year to display) and the
+                # total # of years
+                operating_years_by_adm = len(adm_values.columns)
+
+                # if number of available years exceeds year_limit, drop excess columns (years)
+                if operating_years_by_adm > max_display_years:
+                    adm_values = adm_values.drop(columns = adm_values.columns[: (operating_years_by_adm - max_display_years)],axis=1)
+
+                # "excluded years" is a list of YYYY strings (all years more
+                # recent than selected year) that can be used to filter data
+                # that should not be displayed
+                excluded_academic_years = current_academic_year - selected_year_numeric
+                
+                excluded_years = []
+                
+                for i in range(excluded_academic_years):
+                    excluded_year = current_academic_year - i
+                    excluded_years.append(str(excluded_year))
+                
+                # if the display year is less than current year
+                # drop columns where year matches any years in "excluded years" list
+                if excluded_years:
+                    adm_values = adm_values.loc[
+                        :, ~adm_values.columns.str.contains("|".join(excluded_years))
+                    ]
+
+            # drop any columns with partial year data (e.g., 2023 (Q2)) because
+            # they generally do not have reliable adm data.
+            adm_values = adm_values[adm_values.columns.drop(list(adm_values.filter(regex="Q")))]
+            
+            # turn single row dataframe into two lists (column headers and data)
+            adm_data=adm_values.iloc[0].tolist()
+            years=adm_values.columns.tolist()
+
+            # create chart
+            adm_fig = px.line(
+                x=years,
+                y=adm_data,
+                markers=True,
+                color_discrete_sequence=linecolor,
+            )
+            adm_fig.update_traces(mode="markers+lines", hovertemplate=None)
+            adm_fig["data"][0]["showlegend"]=True
+            adm_fig["data"][0]["name"]="ADM Average"
+            adm_fig.update_yaxes(title="", showgrid=True, gridcolor="#b0c4de")
+            adm_fig.update_xaxes(ticks="outside", tickcolor="#b0c4de", title="")
+
+            adm_fig.update_layout(
+                margin=dict(l=40, r=40, t=40, b=40),
+                font = dict(
+                    family="Jost, sans-serif",
+                    color="#6783a9",
+                    size=12
+                    ),
+                hovermode="x unified",
+                height=400,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)"
+            )
+        
+    return (
+        enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, subgroup_title,
+        subgroup_fig, main_container, empty_container, no_data_to_display
+    )
 
 layout = html.Div(
         [
@@ -632,30 +468,6 @@ layout = html.Div(
                 children=[
             html.Div(
                 [
-                    html.Div(
-                        [
-                            html.Div(
-                                [     
-                                    html.Div(
-                                        [
-                                            html.Label(id="school-name", className = "header_label"),
-                                            html.Div(id="info-table"),
-                                        ],
-                                        className="pretty_container_left six columns",
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Label("State and Federal Ratings", className = "header_label"),
-                                            html.Div(id="letter-grade-table"),
-                                        ],
-                                        className="pretty_container six columns"
-                                    ),
-                                ],
-                                className="bare_container_no_center twelve columns"
-                            ),
-                        ],
-                        className = "row",
-                    ),
                     html.Div(
                         [
                             html.Div(
@@ -705,18 +517,6 @@ layout = html.Div(
             ),
             html.Div(
                 [
-                    html.Div(
-                        [    
-                            html.Div(
-                                [
-                                    html.Label(id="school-name-no-data", className = "header_label"),
-                                    html.Div(id="info-table-no-data"),
-                                ],
-                                className="pretty_container eight columns"
-                            ),
-                        ],
-                        className = "bare_container_center twelve columns",
-                    ),
                     html.Div(id="about-no-data"),
                 ],
                 id = "about-empty-container",
