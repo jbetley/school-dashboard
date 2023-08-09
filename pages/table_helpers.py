@@ -216,6 +216,9 @@ def create_proficiency_key() -> dash_table.DataTable:
     ]
     return key_table
 
+# TODO: Standardize empty tables
+
+# TODO: This table does not currently display
 def no_data_table(label: str = 'No Data to Display') -> list:
     """
     Creates single empty table with provided label
@@ -248,6 +251,7 @@ def no_data_table(label: str = 'No Data to Display') -> list:
 
     return table_layout
 
+# TODO: THis table will display
 def no_data_page(label: str) -> list:
     """
     Creates a layout with a single empty table to be used as a replacement for an entire
@@ -998,210 +1002,242 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
     table_size = len(data.columns)
 
-    # determines the col_width class and width of the category column based
-    # on the size (# of cols) of the dataframe
-    if table_size <= 3:
-        col_width = 'four'
-        category_width = 35
-    if table_size > 3 and table_size <=5:
-        col_width = 'four'
-        category_width = 25
-    elif table_size > 5 and table_size <= 7:
-        col_width = 'five'
-        category_width = 20
-    elif table_size > 7 and table_size <= 9:
-        col_width = 'six'
-        category_width = 20
-    elif table_size >= 10 and table_size <= 13:
-        col_width = 'seven'
-        category_width = 15
-    elif table_size > 13 and table_size <=17:
-        col_width = 'nine'
-        category_width = 15
-    elif table_size > 17:
-        col_width = 'ten'
-        category_width = 15
+    if table_size > 1:
+        # determines the col_width class and width of the category column based
+        # on the size (# of cols) of the dataframe
+        if table_size <= 3:
+            col_width = 'four'
+            category_width = 35
+        if table_size > 3 and table_size <=5:
+            col_width = 'four'
+            category_width = 25
+        elif table_size > 5 and table_size < 7:
+            col_width = 'five'
+            category_width = 20
+        elif table_size >= 7 and table_size < 9:
+            col_width = 'six'
+            category_width = 20
+        elif table_size >= 9 and table_size <= 13:
+            col_width = 'seven'
+            category_width = 15
+        elif table_size > 13 and table_size <=17:
+            col_width = 'nine'
+            category_width = 15
+        elif table_size > 17:
+            col_width = 'ten'
+            category_width = 15
 
-    class_name = 'pretty_container ' + col_width + ' columns'
+        class_name = 'pretty_container ' + col_width + ' columns'
 
-    # rename columns n_size before getting n col list
-    data.columns = data.columns.str.replace('N-Size|SN-Size', 'Tested', regex=True)
-    data.columns = data.columns.str.replace('School', 'Proficiency', regex=True)
-    nsize_headers = [y for y in data.columns if 'Tested' in y]
-    year_headers = [y for y in data.columns if 'Proficiency' in y]
+        # rename columns n_size before getting n col list
+        data.columns = data.columns.str.replace('N-Size|SN-Size', 'Tested', regex=True)
+        data.columns = data.columns.str.replace('School', 'Proficiency', regex=True)
+        nsize_headers = [y for y in data.columns if 'Tested' in y]
+        year_headers = [y for y in data.columns if 'Proficiency' in y]
 
-    # get new list of cols after replacing N-Size
-    all_cols = data.columns.tolist()
+        # get new list of cols after replacing N-Size
+        all_cols = data.columns.tolist()
 
-    # set column widths
-    nsize_width = 4
-    data_width = 100 - category_width - nsize_width
-    year_width = data_width / (table_size - 1)
-    
-    # formatting logic is slightly different for a multi-header table
-    table_cell_conditional = [
-        {
-            'if': {
-                'column_id': 'Category'
+        # set column widths
+        nsize_width = 4
+        data_width = 100 - category_width - nsize_width
+        year_width = data_width / (table_size - 1)
+        
+        # formatting logic is slightly different for a multi-header table
+        table_cell_conditional = [
+            {
+                'if': {
+                    'column_id': 'Category'
+                },
+                'textAlign': 'left',
+                'paddingLeft': '20px',
+                'fontWeight': '500',
+                'width': str(category_width) + '%'
             },
-            'textAlign': 'left',
-            'paddingLeft': '20px',
-            'fontWeight': '500',
-            'width': str(category_width) + '%'
-        },
-    ] + [
-        {
-            'if': {
-                'column_id': year
+        ] + [
+            {
+                'if': {
+                    'column_id': year
+                },
+                'textAlign': 'center',
+                'fontWeight': '500',
+                'width': str(year_width) + '%',
+            } for year in year_headers
+        ]  + [
+            {   'if': {
+                'column_id': nsize
             },
-            'textAlign': 'center',
-            'fontWeight': '500',
-            'width': str(year_width) + '%',
-        } for year in year_headers
-    ]  + [
-        {   'if': {
-            'column_id': nsize
-        },
-            'textAlign': 'center',
-            'fontWeight': '300',
-            'fontSize': '8px',
-            'width': str(nsize_width) + '%'
-        } for nsize in nsize_headers
-    ]
+                'textAlign': 'center',
+                'fontWeight': '300',
+                'fontSize': '8px',
+                'width': str(nsize_width) + '%'
+            } for nsize in nsize_headers
+        ]
 
-    table_header_conditional = [
-        {
-            'if': {
-                'column_id': year,
+        table_header_conditional = [
+            {
+                'if': {
+                    'column_id': year,
+                    'header_index': 1,
+                },
+                'borderLeft': '.5px solid #b2bdd4',
+                'borderTop': '.5px solid #b2bdd4',
+                'borderBottom': '.5px solid #b2bdd4'
+            } for year in year_headers
+        ] + [
+            {   'if': {
+                'column_id': nsize,
                 'header_index': 1,
             },
-            'borderLeft': '.5px solid #b2bdd4',
-            'borderTop': '.5px solid #b2bdd4',
-            'borderBottom': '.5px solid #b2bdd4'
-        } for year in year_headers
-    ] + [
-        {   'if': {
-            'column_id': nsize,
-            'header_index': 1,
-        },
-            'textAlign': 'center',
-            'fontWeight': '400',
-            'fontSize': '10px',
-            'borderRight': '.5px solid #b2bdd4',
-            'borderTop': '.5px solid #b2bdd4',
-            'borderBottom': '.5px solid #b2bdd4'
-    } for nsize in nsize_headers
-    ] + [
-        {   'if': {
-            'column_id': all_cols[-1],
-            'header_index': 1,
-        },
-        'borderRight': '.5px solid #b2bdd4',
-        }
-    ]
-
-    table_data_conditional = [
-        {
-            'if': {
-                'state': 'selected'
-            },
-            'backgroundColor': 'rgba(112,128,144, .3)',
-            'border': 'thin solid silver'
-        },
-        {
-            'if': {
-                'row_index': 'odd'
-            },
-            'backgroundColor': '#eeeeee'
-        }
-    ] + [
-        {
-            'if': {
-                'column_id': all_cols[-1],
-            },
-            'borderRight': '.5px solid #b2bdd4',
-        },
-    ] + [
-        {
-            'if': {
-                'row_index': 0
-            },
-            'paddingTop': '5px'
-        }
-    ] + [
-        {
-            'if': {
-                'row_index': len(data)-1
-            },
-            'borderBottom': '.5px solid #b2bdd4',
-        }
-    ] + [
-        {
-            'if': {
-                'column_id': 'Category',
-            },
-            'borderRight': '.5px solid #b2bdd4',
-            'borderBottom': 'none',
-        },
-    ] + [
-        { 
-            'if': {
-                'column_id': nsize,
-            },
-            'fontSize': '10px',
-            'textAlign': 'center',
-            'borderRight': '.5px solid #b2bdd4',
+                'textAlign': 'center',
+                'fontWeight': '400',
+                'fontSize': '10px',
+                'borderRight': '.5px solid #b2bdd4',
+                'borderTop': '.5px solid #b2bdd4',
+                'borderBottom': '.5px solid #b2bdd4'
         } for nsize in nsize_headers
-    ]
-
-    # build multi-level headers
-    name_cols = [['Category','']]
-
-    # Split columns into two levels
-    for item in all_cols:
-        if item.startswith('20'):
-            name_cols.append([item[:4],item[4:]])
-
-    table_columns = [
-            {
-                'name': col,
-                'id': all_cols[idx],
-                'type': 'numeric',
-                'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses),
+        ] + [
+            {   'if': {
+                'column_id': all_cols[-1],
+                'header_index': 1,
+            },
+            'borderRight': '.5px solid #b2bdd4',
             }
-            if 'Proficiency' in col      
-            
-            else
+        ]
+
+        table_data_conditional = [
+            {
+                'if': {
+                    'state': 'selected'
+                },
+                'backgroundColor': 'rgba(112,128,144, .3)',
+                'border': 'thin solid silver'
+            },
+            {
+                'if': {
+                    'row_index': 'odd'
+                },
+                'backgroundColor': '#eeeeee'
+            }
+        ] + [
+            {
+                'if': {
+                    'column_id': all_cols[-1],
+                },
+                'borderRight': '.5px solid #b2bdd4',
+            },
+        ] + [
+            {
+                'if': {
+                    'row_index': 0
+                },
+                'paddingTop': '5px'
+            }
+        ] + [
+            {
+                'if': {
+                    'row_index': len(data)-1
+                },
+                'borderBottom': '.5px solid #b2bdd4',
+            }
+        ] + [
+            {
+                'if': {
+                    'column_id': 'Category',
+                },
+                'borderRight': '.5px solid #b2bdd4',
+                'borderBottom': 'none',
+            },
+        ] + [
+            { 
+                'if': {
+                    'column_id': nsize,
+                },
+                'fontSize': '10px',
+                'textAlign': 'center',
+                'borderRight': '.5px solid #b2bdd4',
+            } for nsize in nsize_headers
+        ]
+
+        # build multi-level headers
+        name_cols = [['Category','']]
+
+        # Split columns into two levels
+        for item in all_cols:
+            if item.startswith('20'):
+                name_cols.append([item[:4],item[4:]])
+
+        table_columns = [
                 {
                     'name': col,
                     'id': all_cols[idx],
-                    'type':'numeric',
-                    'format': Format()
+                    'type': 'numeric',
+                    'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses),
                 }
-                for (idx, col) in enumerate(name_cols)
-    ]
+                if 'Proficiency' in col      
+                
+                else
+                    {
+                        'name': col,
+                        'id': all_cols[idx],
+                        'type':'numeric',
+                        'format': Format()
+                    }
+                    for (idx, col) in enumerate(name_cols)
+        ]
 
-    table_layout = [
-        html.Div(
-            [
-                html.Label(label, className='header_label'),
-                html.Div(
-                    dash_table.DataTable(
-                        data.to_dict('records'),
-                        columns = table_columns,
-                        style_data = table_style,
-                        style_data_conditional = table_data_conditional,
-                        style_header = table_header,
-                        style_cell = table_cell,
-                        style_header_conditional = table_header_conditional,
-                        style_cell_conditional = table_cell_conditional,
-                        merge_duplicate_headers=True
+        table_layout = [
+            html.Div(
+                [
+                    html.Label(label, className='header_label'),
+                    html.Div(
+                        dash_table.DataTable(
+                            data.to_dict('records'),
+                            columns = table_columns,
+                            style_data = table_style,
+                            style_data_conditional = table_data_conditional,
+                            style_header = table_header,
+                            style_cell = table_cell,
+                            style_header_conditional = table_header_conditional,
+                            style_cell_conditional = table_cell_conditional,
+                            merge_duplicate_headers=True
+                        ),
+                    )
+                ],
+                className = class_name
+            )
+        ]
+
+    else:
+
+        empty_dict = [{"": ""}]
+        table_layout = [
+            html.Div(
+                [
+                    html.Label(label, className='header_label'),
+                    html.Div(
+                        dash_table.DataTable(
+                            data=empty_dict,
+                            columns = [
+                                {'id': 'emptytable', 'name': 'No Data to Display'},
+                            ],
+                            style_header={
+                                'fontSize': '14px',
+                                'border': 'none',
+                                'textAlign': 'center',
+                                'color': '#6783a9',
+                                'fontFamily': 'Jost, sans-serif',
+                                'height': '30vh',
+                            },
+                            style_data={
+                                'display': 'none',
+                            },
+                        ),
                     ),
-                )
-            ],
-            className = class_name
-        )
-    ]
+                ],
+                className = 'pretty_container four columns'
+            )
+        ]
 
     return table_layout
 
@@ -1307,18 +1343,6 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         rating_width = data_col_width/2
         year_width = data_col_width + data_col_width/4
         diff_width = data_col_width + data_col_width/4
-
-        # print('leftoverw')
-        # print(data_width)
-        # print('rw')
-        # print(len(rating_headers))
-        # print(rating_width)
-        # print('yw')
-        # print(len(year_headers))
-        # print(year_width)
-        # print('dw')
-        # print(len(diff_headers))
-        # print(diff_width)
 
         class_name = 'pretty_container ' + col_width + ' columns'
 

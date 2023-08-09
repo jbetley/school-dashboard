@@ -577,75 +577,82 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
             if {'AHS|CCR','AHS|Grad All'}.issubset(data.columns):
                 data["CCR Percentage"] = (data["AHS|CCR"] / data["AHS|Grad All"])
 
-        data = data.filter(
-            regex=r"^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|^Year$", # ^Strength of Diploma
-            axis=1,
-        )
-
-        school_info = school_info.reset_index(drop=True)
-        data = data.reset_index(drop=True)
-
-        data = pd.concat([data, school_info], axis=1, join="inner")
-
-        data.columns = data.columns.astype(str)
-
-        data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-
-        # State/Federal grade rows not used at this point
-        data = data[data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
-
-        if data_geo_code == school_geo_code:
-            data = data.rename(columns={c: str(c)+'Corp' for c in data.columns if c not in ['Category']})   
-        else:
-            data = data.rename(columns={c: str(c)+'School' for c in data.columns if c not in ['Category']})  
+        # Need to check data again to see if anything is left after the above operations
+        # if all columns in data other than the 1st (Year) are null then return empty df
+        if data.iloc[:, 1:].isna().all().all():
+            final_data = pd.DataFrame()
         
-        data = data.reset_index(drop=True)
-
-        # make sure there are no lingering NoneTypes 
-        data = data.fillna(value=np.nan)
-
-        # Merge Total Tested DF with Proficiency DF based on substring match
-
-        # add new column with substring values and drop old Category column
-        data_tested['Substring'] = data_tested['Category'].replace({" Total Tested": "", "\|Cohort Count": " Graduation"}, regex=True)
-
-        data_tested = data_tested.drop('Category', axis=1)
-
-        # this cross-merge and substring match process takes about .3s - must be a faster way
-        # t20 = time.process_time()
-
-        final_data = data.merge(data_tested, how='cross')
-
-        # keep only those rows where substring is in Category
-        # Need to temporarily rename 'English Learner' because otherwise it 
-        # will match both 'English' and 'Non English'
-        final_data = final_data.replace({"Non English Language Learners": "Temp1", "English Language Learners": "Temp2"}, regex=True)
-
-        final_data = final_data[[a in b for a, b in zip(final_data['Substring'], final_data['Category'])]]
-        
-        final_data = final_data.replace({"Temp1": "Non English Language Learners", "Temp2": "English Language Learners"}, regex=True)             
-
-        final_data = final_data.drop('Substring', axis=1)
-        final_data = final_data.reset_index(drop=True)
-
-        # reorder columns for display
-        # NOTE: This final data keeps the Corp N-Size cols, which are not used
-        # currently. We drop them later in the merge_high_school_data() step.
-        if data_geo_code == school_geo_code:
-            school_cols = [e for e in final_data.columns if 'Corp' in e]
-            nsize_cols = [e for e in final_data.columns if 'CN-Size' in e]
         else:
-            school_cols = [e for e in final_data.columns if 'School' in e]
-            nsize_cols = [e for e in final_data.columns if 'SN-Size' in e]
 
-        school_cols.sort(reverse=True)
-        nsize_cols.sort(reverse=True)
+            data = data.filter(
+                regex=r"^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|^Year$", # ^Strength of Diploma
+                axis=1,
+            )
 
-        final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+            school_info = school_info.reset_index(drop=True)
+            data = data.reset_index(drop=True)
+
+            data = pd.concat([data, school_info], axis=1, join="inner")
+
+            data.columns = data.columns.astype(str)
+
+            data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+            # State/Federal grade rows not used at this point
+            data = data[data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
+
+            if data_geo_code == school_geo_code:
+                data = data.rename(columns={c: str(c)+'Corp' for c in data.columns if c not in ['Category']})   
+            else:
+                data = data.rename(columns={c: str(c)+'School' for c in data.columns if c not in ['Category']})  
+            
+            data = data.reset_index(drop=True)
+
+            # make sure there are no lingering NoneTypes 
+            data = data.fillna(value=np.nan)
+
+            # Merge Total Tested DF with Proficiency DF based on substring match
+
+            # add new column with substring values and drop old Category column
+            data_tested['Substring'] = data_tested['Category'].replace({" Total Tested": "", "\|Cohort Count": " Graduation"}, regex=True)
+
+            data_tested = data_tested.drop('Category', axis=1)
+
+            # this cross-merge and substring match process takes about .3s - must be a faster way
+            # t20 = time.process_time()
+
+            final_data = data.merge(data_tested, how='cross')
+
+            # keep only those rows where substring is in Category
+            # Need to temporarily rename 'English Learner' because otherwise it 
+            # will match both 'English' and 'Non English'
+            final_data = final_data.replace({"Non English Language Learners": "Temp1", "English Language Learners": "Temp2"}, regex=True)
+
+            final_data = final_data[[a in b for a, b in zip(final_data['Substring'], final_data['Category'])]]
+            
+            final_data = final_data.replace({"Temp1": "Non English Language Learners", "Temp2": "English Language Learners"}, regex=True)             
+
+            final_data = final_data.drop('Substring', axis=1)
+            final_data = final_data.reset_index(drop=True)
+
+            # reorder columns for display
+            # NOTE: This final data keeps the Corp N-Size cols, which are not used
+            # currently. We drop them later in the merge_high_school_data() step.
+            if data_geo_code == school_geo_code:
+                school_cols = [e for e in final_data.columns if 'Corp' in e]
+                nsize_cols = [e for e in final_data.columns if 'CN-Size' in e]
+            else:
+                school_cols = [e for e in final_data.columns if 'School' in e]
+                nsize_cols = [e for e in final_data.columns if 'SN-Size' in e]
+
+            school_cols.sort(reverse=True)
+            nsize_cols.sort(reverse=True)
+
+            final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
 
 
-        final_cols.insert(0, "Category")
-        final_data = final_data[final_cols]
+            final_cols.insert(0, "Category")
+            final_data = final_data[final_cols]
 
     else:
 

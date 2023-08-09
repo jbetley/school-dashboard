@@ -4,6 +4,8 @@
 # author:   jbetley
 # version:  1.08
 # date:     08/01/23
+#
+# TODO: Add Total Tested to Proficiency Bar Charts
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -45,7 +47,6 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("sat-overview-table", "children"),
     Output("sat-ethnicity-table", "children"),
     Output("sat-subgroup-table", "children"),
-    # Output("hs-eca-table", "children"),
     Output("hs-table-container", "style"),
     Output("academic-information-main-container", "style"),
     Output("academic-information-empty-container", "style"),
@@ -71,8 +72,8 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("state-growth-main-container", "style"),
     Output("state-growth-empty-container", "style"),    
     Output("state-growth-no-data", "children"),
-    Output("growth-values-table", "children"),    
-    Output("growth-values-table-container", "style"),
+    # Output("growth-values-table", "children"),    
+    # Output("growth-values-table-container", "style"),
     Output("academic-information-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
@@ -100,8 +101,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
     state_growth_empty_container = {"display": "none"}   
     no_state_growth_data_to_display = no_data_page("Indiana State Growth Calculations")
 
-    growth_values_table = [html.Img(src="assets/growth_table.jpg", hidden=True)]
-    growth_values_table_container = {"display": "none"}
+    # growth_values_table = [html.Img(src="assets/growth_table.jpg", hidden=True)]
+    # growth_values_table_container = {"display": "none"}
 
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
@@ -143,7 +144,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 sat_overview_table = {}
                 sat_ethnicity_table = {}
                 sat_subgroup_table = {}                  
-                # hs_eca_table = {}
                 hs_table_container = {"display": "none"}
 
             # get all years of data
@@ -172,28 +172,28 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
                 years_by_grade = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(grades_iread))]
 
-                if not years_by_grade.empty:
-                    k8_grade_table = create_academic_info_table(years_by_grade,"Proficiency by Grade")
-                else:
-                    k8_grade_table = no_data_table("Proficiency by Grade")
+                # if not years_by_grade.empty:
+                k8_grade_table = create_academic_info_table(years_by_grade,"Proficiency by Grade")
+                # else:
+                #     k8_grade_table = no_data_table("Proficiency by Grade")
 
                 k8_grade_table = set_table_layout(k8_grade_table, k8_grade_table, years_by_grade.columns)
 
                 years_by_subgroup = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(subgroup))]
 
-                if not years_by_subgroup.empty:            
-                    k8_subgroup_table = create_academic_info_table(years_by_subgroup,"Proficiency by Subgroup")
-                else:
-                    k8_subgroup_table = no_data_table("Proficiency by Subgroup")
+                # if not years_by_subgroup.empty:            
+                k8_subgroup_table = create_academic_info_table(years_by_subgroup,"Proficiency by Subgroup")
+                # else:
+                #     k8_subgroup_table = no_data_table("Proficiency by Subgroup")
 
                 k8_subgroup_table = set_table_layout(k8_subgroup_table, k8_subgroup_table, years_by_subgroup.columns)
 
                 years_by_ethnicity = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(ethnicity))]
 
-                if not years_by_ethnicity.empty:            
-                    k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,"Proficiency by Ethnicity")
-                else:
-                    k8_ethnicity_table = no_data_table("Proficiency by Ethnicity")
+                # if not years_by_ethnicity.empty:            
+                k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,"Proficiency by Ethnicity")
+                # else:
+                #     k8_ethnicity_table = no_data_table("Proficiency by Ethnicity")
 
                 k8_ethnicity_table = set_table_layout(k8_ethnicity_table, k8_ethnicity_table, years_by_ethnicity.columns)
 
@@ -311,13 +311,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                                 rounded_percentages_cols = list(rounded_percentages.columns)
                                 all_proficiency_data[proficiency_columns] = rounded_percentages[rounded_percentages_cols]
 
-                # # drop all remaining columns used for calculation that we dont want to chart
-                # all_proficiency_data.drop(list(all_proficiency_data.filter(regex="Total\||Total Proficient|ELA and Math")),
-                #     axis=1,
-                #     inplace=True,
-                # )
-                # TODO: Is it necessary to drop anything here?
-                # TODO: determine if possible to add Total Tested to Bar Charts
                 # drop columns used for calculation that we dont want to chart (keeping Total Tested)
                 all_proficiency_data.drop(list(all_proficiency_data.filter(regex="Total Proficient|ELA and Math")),
                     axis=1,
@@ -330,12 +323,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 # all use "th" suffix except for 3rd - so we need to specially treat "3""
                 all_proficiency_data.columns = [x.replace("3th", "3rd") for x in all_proficiency_data.columns.to_list()]
 
-                # transpose df
-                all_proficiency_data = (
-                    all_proficiency_data.T.rename_axis("Category")
-                    .rename_axis(None, axis=1)
-                    .reset_index()
-                )
+                all_proficiency_data = (all_proficiency_data.T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
                 # split Grade column into two columns and rename what used to be the index
                 all_proficiency_data[["Category", "Proficiency"]] = all_proficiency_data["Category"].str.split("|", expand=True)
@@ -480,86 +468,69 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
                 all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
 
-            # Graduation Rate Tables
-                grad_overview_categories = ["Total", "Non Waiver", "State Average"] # "Strength of Diploma" (not currently displayed)
+                if all_hs_school_data.empty:
 
+                    # df is empty after being processed
+                    hs_grad_overview_table = {}
+                    hs_grad_ethnicity_table = {}
+                    hs_grad_subgroup_table = {}
+                    sat_overview_table = {}
+                    sat_ethnicity_table = {}
+                    sat_subgroup_table = {}        
+                    hs_table_container = {"display": "none"}
+                
+                else:
+                    # Graduation Rate Tables ("Strength of Diploma" in data, but not currently displayed)
+                    grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
-                if selected_school_type == "AHS":
-                    grad_overview_categories.append("CCR Percentage")
+                    if selected_school_type == "AHS":
+                        grad_overview_categories.append("CCR Percentage")
 
-                all_hs_school_data.columns = all_hs_school_data.columns.astype(str)
+                    all_hs_school_data.columns = all_hs_school_data.columns.astype(str)
 
-                # Graduation Rate Tables
-                graduation_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Graduation")].copy()
+                    # Graduation Rate Tables
+                    graduation_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Graduation")].copy()
+                    graduation_data["Category"] = (graduation_data["Category"].str.replace("Graduation Rate", "").str.strip())
 
-                # drop "Graduation Rate" from all "Category" rows and remove whitespace
-                graduation_data["Category"] = (graduation_data["Category"].str.replace("Graduation Rate", "").str.strip())
+                    grad_overview = graduation_data[graduation_data["Category"].str.contains("|".join(grad_overview_categories))]
+                    grad_overview = grad_overview.dropna(axis=1,how="all")
 
-                grad_overview = graduation_data[graduation_data["Category"].str.contains("|".join(grad_overview_categories))]
-                grad_overview = grad_overview.dropna(axis=1,how="all")
-
-                if len(grad_overview.columns) > 1:
                     hs_grad_overview_table = create_academic_info_table(grad_overview,"Graduation Rate Overview")
-                else:
-                    hs_grad_overview_table = no_data_table("Graduation Rate Overview")
+                    hs_grad_overview_table = set_table_layout(hs_grad_overview_table, hs_grad_overview_table, grad_overview.columns)
 
-                hs_grad_overview_table = set_table_layout(hs_grad_overview_table, hs_grad_overview_table, grad_overview.columns)
+                    grad_ethnicity = graduation_data[graduation_data["Category"].str.contains("|".join(ethnicity))]
+                    grad_ethnicity = grad_ethnicity.dropna(axis=1,how="all")
 
-                grad_ethnicity = graduation_data[graduation_data["Category"].str.contains("|".join(ethnicity))]
-                grad_ethnicity = grad_ethnicity.dropna(axis=1,how="all")
-
-                if len(grad_ethnicity.columns) > 1:                
                     hs_grad_ethnicity_table = create_academic_info_table(grad_ethnicity,"Graduation Rate by Ethnicity")
-                else:
-                    hs_grad_ethnicity_table = no_data_table("Graduation Rate by Ethnicity")
+                    hs_grad_ethnicity_table = set_table_layout(hs_grad_ethnicity_table, hs_grad_ethnicity_table, grad_ethnicity.columns)
+                    
+                    grad_subgroup = graduation_data[graduation_data["Category"].str.contains("|".join(subgroup))]
+                    grad_subgroup = grad_subgroup.dropna(axis=1,how="all")
 
-                hs_grad_ethnicity_table = set_table_layout(hs_grad_ethnicity_table, hs_grad_ethnicity_table, grad_ethnicity.columns)
-                
-                grad_subgroup = graduation_data[graduation_data["Category"].str.contains("|".join(subgroup))]
-                grad_subgroup = grad_subgroup.dropna(axis=1,how="all")
-
-                if len(grad_subgroup.columns) > 1:
                     hs_grad_subgroup_table = create_academic_info_table(grad_subgroup,"Graduation Rate by Subgroup")
-                else:
-                    hs_grad_subgroup_table = no_data_table("Graduation Rate by Subgroup")
+                    hs_grad_subgroup_table = set_table_layout(hs_grad_subgroup_table, hs_grad_subgroup_table, grad_subgroup.columns)
                 
-                hs_grad_subgroup_table = set_table_layout(hs_grad_subgroup_table, hs_grad_subgroup_table, grad_subgroup.columns)
-            
-            # SAT Benchmark Tables
-                sat_table_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Benchmark %")].copy()
+                    # SAT Benchmark Tables
+                    sat_table_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Benchmark %")].copy()
+                    sat_table_data["Category"] = (sat_table_data["Category"].str.replace("Benchmark %", "").str.strip())
 
-                # drop "Graduation Rate" from all "Category" rows and remove whitespace
-                sat_table_data["Category"] = (sat_table_data["Category"].str.replace("Benchmark %", "").str.strip())
+                    sat_overview = sat_table_data[sat_table_data["Category"].str.contains("School Total")]
+                    sat_overview = sat_overview.dropna(axis=1,how="all")
 
-                sat_overview = sat_table_data[sat_table_data["Category"].str.contains("School Total")]
-                sat_overview = sat_overview.dropna(axis=1,how="all")
-
-                if len(sat_overview.columns) > 1:
                     sat_overview_table = create_academic_info_table(sat_overview,"SAT Overview")
-                else:
-                    sat_overview_table = no_data_table("SAT Overview")
+                    sat_overview_table = set_table_layout(sat_overview_table, sat_overview_table, sat_overview.columns) 
+                    
+                    sat_ethnicity = sat_table_data[sat_table_data["Category"].str.contains("|".join(ethnicity))]
+                    sat_ethnicity = sat_ethnicity.dropna(axis=1,how="all")
 
-                sat_overview_table = set_table_layout(sat_overview_table, sat_overview_table, sat_overview.columns) 
-                
-                sat_ethnicity = sat_table_data[sat_table_data["Category"].str.contains("|".join(ethnicity))]
-                sat_ethnicity = sat_ethnicity.dropna(axis=1,how="all")
-
-                if len(sat_ethnicity.columns) > 1:
                     sat_ethnicity_table = create_academic_info_table(sat_ethnicity,"SAT Benchmarks by Ethnicity")
-                else:
-                    sat_ethnicity_table = no_data_table("SAT Benchmarks by Ethnicity")
+                    sat_ethnicity_table = set_table_layout(sat_ethnicity_table, sat_ethnicity_table, sat_ethnicity.columns) 
+                    
+                    sat_subgroup = sat_table_data[sat_table_data["Category"].str.contains("|".join(subgroup))]
+                    sat_subgroup = sat_subgroup.dropna(axis=1,how="all")
 
-                sat_ethnicity_table = set_table_layout(sat_ethnicity_table, sat_ethnicity_table, sat_ethnicity.columns) 
-                
-                sat_subgroup = sat_table_data[sat_table_data["Category"].str.contains("|".join(subgroup))]
-                sat_subgroup = sat_subgroup.dropna(axis=1,how="all")
-
-                if len(sat_subgroup.columns) > 1:                
                     sat_subgroup_table = create_academic_info_table(sat_subgroup,"SAT Benchmarks by Subgroup")
-                else:
-                    sat_subgroup_table = no_data_table("SAT Benchmarks by Subgroup")
-
-                sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
+                    sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
 
             else:
                 # selected type is HS, AHS, K12, or CHS < 2021, but there is no data
@@ -569,14 +540,9 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 sat_overview_table = {}
                 sat_ethnicity_table = {}
                 sat_subgroup_table = {}        
-                # hs_eca_table = {}
                 hs_table_container = {"display": "none"}
-                
-                main_container = {"display": "none"}
-                empty_container = {"display": "block"}      
 
     elif radio_value =="growth":
-
     # Growth Tab #
 
         # set all proficiency tables to null and containers to display: none
@@ -586,7 +552,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         sat_overview_table = {}
         sat_ethnicity_table = {}
         sat_subgroup_table = {}        
-        # hs_eca_table = {}
         hs_table_container = {"display": "none"}
 
         k8_grade_table = {}
@@ -613,15 +578,12 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         # was out of the system for most of the year. "Tested School" is where the student actually took the
         # test. IDOE uses "Majority Enrolled" for their calculations
 
-        # Percentage of students achieving “typical” or “high” growth on the state assessment in ELA/Math
-        # NOTE: Typical/high designations are no longer used.
+        # ICSB growth metrics need to be updated, currently say:
+        #   Percentage of students achieving “typical” or “high” growth on the state assessment in ELA/Math
+        #   Median SGP of students achieving "adequate and sufficient growth" on the state assessment in ELA/Math
 
-        # Median SGP of students achieving "adequate and sufficient growth" on the state assessment in ELA/Math
-
-        # Data shown:
-        # ILEARNGrowthLevel / TestYear / GradeLevel / Subject
-        # Group by Year, Subject and Grade Level,  Ethnicity, Socio Economic Status Category, English Learner Status Category, Special Ed Status Category
-        # Also avaiable: Homeless Status Category, High Ability Status Category    
+        # NOTE: Growth data shows: byGrade, byEthnicity, bySES, byEL Status, & by Sped Status
+        # Also avaiable (but not shown): Homeless Status and High Ability Status
 
         # dataset is all students who are coded as "Majority Enrolled" at the school
         all_growth_data = get_growth_data(school)
@@ -634,8 +596,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
         if len(growth_data.index) > 0:
             
-            growth_values_table = [html.Img(src="assets/growth_table.jpg", hidden=False)]
-            growth_values_table_container = {"display": "block"}
+            # growth_values_table = [html.Img(src="assets/growth_table.jpg", hidden=False)]
+            # growth_values_table_container = {"display": "block"}
 
             # NOTE: This calculates the difference between the count of Majority Enrolled and 162-Day students by Year
             # counts_growth = growth_data.groupby("Test Year")["Test Year"].count().reset_index(name = "Count (Majority Enrolled)")
@@ -644,12 +606,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             # counts_growth["School Name"] = selected_school["School Name"].values[0]
             # counts_growth["Count (162 Days)"] = counts_growth_162["Count (162 Days)"]
             # counts_growth["Difference"] = counts_growth["Count (Majority Enrolled)"] - counts_growth["Count (162 Days)"]
-
-            # print("Count Difference")
-            # print(counts_growth)
-
             # diff_threshold = abs(len(growth_data.index) - len(growth_data_162.index))
-
             # print(f"Percentage difference: " + str(diff_threshold / len(growth_data.index)))
 
             # Percentage of students achieving "Adequate Growth"
@@ -724,7 +681,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             table_subgroup_growth_math_container = set_table_layout(table_subgroup_growth_math, table_subgroup_sgp_math, table_data_subgroup_growth.columns)
 
         ## Growth figures
-        # NOTE: Currently only displaying Majority Enrolled Data (162 in tooltip)
+        # NOTE: Currently only displaying Majority Enrolled Data
+        #TODO: Add 162 in tooltip
             # Growth by Grade (Both ME and 162)
             growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
             growth_data_162_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("Math"))]
@@ -854,8 +812,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             state_growth_main_container = {"display": "none"}
             state_growth_empty_container = {"display": "block"}
 
-            # NOTE: Currently showing median SGP for all students, the following code would give us for students
-            # achieving adequate growth. What is the value of using this metric instead?
+            # NOTE: Currently showing median SGP for all students, the following code would give us median
+            # sgp for students achieving adequate growth. What is the value of using this metric instead?
             # adequate_growth_data = growth_data[growth_data["ILEARNGrowth Level"] == "Adequate Growth"]
             # median_sgp_adequate = adequate_growth_data.groupby(["Test Year","Grade Level", "Subject"])["ILEARNGrowth Percentile"].median()
             # adequate_growth_data_162 = growth_data_162[growth_data_162["ILEARNGrowth Level"] == "Adequate Growth"]
@@ -894,7 +852,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         sat_overview_table = {}
         sat_ethnicity_table = {}
         sat_subgroup_table = {}        
-        # hs_eca_table = {}
         hs_table_container = {"display": "none"}
 
         k8_grade_table = {}
@@ -913,7 +870,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
 
-    # table notes
     if radio_value == "proficiency":
         if selected_school_type == "AHS":
             academic_information_notes_string = "Adult High Schools enroll students who are over the age of 18, under credited, \
@@ -949,9 +905,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         table_subgroup_growth_math_container, fig_grade_growth_ela, fig_grade_sgp_ela, fig_grade_growth_math, fig_grade_sgp_math,
         fig_ethnicity_growth_ela, fig_ethnicity_sgp_ela, fig_ethnicity_growth_math, fig_ethnicity_sgp_math, fig_subgroup_growth_ela,
         fig_subgroup_sgp_ela, fig_subgroup_growth_math, fig_subgroup_sgp_math,state_growth_main_container,
-        state_growth_empty_container, no_state_growth_data_to_display, growth_values_table, growth_values_table_container,
-        academic_information_notes_string
-    ) # hs_eca_table,
+        state_growth_empty_container, no_state_growth_data_to_display, academic_information_notes_string
+    ) # growth_values_table, growth_values_table_container,
 
 def layout():
     return html.Div(
@@ -994,17 +949,17 @@ def layout():
                 ],
                 className = "row",
             ),
-            html.Div(
-                [                     
-                    html.Div(
-                        [                             
-                            html.Div(id="growth-values-table"),
-                        ],
-                        className = "bare_container_center twelve columns"
-                    ),
-                ],
-                id="growth-values-table-container",
-            ),
+            # html.Div(
+            #     [                     
+            #         html.Div(
+            #             [                             
+            #                 html.Div(id="growth-values-table"),
+            #             ],
+            #             className = "bare_container_center twelve columns"
+            #         ),
+            #     ],
+            #     id="growth-values-table-container",
+            # ),
             html.Div(
                 [
                     html.Div(
@@ -1048,17 +1003,7 @@ def layout():
                     children=[
                     html.Div(
                         [
-                            # html.Div(
-                            #     [   
-                                    # html.Div(
-                                    #     [
-                                            html.Div(id="k8-grade-table", children=[]),
-                                    #     ],
-                                    #     className="pretty_container six columns",
-                                    # ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),
+                            html.Div(id="k8-grade-table", children=[]),
                             html.Div(
                                 [
                                     html.Div(
@@ -1076,17 +1021,7 @@ def layout():
                                 ],
                                 className="bare_container_center twelve columns",
                             ),
-                            # html.Div(
-                            #     [
-                                    # html.Div(
-                                    #     [
-                                            html.Div(id="k8-ethnicity-table", children=[]),
-                                    #     ],
-                                    #     className="pretty_container six columns",
-                                    # ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),
+                            html.Div(id="k8-ethnicity-table", children=[]),
                             html.Div(
                                 [
                                     html.Div(
@@ -1104,17 +1039,7 @@ def layout():
                                 ],
                                 className="bare_container_center twelve columns",
                             ),
-                            # html.Div(
-                            #     [
-                                    # html.Div(
-                                    #     [
-                                            html.Div(id="k8-subgroup-table", children=[]),
-                                    #     ],
-                                    #     className="pretty_container six columns",
-                                    # ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),
+                            html.Div(id="k8-subgroup-table", children=[]),
                             html.Div(
                                 [
                                     html.Div(
@@ -1132,99 +1057,18 @@ def layout():
                                 ],
                                 className="bare_container_center twelve columns",
                             ),
-                            # html.Div(
-                                # [
-                                #     html.Div(
-                                #         [
-                                            html.Div(id="k8-other-table", children=[]),
-                        #                 ],
-                        #                 className="pretty_container six columns",
-                        #             ),
-                        #         ],
-                        #         className="bare_container_center twelve columns",
-                        #     ),
+                            html.Div(id="k8-other-table", children=[]),
                         ],
                         id="k8-table-container",
                     ),
                     html.Div(
                         [
-                            # html.Div(
-                            #     [
-                            #         html.Div(
-                            #             [
-                                            html.Div(id="hs-grad-overview-table"),
-                            #             ],
-                            #             className="pretty_container six columns",
-                            #         ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),
-                            # html.Div(
-                            #     [
-                            #         html.Div(
-                            #             [
-                                            html.Div(id="hs-grad-ethnicity-table"),
-                            #             ],
-                            #             className="pretty_container six columns",
-                            #         ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),
-                            # html.Div(
-                            #     [
-                            #         html.Div(
-                            #             [
-                                            html.Div(id="hs-grad-subgroup-table"),
-                            #             ],
-                            #             className="pretty_container six columns",
-                            #         ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),
-                            # html.Div(
-                            #     [
-                            #         html.Div(
-                            #             [
-                                            html.Div(id="sat-overview-table"),
-                            #             ],
-                            #             className="pretty_container six columns",
-                            #         ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),
-                            # html.Div(
-                            #     [
-                            #         html.Div(
-                            #             [
-                                            html.Div(id="sat-ethnicity-table"),
-                            #             ],
-                            #             className="pretty_container six columns",
-                            #         ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),
-                            # html.Div(
-                            #     [
-                            #         html.Div(
-                            #             [
-                                            html.Div(id="sat-subgroup-table"),
-                            #             ],
-                            #             className="pretty_container six columns",
-                            #         ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),                            
-                            # html.Div(
-                            #     [
-                            #         html.Div(
-                            #             [
-                            #                 html.Div(id="hs-eca-table"),
-                            #             ],
-                            #             className="pretty_container six columns",
-                            #         ),
-                            #     ],
-                            #     className="bare_container_center twelve columns",
-                            # ),
+                            html.Div(id="hs-grad-overview-table"),
+                            html.Div(id="hs-grad-ethnicity-table"),
+                            html.Div(id="hs-grad-subgroup-table"),
+                            html.Div(id="sat-overview-table"),
+                            html.Div(id="sat-ethnicity-table"),
+                            html.Div(id="sat-subgroup-table"),
                         ],
                         id="hs-table-container",
                     ),
