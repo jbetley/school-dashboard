@@ -14,7 +14,7 @@ import numpy as np
 
 from .table_helpers import no_data_page
 from .subnav import subnav_finance
-from .load_data import max_display_years, current_academic_year
+from .load_data import max_display_years
 from .load_db import get_school_index, get_financial_data
 
 dash.register_page(__name__, top_nav=True, path = "/financial_information", order=1)
@@ -142,11 +142,16 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         else:
             table_title = "Audited Financial Information (" + financial_data["School Name"][0] + ")"
 
-    # clean up
-    financial_data = financial_data.drop(["School ID","School Name"], axis=1)
-    financial_data = financial_data.dropna(axis=1, how="all")
-    
-    if len(financial_data.columns) > 1:
+    if (len(financial_data.columns) <= 1 or financial_data.empty):
+
+        financial_information_table = {}
+        main_container = {"display": "none"}
+        empty_container = {"display": "block"}
+
+    else:
+
+        financial_data = financial_data.drop(["School ID","School Name"], axis=1)
+        financial_data = financial_data.dropna(axis=1, how="all")
 
         # Financial data will almost always be more recent than academic
         # data. This is the only time we want do display "future" data,
@@ -156,28 +161,16 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         # "YYYY (Q#)", where Q# represents the quarter of the displayed
         # financial data (Q1, Q2, Q3, Q4). If "(Q#)" is not in the string,
         # it means the data in the column is audited data.
+        available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
+        available_years = [int(c[:4]) for c in available_years]
+        most_recent_finance_year = max(available_years)
 
-        # get most recent finance year - slicing the first 4 characters
-        # to remove any quarter information (Q#).
-        most_recent_finance_year = int(financial_data.columns[1][:4])
-
-        # get the number of years to exclude
         years_to_exclude = most_recent_finance_year -  selected_year_numeric
 
-        # if selected_year is less than most_recent_finance_year,
-        # drop all financial years more recent than the selected_year
-# TODO: Monitor this. Changes are in load_db (get_operational_dropdown_years)
-        if  selected_year_numeric < most_recent_finance_year:
+        if selected_year_numeric < most_recent_finance_year:
             financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
 
-        # financial file exists, but is empty
-        if len(financial_data.columns) <= 1:
-            
-            financial_information_table = {}
-            main_container = {"display": "none"}
-            empty_container = {"display": "block"}
-
-        else:
+        if len(financial_data.columns) > 1:
 
             # change all cols to numeric except for Category
             for col in financial_data.columns[1:]:
@@ -189,7 +182,6 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             # underlying data: 1) "Total Grants" = "State Grants" + "Federal Grants";
             # 2) "Net Asset Position" = "Total Assets" - "Total Liabilities"; and
             # 3) "Change in Net Assets" = "Operating Revenues" - "Operating Expenses"
-
             # Because the rows already exist in the dataframe, we set Category as index
             # (so we can use .loc with the Category names):
 
@@ -231,14 +223,10 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
             financial_data = financial_data[~financial_data["Category"].isin(remove_categories)]
 
-            # drop any column (year) with all NaN (this can happen for schools that
-            # existed prior to being with ICSB- e.g., they have Ratio data (from form 9),
-            # but no financial information with ICSB
             financial_data = financial_data.dropna(axis=1, how="all")
             financial_data = financial_data.reset_index(drop=True)
 
             # Force correct format for display of df in datatable (accounting, no decimals, no "$")
-
             for year in string_years:
                 financial_data[year] = pd.Series(["{:,.0f}".format(val) for val in financial_data[year]], index = financial_data.index)
 
@@ -363,10 +351,12 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                     className = "bare_container_center twelve columns",
                 )
             ]
-    else:
-        financial_information_table = {}
-        main_container = {"display": "none"}
-        empty_container = {"display": "block"}
+
+        else:
+
+            financial_information_table = {}
+            main_container = {"display": "none"}
+            empty_container = {"display": "block"}
 
     return financial_information_table, display_radio,radio_content, \
         main_container, empty_container, no_data_to_display

@@ -163,25 +163,37 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             FP_title = "2-Year Financial Position (" + financial_data["School Name"][0] + ")"
             FA_title = "2-Year Financial Activities (" + financial_data["School Name"][0] + ")"
 
-    # clean up
-    financial_data = financial_data.drop(["School ID","School Name"], axis=1)
-    financial_data = financial_data.dropna(axis=1, how="all")
+    if (len(financial_data.columns) <= 1 or financial_data.empty):
 
-    if len(financial_data.columns) > 1:
+        financial_position_table = {}
+        financial_activities_table = {}
+        financial_ratios_table = {}
+        per_student_table = {}
 
-        # NOTE: Drop partial year data (financial data with a "Q#" in column header).
+        revenue_expenses_fig = {}
+        assets_liabilities_fig = {}
+        main_container = {"display": "none"}
+        empty_container = {"display": "block"}
+
+    else:
+
+        financial_data = financial_data.drop(["School ID","School Name"], axis=1)
+        financial_data = financial_data.dropna(axis=1, how="all")
+
+        # NOTE: rop partial year data (financial data with a "Q#" in column header).
         # may eventually want to implement for Q4 data, but the display quickly gets
         # too confusing with incomplete data.
         if "Q" in financial_data.columns[1]:
-
             financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
-        most_recent_finance_year = int(financial_data.columns[1])
+        available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
+        available_years = [int(c[:4]) for c in available_years]
+        most_recent_finance_year = max(available_years)
 
-        years_to_exclude = most_recent_finance_year - selected_year_numeric
+        years_to_exclude = most_recent_finance_year -  selected_year_numeric
 
-        if years_to_exclude > 0:
-            financial_data = financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1)
+        if selected_year_numeric < most_recent_finance_year:
+            financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
 
         # if there are no columns or only one column ("Category"), then all tables and figs are empty
         if len(financial_data.columns) <= 1:
@@ -193,7 +205,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             revenue_expenses_fig = {}
             assets_liabilities_fig = {}
             main_container = {"display": "none"}
-            empty_container = {"display": "block"}        
+            empty_container = {"display": "block"}
 
         else:
 
@@ -231,8 +243,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             ## Fig 1: Operating Revenue, Operating Expenses, & Change in
             # Net Assets (Net Income) show Operating Revenue and Expenses
             # as grouped bars and Change in Net Assets as line
-            # https://stackoverflow.com/questions/65124833/plotly-how-to-combine-scatter-and-line-plots-using-plotly-express/65134290#65134290
-
             revenue_expenses_data = financial_data_fig[financial_data_fig["Category"].isin(["Operating Expenses", "Operating Revenues"])]
             revenue_expenses_data = revenue_expenses_data.reset_index(drop=True)
 
@@ -383,8 +393,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             assets_liabilities_fig["data"][0]["name"]="Net Asset Position"
             assets_liabilities_fig["data"][0]["hovertemplate"]="Net Asset Position<br>$ %{y:,.2f}<extra></extra>"
 
-        ## Two Year Finance Tables (Financial Position and Financial Activities)
-            
+            ## Two Year Finance Tables (Financial Position and Financial Activities)        
             # display years is a list of [CY, PY]
             default_headers = ["Category"] + display_years
             
@@ -451,6 +460,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 financial_data = financial_data[default_headers]
 
             else:
+
                 # identify the missing_year and the remaining_year and then add the missing_year as a blank
                 # column to the dataframe either before or after remaining_year depending on which year
                 # is earlier in time
@@ -472,10 +482,13 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
             # only calculate "% Change" if the number of columns with all zeros is
             # equal to 0 (e.g., all columns have nonzero values) force % formatting
-            if financial_position_data.sum().eq(0).sum() == 0: 
+            if financial_position_data.sum().eq(0).sum() == 0:
+
                 financial_position_data["% Change"] = (financial_position_data[display_years[0]] - financial_position_data[display_years[1]]).div(abs(financial_position_data[display_years[1]]))
                 financial_position_data["% Change"] = pd.Series(["{0:.2f}%".format(val * 100) for val in financial_position_data["% Change"]], index = financial_position_data.index)
+
             else:
+
                 financial_position_data["% Change"] = "N/A"
 
             # format numbers (since we are converting values to strings, we cannot vectorize,
@@ -535,8 +548,11 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             # maximum of two columns) only calculates change if the number
             # of columns with all zeros is equal to 0 (e.g., all columns have nonzero values)
             if financial_activity_data.sum().eq(0).sum() == 0:
+
                 financial_activity_data["% Change"] = (financial_activity_data[display_years[0]] - financial_activity_data[display_years[1]]).div(abs(financial_activity_data[display_years[1]]))
+
             else:
+
                 financial_activity_data["% Change"] = "N/A"
             
             # Force correct formats for display of df in datatable
@@ -871,26 +887,15 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             #                     )
             #     ]
 
-    else:
-        financial_position_table = {}
-        financial_activities_table = {}
-        financial_ratios_table = {}
-        per_student_table = {}
-
-        revenue_expenses_fig = {}
-        assets_liabilities_fig = {}
-        main_container = {"display": "none"}
-        empty_container = {"display": "block"}       
-
-    return revenue_expenses_fig, assets_liabilities_fig, financial_position_table,\
-        financial_activities_table, radio_content, display_radio, RandE_title, \
-        AandL_title, FP_title, FA_title, financial_ratios_table, per_student_table, \
-        main_container, empty_container, no_data_to_display, financial_analysis_notes_string # audit_findings_table,
+    return (
+        revenue_expenses_fig, assets_liabilities_fig, financial_position_table,financial_activities_table,
+        radio_content, display_radio, RandE_title, AandL_title, FP_title, FA_title, financial_ratios_table,
+        per_student_table, main_container, empty_container, no_data_to_display, financial_analysis_notes_string
+     ) # audit_findings_table,
 
 def layout():
     return html.Div(
                 [
-
                     html.Div(
                         [
                             html.Div(
@@ -913,116 +918,112 @@ def layout():
                         ],
                         id = "radio-finance-analysis-display",
                     ),
-                    # html.Div(
-                    #     [    
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Label("Notes:", className="header_label"),
-                                            html.P(""),
-                                                html.P(id="financial-analysis-notes-string",
-                                                    style={
-                                                            "textAlign": "Center",
-                                                            "color": "#6783a9",
-                                                            "fontSize": 12,
-                                                            "marginLeft": "10px",
-                                                            "marginRight": "10px",
-                                                            "marginTop": "10px",
-                                                    }
-                                                ),
-                                        ],
-                                        className = "pretty_container five columns",
-                                    ),
-                                ],
-                                className = "bare_container_center twelve columns"
-                            ),
-                    #     ],
-                    #     className = "row",
-                    # ),                    
-            dcc.Loading(
-                id="loading",
-                type="circle",
-                fullscreen = True,
-                style={
-                    "position": "absolute",
-                    "align-self": "center",
-                    "background-color": "#F2F2F2",
-                    },
-                children=[                    
                     html.Div(
-                        [     
+                        [
                             html.Div(
                                 [
-                                    html.Div(
-                                        [
-                                            html.Label(id="finance-analysis-RandE-title", className = "header_label"),                                    
-                                            dcc.Graph(id="revenue-expenses-fig", figure = loading_fig(),config={"displayModeBar": False})
-                                        ],
-                                        className = "pretty_container six columns"
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Label(id="finance-analysis-AandL-title", className = "header_label"),                                       
-                                            dcc.Graph(id="assets-liabilities-fig", figure = loading_fig(),config={"displayModeBar": False})
-                                        ],
-                                        className = "pretty_container six columns"
-                                    )
+                                    html.Label("Notes:", className="header_label"),
+                                    html.P(""),
+                                        html.P(id="financial-analysis-notes-string",
+                                            style={
+                                                    "textAlign": "Center",
+                                                    "color": "#6783a9",
+                                                    "fontSize": 12,
+                                                    "marginLeft": "10px",
+                                                    "marginRight": "10px",
+                                                    "marginTop": "10px",
+                                            }
+                                        ),
                                 ],
-                                className="bare_container_no_center twelve columns",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Label(id="finance-analysis-FP-title", className = "header_label"),                                      
-                                            html.P(""),
-                                            html.Div(id="financial-position-table")
-                                        ],
-                                        className = "pretty_container_left six columns"
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Label(id="finance-analysis-FA-title", className = "header_label"),                                        
-                                            html.P(""),
-                                            html.Div(id="financial-activities-table")
-                                        ],
-                                        className = "pretty_container six columns",
-                                    ),
-                                ],
-                                className = "bare_container twelve columns",
-                            ),
-                            # html.Div(
-                            #     [
-                            #         html.Label("Federal Audit Findings", style=label_style),
-                            #         html.P(""),
-                            #         html.Div(id="audit-findings-table")
-                            #     ],
-                            #     className = "pretty_container six columns"
-                            # ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [                    
-                                            html.Div(id="financial-ratios-table", children=[]),
-                                        ],
-                                        className = "pretty_container_left six columns",                                        
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Label("Revenues and Expenditures Per Student", className = "header_label"),
-                                            html.P(""),
-                                            html.Div(id="per-student-table")
-                                        ],
-                                        className = "pretty_container six columns",
-                                    ),
-                                ],
-                                className = "bare_container twelve columns",
+                                className = "pretty_container five columns",
                             ),
                         ],
-                        id = "financial-analysis-main-container",
+                        className = "bare_container_center twelve columns"
                     ),
-                ]),
+                    dcc.Loading(
+                        id="loading",
+                        type="circle",
+                        fullscreen = True,
+                        style={
+                            "position": "absolute",
+                            "align-self": "center",
+                            "background-color": "#F2F2F2",
+                            },
+                        children=[                    
+                            html.Div(
+                                [     
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.Label(id="finance-analysis-RandE-title", className = "header_label"),                                    
+                                                    dcc.Graph(id="revenue-expenses-fig", figure = loading_fig(),config={"displayModeBar": False})
+                                                ],
+                                                className = "pretty_container six columns"
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Label(id="finance-analysis-AandL-title", className = "header_label"),                                       
+                                                    dcc.Graph(id="assets-liabilities-fig", figure = loading_fig(),config={"displayModeBar": False})
+                                                ],
+                                                className = "pretty_container six columns"
+                                            )
+                                        ],
+                                        className="bare_container_no_center twelve columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.Label(id="finance-analysis-FP-title", className = "header_label"),                                      
+                                                    html.P(""),
+                                                    html.Div(id="financial-position-table")
+                                                ],
+                                                className = "pretty_container_left six columns"
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Label(id="finance-analysis-FA-title", className = "header_label"),                                        
+                                                    html.P(""),
+                                                    html.Div(id="financial-activities-table")
+                                                ],
+                                                className = "pretty_container six columns",
+                                            ),
+                                        ],
+                                        className = "bare_container twelve columns",
+                                    ),
+                                    # html.Div(
+                                    #     [
+                                    #         html.Label("Federal Audit Findings", style=label_style),
+                                    #         html.P(""),
+                                    #         html.Div(id="audit-findings-table")
+                                    #     ],
+                                    #     className = "pretty_container six columns"
+                                    # ),
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [                    
+                                                    html.Div(id="financial-ratios-table", children=[]),
+                                                ],
+                                                className = "pretty_container_left six columns",                                        
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Label("Revenues and Expenditures Per Student", className = "header_label"),
+                                                    html.P(""),
+                                                    html.Div(id="per-student-table")
+                                                ],
+                                                className = "pretty_container six columns",
+                                            ),
+                                        ],
+                                        className = "bare_container twelve columns",
+                                    ),
+                                ],
+                                id = "financial-analysis-main-container",
+                            ),
+                        ]
+                    ),
                     html.Div(
                         [
                             html.Div(id="financial-analysis-no-data"),
@@ -1031,4 +1032,4 @@ def layout():
                     ),
                 ],
                 id="mainContainer"
-        )
+            )

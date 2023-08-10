@@ -132,40 +132,50 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         else:
             table_title = "Financial Accountability Metrics (" + financial_data["School Name"][0] + ")"
 
-    # clean up
-    financial_data = financial_data.drop(["School ID","School Name"], axis=1)
-    financial_data = financial_data.dropna(axis=1, how="all")
+    # if SQL returns nothing or just cols
+    if (len(financial_data.columns) <= 1 or financial_data.empty):
 
-    if len(financial_data.columns) > 1:
-        
-        # in order for metrics to be calculated properly, we need
-        # to temporarily store and remove the (Q#) part of string
-        financial_quarter = ""
-        financial_quarter = financial_data.columns[1][5:] if len(financial_data.columns[1]) > 4 else ""
-        financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != "Category" else x)
+        financial_metrics_table = {}
+        financial_indicators_table = {}
+        financial_metrics_definitions_table = {}
+        main_container = {"display": "none"}
+        empty_container = {"display": "block"}
 
-        most_recent_finance_year = int(financial_data.columns[1])
+    else:
 
-        years_to_exclude = most_recent_finance_year - selected_year_numeric
-        
-        if selected_year_numeric < current_academic_year:
-            financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1, inplace=True)
+        # Drop out of scope years
+        financial_data = financial_data.drop(["School ID","School Name"], axis=1)
+        financial_data = financial_data.dropna(axis=1, how="all")
 
-        # create_empty_table() if file exists, but has no financial data, or
-        # if file exists and has one year of data, but does not have
-        # a value for any State Grants (the school is in Pre-Opening)
+        available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
+        available_years = [int(c[:4]) for c in available_years]
+        most_recent_finance_year = max(available_years)
 
+        years_to_exclude = most_recent_finance_year -  selected_year_numeric
+
+        if selected_year_numeric < most_recent_finance_year:
+            financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
+            
+        # if after dropping out of scope years, we create_empty_table() if file exists,
+        # but has no financial data, or if file exists and has one year of data, but does
+        # not have a value for any State Grants (because the school is in Pre-Opening)
         # NOTE: To show schools in Pre-Opening year, remove the "or" condition
         # (you would also need to modify the financial metric calculation function, so
         # maybe think twice (or three times) before doing it)
-        
         if (len(financial_data.columns) <= 1) | ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == "0")):
-                financial_metrics_table = {}
-                financial_indicators_table = {}
-                financial_metrics_definitions_table = {}
-                main_container = {"display": "none"}
-                empty_container = {"display": "block"}
+            financial_metrics_table = {}
+            financial_indicators_table = {}
+            financial_metrics_definitions_table = {}
+            main_container = {"display": "none"}
+            empty_container = {"display": "block"}        
+        
         else:
+            
+            # in order for metrics to be calculated properly, we need
+            # to temporarily store and remove the (Q#) part of string
+            financial_quarter = ""
+            financial_quarter = financial_data.columns[1][5:] if len(financial_data.columns[1]) > 4 else ""
+            financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != "Category" else x)
 
             for col in financial_data.columns:
                 financial_data[col]=pd.to_numeric(financial_data[col], errors="coerce").fillna(financial_data[col]).tolist()
@@ -185,13 +195,11 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
             # remove audit and other indicator data (it is displayed on the financial metrics page)
             financial_values = financial_data.loc[:(financial_data["Category"] == "Audit Information").idxmax()-1]
-            # financial_values = financial_data.drop(financial_data.index[41:])
 
             # Release The Hounds!
             financial_metrics = calculate_financial_metrics(financial_values)
             
-            # Catches edge case where school with only opening year of data has empty df
-            # after calculation
+            # Catches edge case where school has empty df after metric calculation
             if len(financial_metrics.columns) == 0:
                 financial_metrics_table = {}
                 financial_indicators_table = {}
@@ -215,7 +223,6 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                     if financial_metrics.iat[10,x]:
                         financial_metrics.iat[10,x] = "{:,.2f}".format(financial_metrics.iat[10,x])
 
-                # TODO: Monitor whether this was affected by the get_op_years change
                 # Add financial quarter back to financial header for display purposes (if partial
                 # year is being displayed)
                 if int(financial_metrics.columns[1]) > current_academic_year:
@@ -223,12 +230,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
                 headers = financial_metrics.columns.tolist()
 
-                # input: table_size
-                # output: col_width, category_width, rating_width, and year_width,
-                #  (difference_width, corporation_width)
-                # Problem: variable number of return items. table_size adjustments
-                #  are different between financial metrics table and academic metrics table
-
+                # determine # of columns and width of category column for display
                 clean_headers = []
                 for i, x in enumerate (headers):
                     if "Rating" in x:
@@ -290,7 +292,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                                 for (idx, col) in enumerate(clean_headers)
                                             ],                                            
                                             style_data={
-                                                "fontSize": "11px",
+                                                "fontSize": "12px",
                                                 "border": "none",
                                                 "fontFamily": "Jost, sans-serif",
                                             },
@@ -386,6 +388,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 financial_indicators_table = no_data_page("Financial Indicators")
 
             else:
+
                 financial_indicators[["Standard","Description"]] = financial_indicators["Category"].str.split("|", expand=True).copy()
 
                 # reorder and clean up dataframe
@@ -584,16 +587,11 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                         className = "bare_container_center twelve columns",
                     )
                 ]
-    else:
-        financial_metrics_table = {}
-        financial_indicators_table = {}
-        financial_metrics_definitions_table = {}
-        main_container = {"display": "none"}
-        empty_container = {"display": "block"}
 
-    return financial_metrics_table, radio_content, display_radio, \
-        financial_indicators_table, financial_metrics_definitions_table, \
-        main_container, empty_container, no_data_to_display
+    return (
+        financial_metrics_table, radio_content, display_radio, financial_indicators_table,
+        financial_metrics_definitions_table, main_container, empty_container, no_data_to_display
+    )
 
 def layout():
     return html.Div(

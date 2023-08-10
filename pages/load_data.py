@@ -273,40 +273,42 @@ def calculate_proficiency(values: pd.DataFrame) -> pd.DataFrame:
     return data
 
 ### Dataframe Processing Functions ###
-def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
+def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
 
     data = data.reset_index(drop = True)
 
-    # school data has School Name column, corp data does not
-    if len(data.index) != 0:
+    school_info = data[['School Name','Low Grade','High Grade']].copy()
 
-        school_info = data[['School Name','Low Grade','High Grade']].copy()
+    # filter (and drop ELA and Math Subject Category)
+    data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+    data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]]
+    
+    # NOTE: update is twice as fast as fillna?? (.015s vs .045s)
+    data.update(data.apply(pd.to_numeric, errors='coerce'))
+    
+    # Drop all columns for a Category if the value of 'Total Tested' for that Category is '0'
+    # This method works even if data is inconsistent, e.g., where no data could be (and is)
+    # alternately represented by NULL, None, or '0'
+    tested_cols = data.filter(regex='Total Tested').columns.tolist()
 
-        # filter (and drop ELA and Math Subject Category)
-        data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
-        data = data[data.columns[~data.columns.str.contains(r'ELA and Math')]]
+    drop_columns=[]
+    for col in tested_cols:
+        if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
+
+            match_string = ' Total Tested'
+            matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(match_string)[0])]
+            drop_columns.append(matching_cols.tolist())   
+
+    drop_all = [i for sub_list in drop_columns for i in sub_list]
+
+    data = data.drop(drop_all, axis=1).copy()
+
+    if len(data.columns) <= 1:
         
-        # NOTE: update is twice as fast as fillna?? (.015s vs .045s)
-        data.update(data.apply(pd.to_numeric, errors='coerce'))
-        
-        # Drop all columns for a Category if the value of 'Total Tested' for that Category is '0'
-        # This method works even if data is inconsistent, e.g., where no data could be (and is)
-        # alternately represented by NULL, None, or '0'
-        tested_cols = data.filter(regex='Total Tested').columns.tolist()
+        final_data = pd.DataFrame()
 
-        drop_columns=[]
-        for col in tested_cols:
-            if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
+    else:
 
-                match_string = ' Total Tested'
-                matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(match_string)[0])]
-                drop_columns.append(matching_cols.tolist())   
-
-        drop_all = [i for sub_list in drop_columns for i in sub_list]
-
-        data = data.drop(drop_all, axis=1).copy()
-
-        # does not calculate IREAD proficiency
         data_proficiency = calculate_proficiency(data)
 
         # create new df with Total Tested and Test N (IREAD) values
@@ -317,8 +319,7 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         data_proficiency = data_proficiency.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$", axis=1)
 
-        # add School Name column back
-        # school data has School Name column, corp data does not
+        # add School Name column back (school data has School Name column, corp data does not)
         if len(school_info.index) > 0:
             data_proficiency = pd.concat([data_proficiency, school_info], axis=1, join="inner")
 
@@ -374,10 +375,6 @@ def process_k8_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
         final_data = pd.concat([final_data.reset_index(drop=True), other_rows.reset_index(drop=True)], axis=0).reset_index(drop=True)
 
         # print(f'Time to Cross Merge : ' + str(time.process_time() - t20))    
-
-    else:
-    
-        final_data = pd.DataFrame()
 
     return final_data
 

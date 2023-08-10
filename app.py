@@ -2,10 +2,10 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley
-# version:  1.04
-# date:     07/10/23
+# version:  1.09
+# date:     08/13/23
 
-## NOTE: Because of the way data is store and presented by IDOE, there are
+# NOTE: Because of the way data is store and presented by IDOE, there are
 # cases in which data points need to be manually calculated that the school
 # level for data that is stored at the corporation level. Specifically, this
 # is an issue for calculating demographic enrollment when there is a school
@@ -35,11 +35,7 @@ from pages.load_db import get_school_index, get_academic_dropdown_years, \
      get_financial_info_dropdown_years, get_school_dropdown_list, get_financial_analysis_dropdown_years
 from pages.load_data import current_academic_year
 
-# load data and global variables
-
-# https://community.plotly.com/t/dash-layout-and-dash-update-component-waiting/35573/7
-
-# Used solely to generate metric rating svg circles
+# Used to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Jost:400", FONT_AWESOME]
@@ -67,8 +63,7 @@ login_manager.login_view = "/login"
 # each table in the database needs a class to be created for it
 # using the db.Model, all db columns must be identified by name
 # and data type. UserMixin provides a get_id method that returns
-# the id attribute or raises an exception. Need to either name the
-# database attribute 'id' or override the get_id function to return user_id
+# the id attribute or raises an exception.
 class User(UserMixin, db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
@@ -234,8 +229,14 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     elif 'financial_analysis' in current_page:
         years = get_financial_analysis_dropdown_years(school_id)
 
-    else:        
+    else:
         years = get_financial_info_dropdown_years(school_id)
+
+#TODO: Account for situation where fin_anal year is 2022 but school actually has 2023 data - not sure way to do this
+# TODO: TBH I have no idea what the issue is here - need to revisit.
+# Currently both financial_analysis_dropdown and financial_info_dropdown are the same - they both
+# reads financial_data and returns a list of Year column names for each year for which ADM Average
+# is greater than '0'     
 
     # set year_value and year_options
     number_of_years_to_display = len(years) if len(years) <= max_dropdown_years else max_dropdown_years
@@ -243,13 +244,13 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     first_available_year = dropdown_years[0]
     earliest_available_year = dropdown_years[-1]
 
-#TODO: Account for situation where fin_anal year is 2022 but school actually has 2023 data - not sure way to do this
-
     # 'year' represents the State of the year-dropdown when a school is selected.
-    # Current value is set to:
+    # Current year_value is set to:
     #   1) current_academic year (when app is first opened);
-    #   2) the earliest_available_year (if the selected year is earlier);
-    #   3) the first_available_year (if the selected year is later); or
+    #   2) the earliest_available_year (if the selected year is earlier
+    #       than the first year of available data);
+    #   3) the first_available_year (if the selected year is later
+    #       than the first year of available data);); or
     #   4) the selected year.
     if year is None:
         year_value = str(first_available_year)
@@ -278,6 +279,7 @@ def layout():
     return html.Div(
     [
         dcc.Store(id="dash-session", storage_type="session"),
+
         # the next two components are used by the year dropdown callback to determine the current url
         dcc.Location(id='current-page', refresh=False),
         html.Div(id='hidden', style={"display": "none"}),

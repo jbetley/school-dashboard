@@ -298,7 +298,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
         selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
-        clean_school_data = process_k8_academic_data(selected_raw_k8_school_data, school)
+        clean_school_data = process_k8_academic_data(selected_raw_k8_school_data)
 
         raw_corp_data = get_k8_corporation_academic_data(school)
 

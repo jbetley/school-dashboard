@@ -79,7 +79,7 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Input("year-dropdown", "value"),
     Input(component_id="radio-button-academic-info", component_property="value")
 )
-def update_academic_information_page(school: str, year: str, radio_value:str):
+def update_academic_information_page(school: str, year: str, radio_value: str):
     if not school:
         raise PreventUpdate
 
@@ -108,10 +108,10 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
     selected_school_type = selected_school["School Type"].values[0]
     selected_school_id = int(selected_school["School ID"].values[0])
 
-    ## Proficiency Tables ##
+    ## Proficiency Tables
     if radio_value == "proficiency":
 
-        # growth tables to null
+        # set growth tables to null
         table_grades_growth_ela_container = {}
         table_grades_growth_math_container = {}
         table_ethnicity_growth_ela_container = {}
@@ -138,6 +138,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
             # if K8, hide HS tables (except for CHS prior to 2021 when it was a K12)
             if selected_school_type == "K8" and not (selected_school_id == 5874 and selected_year_numeric < 2021):
+                
                 hs_grad_overview_table = {}
                 hs_grad_ethnicity_table = {}
                 hs_grad_subgroup_table = {}
@@ -154,262 +155,10 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 selected_raw_k8_school_data = raw_k8_school_data[~raw_k8_school_data["Year"].isin(excluded_years)].copy()
             else:
                 selected_raw_k8_school_data = raw_k8_school_data.copy()
-            
-            if len(selected_raw_k8_school_data.index) > 0:
-            
-                all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data, school)
 
-                all_k8_school_data = all_k8_school_data.fillna("No Data")
-                all_k8_school_data = (all_k8_school_data.set_index(["Category"]).add_suffix("School").reset_index())
+            if len(selected_raw_k8_school_data.index) == 0:
 
-                all_k8_school_data.columns = all_k8_school_data.columns.str.replace(r"School$", "", regex=True)
-
-                all_k8_school_data["Category"] = (all_k8_school_data["Category"].str.replace(" Proficient %", "").str.strip())
-
-                all_k8_school_data.loc[all_k8_school_data["Category"] == "IREAD", "Category"] = "IREAD Proficiency (Grade 3)"
-
-                grades_iread = grades_all + ["IREAD Proficiency (Grade 3)"]
-
-                years_by_grade = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(grades_iread))]
-
-                # if not years_by_grade.empty:
-                k8_grade_table = create_academic_info_table(years_by_grade,"Proficiency by Grade")
-                # else:
-                #     k8_grade_table = no_data_table("Proficiency by Grade")
-
-                k8_grade_table = set_table_layout(k8_grade_table, k8_grade_table, years_by_grade.columns)
-
-                years_by_subgroup = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(subgroup))]
-
-                # if not years_by_subgroup.empty:            
-                k8_subgroup_table = create_academic_info_table(years_by_subgroup,"Proficiency by Subgroup")
-                # else:
-                #     k8_subgroup_table = no_data_table("Proficiency by Subgroup")
-
-                k8_subgroup_table = set_table_layout(k8_subgroup_table, k8_subgroup_table, years_by_subgroup.columns)
-
-                years_by_ethnicity = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(ethnicity))]
-
-                # if not years_by_ethnicity.empty:            
-                k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,"Proficiency by Ethnicity")
-                # else:
-                #     k8_ethnicity_table = no_data_table("Proficiency by Ethnicity")
-
-                k8_ethnicity_table = set_table_layout(k8_ethnicity_table, k8_ethnicity_table, years_by_ethnicity.columns)
-
-                # Attendance rate
-                school_demographic_data = get_demographic_data(school)
-                attendance_rate = get_attendance_data(school_demographic_data, selected_year_string)
-
-                if len(attendance_rate.index) != 0:
-                    k8_other_table = create_basic_info_table(attendance_rate,"Attendance Data") 
-                else:
-                    k8_other_table = no_data_table("Attendance Data")
-
-                k8_other_table = set_table_layout(k8_other_table, k8_other_table, attendance_rate.columns)
-                
-                ## Proficiency Breakdown ##
-                proficiency_data = selected_raw_k8_school_data.copy()
-
-                # NOTE: IDOE's raw proficency data is annoyingly inconsistent. In some cases missing
-                # data is blank and in other cases it is represented by "0." So we need to be extra
-                # careful in interpreting what is missing from what is just inconsistenly recorded
-
-                school_k8_proficiency_data = proficiency_data.loc[proficiency_data["Year"] == selected_year_numeric]
-
-                school_k8_proficiency_data = school_k8_proficiency_data.dropna(axis=1)
-                school_k8_proficiency_data = school_k8_proficiency_data.reset_index()
-
-                for col in school_k8_proficiency_data.columns:
-                    school_k8_proficiency_data[col] = pd.to_numeric(school_k8_proficiency_data[col], errors="coerce")
-
-                # Filter needed categories (this captures ELA&Math as well, which we drop later)
-
-                school_k8_proficiency_data = school_k8_proficiency_data.filter(
-                    regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
-                    axis=1,
-                )
-
-                all_proficiency_data = school_k8_proficiency_data.copy()
-                
-                proficiency_rating = ["Below Proficiency", "Approaching Proficiency", "At Proficiency", "Above Proficiency"]
-               
-                # NOTE: This may seem kludgy, but runs consistently around .15s
-                # for each category, create a proficiency_columns list of columns using the strings in
-                # "proficiency_rating" and then divide each column by "Total Tested"
-                categories = grades_all + ethnicity + subgroup
-
-                # create dataframe to hold annotations (categories & missing data)
-                # NOTE: Annotations are currently not used
-                annotations = pd.DataFrame(columns= ["Category","Total Tested","Status"])
-
-                for c in categories:
-                    for s in subject:
-                        category_subject = c + "|" + s
-                        proficiency_columns = [category_subject + " " + x for x in proficiency_rating]
-                        total_tested = category_subject + " " + "Total Tested"
-
-                        # We do not want categories that do not appear in the dataframe, there are
-                        # three possible data configurations for each column:
-                        # 1) Total Tested > 0 and the sum of proficiency_rating(s) is > 0: the school
-                        #    has tested category and there is publicly available data [display]
-                        # 2) Total Tested > 0 and the sum of proficiency_rating(s) are == "NaN": the
-                        #    school has tested category but there is no publicly available data
-                        #    (insufficient N-size) [do not display]
-                        # 3) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
-                        #    have data for the tested category [do not display]
-
-                        # Neither (2) nor (3) should be displayed. However, we do want to
-                        # track which Category/Subject combinations meet either condition
-                        # (for figure annotation purposes). So we use a little trick. The
-                        # sum of a series of "0" values is 0 (a numpy.int64). The sum of a
-                        # series of "NaN" values is also 0.0 (but the value is a float because
-                        # numpy treats NaN as a numpy.float64). While either value returns True
-                        # when tested if the value is 0, we can test the "type" of the result (using
-                        # np.integer and np.floating) to distinguish between them.
-
-                        if total_tested in all_proficiency_data.columns:
-
-                            if all_proficiency_data[proficiency_columns].iloc[0].sum() == 0:
-
-                                # if the value is a float, the measured values were NaN, which
-                                # means they were converted "***", and thus "insufficient data"
-                                if isinstance(all_proficiency_data[proficiency_columns].iloc[0].sum(), np.floating):
-                                    annotations.loc[len(annotations.index)] = [proficiency_columns[0],all_proficiency_data[total_tested].values[0],"Insufficient"]
-
-                                # if the value is an integer, the measured values were 0, which
-                                # means "missing data"
-                                elif isinstance(all_proficiency_data[proficiency_columns].iloc[0].sum(), np.integer):
-
-                                    # Only add to annotations if it is a non "Grade" category.
-                                    # this is to account for IDOE's shitty data practices- sometimes
-                                    # missing grades are blank (the correct way) and sometimes the
-                                    # columns are filled with 0. So if everything is 0 AND it is a Grade
-                                    # category, we assume it is just IDOE's fucked up data entry
-                                    if ~all_proficiency_data[proficiency_columns].columns.str.contains("Grade").any():
-                                        annotations.loc[len(annotations.index)] = [proficiency_columns[0],all_proficiency_data[total_tested].values[0],"Missing"]
-
-                                # either way, drop all columns related to the category from the df
-                                all_proficiency_columns = proficiency_columns + [total_tested]
-
-                                all_proficiency_data = all_proficiency_data.drop(all_proficiency_columns, axis=1)
-
-                            else:
-                                # calculate percentage
-                                all_proficiency_data[proficiency_columns] = all_proficiency_data[proficiency_columns].divide(
-                                    all_proficiency_data[total_tested], axis="index"
-                                )
-
-                                # get a list of all values
-                                row_list = all_proficiency_data[proficiency_columns].values.tolist()
-
-                                # round percentages using Largest Remainder Method
-                                rounded = round_percentages(row_list[0])
-
-                                # add back to dataframe
-                                rounded_percentages = pd.DataFrame([rounded])
-                                rounded_percentages_cols = list(rounded_percentages.columns)
-                                all_proficiency_data[proficiency_columns] = rounded_percentages[rounded_percentages_cols]
-
-                # drop columns used for calculation that we dont want to chart (keeping Total Tested)
-                all_proficiency_data.drop(list(all_proficiency_data.filter(regex="Total Proficient|ELA and Math")),
-                    axis=1,
-                    inplace=True,
-                )
-
-                # Replace Grade X with ordinal number (e.g., Grade 4 = 4th)
-                all_proficiency_data = all_proficiency_data.rename(columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x))
-
-                # all use "th" suffix except for 3rd - so we need to specially treat "3""
-                all_proficiency_data.columns = [x.replace("3th", "3rd") for x in all_proficiency_data.columns.to_list()]
-
-                all_proficiency_data = (all_proficiency_data.T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-
-                # split Grade column into two columns and rename what used to be the index
-                all_proficiency_data[["Category", "Proficiency"]] = all_proficiency_data["Category"].str.split("|", expand=True)
-
-                all_proficiency_data.rename(columns={0: "Percentage"}, inplace=True)
-
-                all_proficiency_data = all_proficiency_data[all_proficiency_data["Category"] != "index"]
-
-                ela_title = selected_year_string + " ELA Proficiency Breakdown"
-                math_title = selected_year_string + " Math Proficiency Breakdown"
-
-                # ELA by Grade
-                grade_annotations = annotations.loc[annotations["Category"].str.contains("Grade")]
-
-                grade_ela_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(grades_ordinal)
-                    & all_proficiency_data["Proficiency"].str.contains("ELA")
-                ]
-
-                if not grade_ela_fig_data.empty:
-                    k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data,ela_title)
-                else:
-                    k8_grade_ela_fig = no_data_fig_label(ela_title, 100)
-
-                # Math by Grade
-                grade_math_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(grades_ordinal)
-                    & all_proficiency_data["Proficiency"].str.contains("Math")
-                ]
-
-                if not grade_math_fig_data.empty:
-                    k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,math_title)
-                else:
-                    k8_grade_math_fig = no_data_fig_label(math_title, 100)
-
-                # ELA by Ethnicity
-                ethnicity_annotations = annotations.loc[annotations["Category"].str.contains("Ethnicity")]
-
-                ethnicity_ela_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(ethnicity)
-                    & all_proficiency_data["Proficiency"].str.contains("ELA")
-                ]
-
-                if not ethnicity_ela_fig_data.empty:
-                    k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,ela_title)
-                else:
-                    k8_ethnicity_ela_fig = no_data_fig_label(ela_title, 100)
-
-                # Math by Ethnicity
-                ethnicity_math_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(ethnicity)
-                    & all_proficiency_data["Proficiency"].str.contains("Math")
-                ]
-
-                if not ethnicity_math_fig_data.empty:
-                    k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,math_title)
-                else:
-                    k8_ethnicity_math_fig = no_data_fig_label(math_title, 100)
-
-                # ELA by Subgroup
-                subgroup_annotations = annotations.loc[annotations["Category"].str.contains("Subgroup")]
-
-                subgroup_ela_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(subgroup)
-                    & all_proficiency_data["Proficiency"].str.contains("ELA")
-                ]
-
-                if not subgroup_ela_fig_data.empty:
-                    k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data,ela_title)
-                else:
-                    k8_subgroup_ela_fig = no_data_fig_label(ela_title, 100)
-
-                # Math by Subgroup
-                subgroup_math_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(subgroup)
-                    & all_proficiency_data["Proficiency"].str.contains("Math")
-                ]
-
-                if not subgroup_math_fig_data.empty:
-                    k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,math_title)
-                else:
-
-                    k8_subgroup_math_fig = no_data_fig_label(math_title, 100)
-
-            else:
-                # school type is K8 or K12, but there is no data
+                # school type is K8 or K12, but there is no k8 data (may still be 9-12 data)
                 k8_grade_table = {}
                 k8_ethnicity_table = {}
                 k8_subgroup_table = {}
@@ -431,7 +180,275 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                 if selected_school_type == "K8":
 
                     main_container = {"display": "none"}
-                    empty_container = {"display": "block"}                
+                    empty_container = {"display": "block"}
+
+            else:                    
+
+                all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data)
+
+                if all_k8_school_data.empty:
+
+                    k8_grade_table = {}
+                    k8_ethnicity_table = {}
+                    k8_subgroup_table = {}
+                    k8_other_table = {}
+                    k8_grade_ela_fig = {}
+                    k8_grade_math_fig = {}
+                    k8_ethnicity_ela_fig = {}
+                    k8_ethnicity_math_fig = {}
+                    k8_subgroup_ela_fig = {}
+                    k8_subgroup_math_fig = {}
+                    k8_table_container = {"display": "none"}               
+                    
+                    # This section displays K8 tables for both K8 and K12 schools. If the 
+                    # selected school is K8 and it has no data, then we display full
+                    # no_data_page fig. If the selected school is a K12, we go to the next
+                    # check and if it has no HS data either, then no_data_fig will also
+                    # be displayed.
+
+                    if selected_school_type == "K8":
+
+                        main_container = {"display": "none"}
+                        empty_container = {"display": "block"}
+
+                else:
+
+                    all_k8_school_data = all_k8_school_data.fillna("No Data")
+                    all_k8_school_data = (all_k8_school_data.set_index(["Category"]).add_suffix("School").reset_index())
+
+                    all_k8_school_data.columns = all_k8_school_data.columns.str.replace(r"School$", "", regex=True)
+
+                    all_k8_school_data["Category"] = (all_k8_school_data["Category"].str.replace(" Proficient %", "").str.strip())
+
+                    all_k8_school_data.loc[all_k8_school_data["Category"] == "IREAD", "Category"] = "IREAD Proficiency (Grade 3)"
+
+                    grades_iread = grades_all + ["IREAD Proficiency (Grade 3)"]
+
+                    years_by_grade = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(grades_iread))]
+
+                    k8_grade_table = create_academic_info_table(years_by_grade,"Proficiency by Grade")
+                    k8_grade_table = set_table_layout(k8_grade_table, k8_grade_table, years_by_grade.columns)
+
+                    years_by_subgroup = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(subgroup))]
+
+                    k8_subgroup_table = create_academic_info_table(years_by_subgroup,"Proficiency by Subgroup")
+                    k8_subgroup_table = set_table_layout(k8_subgroup_table, k8_subgroup_table, years_by_subgroup.columns)
+
+                    years_by_ethnicity = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(ethnicity))]
+
+                    k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,"Proficiency by Ethnicity")
+                    k8_ethnicity_table = set_table_layout(k8_ethnicity_table, k8_ethnicity_table, years_by_ethnicity.columns)
+
+                    # Attendance rate
+                    school_demographic_data = get_demographic_data(school)
+                    attendance_rate = get_attendance_data(school_demographic_data, selected_year_string)
+
+                    if len(attendance_rate.index) != 0:
+                        k8_other_table = create_basic_info_table(attendance_rate,"Attendance Data") 
+                    else:
+                        k8_other_table = no_data_table("Attendance Data")
+
+                    k8_other_table = set_table_layout(k8_other_table, k8_other_table, attendance_rate.columns)
+                    
+                    ## Proficiency Breakdown ##
+                    proficiency_data = selected_raw_k8_school_data.copy()
+
+                    # NOTE: IDOE's raw proficency data is annoyingly inconsistent. In some cases missing
+                    # data is blank and in other cases it is represented by "0." So we need to be extra
+                    # careful in interpreting what is missing from what is just inconsistenly recorded
+
+                    school_k8_proficiency_data = proficiency_data.loc[proficiency_data["Year"] == selected_year_numeric]
+
+                    school_k8_proficiency_data = school_k8_proficiency_data.dropna(axis=1)
+                    school_k8_proficiency_data = school_k8_proficiency_data.reset_index()
+
+                    for col in school_k8_proficiency_data.columns:
+                        school_k8_proficiency_data[col] = pd.to_numeric(school_k8_proficiency_data[col], errors="coerce")
+
+                    # Filter needed categories (this captures ELA&Math as well, which we drop later)
+
+                    school_k8_proficiency_data = school_k8_proficiency_data.filter(
+                        regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
+                        axis=1,
+                    )
+
+                    all_proficiency_data = school_k8_proficiency_data.copy()
+                    
+                    proficiency_rating = ["Below Proficiency", "Approaching Proficiency", "At Proficiency", "Above Proficiency"]
+                
+                    # NOTE: This may seem kludgy, but runs consistently around .15s
+                    # for each category, create a proficiency_columns list of columns using the strings in
+                    # "proficiency_rating" and then divide each column by "Total Tested"
+                    categories = grades_all + ethnicity + subgroup
+
+                    # create dataframe to hold annotations (categories & missing data)
+                    # NOTE: Annotations are currently not used
+                    annotations = pd.DataFrame(columns= ["Category","Total Tested","Status"])
+
+                    for c in categories:
+                        for s in subject:
+                            category_subject = c + "|" + s
+                            proficiency_columns = [category_subject + " " + x for x in proficiency_rating]
+                            total_tested = category_subject + " " + "Total Tested"
+
+                            # We do not want categories that do not appear in the dataframe, there are
+                            # three possible data configurations for each column:
+                            # 1) Total Tested > 0 and the sum of proficiency_rating(s) is > 0: the school
+                            #    has tested category and there is publicly available data [display]
+                            # 2) Total Tested > 0 and the sum of proficiency_rating(s) are == "NaN": the
+                            #    school has tested category but there is no publicly available data
+                            #    (insufficient N-size) [do not display]
+                            # 3) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
+                            #    have data for the tested category [do not display]
+
+                            # Neither (2) nor (3) should be displayed. However, we do want to
+                            # track which Category/Subject combinations meet either condition
+                            # (for figure annotation purposes). So we use a little trick. The
+                            # sum of a series of "0" values is 0 (a numpy.int64). The sum of a
+                            # series of "NaN" values is also 0.0 (but the value is a float because
+                            # numpy treats NaN as a numpy.float64). While either value returns True
+                            # when tested if the value is 0, we can test the "type" of the result (using
+                            # np.integer and np.floating) to distinguish between them.
+
+                            if total_tested in all_proficiency_data.columns:
+
+                                if all_proficiency_data[proficiency_columns].iloc[0].sum() == 0:
+
+                                    # if the value is a float, the measured values were NaN, which
+                                    # means they were converted "***", and thus "insufficient data"
+                                    if isinstance(all_proficiency_data[proficiency_columns].iloc[0].sum(), np.floating):
+                                        annotations.loc[len(annotations.index)] = [proficiency_columns[0],all_proficiency_data[total_tested].values[0],"Insufficient"]
+
+                                    # if the value is an integer, the measured values were 0, which
+                                    # means "missing data"
+                                    elif isinstance(all_proficiency_data[proficiency_columns].iloc[0].sum(), np.integer):
+
+                                        # Only add to annotations if it is a non "Grade" category.
+                                        # this is to account for IDOE's shitty data practices- sometimes
+                                        # missing grades are blank (the correct way) and sometimes the
+                                        # columns are filled with 0. So if everything is 0 AND it is a Grade
+                                        # category, we assume it is just IDOE's fucked up data entry
+                                        if ~all_proficiency_data[proficiency_columns].columns.str.contains("Grade").any():
+                                            annotations.loc[len(annotations.index)] = [proficiency_columns[0],all_proficiency_data[total_tested].values[0],"Missing"]
+
+                                    # either way, drop all columns related to the category from the df
+                                    all_proficiency_columns = proficiency_columns + [total_tested]
+
+                                    all_proficiency_data = all_proficiency_data.drop(all_proficiency_columns, axis=1)
+
+                                else:
+                                    # calculate percentage
+                                    all_proficiency_data[proficiency_columns] = all_proficiency_data[proficiency_columns].divide(
+                                        all_proficiency_data[total_tested], axis="index"
+                                    )
+
+                                    # get a list of all values
+                                    row_list = all_proficiency_data[proficiency_columns].values.tolist()
+
+                                    # round percentages using Largest Remainder Method
+                                    rounded = round_percentages(row_list[0])
+
+                                    # add back to dataframe
+                                    rounded_percentages = pd.DataFrame([rounded])
+                                    rounded_percentages_cols = list(rounded_percentages.columns)
+                                    all_proficiency_data[proficiency_columns] = rounded_percentages[rounded_percentages_cols]
+
+                    # drop columns used for calculation that we dont want to chart (keeping Total Tested)
+                    all_proficiency_data.drop(list(all_proficiency_data.filter(regex="Total Proficient|ELA and Math")),
+                        axis=1,
+                        inplace=True,
+                    )
+
+                    # Replace Grade X with ordinal number (e.g., Grade 4 = 4th)
+                    all_proficiency_data = all_proficiency_data.rename(columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x))
+
+                    # all use "th" suffix except for 3rd - so we need to specially treat "3""
+                    all_proficiency_data.columns = [x.replace("3th", "3rd") for x in all_proficiency_data.columns.to_list()]
+
+                    all_proficiency_data = (all_proficiency_data.T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+                    # split Grade column into two columns and rename what used to be the index
+                    all_proficiency_data[["Category", "Proficiency"]] = all_proficiency_data["Category"].str.split("|", expand=True)
+
+                    all_proficiency_data.rename(columns={0: "Percentage"}, inplace=True)
+
+                    all_proficiency_data = all_proficiency_data[all_proficiency_data["Category"] != "index"]
+
+                    ela_title = selected_year_string + " ELA Proficiency Breakdown"
+                    math_title = selected_year_string + " Math Proficiency Breakdown"
+
+                    # ELA by Grade
+                    grade_annotations = annotations.loc[annotations["Category"].str.contains("Grade")]
+
+                    grade_ela_fig_data = all_proficiency_data[
+                        all_proficiency_data["Category"].isin(grades_ordinal)
+                        & all_proficiency_data["Proficiency"].str.contains("ELA")
+                    ]
+
+                    if not grade_ela_fig_data.empty:
+                        k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data,ela_title)
+                    else:
+                        k8_grade_ela_fig = no_data_fig_label(ela_title, 100)
+
+                    # Math by Grade
+                    grade_math_fig_data = all_proficiency_data[
+                        all_proficiency_data["Category"].isin(grades_ordinal)
+                        & all_proficiency_data["Proficiency"].str.contains("Math")
+                    ]
+
+                    if not grade_math_fig_data.empty:
+                        k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,math_title)
+                    else:
+                        k8_grade_math_fig = no_data_fig_label(math_title, 100)
+
+                    # ELA by Ethnicity
+                    ethnicity_annotations = annotations.loc[annotations["Category"].str.contains("Ethnicity")]
+
+                    ethnicity_ela_fig_data = all_proficiency_data[
+                        all_proficiency_data["Category"].isin(ethnicity)
+                        & all_proficiency_data["Proficiency"].str.contains("ELA")
+                    ]
+
+                    if not ethnicity_ela_fig_data.empty:
+                        k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,ela_title)
+                    else:
+                        k8_ethnicity_ela_fig = no_data_fig_label(ela_title, 100)
+
+                    # Math by Ethnicity
+                    ethnicity_math_fig_data = all_proficiency_data[
+                        all_proficiency_data["Category"].isin(ethnicity)
+                        & all_proficiency_data["Proficiency"].str.contains("Math")
+                    ]
+
+                    if not ethnicity_math_fig_data.empty:
+                        k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,math_title)
+                    else:
+                        k8_ethnicity_math_fig = no_data_fig_label(math_title, 100)
+
+                    # ELA by Subgroup
+                    subgroup_annotations = annotations.loc[annotations["Category"].str.contains("Subgroup")]
+
+                    subgroup_ela_fig_data = all_proficiency_data[
+                        all_proficiency_data["Category"].isin(subgroup)
+                        & all_proficiency_data["Proficiency"].str.contains("ELA")
+                    ]
+
+                    if not subgroup_ela_fig_data.empty:
+                        k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data,ela_title)
+                    else:
+                        k8_subgroup_ela_fig = no_data_fig_label(ela_title, 100)
+
+                    # Math by Subgroup
+                    subgroup_math_fig_data = all_proficiency_data[
+                        all_proficiency_data["Category"].isin(subgroup)
+                        & all_proficiency_data["Proficiency"].str.contains("Math")
+                    ]
+
+                    if not subgroup_math_fig_data.empty:
+                        k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,math_title)
+                    else:
+
+                        k8_subgroup_math_fig = no_data_fig_label(math_title, 100)
 
         else:
             # school type is not K8 or K12
@@ -463,7 +480,18 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             else:
                 selected_raw_hs_school_data = raw_hs_school_data.copy()
 
-            if len(selected_raw_hs_school_data.index) > 0:
+            if len(selected_raw_hs_school_data.index) == 0:
+
+                # selected type is HS, AHS, K12, or CHS < 2021, but there is no data
+                hs_grad_overview_table = {}
+                hs_grad_ethnicity_table = {}
+                hs_grad_subgroup_table = {}
+                sat_overview_table = {}
+                sat_ethnicity_table = {}
+                sat_subgroup_table = {}        
+                hs_table_container = {"display": "none"}                
+
+            else:
 
                 selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
                 all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
@@ -532,16 +560,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
                     sat_subgroup_table = create_academic_info_table(sat_subgroup,"SAT Benchmarks by Subgroup")
                     sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
 
-            else:
-                # selected type is HS, AHS, K12, or CHS < 2021, but there is no data
-                hs_grad_overview_table = {}
-                hs_grad_ethnicity_table = {}
-                hs_grad_subgroup_table = {}
-                sat_overview_table = {}
-                sat_ethnicity_table = {}
-                sat_subgroup_table = {}        
-                hs_table_container = {"display": "none"}
-
     elif radio_value =="growth":
     # Growth Tab #
 
@@ -586,13 +604,11 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
         # Also avaiable (but not shown): Homeless Status and High Ability Status
 
         # dataset is all students who are coded as "Majority Enrolled" at the school
-        all_growth_data = get_growth_data(school)
+        growth_data = get_growth_data(school)
 
         # filter out years of data later than the selected year
         if excluded_years:
-            growth_data = all_growth_data[~all_growth_data["Test Year"].isin(excluded_years)].copy()
-        else:
-            growth_data = all_growth_data.copy()
+            growth_data = growth_data[~growth_data["Test Year"].isin(excluded_years)]
 
         if len(growth_data.index) > 0:
             
@@ -630,7 +646,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             table_data_subgroup_sgp = pd.concat([table_data_ses_sgp, table_data_el_sgp, table_data_sped_sgp])
             fig_data_subgroup_sgp = pd.concat([fig_data_ses_sgp, fig_data_el_sgp, fig_data_sped_sgp], axis=1)
             
-            # Tables
+            # Growth tables
 
             # by grade
             table_data_grades_growth_ela = table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("ELA"))]
@@ -680,8 +696,8 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
             table_subgroup_growth_math_container = set_table_layout(table_subgroup_growth_math, table_subgroup_sgp_math, table_data_subgroup_growth.columns)
 
-        ## Growth figures
-        # NOTE: Currently only displaying Majority Enrolled Data
+        ## Growth figures (NOTE: Currently only displaying Majority Enrolled Data)
+
         #TODO: Add 162 in tooltip
             # Growth by Grade (Both ME and 162)
             growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
@@ -761,7 +777,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             label_grade_sgp_math ="Median SGP in Math by Grade"
             fig_grade_sgp_math = make_growth_chart(sgp_data_me_grades_math, sgp_data_162_grades_math, label_grade_sgp_math)            
 
-
             label_ethnicity_growth_ela="Percentage of Students Achieving Adequate Growth in ELA by Ethnicity"
             fig_ethnicity_growth_ela = make_growth_chart(growth_data_me_ethnicity_ela, growth_data_162_ethnicity_ela, label_ethnicity_growth_ela)
 
@@ -773,7 +788,6 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
 
             label_ethnicity_sgp_math ="Median SGP in Math by Ethnicity"
             fig_ethnicity_sgp_math = make_growth_chart(sgp_data_me_ethnicity_math, sgp_data_162_ethnicity_math, label_ethnicity_sgp_math)
-
 
             label_subgroup_growth_ela="Percentage of Students Achieving Adequate Growth in ELA by Subgroup"
             fig_subgroup_growth_ela = make_growth_chart(growth_data_me_subgroup_ela, growth_data_162_subgroup_ela, label_subgroup_growth_ela)
@@ -812,7 +826,7 @@ def update_academic_information_page(school: str, year: str, radio_value:str):
             state_growth_main_container = {"display": "none"}
             state_growth_empty_container = {"display": "block"}
 
-            # NOTE: Currently showing median SGP for all students, the following code would give us median
+            # NOTE: The above code shows median SGP for all students, the following code would give us median
             # sgp for students achieving adequate growth. What is the value of using this metric instead?
             # adequate_growth_data = growth_data[growth_data["ILEARNGrowth Level"] == "Adequate Growth"]
             # median_sgp_adequate = adequate_growth_data.groupby(["Test Year","Grade Level", "Subject"])["ILEARNGrowth Percentile"].median()

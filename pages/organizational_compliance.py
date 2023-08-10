@@ -26,28 +26,32 @@ def update_organizational_compliance(school, year):
     selected_year_numeric = int(year)
 
     # get organizational comliance data from financial data and clean-up
-    finance_file = get_financial_data(school)
-    finance_file = finance_file.drop(["School ID","School Name"], axis=1)
-    finance_file = finance_file.dropna(axis=1, how="all")
+    financial_data = get_financial_data(school)
 
-    financial_data = finance_file.copy()
+    if (len(financial_data.columns) <= 1 or financial_data.empty):
 
-    if len(financial_data.index) != 0:
+        org_compliance_table = no_data_table("Organizational and Operational Accountability")    
 
-        # Ignore any partial years- e.g., 2023(Q3)
+    else:
+
+        financial_data = financial_data.drop(["School ID","School Name"], axis=1)
+        financial_data = financial_data.dropna(axis=1, how="all")
+
+        # Drop partial years
         if "Q" in financial_data.columns[1]:
             financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
-        most_recent_finance_year = int(financial_data.columns[1])
+        available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
+        available_years = [int(c[:4]) for c in available_years]
+        most_recent_finance_year = max(available_years)
 
-        years_to_exclude = most_recent_finance_year - selected_year_numeric
-        financial_data = financial_data.drop(financial_data.columns[1:years_to_exclude+1], axis=1)
+        years_to_exclude = most_recent_finance_year -  selected_year_numeric
 
-        # if a school doesn"t have data for the selected year, df will only have 1 column (Category)
-        if len(financial_data.columns) <= 1:
-            org_compliance_table = no_data_table("Organizational and Operational Accountability")
+        if selected_year_numeric < most_recent_finance_year:
+            financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
 
-        else:
+        if len(financial_data.columns) > 1:
+
             organizational_indicators = financial_data[financial_data["Category"].str.startswith("3.")].copy()
             organizational_indicators[["Standard","Description"]] = organizational_indicators["Category"].str.split("|", expand=True)
 
@@ -143,9 +147,6 @@ def update_organizational_compliance(school, year):
                             markdown_options={"html": True},
                         )
             ]
-
-    else:
-        org_compliance_table = no_data_table("Organizational and Operational Accountability")
     
     org_compliance_definitions_data = [
         ["3.1.","The school materially complied with admissions and enrollment requirements based on applicable laws, rules and regulations, and all \
