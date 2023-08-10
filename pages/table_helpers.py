@@ -381,7 +381,8 @@ def create_school_label(data: pd.DataFrame) -> str:
 
     return label
 
-def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
+# NOTE: Displays both 162Day and Majority Enrolled, along with Difference
+def create_growth_table_both(label: str, content: pd.DataFrame, kind: str) -> list:
     """
     Takes a label, a dataframe, and a descriptive (type) string and creates a multi-header
     table with academic growth and sgp data.
@@ -459,43 +460,6 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
         first_cols = [col for col in all_cols if 'Days' in col]
         diff_cols = [col for col in all_cols if 'Diff' in col]
 
-        table_cell_conditional = [
-            {
-                'if': {
-                    'column_id': 'Category'
-                },
-                'textAlign': 'left',
-                'paddingLeft': '20px',
-                'fontWeight': '500',
-                'width': str(category_width) + '%'
-            },
-        ] + [
-            {
-                'if': {
-                    'column_id': col
-                },
-                'textAlign': 'center',
-                'fontWeight': '500',
-                'width': str(data_col_width) + '%',
-            } for col in data_cols
-        ]
-
-        table_data_conditional =  [
-            {
-                'if': {
-                    'row_index': 'odd'
-                },
-                'backgroundColor': '#eeeeee',
-            },
-            {
-                'if': {
-                    'state': 'selected'
-                },
-                'backgroundColor': 'rgba(112,128,144, .3)',
-                'border': 'thin solid silver'
-            } 
-        ]
-
         # remove subject from category
         data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
 
@@ -534,6 +498,27 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
                 },
                 'borderRight': '.5px solid #b2bdd4',
             }
+        ]
+
+        table_cell_conditional = [
+            {
+                'if': {
+                    'column_id': 'Category'
+                },
+                'textAlign': 'left',
+                'paddingLeft': '20px',
+                'fontWeight': '500',
+                'width': str(category_width) + '%'
+            },
+        ] + [
+            {
+                'if': {
+                    'column_id': col
+                },
+                'textAlign': 'center',
+                'fontWeight': '500',
+                'width': str(data_col_width) + '%',
+            } for col in data_cols
         ]
 
         table_data_conditional = [
@@ -646,6 +631,197 @@ def create_growth_table(label: str, content: pd.DataFrame, kind: str) -> list:
                     )
                 ],
                 className = class_name
+            )
+        ]
+
+    return table_layout
+
+# NOTE: Displays just Majority Enrolled (with 162 Day values in tooltip)
+def create_growth_table(label: str, data: pd.DataFrame, kind: str) -> list:
+    """
+    Takes a label, a dataframe, and a descriptive (type) string and creates a multi-header
+    table with academic growth and sgp data.
+
+    Args:
+        label (str): Table title
+        content (pd.DataTable): dash dataTable
+        kind (str): 'sgp|growth'
+    Returns:
+        table_layout (list): dash html.Div enclosing html.Label and DataTable
+    """
+    data_me = data.loc[:, data.columns.str.contains('Category|Majority Enrolled')].copy()
+    data_me = data_me.rename(columns={c: c[:4] for c in data_me.columns if c not in ['Category']})
+
+    # 162 day data is used for tooltip
+    data_162 = data.loc[:, data.columns.str.contains('Category|162 Days')].copy()
+    data_162 = data_162.rename(columns={c: c[:4] for c in data_162.columns if c not in ['Category']})
+    data_162 = data_162.drop('Category', axis=1)
+    
+    num_cols = len(data_me.columns)
+
+    if len(data_me.index) == 0 or num_cols == 1:
+        table_layout = [
+            html.Div(
+                [
+                    html.Label(label, className='header_label'),
+                    html.Div(
+                        dash_table.DataTable(
+                            columns = [
+                                {'id': 'emptytable', 'name': 'No Data to Display'},
+                            ],
+                            style_header={
+                                'fontSize': '14px',
+                                'border': 'none',
+                                'textAlign': 'center',
+                                'color': '#6783a9',
+                                'fontFamily': 'Open Sans, sans-serif',
+                            },
+                        )
+                    )
+                ],
+                className = 'pretty_container ten columns'
+            )
+        ]
+
+    else:
+
+        if num_cols <= 3:
+            col_width = 'four'
+            category_width = 70
+        if num_cols > 3 and num_cols <=4:
+            col_width = 'six'
+            category_width = 35
+        elif num_cols >= 5 and num_cols <= 8:
+            col_width = 'six'
+            category_width = 30
+        elif num_cols > 9:
+            col_width = 'seven'
+            category_width = 30
+
+        data_cols = (100 - category_width) / (num_cols - 1)
+        class_name = 'pretty_container ' + col_width + ' columns'
+
+        all_cols = data_me.columns.tolist()
+        data_cols = [col for col in all_cols if 'Category' not in col]
+
+        table_cell_conditional = [
+            {
+                'if': {
+                    'column_id': 'Category'
+                },
+                'textAlign': 'left',
+                'paddingLeft': '20px',
+                'fontWeight': '500',
+                'width': str(category_width) + '%'
+            },
+        ] + [
+            {
+                'if': {
+                    'column_id': col
+                },
+                'textAlign': 'center',
+                'fontWeight': '500',
+                'width': str(data_cols) + '%',
+            } for col in data_cols
+        ]
+
+        table_header_conditional = [
+            {
+                'if': {
+                    'column_id': col,
+                },
+                'borderBottom': '.5px solid #b2bdd4',
+            } for col in data_cols
+        ]
+
+        table_data_conditional = [
+            {
+                'if': {
+                    'state': 'selected'
+                },
+                'backgroundColor': 'rgba(112,128,144, .3)',
+                'border': 'thin solid silver'
+            },
+            {
+                'if': {
+                    'row_index': 'odd'
+                },
+                'backgroundColor': '#eeeeee'
+            },
+        ] + [
+            {
+                'if': {
+                    'row_index': 0
+                },
+                'paddingTop': '5px'
+            },
+        ]
+
+        if kind == 'sgp':
+            column_format=[
+                {
+                'name': col, 'id': col, 'type':'numeric',
+                'format': Format()
+                }
+                for col in all_cols
+            ]
+
+            # NOTE: if value != value then value is NaN
+            tooltip_format = [
+                {
+                    column: {
+                        'value': '162 Days: {:.1f}'.format(float(value)) if value == value else '',
+                        'type': 'markdown'
+                    }
+                    for column, value in row.items()
+                }
+                for row in data_162.to_dict('records')
+            ]
+
+        else:
+            column_format = [
+                {
+                'name': col, 'id': col, 'type':'numeric',
+                'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
+                }
+                for col in all_cols
+            ]
+
+            tooltip_format = [
+                {
+                    column: {
+                        'value': '162 Days: {:.2%}'.format(float(value)) if value == value else '',
+                        'type': 'markdown'
+                    }
+                    for column, value in row.items()
+                }
+                for row in data_162.to_dict('records')
+            ]                
+
+        table_layout = [
+            html.Div(
+                [
+                    html.Label(label, className='header_label'),
+                    html.Div(
+                        dash_table.DataTable(
+                            data_me.to_dict('records'),
+                            columns = column_format,
+                            style_table = {'height': '300px'},
+                            style_data = table_style,
+                            style_data_conditional = table_data_conditional,
+                            style_header = table_header,
+                            style_header_conditional = table_header_conditional,
+                            style_cell = table_cell,
+                            style_cell_conditional = table_cell_conditional,
+                            tooltip_data = tooltip_format,
+                            css=[{
+                                'selector': '.dash-table-tooltip',
+                                'rule': 'font-size: 12px'
+                            }],
+                        )
+                    )
+                ],
+                # className = class_name
             )
         ]
 

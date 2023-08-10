@@ -191,16 +191,25 @@ body {
 /* same as pretty_container but adds min-width. Used for left side of 'About' page
    to ensure the width of the tables and figs are aligned. Gets screwy when the window
    is too small tho. */
-   .pretty_container_left {
-    border-radius: 5px;
-    background-color: #ffffff;
-    margin: 10px;
-    padding: 15px;
-    min-width: 50%;
-    position: relative;
-    box-shadow: 2px 2px 2px lightgrey;
+.pretty_container_left {
+  border-radius: 5px;
+  background-color: #ffffff;
+  margin: 10px;
+  padding: 15px;
+  min-width: 50%;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
   }
-  
+
+/* .pretty_container_vcenter {
+  border-radius: 5px;
+  background-color: #ffffff;
+  margin: 10px;
+  padding: 15px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+} */
+
 /*  This little bit of sorcery overrides the display of any pretty_container
     that doesn't contain: 1) a dash datatable that has cells (not counting
     the header); 2) a plotly fig; 3) a dash dropdown component; or 4) notes-string

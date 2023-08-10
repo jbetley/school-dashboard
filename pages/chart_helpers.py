@@ -580,8 +580,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
     
     return fig_layout
 
-# TODO: Move 162-Day data to fig hovertemplates
-def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str) -> list:
+def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str) -> list:
     """
     Creates a dash html.Div layout with a label, and a multi-line (scatter) plot (px.line) representing
     two discrete dataframes in solid and dotted lines
@@ -599,16 +598,27 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
     
     fig = make_subplots() #specs=[[{"secondary_y": False}]]
 
+    if 'Growth' in label:
+        ytick ='.0%'
+        ytitle='Adequate Growth %'
+
+    elif 'SGP' in label:
+        ytick ='.1f'
+        ytitle='Median SGP'
+
     # Add traces
     for i, col in enumerate(data_me.columns):
         fig.add_trace(
             go.Scatter(
                 x=data_me.index,
                 y=data_me[col],
+                name=col,
+                meta=[col], # wtf is this?? [https://community.plotly.com/t/hovertemplate-does-not-show-name-property/36139]
                 mode='markers+lines',
                 marker=dict(color=color[i], symbol = 'square'),
                 line={'dash': 'solid'},
-                name=col,
+                customdata = [f'{i:.2%}' for i in data_162[col]] if 'Growth' in label else [f'{i:.1f}' for i in data_162[col]],
+                text = [f'{i}' for i in data_me.columns],
                 # NOTE: the legendgroup variable separates each dataframe into a separate
                 # legend group, which is great because it allows you to turn on and off each
                 # group. However, it looks bad because it does not currently allow you to display
@@ -633,13 +643,6 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
         #     ),
         #     secondary_y=False,
         # )
-
-    if 'Growth' in label:
-        ytick ='.0%'
-        ytitle='Adequate Growth %'
-    elif 'SGP' in label:
-        ytick ='.1f'
-        ytitle='Median SGP'
 
     # Add figure title
     fig.update_layout(
@@ -685,8 +688,19 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
         # width=400,
         # legend_title='',
     )                    
-
-    # NOTE: annotation used to identify 162-day vs 162-ME scatter lines
+    fig.update_traces(
+        hovertemplate='<br>'.join(
+            [
+                # TODO: Need to format this properly so data is aligned
+                s.replace(' ', '&nbsp;')
+                for s in [
+                    '%{meta} : %{y} (Majority Enrolled)',
+                    '        : %{customdata} (162 Days)<br><extra></extra>',
+                ]
+            ]
+        )
+    )
+    # NOTE: annotation is used as a master legend to identify 162-day vs 162-ME scatter lines
     # diamond - &#9670;	&#x25C6;
     # square - &#9632;	&#x25A0;
     # fig.add_annotation(
@@ -714,6 +728,33 @@ def make_growth_chart(data_162: pd.DataFrame, data_me: pd.DataFrame, label: str)
     ]
 
     return fig_layout
+
+# def set_table_fig_layout(table: list, fig: list,  cols: pd.Series) -> list:
+#     """
+#     Determines table layout depending on the size (# of cols) of the tables,
+#     either side by side or on an individual row
+
+#     Args:
+#         table1 (list): dash DataTable
+#         table2 (list): dash DataTable
+#         cols (pandas.core.indexes.Base.index): Pandas series of column headers
+
+#     Returns:
+#         table_layout (list): an html Div enclosing dash DataTables and css formatting
+#     """
+#     cols = [int(e[:4]) for e in cols if 'Category' not in e]
+#     num_cols = len(list(set(cols))) + 1 # 'Category + # of Years'
+
+#     table_layout = [
+#         html.Div([
+#                     table,
+#                     fig,
+#                 ],
+#                 className = 'bare_container_center twelve columns',
+#                 )
+#         ]
+
+#     return table_layout
 
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
     """

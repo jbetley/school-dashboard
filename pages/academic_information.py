@@ -51,16 +51,23 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("academic-information-main-container", "style"),
     Output("academic-information-empty-container", "style"),
     Output("academic-information-no-data", "children"),
-    Output("table-grades-growth-ela-container", "children"),
-    Output("table-grades-growth-math-container", "children"),
+    # Output("table-grades-growth-ela-container", "children"),
+    # Output("table-grades-growth-math-container", "children"),
+    
     Output("table-ethnicity-growth-ela-container", "children"),
     Output("table-ethnicity-growth-math-container", "children"),
     Output("table-subgroup-growth-ela-container", "children"),
     Output("table-subgroup-growth-math-container", "children"),
-    Output("fig-grade-growth-ela", "children"),
-    Output("fig-grade-sgp-ela", "children"),
-    Output("fig-grade-growth-math", "children"),
-    Output("fig-grade-sgp-math", "children"),
+    
+    Output("table-grades-growth-ela", "children"),    
+    Output("fig-grades-growth-ela", "children"),
+    Output("table-grades-sgp-ela", "children"),     
+    Output("fig-grades-sgp-ela", "children"),
+    Output("table-grades-growth-math", "children"),        
+    Output("fig-grades-growth-math", "children"),
+    Output("table-grades-sgp-math", "children"),    
+    Output("fig-grades-sgp-math", "children"),
+
     Output("fig-ethnicity-growth-ela", "children"),
     Output("fig-ethnicity-sgp-ela", "children"),
     Output("fig-ethnicity-growth-math", "children"),
@@ -250,40 +257,39 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                     k8_other_table = set_table_layout(k8_other_table, k8_other_table, attendance_rate.columns)
                     
-                    ## Proficiency Breakdown ##
-                    proficiency_data = selected_raw_k8_school_data.copy()
+                    ## get proficiency breakdown data for stacked bar charts
 
                     # NOTE: IDOE's raw proficency data is annoyingly inconsistent. In some cases missing
                     # data is blank and in other cases it is represented by "0." So we need to be extra
                     # careful in interpreting what is missing from what is just inconsistenly recorded
 
-                    school_k8_proficiency_data = proficiency_data.loc[proficiency_data["Year"] == selected_year_numeric]
+                    all_proficiency_data = selected_raw_k8_school_data.loc[selected_raw_k8_school_data["Year"] == selected_year_numeric].copy()
 
-                    school_k8_proficiency_data = school_k8_proficiency_data.dropna(axis=1)
-                    school_k8_proficiency_data = school_k8_proficiency_data.reset_index()
+                    all_proficiency_data = all_proficiency_data.dropna(axis=1)
+                    all_proficiency_data = all_proficiency_data.reset_index()
 
-                    for col in school_k8_proficiency_data.columns:
-                        school_k8_proficiency_data[col] = pd.to_numeric(school_k8_proficiency_data[col], errors="coerce")
+                    for col in all_proficiency_data.columns:
+                        all_proficiency_data[col] = pd.to_numeric(all_proficiency_data[col], errors="coerce")
 
-                    # Filter needed categories (this captures ELA&Math as well, which we drop later)
-
-                    school_k8_proficiency_data = school_k8_proficiency_data.filter(
+                    # this keeps ELA and Math as well, which we drop later
+                    all_proficiency_data = all_proficiency_data.filter(
                         regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
                         axis=1,
                     )
 
-                    all_proficiency_data = school_k8_proficiency_data.copy()
+                    # all_proficiency_data = school_k8_proficiency_data.copy()
                     
                     proficiency_rating = ["Below Proficiency", "Approaching Proficiency", "At Proficiency", "Above Proficiency"]
                 
-                    # NOTE: This may seem kludgy, but runs consistently around .15s
-                    # for each category, create a proficiency_columns list of columns using the strings in
-                    # "proficiency_rating" and then divide each column by "Total Tested"
-                    categories = grades_all + ethnicity + subgroup
-
                     # create dataframe to hold annotations (categories & missing data)
                     # NOTE: Annotations are currently not used
                     annotations = pd.DataFrame(columns= ["Category","Total Tested","Status"])
+
+                    # NOTE: This may seem kludgy, but runs consistently around .15s
+                    # for each category, create a proficiency_columns list of columns using the strings in
+                    # "proficiency_rating" and then divide each column by "Total Tested"
+                    
+                    categories = grades_all + ethnicity + subgroup
 
                     for c in categories:
                         for s in subject:
@@ -353,7 +359,6 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                                     rounded_percentages_cols = list(rounded_percentages.columns)
                                     all_proficiency_data[proficiency_columns] = rounded_percentages[rounded_percentages_cols]
 
-                    # drop columns used for calculation that we dont want to chart (keeping Total Tested)
                     all_proficiency_data.drop(list(all_proficiency_data.filter(regex="Total Proficient|ELA and Math")),
                         axis=1,
                         inplace=True,
@@ -472,13 +477,11 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             or (selected_school_id == 5874 and selected_year_numeric < 2021)):
 
             # load HS academic data
-            raw_hs_school_data = get_high_school_academic_data(school)
+            selected_raw_hs_school_data = get_high_school_academic_data(school)
 
             # exclude years later than the selected year
             if excluded_years:
-                selected_raw_hs_school_data = raw_hs_school_data[~raw_hs_school_data["Year"].isin(excluded_years)].copy()
-            else:
-                selected_raw_hs_school_data = raw_hs_school_data.copy()
+                selected_raw_hs_school_data = selected_raw_hs_school_data[~selected_raw_hs_school_data["Year"].isin(excluded_years)]
 
             if len(selected_raw_hs_school_data.index) == 0:
 
@@ -589,7 +592,6 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
         empty_container = {"display": "none"}
 
         # State Growth Data
-
         # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
         # 162 days. "Majority Enrolled" is misleading. It actually means "Greatest Number of Days." So the actual
         # number of days could easily be less than 82 if, for example, a student transferred a few times, or
@@ -601,7 +603,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
         #   Median SGP of students achieving "adequate and sufficient growth" on the state assessment in ELA/Math
 
         # NOTE: Growth data shows: byGrade, byEthnicity, bySES, byEL Status, & by Sped Status
-        # Also avaiable (but not shown): Homeless Status and High Ability Status
+        # Also available (but not shown): Homeless Status and High Ability Status
 
         # dataset is all students who are coded as "Majority Enrolled" at the school
         growth_data = get_growth_data(school)
@@ -612,13 +614,13 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
         if len(growth_data.index) > 0:
             
+            # Uncomment to show growth values table (not currently relevant without more data)
             # growth_values_table = [html.Img(src="assets/growth_table.jpg", hidden=False)]
             # growth_values_table_container = {"display": "block"}
 
             # NOTE: This calculates the difference between the count of Majority Enrolled and 162-Day students by Year
             # counts_growth = growth_data.groupby("Test Year")["Test Year"].count().reset_index(name = "Count (Majority Enrolled)")
             # counts_growth_162 = growth_data_162.groupby("Test Year")["Test Year"].count().reset_index(name = "Count (162 Days)")
-
             # counts_growth["School Name"] = selected_school["School Name"].values[0]
             # counts_growth["Count (162 Days)"] = counts_growth_162["Count (162 Days)"]
             # counts_growth["Difference"] = counts_growth["Count (Majority Enrolled)"] - counts_growth["Count (162 Days)"]
@@ -646,23 +648,59 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             table_data_subgroup_sgp = pd.concat([table_data_ses_sgp, table_data_el_sgp, table_data_sped_sgp])
             fig_data_subgroup_sgp = pd.concat([fig_data_ses_sgp, fig_data_el_sgp, fig_data_sped_sgp], axis=1)
             
-            # Growth tables
-
             # by grade
+            # table data
             table_data_grades_growth_ela = table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("ELA"))]
             table_data_grades_growth_math= table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("Math"))]                    
             table_data_grades_sgp_ela = table_data_grades_sgp[(table_data_grades_sgp["Category"].str.contains("ELA"))]                    
             table_data_grades_sgp_math = table_data_grades_sgp[(table_data_grades_sgp["Category"].str.contains("Math"))]
 
+            # fig data
+            growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
+            growth_data_162_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("Math"))]
+            growth_data_me_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("Majority Enrolled")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
+            growth_data_me_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("Majority Enrolled")) & (fig_data_grades_growth.columns.str.contains("Math"))]
+            
+            growth_data_162_grades_ela.columns = growth_data_162_grades_ela.columns.str.split("_").str[1]
+            growth_data_162_grades_math.columns = growth_data_162_grades_math.columns.str.split("_").str[1]
+            growth_data_me_grades_ela.columns = growth_data_me_grades_ela.columns.str.split("_").str[1]
+            growth_data_me_grades_math.columns = growth_data_me_grades_math.columns.str.split("_").str[1]
+
+            # SGP by Grade (Both ME and 162)
+            sgp_data_162_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains("162")) & (fig_data_grades_sgp.columns.str.contains("ELA"))]
+            sgp_data_162_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains("162")) & (fig_data_grades_sgp.columns.str.contains("Math"))]
+            sgp_data_me_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains("Majority Enrolled")) & (fig_data_grades_sgp.columns.str.contains("ELA"))]
+            sgp_data_me_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains("Majority Enrolled")) & (fig_data_grades_sgp.columns.str.contains("Math"))]
+            
+            sgp_data_162_grades_ela.columns = sgp_data_162_grades_ela.columns.str.split("_").str[1]
+            sgp_data_162_grades_math.columns = sgp_data_162_grades_math.columns.str.split("_").str[1]
+            sgp_data_me_grades_ela.columns = sgp_data_me_grades_ela.columns.str.split("_").str[1]
+            sgp_data_me_grades_math.columns = sgp_data_me_grades_math.columns.str.split("_").str[1]
+
+            # grades growth ela table/fig #1
             table_grades_growth_ela = create_growth_table("Percentage of Students with Adequate Growth - by Grade (ELA)", table_data_grades_growth_ela,"growth")
+            label_grades_growth_ela="Percentage of Students Achieving Adequate Growth in ELA by Grade"
+            fig_grades_growth_ela = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, label_grades_growth_ela)
+
+            # grades sgp ela table/fig #2
             table_grades_sgp_ela = create_growth_table("Median SGP - All Students By Grade (ELA)", table_data_grades_sgp_ela,"sgp")
-
-            table_grades_growth_ela_container = set_table_layout(table_grades_growth_ela, table_grades_sgp_ela, table_data_grades_growth.columns)
-
+            label_grades_sgp_ela ="Median SGP in ELA by Grade"
+            fig_grades_sgp_ela = make_growth_chart(sgp_data_me_grades_ela, sgp_data_162_grades_ela, label_grades_sgp_ela)
+            
+            # table_grades_growth_ela_container = set_table_layout(table_grades_growth_ela, table_grades_sgp_ela, table_data_grades_growth.columns)          
+            
+            # grades growth math table/fig #1
             table_grades_growth_math = create_growth_table("Percentage of Students with Adequate Growth - by Grade (Math)", table_data_grades_growth_math,"growth")
-            table_grades_sgp_math = create_growth_table("Median SGP - All Students By Grade (Math)", table_data_grades_sgp_math,"sgp")
+            label_grades_growth_math ="Percentage of Students Achieving Adequate Growth in Math by Grade"
+            fig_grades_growth_math = make_growth_chart(growth_data_me_grades_math, growth_data_162_grades_math, label_grades_growth_math)
 
-            table_grades_growth_math_container = set_table_layout(table_grades_growth_math, table_grades_sgp_math, table_data_grades_growth.columns)
+            # grades sgp math table/fig #2
+            table_grades_sgp_math = create_growth_table("Median SGP - All Students By Grade (Math)", table_data_grades_sgp_math,"sgp")
+            label_grades_sgp_math ="Median SGP in Math by Grade"
+            fig_grades_sgp_math = make_growth_chart(sgp_data_me_grades_math, sgp_data_162_grades_math, label_grades_sgp_math)            
+            
+            # table_grades_growth_math_container = set_table_layout(table_grades_growth_math, table_grades_sgp_math, table_data_grades_growth.columns)
+
 
             # by ethnicity
             table_data_ethnicity_growth_ela = table_data_ethnicity_growth[(table_data_ethnicity_growth["Category"].str.contains("ELA"))]
@@ -698,17 +736,16 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
         ## Growth figures (NOTE: Currently only displaying Majority Enrolled Data)
 
-        #TODO: Add 162 in tooltip
             # Growth by Grade (Both ME and 162)
-            growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
-            growth_data_162_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("Math"))]
-            growth_data_me_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("Majority Enrolled")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
-            growth_data_me_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("Majority Enrolled")) & (fig_data_grades_growth.columns.str.contains("Math"))]
+            # growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
+            # growth_data_162_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("Math"))]
+            # growth_data_me_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("Majority Enrolled")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
+            # growth_data_me_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("Majority Enrolled")) & (fig_data_grades_growth.columns.str.contains("Math"))]
             
-            growth_data_162_grades_ela.columns = growth_data_162_grades_ela.columns.str.split("_").str[1]
-            growth_data_162_grades_math.columns = growth_data_162_grades_math.columns.str.split("_").str[1]
-            growth_data_me_grades_ela.columns = growth_data_me_grades_ela.columns.str.split("_").str[1]
-            growth_data_me_grades_math.columns = growth_data_me_grades_math.columns.str.split("_").str[1]
+            # growth_data_162_grades_ela.columns = growth_data_162_grades_ela.columns.str.split("_").str[1]
+            # growth_data_162_grades_math.columns = growth_data_162_grades_math.columns.str.split("_").str[1]
+            # growth_data_me_grades_ela.columns = growth_data_me_grades_ela.columns.str.split("_").str[1]
+            # growth_data_me_grades_math.columns = growth_data_me_grades_math.columns.str.split("_").str[1]
 
             # Growth by Ethnicity (Both ME and 162)
             growth_data_162_ethnicity_ela = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains("162")) & (fig_data_ethnicity_growth.columns.str.contains("ELA"))]
@@ -732,16 +769,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             growth_data_me_subgroup_ela.columns = growth_data_me_subgroup_ela.columns.str.split("_").str[1]
             growth_data_me_subgroup_math.columns = growth_data_me_subgroup_math.columns.str.split("_").str[1]
 
-            # SGP by Grade (Both ME and 162)
-            sgp_data_162_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains("162")) & (fig_data_grades_sgp.columns.str.contains("ELA"))]
-            sgp_data_162_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains("162")) & (fig_data_grades_sgp.columns.str.contains("Math"))]
-            sgp_data_me_grades_ela = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains("Majority Enrolled")) & (fig_data_grades_sgp.columns.str.contains("ELA"))]
-            sgp_data_me_grades_math = fig_data_grades_sgp.loc[:,(fig_data_grades_sgp.columns.str.contains("Majority Enrolled")) & (fig_data_grades_sgp.columns.str.contains("Math"))]
-            
-            sgp_data_162_grades_ela.columns = sgp_data_162_grades_ela.columns.str.split("_").str[1]
-            sgp_data_162_grades_math.columns = sgp_data_162_grades_math.columns.str.split("_").str[1]
-            sgp_data_me_grades_ela.columns = sgp_data_me_grades_ela.columns.str.split("_").str[1]
-            sgp_data_me_grades_math.columns = sgp_data_me_grades_math.columns.str.split("_").str[1]
+
 
             # SGP by Ethnicity (Both ME and 162)
             sgp_data_162_ethnicity_ela = fig_data_ethnicity_sgp.loc[:,(fig_data_ethnicity_sgp.columns.str.contains("162")) & (fig_data_ethnicity_sgp.columns.str.contains("ELA"))]
@@ -765,17 +793,6 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             sgp_data_me_subgroup_ela.columns = sgp_data_me_subgroup_ela.columns.str.split("_").str[1]
             sgp_data_me_subgroup_math.columns = sgp_data_me_subgroup_math.columns.str.split("_").str[1]
 
-            label_grade_growth_ela="Percentage of Students Achieving Adequate Growth in ELA by Grade"
-            fig_grade_growth_ela = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, label_grade_growth_ela)
-
-            label_grade_sgp_ela ="Median SGP in ELA by Grade"
-            fig_grade_sgp_ela = make_growth_chart(sgp_data_me_grades_ela, sgp_data_162_grades_ela, label_grade_sgp_ela)
-
-            label_grade_growth_math ="Percentage of Students Achieving Adequate Growth in Math by Grade"
-            fig_grade_growth_math = make_growth_chart(growth_data_me_grades_math, growth_data_162_grades_math, label_grade_growth_math)
-
-            label_grade_sgp_math ="Median SGP in Math by Grade"
-            fig_grade_sgp_math = make_growth_chart(sgp_data_me_grades_math, sgp_data_162_grades_math, label_grade_sgp_math)            
 
             label_ethnicity_growth_ela="Percentage of Students Achieving Adequate Growth in ELA by Ethnicity"
             fig_ethnicity_growth_ela = make_growth_chart(growth_data_me_ethnicity_ela, growth_data_162_ethnicity_ela, label_ethnicity_growth_ela)
@@ -904,23 +921,27 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             academic_information_notes_string = ""
 
     if radio_value == "growth":
-        academic_information_notes_string = "State growth data comes from IDOE's LINK. Identifying information is scrubbed and data is aggregated \
-            Federal Growth Data comes from IDOE's School Report Card Summaries of Federal Growth indicators. \
-            While the data represented here is an accurate representation of the data present in the Summaries, \
-            it has not been otherwise reconciled with the raw data used to produce the Summaries. It is presented \
-            here for informational purposes only."
+        academic_information_notes_string = "State growth data comes from IDOE's LINK. Identifying information \
+            is scrubbed and data is aggregated before display. The calculation includes all students who were \
+            enrolled in the selected school for the most number of days that student was enrolled in any school \
+            over the entire school year (Majority Enrolled). This does not necessarily mean that the student was \
+            enrolled in the school for an actual majority of the year (e.g., 82 days). This calculation thus includes \
+            more students than previous year calculations which only included students who were enrolled in the \
+            school for 162 Days. The 162 Day value is included in the tooltip of each table and chart for comparison purposes."
 
     return (
         k8_grade_table, k8_grade_ela_fig, k8_grade_math_fig, k8_ethnicity_table, k8_ethnicity_ela_fig, k8_ethnicity_math_fig,
         k8_subgroup_table, k8_subgroup_ela_fig, k8_subgroup_math_fig, k8_other_table, k8_table_container, hs_grad_overview_table,
         hs_grad_ethnicity_table, hs_grad_subgroup_table, sat_overview_table, sat_ethnicity_table, sat_subgroup_table, 
-        hs_table_container, main_container, empty_container, no_data_to_display, table_grades_growth_ela_container, table_grades_growth_math_container,
+        hs_table_container, main_container, empty_container, no_data_to_display, 
         table_ethnicity_growth_ela_container, table_ethnicity_growth_math_container, table_subgroup_growth_ela_container, 
-        table_subgroup_growth_math_container, fig_grade_growth_ela, fig_grade_sgp_ela, fig_grade_growth_math, fig_grade_sgp_math,
+        table_subgroup_growth_math_container, 
+        table_grades_growth_ela, fig_grades_growth_ela, table_grades_sgp_ela, fig_grades_sgp_ela,
+        table_grades_growth_math, fig_grades_growth_math, table_grades_sgp_math, fig_grades_sgp_math,
         fig_ethnicity_growth_ela, fig_ethnicity_sgp_ela, fig_ethnicity_growth_math, fig_ethnicity_sgp_math, fig_subgroup_growth_ela,
         fig_subgroup_sgp_ela, fig_subgroup_growth_math, fig_subgroup_sgp_math,state_growth_main_container,
         state_growth_empty_container, no_state_growth_data_to_display, academic_information_notes_string
-    ) # growth_values_table, growth_values_table_container,
+    ) # growth_values_table, growth_values_table_container, table_grades_growth_ela_container, table_grades_growth_math_container,
 
 def layout():
     return html.Div(
@@ -1098,42 +1119,109 @@ def layout():
             ),            
             html.Div(
                 [
-                    html.Div(id="table-grades-growth-ela-container", children=[]),
                     html.Div(
                         [
                             html.Div(
-                                [
-                                    html.Div(id="fig-grade-growth-ela", children=[]),
-                                ],
-                                className="pretty_container six columns",
-                            ),
-                            html.Div(
                                 [                            
-                                    html.Div(id="fig-grade-sgp-ela", children=[]),
+                                    html.Div(id="table-grades-growth-ela", children=[]),
                                 ],
-                                className="pretty_container six columns",
+                                        className = "pretty_container six columns"
                             ),                            
+                            html.Div(
+                                [
+                                    html.Div(id="fig-grades-growth-ela", children=[]),
+                                ],
+                                className = "pretty_container six columns"
+                            ),
                         ],
                         className="bare_container_center twelve columns",
                     ),
-                    html.Div(id="table-grades-growth-math-container", children=[]),
+                    html.Div(
+                        [
+                            html.Div(
+                                [                                 
+                                    html.Div(id="table-grades-sgp-ela", children=[]),
+                                ],
+                                className = "pretty_container six columns"
+                            ),                                    
+                            html.Div(
+                                [                                    
+                                    html.Div(id="fig-grades-sgp-ela", children=[]),
+                                ],
+                                className = "pretty_container six columns"
+                            ),                                    
+                        ],
+                        className="bare_container_center twelve columns",
+                    ),
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    html.Div(id="fig-grade-growth-math", children=[]),
+                                    html.Div(id="table-grades-growth-math", children=[]),
                                 ],
-                                className="pretty_container six columns",
-                            ),
+                                className = "pretty_container six columns"
+                            ),                                        
                             html.Div(
-                                [                            
-                                    html.Div(id="fig-grade-sgp-math", children=[]),
+                                [
+                                    html.Div(id="fig-grades-growth-math", children=[]),
                                 ],
-                                className="pretty_container six columns",
-                            ),                            
+                                className = "pretty_container six columns"
+                            ),                                        
                         ],
                         className="bare_container_center twelve columns",
-                    ),                    
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [                            
+                                    html.Div(id="table-grades-sgp-math", children=[]),
+                                ],
+                                className = "pretty_container six columns"
+                            ),                                               
+                            html.Div(
+                                [                                     
+                                    html.Div(id="fig-grades-sgp-math", children=[]),
+                                ],
+                                className = "pretty_container six columns"
+                            ),                                               
+                        ],
+                        className="bare_container_center twelve columns",
+                    ),        
+                    # html.Div(
+                    #     [
+                    #         html.Div(
+                    #             [
+                                    
+                    #             ],
+                    #             className="pretty_container six columns",
+                    #         ),
+                    #         html.Div(
+                    #             [                            
+                    #                 html.Div(id="fig-grade-sgp-ela", children=[]),
+                    #             ],
+                    #             className="pretty_container six columns",
+                    #         ),                            
+                    #     ],
+                    #     className="bare_container_center twelve columns",
+                    # ),
+                    # html.Div(id="table-grades-growth-math-container", children=[]),
+                    # html.Div(
+                    #     [
+                    #         html.Div(
+                    #             [
+                    #                 html.Div(id="fig-grade-growth-math", children=[]),
+                    #             ],
+                    #             className="pretty_container six columns",
+                    #         ),
+                    #         html.Div(
+                    #             [                            
+                    #                 html.Div(id="fig-grade-sgp-math", children=[]),
+                    #             ],
+                    #             className="pretty_container six columns",
+                    #         ),                            
+                    #     ],
+                    #     className="bare_container_center twelve columns",
+                    # ),
                     html.Div(id="table-ethnicity-growth-ela-container", children=[]),
                     html.Div(
                         [
