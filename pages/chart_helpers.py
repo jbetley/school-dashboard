@@ -601,10 +601,11 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
     if 'Growth' in label:
         ytick ='.0%'
         ytitle='Adequate Growth %'
-
+        hover = '.2%'
     elif 'SGP' in label:
         ytick ='.1f'
         ytitle='Median SGP'
+        hover = '.1f'
 
     # Add traces
     for i, col in enumerate(data_me.columns):
@@ -678,6 +679,7 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
             showgrid=True,
             gridcolor='#b0c4de',
             zeroline=False,
+            hoverformat=hover, 
             # range = add_years
             ),
         legend=dict(
@@ -692,10 +694,11 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
         hovertemplate='<br>'.join(
             [
                 # TODO: Need to format this properly so data is aligned
+                # TODO: Maybe get a second meta that is blank spaces the same as the meta length
                 s.replace(' ', '&nbsp;')
                 for s in [
                     '%{meta} : %{y} (Majority Enrolled)',
-                    '        : %{customdata} (162 Days)<br><extra></extra>',
+                    '%{meta} : %{customdata} (162 Days)<br><extra></extra>',
                 ]
             ]
         )
