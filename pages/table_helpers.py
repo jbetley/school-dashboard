@@ -2,8 +2,8 @@
 # ICSB Dashboard - DataTable Functions #
 ########################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/11/23
 
 import numpy as np
 import pandas as pd
@@ -67,7 +67,7 @@ def get_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
 
     return result
 
-def create_proficiency_key() -> dash_table.DataTable:
+def create_proficiency_key() -> list:
     """
     Creates a dash datatable 'key' using proficiency ratings and
     the Font Awesome circle icon
@@ -76,7 +76,7 @@ def create_proficiency_key() -> dash_table.DataTable:
         None
 
     Returns:
-        key_table (dict): dash DataTable
+        key_table (list): a list that will be displayed as a dash_table.DataTable
     """
     rating_icon = '<span style="font-size: 1em;"><i class="fa fa-circle"></i></span>'
 
@@ -214,17 +214,16 @@ def create_proficiency_key() -> dash_table.DataTable:
             ],
         )
     ]
+
     return key_table
 
-# TODO: Standardize empty tables
-
-# TODO: This table does not currently display
-def no_data_table(label: str = 'No Data to Display') -> list:
+def no_data_table(label: str = 'Academic Data', text: str = 'No Data to Display') -> list:
     """
-    Creates single empty table with provided label
+    Creates empty table with provided label and content string
 
     Args:
-        label (String): table label string
+        label (str): table label
+        text (str): table content
 
     Returns:
         table_layout (list): a dash html.Label object and html.Div object enclosing a dash DataTable
@@ -235,7 +234,7 @@ def no_data_table(label: str = 'No Data to Display') -> list:
                 html.Div(
                     dash_table.DataTable(
                         columns = [
-                            {'id': 'emptytable', 'name': 'No Data to Display'},
+                            {'id': 'emptytable', 'name': text},
                         ],
                         style_header={
                             'fontSize': '14px',
@@ -251,8 +250,7 @@ def no_data_table(label: str = 'No Data to Display') -> list:
 
     return table_layout
 
-# TODO: THis table will display
-def no_data_page(label: str) -> list:
+def no_data_page(label: str = 'Academic Data', text: str = 'No Data to Display') -> list:
     """
     Creates a layout with a single empty table to be used as a replacement for an entire
     page without data for any tables/figs, with provided label
@@ -278,7 +276,7 @@ def no_data_page(label: str) -> list:
                                     dash_table.DataTable(
                                         data=empty_dict,
                                         columns = [
-                                            {'id': 'emptytable', 'name': 'No Data to Display'},
+                                            {'id': 'emptytable', 'name': text},
                                         ],
                                         style_header={
                                             'fontSize': '14px',
@@ -355,8 +353,8 @@ def create_chart_label(final_data: pd.DataFrame) -> str:
         label_category = ' Proficiency by Subgroup'                      
 
     # get the subject using regex
-    label_subject = re.search(r'(?<=\|)(.*?)(?=\s)',final_data_columns[0]).group()
-    
+    label_subject = re.search(r'(?<=\|)(.*?)(?=\s)',final_data_columns[0]).group() # type: ignore
+
     label = 'Comparison: ' + label_subject + label_category
 
     return label
@@ -698,7 +696,7 @@ def create_growth_table(label: str, data: pd.DataFrame, kind: str) -> list:
             col_width = 'seven'
             category_width = 30
 
-        data_cols = (100 - category_width) / (num_cols - 1)
+        data_col_width = (100 - category_width) / (num_cols - 1)
         class_name = 'pretty_container ' + col_width + ' columns'
 
         all_cols = data_me.columns.tolist()
@@ -721,7 +719,7 @@ def create_growth_table(label: str, data: pd.DataFrame, kind: str) -> list:
                 },
                 'textAlign': 'center',
                 'fontWeight': '500',
-                'width': str(data_cols) + '%',
+                'width': str(data_col_width) + '%',
             } for col in data_cols
         ]
 
@@ -955,16 +953,17 @@ def process_chart_data(school_data: pd.DataFrame, corporation_data: pd.DataFrame
     # we need to make sure that all conditions match proper punctuation.
     if len(schools_with_missing_list) != 0:
         if len(schools_with_missing_list) > 1:
-            schools_with_missing_list = ', '.join(schools_with_missing_list)
+
+            schools_with_missing_string = ', '.join(schools_with_missing_list)
         else:
-            schools_with_missing_list = schools_with_missing_list[0]
+            schools_with_missing_string = schools_with_missing_list[0]
 
         if missing_schools:
             missing_schools = [i + ' (All)' for i in missing_schools]
             school_string = ', '.join(list(map(str, missing_schools))) + '.'
-            school_string = schools_with_missing_list + ', ' + school_string
+            school_string = schools_with_missing_string + ', ' + school_string
         else:
-            school_string = schools_with_missing_list + '.'
+            school_string = schools_with_missing_string + '.'
     else:
         if missing_schools:
             missing_schools = [i + ' (All)' for i in missing_schools]

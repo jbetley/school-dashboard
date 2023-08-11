@@ -64,13 +64,13 @@ def update_about_page(year: str, school: str):
 
     if (len(demographic_data.index) == 0 or demographic_data.empty) and \
         (len(financial_data.columns) <= 1 or financial_data.empty):
-        enroll_title = {}
-        enroll_table = {}
-        adm_fig = {}
-        ethnicity_title = {}
-        ethnicity_fig = {}
-        subgroup_title = {}
-        subgroup_fig = {}
+        enroll_title = ""
+        enroll_table = []
+        adm_fig = []
+        ethnicity_title = ""
+        ethnicity_fig = []
+        subgroup_title = ""
+        subgroup_fig = []
 
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
@@ -448,7 +448,7 @@ def update_about_page(year: str, school: str):
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)"
             )
-        
+
     return (
         enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, subgroup_title,
         subgroup_fig, main_container, empty_container, no_data_to_display

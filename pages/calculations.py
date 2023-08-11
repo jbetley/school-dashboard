@@ -12,14 +12,13 @@ import scipy.spatial as spatial
 
 def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     """
-    fillna based on column name - using substrings to
-    identify columns
+    conditional fillna based on column name using substrings to identify columns
 
     Args:
         data (pd.DataFrame): academic data dataframe
 
     Returns:
-        pd.DataFrame: the same dataframe with the na's filled
+        pd.DataFrame: the same dataframe with the nan's filled
     """
     data.columns = data.columns.astype(str)
 
@@ -36,10 +35,10 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
 
 def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
     """
-        In order for an apples to apples comparison between aggregated school corporation academic
-        data and the academic data of the selected school, we need to recalculate Total School
-        Proficiency for both Math and ELA using only the grade levels for which we have school
-        data.
+    In order for an apples to apples comparison between aggregated school corporation academic
+    data and the academic data of the selected school, we need to recalculate Total School
+    Proficiency for both Math and ELA using only the grade levels for which we have school
+    data.
 
     Args:
         corp_data (pd.DataFrame):   aggregated academic data for the school corporation in which
@@ -336,9 +335,11 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
         data (pd.DataFrame): dataframe of academic proficiency values
 
     Returns:
-        data (pd.DataFrame) & string (str): a single string of all years of missing data.\ and a dataframe where the years of missing
-        data (rows) have been dropped.
+        data (pd.DataFrame) & string (str): a dataframe where the years of missing data (rows) have been dropped
+        and a string of all years of missing data
+        
     """
+
     # Identify and drop rows with no or insufficient data ('***' or NaN/None)
     tmp = data.copy()
     tmp = tmp.drop('School Name', axis=1)
@@ -726,7 +727,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
         # A very specific sort function
         # Because this is for display, we need to manually reorder the columns
-        def sort_metrics(column: pd.Series) -> pd.Series:
+        def sort_financial_metrics(column: pd.Series) -> pd.Series:
             reorder = [
                 'Current Ratio','Current Ratio Metric',
                 'Days Cash on Hand','Days Cash Metric',
@@ -744,7 +745,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
             
             return pd.Series(cat)
 
-        metric_grid_sorted = metric_grid.sort_values(by='Category', key=sort_metrics)
+        metric_grid_sorted = metric_grid.sort_values(by='Category', key=sort_financial_metrics)
 
         final_grid = pd.DataFrame()
 
@@ -768,8 +769,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         final_grid.columns = final_grid.columns.str.replace(r'\d{4}Rating', 'Rating', regex=True)
 
         # Add new rows for 'Near Term|Long Term' titles
-        # NOTE: it baffles me why this is so difficult
-        
+        # NOTE: it baffles me why this is so complicated 
         # add row between existing indexes, sort and then reset
         final_grid.loc[3.5,'Category'] = 'Long Term'
         final_grid = final_grid.sort_index().reset_index(drop=True)

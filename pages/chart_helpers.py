@@ -2,8 +2,8 @@
 # ICSB Dashboard - Charting Functions #
 #######################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.089
+# date:     08/11/23
 
 import plotly.express as px
 import pandas as pd
@@ -99,7 +99,7 @@ def loading_fig() -> dict:
 
     return fig
 
-def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> dict:
+def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> list:
     """
     Creates a blank fig with with a label and default height
 
@@ -384,8 +384,8 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             )
 
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
-            fig.update_traces(hovertemplate=None)
-            fig.update_layout(
+            fig.update_traces(hovertemplate=None)   # type: ignore
+            fig.update_layout(                      # type: ignore
                 margin=dict(l=40, r=40, t=40, b=0),
                 title_x=0.5,
                 font = dict(
@@ -428,13 +428,13 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
             data_max = data.max(numeric_only=True).max()
 
             if "IREAD Proficiency (Grade 3 only)" in data.columns:
-                range_vals = [0,1]
+                range_vals = [0,1]  # type: list[float]
             elif data_max < .5:
-                range_vals = [0,.5]
+                range_vals = [0,.5] 
             else:
                 range_vals = [0,data_max + .1]
 
-            fig.update_yaxes(
+            fig.update_yaxes(       # type: ignore
                 title='',
                 mirror=True,
                 showline=True,

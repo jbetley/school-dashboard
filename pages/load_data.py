@@ -2,12 +2,13 @@
 # ICSB Dashboard - Data & Global Variables #
 ############################################
 # author:   jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.09
+# date:     08/11/23
 
 # TODO: Explore serverside disk caching for data loading
 #https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
 
+import time
 from typing import Tuple
 import pandas as pd
 import numpy as np
@@ -16,12 +17,8 @@ from .load_db import get_current_year, get_school_index, get_demographic_data, g
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
     set_academic_rating, recalculate_total_proficiency, conditional_fillna
 
-pd.set_option('display.max_rows', None)
-
-## Load Data Files ##
-print("#### Loading Data. . . . . ####")
-
 # NOTE: No K8 academic data exists for 2020
+print("#### Loading Data. . . . . ####")
 
 # global integers
 current_academic_year = get_current_year()
@@ -108,7 +105,6 @@ def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
 
     attendance_rate['Category'] =  attendance_rate['Category'].replace(['Avg Attendance'], 'Attendance Rate')
 
-    # attendance_rate = attendance_rate.fillna('No Data')
     attendance_rate = conditional_fillna(attendance_rate)
 
     attendance_rate.columns = attendance_rate.columns.astype(str)
@@ -170,7 +166,7 @@ def get_attendance_metrics(school: str, year: str) -> pd.DataFrame:
     #   loop stops at the third column (which has an index of 2);
     #   2) for each step, the code inserts a new column, at index 'i'. The column
     #   header is a string that is equal to 'the year (YYYY) part of the column
-    #   string (attendance_data_metrics.columns[i-1])[:7 - 3]) + 'Rating' + 'i'
+    #   string (attendance_data_metrics.columns[i-1])[:7 - 3]) + 'Rate' + 'i'
     #   (the value of 'i' doesn't matter other than to differentiate the columns) +
     #   the accountability value, a string returned by the set_academic_rating() function.
     #   3) the set_academic_rating() function calculates an 'accountability rating'
@@ -200,9 +196,7 @@ def get_attendance_metrics(school: str, year: str) -> pd.DataFrame:
 
     return attendance_metrics
 
-def calculate_graduation_rate(values: pd.DataFrame) -> pd.DataFrame:
-    
-    data = values.copy()
+def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
 
     cohorts = data[data.columns[data.columns.str.contains(r'Cohort Count')]].columns.tolist()
 
@@ -220,9 +214,7 @@ def calculate_strength_of_diploma(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-def calculate_sat_rate(values: pd.DataFrame) -> pd.DataFrame:
-# NOTE: All nulls should have already been filtered out by filter_high_school_academic_data()
-    data = values.copy()
+def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
 
     tested = data[data.columns[data.columns.str.contains(r'Total Tested')]].columns.tolist()
 
@@ -236,13 +228,11 @@ def calculate_sat_rate(values: pd.DataFrame) -> pd.DataFrame:
     return data
 
 # TODO: This is slow. Refactor
-import time
 
-def calculate_proficiency(values: pd.DataFrame) -> pd.DataFrame:
+def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
 
 # Calculates proficiency. If Total Tested == 0 or NaN or if Total Tested > 0, but Total Proficient is
 # NaN, all associated columns are dropped
-    data = values.copy()
 
     # Get a list of all 'Total Tested' columns except those for ELA & Math
     tested_categories = data[data.columns[data.columns.str.contains(r'Total Tested')]].columns.tolist()
@@ -267,9 +257,9 @@ def calculate_proficiency(values: pd.DataFrame) -> pd.DataFrame:
             else:
                 data[proficiency] = calculate_percentage(data[total_proficient], data[total_tested])
 
-    # separately calculate IREAD Proficiency
-    if "IREAD Test N" in data.columns:
-        data["IREAD Proficient %"] =  calculate_percentage(data["IREAD Pass N"],data["IREAD Test N"])
+    # # separately calculate IREAD Proficiency
+    # if "IREAD Test N" in data.columns:
+    #     data["IREAD Proficient %"] =  calculate_percentage(data["IREAD Pass N"],data["IREAD Test N"])
 
     return data
 
@@ -312,6 +302,10 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
 
         data_proficiency = calculate_proficiency(data)
 
+        # separately calculate IREAD Proficiency
+        if "IREAD Test N" in data.columns:
+            data["IREAD Proficient %"] =  calculate_percentage(data["IREAD Pass N"],data["IREAD Test N"])
+        
         # create new df with Total Tested and Test N (IREAD) values
         data_tested = data_proficiency.filter(regex='Total Tested|Test N|Year', axis=1).copy()
         data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
@@ -414,10 +408,7 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
         corp_data = corp_data.drop(drop_all, axis=1).copy()
 
         corp_data = calculate_proficiency(corp_data)
-        
-        # recalculate total proficiency numbers using only school grades
-        corp_data = recalculate_total_proficiency(corp_data, school_data)        
-        
+
         if "IREAD Pass N" in corp_data.columns:
             corp_data["IREAD Proficient %"] = pd.to_numeric(corp_data["IREAD Pass N"], errors="coerce") \
                 / pd.to_numeric(corp_data["IREAD Test N"], errors="coerce")
@@ -426,6 +417,9 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
             # NaN - we want it to display '***', so we just fillna
             corp_data["IREAD Proficient %"] = corp_data["IREAD Proficient %"].fillna("***")
 
+        # recalculate total proficiency numbers using only school grades
+        corp_data = recalculate_total_proficiency(corp_data, school_data)        
+        
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         corp_data = corp_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$", axis=1)
 
@@ -437,10 +431,10 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
         corp_data = corp_data.reset_index(drop=True)
 
         # transpose dataframes and clean headers            
-        # corp_data.columns = corp_data.columns.astype(str)
         corp_data = (corp_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
         corp_data = corp_data[corp_data["Category"].str.contains("School Name") == False]
         corp_data = corp_data.reset_index(drop=True)
+        corp_data.columns = corp_data.columns.astype(str)
 
     return corp_data
 
