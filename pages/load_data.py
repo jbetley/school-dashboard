@@ -453,40 +453,41 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
 
 # TODO: Can we move this SAT filtration (?) to its own function for all academic data because we
 # TODO: DO the same thing with the school data
-    if len(data.index) > 0:
-        data = data.replace({"^": "***"})
 
-        # school data: coerce to numeric but keep strings ('***')
-        for col in data.columns:
-            data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
+    data = data.replace({"^": "***"})
 
-        # Drop: 'Graduation Rate', 'Percent Pass', 'ELA and Math' (never need these)
-        data = data[data.columns[~data.columns.str.contains(r'Graduation Rate|Percent Pass|ELA and Math')]].copy()
+    # school data: coerce to numeric but keep strings ('***')
+    for col in data.columns:
+        data[col] = pd.to_numeric(data[col], errors='coerce').fillna(data[col])
 
-        # Drop: all SAT related columns ('Approaching Benchmark', 'At Benchmark', etc.)
-        # for a Category if the value of 'Total Tested' for that Category is '0'
-        tested_cols = data.filter(regex='Total Tested|Cohort Count|Test N').columns.tolist()
-        drop_columns=[]
+    # Drop: 'Graduation Rate', 'Percent Pass', 'ELA and Math' (never need these)
+    data = data[data.columns[~data.columns.str.contains(r'Graduation Rate|Percent Pass|ELA and Math')]].copy()
 
-        for col in tested_cols:
-            if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
+    # Drop: all SAT related columns ('Approaching Benchmark', 'At Benchmark', etc.)
+    # for a Category if the value of 'Total Tested' for that Category is '0'
+    tested_cols = data.filter(regex='Total Tested|Cohort Count|Test N').columns.tolist()
+    drop_columns=[]
 
-                if 'Total Tested' in col:
-                    match_string = ' Total Tested'
-                elif 'Cohort Count' in col:
-                    match_string = '|Cohort Count'
-                elif 'Test N' in col:
-                    match_string = ' Test N'
+    for col in tested_cols:
+        if pd.to_numeric(data[col], errors='coerce').sum() == 0 or data[col].isnull().all():
 
-                matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(match_string)[0])]
-                drop_columns.append(matching_cols.tolist())   
+            if 'Total Tested' in col:
+                match_string = ' Total Tested'
+            elif 'Cohort Count' in col:
+                match_string = '|Cohort Count'
+            elif 'Test N' in col:
+                match_string = ' Test N'
 
-        drop_all = [i for sub_list in drop_columns for i in sub_list]
+            matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(match_string)[0])]
+            drop_columns.append(matching_cols.tolist())   
 
-        # ALT: data = data.loc[:,~data.columns.str.contains(drop_all, case=False)] 
-        data = data.drop(drop_all, axis=1).copy()
+    drop_all = [i for sub_list in drop_columns for i in sub_list]
 
-    else:
+    # ALT: data = data.loc[:,~data.columns.str.contains(drop_all, case=False)] 
+    data = data.drop(drop_all, axis=1).copy()
+
+    if len(data.columns) <= 1:
+        
         data = pd.DataFrame()
 
     return data

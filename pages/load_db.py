@@ -267,17 +267,17 @@ def get_letter_grades(*args):
     
     return run_query(q, params)
 
-def get_adult_high_school_metric_data(*args):
-    keys = ['id']
-    params = dict(zip(keys, args))
+# def get_adult_high_school_metric_data(*args):
+#     keys = ['id']
+#     params = dict(zip(keys, args))
 
-    q = text('''
-        SELECT Year, "AHS|CCR", "AHS|GradAll"
-            FROM academic_data_hs
-	        WHERE SchoolID = :id
-        ''')
+#     q = text('''
+#         SELECT Year, "AHS|CCR", "AHS|GradAll"
+#             FROM academic_data_hs
+# 	        WHERE SchoolID = :id
+#         ''')
     
-    return run_query(q, params)
+#     return run_query(q, params)
 
 def get_k8_school_academic_data(*args):
     keys = ['id']

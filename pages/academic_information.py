@@ -174,13 +174,11 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                 hs_table_container = {"display": "none"}
 
             # get all years of data
-            raw_k8_school_data = get_k8_school_academic_data(school)
+            selected_raw_k8_school_data = get_k8_school_academic_data(school)
             
             # filter out years of data later than the selected year
             if excluded_years:
-                selected_raw_k8_school_data = raw_k8_school_data[~raw_k8_school_data["Year"].isin(excluded_years)].copy()
-            else:
-                selected_raw_k8_school_data = raw_k8_school_data.copy()
+                selected_raw_k8_school_data = selected_raw_k8_school_data[~selected_raw_k8_school_data["Year"].isin(excluded_years)]
 
             if len(selected_raw_k8_school_data.index) == 0:
 
@@ -224,13 +222,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     k8_ethnicity_math_fig = {}
                     k8_subgroup_ela_fig = {}
                     k8_subgroup_math_fig = {}
-                    k8_table_container = {"display": "none"}               
-                    
-                    # This section displays K8 tables for both K8 and K12 schools. If the 
-                    # selected school is K8 and it has no data, then we display full
-                    # no_data_page fig. If the selected school is a K12, we go to the next
-                    # check and if it has no HS data either, then no_data_fig will also
-                    # be displayed.
+                    k8_table_container = {"display": "none"}
 
                     if selected_school_type == "K8":
 
@@ -469,25 +461,27 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     ]
 
                     if not subgroup_math_fig_data.empty:
+
                         k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,math_title)
+
                     else:
 
                         k8_subgroup_math_fig = no_data_fig_label(math_title, 100)
 
-        else:
-            # school type is not K8 or K12
-            k8_grade_table = {}
-            k8_ethnicity_table = {}
-            k8_subgroup_table = {}
-            k8_other_table = {}
-            k8_table_container = {"display": "none"}
+        # else:
+        #     # school type is not K8 or K12
+        #     k8_grade_table = {}
+        #     k8_ethnicity_table = {}
+        #     k8_subgroup_table = {}
+        #     k8_other_table = {}
+        #     k8_table_container = {"display": "none"}
 
-            k8_grade_ela_fig = {}
-            k8_grade_math_fig = {}
-            k8_ethnicity_ela_fig = {}
-            k8_ethnicity_math_fig = {}
-            k8_subgroup_ela_fig = {}
-            k8_subgroup_math_fig = {}
+        #     k8_grade_ela_fig = {}
+        #     k8_grade_math_fig = {}
+        #     k8_ethnicity_ela_fig = {}
+        #     k8_ethnicity_math_fig = {}
+        #     k8_subgroup_ela_fig = {}
+        #     k8_subgroup_math_fig = {}
 
         # NOTE: There is a special exception for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
@@ -516,9 +510,8 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             else:
 
                 selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
-                all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
 
-                if all_hs_school_data.empty:
+                if selected_raw_hs_school_data.empty:
 
                     # df is empty after being processed
                     hs_grad_overview_table = {}
@@ -530,6 +523,8 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     hs_table_container = {"display": "none"}
                 
                 else:
+                    all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
+                    
                     # Graduation Rate Tables ("Strength of Diploma" in data, but not currently displayed)
                     grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
