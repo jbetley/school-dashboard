@@ -22,7 +22,7 @@ from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data
 
 from .load_db import get_school_index, get_k8_school_academic_data, get_high_school_academic_data, \
     get_hs_corporation_academic_data, get_k8_corporation_academic_data
-from .calculations import conditional_fill
+from .calculations import conditional_fillna
 
 dash.register_page(__name__,  path = "/academic_metrics", order=5)
 
@@ -61,14 +61,14 @@ def update_academic_metrics(school: str, year: str):
     
     excluded_years = get_excluded_years(year)
 
-    # default values
+    # default values (all empty values with empty container displayed)
     table_container_11ab = {}
     table_container_11cd = {}
     table_container_14ab = {}
     table_container_14cd = {}
     table_container_14ef = {}
     table_container_14g = {}
-    # table_container_15abcd = {}
+    # table_container_15abcd = {}   # Growth
     table_container_16ab = {}
     table_container_16cd = {}     
     display_attendance = {"display": "none"}
@@ -94,17 +94,6 @@ def update_academic_metrics(school: str, year: str):
     # K8 Academic Metrics (for K8 and K12 schools)
     if selected_school_type == "K8" or selected_school_type == "K12":
 
-        # ahs_table_container_113 = {}
-        # ahs_table_container_1214 = {}
-        # display_ahs_metrics = {"display": "none"}
-
-        # if K8, hide HS tables (except for CHS prior to 2021 when it was a K12)
-        # if selected_school_type == "K8" and not (selected_school_id == 5874 and selected_year_numeric < 2021):
-
-        #     table_container_17ab = {}
-        #     table_container_17cd = {}
-        #     display_hs_metrics = {"display": "none"}
-
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
         
         if excluded_years:
@@ -112,57 +101,19 @@ def update_academic_metrics(school: str, year: str):
 
         if len(selected_raw_k8_school_data.index) > 0:
 
-            # #if school type is K8 only but dataframes are empty
-            # table_container_11cd = {}
-            # table_container_14ab = {}
-            # table_container_14cd = {}
-            # table_container_14ef = {}
-            # table_container_14g = {}
-            # # table_container_15abcd = {}
-            # table_container_16ab = {}
-            # table_container_16cd = {}            
-            # display_k8_metrics = {"display": "none"}
-
-            # # This section displays K8 tables for both K8 and K12 schools. If the 
-            # # selected school is K8 and it has no data, then we display full
-            # # no_data_page fig. If the selected school is a K12, we go to the next
-            # # check and if it has no HS data either, then no_data_fig will also
-            # # be displayed.
-
-            # if selected_school_type == "K8":
-
-            #     main_container = {"display": "none"}
-            #     empty_container = {"display": "block"}
-
-        # else:
-
             selected_raw_k8_school_data = selected_raw_k8_school_data.replace({"^": "***"})
 
             clean_school_data = process_k8_academic_data(selected_raw_k8_school_data)
 
             if not clean_school_data.empty:
 
-            #     table_container_11cd = {}
-            #     table_container_14ab = {}
-            #     table_container_14cd = {}
-            #     table_container_14ef = {}
-            #     table_container_14g = {}
-            #     # table_container_15abcd = {}
-            #     table_container_16ab = {}
-            #     table_container_16cd = {}
-            #     display_k8_metrics = {"display": "none"}
-
-            #     if selected_school_type == "K8":
-
-            #         main_container = {"display": "none"}
-            #         empty_container = {"display": "block"}
-
-            # else:
                 display_k8_metrics = {"display": "block"}
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
+
+# TODO: Add First Year column to right of first year
 
                 raw_corp_data = get_k8_corporation_academic_data(school)
 
@@ -217,7 +168,7 @@ def update_academic_metrics(school: str, year: str):
                 metric_14ef_data = pd.concat([year_proficiency_empty, year_proficiency], ignore_index = True)
                 metric_14ef_data.reset_index()
 
-                metric_14ef_data = conditional_fill(metric_14ef_data)
+                metric_14ef_data = conditional_fillna(metric_14ef_data)
 
                 metric_14ef_label = "Percentage of students enrolled for at least two (2) school years achieving proficiency on the state assessment in English Language Arts (1.4.e.) and Math (1.4.f.)"
                 metric_14ef_data = get_svg_circle(metric_14ef_data)
@@ -302,49 +253,12 @@ def update_academic_metrics(school: str, year: str):
         # AHS data is stored in hs_academic_data file
         if len(selected_raw_hs_school_data.index) > 0:
 
-        #     table_container_17ab = {}
-        #     table_container_17cd = {}
-        #     display_hs_metrics = {"display": "none"}
-
-        #     ahs_table_container_113 = {}
-        #     ahs_table_container_1214 = {}
-        #     display_ahs_metrics = {"display": "none"}
-
-        #     # if not HS data and type is HS then whole page is empty
-        #     if selected_school_type == "HS" or selected_school_type == "AHS":
-
-        #         main_container = {"display": "none"}
-        #         empty_container = {"display": "block"}
-
-        # else:
-
             raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
             
             if not raw_hs_school_data.empty:
 
-            #     table_container_17ab = {}
-            #     table_container_17cd = {}
-            #     display_hs_metrics = {"display": "none"}
-
-            # else:
-
                 # Adult High School Metrics
                 if selected_school_type == "AHS":
-
-                    # # if hide all non-AHS related metrics
-                    # table_container_11cd = {}
-                    # table_container_14ab = {}
-                    # table_container_14cd = {}
-                    # table_container_14ef = {}
-                    # table_container_14g = {}
-                    # # table_container_15abcd = {}
-                    # table_container_16ab = {}
-                    # table_container_16cd = {}
-                    # display_k8_metrics = {"display": "none"}
-
-                    # table_container_17ab = {}
-                    # table_container_17cd = {}
-                    # display_hs_metrics = {"display": "none"}
 
                     display_ahs_metrics = {"display": "block"}
                     main_container = {"display": "block"}
@@ -378,10 +292,10 @@ def update_academic_metrics(school: str, year: str):
 
                     ahs_metric_data_1214 = pd.concat([ahs_nocalc_empty, ahs_no_calc], ignore_index = True)
                     ahs_metric_data_1214.reset_index()
-                    
+
                     # This fills nan with either "N/A" or "No Data" depending on the column
-                    ahs_metric_data_1214 = conditional_fill(ahs_metric_data_1214)
-                    
+                    ahs_metric_data_1214 = conditional_fillna(ahs_metric_data_1214)
+                 
                     ahs_metric_label_1214 = "Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b (Not Calculated)"
                     ahs_metric_data_1214 = get_svg_circle(ahs_metric_data_1214) 
                     ahs_table_1214 = create_metric_table(ahs_metric_label_1214, ahs_metric_data_1214)
@@ -432,65 +346,12 @@ def update_academic_metrics(school: str, year: str):
                     metric_17cd_data = pd.concat([grad_metrics_empty, grad_metrics], ignore_index = True)
                     metric_17cd_data.reset_index()
 
-                    metric_17cd_data = conditional_fill(metric_17cd_data)
-                    
+                    metric_17cd_data = conditional_fillna(metric_17cd_data)
+                  
                     metric_17cd_label = "High School Accountability Metrics 1.7.c & 1.7.d"
                     metric_17cd_data = get_svg_circle(metric_17cd_data)          
                     table_17cd = create_metric_table(metric_17cd_label, metric_17cd_data)
                     table_container_17cd = set_table_layout(table_17cd, table_17cd, metric_17cd_data.columns)
-
-                
-    # # K8, K12, & HS Accountability Metrics
-    # else:   
-        
-    #     # hide AHS metrics
-    #     ahs_table_container_113 = {}
-    #     ahs_table_container_1214 = {}
-    #     display_ahs_metrics = {"display": "none"}
-
-    #     # High School Academic Metrics (including CHS if prior to 2021)
-    #     if selected_school_type == "HS" or selected_school_type == "K12" or \
-    #         (selected_school_type == "5874" and selected_year_numeric < 2021):
-        
-    #         # if HS only, no K8 data
-    #         if selected_school_type == "HS":
-    #             table_container_11cd = {}
-    #             table_container_14ab = {}
-    #             table_container_14cd = {}
-    #             table_container_14ef = {}
-    #             table_container_14g = {}
-    #             # table_container_15abcd = {}
-    #             table_container_16ab = {}
-    #             table_container_16cd = {}              
-    #             display_k8_metrics = {"display": "none"}
-
-
-    # This should never happen . . . 
-    # if selected_school_type != "K8" and selected_school_type != "K12" \
-    #     and selected_school_type != "HS" and selected_school_type != "AHS":
-        
-    #     table_container_11ab = {}
-    #     table_container_11cd = {}
-    #     table_container_14ab = {}
-    #     table_container_14cd = {}
-    #     table_container_14ef = {}
-    #     table_container_14g = {}
-    #     # table_container_15abcd = {}
-    #     table_container_16ab = {}
-    #     table_container_16cd = {}     
-    #     display_attendance = {"display": "none"}
-    #     display_k8_metrics = {"display": "none"}
-
-    #     table_container_17ab = {}
-    #     table_container_17cd = {}
-    #     display_hs_metrics = {"display": "none"}
-        
-    #     ahs_table_container_113 = {}
-    #     ahs_table_container_1214 = {}
-    #     display_ahs_metrics = {"display": "none"}
-
-    #     main_container = {"display": "none"}
-    #     empty_container = {"display": "block"}
 
     # Attendance Data & Teacher Retention Rate (all schools have this data)
     metric_11ab_label = "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation."
@@ -503,8 +364,8 @@ def update_academic_metrics(school: str, year: str):
         teacher_retention_rate = pd.DataFrame({"Category": ["1.1.b. Teacher Retention Rate"]})
 
         metric_11ab_data = pd.merge(attendance_data, teacher_retention_rate, how="outer", on="Category")
- 
-        metric_11ab_data = conditional_fill(metric_11ab_data)
+
+        metric_11ab_data = conditional_fillna(metric_11ab_data)
 
         metric_11ab_data = get_svg_circle(metric_11ab_data)
         table_11ab = create_metric_table(metric_11ab_label, metric_11ab_data)
@@ -526,7 +387,7 @@ def update_academic_metrics(school: str, year: str):
         metric_11cd_data = pd.concat([student_retention_empty, student_retention_rate], ignore_index = True)
         metric_11cd_data.reset_index()
 
-        metric_11cd_data = conditional_fill(metric_11cd_data)
+        metric_11cd_data = conditional_fillna(metric_11cd_data)
 
         metric_11cd_data = get_svg_circle(metric_11cd_data)
         table_11cd = create_metric_table(metric_11cd_label, metric_11cd_data)

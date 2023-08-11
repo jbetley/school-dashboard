@@ -14,7 +14,7 @@ import numpy as np
 import itertools
 from .load_db import get_current_year, get_school_index, get_demographic_data, get_graduation_data, get_letter_grades
 from .calculations import calculate_percentage, calculate_difference, calculate_year_over_year, \
-    set_academic_rating, recalculate_total_proficiency
+    set_academic_rating, recalculate_total_proficiency, conditional_fillna
 
 pd.set_option('display.max_rows', None)
 
@@ -108,7 +108,8 @@ def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
 
     attendance_rate['Category'] =  attendance_rate['Category'].replace(['Avg Attendance'], 'Attendance Rate')
 
-    attendance_rate = attendance_rate.fillna('No Data')
+    # attendance_rate = attendance_rate.fillna('No Data')
+    attendance_rate = conditional_fillna(attendance_rate)
 
     attendance_rate.columns = attendance_rate.columns.astype(str)
 
@@ -885,8 +886,8 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
         )
         for i in range(data.shape[1]-2, 1, -3)
     ]
-
-    data = data.fillna("No Data")
+    data = conditional_fillna(data)
+    # data = data.fillna("No Data")
 
     data.columns = data.columns.astype(str)
 
@@ -1015,7 +1016,8 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
         for i in range(final_k8_academic_data.shape[1], 1, -3)
     ]
 
-    final_k8_academic_data = final_k8_academic_data.fillna("No Data")
+    # final_k8_academic_data = final_k8_academic_data.fillna("No Data")
+    final_k8_academic_data = conditional_fillna(final_k8_academic_data)
 
     return final_k8_academic_data
 
@@ -1179,7 +1181,8 @@ def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
         for i in range(data.shape[1], 1, -1)
     ]
 
-    data = data.fillna("No Data")
+    # data = data.fillna("No Data")
+    data = conditional_fillna(data)
     data.columns = data.columns.astype(str)
 
     return data

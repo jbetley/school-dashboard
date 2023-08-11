@@ -19,7 +19,7 @@ import re
 from .table_helpers import no_data_page, no_data_table, create_academic_info_table, \
     create_growth_table, set_table_layout, create_basic_info_table
 from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart
-from .calculations import round_percentages
+from .calculations import round_percentages, conditional_fillna
 from .subnav import subnav_academic
 from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_excluded_years, \
     process_k8_academic_data, get_attendance_data, process_high_school_academic_data, filter_high_school_academic_data, \
@@ -50,16 +50,7 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("hs-table-container", "style"),
     Output("academic-information-main-container", "style"),
     Output("academic-information-empty-container", "style"),
-    Output("academic-information-no-data", "children"),
-    # Output("table-grades-growth-ela-container", "children"),
-    # Output("table-grades-growth-math-container", "children"),
-    
-    # Output("table-ethnicity-growth-ela-container", "children"),
-    # Output("table-ethnicity-growth-math-container", "children"),
-
-    # Output("table-subgroup-growth-ela-container", "children"),
-    # Output("table-subgroup-growth-math-container", "children"),
-    
+    Output("academic-information-no-data", "children"),    
     Output("table-grades-growth-ela", "children"),    
     Output("fig-grades-growth-ela", "children"),
     Output("table-grades-sgp-ela", "children"),     
@@ -68,7 +59,6 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("fig-grades-growth-math", "children"),
     Output("table-grades-sgp-math", "children"),    
     Output("fig-grades-sgp-math", "children"),
-    
     Output("table-ethnicity-growth-ela", "children"),  
     Output("fig-ethnicity-growth-ela", "children"),
     Output("table-ethnicity-sgp-ela", "children"),      
@@ -77,7 +67,6 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("fig-ethnicity-growth-math", "children"),
     Output("table-ethnicity-sgp-math", "children"),       
     Output("fig-ethnicity-sgp-math", "children"),
-    
     Output("table-subgroup-growth-ela", "children"),      
     Output("fig-subgroup-growth-ela", "children"),
     Output("table-subgroup-sgp-ela", "children"),     
@@ -86,10 +75,9 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("fig-subgroup-growth-math", "children"),
     Output("table-subgroup-sgp-math", "children"),       
     Output("fig-subgroup-sgp-math", "children"),        
-    
-    Output("state-growth-main-container", "style"),
-    Output("state-growth-empty-container", "style"),    
-    Output("state-growth-no-data", "children"),
+    Output("academic-information-main-growth-container", "style"),
+    Output("academic-information-empty-growth-container", "style"),    
+    Output("academic-information-no-growth-data", "children"),
     # Output("growth-values-table", "children"),    
     # Output("growth-values-table-container", "style"),
     Output("academic-information-notes-string", "children"),
@@ -108,19 +96,64 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
     excluded_years = get_excluded_years(selected_year_string)
 
-    # default styles
-    main_container = {"display": "block"}
-    k8_table_container = {"display": "block"}
-    hs_table_container = {"display": "block"}
-    empty_container = {"display": "none"}
-    no_data_to_display = no_data_page("Academic Proficiency")
-    
-    state_growth_main_container = {"display": "block"}
-    state_growth_empty_container = {"display": "none"}   
-    no_state_growth_data_to_display = no_data_page("Indiana State Growth Calculations")
+    # default styles (all values empty - only empty_container displayed)
+    # growth
+    table_grades_growth_ela = {}
+    fig_grades_growth_ela = {}        
+    table_grades_sgp_ela = {}    
+    fig_grades_sgp_ela = {}            
+    table_grades_growth_math = {}
+    fig_grades_growth_math = {}        
+    table_grades_sgp_math = {}
+    fig_grades_sgp_math = {}        
 
-    # growth_values_table = [html.Img(src="assets/growth_table.jpg", hidden=True)]
-    # growth_values_table_container = {"display": "none"}
+    table_ethnicity_growth_ela = {}
+    fig_ethnicity_growth_ela = {}   
+    table_ethnicity_sgp_ela = {}    
+    fig_ethnicity_sgp_ela = {}          
+    table_ethnicity_growth_math = {}
+    fig_ethnicity_growth_math = {}      
+    table_ethnicity_sgp_math = {}
+    fig_ethnicity_sgp_math = {}
+
+    table_subgroup_growth_ela = {}
+    fig_subgroup_growth_ela = {}   
+    table_subgroup_sgp_ela = {}    
+    fig_subgroup_sgp_ela = {}          
+    table_subgroup_growth_math = {}
+    fig_subgroup_growth_math = {}      
+    table_subgroup_sgp_math = {}        
+    fig_subgroup_sgp_math = {}
+    main_growth_container = {"display": "none"}
+    empty_growth_container = {"display": "none"}
+
+    # proficiency
+    hs_grad_overview_table = {}
+    hs_grad_ethnicity_table = {}
+    hs_grad_subgroup_table = {}
+    sat_overview_table = {}
+    sat_ethnicity_table = {}
+    sat_subgroup_table = {}        
+    hs_table_container = {"display": "none"}
+
+    k8_grade_table = {}
+    k8_ethnicity_table = {}
+    k8_subgroup_table = {}
+    k8_other_table = {}
+    k8_table_container = {"display": "none"}
+
+    k8_grade_ela_fig = {}
+    k8_grade_math_fig = {}
+    k8_ethnicity_ela_fig = {}
+    k8_ethnicity_math_fig = {}
+    k8_subgroup_ela_fig = {}
+    k8_subgroup_math_fig = {}
+
+    main_container = {"display": "none"}
+    empty_container = {"display": "block"}
+
+    no_display_data = no_data_page("Academic Proficiency")
+    no_growth_data = no_data_page("Academic Growth")
 
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
@@ -129,109 +162,29 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
     ## Proficiency Tables
     if radio_value == "proficiency":
 
-        # set growth tables to null
-        table_grades_growth_ela = {}
-        fig_grades_growth_ela = {}        
-        table_grades_sgp_ela = {}    
-        fig_grades_sgp_ela = {}            
-        table_grades_growth_math = {}
-        fig_grades_growth_math = {}        
-        table_grades_sgp_math = {}
-        fig_grades_sgp_math = {}        
+        main_growth_container = {"display": "none"}
+        empty_growth_container = {"display": "none"}
 
-        table_ethnicity_growth_ela = {}
-        fig_ethnicity_growth_ela = {}   
-        table_ethnicity_sgp_ela = {}    
-        fig_ethnicity_sgp_ela = {}          
-        table_ethnicity_growth_math = {}
-        fig_ethnicity_growth_math = {}      
-        table_ethnicity_sgp_math = {}
-        fig_ethnicity_sgp_math = {}
-
-        table_subgroup_growth_ela = {}
-        fig_subgroup_growth_ela = {}   
-        table_subgroup_sgp_ela = {}    
-        fig_subgroup_sgp_ela = {}          
-        table_subgroup_growth_math = {}
-        fig_subgroup_growth_math = {}      
-        table_subgroup_sgp_math = {}        
-        fig_subgroup_sgp_math = {}
-
-        state_growth_main_container = {"display": "none"}
-        state_growth_empty_container = {"display": "none"}   
-     
         if (selected_school_type == "K8" or selected_school_type == "K12"):
 
-            # if K8, hide HS tables (except for CHS prior to 2021 when it was a K12)
-            if selected_school_type == "K8" and not (selected_school_id == 5874 and selected_year_numeric < 2021):
-                
-                hs_grad_overview_table = {}
-                hs_grad_ethnicity_table = {}
-                hs_grad_subgroup_table = {}
-                sat_overview_table = {}
-                sat_ethnicity_table = {}
-                sat_subgroup_table = {}                  
-                hs_table_container = {"display": "none"}
-
-            # get all years of data
             selected_raw_k8_school_data = get_k8_school_academic_data(school)
             
             # filter out years of data later than the selected year
             if excluded_years:
                 selected_raw_k8_school_data = selected_raw_k8_school_data[~selected_raw_k8_school_data["Year"].isin(excluded_years)]
 
-            if len(selected_raw_k8_school_data.index) == 0:
-
-                # school type is K8 or K12, but there is no k8 data (may still be 9-12 data)
-                k8_grade_table = {}
-                k8_ethnicity_table = {}
-                k8_subgroup_table = {}
-                k8_other_table = {}
-                k8_grade_ela_fig = {}
-                k8_grade_math_fig = {}
-                k8_ethnicity_ela_fig = {}
-                k8_ethnicity_math_fig = {}
-                k8_subgroup_ela_fig = {}
-                k8_subgroup_math_fig = {}
-                k8_table_container = {"display": "none"}               
-                
-                # This section displays K8 tables for both K8 and K12 schools. If the 
-                # selected school is K8 and it has no data, then we display full
-                # no_data_page fig. If the selected school is a K12, we go to the next
-                # check and if it has no HS data either, then no_data_fig will also
-                # be displayed.
-
-                if selected_school_type == "K8":
-
-                    main_container = {"display": "none"}
-                    empty_container = {"display": "block"}
-
-            else:                    
+            if len(selected_raw_k8_school_data.index) > 0:
 
                 all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data)
 
-                if all_k8_school_data.empty:
+                if not all_k8_school_data.empty:
 
-                    k8_grade_table = {}
-                    k8_ethnicity_table = {}
-                    k8_subgroup_table = {}
-                    k8_other_table = {}
-                    k8_grade_ela_fig = {}
-                    k8_grade_math_fig = {}
-                    k8_ethnicity_ela_fig = {}
-                    k8_ethnicity_math_fig = {}
-                    k8_subgroup_ela_fig = {}
-                    k8_subgroup_math_fig = {}
-                    k8_table_container = {"display": "none"}
+                    k8_table_container = {"display": "block"}
+                    main_container = {"display": "block"}
+                    empty_container = {"display": "none"}                    
 
-                    if selected_school_type == "K8":
+                    all_k8_school_data = conditional_fillna(all_k8_school_data)
 
-                        main_container = {"display": "none"}
-                        empty_container = {"display": "block"}
-
-                else:
-
-                    all_k8_school_data = all_k8_school_data.fillna("No Data")
                     all_k8_school_data = (all_k8_school_data.set_index(["Category"]).add_suffix("School").reset_index())
 
                     all_k8_school_data.columns = all_k8_school_data.columns.str.replace(r"School$", "", regex=True)
@@ -261,7 +214,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     school_demographic_data = get_demographic_data(school)
                     attendance_rate = get_attendance_data(school_demographic_data, selected_year_string)
 
-                    if len(attendance_rate.index) != 0:
+                    if len(attendance_rate.index) > 0:
                         k8_other_table = create_basic_info_table(attendance_rate,"Attendance Data") 
                     else:
                         k8_other_table = no_data_table("Attendance Data")
@@ -287,8 +240,6 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
                         axis=1,
                     )
-
-                    # all_proficiency_data = school_k8_proficiency_data.copy()
                     
                     proficiency_rating = ["Below Proficiency", "Approaching Proficiency", "At Proficiency", "Above Proficiency"]
                 
@@ -468,21 +419,6 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                         k8_subgroup_math_fig = no_data_fig_label(math_title, 100)
 
-        # else:
-        #     # school type is not K8 or K12
-        #     k8_grade_table = {}
-        #     k8_ethnicity_table = {}
-        #     k8_subgroup_table = {}
-        #     k8_other_table = {}
-        #     k8_table_container = {"display": "none"}
-
-        #     k8_grade_ela_fig = {}
-        #     k8_grade_math_fig = {}
-        #     k8_ethnicity_ela_fig = {}
-        #     k8_ethnicity_math_fig = {}
-        #     k8_subgroup_ela_fig = {}
-        #     k8_subgroup_math_fig = {}
-
         # NOTE: There is a special exception for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
         # Christel House Watanabe Manual HS
@@ -496,33 +432,16 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             if excluded_years:
                 selected_raw_hs_school_data = selected_raw_hs_school_data[~selected_raw_hs_school_data["Year"].isin(excluded_years)]
 
-            if len(selected_raw_hs_school_data.index) == 0:
-
-                # selected type is HS, AHS, K12, or CHS < 2021, but there is no data
-                hs_grad_overview_table = {}
-                hs_grad_ethnicity_table = {}
-                hs_grad_subgroup_table = {}
-                sat_overview_table = {}
-                sat_ethnicity_table = {}
-                sat_subgroup_table = {}        
-                hs_table_container = {"display": "none"}                
-
-            else:
+            if len(selected_raw_hs_school_data.index) > 0:
 
                 selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
 
-                if selected_raw_hs_school_data.empty:
+                if not selected_raw_hs_school_data.empty:
 
-                    # df is empty after being processed
-                    hs_grad_overview_table = {}
-                    hs_grad_ethnicity_table = {}
-                    hs_grad_subgroup_table = {}
-                    sat_overview_table = {}
-                    sat_ethnicity_table = {}
-                    sat_subgroup_table = {}        
-                    hs_table_container = {"display": "none"}
-                
-                else:
+                    hs_table_container = {"display": "block"}
+                    main_container = {"display": "block"}
+                    empty_container = {"display": "none"}
+
                     all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
                     
                     # Graduation Rate Tables ("Strength of Diploma" in data, but not currently displayed)
@@ -578,32 +497,8 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
 
     elif radio_value =="growth":
-    # Growth Tab #
-
-        # set all proficiency tables to null and containers to display: none
-        hs_grad_overview_table = {}
-        hs_grad_ethnicity_table = {}
-        hs_grad_subgroup_table = {}
-        sat_overview_table = {}
-        sat_ethnicity_table = {}
-        sat_subgroup_table = {}        
-        hs_table_container = {"display": "none"}
-
-        k8_grade_table = {}
-        k8_ethnicity_table = {}
-        k8_subgroup_table = {}
-        k8_other_table = {}
-        k8_table_container = {"display": "none"}
-
-        k8_grade_ela_fig = {}
-        k8_grade_math_fig = {}
-        k8_ethnicity_ela_fig = {}
-        k8_ethnicity_math_fig = {}
-        k8_subgroup_ela_fig = {}
-        k8_subgroup_math_fig = {}
-
+ 
         main_container = {"display": "none"}
-        empty_container = {"display": "none"}
 
         # State Growth Data
         # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
@@ -628,6 +523,9 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
         if len(growth_data.index) > 0:
             
+            main_growth_container = {"display": "block"}
+            empty_growth_container = {"display": "none"}
+            empty_container = {"display": "none"}
             # Uncomment to show growth values table (not currently relevant without more data)
             # growth_values_table = [html.Img(src="assets/growth_table.jpg", hidden=False)]
             # growth_values_table_container = {"display": "block"}
@@ -654,6 +552,13 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             fig_data_ses_sgp, table_data_ses_sgp = process_growth_data(growth_data,"Socioeconomic Status","sgp")
             fig_data_el_sgp, table_data_el_sgp = process_growth_data(growth_data,"English Learner Status","sgp")
             fig_data_sped_sgp, table_data_sped_sgp = process_growth_data(growth_data,"Special Education Status","sgp")
+
+            # NOTE: The above code shows median SGP for all students, the following code would give us median
+            # sgp for students achieving adequate growth. What is the value of using this metric instead?
+            # adequate_growth_data = growth_data[growth_data["ILEARNGrowth Level"] == "Adequate Growth"]
+            # median_sgp_adequate = adequate_growth_data.groupby(["Test Year","Grade Level", "Subject"])["ILEARNGrowth Percentile"].median()
+            # adequate_growth_data_162 = growth_data_162[growth_data_162["ILEARNGrowth Level"] == "Adequate Growth"]
+            # median_sgp_adequate_162 = adequate_growth_data_162.groupby(["Test Year","Grade Level", "Subject"])["ILEARNGrowth Percentile"].median()
 
             # combine subgroups
             table_data_subgroup_growth = pd.concat([table_data_ses_growth, table_data_el_growth, table_data_sped_growth])
@@ -806,103 +711,6 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             label_subgroup_sgp_math ="Median SGP in Math by Subgroup"
             fig_subgroup_sgp_math = make_growth_chart(sgp_data_me_subgroup_math, sgp_data_162_subgroup_math, label_subgroup_sgp_math)
 
-        else:
-
-            # set growth tables to null
-            table_grades_growth_ela = {}
-            fig_grades_growth_ela = {}        
-            table_grades_sgp_ela = {}    
-            fig_grades_sgp_ela = {}            
-            table_grades_growth_math = {}
-            fig_grades_growth_math = {}        
-            table_grades_sgp_math = {}
-            fig_grades_sgp_math = {}        
-
-            table_ethnicity_growth_ela = {}
-            fig_ethnicity_growth_ela = {}   
-            table_ethnicity_sgp_ela = {}    
-            fig_ethnicity_sgp_ela = {}          
-            table_ethnicity_growth_math = {}
-            fig_ethnicity_growth_math = {}      
-            table_ethnicity_sgp_math = {}
-            fig_ethnicity_sgp_math = {}
-
-            table_subgroup_growth_ela = {}
-            fig_subgroup_growth_ela = {}   
-            table_subgroup_sgp_ela = {}    
-            fig_subgroup_sgp_ela = {}          
-            table_subgroup_growth_math = {}
-            fig_subgroup_growth_math = {}      
-            table_subgroup_sgp_math = {}        
-            fig_subgroup_sgp_math = {}
-            state_growth_main_container = {"display": "none"}
-            state_growth_empty_container = {"display": "block"}
-
-            # NOTE: The above code shows median SGP for all students, the following code would give us median
-            # sgp for students achieving adequate growth. What is the value of using this metric instead?
-            # adequate_growth_data = growth_data[growth_data["ILEARNGrowth Level"] == "Adequate Growth"]
-            # median_sgp_adequate = adequate_growth_data.groupby(["Test Year","Grade Level", "Subject"])["ILEARNGrowth Percentile"].median()
-            # adequate_growth_data_162 = growth_data_162[growth_data_162["ILEARNGrowth Level"] == "Adequate Growth"]
-            # median_sgp_adequate_162 = adequate_growth_data_162.groupby(["Test Year","Grade Level", "Subject"])["ILEARNGrowth Percentile"].median()
-
-    else:
-        # this should only trigger if radio_value is somehow anything other than proficiency or growth
-
-        # set growth tables to null
-        table_grades_growth_ela = {}
-        fig_grades_growth_ela = {}        
-        table_grades_sgp_ela = {}    
-        fig_grades_sgp_ela = {}            
-        table_grades_growth_math = {}
-        fig_grades_growth_math = {}        
-        table_grades_sgp_math = {}
-        fig_grades_sgp_math = {}        
-
-        table_ethnicity_growth_ela = {}
-        fig_ethnicity_growth_ela = {}   
-        table_ethnicity_sgp_ela = {}    
-        fig_ethnicity_sgp_ela = {}          
-        table_ethnicity_growth_math = {}
-        fig_ethnicity_growth_math = {}      
-        table_ethnicity_sgp_math = {}
-        fig_ethnicity_sgp_math = {}
-
-        table_subgroup_growth_ela = {}
-        fig_subgroup_growth_ela = {}   
-        table_subgroup_sgp_ela = {}    
-        fig_subgroup_sgp_ela = {}          
-        table_subgroup_growth_math = {}
-        fig_subgroup_growth_math = {}      
-        table_subgroup_sgp_math = {}        
-        fig_subgroup_sgp_math = {}
-        state_growth_main_container = {"display": "none"}
-        state_growth_empty_container = {"display": "block"}
-
-        # proficiency
-        hs_grad_overview_table = {}
-        hs_grad_ethnicity_table = {}
-        hs_grad_subgroup_table = {}
-        sat_overview_table = {}
-        sat_ethnicity_table = {}
-        sat_subgroup_table = {}        
-        hs_table_container = {"display": "none"}
-
-        k8_grade_table = {}
-        k8_ethnicity_table = {}
-        k8_subgroup_table = {}
-        k8_other_table = {}
-        k8_table_container = {"display": "none"}
-
-        k8_grade_ela_fig = {}
-        k8_grade_math_fig = {}
-        k8_ethnicity_ela_fig = {}
-        k8_ethnicity_math_fig = {}
-        k8_subgroup_ela_fig = {}
-        k8_subgroup_math_fig = {}
-
-        main_container = {"display": "none"}
-        empty_container = {"display": "block"}
-
     if radio_value == "proficiency":
         if selected_school_type == "AHS":
             academic_information_notes_string = "Adult High Schools enroll students who are over the age of 18, under credited, \
@@ -935,14 +743,14 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
         k8_grade_table, k8_grade_ela_fig, k8_grade_math_fig, k8_ethnicity_table, k8_ethnicity_ela_fig, k8_ethnicity_math_fig,
         k8_subgroup_table, k8_subgroup_ela_fig, k8_subgroup_math_fig, k8_other_table, k8_table_container, hs_grad_overview_table,
         hs_grad_ethnicity_table, hs_grad_subgroup_table, sat_overview_table, sat_ethnicity_table, sat_subgroup_table, 
-        hs_table_container, main_container, empty_container, no_data_to_display, 
+        hs_table_container, main_container, empty_container, no_display_data, 
         table_grades_growth_ela, fig_grades_growth_ela, table_grades_sgp_ela, fig_grades_sgp_ela,
         table_grades_growth_math, fig_grades_growth_math, table_grades_sgp_math, fig_grades_sgp_math,
         table_ethnicity_growth_ela, fig_ethnicity_growth_ela, table_ethnicity_sgp_ela, fig_ethnicity_sgp_ela,
         table_ethnicity_growth_math, fig_ethnicity_growth_math, table_ethnicity_sgp_math, fig_ethnicity_sgp_math,
         table_subgroup_growth_ela, fig_subgroup_growth_ela, table_subgroup_sgp_ela, fig_subgroup_sgp_ela,
         table_subgroup_growth_math, fig_subgroup_growth_math, table_subgroup_sgp_math, fig_subgroup_sgp_math,
-        state_growth_main_container,state_growth_empty_container, no_state_growth_data_to_display, academic_information_notes_string
+        main_growth_container,empty_growth_container, no_growth_data, academic_information_notes_string
     ) # growth_values_table, growth_values_table_container
 
 def layout():
@@ -1326,13 +1134,13 @@ def layout():
                         className="bare_container_center twelve columns",
                     ),                      
                 ],
-                id = "state-growth-main-container",
+                id = "academic-information-main-growth-container",
             ),
             html.Div(
                 [
-                    html.Div(id="state-growth-no-data"),
+                    html.Div(id="academic-information-no-growth-data"),
                 ],
-                id = "state-growth-empty-container",
+                id = "academic-information-empty-growth-container",
             ),
         ],
         id="mainContainer",

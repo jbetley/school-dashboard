@@ -1001,24 +1001,21 @@ def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
     # determines the col_width class and width of the category column based
     # on the size (# of cols) of the dataframe
     if table_size <= 3:
-        col_width = 'four'
+        col_width = 'six'
         category_width = 35
     if table_size > 3 and table_size <=5:
-        col_width = 'four'
+        col_width = 'seven'
         category_width = 25
     elif table_size > 5 and table_size <= 7:
-        col_width = 'five'
+        col_width = 'eight'
         category_width = 20
     elif table_size > 7 and table_size <= 9:
-        col_width = 'six'
+        col_width = 'nine'
         category_width = 20
     elif table_size >= 10 and table_size <= 13:
-        col_width = 'seven'
+        col_width = 'ten'
         category_width = 15
-    elif table_size > 13 and table_size <=17:
-        col_width = 'nine'
-        category_width = 15
-    elif table_size > 17:
+    elif table_size > 13:
         col_width = 'ten'
         category_width = 15
 
@@ -1183,18 +1180,18 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
         # on the size (# of cols) of the dataframe
         if table_size <= 3:
             col_width = 'four'
-            category_width = 35
+            category_width = 40
         if table_size > 3 and table_size <=5:
-            col_width = 'four'
-            category_width = 25
-        elif table_size > 5 and table_size < 7:
-            col_width = 'five'
-            category_width = 20
-        elif table_size >= 7 and table_size < 9:
             col_width = 'six'
             category_width = 20
-        elif table_size >= 9 and table_size <= 13:
+        elif table_size > 5 and table_size < 7:
+            col_width = 'six'
+            category_width = 20
+        elif table_size >= 7 and table_size < 9:
             col_width = 'seven'
+            category_width = 20
+        elif table_size >= 9 and table_size <= 13:
+            col_width = 'eight'
             category_width = 15
         elif table_size > 13 and table_size <=17:
             col_width = 'nine'
@@ -1215,10 +1212,16 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
         all_cols = data.columns.tolist()
 
         # set column widths
-        nsize_width = 4
-        data_width = 100 - category_width - nsize_width
-        year_width = data_width / (table_size - 1)
+        if table_size <= 3:
+            data_width = 100 - category_width
+            nsize_width = year_width = data_width / (table_size - 1)          
         
+        else:
+            nsize_width = 5
+            data_width = 100 - category_width - nsize_width
+            year_width = data_width / (table_size - 1)
+
+  
         # formatting logic is slightly different for a multi-header table
         table_cell_conditional = [
             {
@@ -1267,7 +1270,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
             },
                 'textAlign': 'center',
                 'fontWeight': '400',
-                'fontSize': '10px',
+                'fontSize': '12px',
                 'borderRight': '.5px solid #b2bdd4',
                 'borderTop': '.5px solid #b2bdd4',
                 'borderBottom': '.5px solid #b2bdd4'
@@ -1475,24 +1478,24 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         # on the size (# of cols) of the dataframe
         if table_size <= 3:
             col_width = 'four'
-            category_width = 70
-        if table_size > 3 and table_size <=4:
+            category_width = 40
+        if table_size > 3 and table_size <=5:
             col_width = 'six'
             category_width = 35
-        elif table_size >= 5 and table_size <= 8:
-            col_width = 'six'
-            category_width = 30
-        elif table_size == 9:
+        elif table_size > 5 and table_size <= 7:
             col_width = 'seven'
             category_width = 30
+        elif table_size > 7 and table_size <= 9:
+            col_width = 'seven'
+            category_width = 20
         elif table_size >= 10 and table_size <= 13:
-            col_width = 'seven'
+            col_width = 'eight'
             category_width = 15
         elif table_size > 13 and table_size <=17:
-            col_width = 'nine'
+            col_width = 'ten'
             category_width = 15
         elif table_size > 17:
-            col_width = 'ten'
+            col_width = 'eleven'
             category_width = 15
 
         list_cols = data.columns.tolist()
@@ -1502,8 +1505,8 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
         diff_headers = [y for y in list_cols if 'Diff' in y]
 
         # rename n_size before getting col list
-        data.columns = data.columns.str.replace('N-Size', 'n', regex=True)
-        nsize_headers = [y for y in data.columns.tolist() if 'n' in y]
+        data.columns = data.columns.str.replace('N-Size', 'Tested', regex=True)
+        nsize_headers = [y for y in data.columns.tolist() if 'Tested' in y]
 
         # get new col list after renaming N-Size
         all_cols = data.columns.tolist()
@@ -1512,13 +1515,21 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
 
         # splits column width evenly for all columns other than 'Category'
         # can adjust individual categories by adjusting formula
-        nsize_width = 1
-        data_width = 100 - category_width - nsize_width
 
-        data_col_width = data_width / (table_size - 1)
-        rating_width = data_col_width/2
-        year_width = data_col_width + data_col_width/4
-        diff_width = data_col_width + data_col_width/4
+        # set column widths
+        if table_size <= 3:
+            data_width = 100 - category_width
+            nsize_width = year_width = rating_width = diff_width = data_width / (table_size - 1)          
+        
+        else:
+
+            nsize_width = 5
+            data_width = 100 - category_width - nsize_width
+
+            data_col_width = data_width / (table_size - 1)
+            rating_width = data_col_width/2
+            year_width = data_col_width + data_col_width/4
+            diff_width = data_col_width + data_col_width/4
 
         class_name = 'pretty_container ' + col_width + ' columns'
 
@@ -1546,8 +1557,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                 'column_id': nsize
             },
                 'textAlign': 'center',
-                'fontWeight': '300',
-                'fontSize': '8px',
+                'fontWeight': '500',
                 'width': str(nsize_width) + '%'
             } for nsize in nsize_headers
         ]  + [            
@@ -1555,7 +1565,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                 'column_id': rating
             },
                 'textAlign': 'center',
-                'fontWeight': '600',
+                'fontWeight': '700',
                 'width': str(rating_width) + '%'
             } for rating in rating_headers
         ]  + [
@@ -1608,6 +1618,9 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                 'column_id': diff,
                 'header_index': 1,
             },
+                'textAlign': 'center',
+                'fontWeight': '400',
+                'fontSize': '12px',
                 'borderTop': '.5px solid #b2bdd4',
                 'borderBottom': '.5px solid #b2bdd4',
         } for diff in diff_headers
@@ -1617,6 +1630,8 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                 'header_index': 1,
             },
                 'textAlign': 'center',
+                'fontWeight': '400',
+                'fontSize': '12px',
                 'borderTop': '.5px solid #b2bdd4',
                 'borderBottom': '.5px solid #b2bdd4',
         } for nsize in nsize_headers
@@ -1731,7 +1746,7 @@ def create_metric_table(label: str, content: pd.DataFrame) -> list:
                 'id': all_cols[idx],
                 'presentation': 'markdown'
             }
-            if 'Rate' in col or 'n' in col
+            if 'Rate' in col or 'Tested' in col
 
             # NOTE: Cannot figure out how to have three different col formatting conditions   
             # { 

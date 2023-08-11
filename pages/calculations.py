@@ -10,8 +10,10 @@ import numpy as np
 from typing import Tuple
 import scipy.spatial as spatial
 
-def conditional_fill(data: pd.DataFrame) -> pd.DataFrame:
-    """fillna, but conditional
+def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    fillna based on column name - using substrings to
+    identify columns
 
     Args:
         data (pd.DataFrame): academic data dataframe
@@ -19,11 +21,15 @@ def conditional_fill(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the same dataframe with the na's filled
     """
+    data.columns = data.columns.astype(str)
 
     fill_with_na = [i for i in data.columns if 'Rate' in i]
     data[fill_with_na] = data[fill_with_na].fillna(value="N/A")
 
-    fill_with_no_data = [i for i in data.columns if 'Rate' not in i]
+    fill_with_dash = [i for i in data.columns if 'Diff' in i or 'Tested' in i or 'N-Size' in i]
+    data[fill_with_dash] = data[fill_with_dash].fillna(value='\u2014') # em dash (—)
+
+    fill_with_no_data = [i for i in data.columns if 'Rate' not in i or 'Diff' not in i or 'Tested' not in i]
     data[fill_with_no_data] = data[fill_with_no_data].fillna(value="No Data")
 
     return data
