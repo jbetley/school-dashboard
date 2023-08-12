@@ -379,263 +379,43 @@ def create_school_label(data: pd.DataFrame) -> str:
 
     return label
 
-# NOTE: Displays both 162Day and Majority Enrolled, along with Difference
-def create_growth_table_both(label: str, content: pd.DataFrame, kind: str) -> list:
-    """
-    Takes a label, a dataframe, and a descriptive (type) string and creates a multi-header
-    table with academic growth and sgp data.
-
-    Args:
-        label (str): Table title
-        content (pd.DataTable): dash dataTable
-        kind (str): 'sgp|growth'
-    Returns:
-        table_layout (list): dash html.Div enclosing html.Label and DataTable
-    """
-   
-    data = content.copy()
-
-    num_cols = len(data.columns)
-
-    if len(data.index) == 0 or num_cols == 1:
-        table_layout = [
-            html.Div(
-                [
-                    html.Label(label, className='header_label'),
-                    html.Div(
-                        dash_table.DataTable(
-                            columns = [
-                                {'id': 'emptytable', 'name': 'No Data to Display'},
+def growth_mashup(table: list, fig, label: str):    # : plotly.graph_objs._figure.Figure
+    
+    table_layout = [
+        html.Div(
+            [
+                html.Div(
+                    [                    
+                        html.Label(label, className='header_label'),                    
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(table, style={"marginTop": "20px"}),
+                                    ],
+                                    className="pretty_container six columns",                        
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(fig, style={"marginTop": "-20px"}),
+                                    ],
+                                    className="pretty_container six columns",                        
+                                ),
                             ],
-                            style_header={
-                                'fontSize': '14px',
-                                'border': 'none',
-                                'textAlign': 'center',
-                                'color': '#6783a9',
-                                'fontFamily': 'Open Sans, sans-serif',
-                            },
-                        )
-                    )
-                ],
-                className = 'pretty_container ten columns'
-            )
-        ]
-
-    else:
-
-        # determines the col_width class and width of the category column based
-        # on the size (# of cols) of the dataframe
-        if num_cols <= 3:
-            col_width = 'four'
-            category_width = 70
-        if num_cols > 3 and num_cols <=4:
-            col_width = 'six'
-            category_width = 35
-        elif num_cols >= 5 and num_cols <= 8:
-            col_width = 'six'
-            category_width = 30
-        elif num_cols == 9:
-            col_width = 'seven'
-            category_width = 30
-        elif num_cols >= 10 and num_cols <= 13:
-            col_width = 'seven'
-            category_width = 15
-        elif num_cols > 13 and num_cols <=17:
-            col_width = 'nine'
-            category_width = 15
-        elif num_cols > 17:
-            col_width = 'ten'
-            category_width = 15
-
-        # splits column width evenly for all columns other than 'Category'
-        data_col_width = (100 - category_width) / (num_cols - 1)
-
-        class_name = 'pretty_container ' + col_width + ' columns'
-
-        all_cols = data.columns.tolist()
-
-        data_cols = [col for col in all_cols if 'Category' not in col]
-        first_cols = [col for col in all_cols if 'Days' in col]
-        diff_cols = [col for col in all_cols if 'Diff' in col]
-
-        # remove subject from category
-        data['Category'] = data['Category'].map(lambda x: x.split('|')[0]).copy()
-
-        # build multi-level headers
-        name_cols = [['Category','']]
-
-        # Split columns into Year (top level) and "162 Days", "Majority Enrolled",
-        # "diff" (second level)
-        for item in all_cols:
-
-            if item.startswith('20'):
-                name_cols.append([item[:4],item[4:]])
-
-        table_header_conditional = [
-            {   # need border left on the first column (162 Days) of each group
-                'if': {
-                    'column_id': col,
-                    'header_index': 1,
-                },
-                'borderLeft': '.5px solid #b2bdd4',
-            } for col in first_cols
-        ] + [
-            {   
-                'if': {
-                    'column_id': col,
-                    'header_index': 1,
-                },
-                'borderTop': '.5px solid #b2bdd4',
-                'borderBottom': '.5px solid #b2bdd4',
-        } for col in data_cols
-        ] + [
-            {
-                'if': {
-                    'column_id': data_cols[-1],
-                    'header_index': 1,
-                },
-                'borderRight': '.5px solid #b2bdd4',
-            }
-        ]
-
-        table_cell_conditional = [
-            {
-                'if': {
-                    'column_id': 'Category'
-                },
-                'textAlign': 'left',
-                'paddingLeft': '20px',
-                'fontWeight': '500',
-                'width': str(category_width) + '%'
-            },
-        ] + [
-            {
-                'if': {
-                    'column_id': col
-                },
-                'textAlign': 'center',
-                'fontWeight': '500',
-                'width': str(data_col_width) + '%',
-            } for col in data_cols
-        ]
-
-        table_data_conditional = [
-            {
-                'if': {
-                    'state': 'selected'
-                },
-                'backgroundColor': 'rgba(112,128,144, .3)',
-                'border': 'thin solid silver'
-            },
-            {
-                'if': {
-                    'row_index': 'odd'
-                },
-                'backgroundColor': '#eeeeee'
-            }
-        ] + [
-            {
-                'if': {
-                    'column_id': data_cols[-1],
-                },
-                'borderRight': '.5px solid #b2bdd4',
-            },
-        ] + [
-            {
-                'if': {
-                    'row_index': 0
-                },
-                'paddingTop': '5px'
-            }
-        ] + [
-            {
-                'if': {
-                    'row_index': len(data)-1
-                },
-                'borderBottom': '.5px solid #b2bdd4',
-            }
-        ] + [
-            {
-                'if': {
-                    'column_id': 'Category',
-                },
-                'borderRight': '.5px solid #b2bdd4',
-                'borderBottom': 'none',
-            },
-        ] + [
-            {
-                'if': {
-                    'column_id': col,
-                },
-                'borderRight': '.5px solid #b2bdd4',
-                'textAlign': 'center',
-            } for col in diff_cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} < 0'.format(col=col),
-                    'column_id': col
-                },
-                'fontWeight': 'bold',
-                'color': '#b44655',
-                'fontSize': '10px',
-            } for col in diff_cols
-        ] + [
-            {
-                'if': {
-                    'filter_query': '{{{col}}} > 0'.format(col=col),
-                    'column_id': col
-                },
-                'fontWeight': 'bold',
-                'color': '#81b446',
-                'fontSize': '10px',
-            } for col in diff_cols
-        ]
-
-        if kind == 'sgp':
-            col_format=[
-                {
-                'name': col, 'id': all_cols[idx], 'type':'numeric',
-                'format': Format()
-                }
-                for (idx, col) in enumerate(name_cols)
-            ]
-
-        else:
-            col_format=[
-                {
-                'name': col, 'id': all_cols[idx], 'type':'numeric',
-                'format': Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
-                }
-                for (idx, col) in enumerate(name_cols)
-            ]
-
-        table_layout = [
-            html.Div(
-                [
-                    html.Label(label, className='header_label'),
-                    html.Div(
-                        dash_table.DataTable(
-                            data.to_dict('records'),
-                            columns=col_format,
-                            style_data = table_style,
-                            style_data_conditional = table_data_conditional,
-                            style_header = table_header,
-                            style_header_conditional = table_header_conditional,
-                            style_cell = table_cell,
-                            style_cell_conditional = table_cell_conditional,
-                            merge_duplicate_headers=True,
-                        )
-                    )
-                ],
-                className = class_name
-            )
-        ]
+                            className="bare_container twelve columns",
+                        ),
+                    ],
+                    className="pretty_container twelve columns",
+                ),       
+            ],
+            className="bare_container_center twelve columns",
+        ),             
+    ]
 
     return table_layout
 
 # NOTE: Displays just Majority Enrolled (with 162 Day values in tooltip)
-def create_growth_table(label: str, data: pd.DataFrame, kind: str) -> list:
+def create_growth_table(label: str = '', data: pd.DataFrame, kind: str) -> list:
     """
     Takes a label, a dataframe, and a descriptive (type) string and creates a multi-header
     table with academic growth and sgp data.
@@ -697,7 +477,7 @@ def create_growth_table(label: str, data: pd.DataFrame, kind: str) -> list:
             category_width = 30
 
         data_col_width = (100 - category_width) / (num_cols - 1)
-        class_name = 'pretty_container ' + col_width + ' columns'
+        # class_name = 'pretty_container ' + col_width + ' columns'
 
         all_cols = data_me.columns.tolist()
         data_cols = [col for col in all_cols if 'Category' not in col]
@@ -796,12 +576,7 @@ def create_growth_table(label: str, data: pd.DataFrame, kind: str) -> list:
                 for row in data_162.to_dict('records')
             ]                
 
-        table_layout = [
-            html.Div(
-                [
-                    # html.Label(label, className='header_label'),
-                    html.Div(
-                        dash_table.DataTable(
+        table = dash_table.DataTable(
                             data_me.to_dict('records'),
                             columns = column_format,
                             style_table = {'height': '300px'},
@@ -817,11 +592,40 @@ def create_growth_table(label: str, data: pd.DataFrame, kind: str) -> list:
                                 'rule': 'font-size: 12px'
                             }],
                         )
-                    )
-                ],
-                # className = class_name
+
+        table_layout = [
+            html.Div(
+                [
+                html.Div(table)
+                ]
             )
-        ]
+        ]        
+        # table_layout = [
+        #     html.Div(
+        #         [
+        #             html.Label(label, className='header_label'),
+        #             html.Div(
+        #                 dash_table.DataTable(
+        #                     data_me.to_dict('records'),
+        #                     columns = column_format,
+        #                     style_table = {'height': '300px'},
+        #                     style_data = table_style,
+        #                     style_data_conditional = table_data_conditional,
+        #                     style_header = table_header,
+        #                     style_header_conditional = table_header_conditional,
+        #                     style_cell = table_cell,
+        #                     style_cell_conditional = table_cell_conditional,
+        #                     tooltip_data = tooltip_format,
+        #                     css=[{
+        #                         'selector': '.dash-table-tooltip',
+        #                         'rule': 'font-size: 12px'
+        #                     }],
+        #                 )
+        #             )
+        #         ],
+        #         # className = class_name
+        #     )
+        # ]
 
     return table_layout
 

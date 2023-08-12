@@ -721,43 +721,17 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
 
     fig.update_yaxes(title_text=ytitle, secondary_y=False)
 
+
     fig_layout = [
                 html.Div(
                     [
-                    html.Label(label, className = 'header_label'),
+                    # html.Label(label, className = 'header_label'),
                     dcc.Graph(figure = fig, config={'displayModeBar': False})
                     ],      
                 )
     ]
 
     return fig_layout
-
-# def set_table_fig_layout(table: list, fig: list,  cols: pd.Series) -> list:
-#     """
-#     Determines table layout depending on the size (# of cols) of the tables,
-#     either side by side or on an individual row
-
-#     Args:
-#         table1 (list): dash DataTable
-#         table2 (list): dash DataTable
-#         cols (pandas.core.indexes.Base.index): Pandas series of column headers
-
-#     Returns:
-#         table_layout (list): an html Div enclosing dash DataTables and css formatting
-#     """
-#     cols = [int(e[:4]) for e in cols if 'Category' not in e]
-#     num_cols = len(list(set(cols))) + 1 # 'Category + # of Years'
-
-#     table_layout = [
-#         html.Div([
-#                     table,
-#                     fig,
-#                 ],
-#                 className = 'bare_container_center twelve columns',
-#                 )
-#         ]
-
-#     return table_layout
 
 def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
     """
