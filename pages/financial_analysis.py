@@ -165,13 +165,13 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 
-        financial_position_table = {}
-        financial_activities_table = {}
-        financial_ratios_table = {}
-        per_student_table = {}
+        financial_position_table = []       # type: list
+        financial_activities_table = []     # type: list
+        financial_ratios_table = []         # type: list
+        per_student_table = []              # type: list
 
-        revenue_expenses_fig = {}
-        assets_liabilities_fig = {}
+        revenue_expenses_fig = {}           # type: ignore
+        assets_liabilities_fig = {}         # type: ignore
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
 
@@ -197,10 +197,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
         # if there are no columns or only one column ("Category"), then all tables and figs are empty
         if len(financial_data.columns) <= 1:
-            financial_position_table = {}
-            financial_activities_table = {}
-            financial_ratios_table = {}
-            per_student_table = {}
+            financial_position_table = []
+            financial_activities_table = []
+            financial_ratios_table = []
+            per_student_table = []
 
             revenue_expenses_fig = {}
             assets_liabilities_fig = {}
@@ -815,7 +815,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     ),
                 ]
             else:
-                financial_ratios_table  = no_data_table("Financial Ratios")
+                financial_ratios_table  = no_data_table(["Financial Ratios"])
 
             # NOTE: Uncomment to add federal audit findings
             # # federal_audit_findings_json

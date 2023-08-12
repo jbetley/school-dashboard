@@ -144,7 +144,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 
-        financial_information_table = {}
+        financial_information_table = []
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
 
@@ -354,7 +354,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
         else:
 
-            financial_information_table = {}
+            financial_information_table = []
             main_container = {"display": "none"}
             empty_container = {"display": "block"}
 

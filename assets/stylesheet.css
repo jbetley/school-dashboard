@@ -238,11 +238,30 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-/* used for ADM chart on About page to ensure same height as enrollmetn table.
+/* used for ADM chart on About page to ensure same height as enrollment table.
    Not currently used because it seems to mess with the width alignment. */
 .bare_container {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
+  display: flex;
+}
+
+.pretty_bare_container {
+  border-radius: 5px;
+  background-color: #ffffff;
+  margin: 10px;
+  padding: 15px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
+.pretty_flex_container {
+  border-radius: 5px;
+  background-color: #ffffff;
+  margin-top: 10px;
+  /* padding: 15px; */
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
   display: flex;
 }
 
@@ -815,6 +834,22 @@ label > .label-body {
   font-weight: bold;
   padding-bottom: 5px;
   padding-top: 5px;
+}
+
+.header_label_test {
+  height: auto;
+  background-color: #6783a9;
+  font-size: 12px;
+  font-family: 'Jost', sans-serif;
+  color: #ffffff;
+  text-align: center;
+  font-weight: bold;
+  padding-bottom: 5px;
+  padding-top: 5px;
+  /* position: absolute; */
+  width: 80%;
+  top: 0;
+  display: flex;
 }
 
 .school_string {

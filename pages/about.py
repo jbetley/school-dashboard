@@ -43,7 +43,7 @@ def update_about_page(year: str, school: str):
     previous_year_string = str(previous_year_numeric)
 
     year_title = previous_year_string + "-" + selected_year_string[-2:]
-    enroll_title = "Enrollment " + "(" + year_title + ")"
+    enroll_title = ["Enrollment " + "(" + year_title + ")"]
     ethnicity_title = "Enrollment by Ethnicity " + "(" + year_title + ")"
     subgroup_title = "Enrollment by Subgroup " + "(" + year_title + ")"
     
@@ -64,7 +64,7 @@ def update_about_page(year: str, school: str):
 
     if (len(demographic_data.index) == 0 or demographic_data.empty) and \
         (len(financial_data.columns) <= 1 or financial_data.empty):
-        enroll_title = ""
+        enroll_title = []
         enroll_table = []
         adm_fig = []
         ethnicity_title = ""

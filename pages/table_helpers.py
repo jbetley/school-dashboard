@@ -217,7 +217,7 @@ def create_proficiency_key() -> list:
 
     return key_table
 
-def no_data_table(label: str = 'Academic Data', text: str = 'No Data to Display') -> list:
+def no_data_table(label: list = ['Academic Data'], text: list = ['No Data to Display']) -> list:
     """
     Creates empty table with provided label and content string
 
@@ -799,7 +799,7 @@ def create_growth_table(label: str, data: pd.DataFrame, kind: str) -> list:
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className='header_label'),
+                    # html.Label(label, className='header_label'),
                     html.Div(
                         dash_table.DataTable(
                             data_me.to_dict('records'),
@@ -1419,7 +1419,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
     return table_layout
 
-def create_metric_table(label: str, content: pd.DataFrame) -> list:
+def create_metric_table(label: list, content: pd.DataFrame) -> list:
     """
     Takes a label and a dataframe consisting of Rating and Metric Columns and returns
     a dash datatable. NOTE: could possibly be less complicated than it is, or maybe not-

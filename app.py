@@ -64,7 +64,7 @@ login_manager.login_view = "/login"
 # using the db.Model, all db columns must be identified by name
 # and data type. UserMixin provides a get_id method that returns
 # the id attribute or raises an exception.
-class User(UserMixin, db.Model):
+class User(UserMixin, db.Model):    # type: ignore
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.Text, unique=True)

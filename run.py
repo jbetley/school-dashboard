@@ -9,7 +9,7 @@ app.server.wsgi_app = ProfilerMiddleware(
     app.server.wsgi_app,
     sort_by=["cumtime"], 
     restrictions=[50],
-    stream=None,
+    stream=None,        # type: ignore
     profile_dir=PROF_DIR
 )  
 

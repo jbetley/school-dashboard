@@ -135,9 +135,9 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     # if SQL returns nothing or just cols
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 
-        financial_metrics_table = {}
-        financial_indicators_table = {}
-        financial_metrics_definitions_table = {}
+        financial_metrics_table = []                #type: list
+        financial_indicators_table = []             #type: list
+        financial_metrics_definitions_table = []    #type: list
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
 
@@ -163,9 +163,9 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         # (you would also need to modify the financial metric calculation function, so
         # maybe think twice (or three times) before doing it)
         if (len(financial_data.columns) <= 1) | ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == "0")):
-            financial_metrics_table = {}
-            financial_indicators_table = {}
-            financial_metrics_definitions_table = {}
+            financial_metrics_table = []
+            financial_indicators_table = []
+            financial_metrics_definitions_table = []
             main_container = {"display": "none"}
             empty_container = {"display": "block"}        
         
@@ -201,9 +201,9 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             
             # Catches edge case where school has empty df after metric calculation
             if len(financial_metrics.columns) == 0:
-                financial_metrics_table = {}
-                financial_indicators_table = {}
-                financial_metrics_definitions_table = {}
+                financial_metrics_table = []
+                financial_indicators_table = []
+                financial_metrics_definitions_table = []
                 main_container = {"display": "none"}
                 empty_container = {"display": "block"}
 
@@ -231,13 +231,8 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 headers = financial_metrics.columns.tolist()
 
                 # determine # of columns and width of category column for display
-                clean_headers = []
-                for i, x in enumerate (headers):
-                    if "Rating" in x:
-                        clean_headers.append("Rate")
-                    else:
-                        clean_headers.append(x)
 
+                clean_headers = ["Rate" if "Rating" in c else c for c in headers]
                 year_headers = [i for i in headers if "Rating" not in i and "Metric" not in i]
                 rating_headers = [y for y in headers if "Rating" in y]
 

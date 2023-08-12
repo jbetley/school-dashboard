@@ -62,24 +62,24 @@ def update_academic_metrics(school: str, year: str):
     excluded_years = get_excluded_years(year)
 
     # default values (all empty values with empty container displayed)
-    table_container_11ab = {}
-    table_container_11cd = {}
-    table_container_14ab = {}
-    table_container_14cd = {}
-    table_container_14ef = {}
-    table_container_14g = {}
-    # table_container_15abcd = {}   # Growth
-    table_container_16ab = {}
-    table_container_16cd = {}     
+    table_container_11ab = []
+    table_container_11cd = []
+    table_container_14ab = []
+    table_container_14cd = []
+    table_container_14ef = []
+    table_container_14g = []
+    # table_container_15abcd = []   # Growth
+    table_container_16ab = []
+    table_container_16cd = []     
     display_attendance = {"display": "none"}
     display_k8_metrics = {"display": "none"}
 
-    table_container_17ab = {}
-    table_container_17cd = {}
+    table_container_17ab = []
+    table_container_17cd = []
     display_hs_metrics = {"display": "none"}
     
-    ahs_table_container_113 = {}
-    ahs_table_container_1214 = {}
+    ahs_table_container_113 = []
+    ahs_table_container_1214 = []
     display_ahs_metrics = {"display": "none"}
 
     main_container = {"display": "none"}
@@ -119,13 +119,14 @@ def update_academic_metrics(school: str, year: str):
 
                 clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
 
-                combined_delta = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, selected_year_numeric)
+                combined_delta = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, selected_year_string) # selected_year_numeric
 
                 category = ethnicity + subgroup
 
                 metric_14a_data = combined_years[(combined_years["Category"].str.contains("|".join(grades_all))) & (combined_years["Category"].str.contains("ELA"))]
                 metric_14a_label = ["1.4a Grade level proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " compared with the previous school year."]
-
+                print(metric_14a_label)
+                print(type(metric_14a_label))
                 metric_14a_data = get_svg_circle(metric_14a_data)
                 table_14a = create_metric_table(metric_14a_label, metric_14a_data)
 
@@ -170,7 +171,7 @@ def update_academic_metrics(school: str, year: str):
 
                 metric_14ef_data = conditional_fillna(metric_14ef_data)
 
-                metric_14ef_label = "Percentage of students enrolled for at least two (2) school years achieving proficiency on the state assessment in English Language Arts (1.4.e.) and Math (1.4.f.)"
+                metric_14ef_label = ["Percentage of students enrolled for at least two (2) school years achieving proficiency on the state assessment in English Language Arts (1.4.e.) and Math (1.4.f.)"]
                 metric_14ef_data = get_svg_circle(metric_14ef_data)
                 table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
                 table_container_14ef = set_table_layout(table_14ef, table_14ef, metric_14ef_data.columns)
@@ -185,13 +186,13 @@ def update_academic_metrics(school: str, year: str):
 
                     iread_data = iread_data.reset_index(drop=True)
 
-                    metric_14g_label = "1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment."
+                    metric_14g_label = ["1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment."]
                     iread_data = get_svg_circle(iread_data)   
                     table_14g = create_metric_table(metric_14g_label, iread_data)
                     table_container_14g = set_table_layout(table_14g, table_14g, iread_data.columns)
 
                 else:
-                    table_container_14g = no_data_table("1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.")
+                    table_container_14g = no_data_table(["1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment."])
 
                 # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
                 # growth_metrics_empty = pd.DataFrame(columns = simple_cols)
@@ -272,7 +273,7 @@ def update_academic_metrics(school: str, year: str):
                     
                     ahs_metric_data_113 = ahs_metric_data_113.drop("Metric", axis=1)
 
-                    ahs_metric_label_113 = "Adult High School Accountability Metrics 1.1 & 1.3"
+                    ahs_metric_label_113 = ["Adult High School Accountability Metrics 1.1 & 1.3"]
                     ahs_metric_data_113 = get_svg_circle(ahs_metric_data_113)            
                     ahs_table_113 = create_metric_table(ahs_metric_label_113, ahs_metric_data_113)
                     ahs_table_container_113 = set_table_layout(ahs_table_113, ahs_table_113, ahs_metric_data_113.columns)
@@ -296,7 +297,7 @@ def update_academic_metrics(school: str, year: str):
                     # This fills nan with either "N/A" or "No Data" depending on the column
                     ahs_metric_data_1214 = conditional_fillna(ahs_metric_data_1214)
                  
-                    ahs_metric_label_1214 = "Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b (Not Calculated)"
+                    ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b (Not Calculated)"]
                     ahs_metric_data_1214 = get_svg_circle(ahs_metric_data_1214) 
                     ahs_table_1214 = create_metric_table(ahs_metric_label_1214, ahs_metric_data_1214)
                     ahs_table_container_1214 = set_table_layout(ahs_table_1214, ahs_table_1214, ahs_metric_data_1214.columns)
@@ -323,7 +324,7 @@ def update_academic_metrics(school: str, year: str):
                     hs_merged_data = merge_high_school_data(clean_hs_school_data, clean_hs_corp_data)
                     combined_grad_metrics_data = calculate_high_school_metrics(hs_merged_data)
 
-                    metric_17ab_label = "High School Accountability Metrics 1.7.a & 1.7.b"
+                    metric_17ab_label = ["High School Accountability Metrics 1.7.a & 1.7.b"]
                     combined_grad_metrics_data = get_svg_circle(combined_grad_metrics_data)  
                     table_17ab = create_metric_table(metric_17ab_label, combined_grad_metrics_data)
                     table_container_17ab = set_table_layout(table_17ab, table_17ab, combined_grad_metrics_data.columns)
@@ -348,13 +349,16 @@ def update_academic_metrics(school: str, year: str):
 
                     metric_17cd_data = conditional_fillna(metric_17cd_data)
                   
-                    metric_17cd_label = "High School Accountability Metrics 1.7.c & 1.7.d"
+                    metric_17cd_label = ["High School Accountability Metrics 1.7.c & 1.7.d"]
                     metric_17cd_data = get_svg_circle(metric_17cd_data)          
                     table_17cd = create_metric_table(metric_17cd_label, metric_17cd_data)
                     table_container_17cd = set_table_layout(table_17cd, table_17cd, metric_17cd_data.columns)
 
     # Attendance Data & Teacher Retention Rate (all schools have this data)
-    metric_11ab_label = "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation."
+    metric_11ab_label = ["Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation."]
+
+    # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
+    metric_11cd_label = ["End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate."]
     
     attendance_data = get_attendance_metrics(school, selected_year_string)
 
@@ -376,9 +380,6 @@ def update_academic_metrics(school: str, year: str):
         }
         
         mock_columns = [i for i in attendance_data.columns if "Corp Avg" not in i]
-
-        # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
-        metric_11cd_label = "End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate."
         
         # Only add placeholder if there is attendance data
         student_retention_empty = pd.DataFrame(columns = mock_columns)
@@ -398,9 +399,6 @@ def update_academic_metrics(school: str, year: str):
         table_container_11ab = no_data_table(metric_11ab_label)
         table_container_11cd = no_data_table(metric_11cd_label)        
         display_attendance = {"display": "none"}
-
-    # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
-    metric_11cd_label = "End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate."
      
     return (
         table_container_11ab, display_attendance, table_container_11cd, table_container_14ab,

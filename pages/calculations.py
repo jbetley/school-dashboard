@@ -67,9 +67,9 @@ def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataF
     corp_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
 
     return corp_data
-    
-def calculate_percentage(numerator: str, denominator: str) -> float|None|str:
-    """
+
+def calculate_percentage(numerator: str, denominator: str) -> np.ndarray: #[float|None|str]:
+    """Incompatible return value type (got "ndarray[Any, dtype[Any]]
     Calculates a percentage given a numerator and a denominator, while accounting for two
     special case: a string representing insufficent n-size ('***') and certain conditions
     where a '0' value has a different result. The function does the following:
@@ -88,18 +88,17 @@ def calculate_percentage(numerator: str, denominator: str) -> float|None|str:
         (numerator == "***") | (denominator == "***"),
         "***",
         np.where(
-            (numerator.isna()) & (denominator.isna()),
+            pd.to_numeric(numerator, errors="coerce").isna() & pd.to_numeric(denominator, errors="coerce").isna(),
             None,
             np.where(
-                numerator.isna(),
+                pd.to_numeric(numerator, errors="coerce").isna(),
                 0,
-                pd.to_numeric(numerator, errors="coerce")
-                / pd.to_numeric(denominator, errors="coerce"),
+                pd.to_numeric(numerator, errors="coerce") / pd.to_numeric(denominator, errors="coerce"),
             ),
         ),
     )
 
-def calculate_difference(value1: str, value2: str) -> float|None|str:
+def calculate_difference(value1: str, value2: str) -> np.ndarray:
     """
     Calculate the difference between two dataframes with specific mixed datatypes
     and conditions.
@@ -116,10 +115,9 @@ def calculate_difference(value1: str, value2: str) -> float|None|str:
         (value1 == "***") | (value2 == "***"),
         "***",
         np.where(
-            value1.isna(),
+            pd.to_numeric(value1, errors="coerce").isna(),
             None,
-            pd.to_numeric(value1, errors="coerce")
-            - pd.to_numeric(value2, errors="coerce"),
+            pd.to_numeric(value1, errors="coerce") - pd.to_numeric(value2, errors="coerce"),
         ),
     )
 
@@ -151,10 +149,9 @@ def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) 
         np.where(
             (current_year == "***") | (previous_year == "***"), "***",
             np.where(
-                (current_year.isna()) & (previous_year.isna()), None,
+                (pd.to_numeric(current_year, errors="coerce").isna()) & (pd.to_numeric(previous_year, errors="coerce").isna()), None,
                 np.where(
-                    (~current_year.isna()) & (previous_year.isna()), None,
-                    
+                    (~pd.to_numeric(current_year, errors="coerce").isna()) & (pd.to_numeric(previous_year, errors="coerce").isna()), None,              
                     pd.to_numeric(current_year, errors="coerce") - pd.to_numeric(previous_year, errors="coerce"),
                 ),
             ),
@@ -304,9 +301,9 @@ def round_percentages(percentages: list) -> list:
     sum_of_integer_parts = 0
 
     for index, percentage in enumerate(percentages):
-        integer, decimal = str(float(percentage)).split(".")
-        integer = int(integer)
-        decimal = int(decimal)
+        whole, fractional = str(float(percentage)).split(".")
+        integer = int(whole)
+        decimal = int(fractional)
 
         result.append([integer, decimal, index])
         sum_of_integer_parts += integer
@@ -434,7 +431,7 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
 
     return df_string
 
-def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> np.ndarray|np.ndarray:
+def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> Tuple[np.ndarray,np.ndarray]:
     """
     Based on https://stackoverflow.com/q/43020919/190597
     https://stackoverflow.com/questions/45127141/find-the-nearest-point-in-distance-for-all-the-points-in-the-dataset-python

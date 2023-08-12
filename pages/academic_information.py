@@ -98,56 +98,56 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
     # default styles (all values empty - only empty_container displayed)
     # growth
-    table_grades_growth_ela = {}
-    fig_grades_growth_ela = {}        
-    table_grades_sgp_ela = {}    
-    fig_grades_sgp_ela = {}            
-    table_grades_growth_math = {}
-    fig_grades_growth_math = {}        
-    table_grades_sgp_math = {}
-    fig_grades_sgp_math = {}        
+    table_grades_growth_ela = []
+    fig_grades_growth_ela = []        
+    table_grades_sgp_ela = []    
+    fig_grades_sgp_ela = []            
+    table_grades_growth_math = []
+    fig_grades_growth_math = []        
+    table_grades_sgp_math = []
+    fig_grades_sgp_math = []        
 
-    table_ethnicity_growth_ela = {}
-    fig_ethnicity_growth_ela = {}   
-    table_ethnicity_sgp_ela = {}    
-    fig_ethnicity_sgp_ela = {}          
-    table_ethnicity_growth_math = {}
-    fig_ethnicity_growth_math = {}      
-    table_ethnicity_sgp_math = {}
-    fig_ethnicity_sgp_math = {}
+    table_ethnicity_growth_ela = []
+    fig_ethnicity_growth_ela = []   
+    table_ethnicity_sgp_ela = []   
+    fig_ethnicity_sgp_ela = []        
+    table_ethnicity_growth_math = []
+    fig_ethnicity_growth_math = []    
+    table_ethnicity_sgp_math = []
+    fig_ethnicity_sgp_math = []
 
-    table_subgroup_growth_ela = {}
-    fig_subgroup_growth_ela = {}   
-    table_subgroup_sgp_ela = {}    
-    fig_subgroup_sgp_ela = {}          
-    table_subgroup_growth_math = {}
-    fig_subgroup_growth_math = {}      
-    table_subgroup_sgp_math = {}        
-    fig_subgroup_sgp_math = {}
+    table_subgroup_growth_ela = []
+    fig_subgroup_growth_ela = [] 
+    table_subgroup_sgp_ela = []   
+    fig_subgroup_sgp_ela = []        
+    table_subgroup_growth_math = []
+    fig_subgroup_growth_math = []    
+    table_subgroup_sgp_math = []       
+    fig_subgroup_sgp_math = []
     main_growth_container = {"display": "none"}
     empty_growth_container = {"display": "none"}
 
     # proficiency
-    hs_grad_overview_table = {}
-    hs_grad_ethnicity_table = {}
-    hs_grad_subgroup_table = {}
-    sat_overview_table = {}
-    sat_ethnicity_table = {}
-    sat_subgroup_table = {}        
+    hs_grad_overview_table = []
+    hs_grad_ethnicity_table = []
+    hs_grad_subgroup_table = []
+    sat_overview_table = []
+    sat_ethnicity_table = []
+    sat_subgroup_table = []
     hs_table_container = {"display": "none"}
 
-    k8_grade_table = {}
-    k8_ethnicity_table = {}
-    k8_subgroup_table = {}
-    k8_other_table = {}
+    k8_grade_table = []
+    k8_ethnicity_table = []
+    k8_subgroup_table = []
+    k8_other_table = []
     k8_table_container = {"display": "none"}
 
-    k8_grade_ela_fig = {}
-    k8_grade_math_fig = {}
-    k8_ethnicity_ela_fig = {}
-    k8_ethnicity_math_fig = {}
-    k8_subgroup_ela_fig = {}
-    k8_subgroup_math_fig = {}
+    k8_grade_ela_fig = []
+    k8_grade_math_fig = []
+    k8_ethnicity_ela_fig = []
+    k8_ethnicity_math_fig = []
+    k8_subgroup_ela_fig = []
+    k8_subgroup_math_fig = []
 
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
@@ -217,7 +217,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     if len(attendance_rate.index) > 0:
                         k8_other_table = create_basic_info_table(attendance_rate,"Attendance Data") 
                     else:
-                        k8_other_table = no_data_table("Attendance Data")
+                        k8_other_table = no_data_table(["Attendance Data"])
 
                     k8_other_table = set_table_layout(k8_other_table, k8_other_table, attendance_rate.columns)
                     
@@ -341,8 +341,8 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                     all_proficiency_data = all_proficiency_data[all_proficiency_data["Category"] != "index"]
 
-                    ela_title = selected_year_string + " ELA Proficiency Breakdown"
-                    math_title = selected_year_string + " Math Proficiency Breakdown"
+                    ela_title = selected_year_string + " Proficiency Breakdown - ELA "
+                    math_title = selected_year_string + " Proficiency Breakdown - Math "
 
                     # ELA by Grade
                     grade_annotations = annotations.loc[annotations["Category"].str.contains("Grade")]
@@ -351,9 +351,10 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         all_proficiency_data["Category"].isin(grades_ordinal)
                         & all_proficiency_data["Proficiency"].str.contains("ELA")
                     ]
+                    ela_by_grade_title = ela_title + "By Grade"
 
                     if not grade_ela_fig_data.empty:
-                        k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data,ela_title)
+                        k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data, ela_by_grade_title)
                     else:
                         k8_grade_ela_fig = no_data_fig_label(ela_title, 100)
 
@@ -362,9 +363,10 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         all_proficiency_data["Category"].isin(grades_ordinal)
                         & all_proficiency_data["Proficiency"].str.contains("Math")
                     ]
+                    math_by_grade_title = math_title + "By Grade"
 
                     if not grade_math_fig_data.empty:
-                        k8_grade_math_fig = make_stacked_bar(grade_math_fig_data,math_title)
+                        k8_grade_math_fig = make_stacked_bar(grade_math_fig_data, math_by_grade_title)
                     else:
                         k8_grade_math_fig = no_data_fig_label(math_title, 100)
 
@@ -375,9 +377,10 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         all_proficiency_data["Category"].isin(ethnicity)
                         & all_proficiency_data["Proficiency"].str.contains("ELA")
                     ]
+                    ela_by_ethnicity_title = ela_title + "By Ethnicity"
 
                     if not ethnicity_ela_fig_data.empty:
-                        k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data,ela_title)
+                        k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data, ela_by_ethnicity_title)
                     else:
                         k8_ethnicity_ela_fig = no_data_fig_label(ela_title, 100)
 
@@ -386,9 +389,10 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         all_proficiency_data["Category"].isin(ethnicity)
                         & all_proficiency_data["Proficiency"].str.contains("Math")
                     ]
+                    math_by_ethnicity_title = math_title + "By Ethnicity"
 
                     if not ethnicity_math_fig_data.empty:
-                        k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data,math_title)
+                        k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data, math_by_ethnicity_title)
                     else:
                         k8_ethnicity_math_fig = no_data_fig_label(math_title, 100)
 
@@ -399,9 +403,10 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         all_proficiency_data["Category"].isin(subgroup)
                         & all_proficiency_data["Proficiency"].str.contains("ELA")
                     ]
+                    ela_by_subgroup_title = ela_title + "By Subgroup"
 
                     if not subgroup_ela_fig_data.empty:
-                        k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data,ela_title)
+                        k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data, ela_by_subgroup_title)
                     else:
                         k8_subgroup_ela_fig = no_data_fig_label(ela_title, 100)
 
@@ -410,10 +415,11 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         all_proficiency_data["Category"].isin(subgroup)
                         & all_proficiency_data["Proficiency"].str.contains("Math")
                     ]
+                    math_by_subgroup_title = math_title + "By Subgroup"
 
                     if not subgroup_math_fig_data.empty:
 
-                        k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data,math_title)
+                        k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data, math_by_subgroup_title)
 
                     else:
 
@@ -930,21 +936,28 @@ def layout():
             html.Div(
                 [
                     html.Div(
-                        [
-                            html.Div(
-                                [                            
-                                    html.Div(id="table-grades-growth-ela", children=[]),
-                                ],
-                                        className = "pretty_container six columns"
-                            ),                            
+                        [       
+                            html.Label("Percentage of Students Achieving Adequate Growth - by Grade (ELA)", className='header_label_test'),                            
                             html.Div(
                                 [
-                                    html.Div(id="fig-grades-growth-ela", children=[]),
+
+                                    html.Div(
+                                        [                            
+                                            html.Div(id="table-grades-growth-ela", children=[]),
+                                        ],
+                                        className = "pretty_bare_container six columns"
+                                    ),                            
+                                    html.Div(
+                                        [
+                                            html.Div(id="fig-grades-growth-ela", children=[]),
+                                        ],
+                                        className = "pretty_bare_container six columns"
+                                    ),
                                 ],
-                                className = "pretty_container six columns"
+                                className="pretty_flex_container twelve columns",
                             ),
                         ],
-                        className="bare_container_center twelve columns",
+                        className = "bare_container_center twelve columns"
                     ),
                     html.Div(
                         [

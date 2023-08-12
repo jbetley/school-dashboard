@@ -507,7 +507,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 else:
                     # NOTE: This should never ever happen. So it's critical that we expect it to.
                     fig14c_chart = no_data_fig_label("Comparison: Current Year ELA Proficiency",200)
-                    fig14c_table = no_data_table("Proficiency")
+                    fig14c_table = no_data_table(["Proficiency"])
 
                 fig14c = combine_barchart_and_table(fig14c_chart,fig14c_table)
 
@@ -542,7 +542,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 
                 else:
                     fig14d_chart = no_data_fig_label("Comparison: Current Year Math Proficiency",200)
-                    fig14d_table = no_data_table("Proficiency")
+                    fig14d_table = no_data_table(["Proficiency"])
 
                 fig14d = combine_barchart_and_table(fig14d_chart,fig14d_table)
 
@@ -577,7 +577,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 
                 else:
                     fig_iread_chart = no_data_fig_label("Comparison: Current Year IREAD Proficiency",200)
-                    fig_iread_table = no_data_table("Proficiency")
+                    fig_iread_table = no_data_table(["Proficiency"])
 
                 fig_iread = combine_barchart_and_table(fig_iread_chart,fig_iread_table)
 
