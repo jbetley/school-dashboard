@@ -1049,6 +1049,21 @@ def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> 
     elif calculation == 'sgp':
         data = data.drop([category, 'Subject'], axis=1)
 
+    # NOTE: Occasionally, the data will have an "Unknown" Category. No idea why, but
+    # we need to get rid of it - easiest way would be to just drop any Categories
+    # matching Unknown, but that won't stop other random Categories from getting
+    # through. So instead, we drop any Categories that don't match categories in 
+    # the respective list
+
+    if category == "Grade Level":
+        data = data[data['Category'].str.contains('|'.join(grades))]
+
+    elif category == "Ethnicity":
+        data = data[data['Category'].str.contains('|'.join(ethnicity))]
+
+    elif category == "Socioeconomic Status" or category == "English Learner Status" or category == "Special Education Status":
+        data = data[data['Category'].str.contains('|'.join(subgroup))]
+
     # create fig data
     fig_data = data.copy()
     fig_data = fig_data.drop('Difference', axis=1)

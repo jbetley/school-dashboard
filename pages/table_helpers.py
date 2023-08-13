@@ -415,7 +415,7 @@ def growth_mashup(table: list, fig, label: str):    # : plotly.graph_objs._figur
     return table_layout
 
 # NOTE: Displays just Majority Enrolled (with 162 Day values in tooltip)
-def create_growth_table(label: str = '', data: pd.DataFrame, kind: str) -> list:
+def create_growth_table(data: pd.DataFrame, label: str = '') -> list:
     """
     Takes a label, a dataframe, and a descriptive (type) string and creates a multi-header
     table with academic growth and sgp data.
@@ -464,16 +464,16 @@ def create_growth_table(label: str = '', data: pd.DataFrame, kind: str) -> list:
     else:
 
         if num_cols <= 3:
-            col_width = 'four'
+            # col_width = 'four'
             category_width = 70
         if num_cols > 3 and num_cols <=4:
-            col_width = 'six'
+            # col_width = 'six'
             category_width = 35
         elif num_cols >= 5 and num_cols <= 8:
-            col_width = 'six'
+            # col_width = 'six'
             category_width = 30
         elif num_cols > 9:
-            col_width = 'seven'
+            # col_width = 'seven'
             category_width = 30
 
         data_col_width = (100 - category_width) / (num_cols - 1)
@@ -534,8 +534,7 @@ def create_growth_table(label: str = '', data: pd.DataFrame, kind: str) -> list:
                 'paddingTop': '5px'
             },
         ]
-
-        if kind == 'sgp':
+        if 'SGP' in label:
             column_format=[
                 {
                 'name': col, 'id': col, 'type':'numeric',

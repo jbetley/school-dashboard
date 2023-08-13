@@ -607,7 +607,6 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
         ytitle='Median SGP'
         hover = '.1f'
 
-    # Add traces
     for i, col in enumerate(data_me.columns):
         fig.add_trace(
             go.Scatter(
