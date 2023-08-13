@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/14/23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -20,8 +20,7 @@ from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
-from .load_data import max_display_years 
-from .load_db import get_school_index, get_financial_data, get_financial_ratios
+from .load_data import max_display_years, get_school_index, get_financial_data, get_financial_ratios
 
 dash.register_page(__name__, path = "/financial_analysis", order=3)
 

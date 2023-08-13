@@ -255,16 +255,6 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 } */
 
-/* .pretty_flex_container {
-  border-radius: 5px;
-  background-color: #ffffff;
-  margin-top: 10px;
-  /* padding: 15px; */
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-  display: flex;
-} */
-
 .bare_container_no_center {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
@@ -346,7 +336,7 @@ body {
   margin-right: 0;
   padding-top: 10px;
   color: steelblue;
-  display: inline-block;
+  /* display: inline-block; */
   vertical-align: middle;
   float: left;
 }
@@ -470,6 +460,7 @@ select {
 }
 button {
   -webkit-appearance: button;
+  appearance: button;
 }
 [type="button"]:not(:disabled),
 [type="reset"]:not(:disabled),

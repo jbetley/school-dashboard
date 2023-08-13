@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Information #
 #########################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/14/23
 #
 # TODO: Add Total Tested to Proficiency Bar Charts
 
@@ -17,15 +17,14 @@ import re
 
 # import local functions
 from .table_helpers import no_data_page, no_data_table, create_academic_info_table, \
-    create_growth_table, set_table_layout, create_basic_info_table, growth_mashup
+    create_growth_table, set_table_layout, create_basic_info_table, create_growth_table_and_fig
 from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart
-from .calculations import round_percentages, conditional_fillna
+from .calculations import round_percentages, conditional_fillna, get_excluded_years
 from .subnav import subnav_academic
-from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_excluded_years, \
-    process_k8_academic_data, get_attendance_data, process_high_school_academic_data, filter_high_school_academic_data, \
-    process_growth_data  
-from .load_db import get_k8_school_academic_data, get_high_school_academic_data, get_demographic_data, get_school_index, \
-    get_growth_data
+from .process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
+    filter_high_school_academic_data, process_growth_data  
+from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_k8_school_academic_data, \
+    get_high_school_academic_data, get_demographic_data, get_school_index, get_growth_data
 
 dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
 
@@ -39,15 +38,17 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("k8-subgroup-table", "children"),
     Output("k8-subgroup-ela-fig", "children"),
     Output("k8-subgroup-math-fig", "children"),
-    Output("k8-other-table", "children"),
+    Output("attendance-table", "children"),
     Output("k8-table-container", "style"),
     Output("hs-grad-overview-table", "children"),
     Output("hs-grad-ethnicity-table", "children"),
     Output("hs-grad-subgroup-table", "children"),
+    Output("sat-cut-scores-table", "children"),    
     Output("sat-overview-table", "children"),
     Output("sat-ethnicity-table", "children"),
     Output("sat-subgroup-table", "children"),
-    Output("hs-table-container", "style"),
+    Output("grad-table-container", "style"),
+    Output("sat-table-container", "style"),        
     Output("academic-information-main-container", "style"),
     Output("academic-information-empty-container", "style"),
     Output("academic-information-no-data", "children"),
@@ -107,12 +108,14 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
     sat_overview_table = []
     sat_ethnicity_table = []
     sat_subgroup_table = []
-    hs_table_container = {"display": "none"}
+    sat_cut_scores_table = []
+    sat_table_container = {"display": "none"}
+    grad_table_container = {"display": "none"}
 
     k8_grade_table = []
     k8_ethnicity_table = []
     k8_subgroup_table = []
-    k8_other_table = []
+    attendance_table = []
     k8_table_container = {"display": "none"}
 
     k8_grade_ela_fig = []
@@ -188,11 +191,11 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     attendance_rate = get_attendance_data(school_demographic_data, selected_year_string)
 
                     if len(attendance_rate.index) > 0:
-                        k8_other_table = create_basic_info_table(attendance_rate,"Attendance Data") 
+                        attendance_table = create_basic_info_table(attendance_rate,"Attendance Data") 
                     else:
-                        k8_other_table = no_data_table(["Attendance Data"])
+                        attendance_table = no_data_table(["Attendance Data"])
 
-                    k8_other_table = set_table_layout(k8_other_table, k8_other_table, attendance_rate.columns)
+                    attendance_table = set_table_layout(attendance_table, attendance_table, attendance_rate.columns)
                     
                     ## get proficiency breakdown data for stacked bar charts
 
@@ -417,7 +420,6 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                 if not selected_raw_hs_school_data.empty:
 
-                    hs_table_container = {"display": "block"}
                     main_container = {"display": "block"}
                     empty_container = {"display": "none"}
 
@@ -433,48 +435,71 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                     # Graduation Rate Tables
                     graduation_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Graduation")].copy()
-                    graduation_data["Category"] = (graduation_data["Category"].str.replace("Graduation Rate", "").str.strip())
 
-                    grad_overview = graduation_data[graduation_data["Category"].str.contains("|".join(grad_overview_categories))]
-                    grad_overview = grad_overview.dropna(axis=1,how="all")
+                    if len(graduation_data.columns) > 1 and len (graduation_data.index) > 0:
+                        grad_table_container = {"display": "block"}
 
-                    hs_grad_overview_table = create_academic_info_table(grad_overview,"Graduation Rate Overview")
-                    hs_grad_overview_table = set_table_layout(hs_grad_overview_table, hs_grad_overview_table, grad_overview.columns)
+                        graduation_data["Category"] = (graduation_data["Category"].str.replace("Graduation Rate", "").str.strip())
 
-                    grad_ethnicity = graduation_data[graduation_data["Category"].str.contains("|".join(ethnicity))]
-                    grad_ethnicity = grad_ethnicity.dropna(axis=1,how="all")
+                        grad_overview = graduation_data[graduation_data["Category"].str.contains("|".join(grad_overview_categories))]
+                        grad_overview = grad_overview.dropna(axis=1,how="all")
 
-                    hs_grad_ethnicity_table = create_academic_info_table(grad_ethnicity,"Graduation Rate by Ethnicity")
-                    hs_grad_ethnicity_table = set_table_layout(hs_grad_ethnicity_table, hs_grad_ethnicity_table, grad_ethnicity.columns)
+                        hs_grad_overview_table = create_academic_info_table(grad_overview,"Graduation Rate Overview")
+                        hs_grad_overview_table = set_table_layout(hs_grad_overview_table, hs_grad_overview_table, grad_overview.columns)
+
+                        grad_ethnicity = graduation_data[graduation_data["Category"].str.contains("|".join(ethnicity))]
+                        grad_ethnicity = grad_ethnicity.dropna(axis=1,how="all")
+
+                        hs_grad_ethnicity_table = create_academic_info_table(grad_ethnicity,"Graduation Rate by Ethnicity")
+                        hs_grad_ethnicity_table = set_table_layout(hs_grad_ethnicity_table, hs_grad_ethnicity_table, grad_ethnicity.columns)
+                        
+                        grad_subgroup = graduation_data[graduation_data["Category"].str.contains("|".join(subgroup))]
+                        grad_subgroup = grad_subgroup.dropna(axis=1,how="all")
+
+                        hs_grad_subgroup_table = create_academic_info_table(grad_subgroup,"Graduation Rate by Subgroup")
+                        hs_grad_subgroup_table = set_table_layout(hs_grad_subgroup_table, hs_grad_subgroup_table, grad_subgroup.columns)
                     
-                    grad_subgroup = graduation_data[graduation_data["Category"].str.contains("|".join(subgroup))]
-                    grad_subgroup = grad_subgroup.dropna(axis=1,how="all")
-
-                    hs_grad_subgroup_table = create_academic_info_table(grad_subgroup,"Graduation Rate by Subgroup")
-                    hs_grad_subgroup_table = set_table_layout(hs_grad_subgroup_table, hs_grad_subgroup_table, grad_subgroup.columns)
-                
-                    # SAT Benchmark Tables
+                    # SAT Benchmark Table
                     sat_table_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Benchmark %")].copy()
-                    sat_table_data["Category"] = (sat_table_data["Category"].str.replace("Benchmark %", "").str.strip())
 
-                    sat_overview = sat_table_data[sat_table_data["Category"].str.contains("School Total")]
-                    sat_overview = sat_overview.dropna(axis=1,how="all")
+                    if len(sat_table_data.columns) > 1 and len (sat_table_data.index) > 0:
 
-                    sat_overview_table = create_academic_info_table(sat_overview,"SAT Overview")
-                    sat_overview_table = set_table_layout(sat_overview_table, sat_overview_table, sat_overview.columns) 
-                    
-                    sat_ethnicity = sat_table_data[sat_table_data["Category"].str.contains("|".join(ethnicity))]
-                    sat_ethnicity = sat_ethnicity.dropna(axis=1,how="all")
+                        sat_table_container = {"display": "block"}
 
-                    sat_ethnicity_table = create_academic_info_table(sat_ethnicity,"SAT Benchmarks by Ethnicity")
-                    sat_ethnicity_table = set_table_layout(sat_ethnicity_table, sat_ethnicity_table, sat_ethnicity.columns) 
-                    
-                    sat_subgroup = sat_table_data[sat_table_data["Category"].str.contains("|".join(subgroup))]
-                    sat_subgroup = sat_subgroup.dropna(axis=1,how="all")
+                        sat_table_data["Category"] = (sat_table_data["Category"].str.replace("Benchmark %", "").str.strip())
 
-                    sat_subgroup_table = create_academic_info_table(sat_subgroup,"SAT Benchmarks by Subgroup")
-                    sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
+                        sat_overview = sat_table_data[sat_table_data["Category"].str.contains("School Total")]
+                        sat_overview = sat_overview.dropna(axis=1,how="all")
 
+                        sat_overview_table = create_academic_info_table(sat_overview,"SAT Overview")
+                        sat_overview_table = set_table_layout(sat_overview_table, sat_overview_table, sat_overview.columns) 
+                        
+                        sat_ethnicity = sat_table_data[sat_table_data["Category"].str.contains("|".join(ethnicity))]
+                        sat_ethnicity = sat_ethnicity.dropna(axis=1,how="all")
+
+                        sat_ethnicity_table = create_academic_info_table(sat_ethnicity,"SAT Benchmarks by Ethnicity")
+                        sat_ethnicity_table = set_table_layout(sat_ethnicity_table, sat_ethnicity_table, sat_ethnicity.columns) 
+                        
+                        sat_subgroup = sat_table_data[sat_table_data["Category"].str.contains("|".join(subgroup))]
+                        sat_subgroup = sat_subgroup.dropna(axis=1,how="all")
+
+                        sat_subgroup_table = create_academic_info_table(sat_subgroup,"SAT Benchmarks by Subgroup")
+                        sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
+
+                        # SAT Cut-Score Table
+                        # https://www.in.gov/sboe/files/2021-2022-SAT-Standard-Setting-SBOE-Review.pdf
+                        sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
+                        sat_cut_scores_dict = {
+                            "Content Area": ["Mathematics", "Evidenced-Based Reading and Writing"],
+                            "Below College-Ready Benchmark": ["200 - 450", "200 - 440"],
+                            "Approaching College-Ready Benchmark": ["460 - 520", "450 - 470"],
+                            "At College-Ready Benchmark": ["530 - 800", "480 - 800"]
+                        }
+                        
+                        sat_cut_scores = pd.DataFrame(sat_cut_scores_dict)
+                        sat_cut_scores_table = create_basic_info_table(sat_cut_scores, sat_cut_scores_label)
+
+                        print(sat_cut_scores_table)
     elif radio_value =="growth":
  
         main_container = {"display": "none"}
@@ -580,28 +605,28 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             table_grades_growth_ela = create_growth_table(table_data_grades_growth_ela,label_grades_growth_ela)
             fig_grades_growth_ela = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, label_grades_growth_ela)
 
-            growth_grades_ela = growth_mashup(table_grades_growth_ela, fig_grades_growth_ela, label_grades_growth_ela)
+            growth_grades_ela = create_growth_table_and_fig(table_grades_growth_ela, fig_grades_growth_ela, label_grades_growth_ela)
 
             # grades sgp ela table/fig #2
             label_grades_sgp_ela = "Median SGP - All Students By Grade (ELA)"           
             table_grades_sgp_ela = create_growth_table(table_data_grades_sgp_ela, label_grades_sgp_ela)
             fig_grades_sgp_ela = make_growth_chart(sgp_data_me_grades_ela, sgp_data_162_grades_ela, label_grades_sgp_ela)
 
-            sgp_grades_ela = growth_mashup(table_grades_sgp_ela, fig_grades_sgp_ela, label_grades_sgp_ela)
+            sgp_grades_ela = create_growth_table_and_fig(table_grades_sgp_ela, fig_grades_sgp_ela, label_grades_sgp_ela)
             
             # grades growth math table/fig #3
             label_grades_growth_math = "Percentage of Students with Adequate Growth - by Grade (Math)"
             table_grades_growth_math = create_growth_table(table_data_grades_growth_math, label_grades_growth_math)
             fig_grades_growth_math = make_growth_chart(growth_data_me_grades_math, growth_data_162_grades_math, label_grades_growth_math)
 
-            growth_grades_math = growth_mashup(table_grades_growth_math, fig_grades_growth_math, label_grades_growth_math)
+            growth_grades_math = create_growth_table_and_fig(table_grades_growth_math, fig_grades_growth_math, label_grades_growth_math)
 
             # grades sgp math table/fig #4
             label_grades_sgp_math = "Median SGP - All Students By Grade (Math)"            
             table_grades_sgp_math = create_growth_table(table_data_grades_sgp_math, label_grades_sgp_math)
             fig_grades_sgp_math = make_growth_chart(sgp_data_me_grades_math, sgp_data_162_grades_math, label_grades_sgp_math)
 
-            sgp_grades_math = growth_mashup(table_grades_sgp_math, fig_grades_sgp_math, label_grades_sgp_math)
+            sgp_grades_math = create_growth_table_and_fig(table_grades_sgp_math, fig_grades_sgp_math, label_grades_sgp_math)
 
         ## By ethnicity
             # table data
@@ -636,28 +661,28 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             table_ethnicity_growth_ela = create_growth_table(table_data_ethnicity_growth_ela, label_ethnicity_growth_ela)
             fig_ethnicity_growth_ela = make_growth_chart(growth_data_me_ethnicity_ela, growth_data_162_ethnicity_ela, label_ethnicity_growth_ela)
 
-            growth_ethnicity_ela = growth_mashup(table_ethnicity_growth_ela, fig_ethnicity_growth_ela, label_ethnicity_growth_ela)
+            growth_ethnicity_ela = create_growth_table_and_fig(table_ethnicity_growth_ela, fig_ethnicity_growth_ela, label_ethnicity_growth_ela)
 
             # ethnicity sgp ela table/fig #2
             label_ethnicity_sgp_ela = "Median SGP - All Students By Ethnicity (ELA)"            
             table_ethnicity_sgp_ela = create_growth_table(table_data_ethnicity_sgp_ela, label_ethnicity_sgp_ela)
             fig_ethnicity_sgp_ela = make_growth_chart(sgp_data_me_ethnicity_ela, sgp_data_162_ethnicity_ela, label_ethnicity_sgp_ela)
 
-            sgp_ethnicity_ela = growth_mashup(table_ethnicity_sgp_ela, fig_ethnicity_sgp_ela, label_ethnicity_sgp_ela)
+            sgp_ethnicity_ela = create_growth_table_and_fig(table_ethnicity_sgp_ela, fig_ethnicity_sgp_ela, label_ethnicity_sgp_ela)
 
             # ethnicity growth math table/fig #3
             label_ethnicity_growth_math = "Percentage of Students with Adequate Growth - by Ethnicity (Math)"
             table_ethnicity_growth_math = create_growth_table(table_data_ethnicity_growth_math, label_ethnicity_growth_math)
             fig_ethnicity_growth_math = make_growth_chart(growth_data_me_ethnicity_math, growth_data_162_ethnicity_math, label_ethnicity_growth_math)
 
-            growth_ethnicity_math = growth_mashup(table_ethnicity_growth_math, fig_ethnicity_growth_math, label_ethnicity_growth_math)
+            growth_ethnicity_math = create_growth_table_and_fig(table_ethnicity_growth_math, fig_ethnicity_growth_math, label_ethnicity_growth_math)
             
             # ethnicity sgp math table/fig #4
             label_ethnicity_sgp_math = "Median SGP - All Students By Ethnicity (Math)"            
             table_ethnicity_sgp_math = create_growth_table(table_data_ethnicity_sgp_math, label_ethnicity_sgp_math)
             fig_ethnicity_sgp_math = make_growth_chart(sgp_data_me_ethnicity_math, sgp_data_162_ethnicity_math, label_ethnicity_sgp_math)
 
-            sgp_ethnicity_math = growth_mashup(table_ethnicity_sgp_math, fig_ethnicity_sgp_math, label_ethnicity_sgp_math)
+            sgp_ethnicity_math = create_growth_table_and_fig(table_ethnicity_sgp_math, fig_ethnicity_sgp_math, label_ethnicity_sgp_math)
 
         ## By subgroup
             # table data
@@ -692,28 +717,28 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             table_subgroup_growth_ela = create_growth_table(table_data_subgroup_growth_ela, label_subgroup_growth_ela)
             fig_subgroup_growth_ela = make_growth_chart(growth_data_me_subgroup_ela, growth_data_162_subgroup_ela, label_subgroup_growth_ela)
 
-            growth_subgroup_ela = growth_mashup(table_subgroup_growth_ela, fig_subgroup_growth_ela, label_subgroup_growth_ela)
+            growth_subgroup_ela = create_growth_table_and_fig(table_subgroup_growth_ela, fig_subgroup_growth_ela, label_subgroup_growth_ela)
 
             # subgroup sgp ela table/fig #2
             label_subgroup_sgp_ela = "Median SGP - All Students By Ethnicity (ELA)"            
             table_subgroup_sgp_ela = create_growth_table(table_data_subgroup_sgp_ela, label_subgroup_sgp_ela)
             fig_subgroup_sgp_ela = make_growth_chart(sgp_data_me_subgroup_ela, sgp_data_162_subgroup_ela, label_subgroup_sgp_ela)
 
-            sgp_subgroup_ela = growth_mashup(table_subgroup_sgp_ela, fig_subgroup_sgp_ela, label_subgroup_sgp_ela)
+            sgp_subgroup_ela = create_growth_table_and_fig(table_subgroup_sgp_ela, fig_subgroup_sgp_ela, label_subgroup_sgp_ela)
 
             # subgroup growth math table/fig #3
             label_subgroup_growth_math = "Percentage of Students with Adequate Growth - by Ethnicity (Math)"            
             table_subgroup_growth_math = create_growth_table(table_data_subgroup_growth_math, label_subgroup_growth_math)
             fig_subgroup_growth_math = make_growth_chart(growth_data_me_subgroup_math, growth_data_162_subgroup_math, label_subgroup_growth_math)
 
-            growth_subgroup_math = growth_mashup(table_subgroup_growth_math, fig_subgroup_growth_math, label_subgroup_growth_math)
+            growth_subgroup_math = create_growth_table_and_fig(table_subgroup_growth_math, fig_subgroup_growth_math, label_subgroup_growth_math)
 
             # subgroup sgp math table/fig #4
             label_subgroup_sgp_math = "Median SGP - All Students By Ethnicity (Math)"            
             table_subgroup_sgp_math = create_growth_table(table_data_subgroup_sgp_math, label_subgroup_sgp_math)
             fig_subgroup_sgp_math = make_growth_chart(sgp_data_me_subgroup_math, sgp_data_162_subgroup_math, label_subgroup_sgp_math)
 
-            sgp_subgroup_math = growth_mashup(table_subgroup_sgp_math, fig_subgroup_sgp_math, label_subgroup_sgp_math)
+            sgp_subgroup_math = create_growth_table_and_fig(table_subgroup_sgp_math, fig_subgroup_sgp_math, label_subgroup_sgp_math)
 
     if radio_value == "proficiency":
         if selected_school_type == "AHS":
@@ -733,7 +758,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                 Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
         else:
             academic_information_notes_string = ""
-
+        
     if radio_value == "growth":
         academic_information_notes_string = "State growth data comes from IDOE's LINK. Identifying information \
             is scrubbed and data is aggregated before display. The calculation includes all students who were \
@@ -745,13 +770,15 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
     return (
         k8_grade_table, k8_grade_ela_fig, k8_grade_math_fig, k8_ethnicity_table, k8_ethnicity_ela_fig, k8_ethnicity_math_fig,
-        k8_subgroup_table, k8_subgroup_ela_fig, k8_subgroup_math_fig, k8_other_table, k8_table_container, hs_grad_overview_table,
-        hs_grad_ethnicity_table, hs_grad_subgroup_table, sat_overview_table, sat_ethnicity_table, sat_subgroup_table, 
-        hs_table_container, main_container, empty_container, no_display_data, 
+        k8_subgroup_table, k8_subgroup_ela_fig, k8_subgroup_math_fig, attendance_table, k8_table_container,
+        hs_grad_overview_table, hs_grad_ethnicity_table, hs_grad_subgroup_table,
+        sat_cut_scores_table, sat_overview_table, sat_ethnicity_table, sat_subgroup_table, 
+        grad_table_container, sat_table_container, main_container, empty_container, no_display_data, 
         growth_grades_ela, sgp_grades_ela, growth_grades_math, sgp_grades_math,
         growth_ethnicity_ela, sgp_ethnicity_ela, growth_ethnicity_math, sgp_ethnicity_math,
         growth_subgroup_ela, sgp_subgroup_ela, growth_subgroup_math, sgp_subgroup_math,
-        main_growth_container,empty_growth_container, no_growth_data, academic_information_notes_string
+        main_growth_container,empty_growth_container, no_growth_data,
+        academic_information_notes_string, 
     ) # growth_values_table, growth_values_table_container
 
 def layout():
@@ -768,8 +795,8 @@ def layout():
                 ],
                 className="row",
             ),
-            html.Div(
-                [    
+            # html.Div(
+            #     [    
                     html.Div(
                         [
                             html.Div(
@@ -792,9 +819,9 @@ def layout():
                         ],
                         className = "bare_container_center twelve columns"
                     ),
-                ],
-                className = "row",
-            ),
+            #     ],
+            #     className = "row",
+            # ),
             # html.Div(
             #     [                     
             #         html.Div(
@@ -847,112 +874,119 @@ def layout():
                         "background-color": "#F2F2F2",
                         },
                     children=[
-                    html.Div(
-                        [
-                            html.Div(id="k8-grade-table", children=[]),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-grade-ela-fig"),
-                                        ],
-                                        className="pretty_container four columns",
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-grade-math-fig"),
-                                        ],
-                                        className="pretty_container four columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
-                            html.Div(id="k8-ethnicity-table", children=[]),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-ethnicity-ela-fig"),
-                                        ],
-                                        className="pretty_container four columns",
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-ethnicity-math-fig"),
-                                        ],
-                                        className="pretty_container four columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
-                            html.Div(id="k8-subgroup-table", children=[]),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-subgroup-ela-fig"),
-                                        ],
-                                        className="pretty_container four columns",
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Div(id="k8-subgroup-math-fig"),
-                                        ],
-                                        className="pretty_container four columns",
-                                    ),
-                                ],
-                                className="bare_container_center twelve columns",
-                            ),
-                            html.Div(id="k8-other-table", children=[]),
-                        ],
-                        id="k8-table-container",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(id="hs-grad-overview-table"),
-                            html.Div(id="hs-grad-ethnicity-table"),
-                            html.Div(id="hs-grad-subgroup-table"),
-                            html.Div(id="sat-overview-table"),
-                            html.Div(id="sat-ethnicity-table"),
-                            html.Div(id="sat-subgroup-table"),
-                        ],
-                        id="hs-table-container",
-                    ),
-                    ]),
-                ],
-                id = "academic-information-main-container",
-            ),
-            html.Div(
-                [
-                    html.Div(id="academic-information-no-data"),
-                ],
-                id = "academic-information-empty-container",
-            ),            
-            html.Div(
-                [
-                    html.Div(id="growth-grades-ela", children=[]),
-                    html.Div(id="sgp-grades-ela", children=[]),
-                    html.Div(id="growth-grades-math", children=[]),
-                    html.Div(id="sgp-grades-math", children=[]),
+                        html.Div(
+                            [
+                                html.Div(id="k8-grade-table", children=[]),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Div(id="k8-grade-ela-fig"),
+                                            ],
+                                            className="pretty_container four columns",
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Div(id="k8-grade-math-fig"),
+                                            ],
+                                            className="pretty_container four columns",
+                                        ),
+                                    ],
+                                    className="bare_container_center twelve columns",
+                                ),
+                                html.Div(id="k8-ethnicity-table", children=[]),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Div(id="k8-ethnicity-ela-fig"),
+                                            ],
+                                            className="pretty_container four columns",
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Div(id="k8-ethnicity-math-fig"),
+                                            ],
+                                            className="pretty_container four columns",
+                                        ),
+                                    ],
+                                    className="bare_container_center twelve columns",
+                                ),
+                                html.Div(id="k8-subgroup-table", children=[]),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Div(id="k8-subgroup-ela-fig"),
+                                            ],
+                                            className="pretty_container four columns",
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Div(id="k8-subgroup-math-fig"),
+                                            ],
+                                            className="pretty_container four columns",
+                                        ),
+                                    ],
+                                    className="bare_container_center twelve columns",
+                                ),
+                                html.Div(id="attendance-table", children=[]),
+                            ],
+                            id="k8-table-container",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="hs-grad-overview-table"),
+                                html.Div(id="hs-grad-ethnicity-table"),
+                                html.Div(id="hs-grad-subgroup-table"),
+                            ],
+                            id="grad-table-container",
+                        ),                            
+                        html.Div(
+                            [
+                                html.Div(id="sat-cut-scores-table", children=[]),                                              
+                                html.Div(id="sat-overview-table"),
+                                html.Div(id="sat-ethnicity-table"),
+                                html.Div(id="sat-subgroup-table"),
+                            ],
+                            id="sat-table-container",
+                        ),
+                    ],
+                ),
+            ],
+            id = "academic-information-main-container",
+        ),
+        html.Div(
+            [
+                html.Div(id="academic-information-no-data"),
+            ],
+            id = "academic-information-empty-container",
+        ),            
+        html.Div(
+            [
+                html.Div(id="growth-grades-ela", children=[]),
+                html.Div(id="sgp-grades-ela", children=[]),
+                html.Div(id="growth-grades-math", children=[]),
+                html.Div(id="sgp-grades-math", children=[]),
 
-                    html.Div(id="growth-ethnicity-ela", children=[]),
-                    html.Div(id="sgp-ethnicity-ela", children=[]),
-                    html.Div(id="growth-ethnicity-math", children=[]),
-                    html.Div(id="sgp-ethnicity-math", children=[]),
+                html.Div(id="growth-ethnicity-ela", children=[]),
+                html.Div(id="sgp-ethnicity-ela", children=[]),
+                html.Div(id="growth-ethnicity-math", children=[]),
+                html.Div(id="sgp-ethnicity-math", children=[]),
 
-                    html.Div(id="growth-subgroup-ela", children=[]),
-                    html.Div(id="sgp-subgroup-ela", children=[]),
-                    html.Div(id="growth-subgroup-math", children=[]),
-                    html.Div(id="sgp-subgroup-math", children=[]),                                        
-                ],
-                id = "academic-information-main-growth-container",
-            ),
-            html.Div(
-                [
-                    html.Div(id="academic-information-no-growth-data"),
-                ],
-                id = "academic-information-empty-growth-container",
-            ),
-        ],
-        id="mainContainer",
-    )
+                html.Div(id="growth-subgroup-ela", children=[]),
+                html.Div(id="sgp-subgroup-ela", children=[]),
+                html.Div(id="growth-subgroup-math", children=[]),
+                html.Div(id="sgp-subgroup-math", children=[]),                                        
+            ],
+            id = "academic-information-main-growth-container",
+        ),
+        html.Div(
+            [
+                html.Div(id="academic-information-no-growth-data"),
+            ],
+            id = "academic-information-empty-growth-container",
+        ),
+    ],
+    id="mainContainer",
+)

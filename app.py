@@ -31,9 +31,8 @@ import dash
 from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
 
-from pages.load_db import get_school_index, get_academic_dropdown_years, \
-     get_financial_info_dropdown_years, get_school_dropdown_list, get_financial_analysis_dropdown_years
-from pages.load_data import current_academic_year
+from pages.load_db import get_school_index, get_academic_dropdown_years, get_financial_info_dropdown_years, \
+    get_school_dropdown_list, get_financial_analysis_dropdown_years
 
 # Used to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"

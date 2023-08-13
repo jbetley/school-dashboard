@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Metrics #
 #####################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/14/23
 
 import dash
 from dash import html, Input, Output, callback
@@ -12,17 +12,15 @@ import pandas as pd
 
 # import local functions
 from .subnav import subnav_academic
-from .table_helpers import no_data_page, no_data_table, create_metric_table, \
-    set_table_layout, get_svg_circle, create_proficiency_key
-from .load_data import ethnicity, subgroup, grades_all, process_k8_academic_data, \
-    process_high_school_academic_data, calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, \
-    get_attendance_metrics, merge_high_school_data, calculate_high_school_metrics, \
-    calculate_adult_high_school_metrics, filter_high_school_academic_data, get_excluded_years,\
-    process_k8_corp_academic_data
-
-from .load_db import get_school_index, get_k8_school_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data, get_k8_corporation_academic_data
-from .calculations import conditional_fillna
+from .table_helpers import no_data_page, no_data_table, create_metric_table, set_table_layout, create_proficiency_key
+from .string_helpers import convert_to_svg_circle
+from .process_data import process_k8_academic_data, process_high_school_academic_data, merge_high_school_data, \
+    filter_high_school_academic_data, process_k8_corp_academic_data
+from .calculate_metrics import calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, calculate_high_school_metrics, \
+    calculate_adult_high_school_metrics, calculate_attendance_metrics
+from .load_data import ethnicity, subgroup, grades_all, get_school_index, get_k8_school_academic_data, \
+    get_high_school_academic_data, get_hs_corporation_academic_data, get_k8_corporation_academic_data
+from .calculations import conditional_fillna, get_excluded_years
 
 dash.register_page(__name__,  path = "/academic_metrics", order=5)
 
@@ -127,13 +125,13 @@ def update_academic_metrics(school: str, year: str):
                 metric_14a_label = ["1.4a Grade level proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " compared with the previous school year."]
                 print(metric_14a_label)
                 print(type(metric_14a_label))
-                metric_14a_data = get_svg_circle(metric_14a_data)
+                metric_14a_data = convert_to_svg_circle(metric_14a_data)
                 table_14a = create_metric_table(metric_14a_label, metric_14a_data)
 
                 metric_14b_data = combined_years[(combined_years["Category"].str.contains("|".join(grades_all))) & (combined_years["Category"].str.contains("Math"))]
                 metric_14b_label = ["1.4b Grade level proficiency on the state assessment in",html.Br(), html.U("Math"), " compared with the previous school year."]
                 
-                metric_14b_data = get_svg_circle(metric_14b_data)
+                metric_14b_data = convert_to_svg_circle(metric_14b_data)
                 table_14b = create_metric_table(metric_14b_label, metric_14b_data)
 
                 table_container_14ab = set_table_layout(table_14a,table_14b,combined_years.columns)
@@ -141,13 +139,13 @@ def update_academic_metrics(school: str, year: str):
                 metric_14c_data = combined_delta[(combined_delta["Category"].str.contains("|".join(grades_all))) & (combined_delta["Category"].str.contains("ELA"))]
                 metric_14c_label = ["1.4c Grade level proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " compared with traditional school corporation."]
 
-                metric_14c_data = get_svg_circle(metric_14c_data)
+                metric_14c_data = convert_to_svg_circle(metric_14c_data)
                 table_14c = create_metric_table(metric_14c_label, metric_14c_data)
 
                 metric_14d_data = combined_delta[(combined_delta["Category"].str.contains("|".join(grades_all))) & (combined_delta["Category"].str.contains("Math"))]            
                 metric_14d_label = ["1.4.d Grade level proficiency on the state assessment in",html.Br(), html.U("Math"), " compared with traditional school corporation."]
                 
-                metric_14d_data = get_svg_circle(metric_14d_data)
+                metric_14d_data = convert_to_svg_circle(metric_14d_data)
                 table_14d = create_metric_table(metric_14d_label, metric_14d_data)
 
                 table_container_14cd = set_table_layout(table_14c,table_14d,combined_delta.columns)
@@ -172,7 +170,7 @@ def update_academic_metrics(school: str, year: str):
                 metric_14ef_data = conditional_fillna(metric_14ef_data)
 
                 metric_14ef_label = ["Percentage of students enrolled for at least two (2) school years achieving proficiency on the state assessment in English Language Arts (1.4.e.) and Math (1.4.f.)"]
-                metric_14ef_data = get_svg_circle(metric_14ef_data)
+                metric_14ef_data = convert_to_svg_circle(metric_14ef_data)
                 table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
                 table_container_14ef = set_table_layout(table_14ef, table_14ef, metric_14ef_data.columns)
 
@@ -187,7 +185,7 @@ def update_academic_metrics(school: str, year: str):
                     iread_data = iread_data.reset_index(drop=True)
 
                     metric_14g_label = ["1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment."]
-                    iread_data = get_svg_circle(iread_data)   
+                    iread_data = convert_to_svg_circle(iread_data)   
                     table_14g = create_metric_table(metric_14g_label, iread_data)
                     table_container_14g = set_table_layout(table_14g, table_14g, iread_data.columns)
 
@@ -215,30 +213,30 @@ def update_academic_metrics(school: str, year: str):
                 # metric_15abcd_data = conditional_fill(metric_15abcd_data)
 
                 # metric_15abcd_label = "Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d"
-                # metric_15abcd_data = get_svg_circle(metric_15abcd_data)
+                # metric_15abcd_data = convert_to_svg_circle(metric_15abcd_data)
                 # table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
                 # table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
 
                 metric_16a_data = combined_delta[(combined_delta["Category"].str.contains("|".join(category))) & (combined_delta["Category"].str.contains("ELA"))]
                 metric_16a_label = ["1.6a Proficiency on the state assessment in ", html.U("English Language Arts"), html.Br(),"for each subgroup compared with traditional school corporation."]
-                metric_16a_data = get_svg_circle(metric_16a_data)
+                metric_16a_data = convert_to_svg_circle(metric_16a_data)
                 table_16a = create_metric_table(metric_16a_label,metric_16a_data)
 
                 metric_16b_data = combined_delta[(combined_delta["Category"].str.contains("|".join(category))) & (combined_delta["Category"].str.contains("Math"))]            
                 metric_16b_label = ["1.6b Proficiency on the state assessment in ", html.U("Math"), " for each", html.Br(), "subgroup compared with traditional school corporation."]
-                metric_16b_data = get_svg_circle(metric_16b_data)
+                metric_16b_data = convert_to_svg_circle(metric_16b_data)
                 table_16b = create_metric_table(metric_16b_label, metric_16b_data)
 
                 table_container_16ab = set_table_layout(table_16a,table_16b,combined_delta.columns)
 
                 metric_16c_data = combined_years[(combined_years["Category"].str.contains("|".join(category))) & (combined_years["Category"].str.contains("ELA"))]
                 metric_16c_label = ["1.6c The change in proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " for each subgroup compared with the previous school year."]
-                metric_16c_data = get_svg_circle(metric_16c_data)
+                metric_16c_data = convert_to_svg_circle(metric_16c_data)
                 table_16c = create_metric_table(metric_16c_label,metric_16c_data)
 
                 metric_16d_data = combined_years[(combined_years["Category"].str.contains("|".join(category))) & (combined_years["Category"].str.contains("Math"))]
                 metric_16d_label = ["1.6d The change in proficiency on the state assessment in",html.Br(), html.U("Math"), " for each subgroup compared with the previous school year."]
-                metric_16d_data = get_svg_circle(metric_16d_data)
+                metric_16d_data = convert_to_svg_circle(metric_16d_data)
                 table_16d = create_metric_table(metric_16d_label,metric_16d_data)
 
                 table_container_16cd = set_table_layout(table_16c,table_16d,combined_years.columns)
@@ -274,7 +272,7 @@ def update_academic_metrics(school: str, year: str):
                     ahs_metric_data_113 = ahs_metric_data_113.drop("Metric", axis=1)
 
                     ahs_metric_label_113 = ["Adult High School Accountability Metrics 1.1 & 1.3"]
-                    ahs_metric_data_113 = get_svg_circle(ahs_metric_data_113)            
+                    ahs_metric_data_113 = convert_to_svg_circle(ahs_metric_data_113)            
                     ahs_table_113 = create_metric_table(ahs_metric_label_113, ahs_metric_data_113)
                     ahs_table_container_113 = set_table_layout(ahs_table_113, ahs_table_113, ahs_metric_data_113.columns)
 
@@ -298,7 +296,7 @@ def update_academic_metrics(school: str, year: str):
                     ahs_metric_data_1214 = conditional_fillna(ahs_metric_data_1214)
                  
                     ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b (Not Calculated)"]
-                    ahs_metric_data_1214 = get_svg_circle(ahs_metric_data_1214) 
+                    ahs_metric_data_1214 = convert_to_svg_circle(ahs_metric_data_1214) 
                     ahs_table_1214 = create_metric_table(ahs_metric_label_1214, ahs_metric_data_1214)
                     ahs_table_container_1214 = set_table_layout(ahs_table_1214, ahs_table_1214, ahs_metric_data_1214.columns)
 
@@ -325,7 +323,7 @@ def update_academic_metrics(school: str, year: str):
                     combined_grad_metrics_data = calculate_high_school_metrics(hs_merged_data)
 
                     metric_17ab_label = ["High School Accountability Metrics 1.7.a & 1.7.b"]
-                    combined_grad_metrics_data = get_svg_circle(combined_grad_metrics_data)  
+                    combined_grad_metrics_data = convert_to_svg_circle(combined_grad_metrics_data)  
                     table_17ab = create_metric_table(metric_17ab_label, combined_grad_metrics_data)
                     table_container_17ab = set_table_layout(table_17ab, table_17ab, combined_grad_metrics_data.columns)
 
@@ -350,7 +348,7 @@ def update_academic_metrics(school: str, year: str):
                     metric_17cd_data = conditional_fillna(metric_17cd_data)
                   
                     metric_17cd_label = ["High School Accountability Metrics 1.7.c & 1.7.d"]
-                    metric_17cd_data = get_svg_circle(metric_17cd_data)          
+                    metric_17cd_data = convert_to_svg_circle(metric_17cd_data)          
                     table_17cd = create_metric_table(metric_17cd_label, metric_17cd_data)
                     table_container_17cd = set_table_layout(table_17cd, table_17cd, metric_17cd_data.columns)
 
@@ -360,7 +358,7 @@ def update_academic_metrics(school: str, year: str):
     # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
     metric_11cd_label = ["End of Year to Beginning of Year (1.1.c.) and Year over Year (1.1.d.) Student Re-Enrollment Rate."]
     
-    attendance_data = get_attendance_metrics(school, selected_year_string)
+    attendance_data = calculate_attendance_metrics(school, selected_year_string)
 
     if len(attendance_data.index) > 0:
 
@@ -371,10 +369,11 @@ def update_academic_metrics(school: str, year: str):
 
         metric_11ab_data = conditional_fillna(metric_11ab_data)
 
-        metric_11ab_data = get_svg_circle(metric_11ab_data)
+        metric_11ab_data = convert_to_svg_circle(metric_11ab_data)
         table_11ab = create_metric_table(metric_11ab_label, metric_11ab_data)
         table_container_11ab = set_table_layout(table_11ab, table_11ab, metric_11ab_data.columns)
 
+        # Create placeholders (Acountability Metric 1.1.c.)
         student_retention_rate_dict = {"Category": ["1.1.c. End of Year to Beginning of Year Re-Enrollment Rate",
             "1.1.d. Year over Year Re-Enrollment Rate"]
         }
@@ -390,7 +389,7 @@ def update_academic_metrics(school: str, year: str):
 
         metric_11cd_data = conditional_fillna(metric_11cd_data)
 
-        metric_11cd_data = get_svg_circle(metric_11cd_data)
+        metric_11cd_data = convert_to_svg_circle(metric_11cd_data)
         table_11cd = create_metric_table(metric_11cd_label, metric_11cd_data)
         table_container_11cd = set_table_layout(table_11cd, table_11cd, metric_11cd_data.columns)
 

@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/14/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -12,11 +12,11 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from .calculations import calculate_financial_metrics
-from .table_helpers import no_data_page, get_svg_circle, create_proficiency_key
+from .calculate_metrics import calculate_financial_metrics
+from .table_helpers import no_data_page, create_proficiency_key
+from .string_helpers import convert_to_svg_circle
 from .subnav import subnav_finance
-from .load_data import max_display_years, current_academic_year
-from .load_db import get_school_index, get_financial_data
+from .load_data import max_display_years, current_academic_year, get_school_index, get_financial_data
 
 dash.register_page(__name__, path="/financial_metrics", order=2)
 
@@ -210,7 +210,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             else:
                 
                 # convert ratings to colored circles
-                financial_metrics = get_svg_circle(financial_metrics)
+                financial_metrics = convert_to_svg_circle(financial_metrics)
 
                 financial_metrics = financial_metrics.fillna("")
             
@@ -395,7 +395,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 financial_indicators.insert(loc=0, column="Standard", value = standard)
 
                 # convert ratings to svg circles
-                financial_indicators = get_svg_circle(financial_indicators)
+                financial_indicators = convert_to_svg_circle(financial_indicators)
 
                 headers = financial_indicators.columns.tolist()
                 year_headers = [x for x in headers if "Description" not in x and "Standard" not in x]

@@ -1,15 +1,16 @@
 ##############################################
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/14/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 
-from .table_helpers import get_svg_circle, no_data_table, create_proficiency_key
-from .load_db import get_financial_data
+from .table_helpers import no_data_table, create_proficiency_key
+from .string_helpers import convert_to_svg_circle
+from .load_data import get_financial_data
 
 dash.register_page(__name__, top_nav=True, order=7)
 
@@ -45,7 +46,7 @@ def update_organizational_compliance(school, year):
         available_years = [int(c[:4]) for c in available_years]
         most_recent_finance_year = max(available_years)
 
-        years_to_exclude = most_recent_finance_year -  selected_year_numeric
+        years_to_exclude = most_recent_finance_year - selected_year_numeric
 
         if selected_year_numeric < most_recent_finance_year:
             financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
@@ -64,7 +65,7 @@ def update_organizational_compliance(school, year):
             organizational_indicators.insert(loc=0, column="Standard", value = standard)
 
             # convert ratings to colored circles
-            organizational_indicators = get_svg_circle(organizational_indicators)
+            organizational_indicators = convert_to_svg_circle(organizational_indicators)
 
             headers = organizational_indicators.columns.tolist()
             year_headers = [x for x in headers if "Description" not in x and "Standard" not in x]

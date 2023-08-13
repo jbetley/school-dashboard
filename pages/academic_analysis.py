@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Analysis #
 ######################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/14/23
 #
 # TODO#1: Fix loading spinner issue - Loading spinner should trigger every time a new school is
 # TODO: loaded, but not when the comparison dropdown is used.
@@ -25,16 +25,17 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from .calculations import find_nearest, recalculate_total_proficiency
-from .chart_helpers import no_data_fig_label, make_line_chart, make_bar_chart, make_group_bar_chart, \
+from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
+from .chart_helpers import no_data_fig_label, make_line_chart, make_bar_chart, make_group_bar_chart
+from .table_helpers import create_comparison_table, no_data_page, no_data_table, combine_group_barchart_and_table, \
     combine_barchart_and_table
-from .table_helpers import create_comparison_table, no_data_page, no_data_table, create_school_label, \
-    process_chart_data, process_table_data, create_school_label, create_chart_label, combine_group_barchart_and_table
+from .string_helpers import create_school_label, identify_missing_categories, combine_school_name_and_grade_levels, \
+    create_school_label, create_chart_label
+from .calculate_metrics import calculate_k8_comparison_metrics
+from .process_data import process_k8_academic_data, process_k8_corp_academic_data
+from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
+    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
 from .subnav import subnav_academic
-from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_excluded_years, \
-   process_k8_academic_data, calculate_k8_comparison_metrics, calculate_proficiency, process_k8_corp_academic_data
-from .load_db import get_k8_school_academic_data, get_school_index, get_school_coordinates, \
-    get_comparable_schools, get_k8_corporation_academic_data
 
 dash.register_page(__name__, path = "/academic_analysis", order=6)
 
@@ -594,10 +595,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 if len(fig16a1_k8_school_data.columns) > 3:
                     
                     fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = \
-                        process_chart_data(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
+                        identify_missing_categories(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
                     fig16a1_label = create_chart_label(fig16a1_final_data)
                     fig16a1_chart = make_group_bar_chart(fig16a1_final_data, school_name, fig16a1_label)
-                    fig16a1_table_data = process_table_data(fig16a1_final_data)
+                    fig16a1_table_data = combine_school_name_and_grade_levels(fig16a1_final_data)
                     fig16a1_table = create_comparison_table(fig16a1_table_data, school_name,"")
 
                     fig16a1 = combine_group_barchart_and_table(fig16a1_chart,fig16a1_table,fig16a1_category_string,fig16a1_school_string)
@@ -622,10 +623,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 if len(fig16b1_k8_school_data.columns) > 3:
                     
                     fig16b1_final_data, fig16b1_category_string, fig16b1_school_string = \
-                        process_chart_data(fig16b1_k8_school_data, current_corp_data, comparison_schools, headers_16b1, corp_name)
+                        identify_missing_categories(fig16b1_k8_school_data, current_corp_data, comparison_schools, headers_16b1, corp_name)
                     fig16b1_label = create_chart_label(fig16b1_final_data)
                     fig16b1_chart = make_group_bar_chart(fig16b1_final_data, school_name, fig16b1_label)
-                    fig16b1_table_data = process_table_data(fig16b1_final_data)
+                    fig16b1_table_data = combine_school_name_and_grade_levels(fig16b1_final_data)
                     fig16b1_table = create_comparison_table(fig16b1_table_data, school_name,"")
 
                     fig16b1 = combine_group_barchart_and_table(fig16b1_chart,fig16b1_table,fig16b1_category_string,fig16b1_school_string)
@@ -651,10 +652,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 if len(fig16a2_k8_school_data.columns) > 3:
         
                     fig16a2_final_data, fig16a2_category_string, fig16a2_school_string = \
-                        process_chart_data(fig16a2_k8_school_data, current_corp_data, comparison_schools, headers_16a2, corp_name)
+                        identify_missing_categories(fig16a2_k8_school_data, current_corp_data, comparison_schools, headers_16a2, corp_name)
                     fig16a2_label = create_chart_label(fig16a2_final_data)
                     fig16a2_chart = make_group_bar_chart(fig16a2_final_data, school_name, fig16a2_label)
-                    fig16a2_table_data = process_table_data(fig16a2_final_data)
+                    fig16a2_table_data = combine_school_name_and_grade_levels(fig16a2_final_data)
                     fig16a2_table = create_comparison_table(fig16a2_table_data, school_name,"")
                     
                     fig16a2 = combine_group_barchart_and_table(fig16a2_chart, fig16a2_table,fig16a2_category_string,fig16a2_school_string)
@@ -678,10 +679,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 if len(fig16b2_k8_school_data.columns) > 3:
 
                     fig16b2_final_data, fig16b2_category_string, fig16b2_school_string = \
-                        process_chart_data(fig16b2_k8_school_data, current_corp_data, comparison_schools, headers_16b2, corp_name)
+                        identify_missing_categories(fig16b2_k8_school_data, current_corp_data, comparison_schools, headers_16b2, corp_name)
                     fig16b2_label = create_chart_label(fig16b2_final_data)
                     fig16b2_chart = make_group_bar_chart(fig16b2_final_data, school_name, fig16b2_label)
-                    fig16b2_table_data = process_table_data(fig16b2_final_data)
+                    fig16b2_table_data = combine_school_name_and_grade_levels(fig16b2_final_data)
                     fig16b2_table = create_comparison_table(fig16b2_table_data, school_name,"")
 
                     fig16b2 = combine_group_barchart_and_table(fig16b2_chart, fig16b2_table,fig16b2_category_string,fig16b2_school_string)

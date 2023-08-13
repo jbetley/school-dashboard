@@ -2,18 +2,17 @@
 # ICSB Dashboard - Charting Functions #
 #######################################
 # author:   jbetley
-# version:  1.089
-# date:     08/11/23
+# version:  1.09
+# date:     08/14/23
 
 import plotly.express as px
 import pandas as pd
 import numpy as np
-import textwrap
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from dash import html, dcc
-from .calculations import check_for_insufficient_n_size , check_for_no_data
-
+from .calculations import check_for_insufficient_n_size, check_for_no_data
+from .string_helpers import customwrap
 import time
 
 # Colors
@@ -153,21 +152,6 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> l
     ]
 
     return fig_layout
-
-def customwrap(s: str, width: int = 16) -> str:
-    """
-    Creates wrapped text using html tags based on the specified width.
-    Adds two spaces before <br> to ensure the words at the end of each
-    break have the same spacing as 'ticksuffix' in make_stacked_bar()
-
-    Args:
-        s (str): a string
-        width (int, optional): the desired maximum width of the string. Defaults to 16.
-
-    Returns:
-        string (str)
-    """
-    return '  <br>'.join(textwrap.wrap(s,width=width))
 
 def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     """
@@ -1010,36 +994,3 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     ]
     
     return fig_layout
-
-def combine_barchart_and_table(fig: list, table: list) -> list:
-    """
-    A little helper function to combine a px.bar fig and a dash datatable
-
-    Args:
-        fig (list): a px.bar
-        table (list): a dash DataTable
-
-    Returns:
-        layout (list): a dash html.Div layout with fig and DataTable
-    """    
-    layout = [
-                html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(fig)           
-                        ],
-                        className = 'pretty_container nine columns',
-                    ),
-                    html.Div(
-                        [
-                            html.Div(table)           
-                        ],
-                        className = 'pretty_container three columns'
-                    ),
-                ],
-                className='row'
-            )
-    ]
-
-    return layout

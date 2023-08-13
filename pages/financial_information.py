@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Information #
 ##########################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/14/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -14,8 +14,7 @@ import numpy as np
 
 from .table_helpers import no_data_page
 from .subnav import subnav_finance
-from .load_data import max_display_years
-from .load_db import get_school_index, get_financial_data
+from .load_data import max_display_years, get_school_index, get_financial_data
 
 dash.register_page(__name__, top_nav=True, path = "/financial_information", order=1)
 

@@ -2,8 +2,8 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/14/23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -14,8 +14,9 @@ import numpy as np
 
 from .chart_helpers import loading_fig, no_data_fig_label
 from .table_helpers import no_data_table, no_data_page
-from .load_db import get_school_index, get_financial_data, get_demographic_data
-from .load_data import ethnicity, subgroup, max_display_years, current_academic_year, get_excluded_years
+from .load_data import ethnicity, subgroup, max_display_years, current_academic_year, get_school_index, \
+    get_financial_data, get_demographic_data
+from .calculations import get_excluded_years
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
 
@@ -499,7 +500,7 @@ layout = html.Div(
                                     html.Label(id="subgroup-title", className = "header_label"),
                                     dcc.Graph(id="subgroup-fig", figure = loading_fig(),config={"displayModeBar": False})
                                 ],
-                                className = "pretty_container_left six columns"
+                                className = "pretty_container six columns"
                             ),
                             html.Div(
                                 [
@@ -509,7 +510,7 @@ layout = html.Div(
                                 className = "pretty_container six columns"
                             ),
                         ],
-                        className="bare_container_no_center twelve columns",
+                        className="bare_container_center twelve columns",
                     ),
                 ],
                 id = "about-main-container",
