@@ -12,10 +12,10 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-from .chart_helpers import loading_fig, no_data_fig_label
-from .table_helpers import no_data_table, no_data_page
 from .load_data import ethnicity, subgroup, max_display_years, current_academic_year, get_school_index, \
     get_financial_data, get_demographic_data
+from .chart_helpers import loading_fig, no_data_fig_label
+from .table_helpers import no_data_table, no_data_page
 from .calculations import get_excluded_years
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
@@ -188,7 +188,6 @@ def update_about_page(year: str, school: str):
             # Drop rows that meet the above condition
             ethnicity_data_t = ethnicity_data_t.drop(ethnicity_data_t[((ethnicity_data_t.iloc[:, 0] < .005) | (pd.isnull(ethnicity_data_t.iloc[:, 0])) & (ethnicity_data_t.iloc[:, 1] < .005) | (pd.isnull(ethnicity_data_t.iloc[:, 1])))].index)
 
-            # replace any remaining NaN with 0
             ethnicity_data_t = ethnicity_data_t.fillna(0)
 
             categories = ethnicity_data_t.index.tolist()
@@ -302,9 +301,6 @@ def update_about_page(year: str, school: str):
             # the data and only color text traces when the value of x (t.x) is not NaN
             subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=np.where(~np.isnan(t.x),t.marker.color, "white"),textfont_size=11))
             
-            # Use this to display all instead:
-            # subgroup_fig.for_each_trace(lambda t: t.update(textfont_color=t.marker.color,textfont_size=11))
-            
             subgroup_fig.update_traces(hovertemplate = None, hoverinfo="skip")
 
             # Uncomment to add hover
@@ -352,7 +348,6 @@ def update_about_page(year: str, school: str):
                 )
 
         # Get ADM Data
-        # exclude all years more recent than selected year
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 

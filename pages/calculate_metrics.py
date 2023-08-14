@@ -15,7 +15,18 @@ from .calculations import calculate_year_over_year, set_academic_rating, conditi
     get_excluded_years
 
 def calculate_attendance_metrics(school: str, year: str) -> pd.DataFrame:
+    """
+    Gets attendance data (df) for school and school corporation, calculates the
+    year over year difference using calculate_year_over_year than adds a Rating
+    using set_academic_rating
 
+    Args:
+        school (str): a school ID number
+        year (str): the selected year
+
+    Returns:
+        pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
+    """
     selected_school = get_school_index(school)    
     corp_id = int(selected_school["GEO Corp"].values[0])
 
@@ -30,7 +41,7 @@ def calculate_attendance_metrics(school: str, year: str) -> pd.DataFrame:
     school_attendance_rate = school_attendance_rate.drop("Category", axis=1)
     corp_attendance_rate = corp_attendance_rate.drop("Category", axis=1)
 
-    # concat the two df"s and reorder so that the columns alternate
+    # concat the two df's and reorder so that the columns alternate
     attendance_metrics = pd.concat([school_attendance_rate, corp_attendance_rate], axis=1)
     reordered_cols = list(sum(zip(school_attendance_rate.columns, corp_attendance_rate.columns), ()))
 
@@ -50,7 +61,6 @@ def calculate_attendance_metrics(school: str, year: str) -> pd.DataFrame:
 
     attendance_metrics.insert(loc=0, column="Category", value="1.1.a. Attendance Rate")
 
-    # threshold limits for rating calculations
     attendance_limits = [
         0,
         -0.01,
@@ -94,10 +104,22 @@ def calculate_attendance_metrics(school: str, year: str) -> pd.DataFrame:
         for i in range(attendance_metrics.shape[1], 1, -3)
     ]
 
+    # drop corp rates
+    attendance_metrics = attendance_metrics.loc[:, ~attendance_metrics.columns.str.contains("Corp")]
+    
     return attendance_metrics
 
 def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes a dataframe of school academic data and calculates the proficiency difference
+    between successive years and the assigns an academic rating to each year.
 
+    Args:
+        data (pd.DataFrame): school proficiency data
+
+    Returns:
+        pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
+    """
     data.columns = data.columns.astype(str)
     
     # drop low/high grade rows
@@ -165,7 +187,6 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
         for i in range(data.shape[1]-2, 1, -3)
     ]
     data = conditional_fillna(data)
-    # data = data.fillna("No Data")
 
     data.columns = data.columns.astype(str)
 
@@ -201,7 +222,18 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
 
 def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.DataFrame, year: str) -> pd.DataFrame:
+    """
+    Take a school and corp dataframe (and year string), calculates the differences between the two for
+    each proficiency Category, and then assigns an academic rating for each category for each year.
 
+    Args:
+        school_data (pd.DataFrame): school proficiency data
+        corp_data (pd.DataFrame): school corporation proficiency data
+        year (str): selected school year
+
+    Returns:
+        pd.DataFrame: dataframe with School, Tested, Diff, and Rate columns for each year
+    """
     excluded_years = get_excluded_years(year)
 
     # NOTE: using difference() reverses the order of the columns which would normally
@@ -276,9 +308,6 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
     # leave it alone for now.
     final_k8_academic_data["Category"] = (final_k8_academic_data["Category"].str.replace(" Proficient %", "").str.strip())
 
-    # rename IREAD Category
-    # final_k8_academic_data.loc[final_k8_academic_data["Category"] == "IREAD Pass %", "Category"] = "IREAD Proficiency (Grade 3 only)"
-
     # Add metric ratings. See get_attendance_metrics() for a description
     delta_limits = [0.1, 0.02, 0, 0]  
     [
@@ -300,7 +329,15 @@ def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.Dat
     return final_k8_academic_data
 
 def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes a school dataframe and assigns an academic rating for each category for each year.
 
+    Args:
+    merged_data (pd.DataFrame): school proficiency data
+
+    Returns:
+        pd.DataFrame: dataframe with School, Tested, Diff, and Rate columns for each year
+    """
     data = merged_data.copy()
 
     grad_limits_state = [0, 0.05, 0.15, 0.15]
@@ -362,9 +399,22 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
     combined_grad_metrics.loc[ combined_grad_metrics["Category"] == "Non Waiver Graduation Rate", "Category",
     ] = "1.7.b 4 year non-waiver graduation rate  with school corporation average"
 
+    combined_grad_metrics = conditional_fillna(combined_grad_metrics)
+    
     return combined_grad_metrics
 
 def calculate_adult_high_school_metrics(school: str, data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes a school dataframe and school ID string and assigns an academic rating
+    for each category for each year.
+
+    Args:
+        school_data (pd.DataFrame): adult high school academic data
+        year (str): selected school year
+
+    Returns:
+        pd.DataFrame: dataframe with School and Rate columns for each year
+    """
     # AHS metrics is such a small subset of all metrics, instead of pulling in the
     # entire HS DF, we just pull the three datapoints we need directly from the DB.
 
@@ -442,7 +492,16 @@ def calculate_adult_high_school_metrics(school: str, data: pd.DataFrame) -> pd.D
     return ahs_data
 
 def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
-    
+    """
+    Takes a school dataframe and an academic rating for iread proficiency
+    for each year.
+
+    Args:
+        school_data (pd.DataFrame): school academic data
+
+    Returns:
+        pd.DataFrame: dataframe with School,Tested, Diff, and Rate columns for each year
+    """    
     iread_limits = [0.9, 0.8, 0.7, 0.7] 
 
     data = (data.set_index(["Category"]).add_suffix("School").reset_index())

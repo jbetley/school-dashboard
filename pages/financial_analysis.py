@@ -16,11 +16,11 @@ import numpy as np
 import plotly.graph_objects as go
 
 # import local functions
+from .load_data import max_display_years, get_school_index, get_financial_data, get_financial_ratios
 from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
-from .load_data import max_display_years, get_school_index, get_financial_data, get_financial_ratios
 
 dash.register_page(__name__, path = "/financial_analysis", order=3)
 
@@ -179,7 +179,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
-        # NOTE: rop partial year data (financial data with a "Q#" in column header).
+        # NOTE: drop partial year data (financial data with a "Q#" in column header).
         # may eventually want to implement for Q4 data, but the display quickly gets
         # too confusing with incomplete data.
         if "Q" in financial_data.columns[1]:
@@ -738,7 +738,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                             tooltip_data=[
                                 {
                                 "Category": {
-            #                        "value": markdown_table,
                                     "value": "**Occupancy Ratio** measures the percentage of total revenue used to \
                                     occupy and maintain school facilities. A school\"s occupancy ratio generally \
                                     should be less than 25%. It is calculated as: **Occupancy Expense** (Form 9 Object\
@@ -764,6 +763,14 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                                     and 313) divided by **Total Revenue** (Form 9 Section Codes 1 and 3)",
                                     "type": "markdown"},
                                 },
+                                {
+                                "Category": {
+                                    "value": "**Instructional Staff Ratio** measures how much of a school\'s revenue is used \
+                                    to pay for instructional staff. It is calculated as: **Instructional Staff Expense** (Form 9 \
+                                    Object Codes between 110, 115, 120, 150 and 290) divided by **Total Revenue** (Form 9 \
+                                    Section Codes 1 and 3)",
+                                    "type": "markdown"},
+                                },                                
                             ],
                             css=[
                                 {

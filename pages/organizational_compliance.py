@@ -8,9 +8,9 @@ import dash
 from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 
+from .load_data import get_financial_data
 from .table_helpers import no_data_table, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
-from .load_data import get_financial_data
 
 dash.register_page(__name__, top_nav=True, order=7)
 

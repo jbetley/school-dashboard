@@ -12,11 +12,11 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
+from .load_data import max_display_years, current_academic_year, get_school_index, get_financial_data
 from .calculate_metrics import calculate_financial_metrics
 from .table_helpers import no_data_page, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
 from .subnav import subnav_finance
-from .load_data import max_display_years, current_academic_year, get_school_index, get_financial_data
 
 dash.register_page(__name__, path="/financial_metrics", order=2)
 

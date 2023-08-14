@@ -11,16 +11,16 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from .subnav import subnav_academic
-from .table_helpers import no_data_page, no_data_table, create_metric_table, set_table_layout, create_proficiency_key
-from .string_helpers import convert_to_svg_circle
-from .process_data import process_k8_academic_data, process_high_school_academic_data, merge_high_school_data, \
-    filter_high_school_academic_data, process_k8_corp_academic_data
-from .calculate_metrics import calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, calculate_high_school_metrics, \
-    calculate_adult_high_school_metrics, calculate_attendance_metrics
 from .load_data import ethnicity, subgroup, grades_all, get_school_index, get_k8_school_academic_data, \
     get_high_school_academic_data, get_hs_corporation_academic_data, get_k8_corporation_academic_data
+from .process_data import process_k8_academic_data, process_high_school_academic_data, merge_high_school_data, \
+    filter_high_school_academic_data, process_k8_corp_academic_data
+from .table_helpers import no_data_page, no_data_table, create_metric_table, set_table_layout, create_proficiency_key
+from .string_helpers import convert_to_svg_circle
+from .calculate_metrics import calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, calculate_high_school_metrics, \
+    calculate_adult_high_school_metrics, calculate_attendance_metrics
 from .calculations import conditional_fillna, get_excluded_years
+from .subnav import subnav_academic
 
 dash.register_page(__name__,  path = "/academic_metrics", order=5)
 
@@ -59,7 +59,7 @@ def update_academic_metrics(school: str, year: str):
     
     excluded_years = get_excluded_years(year)
 
-    # default values (all empty values with empty container displayed)
+    # default values (only empty container displayed)
     table_container_11ab = []
     table_container_11cd = []
     table_container_14ab = []
@@ -111,8 +111,6 @@ def update_academic_metrics(school: str, year: str):
 
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
 
-# TODO: Add First Year column to right of first year
-
                 raw_corp_data = get_k8_corporation_academic_data(school)
 
                 clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
@@ -123,8 +121,7 @@ def update_academic_metrics(school: str, year: str):
 
                 metric_14a_data = combined_years[(combined_years["Category"].str.contains("|".join(grades_all))) & (combined_years["Category"].str.contains("ELA"))]
                 metric_14a_label = ["1.4a Grade level proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " compared with the previous school year."]
-                print(metric_14a_label)
-                print(type(metric_14a_label))
+
                 metric_14a_data = convert_to_svg_circle(metric_14a_data)
                 table_14a = create_metric_table(metric_14a_label, metric_14a_data)
 
@@ -158,8 +155,9 @@ def update_academic_metrics(school: str, year: str):
                 year_proficiency_empty = pd.DataFrame(columns = simple_cols)
 
                 year_proficiency_dict = {
-                    "Category": ["1.4.e. Two (2) year student proficiency in ELA.", 
-                            "1.4.f. Two (2) year student proficiency in Math."
+                    "Category": [
+                        "1.4.e. Two (2) year student proficiency in ELA.", 
+                        "1.4.f. Two (2) year student proficiency in Math."
                         ]
                     }
                 year_proficiency = pd.DataFrame(year_proficiency_dict)
@@ -192,7 +190,7 @@ def update_academic_metrics(school: str, year: str):
                 else:
                     table_container_14g = no_data_table(["1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment."])
 
-                # Create placeholders (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
+                # Placeholders for Growth data metrics (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
                 # growth_metrics_empty = pd.DataFrame(columns = simple_cols)
                 # growth_metrics_dict = {
                 #     "Category": ["1.5.a Percentage of students achieving “typical” or “high” growth on the state assessment in \
@@ -206,12 +204,9 @@ def update_academic_metrics(school: str, year: str):
                 #         ]
                 #     }
                 # growth_metrics = pd.DataFrame(growth_metrics_dict)
-
                 # metric_15abcd_data = pd.concat([growth_metrics_empty, growth_metrics], ignore_index = True)
                 # metric_15abcd_data.reset_index()
-
                 # metric_15abcd_data = conditional_fill(metric_15abcd_data)
-
                 # metric_15abcd_label = "Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d"
                 # metric_15abcd_data = convert_to_svg_circle(metric_15abcd_data)
                 # table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
@@ -283,8 +278,9 @@ def update_academic_metrics(school: str, year: str):
                     ahs_nocalc_empty = pd.DataFrame(columns = simple_cols)
 
                     ahs_nocalc_dict = {
-                        "Category": ["1.2.a. Students graduate from high school in 4 years.", 
-                                "1.2.b. Students enrolled in grade 12 graduate within the school year being assessed.",
+                        "Category": [
+                            "1.2.a. Students graduate from high school in 4 years.", 
+                            "1.2.b. Students enrolled in grade 12 graduate within the school year being assessed.",
                             ]
                         }
                     ahs_no_calc = pd.DataFrame(ahs_nocalc_dict)
@@ -292,7 +288,6 @@ def update_academic_metrics(school: str, year: str):
                     ahs_metric_data_1214 = pd.concat([ahs_nocalc_empty, ahs_no_calc], ignore_index = True)
                     ahs_metric_data_1214.reset_index()
 
-                    # This fills nan with either "N/A" or "No Data" depending on the column
                     ahs_metric_data_1214 = conditional_fillna(ahs_metric_data_1214)
                  
                     ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b (Not Calculated)"]
@@ -312,7 +307,7 @@ def update_academic_metrics(school: str, year: str):
 
                     # NOTE: hs_data columns are a subset of school_data columns, but we still need to ensure hs_data
                     # only includes columns that are in school_data (after being cleaned/filtered above). So we find
-                    # the intersection of the two sets and use it to filted hs_data
+                    # the intersection of the two sets and use it to filtered hs_data
                     common_cols = [col for col in set(raw_hs_school_data.columns).intersection(raw_hs_corp_data.columns)]
                     raw_hs_corp_data = raw_hs_corp_data[common_cols]
 
@@ -374,8 +369,10 @@ def update_academic_metrics(school: str, year: str):
         table_container_11ab = set_table_layout(table_11ab, table_11ab, metric_11ab_data.columns)
 
         # Create placeholders (Acountability Metric 1.1.c.)
-        student_retention_rate_dict = {"Category": ["1.1.c. End of Year to Beginning of Year Re-Enrollment Rate",
-            "1.1.d. Year over Year Re-Enrollment Rate"]
+        student_retention_rate_dict = {
+            "Category": [
+                "1.1.c. End of Year to Beginning of Year Re-Enrollment Rate",
+                "1.1.d. Year over Year Re-Enrollment Rate"]
         }
         
         mock_columns = [i for i in attendance_data.columns if "Corp Avg" not in i]

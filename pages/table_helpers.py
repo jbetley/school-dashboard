@@ -116,7 +116,7 @@ def create_proficiency_key() -> list:
             markdown_options={"html": True},
             style_table={
                 "paddingTop": "15px",
-                "fontSize": ".75em",
+                "fontSize": "1em",
                 "border": "none",
                 "fontFamily": "Jost, sans-serif",
             },
@@ -297,7 +297,6 @@ def no_data_page(label: str = "Academic Data", text: str = "No Data to Display")
 #             ]
     
 #     return table_layout
-
 
 def create_growth_table_and_fig(table: list, fig, label: str):    # : plotly.graph_objs._figure.Figure
     
@@ -517,7 +516,6 @@ def create_growth_table(data: pd.DataFrame, label: str = "") -> list:
         ]        
 
     return table_layout
-
 
 def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
     """
@@ -970,7 +968,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
     return table_layout
 
-def create_metric_table(label: list, content: pd.DataFrame) -> list:
+def create_metric_table(label: list, data: pd.DataFrame) -> list:
     """
     Takes a label and a dataframe consisting of Rating and Metric Columns and returns
     a dash datatable. NOTE: could possibly be less complicated than it is, or maybe not-
@@ -983,8 +981,6 @@ def create_metric_table(label: list, content: pd.DataFrame) -> list:
     Returns:
         table (list): dash html.Div enclosing html.Label and DataTable
     """
-
-    data = content.copy()
 
     table_size = len(data.columns)
 
@@ -1014,16 +1010,6 @@ def create_metric_table(label: list, content: pd.DataFrame) -> list:
 
     else:
 
-        # NOTE: Testing a version of the table comparing school and corporation rates
-        # that does not include the corp rate, only the difference. This is in order
-        # to decrease the number of columns. Eventually may want to remove the
-        # calculation from calculateMetrics(), but leaving it in for now in case
-        # we ultimately choose to display it
-
-        # NOTE: The order of these operations matters
-        # remove all Corp Rate / Corp Avg columns
-        data = data.loc[:, ~data.columns.str.contains("Corp")]
-
         # determines the col_width class and width of the category column based
         # on the size (# of cols) of the dataframe
         if table_size <= 3:
@@ -1049,6 +1035,7 @@ def create_metric_table(label: list, content: pd.DataFrame) -> list:
             category_width = 15
 
         list_cols = data.columns.tolist()
+
         # used for formatting purposes
         year_headers = [y for y in list_cols if "School" in y]
         rating_headers = [y for y in list_cols if "Rate" in y]
@@ -1128,18 +1115,34 @@ def create_metric_table(label: list, content: pd.DataFrame) -> list:
             } for diff in diff_headers
         ]
  
+        # drop subject
         data["Category"] = data["Category"].map(lambda x: x.split("|")[0]).copy()
-
-        name_cols = [["Category",""]]
 
         # Build list of lists, top level and secondary level column names
         # for multi-level headers
+        name_cols = [["Category",""]]
+
         for item in all_cols:
             if item.startswith("20"):
                 if "Rate" in item:
                     item = item[:8]
 
                 name_cols.append([item[:4],item[4:]])
+
+        # Each year of an academic metrics data file has a possible 4 columns:
+        # School, Tested, Diff, and Rate. So if the last column for an academic metrics
+        # dataframe is "Rate," then we have a full years worth of data for all calculations
+        # (both comparison, which requires 1 year of data AND year over year, which requires
+        # two years of data). However, the first year of data for a school means Diff and Rate
+        # will not be calculated. So if the last column is a "Tested" column, we need to add
+        # '(Initial Year)' to the header for all columns of that year. Thus also applies in the
+        # case where the last column is 'School' (impacts one table)
+        if name_cols[-1][1] == 'Tested':
+            name_cols[-1][0] = name_cols[-1][0] + ' (Initial Year)'   # the first item in the last list
+            name_cols[-2][0] = name_cols[-2][0] + ' (Initial Year)'   # the first item in the second to last list
+
+        if name_cols[-1][1] == 'School':
+            name_cols[-1][0] = name_cols[-1][0] + ' (Initial Year)'
 
         # NOTE: This add a border to header_index:1 for each category
         # For a single bottom line: comment out blocks, comment out
@@ -1243,7 +1246,7 @@ def create_metric_table(label: list, content: pd.DataFrame) -> list:
                 "borderBottom": "none",
             },
         ] + [
-            {   # NOTE: This doesn"t work as cell_conditional - is it because its markdown?
+            {   # NOTE: This doesn't work as cell_conditional - is it because its markdown?
                 "if": {
                     "column_id": nsize,
                 },

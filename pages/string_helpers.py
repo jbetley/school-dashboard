@@ -10,6 +10,7 @@ import numpy as np
 import re
 import textwrap
 from typing import Tuple
+
 from .load_data import ethnicity, subgroup, info_categories
 
 def customwrap(s: str, width: int = 16) -> str:

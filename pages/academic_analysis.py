@@ -7,12 +7,11 @@
 #
 # TODO#1: Fix loading spinner issue - Loading spinner should trigger every time a new school is
 # TODO: loaded, but not when the comparison dropdown is used.
-# THe Hacky fix right now has the Spinner loading the first 6 figs, so it looks like the
+# The Hacky fix right now has the Spinner loading the first 6 figs, so it looks like the
 # whole page is loading on initial load, but doesn't reload the remainder of the figs
 # when the comparison dropdown is triggered. Issues: Does not show loading spinner in
 # bottom half of page when school dropdown is used. The loading spinner also stops
-# spinning too early in this case, as other parts of the page load first before they are
-# pushed down by the layout.
+# spinning too early  as other parts of the page load first before they are pushed down by the layout.
 # https://community.plotly.com/t/dcc-loading-only-on-first-load-of-dl-map-not-when-clicked-hover-on-feature-in-the-map/77587/3
 # https://stackoverflow.com/questions/68116540/dcc-loading-on-first-load-only-python
 # https://community.plotly.com/t/displaying-loading-screen-when-pages-container-is-loading/72109
@@ -25,6 +24,9 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
+from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
+    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
+from .process_data import process_k8_academic_data, process_k8_corp_academic_data
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
 from .chart_helpers import no_data_fig_label, make_line_chart, make_bar_chart, make_group_bar_chart
 from .table_helpers import create_comparison_table, no_data_page, no_data_table, combine_group_barchart_and_table, \
@@ -32,18 +34,11 @@ from .table_helpers import create_comparison_table, no_data_page, no_data_table,
 from .string_helpers import create_school_label, identify_missing_categories, combine_school_name_and_grade_levels, \
     create_school_label, create_chart_label
 from .calculate_metrics import calculate_k8_comparison_metrics
-from .process_data import process_k8_academic_data, process_k8_corp_academic_data
-from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
-    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
 from .subnav import subnav_academic
 
 dash.register_page(__name__, path = "/academic_analysis", order=6)
 
-# NOTE: For testing purposes
-# pd.set_option("display.max_rows", None)
-# pd.set_option("display.max_columns", None)
-
-# Set options for comparison schools (multi-select dropdown)
+# Set dropdown options for comparison schools
 @callback(
     Output("comparison-dropdown", "options"),
     Output("input-warning","children"),
@@ -83,10 +78,9 @@ def set_dropdown_options(school, year, comparison_schools):
     else:
 
         # NOTE: Before we do the distance check, we reduce the size of the df by removing
-        # schools where there is no, or only one grade overlap between the comparison schools.
-        # "overlap" determines the minimum number of grades which must overlap (a value of "1"
-        # means a 2 grade overlap, "2" means 3 grade overlap, etc.). Currently set to "1"
-
+        # schools where there is no, or only a one grade overlap between the comparison schools.
+        # the variable "overlap" is one less than the the number of grades that we want as a
+        # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
         overlap = 1
 
         schools_by_distance = schools_by_distance.replace({"Low Grade" : { "PK" : 0, "KG" : 1}})
@@ -98,26 +92,25 @@ def set_dropdown_options(school, year, comparison_schools):
 
         # In order to fit within the distance parameters, the tested school must:
         #   a)  have a low grade that is less than or equal to the selected school and
-        #       whose high grade minus the selected school's low grade is greater than or
+        #       a high grade minus the selected school's low grade that is greater than or
         #       eqaul to the overlap; or
         #   b) have a low grade that is greater than or equal to the selected school and
-        #       the selected school's high grade minus the tested school's low grade is 
-        #       greater than or eqaul to the overlap
-        # There may be a name for this algorithm, but I don't know what it is, so here are
-        # some examples -> assume a selected cchool with a gradespan of 5-8:
-        #   a) a school with grades 3-7 -   [match]: low grade is less than selected school and
-        #                                   high grade (7) minus selected school low grade (5) is
-        #                                   greater (2) than the overlap (1).
-        #   b) a school with grades 2-5 -   [No match]: low grade is less than selected school but
-        #                                   high grade (5) minus selected school low grade (5) is
-        #                                   not greater (0) than the overlap (1). In this case while there is
-        #                                   an overlap, is is only 1 grade.
-        #   c) a school with grades 6-12-   [match]: low grade is higher than selected school and
-        #                                   the selected school's high grade (12) minus the tested school's low
-        #                                   grade (5) is greater (7) than the overlap (1)
-        #   d) a school with grades 3-4     [No match]: low grade is lower than selected school, but the tested
-        #                                   school's high grade (4) minus the selected school's low grade (5)
-        #                                   is not greater (-1) than the overlap (1)
+        #       a high grade minus the tested school's low grade that is greater than or 
+        #       equal to the overlap.
+        # Examples -> assume a selected school with a gradespan of 5-8:
+        #   i) a school with grades 3-7 -   [match]: low grade is less than selected school's
+        #       low grade and high grade (7) minus selected school low grade (5) is greater (2)
+        #       than the overlap (1).
+        #   i) a school with grades 2-5 -   [No match]: low grade is less than selected school's
+        #       low grade but high grade (5) minus selected school low grade (5) is not greater (0)
+        #       than the overlap (1). In this case while there is an overlap, it is below our
+        #       threshold (1 grade).
+        #   c) a school with grades 6-12-   [match]: low grade is higher than selected school's
+        #       low grade and high grade (12) minus the tested school low grade (5) is greater
+        #       (7) than the overlap (1).
+        #   d) a school with grades 3-4     [No match]: low grade is lower than selected school's
+        #       low grade, but high grade (4) minus the selected school's low grade (5) is not greater
+        #       (-1) than the overlap (1).
 
         schools_by_distance = schools_by_distance.loc[(
                 (schools_by_distance["Low Grade"] <= school_low) & \
@@ -128,11 +121,9 @@ def set_dropdown_options(school, year, comparison_schools):
                 (school_high - schools_by_distance["Low Grade"]  >= overlap)
             ), :]
         
-        # reset index and make a copy to re-add School Names after distance sort
         schools_by_distance = schools_by_distance.reset_index(drop = True)
         all_schools = schools_by_distance.copy()
 
-        # get school index
         school_idx = schools_by_distance[schools_by_distance["School ID"] == int(school)].index
 
         # NOTE: This should never ever happen because we"ve already determined that the school exists in
@@ -176,8 +167,7 @@ def set_dropdown_options(school, year, comparison_schools):
         # final list will be displayed in order of increasing distance from selected school
         comparison_list = dict(comparison_dict.items())
 
-        # Set default display selections to all schools in the list and
-        # the number of options to be pre-selected to 4
+        # Set default display selections to all schools in the list
         default_options = [{"label":name,"value":id} for name, id in comparison_list.items()]
         options = default_options
 
@@ -240,15 +230,13 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
     # show 2019 instead of 2020 as 2020 has no academic data
     string_year = "2019" if year == "2020" else year
-
     numeric_year = int(string_year)
-    
-    excluded_years = get_excluded_years(year)
 
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
+    school_name = selected_school["School Name"].values[0]
 
-    # default values (all empty - empty container displayed)
+    # default values (only empty container displayed)
     fig14a = []
     fig14c = []
     fig14d = []
@@ -276,14 +264,11 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
     academic_analysis_empty_container = {"display": "block"}
 
     no_data_to_display = no_data_page("Academic Analysis")
-
-    selected_school = get_school_index(school)
     
-    school_name = selected_school["School Name"].values[0]
-    
+    # get academic data
     selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
-    # filter out years of data later than the selected year
+    excluded_years = get_excluded_years(year)
     if excluded_years:
         selected_raw_k8_school_data = selected_raw_k8_school_data[~selected_raw_k8_school_data["Year"].isin(excluded_years)]
 
@@ -305,7 +290,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
 
-            raw_comparison_data = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, string_year) # numeric_year
+            raw_comparison_data = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, string_year)
             
             tested_year = string_year + "School"
 
@@ -326,11 +311,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 raw_comparison_data = raw_comparison_data.drop('Test Year', axis=1)
 
-                ## Year over Year data ##
+                ## Year over Year figs
                 school_academic_data = raw_comparison_data[[col for col in raw_comparison_data.columns if "School" in col or "Category" in col]].copy()
                 school_academic_data.columns = school_academic_data.columns.str.replace(r"School$", "", regex=True)
 
-                # transpose the resulting dataframe (making the categories the column headers)
                 display_academic_data = school_academic_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
 
                 # add suffix to certain Categories
@@ -342,8 +326,8 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 # Chart 1: Year over Year ELA Proficiency by Grade (1.4.a)
                 fig14a_data = yearly_school_data.filter(regex = r"^Grade \d\|ELA|^School Name$|^Year$",axis=1)
 
-                # NOTE: make_line_chart() returns a list (plotly dash html layout), it either
-                # contains a chart (if data) or a empty no data fig
+                # NOTE: make_line_chart() returns a list (plotly dash html layout), that either
+                # contains a chart (if data) or a no data fig
                 fig14a = make_line_chart(fig14a_data,"Year over Year ELA Proficiency by Grade")
 
                 # Chart 2: Year over Year Math Proficiency by Grade (1.4.b)
@@ -435,7 +419,8 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 # remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
                 comparison_schools = comparison_schools.filter(regex = r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$",axis=1)
 
-                # drop all columns from the comparison dataframe that aren"t in the school dataframe
+                # drop all columns from the comparison dataframe that aren't in the school dataframe
+
                 # because the school file has already been processed, column names will not directly
                 # match, so we create a list of unique substrings from the column names and use it
                 # to filter the comparison set
@@ -455,23 +440,8 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 # reset indicies
                 comparison_schools = comparison_schools.reset_index(drop=True)
 
-                ## NOTE: Placeholder for HS/AHS data
-                # hs_comparison_data = hs_all_data_included_years.loc[(hs_all_data_included_years["School ID"].isin(comparison_schools))]
-                #     # filter comparable school data
-                # hs_comparison_data = hs_comparison_data.filter(regex = r"Cohort Count$|Graduates$|Pass N|Test N|^Year$",axis=1)
+                ## TODO: Placeholder for HS/AHS data
 
-                # ## See above (k8_diff)
-                # hs_diff = list(set(hs_corp_data["Year"].unique().tolist()) - set(hs_school_data["Year"].unique().tolist()))
-
-                # if hs_diff:
-                #     hs_corp_data = hs_corp_data[~hs_corp_data["Year"].isin(hs_diff)]
-                #     hs_comparison_data = hs_comparison_data[~hs_comparison_data["Year"].isin(hs_diff)]
-
-                # # ensure columns headers are strings
-                # hs_comparison_data.columns = hs_comparison_data.columns.astype(str)
-
-                # Ensure cols are strings after transposition for matching
-                
                 #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                 category = "School Total|ELA Proficient %"
 
@@ -485,13 +455,11 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                     fig14c_k8_school_data.loc[len(fig14c_k8_school_data.index)] = \
                         [corp_name,"3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
 
-                    # Get comparable school values for the specific category
                     fig14c_comp_data = comparison_schools[info_categories + [category]]
 
                     # Combine data, fix dtypes, and send to chart function
                     fig14c_all_data = pd.concat([fig14c_k8_school_data,fig14c_comp_data])
 
-                    # save table data
                     fig14c_table_data = fig14c_all_data.copy()
 
                     fig14c_all_data[category] = pd.to_numeric(fig14c_all_data[category])
@@ -506,7 +474,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                     fig14c_table = create_comparison_table(fig14c_table_data, school_name,"Proficiency")
 
                 else:
-                    # NOTE: This should never ever happen. So it's critical that we expect it to.
+                    # NOTE: This should never ever happen. So yeah.
                     fig14c_chart = no_data_fig_label("Comparison: Current Year ELA Proficiency",200)
                     fig14c_table = no_data_table(["Proficiency"])
 
@@ -533,7 +501,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                     fig14d_chart = make_bar_chart(fig14d_all_data,category, school_name, "Comparison: Current Year Math Proficiency")
 
-                    # Math Proficiency table
                     fig14d_table_data["School Name"] = create_school_label(fig14d_table_data)
                     
                     fig14d_table_data = fig14d_table_data[["School Name", category]]
@@ -561,14 +528,12 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                     
                     fig_iread_all_data = pd.concat([fig_iread_k8_school_data,fig_iread_comp_data])
 
-                    # save table data
                     fig_iread_table_data = fig_iread_all_data.copy()
 
                     fig_iread_all_data[category] = pd.to_numeric(fig_iread_all_data[category])
 
                     fig_iread_chart = make_bar_chart(fig_iread_all_data,category, school_name, "Comparison: Current Year IREAD Proficiency")
 
-                    # Math Proficiency table
                     fig_iread_table_data["School Name"] = create_school_label(fig_iread_table_data)
 
                     fig_iread_table_data = fig_iread_table_data[["School Name", category]]
@@ -617,7 +582,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 categories_16b1 =  info_categories + headers_16b1
 
-                # filter dataframe by categories
                 fig16b1_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16b1))]
 
                 if len(fig16b1_k8_school_data.columns) > 3:
@@ -646,7 +610,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 
                 categories_16a2 =  info_categories + headers_16a2
 
-                # filter dataframe by categories
                 fig16a2_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16a2))]
 
                 if len(fig16a2_k8_school_data.columns) > 3:
@@ -673,7 +636,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                 categories_16b2 =  info_categories + headers_16b2
 
-                # filter dataframe by categories
                 fig16b2_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16b2))]
 
                 if len(fig16b2_k8_school_data.columns) > 3:

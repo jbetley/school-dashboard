@@ -12,9 +12,9 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
 
+from .load_data import max_display_years, get_school_index, get_financial_data
 from .table_helpers import no_data_page
 from .subnav import subnav_finance
-from .load_data import max_display_years, get_school_index, get_financial_data
 
 dash.register_page(__name__, top_nav=True, path = "/financial_information", order=1)
 

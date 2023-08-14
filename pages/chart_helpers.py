@@ -677,7 +677,7 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
         hovertemplate='<br>'.join(
             [
                 # TODO: Need to format this properly so data is aligned
-                # TODO: Maybe get a second meta that is blank spaces the same as the meta length
+                # TODO: Maybe get a second meta that is blank spaces the same as the meta length?
                 s.replace(' ', '&nbsp;')
                 for s in [
                     '%{meta} : %{y} (Majority Enrolled)',
@@ -703,7 +703,6 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
     # )
 
     fig.update_yaxes(title_text=ytitle, secondary_y=False)
-
 
     fig_layout = [
                 html.Div(

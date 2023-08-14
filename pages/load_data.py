@@ -2,8 +2,8 @@
 # ICSB Dashboard - Database Queries (SQLite #
 #############################################
 # author:   jbetley
-# version:  1.08
-# date:     08/01/23
+# version:  1.09
+# date:     08/14/23
 
 # Resources:
 # https://realpython.com/python-sqlite-sqlalchemy/
@@ -31,10 +31,9 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy import text
 
-# global integers
+# global variables
 max_display_years = 5
 
-# global strings
 subject = ["Math", "ELA"]
 
 info_categories = ["School Name","Low Grade","High Grade"]
@@ -88,20 +87,29 @@ grades_ordinal = [
 
 # Create a simple database
 engine = create_engine('sqlite:///data/db_all.db')
-
-# consider
 # import importlib.resources as resources
 # with resources.path("dashboard_0123.db") as sqlite_filepath:
 #     engine = create_engine(f"sqlite:///{sqlite_filepath}")
 
-print('Database Engine Created . . .')
+# print('Database Engine Created . . .')
 
+def get_current_year():
+
+    db = engine.raw_connection()
+    cur = db.cursor()
+    cur.execute(''' SELECT MAX(Year) FROM academic_data_k8 ''')
+    year = cur.fetchone()[0]
+    db.close()
+
+    return year
+
+# another global variable
+current_academic_year = get_current_year()
+
+# TODO: Refactor so everything passed in as a tuple of a dict for named placeholders, even if only a single val
 # Return Dataframe (read_sql is a convenience function wrapper around
 # read_sql_query or read_sql_table depending on input)
-
-# TODO: Can refactor, everything should passed in as a tuple of a dict for named placeholders, even if only a single
-# TODO: value, so type should always be dict
-# NOTE: if no data matches query, run_query returns an empty dataframe
+# If no data matches query, run_query returns an empty dataframe
 def run_query(q, *args):
     conditions = None
 
@@ -123,19 +131,6 @@ def run_query(q, *args):
         df.columns = df.columns.astype(str)
 
         return df
-
-def get_current_year():
-
-    db = engine.raw_connection()
-    cur = db.cursor()
-    cur.execute(''' SELECT MAX(Year) FROM academic_data_k8 ''')
-    year = cur.fetchone()[0]
-    db.close()
-
-    return year
-
-# global
-current_academic_year = get_current_year()
 
 def get_academic_dropdown_years(*args):
     keys = ['id','type']
@@ -324,18 +319,6 @@ def get_letter_grades(*args):
     
     return run_query(q, params)
 
-# def get_adult_high_school_metric_data(*args):
-#     keys = ['id']
-#     params = dict(zip(keys, args))
-
-#     q = text('''
-#         SELECT Year, "AHS|CCR", "AHS|GradAll"
-#             FROM academic_data_hs
-# 	        WHERE SchoolID = :id
-#         ''')
-    
-#     return run_query(q, params)
-
 def get_k8_school_academic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))
@@ -378,9 +361,7 @@ def get_high_school_academic_data(*args):
             FROM academic_data_hs
 	        WHERE SchoolID = :id
         ''')
-#    results = run_query(q, params)
-#    results = results.sort_values(by = 'Year',ascending = False)
-#    return results    
+
     return run_query(q, params)
 
 def get_hs_corporation_academic_data(*args):
@@ -411,27 +392,6 @@ def get_growth_data(*args):
 	        WHERE MajorityEnrolledSchoolID = :id
         ''')
     return run_query(q, params)
-    
-
-
-# NOTE: gets corp level data - all other tables have school level data
-
-# # TODO: Is there corp level data in this table? NO! Save all Corp level HS data in corporation_data_k8
-# # use generic get corporation_academic_data_k8
-# # and get corporation_academic_data_hs
-# def get_high_school_corporation_academic_data(*args):
-#     keys = ['id']
-#     params = dict(zip(keys, args))
-
-#     q = text('''
-#         SELECT *
-# 	        FROM academic_data_hs
-# 	        WHERE CorporationID = (
-# 		        SELECT GEOCorp
-# 			        FROM school_index
-# 			        WHERE SchoolID = :id)
-#         ''')
-#     return run_query(q, params)
 
 def get_school_coordinates(*args):
     keys = ['year']

@@ -108,10 +108,6 @@ def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
             else:
                 data[proficiency] = calculate_percentage(data[total_proficient], data[total_tested])
 
-    # # separately calculate IREAD Proficiency
-    # if "IREAD Test N" in data.columns:
-    #     data["IREAD Proficient %"] =  calculate_percentage(data["IREAD Pass N"],data["IREAD Test N"])
-
     return data
 
 
@@ -352,9 +348,9 @@ def round_nearest(data: pd.DataFrame, step: int) -> int:
     rnd = round(float(x)/num)
     multiplier = 1 if rnd < 1 else rnd
     tick = int(multiplier*num)
-    print(tick)
+
     return tick
-    
+
 def round_percentages(percentages: list) -> list:
     """
     https://github.com/simondo92/round-percentages
@@ -371,7 +367,6 @@ def round_percentages(percentages: list) -> list:
     Returns:
         list: a list of integers, rounded to whole numbers, adding up to 100
     """
-
     # if numbers are in decimal format (e.g. .57, .90) then the sum
     # of the numbers should bet at or near (1). To be safe we test
     # to see if sum is less than 2. If it is, we multiply all of

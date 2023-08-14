@@ -8,11 +8,12 @@
 # TODO: Explore serverside disk caching for data loading
 #https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
 
-import time
+# import time
 from typing import Tuple
 import pandas as pd
 import numpy as np
 import itertools
+
 from .load_data import grades, ethnicity, subgroup, get_school_index, get_graduation_data
 from .calculations import calculate_percentage, calculate_difference, calculate_proficiency, recalculate_total_proficiency, \
     calculate_graduation_rate, calculate_sat_rate, conditional_fillna, get_excluded_years
@@ -62,6 +63,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     tested_cols = data.filter(regex="Total Tested").columns.tolist()
 
     drop_columns=[]
+
     for col in tested_cols:
         if pd.to_numeric(data[col], errors="coerce").sum() == 0 or data[col].isnull().all():
 
@@ -202,8 +204,7 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         corp_data = corp_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$", axis=1)
 
-        # add School Name column back
-        # school data has School Name column, corp data does not
+        # add School Name column back - school data has School Name column, corp data does not
         if len(corp_info.index) > 0:
             corp_data = pd.concat([corp_data, corp_info], axis=1, join="inner")
 
@@ -225,12 +226,12 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     # masking with any() because they may erroneously drop a 0 value that we want to keep. So we need to
     # iterate through each tested category, if it is NaN or 0, we drop it and all associate categories.
 
-# TODO: Move this SAT filtration (?) to its own function for all academic data because we
-# TODO: DO the same thing with all hs school & corp data
+# TODO: Do we repeat SAT filter process? If so move to separate fn
 
     data = data.replace({"^": "***"})
 
     # school data: coerce to numeric but keep strings ("***")
+    # data.update(data.apply(pd.to_numeric, errors="coerce"))
     for col in data.columns:
         data[col] = pd.to_numeric(data[col], errors="coerce").fillna(data[col])
 
@@ -296,7 +297,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         data_tested = data.filter(regex="Total Tested|Cohort Count|Year", axis=1).copy()
         data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
-#TODO: remove CN-Size altogether
+        #TODO: remove CN-Size altogether
         # temp name N-Size cols in order to differentiate.
         if data_geo_code == school_geo_code:
             data_tested = data_tested.rename(columns={c: str(c)+"CN-Size" for c in data_tested.columns if c not in ["Category"]})
@@ -421,7 +422,6 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
             nsize_cols.sort(reverse=True)
 
             final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
-
 
             final_cols.insert(0, "Category")
             final_data = final_data[final_cols]
