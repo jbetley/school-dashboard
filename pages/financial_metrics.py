@@ -143,7 +143,6 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
     else:
 
-        # Drop out of scope years
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
@@ -170,7 +169,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             empty_container = {"display": "block"}        
         
         else:
-            
+
             # in order for metrics to be calculated properly, we need
             # to temporarily store and remove the (Q#) part of string
             financial_quarter = ""
@@ -186,6 +185,13 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             financial_data.loc["Net Asset Position"] = financial_data.loc["Total Assets"] - financial_data.loc["Total Liabilities"]
             financial_data.loc["Change in Net Assets"] = financial_data.loc["Operating Revenues"] - financial_data.loc["Operating Expenses"]        
             financial_data = financial_data.reset_index()
+
+            # Each column (year) in the df must have at least 12 values to be valid. To avoid the
+            # situation where there is a column that only contains financial ratio or ADM data,
+            # drop any column where more than 31 rows contain empty strings (df has 43 total rows)
+            for c in financial_data.columns:
+                if len(financial_data[financial_data[c] == 0].index) > 31:
+                    financial_data.drop([c], inplace=True, axis=1)
 
             # Ensure only "max_display_years" of financial data
             # is displayed (add +1 to max_display_years to account for the
@@ -241,6 +247,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 table_size = len(financial_metrics.columns)
 
                 # NOTE: Consider turning this table_size into a function()
+                # eleven columns is largest table size
                 if table_size <= 3:
                     col_width = "four"
                     category_width = 70
@@ -248,20 +255,14 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                     col_width = "six"
                     category_width = 35
                 elif table_size >= 5 and table_size <= 8:
-                    col_width = "six"
-                    category_width = 30
-                elif table_size == 9:
                     col_width = "seven"
                     category_width = 30
-                elif table_size >= 10 and table_size <= 13:
+                elif table_size == 9:
                     col_width = "eight"
                     category_width = 25
-                elif table_size > 13 and table_size <=17:
+                elif table_size >= 10:
                     col_width = "nine"
-                    category_width = 15
-                elif table_size > 17:
-                    col_width = "ten"
-                    category_width = 15
+                    category_width = 20
 
                 # this splits column width evenly for all columns other than "Category"
                 data_width = 100 - category_width

@@ -185,6 +185,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                     # Attendance rate
                     school_demographic_data = get_demographic_data(school)
+
                     attendance_rate = get_attendance_data(school_demographic_data, selected_year_string)
 
                     if len(attendance_rate.index) > 0:
@@ -779,28 +780,28 @@ def layout():
                 ],
                 className="row",
             ),
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Label("Notes:", className="header_label"),
-                            html.P(""),
-                                html.P(id="academic-information-notes-string",
-                                    style={
-                                            "textAlign": "Left",
-                                            "color": "#6783a9",
-                                            "fontSize": 12,
-                                            "marginLeft": "10px",
-                                            "marginRight": "10px",
-                                            "marginTop": "10px",
-                                    }
-                                ),
-                        ],
-                        className = "pretty_container seven columns"
-                    ),
-                ],
-                className = "bare_container_center twelve columns"
-            ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Label("Notes:", className="header_label"),
+                                html.P(""),
+                                    html.P(id="academic-information-notes-string",
+                                        style={
+                                                "textAlign": "Left",
+                                                "color": "#6783a9",
+                                                "fontSize": 12,
+                                                "marginLeft": "10px",
+                                                "marginRight": "10px",
+                                                "marginTop": "10px",
+                                        }
+                                    ),
+                            ],
+                            className = "pretty_container seven columns"
+                        ),
+                    ],
+                    className = "bare_container_center twelve columns"
+                ),
             html.Div(
                 [
                     html.Div(

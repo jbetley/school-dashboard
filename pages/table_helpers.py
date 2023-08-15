@@ -1015,10 +1015,10 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         if table_size <= 3:
             col_width = "four"
             category_width = 40
-        if table_size > 3 and table_size <=5:
+        if table_size > 3 and table_size < 5:
             col_width = "six"
             category_width = 35
-        elif table_size > 5 and table_size <= 7:
+        elif table_size >= 5 and table_size <= 7:
             col_width = "seven"
             category_width = 30
         elif table_size > 7 and table_size <= 9:

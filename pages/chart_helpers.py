@@ -962,6 +962,10 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
 
         for j in range(0,len(fig['data'][i]['y'])):
 
+            # # track location of school in index (to add border)
+            # if fig['data'][i]['name'] == school_name:
+            #     loc = i
+
             if fig['data'][i]['y'][j] < .05:
                 position_array.append('outside')
             else:
@@ -976,6 +980,10 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         fig['data'][i]['marker']['line']['width'] = 2
 
         fig['data'][i]['textposition'] = position_array
+
+    # NOTE: Uncomment to add border around selected school
+    # having hard time making this look decent.
+    # fig['data'][loc]['marker']['line']['color'] = 'grey'
 
     # NOTE: From testing, it appears that the legend marker uses the first item in the
     # marker_line_color array ([0]) as the border for the legend marker. So if the

@@ -99,8 +99,9 @@ def create_school_label(data: pd.DataFrame) -> str:
     label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
         "-" + data["High Grade"].fillna("").astype(str) + ")"
     
-    # removes empty parentheses from School Corp
+    # removes empty parentheses from School Corp & trailing .0
     label = label.str.replace("\(-\)", "",regex=True)
+    label = label.str.replace(".0","",regex=True)
 
     return label
 
