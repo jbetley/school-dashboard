@@ -417,7 +417,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                     # calculate IREAD Pass %
                     if "IREAD Proficient %" in current_school_data:
                         comparison_schools["IREAD Proficient %"] = comparison_schools["IREAD Pass N"] / comparison_schools["IREAD Test N"]
-
+                    
                     # remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
                     comparison_schools = comparison_schools.filter(regex = r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$",axis=1)
 
@@ -542,7 +542,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                         fig_iread_table_data = fig_iread_table_data.reset_index(drop=True)
 
                         fig_iread_table = create_comparison_table(fig_iread_table_data, school_name, "Proficiency")
-                    
+
                     else:
                         fig_iread_chart = no_data_fig_label("Comparison: Current Year IREAD Proficiency",200)
                         fig_iread_table = no_data_table(["Proficiency"])
