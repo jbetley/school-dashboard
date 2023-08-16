@@ -234,6 +234,10 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 if int(financial_metrics.columns[1]) > current_academic_year:
                     financial_metrics = financial_metrics.rename(columns={financial_metrics.columns[1]: financial_metrics.columns[1] + financial_quarter})
 
+                # add quarter (Q#) back (current year only) if one exists
+                if financial_quarter:
+                    financial_metrics.columns.values[1] = financial_metrics.columns.values[1] + " " + financial_quarter
+
                 headers = financial_metrics.columns.tolist()
 
                 # determine # of columns and width of category column for display

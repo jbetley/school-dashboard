@@ -312,13 +312,13 @@ def create_growth_table_and_fig(table: list, fig, label: str):    # : plotly.gra
                                     [
                                         html.Div(table, style={"marginTop": "20px"}),
                                     ],
-                                    className="pretty_container six columns",                        
+                                    className="pretty_container five columns",
                                 ),
                                 html.Div(
                                     [
                                         html.Div(fig, style={"marginTop": "-20px"}),
                                     ],
-                                    className="pretty_container six columns",                        
+                                    className="pretty_container seven columns",
                                 ),
                             ],
                             className="bare_container twelve columns",
@@ -333,7 +333,7 @@ def create_growth_table_and_fig(table: list, fig, label: str):    # : plotly.gra
 
     return table_layout
 
-def create_growth_table(data: pd.DataFrame, label: str = "") -> list:
+def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     """
     Takes a label, a dataframe, and a descriptive (type) string and creates a multi-header
     table with academic growth and sgp data using Majority Enrolled Students (162-Day Student
@@ -346,6 +346,10 @@ def create_growth_table(data: pd.DataFrame, label: str = "") -> list:
     Returns:
         table_layout (list): dash html.Div enclosing html.Label and DataTable
     """
+    data = all_data.copy()
+    
+    data["Category"] = data["Category"].str.split("|").str[0]
+
     data_me = data.loc[:, data.columns.str.contains("Category|Majority Enrolled")].copy()
     data_me = data_me.rename(columns={c: c[:4] for c in data_me.columns if c not in ["Category"]})
 
@@ -353,6 +357,10 @@ def create_growth_table(data: pd.DataFrame, label: str = "") -> list:
     data_162 = data.loc[:, data.columns.str.contains("Category|162 Days")].copy()
     data_162 = data_162.rename(columns={c: c[:4] for c in data_162.columns if c not in ["Category"]})
     data_162 = data_162.drop("Category", axis=1)
+
+    # Reverse year order (ignoring Category) to align with charts (ascending order)
+    data_me = data_me.iloc[:, ::-1]
+    data_me.insert(0, "Category", data_me.pop("Category"))
 
     table_size = len(data_me.columns)
 
@@ -1116,7 +1124,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         ]
  
         # drop subject
-        data["Category"] = data["Category"].map(lambda x: x.split("|")[0]).copy()
+        data["Category"] = data["Category"].map(lambda x: x.split("|")[0])
 
         # Build list of lists, top level and secondary level column names
         # for multi-level headers

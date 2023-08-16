@@ -483,6 +483,9 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
 
                         # SAT Cut-Score Table
+                        # change background? create info_table function for all 'info tables' #b47846
+                        # https://www.colorhexa.com/b47846
+                        # #d7b599, #ddbfa7, #e2c9b5
                         # https://www.in.gov/sboe/files/2021-2022-SAT-Standard-Setting-SBOE-Review.pdf
                         sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
                         sat_cut_scores_dict = {

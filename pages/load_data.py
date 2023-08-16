@@ -393,12 +393,13 @@ def get_growth_data(*args):
         ''')
     return run_query(q, params)
 
+# "SchoolTotal|ELATotalTested" is a proxy for school size. 
 def get_school_coordinates(*args):
     keys = ['year']
     params = dict(zip(keys, args))
 
     q = text('''
-        SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade
+        SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade, "SchoolTotal|ELATotalTested"
             FROM academic_data_k8 
             WHERE Year = :year
         ''')

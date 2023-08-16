@@ -578,6 +578,9 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
         fig_layout (list): a plotly dash html layout in the form of a list containing a label and a px.line figure
     """
 
+    data_me.columns = data_me.columns.map(lambda x: x.split("|")[0])
+    data_162.columns = data_162.columns.map(lambda x: x.split("|")[0])
+
     color = ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
     
     fig = make_subplots() #specs=[[{"secondary_y": False}]]
@@ -676,12 +679,9 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
     fig.update_traces(
         hovertemplate='<br>'.join(
             [
-                # TODO: Need to format this properly so data is aligned
-                # TODO: Maybe get a second meta that is blank spaces the same as the meta length?
                 s.replace(' ', '&nbsp;')
                 for s in [
-                    '%{meta} : %{y} (Majority Enrolled)',
-                    '%{meta} : %{customdata} (162 Days)<br><extra></extra>',
+                    '%{meta} (Majority Enrolled): <b>%{y}</b> (162 Days: %{customdata})<br><extra></extra>',
                 ]
             ]
         )

@@ -71,6 +71,10 @@ def set_dropdown_options(school, year, comparison_schools):
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
     schools_by_distance = get_school_coordinates(numeric_year)
     
+    # Drop any school not testing at least 20 students. "SchoolTotal|ELATotalTested" is a proxy
+    # for school size here (probably only impacts ~20 schools)
+    schools_by_distance = schools_by_distance[schools_by_distance["School Total|ELA Total Tested"] >= 20] 
+
     # It is a year when the school didnt exist
     if int(school) not in schools_by_distance["School ID"].values:
         return [],[],[]
