@@ -14,7 +14,7 @@ from dash.dash_table.Format import Format, Scheme, Sign
 table_style = {
     "fontSize": "12px",
     "border": "none",
-    "fontFamily": "Jost, sans-serif",
+    "fontFamily": "Jost, sans-serif"
 }
 
 table_cell = {
@@ -525,6 +525,195 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
     return table_layout
 
+def create_key_table(data: pd.DataFrame, label: str) -> list:
+    """
+    Takes a dataframe of two or more columns and a label and creates a single
+    header table with borders around each cell. If more rows are added, need
+    to adjust logic to remove horizontal borders between rows.
+    
+    Args:
+        label (String): Table title
+        data (pd.DataTable): dash dataTable
+        table_type (String): type of table.
+
+    Returns:
+        table_layout (list): dash DataTable wrapped in dash html components
+    """
+
+    table_size = len(data.columns)
+
+    # determines the col_width class and width of the category column based
+    # on the size (# of cols) of the dataframe - in the case of the basic
+    # table, "Category" is simply whatever is in the first column (it may
+    # or may not have the name "Category")
+    if table_size <= 3:
+        col_width = "six"
+        category_width = 35
+    if table_size > 3 and table_size <=5:
+        col_width = "seven"
+        category_width = 25
+    elif table_size > 5 and table_size <= 7:
+        col_width = "eight"
+        category_width = 20
+    elif table_size > 7 and table_size <= 9:
+        col_width = "nine"
+        category_width = 20
+    elif table_size >= 10 and table_size <= 13:
+        col_width = "ten"
+        category_width = 15
+    elif table_size > 13:
+        col_width = "ten"
+        category_width = 15
+
+    class_name = "pretty_container " + col_width + " columns"
+
+    first_column = data.columns[0]
+    other_columns = data.columns[1:]
+
+    # set column widths
+    first_column_width = category_width + 10
+    remaining_width = 100 - category_width
+    other_column_width = remaining_width / table_size
+
+    table_cell_conditional = [
+        {
+            "if": {
+                "column_id": first_column
+            },
+            "textAlign": "left",
+            "paddingLeft": "20px",
+            "fontWeight": "500",
+            "width": str(first_column_width) + "%"
+        }
+    ] + [
+        {
+            "if": {
+                "column_id": other
+            },
+            "textAlign": "center",
+            "fontWeight": "600",
+            "width": str(other_column_width) + "%",
+            "borderRight": ".5px solid #626262",
+            "borderLeft": ".5px solid #626262",  
+        } for other in other_columns
+    ]
+
+    table_header_conditional = [
+        {
+            "if": {
+                "column_id": other,
+            },
+            "borderBottom": ".5px solid #626262"
+        } for other in other_columns
+    ]
+
+    table_data_conditional = [
+        {
+            "if": {
+                "state": "selected"
+            },
+            "backgroundColor": "rgba(112,128,144, .3)",
+            "border": "thin solid silver"
+        },
+    ] + [
+        {
+            "if": {
+                "row_index": 0
+            },
+            "paddingTop": "5px"
+        }
+    ] + [
+        {
+            "if": {
+                "column_id": data.columns[-1],
+            },
+            "borderRight": ".5px solid #626262",
+        },
+    ] + [
+        {
+            "if": {
+                "row_index": 0
+            },
+            "paddingTop": "5px"
+        }
+    ] + [
+        {
+            "if": {
+                "row_index": len(data)-1
+            },
+            "borderBottom": ".5px solid #626262",
+        }
+    ] + [        
+        {
+            "if": {
+                "column_id": first_column,
+            },
+            "borderRight": ".5px solid #626262",
+            "borderBottom": "none",
+            "borderLeft": "none",
+            "borderTop": "none",                        
+        },
+    ] + [
+        { 
+            "if": {
+                "column_id": other,
+            },
+            "fontSize": "10px",
+            "textAlign": "center",
+            "borderLeft": ".5px solid #626262",
+        } for other in other_columns
+    ]
+
+    table_layout = [
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Label(label, className="key_header_label"),
+                        html.Div(
+                            dash_table.DataTable(
+                                data.to_dict("records"),
+                                columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
+                                style_data = {
+                                    "fontSize": "12px",
+                                    "fontFamily": "Jost, sans-serif",
+                                    "border": "none",
+                                    "color": "#626262",
+                                },
+                                style_header = {
+                                    "backgroundColor": "#ffffff",
+                                    "fontSize": "12px",
+                                    "fontFamily": "Jost, sans-serif",
+                                    "color": "#626262",
+                                    "textAlign": "center",
+                                    "fontWeight": "bold",
+                                    "border": "none"
+                                },
+                                style_cell = {
+                                    "backgroundColor": "#ffffff",
+                                    "whiteSpace": "normal",
+                                    "height": "auto",
+                                    "textAlign": "center",
+                                    "minWidth": "25px",
+                                    "width": "25px",
+                                    "maxWidth": "25px",
+                                },
+                                style_data_conditional = table_data_conditional,
+                                style_header_conditional = table_header_conditional,
+                                style_cell_conditional = table_cell_conditional,
+                                merge_duplicate_headers=True
+                            ),
+                        ),
+                    ],
+                    className = class_name
+                )
+            ],
+            className = "bare_container_center twelve columns"
+        )                
+    ]
+
+    return table_layout
+
 def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
     """
     Takes a dataframe of two or more columns and a label and creates a single
@@ -683,7 +872,7 @@ def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
                                 style_data = {
                                     "fontSize": "12px",
                                     "fontFamily": "Jost, sans-serif",
-                                    "border": "none"                    
+                                    "border": "none",
                                 },    
                                 style_header = table_header,
                                 style_cell = {

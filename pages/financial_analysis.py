@@ -912,130 +912,139 @@ def layout():
                             ),
                         ],
                         className="row"
-                    ),                   
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(id="radio-finance-analysis-content", children=[]),
-                                ],
-                                id = "radio-button-finance-analysis",
-                                ),
-                        ],
-                        id = "radio-finance-analysis-display",
                     ),
                     html.Div(
                         [
-                            html.Div(
-                                [
-                                    html.Label("Notes:", className="header_label"),
-                                    html.P(""),
-                                        html.P(id="financial-analysis-notes-string",
-                                            style={
-                                                    "textAlign": "Center",
-                                                    "color": "#6783a9",
-                                                    "fontSize": 12,
-                                                    "marginLeft": "10px",
-                                                    "marginRight": "10px",
-                                                    "marginTop": "10px",
-                                            }
+                        dcc.Loading(
+                            id="loading",
+                            type="circle",
+                            fullscreen = True,
+                            style={
+                                "position": "absolute",
+                                "align-self": "center",
+                                "background-color": "#F2F2F2",
+                                },
+                            children=[                            
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Label("Notes:", className="key_header_label"),
+                                                html.P(""),
+                                                    html.P(id="financial-analysis-notes-string",
+                                                        style={
+                                                                "textAlign": "center",
+                                                                "color": "#626262",
+                                                                "fontSize": 12,
+                                                                "marginLeft": "10px",
+                                                                "marginRight": "10px",
+                                                                "marginTop": "10px",
+                                                        }
+                                                    ),
+                                            ],
+                                            className = "pretty_container five columns",
                                         ),
-                                ],
-                                className = "pretty_container five columns",
-                            ),
-                        ],
-                        className = "bare_container_center twelve columns"
-                    ),
-                    dcc.Loading(
-                        id="loading",
-                        type="circle",
-                        fullscreen = True,
-                        style={
-                            "position": "absolute",
-                            "align-self": "center",
-                            "background-color": "#F2F2F2",
-                            },
-                        children=[                    
-                            html.Div(
-                                [     
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Label(id="finance-analysis-RandE-title", className = "header_label"),                                    
-                                                    dcc.Graph(id="revenue-expenses-fig", figure = loading_fig(),config={"displayModeBar": False})
-                                                ],
-                                                className = "pretty_container six columns"
-                                            ),
-                                            html.Div(
-                                                [
-                                                    html.Label(id="finance-analysis-AandL-title", className = "header_label"),                                       
-                                                    dcc.Graph(id="assets-liabilities-fig", figure = loading_fig(),config={"displayModeBar": False})
-                                                ],
-                                                className = "pretty_container six columns"
-                                            )
-                                        ],
-                                        className="bare_container_no_center twelve columns",
-                                    ),
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                    html.Label(id="finance-analysis-FP-title", className = "header_label"),                                      
-                                                    html.P(""),
-                                                    html.Div(id="financial-position-table")
-                                                ],
-                                                className = "pretty_container_left six columns"
-                                            ),
-                                            html.Div(
-                                                [
-                                                    html.Label(id="finance-analysis-FA-title", className = "header_label"),                                        
-                                                    html.P(""),
-                                                    html.Div(id="financial-activities-table")
-                                                ],
-                                                className = "pretty_container six columns",
-                                            ),
-                                        ],
-                                        className = "bare_container twelve columns",
-                                    ),
-                                    # html.Div(
-                                    #     [
-                                    #         html.Label("Federal Audit Findings", style=label_style),
-                                    #         html.P(""),
-                                    #         html.Div(id="audit-findings-table")
-                                    #     ],
-                                    #     className = "pretty_container six columns"
-                                    # ),
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [                    
-                                                    html.Div(id="financial-ratios-table", children=[]),
-                                                ],
-                                                className = "pretty_container_left six columns",                                        
-                                            ),
-                                            html.Div(
-                                                [
-                                                    html.Label("Revenues and Expenditures Per Student", className = "header_label"),
-                                                    html.P(""),
-                                                    html.Div(id="per-student-table")
-                                                ],
-                                                className = "pretty_container six columns",
-                                            ),
-                                        ],
-                                        className = "bare_container twelve columns",
-                                    ),
-                                ],
-                                id = "financial-analysis-main-container",
-                            ),
-                        ]
-                    ),
-                    html.Div(
-                        [
-                            html.Div(id="financial-analysis-no-data"),
-                        ],
-                        id = "financial-analysis-empty-container",
-                    ),
-                ],
-                id="mainContainer"
-            )
+                                    ],
+                                    className = "bare_container_center twelve columns"
+                                ),
+                                html.Div(
+                                    [                                
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Div(id="radio-finance-analysis-content", children=[]),
+                                                    ],
+                                                    id = "radio-button-finance-analysis",
+                                                    ),
+                                            ],
+                                            id = "radio-finance-analysis-display",
+                                        ),
+                                    ],
+                                    className = "bare_container_center twelve columns",
+                                ),                                
+                                html.Div(
+                                    [     
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Label(id="finance-analysis-RandE-title", className = "header_label"),                                    
+                                                        dcc.Graph(id="revenue-expenses-fig", figure = loading_fig(),config={"displayModeBar": False})
+                                                    ],
+                                                    className = "pretty_container six columns"
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Label(id="finance-analysis-AandL-title", className = "header_label"),                                       
+                                                        dcc.Graph(id="assets-liabilities-fig", figure = loading_fig(),config={"displayModeBar": False})
+                                                    ],
+                                                    className = "pretty_container six columns"
+                                                )
+                                            ],
+                                            className="bare_container_no_center twelve columns",
+                                        ),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Label(id="finance-analysis-FP-title", className = "header_label"),                                      
+                                                        html.P(""),
+                                                        html.Div(id="financial-position-table")
+                                                    ],
+                                                    className = "pretty_container_left six columns"
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Label(id="finance-analysis-FA-title", className = "header_label"),                                        
+                                                        html.P(""),
+                                                        html.Div(id="financial-activities-table")
+                                                    ],
+                                                    className = "pretty_container six columns",
+                                                ),
+                                            ],
+                                            className = "bare_container twelve columns",
+                                        ),
+                                        # html.Div(
+                                        #     [
+                                        #         html.Label("Federal Audit Findings", style=label_style),
+                                        #         html.P(""),
+                                        #         html.Div(id="audit-findings-table")
+                                        #     ],
+                                        #     className = "pretty_container six columns"
+                                        # ),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [                    
+                                                        html.Div(id="financial-ratios-table", children=[]),
+                                                    ],
+                                                    className = "pretty_container_left six columns",                                        
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Label("Revenues and Expenditures Per Student", className = "header_label"),
+                                                        html.P(""),
+                                                        html.Div(id="per-student-table")
+                                                    ],
+                                                    className = "pretty_container six columns",
+                                                ),
+                                            ],
+                                            className = "bare_container twelve columns",
+                                        ),
+                                    ],
+                                    id = "financial-analysis-main-container",
+                                ),
+                            ] # dcc.loading container
+                        ),                            
+                    ]
+                ),
+                html.Div(
+                    [
+                        html.Div(id="financial-analysis-no-data"),
+                    ],
+                    id = "financial-analysis-empty-container",
+                ),
+            ],
+            id="mainContainer"
+        )

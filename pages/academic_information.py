@@ -20,7 +20,7 @@ from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal,
     get_high_school_academic_data, get_demographic_data, get_school_index, get_growth_data
 from .process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
     filter_high_school_academic_data, process_growth_data  
-from .table_helpers import no_data_page, no_data_table, create_academic_info_table, \
+from .table_helpers import no_data_page, no_data_table, create_academic_info_table, create_key_table, \
     create_growth_table, set_table_layout, create_basic_info_table, create_growth_table_and_fig
 from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart
 from .calculations import round_percentages, conditional_fillna, get_excluded_years
@@ -483,9 +483,6 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
 
                         # SAT Cut-Score Table
-                        # change background? create info_table function for all 'info tables' #b47846
-                        # https://www.colorhexa.com/b47846
-                        # #d7b599, #ddbfa7, #e2c9b5
                         # https://www.in.gov/sboe/files/2021-2022-SAT-Standard-Setting-SBOE-Review.pdf
                         sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
                         sat_cut_scores_dict = {
@@ -496,7 +493,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         }
                         
                         sat_cut_scores = pd.DataFrame(sat_cut_scores_dict)
-                        sat_cut_scores_table = create_basic_info_table(sat_cut_scores, sat_cut_scores_label)
+                        sat_cut_scores_table = create_key_table(sat_cut_scores, sat_cut_scores_label)
 
     elif radio_value =="growth":
  
@@ -783,57 +780,6 @@ def layout():
                 ],
                 className="row",
             ),
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Label("Notes:", className="header_label"),
-                                html.P(""),
-                                    html.P(id="academic-information-notes-string",
-                                        style={
-                                                "textAlign": "Left",
-                                                "color": "#6783a9",
-                                                "fontSize": 12,
-                                                "marginLeft": "10px",
-                                                "marginRight": "10px",
-                                                "marginTop": "10px",
-                                        }
-                                    ),
-                            ],
-                            className = "pretty_container seven columns"
-                        ),
-                    ],
-                    className = "bare_container_center twelve columns"
-                ),
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    dbc.RadioItems(
-                                        id="radio-button-academic-info",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        options=[
-                                            {"label": "Proficiency", "value": "proficiency"},
-                                            {"label": "Growth", "value": "growth"},
-                                        ],
-                                        value="proficiency",
-                                        persistence=True,
-                                        persistence_type="local",
-                                    ),
-                                ],
-                                className="radio-group",
-                            ),
-                        ],
-                        className = "bare_container_center twelve columns",
-                    ),
-                ],
-                className = "row",
-            ),
             html.Div(
                 [
                 dcc.Loading(
@@ -848,85 +794,135 @@ def layout():
                     children=[
                         html.Div(
                             [
-                                html.Div(id="k8-grade-table", children=[]),
                                 html.Div(
                                     [
-                                        html.Div(
-                                            [
-                                                html.Div(id="k8-grade-ela-fig"),
-                                            ],
-                                            className="pretty_container four columns",
-                                        ),
-                                        html.Div(
-                                            [
-                                                html.Div(id="k8-grade-math-fig"),
-                                            ],
-                                            className="pretty_container four columns",
-                                        ),
+                                        html.Label("Notes:", className="key_header_label"),
+                                        html.P(""),
+                                            html.P(id="academic-information-notes-string",
+                                                style={
+                                                        "textAlign": "Left",
+                                                        "color": "#626262",
+                                                        "fontSize": 12,
+                                                        "marginLeft": "10px",
+                                                        "marginRight": "10px",
+                                                        "marginTop": "10px",
+                                                }
+                                            ),
                                     ],
-                                    className="bare_container_center twelve columns",
+                                    className = "pretty_container seven columns"
                                 ),
-                                html.Div(id="k8-ethnicity-table", children=[]),
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [
-                                                html.Div(id="k8-ethnicity-ela-fig"),
-                                            ],
-                                            className="pretty_container four columns",
-                                        ),
-                                        html.Div(
-                                            [
-                                                html.Div(id="k8-ethnicity-math-fig"),
-                                            ],
-                                            className="pretty_container four columns",
-                                        ),
-                                    ],
-                                    className="bare_container_center twelve columns",
-                                ),
-                                html.Div(id="k8-subgroup-table", children=[]),
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [
-                                                html.Div(id="k8-subgroup-ela-fig"),
-                                            ],
-                                            className="pretty_container four columns",
-                                        ),
-                                        html.Div(
-                                            [
-                                                html.Div(id="k8-subgroup-math-fig"),
-                                            ],
-                                            className="pretty_container four columns",
-                                        ),
-                                    ],
-                                    className="bare_container_center twelve columns",
-                                ),
-                                html.Div(id="attendance-table", children=[]),
                             ],
-                            id="k8-table-container",
+                            className = "bare_container_center twelve columns"
                         ),
                         html.Div(
                             [
-                                html.Div(id="hs-grad-overview-table"),
-                                html.Div(id="hs-grad-ethnicity-table"),
-                                html.Div(id="hs-grad-subgroup-table"),
+                                html.Div(
+                                    [
+                                        dbc.RadioItems(
+                                            id="radio-button-academic-info",
+                                            className="btn-group",
+                                            inputClassName="btn-check",
+                                            labelClassName="btn btn-outline-primary",
+                                            labelCheckedClassName="active",
+                                            options=[
+                                                {"label": "Proficiency", "value": "proficiency"},
+                                                {"label": "Growth", "value": "growth"},
+                                            ],
+                                            value="proficiency",
+                                            persistence=True,
+                                            persistence_type="local",
+                                        ),
+                                    ],
+                                    className="radio-group",
+                                ),
                             ],
-                            id="grad-table-container",
-                        ),                            
+                            className = "bare_container_center twelve columns",
+                        ),
                         html.Div(
                             [
-                                html.Div(id="sat-cut-scores-table", children=[]),                                              
-                                html.Div(id="sat-overview-table"),
-                                html.Div(id="sat-ethnicity-table"),
-                                html.Div(id="sat-subgroup-table"),
+                                html.Div(
+                                    [
+                                        html.Div(id="k8-grade-table", children=[]),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Div(id="k8-grade-ela-fig"),
+                                                    ],
+                                                    className="pretty_container four columns",
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Div(id="k8-grade-math-fig"),
+                                                    ],
+                                                    className="pretty_container four columns",
+                                                ),
+                                            ],
+                                            className="bare_container_center twelve columns",
+                                        ),
+                                        html.Div(id="k8-ethnicity-table", children=[]),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Div(id="k8-ethnicity-ela-fig"),
+                                                    ],
+                                                    className="pretty_container four columns",
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Div(id="k8-ethnicity-math-fig"),
+                                                    ],
+                                                    className="pretty_container four columns",
+                                                ),
+                                            ],
+                                            className="bare_container_center twelve columns",
+                                        ),
+                                        html.Div(id="k8-subgroup-table", children=[]),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                    [
+                                                        html.Div(id="k8-subgroup-ela-fig"),
+                                                    ],
+                                                    className="pretty_container four columns",
+                                                ),
+                                                html.Div(
+                                                    [
+                                                        html.Div(id="k8-subgroup-math-fig"),
+                                                    ],
+                                                    className="pretty_container four columns",
+                                                ),
+                                            ],
+                                            className="bare_container_center twelve columns",
+                                        ),
+                                        html.Div(id="attendance-table", children=[]),
+                                    ],
+                                    id="k8-table-container",
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(id="hs-grad-overview-table"),
+                                        html.Div(id="hs-grad-ethnicity-table"),
+                                        html.Div(id="hs-grad-subgroup-table"),
+                                    ],
+                                    id="grad-table-container",
+                                ),                            
+                                html.Div(
+                                    [
+                                        html.Div(id="sat-cut-scores-table", children=[]),                                              
+                                        html.Div(id="sat-overview-table"),
+                                        html.Div(id="sat-ethnicity-table"),
+                                        html.Div(id="sat-subgroup-table"),
+                                    ],
+                                    id="sat-table-container",
+                                ),
                             ],
-                            id="sat-table-container",
+                            id = "academic-information-main-container",
                         ),
                     ],
-                ),
+                ),        
             ],
-            id = "academic-information-main-container",
         ),
         html.Div(
             [

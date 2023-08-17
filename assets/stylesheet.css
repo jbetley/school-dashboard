@@ -329,8 +329,6 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 } */
 
-
-
 /* main page navigation */
 .dash_label {
   margin-right: 0;
@@ -444,7 +442,7 @@ body {
     height: 30px;
 }
 
-/** Buttons (Bootstrap.css) **/
+/* Buttons (from Bootstrap.css) */
 button {
   border-radius: 0;
 }
@@ -480,7 +478,7 @@ button:not(:disabled) {
   --bs-btn-padding-x: 0.75rem;
   --bs-btn-padding-y: 0.375rem;
   --bs-btn-font-family: 'Jost', sans-serif;
-  --bs-btn-font-size: 1.25rem;
+  --bs-btn-font-size: 1.5rem;
   --bs-btn-font-weight: 400;
   --bs-btn-line-height: 1.5;
   --bs-btn-color: #212529;
@@ -646,7 +644,7 @@ fieldset:disabled .btn {
 }
 
 /** ADAPT THIS TO FIT EXISTING ELEMENTS TO EXIST IN FLEX-LAND **/
-/* TODO: Think this is about positioning */
+/* TODO: Think this is about positioning for small/mobie screen sizes*/
 #individual_graph,
 #aggregate_graph {
   width: calc(100% - 30px);
@@ -827,7 +825,19 @@ label > .label-body {
   padding-top: 5px;
 }
 
-.header_label_test {
+.key_header_label {
+  height: auto;
+  background-color: #626262;
+  font-size: 12px;
+  font-family: 'Jost', sans-serif;
+  color: #ececec;
+  text-align: center;
+  font-weight: bold;
+  padding-bottom: 5px;
+  padding-top: 5px;
+}
+
+/* .header_label_test {
   height: auto;
   background-color: #6783a9;
   font-size: 12px;
@@ -838,10 +848,10 @@ label > .label-body {
   padding-bottom: 5px;
   padding-top: 5px;
   /* position: absolute; */
-  width: 80%;
+  /* width: 80%;
   top: 0;
   display: flex;
-}
+} */
 
 .school_string {
   color: #6783a9;
