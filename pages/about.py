@@ -15,15 +15,16 @@ import numpy as np
 from .load_data import ethnicity, subgroup, max_display_years, current_academic_year, get_school_index, \
     get_financial_data, get_demographic_data
 from .chart_helpers import loading_fig, no_data_fig_label
-from .table_helpers import no_data_table, no_data_page
+from .table_helpers import no_data_table, no_data_page, create_key_table
 from .calculations import get_excluded_years
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
 
 @callback(
+    Output("update-table", "children"),        
     Output("enroll-title", "children"),
     Output("enroll-table", "children"),
-    Output("adm_fig", "figure"),
+    Output("adm-fig", "figure"),
     Output("ethnicity-title", "children"),
     Output("ethnicity-fig", "figure"),
     Output("subgroup-title", "children"),
@@ -65,6 +66,7 @@ def update_about_page(year: str, school: str):
 
     if (len(demographic_data.index) == 0 or demographic_data.empty) and \
         (len(financial_data.columns) <= 1 or financial_data.empty):
+        update_table = []
         enroll_title = []
         enroll_table = []
         adm_fig = []
@@ -77,6 +79,18 @@ def update_about_page(year: str, school: str):
         empty_container = {"display": "block"}
 
     else:
+
+        # Updates Table - Right Now hardcoded - may want to add to DB
+        update_table_label = "Recent Updates"
+        update_table_dict = {
+            "Date": ["07.12.23", "08.16.23", "08.18.23", "08.18.23"],
+            "Update": ["Added 2023 ILEARN data for all K-8 schools and school corporations.","Added 2023 IREAD Data for all K-8 schools and school corporations.", "Added 2023 SAT Scores  for all high schools and school corporations.", "Added 2023 Demographic Data  for all schools and school corporations."],
+        }
+        
+        update_table_df = pd.DataFrame(update_table_dict)
+        
+        first_column_width = 15
+        update_table = create_key_table(update_table_df, update_table_label, first_column_width)
 
         if excluded_years:
             demographic_data = demographic_data[~demographic_data["Year"].isin(excluded_years)]
@@ -348,11 +362,15 @@ def update_about_page(year: str, school: str):
                 )
 
         # Get ADM Data
+        # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is
+        # known for the year. So we check the first data column and if ADM Avg
+        # has data we use it.
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
         available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
         available_years = [int(c[:4]) for c in available_years]
+
         most_recent_finance_year = max(available_years)
 
         years_to_exclude = most_recent_finance_year -  selected_year_numeric
@@ -411,10 +429,9 @@ def update_about_page(year: str, school: str):
                         :, ~adm_values.columns.str.contains("|".join(excluded_years))
                     ]
 
-            # drop any columns with partial year data (e.g., 2023 (Q2)) because
-            # they generally do not have reliable adm data.
-            adm_values = adm_values[adm_values.columns.drop(list(adm_values.filter(regex="Q")))]
-            
+            # strip any (Q#) suffix
+            adm_values.columns = adm_values.columns.str[:4]
+
             # turn single row dataframe into two lists (column headers and data)
             adm_data=adm_values.iloc[0].tolist()
             years=adm_values.columns.tolist()
@@ -446,7 +463,7 @@ def update_about_page(year: str, school: str):
             )
 
     return (
-        enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, subgroup_title,
+        update_table, enroll_title, enroll_table, adm_fig, ethnicity_title, ethnicity_fig, subgroup_title,
         subgroup_fig, main_container, empty_container, no_data_to_display
     )
 
@@ -462,12 +479,11 @@ layout = html.Div(
                     "background-color": "#F2F2F2",
                     },
                 children=[
-            html.Div(
-                [
                     html.Div(
                         [
+                            html.Div(id="update-table", children=[]),
                             html.Div(
-                                [
+                                [                                
                                     html.Div(
                                         [
                                             html.Label(id="enroll-title", className = "header_label"),
@@ -478,38 +494,36 @@ layout = html.Div(
                                     html.Div(
                                         [
                                             html.Label("Average Daily Membership History", className = "header_label"),
-                                            dcc.Graph(id="adm_fig", figure = loading_fig(),config={"displayModeBar": False})
+                                            dcc.Graph(id="adm-fig", figure = loading_fig(),config={"displayModeBar": False})
                                         ],
                                         className = "pretty_container six columns"
                                     ),
                                 ],
                                 className="bare_container twelve columns",
-                            ),
-                        ],
-                        className = "row",
-                    ),                    
-                    html.Div(
-                        [
+                            ),                  
                             html.Div(
                                 [
-                                    html.Label(id="subgroup-title", className = "header_label"),
-                                    dcc.Graph(id="subgroup-fig", figure = loading_fig(),config={"displayModeBar": False})
+                                    html.Div(
+                                        [
+                                            html.Label(id="subgroup-title", className = "header_label"),
+                                            dcc.Graph(id="subgroup-fig", figure = loading_fig(),config={"displayModeBar": False})
+                                        ],
+                                        className = "pretty_container six columns"
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Label(id="ethnicity-title", className = "header_label"),
+                                            dcc.Graph(id="ethnicity-fig", figure = loading_fig(),config={"displayModeBar": False})
+                                        ],
+                                        className = "pretty_container six columns"
+                                    ),
                                 ],
-                                className = "pretty_container six columns"
-                            ),
-                            html.Div(
-                                [
-                                    html.Label(id="ethnicity-title", className = "header_label"),
-                                    dcc.Graph(id="ethnicity-fig", figure = loading_fig(),config={"displayModeBar": False})
-                                ],
-                                className = "pretty_container six columns"
+                                className="bare_container_center twelve columns",
                             ),
                         ],
-                        className="bare_container_center twelve columns",
-                    ),
+                        id = "about-main-container",
+                    )
                 ],
-                id = "about-main-container",
-            )],
             ),
             html.Div(
                 [

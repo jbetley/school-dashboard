@@ -739,7 +739,9 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                 the first time during the 2018-19 SY and represented an entirely new type and mode of \
                 assessment (adaptive and online-only). No State assessment was administered  in 2020 because \
                 of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
-                testing school for 162 days, while the 2021 and 2022 data sets included all tested students. \
+                testing school for 162 days, while the 2021 and 2022 data sets included all tested students.  \
+                In addition, beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
+                Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
                 Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
         else:
             academic_information_notes_string = ""
@@ -910,7 +912,7 @@ def layout():
                                 ),                            
                                 html.Div(
                                     [
-                                        html.Div(id="sat-cut-scores-table", children=[]),                                              
+                                        html.Div(id="sat-cut-scores-table", children=[]),
                                         html.Div(id="sat-overview-table"),
                                         html.Div(id="sat-ethnicity-table"),
                                         html.Div(id="sat-subgroup-table"),

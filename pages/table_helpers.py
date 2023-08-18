@@ -525,7 +525,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
     return table_layout
 
-def create_key_table(data: pd.DataFrame, label: str) -> list:
+def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
     """
     Takes a dataframe of two or more columns and a label and creates a single
     header table with borders around each cell. If more rows are added, need
@@ -564,6 +564,9 @@ def create_key_table(data: pd.DataFrame, label: str) -> list:
     elif table_size > 13:
         col_width = "ten"
         category_width = 15
+
+    if width:
+        category_width = width
 
     class_name = "pretty_container " + col_width + " columns"
 
