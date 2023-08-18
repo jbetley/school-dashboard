@@ -226,21 +226,19 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     # masking with any() because they may erroneously drop a 0 value that we want to keep. So we need to
     # iterate through each tested category, if it is NaN or 0, we drop it and all associate categories.
 
-# TODO: Do we repeat SAT filter process? If so move to separate fn
-
     data = data.replace({"^": "***"})
 
     # school data: coerce to numeric but keep strings ("***")
-    # data.update(data.apply(pd.to_numeric, errors="coerce"))
     for col in data.columns:
         data[col] = pd.to_numeric(data[col], errors="coerce").fillna(data[col])
 
     # Drop: "Graduation Rate", "Percent Pass", "ELA and Math" (never need these)
-    data = data[data.columns[~data.columns.str.contains(r"Graduation Rate|Percent Pass|ELA and Math")]].copy()
+    # Also Drop "Pass N" and "Test N" (Grade 10 ECA is no longer used)
+    data = data[data.columns[~data.columns.str.contains(r"Graduation Rate|Percent Pass|ELA and Math|Test N|Pass N")]].copy()
 
     # Drop: all SAT related columns ("Approaching Benchmark", "At Benchmark", etc.)
     # for a Category if the value of "Total Tested" for that Category is "0"
-    tested_cols = data.filter(regex="Total Tested|Cohort Count|Test N").columns.tolist()
+    tested_cols = data.filter(regex="Total Tested|Cohort Count").columns.tolist() #|Test N").columns.tolist()
     drop_columns=[]
 
     for col in tested_cols:
@@ -250,8 +248,8 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
                 match_string = " Total Tested"
             elif "Cohort Count" in col:
                 match_string = "|Cohort Count"
-            elif "Test N" in col:
-                match_string = " Test N"
+            # elif "Test N" in col:
+            #     match_string = " Test N"
 
             matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(match_string)[0])]
             drop_columns.append(matching_cols.tolist())   
@@ -274,14 +272,21 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
     # use these to determine if data belongs to school or corporation
     school_geo_code = school_information["GEO Corp"].values[0]
 
-    # Ensure geo_code is always at index 0
-    data = data.reset_index(drop = True)
-
-    data_geo_code = data["Corporation ID"][0]
-
     school_type = school_information["School Type"].values[0]
 
-    if len(data.index) > 0:
+    # All df at this point should have a minimum of eight cols (Year, Corporation ID,
+    # Corporation Name, School ID, School Name, School Type, AHS|Grad, & All AHS|CCR). If
+    # a df has eight or fewer cols, it means they have no data. Note this includes an AHS
+    # because if they have no grad data then both AHS|Grad and AHS|CCR will be None.
+    if (len(data.index) == 0) or (len(data.columns) <= 8) or (data.empty):
+
+        final_data = pd.DataFrame()
+    
+    else:
+
+         # Ensure geo_code is always at index 0
+        data = data.reset_index(drop = True)
+        data_geo_code = data["Corporation ID"][0]
         
         # it is "corp" data if "Corporation ID" is equal to the value of the school"s "GEO Corp".
         if data_geo_code == school_geo_code:
@@ -425,10 +430,6 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
 
             final_cols.insert(0, "Category")
             final_data = final_data[final_cols]
-
-    else:
-
-        final_data = pd.DataFrame()
 
     return final_data
 

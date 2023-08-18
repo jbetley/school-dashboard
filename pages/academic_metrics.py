@@ -296,9 +296,6 @@ def update_academic_metrics(school: str, year: str):
                     ahs_table_container_1214 = set_table_layout(ahs_table_1214, ahs_table_1214, ahs_metric_data_1214.columns)
 
                 else:
-                    display_hs_metrics = {"display": "block"}
-                    main_container = {"display": "block"}
-                    empty_container = {"display": "none"}
 
                     raw_hs_corp_data = get_hs_corporation_academic_data(school)
 
@@ -314,38 +311,44 @@ def update_academic_metrics(school: str, year: str):
                     clean_hs_school_data = process_high_school_academic_data(raw_hs_school_data, school)
                     clean_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, school)
 
-                    hs_merged_data = merge_high_school_data(clean_hs_school_data, clean_hs_corp_data)
-                    combined_grad_metrics_data = calculate_high_school_metrics(hs_merged_data)
+                    if not clean_hs_school_data.empty:
 
-                    metric_17ab_label = ["High School Accountability Metrics 1.7.a & 1.7.b"]
-                    combined_grad_metrics_data = convert_to_svg_circle(combined_grad_metrics_data)  
-                    table_17ab = create_metric_table(metric_17ab_label, combined_grad_metrics_data)
-                    table_container_17ab = set_table_layout(table_17ab, table_17ab, combined_grad_metrics_data.columns)
+                        display_hs_metrics = {"display": "block"}
+                        main_container = {"display": "block"}
+                        empty_container = {"display": "none"}
 
-                    # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
-                    all_cols = combined_grad_metrics_data.columns.tolist()
+                        hs_merged_data = merge_high_school_data(clean_hs_school_data, clean_hs_corp_data)
+                        combined_grad_metrics_data = calculate_high_school_metrics(hs_merged_data)
 
-                    simple_cols = [x for x in all_cols if (not x.endswith("+/-") and not x.endswith("N-Size"))]
+                        metric_17ab_label = ["High School Accountability Metrics 1.7.a & 1.7.b"]
+                        combined_grad_metrics_data = convert_to_svg_circle(combined_grad_metrics_data)  
+                        table_17ab = create_metric_table(metric_17ab_label, combined_grad_metrics_data)
+                        table_container_17ab = set_table_layout(table_17ab, table_17ab, combined_grad_metrics_data.columns)
 
-                    grad_metrics_empty = pd.DataFrame(columns = simple_cols)
+                        # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
+                        all_cols = combined_grad_metrics_data.columns.tolist()
 
-                    grad_metrics_dict = {
-                        "Category": [
-                            "1.7.c. The percentage of students entering Grade 12 at beginning of year who graduated",
-                            # "1.7.d. The percentage of graduating students planning to pursue college or career."
-                        ]
-                    }
-                    grad_metrics = pd.DataFrame(grad_metrics_dict)
+                        simple_cols = [x for x in all_cols if (not x.endswith("+/-") and not x.endswith("N-Size"))]
 
-                    metric_17cd_data = pd.concat([grad_metrics_empty, grad_metrics], ignore_index = True)
-                    metric_17cd_data.reset_index()
+                        grad_metrics_empty = pd.DataFrame(columns = simple_cols)
 
-                    metric_17cd_data = conditional_fillna(metric_17cd_data)
-                  
-                    metric_17cd_label = ["High School Accountability Metrics 1.7.c & 1.7.d"]
-                    metric_17cd_data = convert_to_svg_circle(metric_17cd_data)          
-                    table_17cd = create_metric_table(metric_17cd_label, metric_17cd_data)
-                    table_container_17cd = set_table_layout(table_17cd, table_17cd, metric_17cd_data.columns)
+                        grad_metrics_dict = {
+                            "Category": [
+                                "1.7.c. The percentage of students entering Grade 12 at beginning of year who graduated",
+                                # "1.7.d. The percentage of graduating students planning to pursue college or career."
+                            ]
+                        }
+                        grad_metrics = pd.DataFrame(grad_metrics_dict)
+
+                        metric_17cd_data = pd.concat([grad_metrics_empty, grad_metrics], ignore_index = True)
+                        metric_17cd_data.reset_index()
+
+                        metric_17cd_data = conditional_fillna(metric_17cd_data)
+                    
+                        metric_17cd_label = ["High School Accountability Metrics 1.7.c & 1.7.d"]
+                        metric_17cd_data = convert_to_svg_circle(metric_17cd_data)          
+                        table_17cd = create_metric_table(metric_17cd_label, metric_17cd_data)
+                        table_container_17cd = set_table_layout(table_17cd, table_17cd, metric_17cd_data.columns)
 
     # Attendance Data & Teacher Retention Rate (all schools have this data)
     metric_11ab_label = ["Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation."]

@@ -414,12 +414,12 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                 selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
 
-                if not selected_raw_hs_school_data.empty:
+                all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
+                
+                if not all_hs_school_data.empty:
 
                     main_container = {"display": "block"}
                     empty_container = {"display": "none"}
-
-                    all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
                     
                     # Graduation Rate Tables ("Strength of Diploma" in data, but not currently displayed)
                     grad_overview_categories = ["Total", "Non Waiver", "State Average"]
