@@ -793,10 +793,10 @@ def layout():
                                                     html.P("Add or Remove Schools: ", className="control_label"),
                                                     dcc.Dropdown(
                                                         id="comparison-dropdown",
-                                                        style={"fontSize": "100%"},
+                                                        style={"fontSize": "1em"},
                                                         multi = True,
                                                         clearable = False,
-                                                        className="dcc_control"
+                                                        # className="multi_dropdown"
                                                     ),
                                                     html.Div(id="input-warning"),
                                                 ],

@@ -312,13 +312,13 @@ def create_growth_table_and_fig(table: list, fig, label: str):    # : plotly.gra
                                     [
                                         html.Div(table, style={"marginTop": "20px"}),
                                     ],
-                                    className="pretty_container five columns",
+                                    className="pretty_container six columns",
                                 ),
                                 html.Div(
                                     [
                                         html.Div(fig, style={"marginTop": "-20px"}),
                                     ],
-                                    className="pretty_container seven columns",
+                                    className="pretty_container six columns",
                                 ),
                             ],
                             className="bare_container twelve columns",
@@ -457,46 +457,25 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
                 "paddingTop": "5px"
             },
         ]
-        if "SGP" in label:
-            column_format=[
-                {
-                "name": col, "id": col, "type":"numeric",
-                "format": Format()
-                }
-                for col in all_cols
-            ]
 
-            # NOTE: if value != value then value is NaN
-            tooltip_format = [
-                {
-                    column: {
-                        "value": "162 Days: {:.1f}".format(float(value)) if value == value else "",
-                        "type": "markdown"
-                    }
-                    for column, value in row.items()
-                }
-                for row in data_162.to_dict("records")
-            ]
+        column_format = [
+            {
+            "name": col, "id": col, "type":"numeric",
+            "format": Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
+            }
+            for col in all_cols
+        ]
 
-        else:
-            column_format = [
-                {
-                "name": col, "id": col, "type":"numeric",
-                "format": Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
+        tooltip_format = [
+            {
+                column: {
+                    "value": "162 Days: {:.2%}".format(float(value)) if value == value else "",
+                    "type": "markdown"
                 }
-                for col in all_cols
-            ]
-
-            tooltip_format = [
-                {
-                    column: {
-                        "value": "162 Days: {:.2%}".format(float(value)) if value == value else "",
-                        "type": "markdown"
-                    }
-                    for column, value in row.items()
-                }
-                for row in data_162.to_dict("records")
-            ]                
+                for column, value in row.items()
+            }
+            for row in data_162.to_dict("records")
+        ]                
 
         table = dash_table.DataTable(
                             data_me.to_dict("records"),
@@ -527,9 +506,8 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
 def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
     """
-    Takes a dataframe of two or more columns and a label and creates a single
-    header table with borders around each cell. If more rows are added, need
-    to adjust logic to remove horizontal borders between rows.
+    Takes a dataframe, a string, and an int (optional) and creates a simple
+    header table with a border around the edge.
     
     Args:
         label (String): Table title
@@ -617,20 +595,6 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
     ] + [
         {
             "if": {
-                "column_id": data.columns[-1],
-            },
-            "borderRight": ".5px solid #b2bdd4",
-        },
-    ] + [
-        {
-            "if": {
-                "row_index": 0
-            },
-            "paddingTop": "5px"
-        }
-    ] + [      
-        {
-            "if": {
                 "column_id": first_column,
             },
             "borderRight": "none",
@@ -671,7 +635,8 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
                                     "color": "#6783a9",
                                     "textAlign": "center",
                                     "fontWeight": "bold",
-                                    "border": "none"
+                                    "border": "none",
+                                    "backgroundColor": "#ffffff"
                                 },
                                 style_cell = {
                                     "whiteSpace": "normal",
@@ -682,7 +647,6 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
                                     "maxWidth": "25px",
                                 },
                                 style_data_conditional = table_data_conditional,
-                                # style_header_conditional = table_header_conditional,
                                 style_cell_conditional = table_cell_conditional,
                                 merge_duplicate_headers=True
                             ),

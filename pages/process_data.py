@@ -525,7 +525,7 @@ def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.Data
 
     return final_hs_academic_data
 
-def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def process_growth_data(data: pd.DataFrame, category: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     # step 1: find the percentage of students with Adequate growth using
     # "Majority Enrolled" students (all available data) and the percentage
@@ -534,13 +534,8 @@ def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> 
 
     data_162 = data[data["Day 162"] == "TRUE"]
 
-    if calculation == "growth":
-        data = data.groupby(["Test Year", category, "Subject"])["ILEARNGrowth Level"].value_counts(normalize=True).reset_index(name="Majority Enrolled")
-        data_162 = data_162.groupby(["Test Year",category, "Subject"])["ILEARNGrowth Level"].value_counts(normalize=True).reset_index(name="162 Days")
-    
-    elif calculation == "sgp":
-        data = data.groupby(["Test Year", category, "Subject"])["ILEARNGrowth Percentile"].median().reset_index(name="Majority Enrolled")
-        data_162 = data_162.groupby(["Test Year", category, "Subject"])["ILEARNGrowth Percentile"].median().reset_index(name="162 Days")
+    data = data.groupby(["Test Year", category, "Subject"])["ILEARNGrowth Level"].value_counts(normalize=True).reset_index(name="Majority Enrolled")
+    data_162 = data_162.groupby(["Test Year",category, "Subject"])["ILEARNGrowth Level"].value_counts(normalize=True).reset_index(name="162 Days")
     
     # step 3: add ME column to df and calculate difference
     data["162 Days"] = data_162["162 Days"]
@@ -552,12 +547,8 @@ def process_growth_data(data: pd.DataFrame, category: str, calculation: str) -> 
     data["Category"] = data[category] + "|" + data["Subject"]
     
     # drop unused rows and columns
-    if calculation == "growth":
-        data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-        data = data.drop([category, "Subject","ILEARNGrowth Level"], axis=1)
-
-    elif calculation == "sgp":
-        data = data.drop([category, "Subject"], axis=1)
+    data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
+    data = data.drop([category, "Subject","ILEARNGrowth Level"], axis=1)
 
     # NOTE: Occasionally, the data will have an "Unknown" Category. No idea why, but
     # we need to get rid of it - easiest way would be to just drop any Categories

@@ -374,6 +374,11 @@ body {
   width: 50%;
 }
 
+.control_label {
+  padding-left: 15px;
+  font-size: 12px;
+}
+
 .fixed-row {
   display: flex;
   width: 100%;
