@@ -803,7 +803,7 @@ def layout():
                                             html.P(id="academic-information-notes-string",
                                                 style={
                                                         "textAlign": "Left",
-                                                        "color": "#626262",
+                                                        "color": "#6783a9",
                                                         "fontSize": 12,
                                                         "marginLeft": "10px",
                                                         "marginRight": "10px",
@@ -811,7 +811,7 @@ def layout():
                                                 }
                                             ),
                                     ],
-                                    className = "pretty_container seven columns"
+                                    className = "pretty_key_container seven columns"
                                 ),
                             ],
                             className = "bare_container_center twelve columns"

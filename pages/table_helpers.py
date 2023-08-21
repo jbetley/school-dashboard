@@ -568,7 +568,7 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
     if width:
         category_width = width
 
-    class_name = "pretty_container " + col_width + " columns"
+    class_name = "pretty_key_container " + col_width + " columns"
 
     first_column = data.columns[0]
     other_columns = data.columns[1:]
@@ -581,6 +581,15 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
     table_cell_conditional = [
         {
             "if": {
+                "column_id": other
+            },
+            "textAlign": "center",
+            "fontWeight": "600",
+            "width": str(other_column_width) + "%",
+        } for other in other_columns        
+    ] + [
+        {
+            "if": {
                 "column_id": first_column
             },
             "textAlign": "left",
@@ -588,26 +597,6 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
             "fontWeight": "500",
             "width": str(first_column_width) + "%"
         }
-    ] + [
-        {
-            "if": {
-                "column_id": other
-            },
-            "textAlign": "center",
-            "fontWeight": "600",
-            "width": str(other_column_width) + "%",
-            "borderRight": ".5px solid #626262",
-            "borderLeft": ".5px solid #626262",  
-        } for other in other_columns
-    ]
-
-    table_header_conditional = [
-        {
-            "if": {
-                "column_id": other,
-            },
-            "borderBottom": ".5px solid #626262"
-        } for other in other_columns
     ]
 
     table_data_conditional = [
@@ -630,7 +619,7 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
             "if": {
                 "column_id": data.columns[-1],
             },
-            "borderRight": ".5px solid #626262",
+            "borderRight": ".5px solid #b2bdd4",
         },
     ] + [
         {
@@ -639,19 +628,12 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
             },
             "paddingTop": "5px"
         }
-    ] + [
-        {
-            "if": {
-                "row_index": len(data)-1
-            },
-            "borderBottom": ".5px solid #626262",
-        }
-    ] + [        
+    ] + [      
         {
             "if": {
                 "column_id": first_column,
             },
-            "borderRight": ".5px solid #626262",
+            "borderRight": "none",
             "borderBottom": "none",
             "borderLeft": "none",
             "borderTop": "none",                        
@@ -663,7 +645,7 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
             },
             "fontSize": "10px",
             "textAlign": "center",
-            "borderLeft": ".5px solid #626262",
+            "borderLeft": ".5px solid #b2bdd4",
         } for other in other_columns
     ]
 
@@ -681,19 +663,17 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
                                     "fontSize": "12px",
                                     "fontFamily": "Jost, sans-serif",
                                     "border": "none",
-                                    "color": "#626262",
+                                    "color": "#6783a9",
                                 },
                                 style_header = {
-                                    "backgroundColor": "#ffffff",
                                     "fontSize": "12px",
                                     "fontFamily": "Jost, sans-serif",
-                                    "color": "#626262",
+                                    "color": "#6783a9",
                                     "textAlign": "center",
                                     "fontWeight": "bold",
                                     "border": "none"
                                 },
                                 style_cell = {
-                                    "backgroundColor": "#ffffff",
                                     "whiteSpace": "normal",
                                     "height": "auto",
                                     "textAlign": "center",
@@ -702,7 +682,7 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
                                     "maxWidth": "25px",
                                 },
                                 style_data_conditional = table_data_conditional,
-                                style_header_conditional = table_header_conditional,
+                                # style_header_conditional = table_header_conditional,
                                 style_cell_conditional = table_cell_conditional,
                                 merge_duplicate_headers=True
                             ),

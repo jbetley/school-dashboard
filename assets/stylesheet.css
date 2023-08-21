@@ -188,6 +188,19 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
+.pretty_key_container {
+  border-radius: 5px;
+  background-color: #ffffff;
+  margin: 10px;
+  padding: 15px;
+  position: relative;
+  /* border: 4px solid #ffffff;  
+  outline: 4px solid steelblue; */
+  outline: 2px solid #b2bdd4;
+  outline-offset: -16px;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
 /* same as pretty_container but adds min-width. Used for left side of 'About' page
    to ensure the width of the tables and figs are aligned. Gets screwy when the window
    is too small tho. */
@@ -827,31 +840,15 @@ label > .label-body {
 
 .key_header_label {
   height: auto;
-  background-color: #626262;
+  background-color: #ffffff;
   font-size: 12px;
   font-family: 'Jost', sans-serif;
-  color: #ececec;
+  color: #6783a9;
   text-align: center;
   font-weight: bold;
   padding-bottom: 5px;
   padding-top: 5px;
 }
-
-/* .header_label_test {
-  height: auto;
-  background-color: #6783a9;
-  font-size: 12px;
-  font-family: 'Jost', sans-serif;
-  color: #ffffff;
-  text-align: center;
-  font-weight: bold;
-  padding-bottom: 5px;
-  padding-top: 5px;
-  /* position: absolute; */
-  /* width: 80%;
-  top: 0;
-  display: flex;
-} */
 
 .school_string {
   color: #6783a9;
