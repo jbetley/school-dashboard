@@ -188,6 +188,15 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
+.pretty_container_grey {
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  margin: 10px;
+  padding: 15px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
 .pretty_key_container {
   border-radius: 5px;
   background-color: #ffffff;
@@ -853,6 +862,36 @@ label > .label-body {
   font-weight: bold;
   padding-bottom: 5px;
   padding-top: 5px;
+}
+
+.half_header_label {
+  height: auto;
+  background-color: #6783a9;
+  font-size: 12px;
+  font-family: 'Jost', sans-serif;
+  color: #ffffff;
+  width: 50%;
+  margin: auto;
+  text-align: center;
+  font-weight: bold;
+  padding-bottom: 5px;
+  padding-top: 5px;
+}
+
+.hollow_header_label {
+  height: auto;
+  background-color: #ffffff;
+  font-size: 12px;
+  font-family: 'Jost', sans-serif;
+  color: #6783a9;
+  text-align: center;
+  width: 50%;
+  margin: auto;
+  font-weight: bold;
+  padding-bottom: 5px;
+  padding-top: 5px;
+  border: .5px solid #6783a9;
+  border-radius: .5rem;
 }
 
 .school_string {

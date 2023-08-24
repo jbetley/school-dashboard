@@ -200,7 +200,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
         text=[f'{i}%' for i in data['Percentage']],
         orientation='h',
         color_discrete_sequence = stacked_color,
-        height=240,
+        height=300,
     )
 
     # the uniformtext_minsize and uniformtext_mode settings hide bar chart
@@ -243,7 +243,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     fig_layout = [
         html.Div(
             [
-                html.Label(label, className = 'header_label'),
+                html.Label(label, className = 'hollow_header_label'),
                 dcc.Graph(
                     figure = fig,
                     config={
@@ -403,7 +403,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                     orientation='h'
                 ),
                 hovermode='x unified',
-                height=400,
+                height=300,
                 legend_title='',
             )
 
@@ -440,7 +440,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                         [
                             html.Div(
                                 [
-                                html.Label(label, className = 'header_label'),
+                                html.Label(label, className = 'hollow_header_label'),
                                 dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
                             ),
@@ -477,7 +477,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                         [
                             html.Div(
                                 [
-                                html.Label(label, className = 'header_label'),
+                                html.Label(label, className = 'hollow_header_label'),
                                 dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
                             ),
@@ -508,7 +508,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                         [
                             html.Div(
                                 [
-                                html.Label(label, className = 'header_label'),
+                                html.Label(label, className = 'hollow_header_label'),
                                 dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
                             ),
@@ -537,7 +537,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 fig_layout = [
                     html.Div(
                         [
-                        html.Label(label, className = 'header_label'),
+                        html.Label(label, className = 'hollow_header_label'),
                         dcc.Graph(figure = fig, config={'displayModeBar': False})
                         ],
                     )

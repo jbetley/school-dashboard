@@ -184,7 +184,8 @@ def set_dropdown_options(school, year, comparison_schools):
         # used to display message if the number of selections exceeds the max
         input_warning = None
 
-        # if list is None or empty ([]), use the default options
+        # if list is None or empty ([]), use the default options (NOTE: The callback takes
+        # comparison schools as an input, so this will only be empty on first run)
         if not comparison_schools:
             comparison_schools = [d["value"] for d in options[:default_num_to_display]]
 

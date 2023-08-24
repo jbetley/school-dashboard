@@ -859,6 +859,47 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
+# NOTE: This was an experiment to combine prof and n-size cols into one - May revisit later
+
+        # if "SAT" in label:
+        #     data.columns = data.columns.str.replace("School", "At Benchmark", regex=True)
+        #     year_headers = [y for y in data.columns if "At Benchmark" in y]            
+        # else:
+        #     data.columns = data.columns.str.replace("School", "", regex=True)
+
+        # # Merge every other Column such that result is Year (n-size)
+
+        # # adjust formatting before merge because it will be a string afterwards
+        # proficiency_headers = [y for y in data.columns if "Category" not in y and "n-size" not in y]
+        # nsize_headers = [y for y in data.columns if "n-size" in y and 'Category' not in y]
+
+        # for n in nsize_headers:
+        #     data[n] = data[n].astype(int)
+        #     data[n] = data[n].map('({})'.format)
+
+        # for p in proficiency_headers:
+        #     data[p] = data[p].astype(float)
+        #     data[p] = data[p].map('{:.2%}'.format)
+
+        # # text_values = text_values.str.replace('nan%','')
+        # data = data.set_index("Category")
+
+        # def APL(df):
+        #     def make_func(offset=0):
+        #         def func(x):
+        #             return '{} {}'.format(x[0 + offset], x[1 + offset])
+        #         return func
+
+        #     df2 = pd.DataFrame()
+        #     for offset in range(0, df.shape[1], 2):
+        #         df2['{} (n-size)'.format(df.columns[offset])] = df.apply(make_func(offset), axis=1)
+        #     return df2
+        
+        # tst = APL(data)
+        # tst = tst.reset_index(drop=True)
+
+        # year_headers = [y for y in data.columns if "Category" not in y]
+
     table_size = len(data.columns)
 
     if table_size > 1:
@@ -866,17 +907,17 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
         # on the size (# of cols) of the dataframe
         if table_size <= 3:
             col_width = "four"
-            category_width = 40
+            category_width = 60
         if table_size > 3 and table_size <=5:
+            col_width = "five"
+            category_width = 20
+        elif table_size > 5 and table_size <= 7:
             col_width = "six"
             category_width = 20
-        elif table_size > 5 and table_size < 7:
-            col_width = "six"
-            category_width = 20
-        elif table_size >= 7 and table_size < 9:
+        elif table_size > 7 and table_size <= 9:
             col_width = "seven"
             category_width = 20
-        elif table_size >= 9 and table_size <= 13:
+        elif table_size >= 10 and table_size <= 13:
             col_width = "eight"
             category_width = 15
         elif table_size > 13 and table_size <=17:
@@ -889,7 +930,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
         class_name = "pretty_container " + col_width + " columns"
 
         # rename columns n_size before getting n col list
-        data.columns = data.columns.str.replace("N-Size|SN-Size", "Tested", regex=True)
+        data.columns = data.columns.str.replace("N-Size|SN-Size", "n-size", regex=True)
 
         if "SAT" in label:
             data.columns = data.columns.str.replace("School", "At Benchmark", regex=True)
@@ -898,7 +939,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
             data.columns = data.columns.str.replace("School", "Proficiency", regex=True)
             year_headers = [y for y in data.columns if "Proficiency" in y]
         
-        nsize_headers = [y for y in data.columns if "Tested" in y]
+        nsize_headers = [y for y in data.columns if "n-size" in y]
 
         # get new list of cols after replacing N-Size
         all_cols = data.columns.tolist()
@@ -909,11 +950,10 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
             nsize_width = year_width = data_width / (table_size - 1)          
         
         else:
-            nsize_width = 5
+            nsize_width = 2
             data_width = 100 - category_width - nsize_width
             year_width = data_width / (table_size - 1)
 
-  
         # formatting logic is slightly different for a multi-header table
         table_cell_conditional = [
             {
@@ -939,7 +979,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
                 "column_id": nsize
             },
                 "textAlign": "center",
-                "fontWeight": "300",
+                "fontWeight": "500",
                 "fontSize": "8px",
                 "width": str(nsize_width) + "%"
             } for nsize in nsize_headers
@@ -961,7 +1001,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
                 "header_index": 1,
             },
                 "textAlign": "center",
-                "fontWeight": "400",
+                "fontWeight": "600",
                 "fontSize": "12px",
                 "borderRight": ".5px solid #b2bdd4",
                 "borderTop": ".5px solid #b2bdd4",
@@ -1060,7 +1100,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className="header_label"),
+                    html.Label(label, className="hollow_header_label"),
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict("records"),

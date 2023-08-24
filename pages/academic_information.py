@@ -17,25 +17,34 @@ import re
 from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_k8_school_academic_data, \
     get_high_school_academic_data, get_demographic_data, get_school_index, get_growth_data
 from .process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
-    filter_high_school_academic_data, process_growth_data  
+    filter_high_school_academic_data, process_growth_data
 from .table_helpers import no_data_page, no_data_table, create_academic_info_table, create_key_table, \
     create_growth_table, set_table_layout, create_basic_info_table, create_growth_table_and_fig
-from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart
+from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
 from .calculations import round_percentages, conditional_fillna, get_excluded_years
 from .subnav import subnav_academic
 
 dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
 
 @callback(
-    Output("k8-grade-table", "children"),
-    Output("k8-grade-ela-fig", "children"),
-    Output("k8-grade-math-fig", "children"),
-    Output("k8-ethnicity-table", "children"),
-    Output("k8-ethnicity-ela-fig", "children"),
-    Output("k8-ethnicity-math-fig", "children"),
-    Output("k8-subgroup-table", "children"),
-    Output("k8-subgroup-ela-fig", "children"),
-    Output("k8-subgroup-math-fig", "children"),
+    Output("ela-grade-table", "children"),
+    Output("ela-grade-line-fig", "children"),
+    Output("ela-grade-bar-fig", "children"),
+    Output("ela-ethnicity-table", "children"),
+    Output("ela-ethnicity-line-fig", "children"),
+    Output("ela-ethnicity-bar-fig", "children"),
+    Output("ela-subgroup-table", "children"),
+    Output("ela-subgroup-line-fig", "children"), 
+    Output("ela-subgroup-bar-fig", "children"),
+    Output("math-grade-table", "children"),
+    Output("math-grade-line-fig", "children"),
+    Output("math-grade-bar-fig", "children"),
+    Output("math-ethnicity-table", "children"),
+    Output("math-ethnicity-line-fig", "children"),
+    Output("math-ethnicity-bar-fig", "children"),
+    Output("math-subgroup-table", "children"),
+    Output("math-subgroup-line-fig", "children"), 
+    Output("math-subgroup-bar-fig", "children"),
     Output("attendance-table", "children"),
     Output("k8-table-container", "style"),
     Output("hs-grad-overview-table", "children"),
@@ -96,18 +105,28 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
     sat_table_container = {"display": "none"}
     grad_table_container = {"display": "none"}
 
-    k8_grade_table = []
-    k8_ethnicity_table = []
-    k8_subgroup_table = []
+    ela_grade_table = []
+    ela_grade_bar_fig = []
+    ela_grade_line_fig = []
+    ela_ethnicity_table = []
+    ela_ethnicity_bar_fig = []
+    ela_ethnicity_line_fig = []  
+    ela_subgroup_table = []
+    ela_subgroup_bar_fig = []
+    ela_subgroup_line_fig = []  
+
+    math_grade_table = []
+    math_grade_bar_fig = []
+    math_grade_line_fig = []
+    math_ethnicity_table = []
+    math_ethnicity_bar_fig = []
+    math_ethnicity_line_fig = []  
+    math_subgroup_table = []
+    math_subgroup_bar_fig = []
+    math_subgroup_line_fig = []  
+
     attendance_table = []
     k8_table_container = {"display": "none"}
-
-    k8_grade_ela_fig = []
-    k8_grade_math_fig = []
-    k8_ethnicity_ela_fig = []
-    k8_ethnicity_math_fig = []
-    k8_subgroup_ela_fig = []
-    k8_subgroup_math_fig = []
 
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
@@ -118,6 +137,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
     selected_school_id = int(selected_school["School ID"].values[0])
+    selected_school_name = selected_school["School Name"].values[0]
 
     ## Proficiency Tables
     if radio_value == "proficiency":
@@ -152,22 +172,102 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                     all_k8_school_data.loc[all_k8_school_data["Category"] == "IREAD", "Category"] = "IREAD Proficiency (Grade 3)"
 
-                    grades_iread = grades_all + ["IREAD Proficiency (Grade 3)"]
+                    # Reformat data for multi-year line charts
+                    year_over_year_data = all_k8_school_data.loc[:,~all_k8_school_data.columns.str.contains('N-Size')].copy()
 
-                    years_by_grade = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(grades_iread))]
+                    year_over_year_data = year_over_year_data.set_index("Category")
+                    year_over_year_data.columns = year_over_year_data.columns.str[:4]
+                
+                    year_over_year_data = year_over_year_data.reset_index()
 
-                    k8_grade_table = create_academic_info_table(years_by_grade,"Proficiency by Grade")
-                    k8_grade_table = set_table_layout(k8_grade_table, k8_grade_table, years_by_grade.columns)
+                    year_over_year_data = year_over_year_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
+                    year_over_year_data["School Name"] = selected_school_name
+                    
+                    year_over_year_data = year_over_year_data.rename(columns = {"Native Hawaiian or Other Pacific Islander|ELA Proficient %": "Pacific Islander|ELA Proficient %"})
+              
+                ## ELA
 
-                    years_by_subgroup = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(subgroup))]
+                    # by Grade Table
+                    years_by_grade_ela = all_k8_school_data[ \
+                        (all_k8_school_data["Category"].str.contains("|".join(grades_all)) & \
+                            all_k8_school_data["Category"].str.contains("ELA")) | \
+                        (all_k8_school_data["Category"] == "IREAD Proficiency (Grade 3)")]
 
-                    k8_subgroup_table = create_academic_info_table(years_by_subgroup,"Proficiency by Subgroup")
-                    k8_subgroup_table = set_table_layout(k8_subgroup_table, k8_subgroup_table, years_by_subgroup.columns)
+                    ela_grade_table = create_academic_info_table(years_by_grade_ela,"Proficiency")
+                    ela_grade_table = set_table_layout(ela_grade_table, ela_grade_table, years_by_grade_ela.columns)
 
-                    years_by_ethnicity = all_k8_school_data[all_k8_school_data["Category"].str.contains("|".join(ethnicity))]
+                    # by Grade Year over Year Line Chart
+                    ela_grade_fig_data = year_over_year_data.filter(regex = r"^Grade \d\|ELA|IREAD|^School Name$|^Year$",axis=1)
+                    ela_grade_line_fig = make_line_chart(ela_grade_fig_data,"Year over Year")
 
-                    k8_ethnicity_table = create_academic_info_table(years_by_ethnicity,"Proficiency by Ethnicity")
-                    k8_ethnicity_table = set_table_layout(k8_ethnicity_table, k8_ethnicity_table, years_by_ethnicity.columns)
+                    # by Subgroup Table
+                    years_by_subgroup_ela = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(subgroup)) & all_k8_school_data["Category"].str.contains("ELA"))]
+
+                    ela_subgroup_table = create_academic_info_table(years_by_subgroup_ela,"Proficiency")
+                    ela_subgroup_table = set_table_layout(ela_subgroup_table, ela_subgroup_table, years_by_subgroup_ela.columns)
+
+                    # get column lists for each subject/category combination
+                    categories_ela_subgroup = []
+                    categories_math_subgroup = []
+                    for s in subgroup:
+                        categories_ela_subgroup.append(s + "|" + "ELA")
+                        categories_math_subgroup.append(s + "|" + "Math")
+
+                    categories_ela_ethnicity = []
+                    categories_math_ethnicity = []
+                    for e in ethnicity:
+                        categories_ela_ethnicity.append(e + "|" + "ELA")
+                        categories_math_ethnicity.append(e + "|" + "Math")
+
+                    # by Subgroup Year over Year Line Chart
+                    ela_subgroup_fig_data = year_over_year_data.loc[:, (year_over_year_data.columns.isin(categories_ela_subgroup)) | \
+                            (year_over_year_data.columns.isin(["School Name","Year"]))]
+                    ela_subgroup_line_fig = make_line_chart(ela_subgroup_fig_data,"Year over Year")
+
+                    # by Ethnicity
+                    years_by_ethnicity_ela = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(ethnicity)) & all_k8_school_data["Category"].str.contains("ELA"))]
+
+                    ela_ethnicity_table = create_academic_info_table(years_by_ethnicity_ela,"Proficiency")
+                    ela_ethnicity_table = set_table_layout(ela_ethnicity_table, ela_ethnicity_table, years_by_ethnicity_ela.columns)
+
+                    # by Ethnicity Year over Year Line Chart
+                    ela_ethnicity_fig_data = year_over_year_data.loc[:, (year_over_year_data.columns.isin(categories_ela_ethnicity)) | \
+                            (year_over_year_data.columns.isin(["School Name","Year"]))]
+                    ela_ethnicity_line_fig = make_line_chart(ela_ethnicity_fig_data,"Year over Year")
+
+               ## Math
+
+                    # by Grade Table
+                    years_by_grade_math = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(grades_all)) & all_k8_school_data["Category"].str.contains("Math"))]
+
+                    math_grade_table = create_academic_info_table(years_by_grade_math,"Proficiency")
+                    math_grade_table = set_table_layout(math_grade_table, math_grade_table, years_by_grade_math.columns)
+
+                    # by Grade Year over Year Line Chart
+                    math_grade_fig_data = year_over_year_data.filter(regex = r"^Grade \d\|Math|^School Name$|^Year$",axis=1)
+                    math_grade_line_fig = make_line_chart(math_grade_fig_data,"Year over Year")
+
+                    # by Subgroup Table
+                    years_by_subgroup_math = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(subgroup)) & all_k8_school_data["Category"].str.contains("Math"))]
+
+                    math_subgroup_table = create_academic_info_table(years_by_subgroup_math,"Proficiency")
+                    math_subgroup_table = set_table_layout(math_subgroup_table, math_subgroup_table, years_by_subgroup_math.columns)
+
+                    # by Subgroup Year over Year Line Chart
+                    math_subgroup_fig_data = year_over_year_data.loc[:, (year_over_year_data.columns.isin(categories_math_subgroup)) | \
+                            (year_over_year_data.columns.isin(["School Name","Year"]))]
+                    math_subgroup_line_fig = make_line_chart(math_subgroup_fig_data,"Year over Year")
+
+                    # by Ethnicity
+                    years_by_ethnicity_math = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(ethnicity)) & all_k8_school_data["Category"].str.contains("Math"))]
+
+                    math_ethnicity_table = create_academic_info_table(years_by_ethnicity_math,"Proficiency")
+                    math_ethnicity_table = set_table_layout(math_ethnicity_table, math_ethnicity_table, years_by_ethnicity_math.columns)
+
+                    # by Ethnicity Year over Year Line Chart
+                    math_ethnicity_fig_data = year_over_year_data.loc[:, (year_over_year_data.columns.isin(categories_math_ethnicity)) | \
+                            (year_over_year_data.columns.isin(["School Name","Year"]))]
+                    math_ethnicity_line_fig = make_line_chart(math_ethnicity_fig_data,"Year over Year")
 
                     # Attendance rate
                     school_demographic_data = get_demographic_data(school)
@@ -181,7 +281,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                     attendance_table = set_table_layout(attendance_table, attendance_table, attendance_rate.columns)
                     
-                    # Proficiency breakdown data for stacked bar charts
+                ## Proficiency breakdown data for stacked bar charts
                     # NOTE: IDOE's raw proficency data is annoyingly inconsistent. In some cases missing
                     # data is blank and in other cases it is represented by "0." So we need to be extra
                     # careful in interpreting what is missing from what is just inconsistenly recorded
@@ -299,89 +399,86 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                     all_proficiency_data = all_proficiency_data[all_proficiency_data["Category"] != "index"]
 
-                    ela_title = selected_year_string + " Proficiency Breakdown - ELA "
-                    math_title = selected_year_string + " Proficiency Breakdown - Math "
+                    bar_fig_title = "Selected Year (" + selected_year_string + ")"
+                    # math_title = selected_year_string + " Proficiency Breakdown - Math "
 
-                    # ELA by Grade
+                    # ELA by Grade - Current Year
                     grade_annotations = annotations.loc[annotations["Category"].str.contains("Grade")]
 
                     grade_ela_fig_data = all_proficiency_data[
                         all_proficiency_data["Category"].isin(grades_ordinal)
                         & all_proficiency_data["Proficiency"].str.contains("ELA")
                     ]
-                    ela_by_grade_title = ela_title + "By Grade"
+                    # ela_by_grade_title = ela_title + "By Grade"
 
                     if not grade_ela_fig_data.empty:
-                        k8_grade_ela_fig = make_stacked_bar(grade_ela_fig_data, ela_by_grade_title)
+                        ela_grade_bar_fig = make_stacked_bar(grade_ela_fig_data, bar_fig_title)
                     else:
-                        k8_grade_ela_fig = no_data_fig_label(ela_title, 100)
+                        ela_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                    # Math by Grade
+                    # Math by Grade - Current Year
                     grade_math_fig_data = all_proficiency_data[
                         all_proficiency_data["Category"].isin(grades_ordinal)
                         & all_proficiency_data["Proficiency"].str.contains("Math")
                     ]
-                    math_by_grade_title = math_title + "By Grade"
+                    # math_by_grade_title = math_title + "By Grade"
 
                     if not grade_math_fig_data.empty:
-                        k8_grade_math_fig = make_stacked_bar(grade_math_fig_data, math_by_grade_title)
+                        math_grade_bar_fig = make_stacked_bar(grade_math_fig_data, bar_fig_title)
                     else:
-                        k8_grade_math_fig = no_data_fig_label(math_title, 100)
+                        math_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                    # ELA by Ethnicity
+                    # ELA by Ethnicity - Current Year
                     ethnicity_annotations = annotations.loc[annotations["Category"].str.contains("Ethnicity")]
 
                     ethnicity_ela_fig_data = all_proficiency_data[
                         all_proficiency_data["Category"].isin(ethnicity)
                         & all_proficiency_data["Proficiency"].str.contains("ELA")
                     ]
-                    ela_by_ethnicity_title = ela_title + "By Ethnicity"
+                    # ela_by_ethnicity_title = ela_title + "By Ethnicity"
 
                     if not ethnicity_ela_fig_data.empty:
-                        k8_ethnicity_ela_fig = make_stacked_bar(ethnicity_ela_fig_data, ela_by_ethnicity_title)
+                        ela_ethnicity_bar_fig = make_stacked_bar(ethnicity_ela_fig_data, bar_fig_title)
                     else:
-                        k8_ethnicity_ela_fig = no_data_fig_label(ela_title, 100)
+                        ela_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                    # Math by Ethnicity
+                    # Math by Ethnicity - Current Year
                     ethnicity_math_fig_data = all_proficiency_data[
                         all_proficiency_data["Category"].isin(ethnicity)
                         & all_proficiency_data["Proficiency"].str.contains("Math")
                     ]
-                    math_by_ethnicity_title = math_title + "By Ethnicity"
+                    # math_by_ethnicity_title = math_title + "By Ethnicity"
 
                     if not ethnicity_math_fig_data.empty:
-                        k8_ethnicity_math_fig = make_stacked_bar(ethnicity_math_fig_data, math_by_ethnicity_title)
+                        math_ethnicity_bar_fig = make_stacked_bar(ethnicity_math_fig_data, bar_fig_title)
                     else:
-                        k8_ethnicity_math_fig = no_data_fig_label(math_title, 100)
+                        math_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                    # ELA by Subgroup
+                    # ELA by Subgroup - Current Year
                     subgroup_annotations = annotations.loc[annotations["Category"].str.contains("Subgroup")]
 
                     subgroup_ela_fig_data = all_proficiency_data[
                         all_proficiency_data["Category"].isin(subgroup)
                         & all_proficiency_data["Proficiency"].str.contains("ELA")
                     ]
-                    ela_by_subgroup_title = ela_title + "By Subgroup"
+                    # ela_by_subgroup_title = ela_title + "By Subgroup"
 
                     if not subgroup_ela_fig_data.empty:
-                        k8_subgroup_ela_fig = make_stacked_bar(subgroup_ela_fig_data, ela_by_subgroup_title)
+                        ela_subgroup_bar_fig = make_stacked_bar(subgroup_ela_fig_data, bar_fig_title)
                     else:
-                        k8_subgroup_ela_fig = no_data_fig_label(ela_title, 100)
+                        ela_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                    # Math by Subgroup
+                    # Math by Subgroup - Current Year
                     subgroup_math_fig_data = all_proficiency_data[
                         all_proficiency_data["Category"].isin(subgroup)
                         & all_proficiency_data["Proficiency"].str.contains("Math")
                     ]
-                    math_by_subgroup_title = math_title + "By Subgroup"
+                    # math_by_subgroup_title = math_title + "By Subgroup"
 
                     if not subgroup_math_fig_data.empty:
-
-                        k8_subgroup_math_fig = make_stacked_bar(subgroup_math_fig_data, math_by_subgroup_title)
-
+                        math_subgroup_bar_fig = make_stacked_bar(subgroup_math_fig_data, bar_fig_title)
                     else:
-
-                        k8_subgroup_math_fig = no_data_fig_label(math_title, 100)
+                        math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
         # NOTE: There is a special exception for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
@@ -587,7 +684,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             growth_data_me_subgroup_ela = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains("Majority Enrolled")) & (fig_data_subgroup_growth.columns.str.contains("ELA"))]
             growth_data_me_subgroup_ela.columns = growth_data_me_subgroup_ela.columns.str.split("_").str[1]
 
-            label_subgroup_growth_ela = "Percentage of Students with Adequate Growth - by Ethnicity (ELA)"
+            label_subgroup_growth_ela = "Percentage of Students with Adequate Growth - by Subgroup (ELA)"
             table_subgroup_growth_ela = create_growth_table(table_data_subgroup_growth_ela, label_subgroup_growth_ela)
             fig_subgroup_growth_ela = make_growth_chart(growth_data_me_subgroup_ela, growth_data_162_subgroup_ela, label_subgroup_growth_ela)
 
@@ -600,7 +697,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             growth_data_me_subgroup_math = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains("Majority Enrolled")) & (fig_data_subgroup_growth.columns.str.contains("Math"))]
             growth_data_me_subgroup_math.columns = growth_data_me_subgroup_math.columns.str.split("_").str[1]
 
-            label_subgroup_growth_math = "Percentage of Students with Adequate Growth - by Ethnicity (Math)"            
+            label_subgroup_growth_math = "Percentage of Students with Adequate Growth - by Subgroup (Math)"            
             table_subgroup_growth_math = create_growth_table(table_data_subgroup_growth_math, label_subgroup_growth_math)
             fig_subgroup_growth_math = make_growth_chart(growth_data_me_subgroup_math, growth_data_162_subgroup_math, label_subgroup_growth_math)
 
@@ -637,14 +734,20 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             school for 162 Days. The 162 Day value is included in the tooltip of each table and chart for comparison purposes."
 
     return (
-        k8_grade_table, k8_grade_ela_fig, k8_grade_math_fig, k8_ethnicity_table, k8_ethnicity_ela_fig, k8_ethnicity_math_fig,
-        k8_subgroup_table, k8_subgroup_ela_fig, k8_subgroup_math_fig, attendance_table, k8_table_container,
+        ela_grade_table, ela_grade_line_fig, ela_grade_bar_fig,
+        ela_ethnicity_table, ela_ethnicity_line_fig, ela_ethnicity_bar_fig,
+        ela_subgroup_table, ela_subgroup_line_fig, ela_subgroup_bar_fig, 
+        math_grade_table, math_grade_line_fig, math_grade_bar_fig,
+        math_ethnicity_table, math_ethnicity_line_fig, math_ethnicity_bar_fig,
+        math_subgroup_table, math_subgroup_line_fig, math_subgroup_bar_fig, 
+        attendance_table, k8_table_container,
+
         hs_grad_overview_table, hs_grad_ethnicity_table, hs_grad_subgroup_table,
         sat_cut_scores_table, sat_overview_table, sat_ethnicity_table, sat_subgroup_table, 
         grad_table_container, sat_table_container, main_container, empty_container, no_display_data, 
         growth_grades_ela, growth_grades_math, growth_ethnicity_ela, growth_ethnicity_math,
         growth_subgroup_ela, growth_subgroup_math, main_growth_container, empty_growth_container, 
-        no_growth_data, academic_information_notes_string
+        no_growth_data, academic_information_notes_string, 
     )
 
 def layout():
@@ -723,60 +826,152 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Div(id="k8-grade-table", children=[]),
+                                    html.Div(
+                                        [
+                                            html.Label("ELA By Grade", className="half_header_label"),
+                                            html.Div(
+                                                [
+                                                    
+                                                    html.Div(
+                                                        [
+                                                            html.Div(id="ela-grade-bar-fig"),
+                                                        ],
+                                                        className="pretty_container six columns",
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            html.Div(id="ela-grade-line-fig"),
+                                                        ],
+                                                        className="pretty_container six columns",
+                                                    ),
+                                                ],
+                                                className="bare_container_center twelve columns",
+                                            ),
+                                            html.Div(id="ela-grade-table", children=[]),
+                                        ],
+                                        className="pretty_container_grey twelve columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Label("ELA By Ethnicity", className="half_header_label"),                                                                            
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        [
+                                                            html.Div(id="ela-ethnicity-bar-fig"),
+                                                        ],
+                                                        className="pretty_container six columns",
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            html.Div(id="ela-ethnicity-line-fig"),
+                                                        ],
+                                                        className="pretty_container six columns",
+                                                    ),
+                                                ],
+                                                className="bare_container_center twelve columns",
+                                            ),
+                                            html.Div(id="ela-ethnicity-table", children=[]),
+                                        ],
+                                        className="pretty_container_grey twelve columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Label("ELA By Subgroup", className="half_header_label"),                                                                             
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        [
+                                                            html.Div(id="ela-subgroup-bar-fig"),
+                                                        ],
+                                                        className="pretty_container six columns",
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            html.Div(id="ela-subgroup-line-fig"),
+                                                        ],
+                                                        className="pretty_container six columns",
+                                                    ),
+                                                ],
+                                                className="bare_container_center twelve columns",
+                                            ),
+                                            html.Div(id="ela-subgroup-table", children=[]),
+                                        ],
+                                        className="pretty_container_grey twelve columns",
+                                    ),
+# TODO: Add Toggle for Math/ELA
+                                    html.Div(
+                                        [
+                                        html.Label("Math By Grade", className="half_header_label"), 
                                         html.Div(
                                             [
                                                 html.Div(
                                                     [
-                                                        html.Div(id="k8-grade-ela-fig"),
+                                                        html.Div(id="math-grade-bar-fig"),
                                                     ],
-                                                    className="pretty_container four columns",
+                                                    className="pretty_container six columns",
                                                 ),
                                                 html.Div(
                                                     [
-                                                        html.Div(id="k8-grade-math-fig"),
+                                                        html.Div(id="math-grade-line-fig"),
                                                     ],
-                                                    className="pretty_container four columns",
+                                                    className="pretty_container six columns",
                                                 ),
                                             ],
                                             className="bare_container_center twelve columns",
                                         ),
-                                        html.Div(id="k8-ethnicity-table", children=[]),
+                                        html.Div(id="math-grade-table", children=[]),
+                                        ],
+                                        className="pretty_container_grey twelve columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                        html.Label("Math By Ethnicity", className="half_header_label"),
                                         html.Div(
                                             [
                                                 html.Div(
                                                     [
-                                                        html.Div(id="k8-ethnicity-ela-fig"),
+                                                        html.Div(id="math-ethnicity-bar-fig"),
                                                     ],
-                                                    className="pretty_container four columns",
+                                                    className="pretty_container six columns",
                                                 ),
                                                 html.Div(
                                                     [
-                                                        html.Div(id="k8-ethnicity-math-fig"),
+                                                        html.Div(id="math-ethnicity-line-fig"),
                                                     ],
-                                                    className="pretty_container four columns",
+                                                    className="pretty_container six columns",
                                                 ),
                                             ],
                                             className="bare_container_center twelve columns",
                                         ),
-                                        html.Div(id="k8-subgroup-table", children=[]),
+                                        html.Div(id="math-ethnicity-table", children=[]),                                        
+                                        ],
+                                        className="pretty_container_grey twelve columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                        html.Label("Math By Ethnicity", className="half_header_label"),                                    
                                         html.Div(
                                             [
                                                 html.Div(
                                                     [
-                                                        html.Div(id="k8-subgroup-ela-fig"),
+                                                        html.Div(id="math-subgroup-bar-fig"),
                                                     ],
-                                                    className="pretty_container four columns",
+                                                    className="pretty_container six columns",
                                                 ),
                                                 html.Div(
                                                     [
-                                                        html.Div(id="k8-subgroup-math-fig"),
+                                                        html.Div(id="math-subgroup-line-fig"),
                                                     ],
-                                                    className="pretty_container four columns",
+                                                    className="pretty_container six columns",
                                                 ),
                                             ],
                                             className="bare_container_center twelve columns",
                                         ),
+                                        html.Div(id="math-subgroup-table", children=[]),    
+                                        ],
+                                        className="pretty_container_grey twelve columns",
+                                    ),
                                         html.Div(id="attendance-table", children=[]),
                                     ],
                                     id="k8-table-container",

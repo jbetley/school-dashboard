@@ -532,7 +532,7 @@ def process_growth_data(data: pd.DataFrame, category: str) -> Tuple[pd.DataFrame
     # of students with Adequate growth using the set of students enrolled for
     # "162 Days" (a subset of available data)
 
-    data_162 = data[data["Day 162"] == "TRUE"]
+    data_162 = data[data["Day 162"].str.contains("True|TRUE")==True]
 
     data = data.groupby(["Test Year", category, "Subject"])["ILEARNGrowth Level"].value_counts(normalize=True).reset_index(name="Majority Enrolled")
     data_162 = data_162.groupby(["Test Year",category, "Subject"])["ILEARNGrowth Level"].value_counts(normalize=True).reset_index(name="162 Days")
@@ -566,6 +566,7 @@ def process_growth_data(data: pd.DataFrame, category: str) -> Tuple[pd.DataFrame
         data = data[data["Category"].str.contains("|".join(subgroup))]
 
     # create fig data
+
     fig_data = data.copy()
     fig_data = fig_data.drop("Difference", axis=1)
     fig_data = fig_data.pivot(index=["Test Year"], columns="Category")

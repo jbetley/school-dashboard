@@ -388,7 +388,7 @@ def get_growth_data(*args):
 
     q = text('''
         SELECT *
-	        FROM growth
+	        FROM growth_data
 	        WHERE MajorityEnrolledSchoolID = :id
         ''')
     return run_query(q, params)
@@ -407,11 +407,17 @@ def get_school_coordinates(*args):
     return run_query(q, params)
 
 def get_comparable_schools(*args):
+
     keys = ['schools','year']
     params = dict(zip(keys, args))
 
+    print(params)
+    print(params['schools'])
+    print(type(params['schools']))
     school_str = ', '.join( [ str(int(v)) for v in params['schools'] ] )
 
+    print(school_str)
+    print(type(school_str))
     query_string = '''
         SELECT *
             FROM academic_data_k8
