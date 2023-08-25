@@ -186,7 +186,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     year_over_year_data = year_over_year_data.rename(columns = {"Native Hawaiian or Other Pacific Islander|ELA Proficient %": "Pacific Islander|ELA Proficient %"})
               
                 ## ELA
-
+# TODO: Change Table Layouts to Be like Growth Tables
                     # by Grade Table
                     years_by_grade_ela = all_k8_school_data[ \
                         (all_k8_school_data["Category"].str.contains("|".join(grades_all)) & \
@@ -703,24 +703,32 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
             growth_subgroup_math = create_growth_table_and_fig(table_subgroup_growth_math, fig_subgroup_growth_math, label_subgroup_growth_math)
 
-    if radio_value == "proficiency":
-        if selected_school_type == "AHS":
-            academic_information_notes_string = "Adult High Schools enroll students who are over the age of 18, under credited, \
+    ahs_notes = "Adult High Schools enroll students who are over the age of 18, under credited, \
                 dropped out of high school for a variety of reasons, and are typically out of cohort from \
                 their original graduation year. Because graduation rate is calculated at the end of the school \
                 year regardless of the length of time a student is enrolled at a school, it is not comparable to \
                 the graduation rate of a traditional high school."
-            
-        elif (selected_school_type == "K8" or selected_school_type == "K12" or selected_school_type == "HS"):
-            academic_information_notes_string = "There are a number of factors that make it difficult to make valid and reliable \
+    
+    k8_notes = "There are a number of factors that make it difficult to make valid and reliable \
                 comparisons between test scores from 2019 to 2022. For example, ILEARN was administered for \
                 the first time during the 2018-19 SY and represented an entirely new type and mode of \
-                assessment (adaptive and online-only). No State assessment was administered  in 2020 because \
+                assessment (adaptive and online-only). No State assessment was administered in 2020 because \
                 of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
-                testing school for 162 days, while the 2021 and 2022 data sets included all tested students.  \
-                In addition, beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
+                testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
+    
+    hs_notes = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
                 Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
                 Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
+    
+    if radio_value == "proficiency":
+        if selected_school_type == "AHS":
+            academic_information_notes_string = ahs_notes + " " + hs_notes
+        elif (selected_school_type == "HS"):
+            academic_information_notes_string = hs_notes
+        elif (selected_school_type == "K8"):
+            academic_information_notes_string = k8_notes
+        elif (selected_school_type == "K12"):
+            academic_information_notes_string = k8_notes + " " + hs_notes
         else:
             academic_information_notes_string = ""
         
@@ -741,13 +749,12 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
         math_ethnicity_table, math_ethnicity_line_fig, math_ethnicity_bar_fig,
         math_subgroup_table, math_subgroup_line_fig, math_subgroup_bar_fig, 
         attendance_table, k8_table_container,
-
         hs_grad_overview_table, hs_grad_ethnicity_table, hs_grad_subgroup_table,
         sat_cut_scores_table, sat_overview_table, sat_ethnicity_table, sat_subgroup_table, 
         grad_table_container, sat_table_container, main_container, empty_container, no_display_data, 
         growth_grades_ela, growth_grades_math, growth_ethnicity_ela, growth_ethnicity_math,
         growth_subgroup_ela, growth_subgroup_math, main_growth_container, empty_growth_container, 
-        no_growth_data, academic_information_notes_string, 
+        no_growth_data, academic_information_notes_string
     )
 
 def layout():

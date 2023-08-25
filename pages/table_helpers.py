@@ -312,13 +312,14 @@ def create_growth_table_and_fig(table: list, fig, label: str):    # : plotly.gra
                                     [
                                         html.Div(table, style={"marginTop": "20px"}),
                                     ],
-                                    className="pretty_container six columns",
+                                    className="pretty_bare_container six columns",
                                 ),
+                                html.Div([], className='vline'),
                                 html.Div(
                                     [
                                         html.Div(fig, style={"marginTop": "-20px"}),
                                     ],
-                                    className="pretty_container six columns",
+                                    className="pretty_bare_line_container six columns",
                                 ),
                             ],
                             className="bare_container twelve columns",

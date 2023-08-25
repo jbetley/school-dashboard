@@ -5,8 +5,7 @@
 # version:  1.09
 # date:     08/14/23
 #
-# TODO#1: Fix loading spinner issue - Loading spinner should trigger every time a new school is
-# TODO: loaded, but not when the comparison dropdown is used.
+
 # The Hacky fix right now has the Spinner loading the first 6 figs, so it looks like the
 # whole page is loading on initial load, but doesn't reload the remainder of the figs
 # when the comparison dropdown is triggered. Issues: Does not show loading spinner in
@@ -203,16 +202,10 @@ def set_dropdown_options(school, year, comparison_schools):
         return options, input_warning, comparison_schools
 
 @callback(
-    Output("fig14a", "children"),
-    Output("fig14b", "children"),
+    Output("academic-analysis-notes-string", "children"),
     Output("fig14c", "children"),
     Output("fig14d", "children"),
     Output("fig-iread", "children"),
-    Output("fig16c1", "children"),
-    Output("fig16d1", "children"),
-    Output("fig16c2", "children"),
-    Output("fig16d2", "children"),
-    Output("fig14g", "children"),
     Output("dropdown-container", "style"),
     Output("fig16a1", "children"),   
     Output("fig16a1-container", "style"),    
@@ -242,16 +235,9 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
     school_name = selected_school["School Name"].values[0]
 
     # default values (only empty container displayed)
-    fig14a = []
-    fig14b = []    
     fig14c = []
     fig14d = []
     fig_iread = []
-    fig16c1 = []
-    fig16d1 = []
-    fig16c2 = []
-    fig16d2 = []
-    fig14g = []
         
     fig16a1 = []
     fig16a1_container = {"display": "none"}
@@ -271,6 +257,11 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
     no_data_to_display = no_data_page("Academic Analysis")
     
+    academic_analysis_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
+        and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
+        the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
+        Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
+
     # Currently we only display data for Grades K-8. So nothing is displayed for
     # High Schools (HS) or Adult High Schools (AHS)
     if selected_school_type != "HS" or selected_school_type != "AHS":
@@ -318,7 +309,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
                     raw_comparison_data = raw_comparison_data.drop('Test Year', axis=1)
 
-                    ## Year over Year figs
                     school_academic_data = raw_comparison_data[[col for col in raw_comparison_data.columns if "School" in col or "Category" in col]].copy()
                     school_academic_data.columns = school_academic_data.columns.str.replace(r"School$", "", regex=True)
 
@@ -327,61 +317,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                     # add suffix to certain Categories
                     display_academic_data = display_academic_data.rename(columns={c: c + " Proficient %" for c in display_academic_data.columns if c not in ["Year", "School Name"]})
 
-                    yearly_school_data = display_academic_data.copy()
-                    yearly_school_data["School Name"] = school_name
-
-                    # Chart 1: Year over Year ELA Proficiency by Grade (1.4.a)
-                    fig14a_data = yearly_school_data.filter(regex = r"^Grade \d\|ELA|^School Name$|^Year$",axis=1)
-
-                    # NOTE: make_line_chart() returns a list (plotly dash html layout), that either
-                    # contains a chart (if data) or a no data fig
-                    fig14a = make_line_chart(fig14a_data,"Year over Year ELA Proficiency by Grade")
-
-                    # Chart 2: Year over Year Math Proficiency by Grade (1.4.b)
-                    fig14b_data = yearly_school_data.filter(regex = r"^Grade \d\|Math|^School Name$|^Year$",axis=1)
-                    fig14b = make_line_chart(fig14b_data,"Year over Year Math Proficiency by Grade")
-
-                    # Charts 3 & 4: See below
-
-                    # Chart 5: Year over Year ELA Proficiency by Ethnicity (1.6.c)
-                    categories_16c1 = []
-                    for e in ethnicity:
-                        categories_16c1.append(e + "|" + "ELA Proficient %")
-
-                    fig16c1_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16c1)) | (yearly_school_data.columns.isin(["School Name","Year"]))]
-                    fig16c1_data = fig16c1_data.rename(columns = {"Native Hawaiian or Other Pacific Islander|ELA Proficient %": "Pacific Islander|ELA Proficient %"})
-                    fig16c1 = make_line_chart(fig16c1_data,"Year over Year ELA Proficiency by Ethnicity")
-
-                    # Chart 6: Year over Year Math Proficiency by Ethnicity (1.6.d)
-                    categories_16d1 = []
-                    for e in ethnicity:
-                        categories_16d1.append(e + "|" + "Math Proficient %")
-
-                    fig16d1_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16d1)) | (yearly_school_data.columns.isin(["School Name","Year"]))]
-                    fig16d1_data = fig16d1_data.rename(columns = {"Native Hawaiian or Other Pacific Islander|Math Proficient %": "Pacific Islander|Math Proficient %"})
-                    fig16d1 = make_line_chart(fig16d1_data,"Year over Year Math Proficiency by Ethnicity")
-
-                    # Chart 7: Year over Year ELA Proficiency by Subgroup (1.6.c)
-                    categories_16c2 = []
-                    for s in subgroup:
-                        categories_16c2.append(s + "|" + "ELA Proficient %")
-
-                    fig16c2_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16c2)) | (yearly_school_data.columns.isin(["School Name","Year"]))]
-                    fig16c2 = make_line_chart(fig16c2_data,"Year over Year ELA Proficiency by Subgroup")
-
-                    # Chart 8: Year over Year Math Proficiency by Subgroup (1.6.d)
-                    categories_16d2 = []
-                    for s in subgroup:
-                        categories_16d2.append(s + "|" + "Math Proficient %")
-
-                    fig16d2_data = yearly_school_data.loc[:, (yearly_school_data.columns.isin(categories_16d2)) | (yearly_school_data.columns.isin(["School Name","Year"]))]
-                    fig16d2 = make_line_chart(fig16d2_data,"Year over Year Math Proficiency by Subgroup")
-
-                    # Chart 9 - IREAD Year over Year
-                    category_iread = "IREAD Proficient %"
-
-                    fig14g_data = yearly_school_data.loc[:, (yearly_school_data.columns == category_iread) | (yearly_school_data.columns.isin(["School Name","Year"]))]         
-                    fig14g = make_line_chart(fig14g_data, category_iread)
+# TODO: Add by Grade multi-line fig
 
                     ## Comparison data ##
                     current_school_data = display_academic_data.loc[display_academic_data["Year"] == string_year].copy()
@@ -663,14 +599,15 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                         fig16b2_container = {"display": "none"}
 
     return (
-        fig14a, fig14b, fig14c, fig14d, fig_iread, fig16c1, fig16d1, fig16c2, fig16d2, fig14g,
-        dropdown_container, fig16a1, fig16a1_container, fig16b1, fig16b1_container, fig16a2,
-        fig16a2_container, fig16b2, fig16b2_container, academic_analysis_main_container,
-        academic_analysis_empty_container, no_data_to_display
+        academic_analysis_notes_string, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, fig16a1_container, fig16b1,
+        fig16b1_container, fig16a2, fig16a2_container, fig16b2, fig16b2_container,
+        academic_analysis_main_container, academic_analysis_empty_container, no_data_to_display
     )
 
+
+    
 def layout():
-    layout = html.Div(
+    return html.Div(
                 [
                     html.Div(
                         [
@@ -685,106 +622,33 @@ def layout():
                     ),
                     html.Div(
                         [
-                            # NOTE: This is an awkward workaround. Want a loading spinner on load, but for it not
-                            # to trigger when comparison dropdown callback is triggered (which would happen if
-                            # Loading wraps the entire page). So we just wrap the first 6 figs, so loading shows
-                            # on initial load, but not on comparison dropdown use.         
-                            dcc.Loading(
-                                id="loading",
-                                type="circle",
-                                fullscreen = True,
-                                style={
-                                    "position": "absolute",
-                                    "align-self": "center",
-                                    "background-color": "#F2F2F2",
-                                },
-                                children=[                         
-                                    html.Div(
-                                        [                                            
-                                            html.Div(
-                                                [
-                                                    html.Div(
-                                                        [
-                                                            html.Div(id="fig14a", children=[])
-                                                        ],
-                                                        className = "pretty_container six columns"
-                                                    ),
-                                                    html.Div(
-                                                        [
-                                                            html.Div(id="fig14b", children=[])
-                                                        ],
-                                                        className = "pretty_container six columns"
-                                                    )
-                                                ],
-                                                className="bare_container twelve columns",
-                                            ),
-                                        ],
-                                        className="row",
-                                    ),                                            
-                                    html.Div(
-                                        [                                            
-                                            html.Div(
-                                                [
-                                                    html.Div(
-                                                        [
-                                                            html.Div(id="fig16c1", children=[])
-                                                        ],
-                                                        className = "pretty_container six columns"
-                                                    ),
-                                                    html.Div(
-                                                        [
-                                                            html.Div(id="fig16d1", children=[])
-                                                        ],
-                                                        className = "pretty_container six columns"
-                                                    )
-                                                ],
-                                                className="bare_container twelve columns",
-                                            ),
-                                        ],
-                                        className="row",
-                                    ),                                              
-                                    html.Div(
-                                        [                                        
-                                            html.Div(
-                                                [
-                                                    html.Div(
-                                                        [
-                                                            html.Div(id="fig16c2", children=[])        
-                                                        ],
-                                                        className = "pretty_container six columns"
-                                                    ),
-                                                    html.Div(
-                                                        [
-                                                            html.Div(id="fig16d2", children=[])
-                                                        ],
-                                                        className = "pretty_container six columns"
-                                                    )
-                                                ],
-                                                className="bare_container twelve columns",
-                                            ),
-                                        ],
-                                        className="row",
-                                    ),
-                                        
-                                ]
-                            ),                
                             html.Div(
-                                [
+                                [     
                                     html.Div(
                                         [
                                             html.Div(
                                                 [
-                                                    html.Div(id="fig14g", children=[])
+                                                    html.Label("Academic Comparison - ILEARN Proficiency", className="key_header_label"),
+                                                    html.P(""),
+                                                        html.P(id="academic-analysis-notes-string",
+                                                            style={
+                                                                    "textAlign": "Left",
+                                                                    "color": "#6783a9",
+                                                                    "fontSize": 12,
+                                                                    "marginLeft": "10px",
+                                                                    "marginRight": "10px",
+                                                                    "marginTop": "10px",
+                                                            }
+                                                        ),
                                                 ],
-                                                className = "pretty_container six columns"
+                                                className = "pretty_key_container seven columns"
                                             ),
                                         ],
-                                        className="bare_container twelve columns",
-                                    )
+                                        className = "bare_container_center twelve columns"
+                                    ),
                                 ],
-                                className="row",
+                                className="row"
                             ),
-                            # Comparison Charts
                             html.Div(
                                 [                                        
                                     html.Div(
@@ -794,10 +658,10 @@ def layout():
                                                     html.P("Add or Remove Schools: ", className="control_label"),
                                                     dcc.Dropdown(
                                                         id="comparison-dropdown",
-                                                        style={"fontSize": "1em"},
+                                                        style={"fontSize": "1.1rem"},
                                                         multi = True,
                                                         clearable = False,
-                                                        # className="multi_dropdown"
+                                                        className="multi_dropdown"
                                                     ),
                                                     html.Div(id="input-warning"),
                                                 ],
@@ -852,4 +716,3 @@ def layout():
                 ],
                 id="mainContainer"
             )
-    return layout

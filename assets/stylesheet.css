@@ -2,8 +2,6 @@
 https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css
 */
 
-/* Fonts */
-
 /* Google Font */
 /* jost-regular - latin */
 @font-face {
@@ -33,7 +31,7 @@ src: local(''),
         url('../fonts/roboto-v29-latin-regular.svg#Roboto') format('svg');
 } */
 
-/* Grid  */
+/** Grid  **/
 .container {
   position: relative;
   width: 100%;
@@ -124,13 +122,12 @@ src: local(''),
     display: none;
   }
   .pagebreak {
-    page-break-before: always; /* page-break-after works, as well */
+    page-break-before: always; /* page-break-after works as well */
   }
 }
 
 /** Base Styles **/
-/* NOTE
-html is set to 62.5% so that all the REM measurements
+/* html is set to 62.5% so that all the REM measurements
 are based on 10px sizing. So basically 1.5rem = 15px */
 html {
   font-size: 62.5%;
@@ -174,9 +171,6 @@ body {
 /** Containers **/
 .row {
   display: flex;
-  /* flex-direction: column; */
-  /* align-items: center; */
-  /* width: 100%; */
 }
 
 .pretty_container {
@@ -188,11 +182,63 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
+.pretty_bare_container {
+  background-color: #ffffff;
+  margin: 10px;
+  padding: 15px;
+  position: relative;
+}
+
+.pretty_bare_line_container {
+  background-color: #ffffff;
+  margin: 10px;
+  padding: 15px;
+  position: relative;
+}
+
+.pretty_bare_line_container::after {
+  content:"";  
+  background: lightgrey;
+  position: absolute;
+  top: 12%;
+  left: 0;
+  height: 80%;
+  width: 1px;
+  z-index: 999;
+}
+
+/* same as pretty_container but adds min-width. Used for left side of 'About' page
+  to ensure the width of the tables and figs are aligned. Gets screwy when the window
+  is too small tho. */
+.pretty_container_left {
+  border-radius: 5px;
+  background-color: #ffffff;
+  margin: 10px;
+  padding: 15px;
+  min-width: 50%;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+  }
+
+  /* TODO: NEED? */
 .pretty_container_grey {
   border-radius: 5px;
   background-color: #f9f9f9;
   margin: 10px;
   padding: 15px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
+.pretty_close_container {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  background-color: #ffffff;
+  margin-top: 10px;
+  padding-top: 15px;
+  padding-right: 15px;
+  padding-left: 15px;
+  padding-bottom: 0px;
   position: relative;
   box-shadow: 2px 2px 2px lightgrey;
 }
@@ -210,77 +256,15 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-/* same as pretty_container but adds min-width. Used for left side of 'About' page
-   to ensure the width of the tables and figs are aligned. Gets screwy when the window
-   is too small tho. */
-.pretty_container_left {
-  border-radius: 5px;
-  background-color: #ffffff;
-  margin: 10px;
-  padding: 15px;
-  min-width: 50%;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-  }
-
-/*  This little bit of sorcery overrides the display of any pretty_container
-    that doesn't contain: 1) a dash datatable that has cells (not counting
-    the header); 2) a plotly fig; 3) a dash dropdown component; or 4) notes-string
-    element. Any other components in a div without one of these three things that
-    we WANT to display must be added to the chained selector
-*/
-.pretty_container:not(:has(
-  div.dash-table-container td,
-  div.js-plotly-plot,
-  div.dash-dropdown,
-  p#academic-information-notes-string,
-  p#financial-analysis-notes-string)) {
-  display: none;
-}
-
-/* Default and min row height for all datatables is 30px. In order for an
-  empty_table ('No Data to Display') to be displayed per the above rule,
-  it needs to have a cell. The blank cell shows up as a 30px empty space
-  unless we use the following rule. It sets the height of the second row
-  of an empty_table to 0 */
-.empty_table tr:nth-of-type(2) {
-  height: 0px !important;
-}
-
-.pretty_close_container {
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
-  background-color: #ffffff;
-  margin-top: 10px;
-  padding-top: 15px;
-  padding-right: 15px;
-  padding-left: 15px;
-  padding-bottom: 0px;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-}
-
-/* used for ADM chart on About page to ensure same height as enrollment table.
-   Not currently used because it seems to mess with the width alignment. */
 .bare_container {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
   display: flex;
 }
 
-/* .pretty_bare_container {
-  border-radius: 5px;
-  background-color: #ffffff;
-  margin: 10px;
-  padding: 15px;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-} */
-
 .bare_container_no_center {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
-  /* justify-content: center; */
   text-align: center;
   align-items: center;
   display: flex;
@@ -351,14 +335,25 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 } */
 
-/* main page navigation */
+/** Navigation **/
+
 .dash_label {
   margin-right: 0;
   padding-top: 10px;
   color: steelblue;
-  /* display: inline-block; */
   vertical-align: middle;
   float: left;
+}
+
+.multi_dropdown {
+  margin: 0;
+  padding-left: 25px;
+  float: left;
+}
+
+.control_label {
+  padding-left: 25px;
+  font-size: 1.1rem;
 }
 
 #year_dash_label {
@@ -381,11 +376,6 @@ body {
   padding: 0;
   float: left;
   width: 50%;
-}
-
-.control_label {
-  padding-left: 15px;
-  font-size: 12px;
 }
 
 .fixed-row {
@@ -469,7 +459,31 @@ body {
     height: 30px;
 }
 
-/* Buttons (from Bootstrap.css) */
+/*  This little bit of sorcery overrides the display of any pretty_container
+    that doesn't contain: 1) a dash datatable that has cells (not counting
+    the header); 2) a plotly fig; 3) a dash dropdown component; or 4) notes-string
+    element. Any other components in a div without one of these three things that
+    we WANT to display must be added to the chained selector
+*/
+.pretty_container:not(:has(
+  div.dash-table-container td,
+  div.js-plotly-plot,
+  div.dash-dropdown,
+  p#academic-information-notes-string,
+  p#financial-analysis-notes-string)) {
+  display: none;
+}
+
+/* Default and min row height for all datatables is 30px. In order for an
+  empty_table ('No Data to Display') to be displayed per the above rule,
+  it needs to have a cell. The blank cell shows up as a 30px empty space
+  unless we use the following rule. It sets the height of the second row
+  of an empty_table to 0 */
+.empty_table tr:nth-of-type(2) {
+  height: 0px !important;
+}
+
+/** Buttons (from Bootstrap.css) **/
 button {
   border-radius: 0;
 }
