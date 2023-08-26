@@ -189,6 +189,14 @@ body {
   position: relative;
 }
 
+.bare_container_outline {
+  background-color: #F2F2F2;
+  /* margin: 10px; */
+  padding: 15px;
+  position: relative;
+  border-radius: 5px;
+}
+
 .pretty_bare_line_container {
   background-color: #ffffff;
   margin: 10px;
@@ -254,6 +262,12 @@ body {
   outline: 2px solid #b2bdd4;
   outline-offset: -16px;
   box-shadow: 2px 2px 2px lightgrey;
+}
+
+.bare_container {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+  display: flex;
 }
 
 .bare_container {
@@ -516,9 +530,26 @@ button:not(:disabled) {
 }
 
 .btn {
-  --bs-btn-padding-x: 0.75rem;
+  margin-top: -5px;
+  text-transform: uppercase;
+  font-family: 'Jost', sans-serif;
+  color: steelblue;
+  background-color: #ffffff;
+  font-size: 14px;
+  font-weight: 400;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(192,193,199, .5);
+  border-radius: .5rem;
+  padding:6px;
+  transition: background-color,color 200ms;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;  
+  /* --bs-btn-padding-x: 0.75rem;
   --bs-btn-padding-y: 0.375rem;
   --bs-btn-font-family: 'Jost', sans-serif;
+  --bs-btn-text-transform: 'uppercase';
   --bs-btn-font-size: 1.5rem;
   --bs-btn-font-weight: 400;
   --bs-btn-line-height: 1.5;
@@ -534,6 +565,7 @@ button:not(:disabled) {
   display: inline-block;
   padding: var(--bs-btn-padding-y) var(--bs-btn-padding-x);
   font-family: var(--bs-btn-font-family);
+  text-transform: var(--bs-btn-text-transform);  
   font-size: var(--bs-btn-font-size);
   font-weight: var(--bs-btn-font-weight);
   line-height: var(--bs-btn-line-height);
@@ -548,7 +580,7 @@ button:not(:disabled) {
   border: var(--bs-btn-border-width) solid var(--bs-btn-border-color);
   border-radius: var(--bs-btn-border-radius);
   background-color: var(--bs-btn-bg);
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out; */
 }
 @media (prefers-reduced-motion: reduce) {
   .btn {
@@ -556,6 +588,23 @@ button:not(:disabled) {
   }
 }
 .btn:hover {
+  text-transform: uppercase;
+  font-family: 'Jost', sans-serif;
+  color: white;
+  background-color: #c0c1c7;
+  font-size: 14px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(70,130,180, .5);
+  border-radius: .5rem;
+  padding:6px;
+  transition: background-color,color 200ms;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+}
+/* .btn:hover {
   color: var(--bs-btn-hover-color);
   background-color: var(--bs-btn-hover-bg);
   border-color: var(--bs-btn-hover-border-color);
@@ -564,7 +613,8 @@ button:not(:disabled) {
   color: var(--bs-btn-color);
   background-color: var(--bs-btn-bg);
   border-color: var(--bs-btn-border-color);
-}
+} */
+/* 
 .btn:focus-visible {
   color: var(--bs-btn-hover-color);
   background-color: var(--bs-btn-hover-bg);
@@ -601,6 +651,23 @@ fieldset:disabled .btn {
   background-color: var(--bs-btn-disabled-bg);
   border-color: var(--bs-btn-disabled-border-color);
   opacity: var(--bs-btn-disabled-opacity);
+} */
+.btn.active {
+  text-transform: uppercase;
+  font-family: 'Jost', sans-serif;
+  color: white;
+  background-color: #c0c1c7;
+  font-size: 14px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(70,130,180, .5);
+  border-radius: .5rem;
+  padding:6px;
+  transition: background-color,color 200ms;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
 }
 .btn-outline-primary {
   --bs-btn-color: #6783a9;
@@ -618,13 +685,14 @@ fieldset:disabled .btn {
   --bs-btn-disabled-border-color: #6783a9;
   --bs-gradient: none;
 }
+
 .btn-group
  {
   position: relative;
   display: inline-flex;
   vertical-align: middle;
 }
-.btn-group > .btn {
+/* .btn-group > .btn {
   position: relative;
   flex: 1 1 auto;
 }
@@ -635,11 +703,16 @@ fieldset:disabled .btn {
 .btn-group > .btn:focus,
 .btn-group > .btn:hover {
   z-index: 1;
-}
+} */
 .btn-group {
-  border-radius: 0.375rem;
+  z-index: 99;
+  margin: 0;
+  padding: 0;
+  float: left;
+  position: relative;
+  /* border-radius: 0.375rem; */
 }
-.btn-group > .btn-group:not(:first-child),
+/* .btn-group > .btn-group:not(:first-child),
 .btn-group > :not(.btn-check:first-child) + .btn {
   margin-left: -1px;
 }
@@ -648,13 +721,13 @@ fieldset:disabled .btn {
 .btn-group > .btn:not(:last-child):not(.dropdown-toggle) {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-}
-.btn-group > .btn-group:not(:first-child) > .btn,
+} */
+/* .btn-group > .btn-group:not(:first-child) > .btn,
 .btn-group > .btn:nth-child(n + 3),
 .btn-group > :not(.btn-check) + .btn {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
-}
+} */
 .btn-check {
   position: absolute;
   clip: rect(0, 0, 0, 0);
@@ -668,12 +741,12 @@ fieldset:disabled .btn {
 }
 
 /** Radio Buttons **/
-.radio-group .form-check {
-  padding-left: 0;
-  padding-top: 5px;
+#radio-category-input {
+  padding-top: 5px;  
+  padding-bottom: 10px;
 }
 
-.radio-group .btn-group > .form-check:not(:last-child) > .btn {
+/* .radio-group .btn-group > .form-check:not(:last-child) > .btn {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
@@ -682,7 +755,7 @@ fieldset:disabled .btn {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
   margin-left: -1px;
-}
+} */
 
 /** ADAPT THIS TO FIT EXISTING ELEMENTS TO EXIST IN FLEX-LAND **/
 /* TODO: Think this is about positioning for small/mobie screen sizes*/
@@ -756,7 +829,7 @@ fieldset:disabled .btn {
 /* TODO: Not working consistently across pages - doesn't stay active when selected */
 /* See:
 https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
-You're only ever setting/removig the active class when the button is clicked.
+You're only ever setting/removing the active class when the button is clicked.
 You'll also need javascript code that runs on page load, checks the current url,
 removes the 'active' class from all nav links, then adds the 'active' class to
 the nav link that matches the current url. (or you could do that in php, either way */
@@ -824,7 +897,6 @@ a.nav-link:hover {
   margin: 0;
   padding: 0;
   float: left;
-  /* height: 6vh; */
   position: relative;
   }
 
@@ -833,7 +905,6 @@ a.nav-link:hover {
   margin: 0;
   padding: 0;
   float: left;
-  /* height: 4vh; */
   position: relative;
 }
 
@@ -854,7 +925,7 @@ label > .label-body {
   font-weight: normal;
 }
 
-.header_label {
+/* .header_label {
   height: auto;
   background-color: #6783a9;
   font-size: 12px;
@@ -864,6 +935,22 @@ label > .label-body {
   font-weight: bold;
   padding-bottom: 5px;
   padding-top: 5px;
+} */
+
+.header_label {
+  height: auto;
+  background-color: #6783a9;
+  font-size: 14px;
+  font-family: 'Jost', sans-serif;
+  color: #ffffff;
+  text-align: center;
+  margin:auto;
+  font-weight: bold;
+  padding-bottom: 5px;
+  padding-top: 5px;
+  width: 80%;
+  border-radius: 5px;
+  margin-bottom: 10px;
 }
 
 .key_header_label {

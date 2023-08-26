@@ -4,18 +4,8 @@
 # author:   jbetley
 # version:  1.09
 # date:     08/14/23
-#
 
-# The Hacky fix right now has the Spinner loading the first 6 figs, so it looks like the
-# whole page is loading on initial load, but doesn't reload the remainder of the figs
-# when the comparison dropdown is triggered. Issues: Does not show loading spinner in
-# bottom half of page when school dropdown is used. The loading spinner also stops
-# spinning too early  as other parts of the page load first before they are pushed down by the layout.
-# https://community.plotly.com/t/dcc-loading-only-on-first-load-of-dl-map-not-when-clicked-hover-on-feature-in-the-map/77587/3
-# https://stackoverflow.com/questions/68116540/dcc-loading-on-first-load-only-python
-# https://community.plotly.com/t/displaying-loading-screen-when-pages-container-is-loading/72109
-
-# TODO#2: Add AHS/HS Data
+# TODO: Add AHS/HS Data
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback

@@ -312,20 +312,19 @@ def create_growth_table_and_fig(table: list, fig, label: str):    # : plotly.gra
                                     [
                                         html.Div(table, style={"marginTop": "20px"}),
                                     ],
-                                    className="pretty_bare_container six columns",
+                                    className="pretty_container six columns",
                                 ),
-                                html.Div([], className='vline'),
                                 html.Div(
                                     [
-                                        html.Div(fig, style={"marginTop": "-20px"}),
+                                        html.Div(fig),
                                     ],
-                                    className="pretty_bare_line_container six columns",
+                                    className="pretty_container six columns",
                                 ),
                             ],
                             className="bare_container twelve columns",
                         ),
                     ],
-                    className="pretty_container twelve columns",
+                    className="bare_container_outline twelve columns",
                 ),       
             ],
             className="bare_container_center twelve columns",
@@ -1118,6 +1117,260 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
                 ],
                 className = class_name
             )
+        ]
+
+    else:
+
+        empty_dict = [{"": ""}]
+        table_layout = [
+            html.Div(
+                [
+                    html.Label(label, className="header_label"),
+                    html.Div(
+                        dash_table.DataTable(
+                            data=empty_dict,
+                            columns = [
+                                {"id": "emptytable", "name": "No Data to Display"},
+                            ],
+                            style_header={
+                                "fontSize": "14px",
+                                "border": "none",
+                                "textAlign": "center",
+                                "color": "#6783a9",
+                                "fontFamily": "Jost, sans-serif",
+                                "height": "30vh",
+                            },
+                            style_data={
+                                "display": "none",
+                            },
+                        ),
+                    ),
+                ],
+                className = "pretty_container four columns"
+            )
+        ]
+
+    return table_layout
+
+def create_simple_academic_info_table(data: pd.DataFrame, label: str) -> list:
+    """
+    Takes a dataframe of two or more columns and a label, and creates a table with multi-headers.
+    
+    Args:
+        label (String): Table title
+        data (pd.DataTable): dash dataTable
+
+    Returns:
+        table_layout (list): dash DataTable wrapped in dash html components
+    """
+
+    table_size = len(data.columns)
+
+    if table_size > 1:
+        data.columns = data.columns.str.replace("N-Size|SN-Size", "n-size", regex=True)
+
+        if "SAT" in label:
+            data.columns = data.columns.str.replace("School", "At Benchmark", regex=True)
+            year_headers = [y for y in data.columns if "At Benchmark" in y]            
+        else:
+# TODO: Move nsize to tooltips - look at growth table
+            data = data[data.columns[~data.columns.str.contains(r"n-size")]]
+
+            data.columns = data.columns.str.replace("School", "", regex=True)
+            year_headers = [y for y in data.columns if "Category" not in y]
+        
+        # nsize_headers = [y for y in data.columns if "n-size" in y]
+
+        all_cols = data.columns.tolist()
+
+        # nsize_width = 2
+        category_width = 20
+        data_width = 100 - category_width
+        year_width = data_width / (table_size - 1)        
+
+        # formatting logic is slightly different for a multi-header table
+        table_cell_conditional = [
+            {
+                "if": {
+                    "column_id": "Category"
+                },
+                "textAlign": "left",
+                "paddingLeft": "20px",
+                "fontWeight": "500",
+                "width": str(category_width) + "%"
+            },
+        ] + [
+            {
+                "if": {
+                    "column_id": year
+                },
+                "textAlign": "center",
+                "fontWeight": "500",
+                "width": str(year_width) + "%",
+            } for year in year_headers
+        # ]  + [
+        #     {   "if": {
+        #         "column_id": nsize
+        #     },
+        #         "textAlign": "center",
+        #         "fontWeight": "500",
+        #         "fontSize": "8px",
+        #         "width": str(nsize_width) + "%"
+        #     } for nsize in nsize_headers
+        ]
+
+        # table_header_conditional = [
+        #     {
+        #         "if": {
+        #             "column_id": year,
+        #             "header_index": 1,
+        #         },
+        #         "borderLeft": ".5px solid #b2bdd4",
+        #         "borderTop": ".5px solid #b2bdd4",
+        #         "borderBottom": ".5px solid #b2bdd4"
+        #     } for year in year_headers
+        # ] + [
+        # #     {   "if": {
+        # #         "column_id": nsize,
+        # #         "header_index": 1,
+        # #     },
+        # #         "textAlign": "center",
+        # #         "fontWeight": "600",
+        # #         "fontSize": "12px",
+        # #         "borderRight": ".5px solid #b2bdd4",
+        # #         "borderTop": ".5px solid #b2bdd4",
+        # #         "borderBottom": ".5px solid #b2bdd4"
+        # # } for nsize in nsize_headers
+        # # ] + [
+        #     {   "if": {
+        #         "column_id": all_cols[-1],
+        #         "header_index": 1,
+        #     },
+        #     "borderRight": ".5px solid #b2bdd4",
+        #     }
+        # ]
+        table_header_conditional = [
+            {
+                "if": {
+                    "column_id": col,
+                },
+                "borderBottom": ".5px solid #b2bdd4",
+            } for col in year_headers
+        ]
+
+        table_data_conditional = [
+            {
+                "if": {
+                    "state": "selected"
+                },
+                "backgroundColor": "rgba(112,128,144, .3)",
+                "border": "thin solid silver"
+            },
+            {
+                "if": {
+                    "row_index": "odd"
+                },
+                "backgroundColor": "#eeeeee"
+            }
+        ] + [
+        #     {
+        #         "if": {
+        #             "column_id": all_cols[-1],
+        #         },
+        #         "borderRight": ".5px solid #b2bdd4",
+        #     },
+        # ] + [
+            {
+                "if": {
+                    "row_index": 0
+                },
+                "paddingTop": "5px"
+            }
+        ] + [
+        #     {
+        #         "if": {
+        #             "row_index": len(data)-1
+        #         },
+        #         "borderBottom": ".5px solid #b2bdd4",
+        #     }
+        # ] + [
+        #     {
+        #         "if": {
+        #             "column_id": "Category",
+        #         },
+        #         "borderRight": ".5px solid #b2bdd4",
+        #         "borderBottom": "none",
+        #     },
+        # ] + [
+        #     { 
+        #         "if": {
+        #             "column_id": nsize,
+        #         },
+        #         "fontSize": "10px",
+        #         "textAlign": "center",
+        #         "borderRight": ".5px solid #b2bdd4",
+        #     } for nsize in nsize_headers
+        ]
+
+        # build multi-level headers
+        # name_cols = [["Category",""]]
+
+        # # Split columns into two levels
+        # for item in all_cols:
+        #     if item.startswith("20"):
+        #         name_cols.append([item[:4],item[4:]])
+
+        table_columns = [
+            {
+            "name": col, "id": col, "type":"numeric",
+            "format": Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses)
+            }
+            for col in all_cols
+        ]
+
+        # tooltip_format = [
+        #     {
+        #         column: {
+        #             "value": "162 Days: {:.2%}".format(float(value)) if value == value else "",
+        #             "type": "markdown"
+        #         }
+        #         for column, value in row.items()
+        #     }
+        #     for row in data_162.to_dict("records")
+        # ] 
+
+        # table_columns = [
+        #         {
+        #             "name": col,
+        #             "id": all_cols[idx],
+        #             "type": "numeric",
+        #             "format": Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses),
+        #         }
+        #         if "Proficiency" in col or "At Benchmark" in col
+                
+        #         else
+        #             {
+        #                 "name": col,
+        #                 "id": all_cols[idx],
+        #                 "type":"numeric",
+        #                 "format": Format()
+        #             }
+        #             for (idx, col) in enumerate(name_cols)
+        # ]
+
+        table_layout = [
+            dash_table.DataTable(
+                data.to_dict("records"),
+                style_table = {"height": "400px"},
+                columns = table_columns,
+                style_data = table_style,
+                style_data_conditional = table_data_conditional,
+                style_header = table_header,
+                style_cell = table_cell,
+                style_header_conditional = table_header_conditional,
+                style_cell_conditional = table_cell_conditional,
+                merge_duplicate_headers=True
+            ),
         ]
 
     else:

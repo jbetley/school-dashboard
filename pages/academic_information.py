@@ -19,7 +19,7 @@ from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal,
 from .process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
     filter_high_school_academic_data, process_growth_data
 from .table_helpers import no_data_page, no_data_table, create_academic_info_table, create_key_table, \
-    create_growth_table, set_table_layout, create_basic_info_table, create_growth_table_and_fig
+    create_growth_table, set_table_layout, create_basic_info_table, create_growth_table_and_fig, create_simple_academic_info_table
 from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
 from .calculations import round_percentages, conditional_fillna, get_excluded_years
 from .subnav import subnav_academic
@@ -27,8 +27,10 @@ from .subnav import subnav_academic
 dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
 
 @callback(
-    Output("ela-grade-table", "children"),
-    Output("ela-grade-line-fig", "children"),
+    Output("radio-category-content", "children"),
+    # Output("ela-grade-table", "children"),
+    # Output("ela-grade-line-fig", "children"),
+    Output("proficiency-grades-ela", "children"),    
     Output("ela-grade-bar-fig", "children"),
     Output("ela-ethnicity-table", "children"),
     Output("ela-ethnicity-line-fig", "children"),
@@ -71,9 +73,10 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
     Output("academic-information-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="radio-button-academic-info", component_property="value")
+    Input(component_id="radio-type-input", component_property="value"),
+    Input(component_id="radio-category-input", component_property="value")
 )
-def update_academic_information_page(school: str, year: str, radio_value: str):
+def update_academic_information_page(school: str, year: str, radio_type: str, radio_category: str):
     if not school:
         raise PreventUpdate
 
@@ -85,6 +88,23 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
     excluded_years = get_excluded_years(selected_year_string)
 
     # default styles (all values empty - only empty_container displayed)
+    radio_category_content = html.Div(
+            [
+                dbc.RadioItems(
+                    id="radio-category-input",
+                    className="btn-group",
+                    inputClassName="btn-check",
+                    labelClassName="btn btn-outline-primary",
+                    labelCheckedClassName="active",
+                    options=[],
+                    value="",
+                    persistence=True,
+                    persistence_type="memory",
+                ),
+            ],
+            className="radio-group",
+    )
+        
     growth_grades_ela = []
     growth_grades_math = []
     growth_ethnicity_ela = []
@@ -105,9 +125,11 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
     sat_table_container = {"display": "none"}
     grad_table_container = {"display": "none"}
 
-    ela_grade_table = []
+    # ela_grade_table = []
+    # ela_grade_line_fig = []    
     ela_grade_bar_fig = []
-    ela_grade_line_fig = []
+
+    proficiency_grades_ela = []
     ela_ethnicity_table = []
     ela_ethnicity_bar_fig = []
     ela_ethnicity_line_fig = []  
@@ -140,11 +162,37 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
     selected_school_name = selected_school["School Name"].values[0]
 
     ## Proficiency Tables
-    if radio_value == "proficiency":
+    if radio_type == "proficiency":
 
         main_growth_container = {"display": "none"}
         empty_growth_container = {"display": "none"}
 
+        radio_category_content = html.Div(
+                    [
+                        dbc.RadioItems(
+                            id="radio-category-input",
+                            className="btn-group",
+                            inputClassName="btn-check",
+                            labelClassName="btn btn-outline-primary",
+                            labelCheckedClassName="active",
+                            options=[
+                                {"label": "School Total", "value": "total"},                                
+                                {"label": "By Grade", "value": "grade"},
+                                {"label": "By Ethnicity", "value": "ethnicity"},
+                                {"label": "By Subgroup", "value": "subgroup"},
+                                {"label": "All Data", "value": "all"},
+                            ],
+                            value="total",
+                            persistence=True,
+                            persistence_type="memory",
+                        ),
+                    ],
+                    className="radio-group",
+                )
+        
+        if radio_category == None: # on first load
+            radio_category = "total"
+            
         if (selected_school_type == "K8" or selected_school_type == "K12"):
 
             selected_raw_k8_school_data = get_k8_school_academic_data(school)
@@ -160,7 +208,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
                     k8_table_container = {"display": "block"}
                     main_container = {"display": "block"}
-                    empty_container = {"display": "none"}                    
+                    empty_container = {"display": "none"}
 
                     all_k8_school_data = conditional_fillna(all_k8_school_data)
 
@@ -186,19 +234,52 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     year_over_year_data = year_over_year_data.rename(columns = {"Native Hawaiian or Other Pacific Islander|ELA Proficient %": "Pacific Islander|ELA Proficient %"})
               
                 ## ELA
-# TODO: Change Table Layouts to Be like Growth Tables
                     # by Grade Table
                     years_by_grade_ela = all_k8_school_data[ \
                         (all_k8_school_data["Category"].str.contains("|".join(grades_all)) & \
                             all_k8_school_data["Category"].str.contains("ELA")) | \
                         (all_k8_school_data["Category"] == "IREAD Proficiency (Grade 3)")]
 
-                    ela_grade_table = create_academic_info_table(years_by_grade_ela,"Proficiency")
-                    ela_grade_table = set_table_layout(ela_grade_table, ela_grade_table, years_by_grade_ela.columns)
+                    ela_grade_table = create_simple_academic_info_table(years_by_grade_ela,"Proficiency")
+                    # ela_grade_table = set_table_layout(ela_grade_table, ela_grade_table, years_by_grade_ela.columns)
 
                     # by Grade Year over Year Line Chart
                     ela_grade_fig_data = year_over_year_data.filter(regex = r"^Grade \d\|ELA|IREAD|^School Name$|^Year$",axis=1)
                     ela_grade_line_fig = make_line_chart(ela_grade_fig_data,"Year over Year")
+
+                    proficiency_grades_ela = [
+                            # html.Div(
+                            #     [
+                                    # html.Div(
+                                    #     [                    
+                                            html.Label("ELA By Grade", className="header_label"),                    
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        [
+                                                            html.Div(ela_grade_table, style={"marginTop": "20px"}),
+                                                        ],
+                                                        className="pretty_container six columns",
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            html.Div(ela_grade_line_fig),
+                                                        ],
+                                                        className="pretty_container six columns",
+                                                    ),
+                                                ],
+                                                className="bare_container_center twelve columns",
+                                            ),
+                                    #     ],
+                                    #     className="bare_container_outline twelve columns",
+                                    # ),       
+                            #     ],
+                            #     className="bare_container_center twelve columns",
+                            # ),             
+                        ]                    
+#                     label_grades_proficiency_ela = "ELA By Grade"
+# # TODO: PUMPKINS
+#                     proficiency_grades_ela = create_growth_table_and_fig(ela_grade_table, ela_grade_line_fig, label_grades_growth_ela)
 
                     # by Subgroup Table
                     years_by_subgroup_ela = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(subgroup)) & all_k8_school_data["Category"].str.contains("ELA"))]
@@ -480,6 +561,82 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                     else:
                         math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
+                attendance_table = []
+
+                if radio_category == "total":
+                    math_ethnicity_table = []
+                    math_ethnicity_bar_fig = []
+                    math_ethnicity_line_fig = []  
+                    math_subgroup_table = []
+                    math_subgroup_bar_fig = []
+                    math_subgroup_line_fig = []
+                    ela_ethnicity_table = []
+                    ela_ethnicity_bar_fig = []
+                    ela_ethnicity_line_fig = []  
+                    ela_subgroup_table = []
+                    ela_subgroup_bar_fig = []
+                    ela_subgroup_line_fig = []
+                elif radio_category == "grade":
+                    math_ethnicity_table = []
+                    math_ethnicity_bar_fig = []
+                    math_ethnicity_line_fig = []  
+                    math_subgroup_table = []
+                    math_subgroup_bar_fig = []
+                    math_subgroup_line_fig = []
+                    ela_ethnicity_table = []
+                    ela_ethnicity_bar_fig = []
+                    ela_ethnicity_line_fig = []  
+                    ela_subgroup_table = []
+                    ela_subgroup_bar_fig = []
+                    ela_subgroup_line_fig = []                    
+                elif radio_category == "ethnicity":
+                    ela_grade_table = []
+                    ela_grade_bar_fig = []
+                    ela_grade_line_fig = []
+                    math_grade_table = []
+                    math_grade_bar_fig = []
+                    math_grade_line_fig = []
+                    math_subgroup_table = []
+                    math_subgroup_bar_fig = []
+                    math_subgroup_line_fig = []
+                    ela_subgroup_table = []
+                    ela_subgroup_bar_fig = []
+                    ela_subgroup_line_fig = []              
+                elif radio_category == "subgroup":
+                    ela_grade_table = []
+                    ela_grade_bar_fig = []
+                    ela_grade_line_fig = []
+                    math_grade_table = []
+                    math_grade_bar_fig = []
+                    math_grade_line_fig = []                    
+                    math_ethnicity_table = []
+                    math_ethnicity_bar_fig = []
+                    math_ethnicity_line_fig = []
+                    ela_ethnicity_table = []
+                    ela_ethnicity_bar_fig = []
+                    ela_ethnicity_line_fig = []  
+                elif radio_category == "all":
+                    pass                
+                else:
+                    ela_grade_table = []
+                    ela_grade_bar_fig = []
+                    ela_grade_line_fig = []
+                    math_grade_table = []
+                    math_grade_bar_fig = []
+                    math_grade_line_fig = []
+                    ela_ethnicity_table = []
+                    ela_ethnicity_bar_fig = []
+                    ela_ethnicity_line_fig = []
+                    math_ethnicity_table = []
+                    math_ethnicity_bar_fig = []
+                    math_ethnicity_line_fig = []                 
+                    ela_subgroup_table = []
+                    ela_subgroup_bar_fig = []
+                    ela_subgroup_line_fig = []  
+                    math_subgroup_table = []
+                    math_subgroup_bar_fig = []
+                    math_subgroup_line_fig = []  
+
         # NOTE: There is a special exception for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
         # Christel House Watanabe Manual HS
@@ -578,9 +735,34 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                         sat_cut_scores = pd.DataFrame(sat_cut_scores_dict)
                         sat_cut_scores_table = create_key_table(sat_cut_scores, sat_cut_scores_label)
 
-    elif radio_value =="growth":
+    elif radio_type == "growth":
  
         main_container = {"display": "none"}
+
+        radio_category_content = html.Div(
+                    [
+                        dbc.RadioItems(
+                            id="radio-category-input",
+                            className="btn-group",
+                            inputClassName="btn-check",
+                            labelClassName="btn btn-outline-primary",
+                            labelCheckedClassName="active",
+                            options=[
+                                {"label": "By Grade", "value": "grade"},
+                                {"label": "By Ethnicity", "value": "ethnicity"},
+                                {"label": "By Subgroup", "value": "subgroup"},
+                                {"label": "All Data", "value": "all"},
+                            ],
+                            value="grade",
+                            persistence=True,
+                            persistence_type="memory",
+                        ),
+                    ],
+                    className="radio-group-category",
+                )
+        
+        if radio_category == None: # on first load
+            radio_category = "grade"
 
         # State Growth Data
         # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
@@ -605,6 +787,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
         if len(growth_data.index) > 0:
             
             main_growth_container = {"display": "block"}
+
             empty_growth_container = {"display": "none"}
             empty_container = {"display": "none"}
 
@@ -674,7 +857,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             fig_ethnicity_growth_math = make_growth_chart(growth_data_me_ethnicity_math, growth_data_162_ethnicity_math, label_ethnicity_growth_math)
 
             growth_ethnicity_math = create_growth_table_and_fig(table_ethnicity_growth_math, fig_ethnicity_growth_math, label_ethnicity_growth_math)
-            
+
         ## By subgroup
 
             # subgroup growth ela table/fig #9
@@ -703,6 +886,31 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
 
             growth_subgroup_math = create_growth_table_and_fig(table_subgroup_growth_math, fig_subgroup_growth_math, label_subgroup_growth_math)
 
+            if radio_category == "grade":
+                growth_ethnicity_ela = []
+                growth_ethnicity_math = []
+                growth_subgroup_ela = []
+                growth_subgroup_math = []                
+            elif radio_category == "ethnicity":
+                growth_grades_ela = []
+                growth_grades_math = []
+                growth_subgroup_ela = []
+                growth_subgroup_math = []                
+            elif radio_category == "subgroup":
+                growth_grades_ela = []
+                growth_grades_math = []
+                growth_ethnicity_ela = []
+                growth_ethnicity_math = []
+            elif radio_category == "all":
+                pass                
+            else:
+                growth_grades_ela = []
+                growth_grades_math = []
+                growth_ethnicity_ela = []
+                growth_ethnicity_math = []
+                growth_subgroup_ela = []
+                growth_subgroup_math = []
+
     ahs_notes = "Adult High Schools enroll students who are over the age of 18, under credited, \
                 dropped out of high school for a variety of reasons, and are typically out of cohort from \
                 their original graduation year. Because graduation rate is calculated at the end of the school \
@@ -720,7 +928,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
                 Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
                 Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
     
-    if radio_value == "proficiency":
+    if radio_type == "proficiency":
         if selected_school_type == "AHS":
             academic_information_notes_string = ahs_notes + " " + hs_notes
         elif (selected_school_type == "HS"):
@@ -732,7 +940,7 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
         else:
             academic_information_notes_string = ""
         
-    if radio_value == "growth":
+    if radio_type == "growth":
         academic_information_notes_string = "State growth data comes from IDOE's LINK. Identifying information \
             is scrubbed and data is aggregated before display. The calculation includes all students who were \
             enrolled in the selected school for the most number of days that student was enrolled in any school \
@@ -741,8 +949,9 @@ def update_academic_information_page(school: str, year: str, radio_value: str):
             more students than previous year calculations which only included students who were enrolled in the \
             school for 162 Days. The 162 Day value is included in the tooltip of each table and chart for comparison purposes."
 
+# ela_grade_table, ela_grade_line_fig, 
     return (
-        ela_grade_table, ela_grade_line_fig, ela_grade_bar_fig,
+        radio_category_content, proficiency_grades_ela, ela_grade_bar_fig,
         ela_ethnicity_table, ela_ethnicity_line_fig, ela_ethnicity_bar_fig,
         ela_subgroup_table, ela_subgroup_line_fig, ela_subgroup_bar_fig, 
         math_grade_table, math_grade_line_fig, math_grade_bar_fig,
@@ -773,6 +982,63 @@ def layout():
             ),
             html.Div(
                 [
+                    html.Div(
+                        [
+                            dbc.RadioItems(
+                                id="radio-type-input",
+                                className="btn-group",
+                                inputClassName="btn-check",
+                                labelClassName="btn btn-outline-primary",
+                                labelCheckedClassName="active",
+                                options=[
+                                    {"label": "Proficiency", "value": "proficiency"},
+                                    {"label": "Growth", "value": "growth"},
+                                ],
+                                value="proficiency",
+                                persistence=True,
+                                persistence_type="local",
+                            ),
+                        ],
+                        className="radio-group",
+                    ),
+                ],
+                className = "bare_container_center twelve columns",
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Label("Notes:", className="key_header_label"),
+                            html.P(""),
+                                html.P(id="academic-information-notes-string",
+                                    style={
+                                            "textAlign": "Left",
+                                            "color": "#6783a9",
+                                            "fontSize": 12,
+                                            "marginLeft": "10px",
+                                            "marginRight": "10px",
+                                            "marginTop": "10px",
+                                    }
+                                ),
+                        ],
+                        className = "pretty_key_container ten columns"
+                    ),
+                ],
+                className = "bare_container_center twelve columns"
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(id="radio-category-content", children=[]),
+                        ],
+                        id = "radio-category-input",
+                    ),
+                ],
+                className = "bare_container_center twelve columns",
+            ),            
+            html.Div(
+                [                   
                 dcc.Loading(
                     id="loading",
                     type="circle",
@@ -787,77 +1053,18 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label("Notes:", className="key_header_label"),
-                                        html.P(""),
-                                            html.P(id="academic-information-notes-string",
-                                                style={
-                                                        "textAlign": "Left",
-                                                        "color": "#6783a9",
-                                                        "fontSize": 12,
-                                                        "marginLeft": "10px",
-                                                        "marginRight": "10px",
-                                                        "marginTop": "10px",
-                                                }
-                                            ),
-                                    ],
-                                    className = "pretty_key_container seven columns"
-                                ),
-                            ],
-                            className = "bare_container_center twelve columns"
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        dbc.RadioItems(
-                                            id="radio-button-academic-info",
-                                            className="btn-group",
-                                            inputClassName="btn-check",
-                                            labelClassName="btn btn-outline-primary",
-                                            labelCheckedClassName="active",
-                                            options=[
-                                                {"label": "Proficiency", "value": "proficiency"},
-                                                {"label": "Growth", "value": "growth"},
+                                        html.Div(id="proficiency-grades-ela", children=[]),
+                                        html.Div(
+                                            [
+                                                html.Div(
+                                                            [
+                                                                html.Div(id="ela-grade-bar-fig"),
+                                                            ],
+                                                            className="pretty_container six columns",
+                                                ),
                                             ],
-                                            value="proficiency",
-                                            persistence=True,
-                                            persistence_type="local",
+                                            className="bare_container_center twelve columns",
                                         ),
-                                    ],
-                                    className="radio-group",
-                                ),
-                            ],
-                            className = "bare_container_center twelve columns",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                    html.Div(
-                                        [
-                                            html.Label("ELA By Grade", className="half_header_label"),
-                                            html.Div(
-                                                [
-                                                    
-                                                    html.Div(
-                                                        [
-                                                            html.Div(id="ela-grade-bar-fig"),
-                                                        ],
-                                                        className="pretty_container six columns",
-                                                    ),
-                                                    html.Div(
-                                                        [
-                                                            html.Div(id="ela-grade-line-fig"),
-                                                        ],
-                                                        className="pretty_container six columns",
-                                                    ),
-                                                ],
-                                                className="bare_container_center twelve columns",
-                                            ),
-                                            html.Div(id="ela-grade-table", children=[]),
-                                        ],
-                                        className="pretty_container_grey twelve columns",
-                                    ),
                                     html.Div(
                                         [
                                             html.Label("ELA By Ethnicity", className="half_header_label"),                                                                            
@@ -906,7 +1113,6 @@ def layout():
                                         ],
                                         className="pretty_container_grey twelve columns",
                                     ),
-# TODO: Add Toggle for Math/ELA
                                     html.Div(
                                         [
                                         html.Label("Math By Grade", className="half_header_label"), 

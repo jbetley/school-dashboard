@@ -403,7 +403,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                     orientation='h'
                 ),
                 hovermode='x unified',
-                height=300,
+                height=400,
                 legend_title='',
             )
 
@@ -537,12 +537,11 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                 fig_layout = [
                     html.Div(
                         [
-                        html.Label(label, className = 'hollow_header_label'),
+                        # html.Label(label, className = 'hollow_header_label'),
                         dcc.Graph(figure = fig, config={'displayModeBar': False})
                         ],
                     )
                 ]
-
     else:
 
         fig = no_data_fig_blank()
@@ -707,7 +706,6 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
     fig_layout = [
                 html.Div(
                     [
-                    # html.Label(label, className = 'header_label'),
                     dcc.Graph(figure = fig, config={'displayModeBar': False})
                     ],      
                 )
