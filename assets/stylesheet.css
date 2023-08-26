@@ -182,6 +182,28 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
+.pretty_close_top_container {
+  border-radius: 5px;  
+  background-color: #ffffff;
+  margin: 5px 10px 30px 10px;
+  padding: 15px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
+.pretty_close_container {
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  background-color: #ffffff;
+  margin-top: 10px;
+  padding-top: 15px;
+  padding-right: 15px;
+  padding-left: 15px;
+  padding-bottom: 0px;
+  position: relative;
+  box-shadow: 2px 2px 2px lightgrey;
+}
+
 .pretty_bare_container {
   background-color: #ffffff;
   margin: 10px;
@@ -191,7 +213,6 @@ body {
 
 .bare_container_outline {
   background-color: #F2F2F2;
-  /* margin: 10px; */
   padding: 15px;
   position: relative;
   border-radius: 5px;
@@ -228,28 +249,14 @@ body {
   box-shadow: 2px 2px 2px lightgrey;
   }
 
-  /* TODO: NEED? */
-.pretty_container_grey {
+/* .pretty_container_grey {
   border-radius: 5px;
   background-color: #f9f9f9;
   margin: 10px;
   padding: 15px;
   position: relative;
   box-shadow: 2px 2px 2px lightgrey;
-}
-
-.pretty_close_container {
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
-  background-color: #ffffff;
-  margin-top: 10px;
-  padding-top: 15px;
-  padding-right: 15px;
-  padding-left: 15px;
-  padding-bottom: 0px;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-}
+} */
 
 .pretty_key_container {
   border-radius: 5px;
@@ -257,8 +264,6 @@ body {
   margin: 10px;
   padding: 15px;
   position: relative;
-  /* border: 4px solid #ffffff;  
-  outline: 4px solid steelblue; */
   outline: 2px solid #b2bdd4;
   outline-offset: -16px;
   box-shadow: 2px 2px 2px lightgrey;
@@ -270,10 +275,10 @@ body {
   display: flex;
 }
 
-.bare_container {
+.relatively_bare_container {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
-  display: flex;
+  position: relative;  
 }
 
 .bare_container_no_center {
@@ -740,22 +745,6 @@ fieldset:disabled .btn {
   opacity: 0.65;
 }
 
-/** Radio Buttons **/
-#radio-category-input {
-  padding-top: 5px;  
-  padding-bottom: 10px;
-}
-
-/* .radio-group .btn-group > .form-check:not(:last-child) > .btn {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.radio-group .btn-group > .form-check:not(:first-child) > .btn {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  margin-left: -1px;
-} */
 
 /** ADAPT THIS TO FIT EXISTING ELEMENTS TO EXIST IN FLEX-LAND **/
 /* TODO: Think this is about positioning for small/mobie screen sizes*/
@@ -906,6 +895,11 @@ a.nav-link:hover {
   padding: 0;
   float: left;
   position: relative;
+}
+
+#radio-category-input {
+  padding-top: 6px;  
+  padding-bottom: 10px;
 }
 
 /** Labels **/

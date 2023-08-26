@@ -260,7 +260,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     print(f'Time to process stacked bar chart: ' + str(time.process_time() - t12))    
     return fig_layout
 
-def make_line_chart(values: pd.DataFrame, label: str) -> list:
+def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
     series of strings (if applicable) detailing missing data.
@@ -315,7 +315,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                     [
                         html.Div(
                             [
-                            html.Label(label, className = 'header_label'),
+                            # html.Label(label, className = 'header_label'),
                             dcc.Graph(figure = fig, config={'displayModeBar': False})
                             ],
                         ),
@@ -440,7 +440,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                         [
                             html.Div(
                                 [
-                                html.Label(label, className = 'hollow_header_label'),
+                                # html.Label(label, className = 'hollow_header_label'),
                                 dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
                             ),
@@ -477,7 +477,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                         [
                             html.Div(
                                 [
-                                html.Label(label, className = 'hollow_header_label'),
+                                # html.Label(label, className = 'hollow_header_label'),
                                 dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
                             ),
@@ -508,7 +508,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                         [
                             html.Div(
                                 [
-                                html.Label(label, className = 'hollow_header_label'),
+                                # html.Label(label, className = 'hollow_header_label'),
                                 dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
                             ),
@@ -551,7 +551,7 @@ def make_line_chart(values: pd.DataFrame, label: str) -> list:
                     [
                         html.Div(
                             [
-                            html.Label(label, className = 'header_label'),
+                            # html.Label(label, className = 'header_label'),
                             dcc.Graph(figure = fig, config={'displayModeBar': False})
                             ],
                         ),

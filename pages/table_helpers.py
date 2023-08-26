@@ -1152,7 +1152,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
     return table_layout
 
-def create_simple_academic_info_table(data: pd.DataFrame, label: str) -> list:
+def create_simple_academic_info_table(data: pd.DataFrame) -> list:
     """
     Takes a dataframe of two or more columns and a label, and creates a table with multi-headers.
     
@@ -1167,19 +1167,13 @@ def create_simple_academic_info_table(data: pd.DataFrame, label: str) -> list:
     table_size = len(data.columns)
 
     if table_size > 1:
-        data.columns = data.columns.str.replace("N-Size|SN-Size", "n-size", regex=True)
+        # data.columns = data.columns.str.replace("N-Size|SN-Size", "n-size", regex=True)
 
-        if "SAT" in label:
-            data.columns = data.columns.str.replace("School", "At Benchmark", regex=True)
-            year_headers = [y for y in data.columns if "At Benchmark" in y]            
-        else:
 # TODO: Move nsize to tooltips - look at growth table
-            data = data[data.columns[~data.columns.str.contains(r"n-size")]]
+        data = data[data.columns[~data.columns.str.contains(r"N-Size")]]
 
-            data.columns = data.columns.str.replace("School", "", regex=True)
-            year_headers = [y for y in data.columns if "Category" not in y]
-        
-        # nsize_headers = [y for y in data.columns if "n-size" in y]
+        data.columns = data.columns.str.replace("School", "", regex=True)
+        year_headers = [y for y in data.columns if "Category" not in y]
 
         all_cols = data.columns.tolist()
 
@@ -1208,47 +1202,8 @@ def create_simple_academic_info_table(data: pd.DataFrame, label: str) -> list:
                 "fontWeight": "500",
                 "width": str(year_width) + "%",
             } for year in year_headers
-        # ]  + [
-        #     {   "if": {
-        #         "column_id": nsize
-        #     },
-        #         "textAlign": "center",
-        #         "fontWeight": "500",
-        #         "fontSize": "8px",
-        #         "width": str(nsize_width) + "%"
-        #     } for nsize in nsize_headers
         ]
 
-        # table_header_conditional = [
-        #     {
-        #         "if": {
-        #             "column_id": year,
-        #             "header_index": 1,
-        #         },
-        #         "borderLeft": ".5px solid #b2bdd4",
-        #         "borderTop": ".5px solid #b2bdd4",
-        #         "borderBottom": ".5px solid #b2bdd4"
-        #     } for year in year_headers
-        # ] + [
-        # #     {   "if": {
-        # #         "column_id": nsize,
-        # #         "header_index": 1,
-        # #     },
-        # #         "textAlign": "center",
-        # #         "fontWeight": "600",
-        # #         "fontSize": "12px",
-        # #         "borderRight": ".5px solid #b2bdd4",
-        # #         "borderTop": ".5px solid #b2bdd4",
-        # #         "borderBottom": ".5px solid #b2bdd4"
-        # # } for nsize in nsize_headers
-        # # ] + [
-        #     {   "if": {
-        #         "column_id": all_cols[-1],
-        #         "header_index": 1,
-        #     },
-        #     "borderRight": ".5px solid #b2bdd4",
-        #     }
-        # ]
         table_header_conditional = [
             {
                 "if": {
@@ -1273,52 +1228,13 @@ def create_simple_academic_info_table(data: pd.DataFrame, label: str) -> list:
                 "backgroundColor": "#eeeeee"
             }
         ] + [
-        #     {
-        #         "if": {
-        #             "column_id": all_cols[-1],
-        #         },
-        #         "borderRight": ".5px solid #b2bdd4",
-        #     },
-        # ] + [
             {
                 "if": {
                     "row_index": 0
                 },
                 "paddingTop": "5px"
             }
-        ] + [
-        #     {
-        #         "if": {
-        #             "row_index": len(data)-1
-        #         },
-        #         "borderBottom": ".5px solid #b2bdd4",
-        #     }
-        # ] + [
-        #     {
-        #         "if": {
-        #             "column_id": "Category",
-        #         },
-        #         "borderRight": ".5px solid #b2bdd4",
-        #         "borderBottom": "none",
-        #     },
-        # ] + [
-        #     { 
-        #         "if": {
-        #             "column_id": nsize,
-        #         },
-        #         "fontSize": "10px",
-        #         "textAlign": "center",
-        #         "borderRight": ".5px solid #b2bdd4",
-        #     } for nsize in nsize_headers
         ]
-
-        # build multi-level headers
-        # name_cols = [["Category",""]]
-
-        # # Split columns into two levels
-        # for item in all_cols:
-        #     if item.startswith("20"):
-        #         name_cols.append([item[:4],item[4:]])
 
         table_columns = [
             {
@@ -1338,25 +1254,6 @@ def create_simple_academic_info_table(data: pd.DataFrame, label: str) -> list:
         #     }
         #     for row in data_162.to_dict("records")
         # ] 
-
-        # table_columns = [
-        #         {
-        #             "name": col,
-        #             "id": all_cols[idx],
-        #             "type": "numeric",
-        #             "format": Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses),
-        #         }
-        #         if "Proficiency" in col or "At Benchmark" in col
-                
-        #         else
-        #             {
-        #                 "name": col,
-        #                 "id": all_cols[idx],
-        #                 "type":"numeric",
-        #                 "format": Format()
-        #             }
-        #             for (idx, col) in enumerate(name_cols)
-        # ]
 
         table_layout = [
             dash_table.DataTable(
@@ -1379,7 +1276,7 @@ def create_simple_academic_info_table(data: pd.DataFrame, label: str) -> list:
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className="header_label"),
+                    # html.Label(label, className="header_label"),
                     html.Div(
                         dash_table.DataTable(
                             data=empty_dict,
@@ -2030,6 +1927,37 @@ def combine_barchart_and_table(fig: list, table: list) -> list:
                 ],
                 className='row'
             )
+    ]
+
+    return layout
+
+def create_line_fig_layout(table: list, fig: list, label: str) -> list:
+
+    layout =  [                          
+
+        html.Div(
+            [    
+        html.Label(label, className="header_label"),                 
+        html.Div(
+            [                                       
+                html.Div(
+                    [
+                        html.Div(table, style={"marginTop": "20px"}),
+                    ],
+                    className="pretty_container six columns",
+                ),
+                html.Div(
+                    [
+                        html.Div(fig),
+                    ],
+                    className="pretty_container six columns",
+                ),
+            ],
+            className="bare_container_center twelve columns",
+        ),
+            ],
+            className="relatively_bare_container twelve columns",
+        ),                               
     ]
 
     return layout
