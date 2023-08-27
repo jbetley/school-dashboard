@@ -38,7 +38,6 @@ from pages.load_data import get_school_index, get_academic_dropdown_years, get_f
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Jost:400", FONT_AWESOME]
-# external_stylesheets = ["https://fonts.googleapis.com/css2?family=Noto+Sans&display=swap", FONT_AWESOME]
 
 # NOTE: Cannot get static folder to work (images do not load and give 302 Found error)
 server = Flask(__name__, static_folder="static")
@@ -232,7 +231,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     else:
         years = get_financial_info_dropdown_years(school_id)
 
-#TODO: Account for situation where fin_anal year is 2022 but school actually has 2023 data - not sure way to do this
+# TODO: Account for situation where fin_anal year is 2022 but school actually has 2023 data - not sure way to do this
 # TODO: TBH I have no idea what the issue is here - need to revisit.
 # Currently both financial_analysis_dropdown and financial_info_dropdown are the same - they both
 # reads financial_data and returns a list of Year column names for each year for which ADM Average
