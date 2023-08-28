@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -15,7 +15,6 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 
-# import local functions
 from .load_data import max_display_years, get_school_index, get_financial_data, get_financial_ratios
 from .table_helpers import no_data_page, no_data_table
 from .chart_helpers import loading_fig
@@ -65,45 +64,46 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     
     financial_analysis_notes_string = "Only the most recent years of audited data are shown."
 
+# TODO: If this operation is similar enough for information, metrics, and analysis - make into function
     # See financial_information.py for comments
     if selected_school["Network"].values[0] != "None":
         if radio_value == "network-analysis":
 
             radio_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-button-finance-analysis",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[
-                            {"label": "School", "value": "school-analysis"},
-                            {"label": "Network", "value": "network-analysis"},
-                        ],
-                        value="network-analysis",
-                    ),
-                ],
-                className="radio-group",
+                                [
+                                    dbc.RadioItems(
+                                        id="radio-button-finance-analysis",
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        options=[
+                                            {"label": "School", "value": "school-analysis"},
+                                            {"label": "Network", "value": "network-analysis"},
+                                        ],
+                                        value="network-analysis",
+                                    ),
+                                ],
+                                className="radio-group"
             )
 
         else:
             radio_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-button-finance-analysis",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[
-                            {"label": "School", "value": "school-analysis"},
-                            {"label": "Network", "value": "network-analysis"},
-                        ],
-                        value="school-analysis",
-                    ),
-                ],
-                className="radio-group",
+                                [
+                                    dbc.RadioItems(
+                                        id="radio-button-finance-analysis",
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        options=[
+                                            {"label": "School", "value": "school-analysis"},
+                                            {"label": "Network", "value": "network-analysis"},
+                                        ],
+                                        value="school-analysis",
+                                    ),
+                                ],
+                                className="radio-group"
             )
 
             radio_value = "school-metrics"
@@ -112,18 +112,18 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     else:
         radio_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-button-finance-analysis",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[],
-                        value="",
-                    ),
-                ],
-                className="radio-group",
+                            [
+                                dbc.RadioItems(
+                                    id="radio-button-finance-analysis",
+                                    className="btn-group",
+                                    inputClassName="btn-check",
+                                    labelClassName="btn btn-outline-primary",
+                                    labelCheckedClassName="active",
+                                    options=[],
+                                    value="",
+                                ),
+                            ],
+                            className="radio-group"
             )
 
         # ensure val is always set to school if the school does not have a network tag
@@ -134,7 +134,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
         network_id = selected_school["Network"].values[0]
         
-        # network financial data
         if network_id != "None":
             financial_data = get_financial_data(network_id)
         else:
@@ -147,10 +146,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     else:
         
-        # school financial data
         financial_data = get_financial_data(school)
 
-        # don't display school name in title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
             RandE_title = "Revenue and Expenses"
             AandL_title = "Assets and Liabilities"
@@ -169,8 +166,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         financial_ratios_table = []         # type: list
         per_student_table = []              # type: list
 
-        revenue_expenses_fig = {}           # type: ignore
-        assets_liabilities_fig = {}         # type: ignore
+        revenue_expenses_fig = go.Figure()
+        assets_liabilities_fig = go.Figure()
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
 
@@ -201,8 +198,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             financial_ratios_table = []
             per_student_table = []
 
-            revenue_expenses_fig = {}
-            assets_liabilities_fig = {}
+            revenue_expenses_fig = go.Figure()
+            assets_liabilities_fig = go.Figure()
             main_container = {"display": "none"}
             empty_container = {"display": "block"}
 
@@ -450,7 +447,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             # there may be columns with no or partial data at beginning or ending of dataframe,
             # this deletes any column where more than 80% of the columns values are == 0
             # (otherwise empty columns may have some data, eg., ADM)
-            # NOTE: This could probably be more precise.
+            # NOTE: This could probably be more precise (compare with that other wierd 31 algorithm).
             financial_data = financial_data.loc[:, (financial_data==0).mean() < .7]
 
             # if all of the years to display (+ Category) exist in (are a subset of) the dataframe,

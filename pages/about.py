@@ -70,11 +70,11 @@ def update_about_page(year: str, school: str):
         update_table = []
         enroll_title = []
         enroll_table = []
-        adm_fig = []
+        adm_fig = px.line()
         ethnicity_title = ""
-        ethnicity_fig = []
+        ethnicity_fig = px.bar()
         subgroup_title = ""
-        subgroup_fig = []
+        subgroup_fig = px.bar()
 
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
@@ -82,7 +82,7 @@ def update_about_page(year: str, school: str):
     else:
 
         # Updates Table - Right Now hardcoded - may want to add to DB
-        update_table_label = "Recent Updates"
+        update_table_label = ""
         update_table_dict = {
             "Date": ["07.12.23", "08.16.23", "08.18.23", "08.18.23", "08.24.23"],
             "Update": ["Added 2023 ILEARN data for all K-8 schools and school corporations.",

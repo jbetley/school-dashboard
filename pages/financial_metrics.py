@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -11,7 +11,6 @@ import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
-# import local functions
 from .load_data import max_display_years, current_academic_year, get_school_index, get_financial_data
 from .calculate_metrics import calculate_financial_metrics
 from .table_helpers import no_data_page, create_proficiency_key
@@ -49,40 +48,40 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     if selected_school["Network"].values[0] != "None":
         if radio_value == "network-metrics":
             radio_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-button-finance-metrics",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[
-                            {"label": "School", "value": "school-metrics"},
-                            {"label": "Network", "value": "network-metrics"},
-                        ],
-                        value="network-metrics",
-                    ),
-                ],
-                className="radio-group",
+                                [
+                                    dbc.RadioItems(
+                                        id="radio-button-finance-metrics",
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        options=[
+                                            {"label": "School", "value": "school-metrics"},
+                                            {"label": "Network", "value": "network-metrics"},
+                                        ],
+                                        value="network-metrics",
+                                    ),
+                                ],
+                                className="radio-group"
             )
 
         else:
             radio_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-button-finance-metrics",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[
-                            {"label": "School", "value": "school-metrics"},
-                            {"label": "Network", "value": "network-metrics"},
-                        ],
-                        value="school-metrics",
-                    ),
-                ],
-                className="radio-group",
+                                [
+                                    dbc.RadioItems(
+                                        id="radio-button-finance-metrics",
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        options=[
+                                            {"label": "School", "value": "school-metrics"},
+                                            {"label": "Network", "value": "network-metrics"},
+                                        ],
+                                        value="school-metrics",
+                                    ),
+                                ],
+                                className="radio-group"
             )
 
             radio_value = "school-metrics"
@@ -91,18 +90,18 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
     else:
         radio_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-button-finance-metrics",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[],
-                        value="",
-                    ),
-                ],
-                className="radio-group",
+                            [
+                                dbc.RadioItems(
+                                    id="radio-button-finance-metrics",
+                                    className="btn-group",
+                                    inputClassName="btn-check",
+                                    labelClassName="btn btn-outline-primary",
+                                    labelCheckedClassName="active",
+                                    options=[],
+                                    value="",
+                                ),
+                            ],
+                            className="radio-group"
             )
     
         # ensure val is always set to school if the school does not have a network tag
@@ -113,7 +112,6 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
         network_id = selected_school["Network"].values[0]
         
-        # network financial data
         if network_id != "None":
             financial_data = get_financial_data(network_id)
         else:
@@ -123,16 +121,15 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     
     else:
         
-        # school financial data
         financial_data = get_financial_data(school)
 
-        # don"t display school name in title if the school isn"t part of a network
+        # don't display school name in title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
             table_title = "Financial Accountability Metrics"
         else:
             table_title = "Financial Accountability Metrics (" + financial_data["School Name"][0] + ")"
 
-    # if SQL returns nothing or just cols
+    # if SQL returns nothing or just empty cols
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 
         financial_metrics_table = []                #type: list
@@ -146,7 +143,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
-        available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
+        available_years = financial_data.columns.difference(["Category"], sort=False).tolist()
         available_years = [int(c[:4]) for c in available_years]
         most_recent_finance_year = max(available_years)
 
@@ -155,9 +152,9 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         if selected_year_numeric < most_recent_finance_year:
             financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
             
-        # if after dropping out of scope years, we create_empty_table() if file exists,
-        # but has no financial data, or if file exists and has one year of data, but does
-        # not have a value for any State Grants (because the school is in Pre-Opening)
+        # create empty tablie if after dropping out of scope years,  df has no financial
+        # data, or file exists and has one year of data, but does not have a value for
+        # State Grants (because the school is in Pre-Opening)
         # NOTE: To show schools in Pre-Opening year, remove the "or" condition
         # (you would also need to modify the financial metric calculation function, so
         # maybe think twice (or three times) before doing it)
@@ -205,7 +202,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             # Release The Hounds!
             financial_metrics = calculate_financial_metrics(financial_values)
             
-            # Catches edge case where school has empty df after metric calculation
+            # Catches edge case where school has empty df _after_ the metric calculation
             if len(financial_metrics.columns) == 0:
                 financial_metrics_table = []
                 financial_indicators_table = []
@@ -215,12 +212,14 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
             else:
                 
-                # convert ratings to colored circles
+                # convert ratings to purty colored circles
                 financial_metrics = convert_to_svg_circle(financial_metrics)
 
                 financial_metrics = financial_metrics.fillna("")
             
                 # Force correct format for display of df in datatable
+                # this must be done after any pandas operations, because it
+                # changes all of the values to strings
                 for x in range(1,len(financial_metrics.columns),2):
                     if financial_metrics.iat[3,x]:
                         financial_metrics.iat[3,x] = "{:.0%}".format(financial_metrics.iat[3,x])
@@ -399,7 +398,6 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 financial_indicators.insert(loc=0, column="Description", value = description)
                 financial_indicators.insert(loc=0, column="Standard", value = standard)
 
-                # convert ratings to svg circles
                 financial_indicators = convert_to_svg_circle(financial_indicators)
 
                 headers = financial_indicators.columns.tolist()
@@ -499,7 +497,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                     ]
             
             # Financial Metric Definitions
-            # NOTE: Explore better styling- Markdown or Images
+            # NOTE: At some point would like to style this better. Markdown?
 
             financial_metrics_definitions_data = [
                 ["Current Ratio = Current Assets ÷ Current Liabilities","Current Ratio is greater than 1.1; or is between 1.0 and 1.1 and the one-year trend is not negative."],

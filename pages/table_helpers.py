@@ -505,7 +505,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
     return table_layout
 
-def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
+def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> list:
     """
     Takes a dataframe, a string, and an int (optional) and creates a simple
     header table with a border around the edge.

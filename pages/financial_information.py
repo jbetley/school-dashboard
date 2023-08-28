@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Information #
 ##########################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -51,44 +51,45 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         if radio_value == "network-finance":
 
             radio_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-button-finance-info",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[
-                            {"label": "School", "value": "school-finance"},
-                            {"label": "Network", "value": "network-finance"},
-                        ],
-                        value="network-finance",
-                        persistence=True,
-                        persistence_type="local",
-                    ),
-                ],
-                className="radio_group_finance",
+                                [
+                                    dbc.RadioItems(
+                                        id="radio-button-finance-info",
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        options=[
+                                            {"label": "School", "value": "school-finance"},
+                                            {"label": "Network", "value": "network-finance"},
+                                        ],
+                                        value="network-finance",
+                                        persistence=True,
+                                        persistence_type="local",
+                                    ),
+                                ],
+                                className="radio_group_finance",
             )
 
         else:
+
             radio_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-button-finance-info",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[
-                            {"label": "School", "value": "school-finance"},
-                            {"label": "Network", "value": "network-finance"},
-                        ],
-                        value="school-finance",
-                        persistence = False,
-                        # persistence_type = "memory",
-                    ),
-                ],
-                className="radio_group_finance",
+                                [
+                                    dbc.RadioItems(
+                                        id="radio-button-finance-info",
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        options=[
+                                            {"label": "School", "value": "school-finance"},
+                                            {"label": "Network", "value": "network-finance"},
+                                        ],
+                                        value="school-finance",
+                                        persistence = False,
+                                        # persistence_type = "memory",
+                                    ),
+                                ],
+                                className="radio_group_finance",
             )
             
             radio_value = "school-metrics"
@@ -97,21 +98,21 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
     else:
         radio_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-button-finance-info",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[],
-                        value="",
-                        persistence = False,
-                        # persistence_type = "memory",
-                    ),
-                ],
-                className="radio_group_finance",
-            )
+                            [
+                                dbc.RadioItems(
+                                    id="radio-button-finance-info",
+                                    className="btn-group",
+                                    inputClassName="btn-check",
+                                    labelClassName="btn btn-outline-primary",
+                                    labelCheckedClassName="active",
+                                    options=[],
+                                    value="",
+                                    persistence = False,
+                                    # persistence_type = "memory",
+                                ),
+                            ],
+                            className="radio_group_finance",
+        )
         
         # radio_value defaults to school if "Network" value is None in school_index
         radio_value = "school-metrics"
@@ -152,7 +153,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
-        # Financial data will almost always be more recent than academic
+        # Financial will almost always have more recent data than academic
         # data. This is the only time we want do display "future" data,
         # that is data from a year more recent than the maximum dropdown
         # (academic) year. The first (most recent) column of the financial
@@ -160,7 +161,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         # "YYYY (Q#)", where Q# represents the quarter of the displayed
         # financial data (Q1, Q2, Q3, Q4). If "(Q#)" is not in the string,
         # it means the data in the column is audited data.
-        available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
+        available_years = financial_data.columns.difference(["Category"], sort=False).tolist()
         available_years = [int(c[:4]) for c in available_years]
         most_recent_finance_year = max(available_years)
 
@@ -195,7 +196,6 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             # Ensure that only the "max_display_years" number of years worth of financial
             # data is displayed (add +1 to max_display_years to account for the category
             # column). To show all years of data, comment out this line.
-
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
             string_years=financial_data.columns.tolist()
@@ -203,7 +203,6 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             string_years.reverse()
 
             # remove audit and other indicator data (it is displayed on the financial metrics page)
-            # financial_data = financial_data.drop(financial_data.index[41:])
             financial_data = financial_data.loc[:(financial_data["Category"] == "Audit Information").idxmax()-1]
 
             # Each column (year) in the df must have at least 12 values to be valid. To avoid the
@@ -214,7 +213,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                 if len(financial_data[financial_data[c] == ""].index) > 31:
                     financial_data.drop([c], inplace=True, axis=1)
 
-            # the following rows (financial categories) are not used and should be removed
+            # not currently used
             remove_categories = ["Administrative Staff", "Instructional Staff","Instructional and Support Staff","Non-Instructional Staff","Total Personnel Expenses",
                 "Instructional & Support Staff", "Instructional Supplies","Management Fee","Insurance (Facility)","Electric and Gas",
                 "Water and Sewer","Waste Disposal","Security Services","Repair and Maintenance","Occupancy Ratio","Human Capital Ratio",
@@ -236,7 +235,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
             table_size = len(financial_data.columns)
 
-            # force css column size depending on # of columns in dataframe
+            # display size depends on the # of columns in the dataframe
             if table_size == 2:
                 col_width = "five"
                 category_width = 55

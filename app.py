@@ -2,8 +2,8 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley
-# version:  1.09
-# date:     08/13/23
+# version:  1.10
+# date:     08/31/23
 
 # NOTE: Because of the way data is store and presented by IDOE, there are
 # cases in which data points need to be manually calculated that the school
@@ -129,8 +129,8 @@ def login():
                         if session["url"]:
                             url = session["url"]
                             session["url"] = None
-                            return redirect(url)  ## redirect to target url
-                    return redirect("/")  ## redirect to home
+                            return redirect(url)    # redirect to target url
+                    return redirect("/")            # redirect to home
 
     # Redirect to login page on error
     return redirect(url_for("login", error=1))
@@ -159,7 +159,7 @@ app = dash.Dash(
 
 # Dropdown shows single school if school login is used
 # shows all schools if admin login is used.
-# NOTE: 'application-state' is a dummy input
+# NOTE: "application-state" is a dummy input
 @callback(
     Output("charter-dropdown", "options"),
     [Input("application-state", "children")]
@@ -174,7 +174,6 @@ def set_dropdown_options(app_state):
     
     # admin user
     if authorized_user.id == 0:
-        # use entire list
         charters = available_charters
 
     else:
@@ -207,35 +206,33 @@ def set_dropdown_value(charter_options):
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
-    Output('hidden', 'children'),
+    Output("hidden", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input('current-page', 'href'),
+    Input("current-page", "href"),
 )
 def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
     max_dropdown_years = 5
 
-    current_page = current_page.rsplit('/', 1)[-1]
+    current_page = current_page.rsplit("/", 1)[-1]
 
     selected_school = get_school_index(school_id)    
-    school_type = selected_school['School Type'].values[0]
+    school_type = selected_school["School Type"].values[0]
 
     # source of available years depends on selected tab
-    if 'academic' in current_page:
+    if "academic" in current_page:
         years = get_academic_dropdown_years(school_id,school_type)
 
-    elif 'financial_analysis' in current_page:
+    elif "financial_analysis" in current_page:
         years = get_financial_analysis_dropdown_years(school_id)
 
     else:
         years = get_financial_info_dropdown_years(school_id)
 
-# TODO: Account for situation where fin_anal year is 2022 but school actually has 2023 data - not sure way to do this
-# TODO: TBH I have no idea what the issue is here - need to revisit.
 # Currently both financial_analysis_dropdown and financial_info_dropdown are the same - they both
 # reads financial_data and returns a list of Year column names for each year for which ADM Average
-# is greater than '0'     
+# is greater than "0"     
 
     # set year_value and year_options
     number_of_years_to_display = len(years) if len(years) <= max_dropdown_years else max_dropdown_years
@@ -243,13 +240,13 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     first_available_year = dropdown_years[0]
     earliest_available_year = dropdown_years[-1]
 
-    # 'year' represents the State of the year-dropdown when a school is selected.
+    # "year" represents the State of the year-dropdown when a school is selected.
     # Current year_value is set to:
     #   1) current_academic year (when app is first opened);
-    #   2) the earliest_available_year (if the selected year is earlier
+    #   2) the earliest year for which the school has data (if the selected year is earlier
     #       than the first year of available data);
-    #   3) the first_available_year (if the selected year is later
-    #       than the first year of available data);); or
+    #   3) the latest year for which the school has data (if the selected year is later
+    #       than the first year of available data); or
     #   4) the selected year.
     if year is None:
         year_value = str(first_available_year)
@@ -264,7 +261,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
         year_value = str(year)
 
     if not dropdown_years:
-        raise Exception("There is simply no way that you can be seeing this error message.")
+        raise Exception("There is simply no way that you can be seeing this error message.") # except i saw it once
     
     year_options=[
         {"label": str(y), "value": str(y)}
@@ -273,15 +270,14 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
     return year_options, year_value, current_page
 
-# app.layout = html.Div(    # NOTE: Test to see if it impacts speed
+# app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. variable
 def layout():
     return html.Div(
-    [
-        dcc.Store(id="dash-session", storage_type="session"),
-
+        [
+        # dcc.Store(id="dash-session", storage_type="session"),
         # the next two components are used by the year dropdown callback to determine the current url
-        dcc.Location(id='current-page', refresh=False),
-        html.Div(id='hidden', style={"display": "none"}),
+        dcc.Location(id="current-page", refresh=False),
+        html.Div(id="hidden", style={"display": "none"}),
         
         html.Div(
             [
@@ -305,8 +301,9 @@ def layout():
                                 dcc.Dropdown(
                                     id="charter-dropdown",
                                     style={
-                                        "fontFamily": "Roboto, sans-serif",
-                                        'color': 'steelblue',
+                                        "fontFamily": "Jost, sans-serif",
+                                        "fontSize": "12px",
+                                        "color": "steelblue",
                                     },
                                     multi=False,
                                     clearable=False,
@@ -329,8 +326,9 @@ def layout():
                                 dcc.Dropdown(
                                     id="year-dropdown",
                                     style={
-                                        "fontFamily": "Roboto, sans-serif",
-                                        'color': 'steelblue',
+                                        "fontFamily": "Jost, sans-serif",
+                                        "fontSize": "12px",                                        
+                                        "color": "steelblue",
                                     },
                                     multi=False,
                                     clearable=False,
@@ -381,4 +379,4 @@ app.layout = layout # testing layout as a function - not sure its faster
 
 if __name__ == "__main__":
     app.run_server(debug=True)
-# #    application.run(host='0.0.0.0', port='8080')
+#    application.run(host="0.0.0.0", port="8080")
