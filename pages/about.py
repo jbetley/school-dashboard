@@ -60,6 +60,7 @@ def update_about_page(year: str, school: str):
     no_data_to_display = no_data_page("School Enrollment & Demographics")
 
     selected_school = get_school_index(school)
+    selected_school_type = selected_school["School Type"].values[0]
 
     demographic_data = get_demographic_data(school)
     financial_data = get_financial_data(school)
@@ -83,8 +84,12 @@ def update_about_page(year: str, school: str):
         # Updates Table - Right Now hardcoded - may want to add to DB
         update_table_label = "Recent Updates"
         update_table_dict = {
-            "Date": ["07.12.23", "08.16.23", "08.18.23", "08.18.23"],
-            "Update": ["Added 2023 ILEARN data for all K-8 schools and school corporations.","Added 2023 IREAD Data for all K-8 schools and school corporations.", "Added 2023 SAT Scores  for all high schools and school corporations.", "Added 2023 Demographic Data  for all schools and school corporations."],
+            "Date": ["07.12.23", "08.16.23", "08.18.23", "08.18.23", "08.24.23"],
+            "Update": ["Added 2023 ILEARN data for all K-8 schools and school corporations.",
+                "Added 2023 IREAD Data for all K-8 schools and school corporations.",
+                "Added 2023 SAT Scores  for all high schools and school corporations.",
+                "Added 2023 Demographic Data  for all schools and school corporations.",
+                "Added 2019-22 Growth Data  for all schools and school corporations."],                
         }
         
         update_table_df = pd.DataFrame(update_table_dict)
@@ -113,12 +118,19 @@ def update_about_page(year: str, school: str):
             enrollment_filter = enrollment_filter[[c for c in enrollment_filter if c not in ["Total Enrollment"]] + ["Total Enrollment"]]
             enrollment_filter = enrollment_filter.dropna(axis=1, how="all")
 
-            school_enrollment = enrollment_filter.T
-            school_enrollment.rename(columns={school_enrollment.columns[0]:"Enrollment"}, inplace=True)
-            school_enrollment.rename(index={"Total Enrollment":"Total"},inplace=True)
+            enrollment = enrollment_filter.T
+            enrollment.rename(columns={enrollment.columns[0]:"Enrollment"}, inplace=True)
+            enrollment.rename(index={"Total Enrollment":"Total"},inplace=True)
 
-            school_enrollment = school_enrollment.reset_index()
-      
+            if selected_school_type == "AHS":
+                sum = enrollment['Enrollment'].sum()
+                school_enrollment = pd.DataFrame(columns = ["index","Enrollment"])
+                school_enrollment.loc[0] = ['Adults', sum]
+                school_enrollment.loc[1] = ['Total', sum]
+
+            else:
+                school_enrollment = enrollment.reset_index()
+
             enroll_table = [
                 dash_table.DataTable(
                     school_enrollment.to_dict("records"),
@@ -481,6 +493,7 @@ layout = html.Div(
                 children=[
                     html.Div(
                         [
+                            html.Div("",className="hide_line"),                            
                             html.Div(id="update-table", children=[]),
                             html.Div(
                                 [                                

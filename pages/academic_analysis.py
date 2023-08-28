@@ -458,7 +458,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                             [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
 
                         fig_iread_comp_data = comparison_schools[info_categories + [category]]
-                        
+
+                        # drop schools that do not have grade 3
+                        fig_iread_comp_data = fig_iread_comp_data.loc[~((pd.to_numeric(fig_iread_comp_data["Low Grade"], errors="coerce") > 3))]
+
                         fig_iread_all_data = pd.concat([fig_iread_k8_school_data,fig_iread_comp_data])
 
                         fig_iread_table_data = fig_iread_all_data.copy()
@@ -605,11 +608,12 @@ def layout():
                                 [
                                     html.Div(subnav_academic(),className="tabs"),
                                 ],
-                                className="bare_container_center twelve columns"
+                                className="bare_container_center twelve columns",
                             ),
                         ],
                         className="row"
                     ),
+                    html.Hr(),
                     html.Div(
                         [
                             html.Div(

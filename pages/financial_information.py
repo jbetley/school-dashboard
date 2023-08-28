@@ -67,7 +67,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                         persistence_type="local",
                     ),
                 ],
-                className="radio-group",
+                className="radio_group_finance",
             )
 
         else:
@@ -84,11 +84,11 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                             {"label": "Network", "value": "network-finance"},
                         ],
                         value="school-finance",
-                        persistence=True,
-                        persistence_type="local",
+                        persistence = False,
+                        # persistence_type = "memory",
                     ),
                 ],
-                className="radio-group",
+                className="radio_group_finance",
             )
             
             radio_value = "school-metrics"
@@ -106,11 +106,11 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                         labelCheckedClassName="active",
                         options=[],
                         value="",
-                        persistence=True,
-                        persistence_type="local",
+                        persistence = False,
+                        # persistence_type = "memory",
                     ),
                 ],
-                className="radio-group",
+                className="radio_group_finance",
             )
         
         # radio_value defaults to school if "Network" value is None in school_index
@@ -369,11 +369,12 @@ def layout():
                             [
                                 html.Div(subnav_finance(),className="tabs"),
                             ],
-                            className="bare_container_center twelve columns"
+                        className="bare_container_center twelve columns",
                         ),
                     ],
                     className="row"
                 ),
+                html.Hr(),
                 html.Div(
                     [
                         html.Div(

@@ -6,7 +6,7 @@
 # date:     08/14/23
 
 import dash
-from dash import dcc, html, Input, Output, callback, clientside_callback, State, ctx
+from dash import dcc, html, Input, Output, callback, State, ctx
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import numpy as np
@@ -28,42 +28,71 @@ from .subnav import subnav_academic
 dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
 
 # https://community.plotly.com/t/can-persistence-be-used-to-clear-cached-memory-from-previous-user-sessions/60370
-# clientside_callback(
-#     """function () {
-#         const keys = Object.keys(localStorage)
-#         for (let key of keys) {
-#             if (String(key).includes('_dash_persistence')) {
-#                 localStorage.removeItem(key)
-#             }
-#         }
-#         return ''
-#     }""",
-#     Output('persistenceClear','children'), ### placeholder for clearing
-#     Input(component_id="radio-type-input", component_property="value"),
-#     Input(component_id="radio-category-input", component_property="value")
-# )
 
-# Update Grades Checklist based on Charter School selection
+# Sub sub navigation buttons
+#   IF AHS or HS - No Type or Category Buttons displayed
+#   If K8 - Radio Type Display & Basic Radio Category Display
+#   If K12 - Radio Type Display With Additional -> Proficiency/Growth/High School
+
+# Type - and display check
+@callback(      
+    Output("radio-type-input", "options"),
+    Output("radio-type-input","value"),
+    Output('radio-input-container', 'style'),
+    Input("charter-dropdown", "value"),
+    State("radio-type-input", "value"),
+)
+def radio_type_selector(school: str, radio_type_value: str):
+
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
+
+    value_default = "proficiency"
+    
+    if school_type == "K8":
+        options_default = [
+            {"label": "Proficiency", "value": "proficiency"},
+            {"label": "Growth", "value": "growth"},
+        ]
+
+    else:
+        options_default = [
+            {"label": "Proficiency", "value": "proficiency"},
+            {"label": "Growth", "value": "growth"},
+            {"label": "High School", "value": "highschool"}        
+        ]
+
+    type_options = options_default
+
+    if radio_type_value:
+        type_value = radio_type_value
+    else:
+        type_value = value_default
+
+    if school_type == "HS" or school_type == "AHS":
+        radio_input_container = {'display': 'none'}
+    else:
+        radio_input_container = {'display': 'block'}
+            
+    return type_options, type_value, radio_input_container
+
+# Category
 @callback(
     Output("radio-category-input", "options"),
     Output("radio-category-input","value"),
     Input("radio-type-input", "value"),
     State("radio-category-input", "options"),
-    State("radio-category-input", "value"),
-    # Input("charter-dropdown", "value"),
-    # Input("year-dropdown", "value"),
-    # prevent_initial_call=True,
+    State("radio-category-input", "value")  
 )
-def radio_type_selector(radio_type: str, radio_category_options: list, radio_category_value: str):
+def radio_category_selector(radio_type: str, radio_category_options: list, radio_category_value: str):
 
-    # default category options for growth and proficiency
     options_default = [
+        {"label": "All Data", "value": "all"},
         {"label": "By Grade", "value": "grade"},
         {"label": "By Ethnicity", "value": "ethnicity"},
-        {"label": "By Subgroup", "value": "subgroup"},
-        {"label": "All Data", "value": "all"}
+        {"label": "By Subgroup", "value": "subgroup"}
     ]
-    value_default = "grade"
+    value_default = "all"
 
     if not ctx.triggered:
         raise PreventUpdate()
@@ -82,19 +111,14 @@ def radio_type_selector(radio_type: str, radio_category_options: list, radio_cat
                 else:
                     category_options = options_default
 
-            else: # highschool
+            else:   # highschool
                 category_value = ""
                 category_options = []
-
-    print('LEAVE RADIO CALLBACK')
-    print(category_options)
-    print(category_value)
     
     return category_options, category_value
 
+# Main
 @callback(
-    Output("radio-type-content", "children"),
-    # Output("radio-category-content", "children"),
     Output("proficiency-grades-ela", "children"),
     Output("ela-grade-bar-fig", "children"),
     Output("proficiency-ela-grades-container", "style"),
@@ -140,10 +164,9 @@ def radio_type_selector(radio_type: str, radio_category_options: list, radio_cat
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input(component_id="radio-type-input", component_property="value"),
-    Input(component_id="radio-category-input", component_property="value"),
-    State(component_id="radio-category-input", component_property="value")    
+    Input(component_id="radio-category-input", component_property="value"),  
 )
-def update_academic_information_page(school: str, year: str, radio_type: str, radio_category: str, radio_category_state: str):
+def update_academic_information_page(school: str, year: str, radio_type: str, radio_category: str):
     if not school:
         raise PreventUpdate
 
@@ -152,6 +175,11 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
     selected_year_string = "2019" if string_year == "2020" else string_year
     selected_year_numeric = int(selected_year_string)
 
+    selected_school = get_school_index(school)
+    selected_school_type = selected_school["School Type"].values[0]
+    selected_school_id = int(selected_school["School ID"].values[0])
+    selected_school_name = selected_school["School Name"].values[0]
+
     excluded_years = get_excluded_years(selected_year_string)
 
     # Radio buttons don't play nice
@@ -159,66 +187,9 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
         radio_type = "proficiency"
 
     if not radio_category:
-        radio_category = "grade"
+        radio_category = "all"
 
-# TODO: Need to add Type Callback to ensure proper active triggerdo n highsechool
-    print('IN Callback')
-    print(radio_type)
-    print(radio_category)
-
-    # print('triggered')
-    # # print(ctx.triggered_id)
-    # # print(ctx.triggered_prop_ids)
-    # print(ctx.args_grouping)
-
-    # if ctx.triggered_id == 'radio-type-input':
-    #     print(ctx.triggered[0]['value'])
-    #     if ctx.triggered[0]['value'] == "growth":
-    #         radio_category = "grade"
-    #         radio_category_value = "grade"
-    #     if ctx.triggered[0]['value'] == "proficiency":
-    #         radio_category = "grade"
-    #         radio_category_value = "grade"
-
-    # print('current vals')
-    # print(radio_type)
-    # print(radio_category)
-
-    # default styles (all values empty - only empty_container displayed)
-    radio_type_content = html.Div(
-            [
-                dbc.RadioItems(
-                    id="radio-type-input",
-                    className="btn-group",
-                    inputClassName="btn-check",
-                    labelClassName="btn btn-outline-primary",
-                    labelCheckedClassName="active",
-                    options=[],
-                    value="",
-                    persistence=False,
-                    # persistence_type="memory",
-                ),
-            ],
-            className="radio-group",
-    )
-
-    # radio_category_content = html.Div(
-    #         [
-    #             dbc.RadioItems(
-    #                 id="radio-category-input",
-    #                 className="btn-group",
-    #                 inputClassName="btn-check",
-    #                 labelClassName="btn btn-outline-primary",
-    #                 labelCheckedClassName="active",
-    #                 options=[],
-    #                 value=radio_category_value,
-    #                 persistence=True,
-    #                 persistence_type="memory",
-    #             ),
-    #         ],
-    #         className="radio-group",
-    # )
-
+    # default styles (all values empty - only empty_container displayed)\
     growth_grades_ela = []
     growth_grades_math = []
     growth_ethnicity_ela = []
@@ -267,15 +238,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
 
     no_display_data = no_data_page("Academic Proficiency")
     no_growth_data = no_data_page("Academic Growth")
-
-    selected_school = get_school_index(school)
-    selected_school_type = selected_school["School Type"].values[0]
-    selected_school_id = int(selected_school["School ID"].values[0])
-    selected_school_name = selected_school["School Name"].values[0]
-
-#   IF AHS or HS - No Radio Type Display
-#   If K8 - Radio Type Display & Basic Radio Category Display
-#   If K12 - Radio Type Display With Additional -> Proficiency/Growth/High School
 
     # NOTE: There is a special exception for Christel House South - prior to 2021,
     # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
@@ -378,50 +340,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
 
     if (selected_school_type == "K8" or selected_school_type == "K12"):
 
-        if selected_school_type == "K12":
-
-            radio_type_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-type-input",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[
-                            {"label": "Proficiency", "value": "proficiency"},
-                            {"label": "Growth", "value": "growth"},
-                            {"label": "High School", "value": "highschool"},
-                        ],
-                        value="proficiency",
-                        persistence=False,
-                        # persistence_type="memory",
-                    ),
-                ],
-                className="radio-group",
-            )
-        else:
-
-            radio_type_content = html.Div(
-                [
-                    dbc.RadioItems(
-                        id="radio-type-input",
-                        className="btn-group",
-                        inputClassName="btn-check",
-                        labelClassName="btn btn-outline-primary",
-                        labelCheckedClassName="active",
-                        options=[
-                            {"label": "Proficiency", "value": "proficiency"},
-                            {"label": "Growth", "value": "growth"},
-                        ],
-                        value="proficiency",
-                        persistence=False,
-                        # persistence_type="memory",
-                    ),
-                ],
-                className="radio-group",
-            )
-
         # If school is K12, we have already loaded HS data, so we just skip the K8 data
         if radio_type == "highschool":
             k8_table_container = {"display": "none"}
@@ -433,28 +351,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
             empty_growth_container = {"display": "none"}
             sat_table_container = {"display": "none"}
             grad_table_container = {"display": "none"}
-
-            # radio_category_content = html.Div(
-            #             [
-            #                 dbc.RadioItems(
-            #                     id="radio-category-input",
-            #                     className="btn-group",
-            #                     inputClassName="btn-check",
-            #                     labelClassName="btn btn-outline-primary",
-            #                     labelCheckedClassName="active",
-            #                     options=[
-            #                         {"label": "By Grade", "value": "grade"},
-            #                         {"label": "By Ethnicity", "value": "ethnicity"},
-            #                         {"label": "By Subgroup", "value": "subgroup"},
-            #                         {"label": "All Data", "value": "all"},
-            #                     ],
-            #                     value="grade",
-            #                     persistence=False,
-            # #                     persistence_type="memory",
-            #                 ),
-            #             ],
-            #             className="radio-group",
-            #         )
 
             selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
@@ -714,7 +610,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     all_proficiency_data = all_proficiency_data[all_proficiency_data["Category"] != "index"]
 
                     bar_fig_title = "Proficiency Breakdown (" + selected_year_string + ")"
-                    # math_title = selected_year_string + " Proficiency Breakdown - Math "
 
                     # ELA by Grade - Current Year
                     grade_annotations = annotations.loc[annotations["Category"].str.contains("Grade")]
@@ -734,7 +629,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                         all_proficiency_data["Category"].isin(grades_ordinal)
                         & all_proficiency_data["Proficiency"].str.contains("Math")
                     ]
-                    # math_by_grade_title = math_title + "By Grade"
 
                     if not grade_math_fig_data.empty:
                         math_grade_bar_fig = make_stacked_bar(grade_math_fig_data, bar_fig_title)
@@ -748,7 +642,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                         all_proficiency_data["Category"].isin(ethnicity)
                         & all_proficiency_data["Proficiency"].str.contains("ELA")
                     ]
-                    # ela_by_ethnicity_title = ela_title + "By Ethnicity"
 
                     if not ethnicity_ela_fig_data.empty:
                         ela_ethnicity_bar_fig = make_stacked_bar(ethnicity_ela_fig_data, bar_fig_title)
@@ -760,7 +653,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                         all_proficiency_data["Category"].isin(ethnicity)
                         & all_proficiency_data["Proficiency"].str.contains("Math")
                     ]
-                    # math_by_ethnicity_title = math_title + "By Ethnicity"
 
                     if not ethnicity_math_fig_data.empty:
                         math_ethnicity_bar_fig = make_stacked_bar(ethnicity_math_fig_data, bar_fig_title)
@@ -774,7 +666,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                         all_proficiency_data["Category"].isin(subgroup)
                         & all_proficiency_data["Proficiency"].str.contains("ELA")
                     ]
-                    # ela_by_subgroup_title = ela_title + "By Subgroup"
 
                     if not subgroup_ela_fig_data.empty:
                         ela_subgroup_bar_fig = make_stacked_bar(subgroup_ela_fig_data, bar_fig_title)
@@ -786,13 +677,13 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                         all_proficiency_data["Category"].isin(subgroup)
                         & all_proficiency_data["Proficiency"].str.contains("Math")
                     ]
-                    # math_by_subgroup_title = math_title + "By Subgroup"
 
                     if not subgroup_math_fig_data.empty:
                         math_subgroup_bar_fig = make_stacked_bar(subgroup_math_fig_data, bar_fig_title)
                     else:
                         math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
+# Maybe Maybe Maybe
             # if radio_category == "total":
             #     proficiency_ela_grades_container = {"display": "block"}
             #     proficiency_math_grades_container = {"display": "block"}
@@ -804,8 +695,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
             #     ela_ethnicity_bar_fig = []
             #     proficiency_subgroup_ela = []
             #     ela_subgroup_bar_fig = []
-            print('My Category us:')
-            print(radio_category)
 
             if radio_category == "grade":
                 proficiency_ela_grades_container = {"display": "block"}
@@ -864,28 +753,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
         elif radio_type == "growth":
 
             main_container = {"display": "none"}
-
-            # radio_category_content = html.Div(
-            #             [
-            #                 dbc.RadioItems(
-            #                     id="radio-category-input",
-            #                     className="btn-group",
-            #                     inputClassName="btn-check",
-            #                     labelClassName="btn btn-outline-primary",
-            #                     labelCheckedClassName="active",
-            #                     options=[
-            #                         {"label": "By Grade", "value": "grade"},
-            #                         {"label": "By Ethnicity", "value": "ethnicity"},
-            #                         {"label": "By Subgroup", "value": "subgroup"},
-            #                         {"label": "All Data", "value": "all"},
-            #                     ],
-            #                     value="grade",
-            #                     persistence=True,
-            #                     persistence_type="memory",
-            #                 ),
-            #             ],
-            #             className="radio-group-category",
-            #         )
 
             # State Growth Data
             # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
@@ -1034,34 +901,13 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     growth_subgroup_ela = []
                     growth_subgroup_math = []
 
-    ahs_notes = "Adult High Schools enroll students who are over the age of 18, under credited, \
-                dropped out of high school for a variety of reasons, and are typically out of cohort from \
-                their original graduation year. Because graduation rate is calculated at the end of the school \
-                year regardless of the length of time a student is enrolled at a school, it is not comparable to \
-                the graduation rate of a traditional high school."
-
-    k8_notes = "There are a number of factors that make it difficult to make valid and reliable \
-                comparisons between test scores from 2019 to 2022. For example, ILEARN was administered for \
-                the first time during the 2018-19 SY and represented an entirely new type and mode of \
-                assessment (adaptive and online-only). No State assessment was administered in 2020 because \
-                of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
-                testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
-
-    hs_notes = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
-                Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
-                Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
-
     if radio_type == "proficiency":
-        if selected_school_type == "AHS":
-            academic_information_notes_string = ahs_notes + " " + hs_notes
-        elif (selected_school_type == "HS"):
-            academic_information_notes_string = hs_notes
-        elif (selected_school_type == "K8"):
-            academic_information_notes_string = k8_notes
-        elif (selected_school_type == "K12"):
-            academic_information_notes_string = k8_notes + " " + hs_notes
-        else:
-            academic_information_notes_string = ""
+        academic_information_notes_string = "There are a number of factors that make it difficult to make \
+            valid and reliable comparisons between test scores from 2019 to 2022. For example, ILEARN was \
+            administered for the first time during the 2018-19 SY and represented an entirely new type and \
+            mode of assessment (adaptive and online-only). No State assessment was administered in 2020 because \
+            of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
+            testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
 
     if radio_type == "growth":
         academic_information_notes_string = "State growth data comes from IDOE's LINK. Identifying information \
@@ -1072,8 +918,23 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
             more students than previous year calculations which only included students who were enrolled in the \
             school for 162 Days. The 162 Day value is included in the tooltip of each table and chart for comparison purposes."
 
-    return ( # radio_category_content,
-        radio_type_content, 
+    ahs_notes = "Adult High Schools enroll students who are over the age of 18, under credited, \
+                dropped out of high school for a variety of reasons, and are typically out of cohort from \
+                their original graduation year. Because graduation rate is calculated at the end of the school \
+                year regardless of the length of time a student is enrolled at a school, it is not comparable to \
+                the graduation rate of a traditional high school."
+
+    hs_notes = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
+                Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
+                Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
+
+    if radio_type == "highschool":
+        if selected_school_type == "AHS":
+            academic_information_notes_string = ahs_notes + " " + hs_notes
+        else:
+            academic_information_notes_string = hs_notes
+
+    return (
         proficiency_grades_ela, ela_grade_bar_fig, proficiency_ela_grades_container,
         proficiency_ethnicity_ela, ela_ethnicity_bar_fig, proficiency_ela_ethnicity_container,
         proficiency_subgroup_ela, ela_subgroup_bar_fig, proficiency_ela_subgroup_container,
@@ -1103,43 +964,51 @@ def layout():
                 ],
                 className="row",
             ),
+            html.Hr(),
             html.Div(
-                [
+                [            
                     html.Div(
                         [
-                            html.Div(id="radio-type-content", children=[]),
+                            html.Div(
+                                [
+                                    dbc.RadioItems(
+                                        id="radio-type-input",
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        value=[],
+                                        persistence=False,
+                                        # persistence_type="memory",
+                                    ),
+                                ],
+                                className="radio-group-academic",
+                            )
                         ],
-                        id = "radio-type-input",
+                        className = "bare_container_center twelve columns",
                     ),
-                ],
-                className = "bare_container_center twelve columns",
-            ),
-            html.Div(
-                [
                     html.Div(
-                        html.Div(
-                            [
-                                dbc.RadioItems(
-                                    id="radio-category-input",
-                                    className="btn-group",
-                                    inputClassName="btn-check",
-                                    labelClassName="btn btn-outline-primary",
-                                    labelCheckedClassName="active",
-                                    # options=[],
-                                    value=[],
-                                    persistence=False,
-                                    # persistence_type="memory",
-                                ),
-                            ],
-                            className="radio-group",
-                    )
-                        # [
-                        #     html.Div(id="radio-category-content", children=[]),
-                        # ],
-                        # id = "radio-category-input",
+                        [
+                            html.Div(
+                                [
+                                    dbc.RadioItems(
+                                        id="radio-category-input",
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        value=[],
+                                        persistence=False,
+                                        # persistence_type="memory",
+                                    ),
+                                ],
+                                className="radio-group-academic",
+                            )
+                        ],
+                        className = "bare_container_center twelve columns",
                     ),
                 ],
-                className = "bare_container_center twelve columns",
+                id = "radio-input-container",
             ),
             html.Div(
                 [
@@ -1265,6 +1134,12 @@ def layout():
                                 ),
                                 html.Div(
                                     [
+                                html.Div(
+                                    [                                        
+                                        html.Label("Graduation Rate", className="header_label", style = {"marginTop": "5px"}),
+                                    ],
+                                    className="bare_container_center twelve columns",                                    
+                                ),
                                         html.Div(id="hs-grad-overview-table"),
                                         html.Div(id="hs-grad-ethnicity-table"),
                                         html.Div(id="hs-grad-subgroup-table"),
@@ -1272,7 +1147,13 @@ def layout():
                                     id="grad-table-container",
                                 ),
                                 html.Div(
+                                    [                                
+                                html.Div(
                                     [
+                                        html.Label("SAT", className="header_label", style = {'marginTop': "20px"}),
+                                   ],
+                                    className="bare_container_center twelve columns",                                    
+                                ),                                        
                                         html.Div(id="sat-cut-scores-table", children=[]),
                                         html.Div(id="sat-overview-table"),
                                         html.Div(id="sat-ethnicity-table"),

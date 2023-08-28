@@ -566,7 +566,6 @@ def process_growth_data(data: pd.DataFrame, category: str) -> Tuple[pd.DataFrame
         data = data[data["Category"].str.contains("|".join(subgroup))]
 
     # create fig data
-
     fig_data = data.copy()
     fig_data = fig_data.drop("Difference", axis=1)
     fig_data = fig_data.pivot(index=["Test Year"], columns="Category")

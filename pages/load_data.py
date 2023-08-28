@@ -91,7 +91,7 @@ engine = create_engine('sqlite:///data/db_all.db')
 # with resources.path("dashboard_0123.db") as sqlite_filepath:
 #     engine = create_engine(f"sqlite:///{sqlite_filepath}")
 
-# print('Database Engine Created . . .')
+print('Database Engine Created . . .')
 
 def get_current_year():
 
@@ -411,13 +411,8 @@ def get_comparable_schools(*args):
     keys = ['schools','year']
     params = dict(zip(keys, args))
 
-    print(params)
-    print(params['schools'])
-    print(type(params['schools']))
     school_str = ', '.join( [ str(int(v)) for v in params['schools'] ] )
 
-    print(school_str)
-    print(type(school_str))
     query_string = '''
         SELECT *
             FROM academic_data_k8

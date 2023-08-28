@@ -279,6 +279,10 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
     data = values.copy()
 
     data.columns = data.columns.str.split('|').str[0]
+
+    if "IREAD Proficiency (Grade 3)" in data.columns:
+        data = data.rename(columns={"IREAD Proficiency (Grade 3)": "IREAD"})
+
     cols=[i for i in data.columns if i not in ['School Name','Year']]
 
     if (len(cols)) > 0:
@@ -315,7 +319,6 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                     [
                         html.Div(
                             [
-                            # html.Label(label, className = 'header_label'),
                             dcc.Graph(figure = fig, config={'displayModeBar': False})
                             ],
                         ),
@@ -364,8 +367,17 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                 y=cols,
                 markers=True,
                 color_discrete_sequence=color,
-                # custom_data = ['N_size']
             )
+
+            # legend shenanigans - adjust location based on columns
+            if data.columns.str.contains("Grade").any():
+                y_value = -0.5
+            elif data.columns.str.contains("Black").any():
+                y_value = -0.4
+            elif data.columns.str.contains("Free").any():
+                y_value = -0.7
+            else:
+                y_value = -0.4
 
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
             fig.update_traces(hovertemplate=None)   # type: ignore
@@ -400,10 +412,14 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                     # range = add_years
                     ),   
                 legend=dict(
-                    orientation='h'
+                    orientation='h',
+                    yanchor="bottom",
+                    y= y_value,
+                    xanchor="left",
+                    x=0.01
                 ),
                 hovermode='x unified',
-                height=400,
+                height=300,
                 legend_title='',
             )
 

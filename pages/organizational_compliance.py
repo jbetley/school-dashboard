@@ -285,6 +285,7 @@ layout = html.Div(
                         ],
                         className = "row",
                     ),
+                    html.Div("",className="hide_line"),
                     html.Div(
                         [
                             html.Div(

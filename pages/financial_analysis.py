@@ -908,11 +908,12 @@ def layout():
                                 [
                                     html.Div(subnav_finance(), className="tabs"),
                                 ],
-                                className="bare_container_center twelve columns"
+                            className="bare_container_center twelve columns",
                             ),
                         ],
                         className="row"
                     ),
+                    html.Hr(),                    
                     html.Div(
                         [
                         dcc.Loading(
@@ -934,7 +935,7 @@ def layout():
                                                     html.P(id="financial-analysis-notes-string",
                                                         style={
                                                                 "textAlign": "center",
-                                                                "color": "#626262",
+                                                                "color": "#6783a9",
                                                                 "fontSize": 12,
                                                                 "marginLeft": "10px",
                                                                 "marginRight": "10px",

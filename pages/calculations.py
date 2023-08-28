@@ -48,7 +48,6 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-
 def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
 
     cohorts = data[data.columns[data.columns.str.contains(r"Cohort Count")]].columns.tolist()
@@ -109,7 +108,6 @@ def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
                 data[proficiency] = calculate_percentage(data[total_proficient], data[total_tested])
 
     return data
-
 
 def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
     """

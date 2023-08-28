@@ -350,6 +350,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     
     data["Category"] = data["Category"].str.split("|").str[0]
 
+
     data_me = data.loc[:, data.columns.str.contains("Category|Majority Enrolled")].copy()
     data_me = data_me.rename(columns={c: c[:4] for c in data_me.columns if c not in ["Category"]})
 
@@ -469,7 +470,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
         tooltip_format = [
             {
                 column: {
-                    "value": "162 Days: {:.2%}".format(float(value)) if value == value else "",
+                    "value": "162 Days: {:.2%}".format(float(value)) if value == value else "\u2014",
                     "type": "markdown"
                 }
                 for column, value in row.items()
@@ -561,7 +562,7 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
             "if": {
                 "column_id": other
             },
-            "textAlign": "center",
+            "textAlign": "left",
             "fontWeight": "600",
             "width": str(other_column_width) + "%",
         } for other in other_columns        
@@ -608,7 +609,7 @@ def create_key_table(data: pd.DataFrame, label: str, width: int = 0) -> list:
                 "column_id": other,
             },
             "fontSize": "10px",
-            "textAlign": "center",
+            "textAlign": "left",
             "borderLeft": ".5px solid #b2bdd4",
         } for other in other_columns
     ]
@@ -1167,12 +1168,18 @@ def create_simple_academic_info_table(data: pd.DataFrame) -> list:
     table_size = len(data.columns)
 
     if table_size > 1:
-        # data.columns = data.columns.str.replace("N-Size|SN-Size", "n-size", regex=True)
 
-# TODO: Move nsize to tooltips - look at growth table
+        # pull out nsize data for tooltips and drop from main df
+        nsize_data = data.loc[:, data.columns.str.contains("N-Size")].copy()
+        nsize_data = nsize_data.rename(columns={c: c[:4] for c in nsize_data.columns})
+
+        for col in nsize_data.columns:
+            nsize_data[col] = pd.to_numeric(nsize_data[col], errors="coerce")
+
         data = data[data.columns[~data.columns.str.contains(r"N-Size")]]
 
         data.columns = data.columns.str.replace("School", "", regex=True)
+        data = data.replace("No Data", "\u2014", regex=True)
         year_headers = [y for y in data.columns if "Category" not in y]
 
         all_cols = data.columns.tolist()
@@ -1244,21 +1251,21 @@ def create_simple_academic_info_table(data: pd.DataFrame) -> list:
             for col in all_cols
         ]
 
-        # tooltip_format = [
-        #     {
-        #         column: {
-        #             "value": "162 Days: {:.2%}".format(float(value)) if value == value else "",
-        #             "type": "markdown"
-        #         }
-        #         for column, value in row.items()
-        #     }
-        #     for row in data_162.to_dict("records")
-        # ] 
+        tooltip_format = [
+            {
+                column: {
+                    "value": "N-Size: {:.1f}".format(float(value)) if value == value else "\u2014",
+                    "type": "markdown"
+                }
+                for column, value in row.items()
+            }
+            for row in nsize_data.to_dict("records")
+        ] 
 
         table_layout = [
             dash_table.DataTable(
                 data.to_dict("records"),
-                style_table = {"height": "400px"},
+                style_table = {"height": "300px"},
                 columns = table_columns,
                 style_data = table_style,
                 style_data_conditional = table_data_conditional,
@@ -1266,7 +1273,12 @@ def create_simple_academic_info_table(data: pd.DataFrame) -> list:
                 style_cell = table_cell,
                 style_header_conditional = table_header_conditional,
                 style_cell_conditional = table_cell_conditional,
-                merge_duplicate_headers=True
+                merge_duplicate_headers=True,
+                tooltip_data = tooltip_format,
+                css=[{
+                    "selector": ".dash-table-tooltip",
+                    "rule": "font-size: 12px"
+                }],                
             ),
         ]
 
@@ -1276,7 +1288,6 @@ def create_simple_academic_info_table(data: pd.DataFrame) -> list:
         table_layout = [
             html.Div(
                 [
-                    # html.Label(label, className="header_label"),
                     html.Div(
                         dash_table.DataTable(
                             data=empty_dict,
@@ -1295,7 +1306,7 @@ def create_simple_academic_info_table(data: pd.DataFrame) -> list:
                                 "display": "none",
                             },
                         ),
-                    ),
+                    ),                   
                 ],
                 className = "pretty_container four columns"
             )
@@ -1943,6 +1954,19 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
                 html.Div(
                     [
                         html.Div(table, style={"marginTop": "20px"}),
+                        html.P(""),
+                        html.P("Hover over each data point to see N-Size.",
+                        style={
+                            "color": "#6783a9",
+                            "fontSize": 10,
+                            "textAlign": "left",
+                            "marginLeft": "10px",
+                            "marginRight": "10px",
+                            "marginTop": "20px",
+                            "paddingTop": "5px",
+                            "borderTop": ".5px solid #c9d3e0",
+                            },
+                        ), 
                     ],
                     className="pretty_container six columns",
                 ),

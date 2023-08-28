@@ -366,12 +366,7 @@ def layout():
                                     className="tabs",
                                 ),
                             ],
-                            className="bare_container_center twelve columns",
-                                style={
-                                    "padding": "50px",
-                                    "paddingBottom": "60px",
-                                    "marginTop": "50px",
-                                }
+                            className="nav_container twelve columns", 
                         ),
                     ],
                     className="row",

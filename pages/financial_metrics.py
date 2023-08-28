@@ -602,11 +602,12 @@ def layout():
                             [
                                 html.Div(subnav_finance(),className="tabs"),
                             ],
-                            className="bare_container_center twelve columns"
+                        className="bare_container_center twelve columns",
                         ),
                     ],
                     className="row"
-                ),          
+                ),
+                html.Hr(),                
                 html.Div(
                     [
                        html.Div(
