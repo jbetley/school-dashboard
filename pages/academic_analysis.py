@@ -2,10 +2,10 @@
 # ICSB Dashboard - Academic Analysis #
 ######################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
-# TODO: Add AHS/HS Data
+# TODO: Add Grad Rate/SAT/? 
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -14,10 +14,12 @@ import pandas as pd
 
 # import local functions
 from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
-    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data
-from .process_data import process_k8_academic_data, process_k8_corp_academic_data
+    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
+    get_hs_corporation_academic_data
+from .process_data import process_k8_academic_data, process_k8_corp_academic_data, filter_high_school_academic_data, \
+    process_high_school_academic_data
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
-from .chart_helpers import no_data_fig_label, make_line_chart, make_bar_chart, make_group_bar_chart
+from .chart_helpers import no_data_fig_label, make_bar_chart, make_group_bar_chart
 from .table_helpers import create_comparison_table, no_data_page, no_data_table, combine_group_barchart_and_table, \
     combine_barchart_and_table
 from .string_helpers import create_school_label, identify_missing_categories, combine_school_name_and_grade_levels, \
@@ -53,8 +55,10 @@ def set_dropdown_options(school, year, comparison_schools):
 
     # There is some time cost for running the dropdown selection function (typically
     # ~0.8 - 1.2s), so we want to exit out as early as possible if we know it isn't necessary
-    # HS and AHS should never generate a list of comparable schools.
-    if (selected_school_type == "HS" or selected_school_type == "AHS"):
+    # HS and AHS currently do not have any data so don't need comparable schools.
+
+# TODO: Adding HS and K12
+    if (selected_school_type == "AHS"): # selected_school_type == "HS" or 
         return [],[],[]
     
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
@@ -119,7 +123,7 @@ def set_dropdown_options(school, year, comparison_schools):
 
         school_idx = schools_by_distance[schools_by_distance["School ID"] == int(school)].index
 
-        # NOTE: This should never ever happen because we"ve already determined that the school exists in
+        # NOTE: This should never ever happen because we've already determined that the school exists in
         # the check above. However, it did happen once, somehow, so we leave this in here just in case.
         if school_idx.size == 0:
             return [],[],[]
@@ -205,9 +209,26 @@ def set_dropdown_options(school, year, comparison_schools):
     Output("fig16a2-container", "style"),
     Output("fig16b2", "children"),
     Output("fig16b2-container", "style"),
-    Output("academic-analysis-main-container", "style"),
-    Output("academic-analysis-empty-container", "style"),
-    Output("academic-analysis-no-data", "children"),
+    Output("k8-analysis-main-container", "style"),
+    Output("k8-analysis-empty-container", "style"),
+    Output("k8-analysis-no-data", "children"),
+
+    Output("hs-grad-overview", "children"),
+    Output("hs-grad-overview-container", "style"),    
+    Output("hs-grad-ethnicity", "children"),
+    Output("hs-grad-ethnicity-container", "style"),    
+    Output("hs-grad-subgroup", "children"),
+    Output("hs-grad-subgroup-container", "style"),    
+    Output("sat-overview", "children"),
+    Output("sat-overview-container", "style"),    
+    Output("sat-ethnicity", "children"),
+    Output("sat-ethnicity-container", "style"),    
+    Output("sat-subgroup", "children"),
+    Output("sat-subgroup-container", "style"),    
+    Output("hs-analysis-main-container", "style"),
+    Output("hs-analysis-empty-container", "style"),
+    Output("hs-analysis-no-data", "children"),
+
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     [Input("comparison-dropdown", "value")],
@@ -242,18 +263,214 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
     fig16b2_container = {"display": "none"}
 
     dropdown_container = {"display": "none"}
-    academic_analysis_main_container = {"display": "none"}
-    academic_analysis_empty_container = {"display": "block"}
+    k8_analysis_main_container = {"display": "none"}
+    k8_analysis_empty_container = {"display": "block"}
 
-    no_data_to_display = no_data_page("Academic Analysis")
+    hs_grad_overview = []
+    hs_grad_overview_container = {"display": "none"}
+
+    hs_grad_ethnicity = []
+    hs_grad_ethnicity_container = {"display": "none"}
+
+    hs_grad_subgroup = []
+    hs_grad_subgroup_container = {"display": "none"}
+
+    sat_overview = []
+    sat_overview_container = {"display": "none"}
+
+    sat_ethnicity = []
+    sat_ethnicity_container = {"display": "none"}
+
+    sat_subgroup = []
+    sat_subgroup_container = {"display": "none"}
+
+    hs_analysis_main_container = {"display": "none"}
+    hs_analysis_empty_container = {"display": "block"}
+
+    k8_analysis_no_data = hs_analysis_no_data = no_data_page("Academic Analysis")
     
     academic_analysis_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
         and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
         the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
         Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
 
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)  
+
     # Currently we only display data for Grades K-8. So nothing is displayed for
     # High Schools (HS) or Adult High Schools (AHS)
+    if selected_school_type == "HS" or selected_school_type == "AHS" or selected_school_type == "K12":
+         
+        if selected_school_type == "HS" or selected_school_type == "AHS":
+            k8_analysis_main_container = {"display": "none"}
+            k8_analysis_empty_container = {"display": "none"}
+
+        raw_hs_school_data = get_high_school_academic_data(school)
+        
+        raw_hs_school_data = raw_hs_school_data.loc[raw_hs_school_data["Year"] == numeric_year]
+        hs_school_name = raw_hs_school_data['School Name'].values[0]
+        
+        filtered_hs_school_data = filter_high_school_academic_data(raw_hs_school_data)
+
+        if not filtered_hs_school_data.empty:
+
+            raw_hs_corp_data = get_hs_corporation_academic_data(school)
+
+            raw_hs_corp_data = raw_hs_corp_data.loc[raw_hs_corp_data["Year"] == numeric_year]   
+            
+            hs_corporation_name = raw_hs_corp_data['Corporation Name'].values[0]
+
+            for col in raw_hs_corp_data.columns:
+                raw_hs_corp_data[col] = pd.to_numeric(raw_hs_corp_data[col], errors="coerce")
+
+            # find the intersection of the two sets and use it to ensure only cols present in
+            # the school df are used
+            common_cols = [col for col in set(filtered_hs_school_data.columns).intersection(raw_hs_corp_data.columns)]
+            raw_hs_corp_data = raw_hs_corp_data[common_cols]
+
+            processed_hs_school_data = process_high_school_academic_data(filtered_hs_school_data, school)
+
+            # processing adds 'N-Size' col which we don't need here
+            processed_hs_school_data = processed_hs_school_data[processed_hs_school_data.columns[~processed_hs_school_data.columns.str.contains(r"N-Size")]]
+            
+            processed_hs_corp_data = process_high_school_academic_data(raw_hs_corp_data, school)
+
+            processed_hs_corp_data = processed_hs_corp_data[processed_hs_corp_data.columns[~processed_hs_corp_data.columns.str.contains(r"N-Size")]]
+
+            hs_corp_data = processed_hs_corp_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
+            
+            hs_corp_data = hs_corp_data[hs_corp_data.columns[hs_corp_data.columns.str.contains(r"Benchmark \%|Graduation Rate")]]
+            
+            hs_school_data = processed_hs_school_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
+
+            hs_school_data = hs_school_data[hs_school_data.columns[hs_school_data.columns.str.contains(r"Benchmark \%|Graduation Rate")]]
+            
+            hs_school_data['School Name'] = hs_school_name
+            hs_corp_data['School Name'] = hs_corporation_name
+
+            print(comparison_school_list)
+            comparison_hs_schools_filtered = get_comparable_schools(comparison_school_list, numeric_year)
+            # print(comparison_hs_schools_filtered)
+            
+            comb_hs_data = pd.concat([hs_school_data, hs_corp_data], ignore_index = True)
+
+            # there are currently only two available data points for AHS and HS: Grad Rate and SAT
+
+            # Graduation Rate Overview
+            hs_grad_overview_headers = ["School Name","Total Graduation Rate", "Non Waiver Graduation Rate"]
+
+            hs_grad_overview_data = comb_hs_data.loc[:, (comb_hs_data.columns.isin(hs_grad_overview_headers))]
+
+            if len(hs_grad_overview_data.columns) > 1:
+                # make chart
+                pass
+            else:
+                hs_grad_overview_fig16 = no_data_fig_label("Comparison: Total/Non Waiver Graduation Rate", 200)
+                hs_grad_overview_container = {"display": "none"}
+
+            # Graduation Rate Ethnicity
+            hs_grad_ethnicity_cols = [col for col in comb_hs_data.columns if 'Graduation Rate' in col and any(substring for substring in ethnicity if substring in col)]
+            hs_grad_ethnicity_cols = ["School Name"] + hs_grad_ethnicity_cols
+            hs_grad_ethnicity_data = comb_hs_data[hs_grad_ethnicity_cols]
+
+            if len(hs_grad_ethnicity_data.columns) > 1:
+                # make chart
+                pass
+            else:
+                hs_grad_ethnicity_fig = no_data_fig_label("Comparison: Graduation Rate by Ethnicity", 200)
+                hs_grad_ethnicity_container = {"display": "none"}
+
+            # Graduation Rate Subgroup
+            hs_grad_subgroup_cols = [col for col in comb_hs_data.columns if 'Graduation Rate' in col and any(substring for substring in subgroup if substring in col)]
+            hs_grad_subgroup_cols = ["School Name"] + hs_grad_subgroup_cols
+            hs_grad_subgroup_data = comb_hs_data[hs_grad_subgroup_cols]
+
+            if len(hs_grad_subgroup_data.columns) > 1:
+                # make chart
+                pass
+            else:
+                hs_grad_subgroup_fig = no_data_fig_label("Comparison: Graduation Rate by Subgroup", 200)
+                hs_grad_subgroup_container = {"display": "none"}
+
+            # SAT Total
+            sat_overview_cols = [col for col in comb_hs_data.columns if 'School Total' in col]
+            sat_overview_cols = ["School Name"] + sat_overview_cols
+            sat_overview_data = comb_hs_data[sat_overview_cols]
+
+            if len(sat_overview_data.columns) > 1:
+                # fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = \
+                #     identify_missing_categories(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
+                sat_overview_label = create_chart_label(sat_overview_data)
+                sat_overview_chart = make_group_bar_chart(sat_overview_data, school_name, sat_overview_label)
+                sat_overview_table_data = combine_school_name_and_grade_levels(sat_overview_data)
+                sat_overview_table = create_comparison_table(sat_overview_table_data, school_name,"")
+
+                sat_overview = combine_group_barchart_and_table(sat_overview_chart,sat_overview_table,"","") #fig16a1_category_string,fig16a1_school_string)
+                
+                sat_overview_container = {"display": "block"}
+                hs_analysis_main_container = {"display": "block"}
+                hs_analysis_empty_container = {"display": "none"}                
+                dropdown_container = {"display": "block"}
+
+            else:
+                sat_overview = no_data_fig_label("Comparison: SAT School Total", 200)
+                sat_overview_container = {"display": "none"}
+            
+            # SAT Ethnicity
+            sat_ethnicity_cols = [col for col in comb_hs_data.columns if 'Benchmark' in col and any(substring for substring in ethnicity if substring in col)]
+            sat_ethnicity_cols = ["School Name"] + sat_ethnicity_cols
+            sat_ethnicity_data = comb_hs_data[sat_ethnicity_cols]
+            
+            sat_ethnicity_data =  sat_ethnicity_data[[col for col in sat_ethnicity_data.columns if "EBRW" in col or "School Name" in col]]
+
+            if len(sat_ethnicity_data.columns) > 1:
+
+                # fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = \
+                #     identify_missing_categories(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
+                sat_ethnicity_label = create_chart_label(sat_ethnicity_data)
+                sat_ethnicity_chart = make_group_bar_chart(sat_ethnicity_data, school_name, sat_ethnicity_label)
+                sat_ethnicity_table_data = combine_school_name_and_grade_levels(sat_ethnicity_data)
+                sat_ethnicity_table = create_comparison_table(sat_ethnicity_table_data, school_name,"")
+
+                sat_ethnicity = combine_group_barchart_and_table(sat_ethnicity_chart,sat_ethnicity_table,"","") #fig16a1_category_string,fig16a1_school_string)
+                
+                sat_ethnicity_container = {"display": "block"}
+                hs_analysis_main_container = {"display": "block"}
+                hs_analysis_empty_container = {"display": "none"}                
+                dropdown_container = {"display": "block"}
+
+            else:
+                sat_ethnicity = no_data_fig_label("Comparison: SAT By Ethnicity", 200)
+                sat_ethnicity_container = {"display": "none"}
+
+            # SAT Subgroup - EBRW
+            sat_subgroup_cols = [col for col in comb_hs_data.columns if 'Benchmark' in col and any(substring for substring in subgroup if substring in col)]
+            sat_subgroup_cols = ["School Name"] + sat_subgroup_cols
+            sat_subgroup_data = comb_hs_data[sat_subgroup_cols]
+
+            sat_subgroup_data =  sat_subgroup_data[[col for col in sat_subgroup_data.columns if "EBRW" in col or "School Name" in col]]
+            
+            if len(sat_subgroup_data.columns) > 1:
+
+                # TODO: Get this to work
+                # fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = \
+                #     identify_missing_categories(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
+                sat_subgroup_label = create_chart_label(sat_subgroup_data)
+                sat_subgroup_chart = make_group_bar_chart(sat_subgroup_data, school_name, sat_subgroup_label)
+                sat_subgroup_table_data = combine_school_name_and_grade_levels(sat_subgroup_data)
+                sat_subgroup_table = create_comparison_table(sat_subgroup_table_data, school_name,"")
+
+                sat_subgroup = combine_group_barchart_and_table(sat_subgroup_chart,sat_subgroup_table,"","") #fig16a1_category_string,fig16a1_school_string)
+                
+                sat_subgroup_container = {"display": "block"}
+                hs_analysis_main_container = {"display": "block"}
+                hs_analysis_empty_container = {"display": "none"}                
+                dropdown_container = {"display": "block"}
+                
+            else:
+                sat_subgroup = no_data_fig_label("Comparison: SAT By Subgroup", 200)
+                sat_subgroup_container = {"display": "none"}   
+
     if selected_school_type != "HS" or selected_school_type != "AHS":
         
         # get academic data
@@ -294,8 +511,8 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                 
                 elif tested_year in raw_comparison_data.columns:
 
-                    academic_analysis_main_container = {"display": "block"}            
-                    academic_analysis_empty_container = {"display": "none"}
+                    k8_analysis_main_container = {"display": "block"}
+                    k8_analysis_empty_container = {"display": "none"}
 
                     raw_comparison_data = raw_comparison_data.drop('Test Year', axis=1)
 
@@ -494,7 +711,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                     fig16a1_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16a1))]
 
                     if len(fig16a1_k8_school_data.columns) > 3:
-                        
                         fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = \
                             identify_missing_categories(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
                         fig16a1_label = create_chart_label(fig16a1_final_data)
@@ -592,13 +808,15 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                         fig16b2_container = {"display": "none"}
 
     return (
-        academic_analysis_notes_string, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, fig16a1_container, fig16b1,
-        fig16b1_container, fig16a2, fig16a2_container, fig16b2, fig16b2_container,
-        academic_analysis_main_container, academic_analysis_empty_container, no_data_to_display
+        academic_analysis_notes_string, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
+        fig16a1_container, fig16b1, fig16b1_container, fig16a2, fig16a2_container, fig16b2,
+        fig16b2_container, k8_analysis_main_container, k8_analysis_empty_container, k8_analysis_no_data,
+        hs_grad_overview, hs_grad_overview_container, hs_grad_ethnicity, hs_grad_ethnicity_container,
+        hs_grad_subgroup, hs_grad_subgroup_container, sat_overview, sat_overview_container,
+        sat_ethnicity, sat_ethnicity_container, sat_subgroup, sat_subgroup_container,
+        hs_analysis_main_container, hs_analysis_empty_container, hs_analysis_no_data
     )
 
-
-    
 def layout():
     return html.Div(
                 [
@@ -698,15 +916,69 @@ def layout():
                                 style= {"display": "none"},
                             ),
                         ],
-                        id = "academic-analysis-main-container",
+                        id = "k8-analysis-main-container",
                         style= {"display": "none"}, 
                     ),
                     html.Div(
                         [
-                            html.Div(id="academic-analysis-no-data"),
+                            html.Div(id="k8-analysis-no-data"),
                         ],
-                        id = "academic-analysis-empty-container",
-                    ),          
+                        id = "k8-analysis-empty-container",
+                    ),
+                    
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id="hs-grad-overview"),
+                                ],
+                                id = "hs-grad-overview-container",
+                                style= {"display": "none"},
+                            ),
+                            html.Div([
+                                    html.Div(id="hs-grad-ethnicity"),
+                                ],
+                                id = "hs-grad-ethnicity-container",
+                                style= {"display": "none"},
+                            ),
+                            html.Div(
+                                [      
+                            html.Div(id="hs-grad-subgroup"),
+                                ],
+                                id = "hs-grad-subgroup-container",
+                                style= {"display": "none"},
+                            ),                                 
+                            html.Div(
+                                [                        
+                                    html.Div(id="sat-overview"),
+                                ],
+                                id = "sat-overview-container",
+                                style= {"display": "none"},
+                            ),
+                            html.Div(
+                                [                        
+                                    html.Div(id="sat-ethnicity"),
+                                ],
+                                id = "sat-ethnicity-container",
+                                style= {"display": "none"},
+                            ),
+                            html.Div(
+                                [                        
+                                    html.Div(id="sat-subgroup"),
+                                ],
+                                id = "sat-subgroup-container",
+                                style= {"display": "none"},
+                            ),                                                        
+                        ],
+                        id = "hs-analysis-main-container",
+                        style= {"display": "none"}, 
+                    ),
+                    html.Div(
+                        [
+                            html.Div(id="hs-analysis-no-data"),
+                        ],
+                        id = "hs-analysis-empty-container",
+                    ),
                 ],
                 id="mainContainer"
             )

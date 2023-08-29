@@ -717,14 +717,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     if (final_ratios_data[year] != "N/A").any():
                         final_ratios_data[year] = pd.Series(["{0:.2f}%".format(val * 100) for val in final_ratios_data[year]], index = final_ratios_data.index)
 
-                # NOTE: make prettier
-                # markdown_table = """|**Occupancy Expense** (Object Codes 411, 431, 441, 450,
-                # between 621 & 626, and between 710 & 720)|
-                # |:-----------:|
-                # |divided by|
-                # |**Total Revenue** (Form 9 Section Codes 1 and 3) |
-                # """
-
                 financial_ratios_table = [
                     html.Label("Financial Ratios", className = "header_label"),
                     html.P(""),
@@ -1033,7 +1025,7 @@ def layout():
                                     ],
                                     id = "financial-analysis-main-container",
                                 ),
-                            ] # dcc.loading container
+                            ]
                         ),                            
                     ]
                 ),

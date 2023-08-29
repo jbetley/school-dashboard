@@ -847,6 +847,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     # find the index of the row containing the school name,
     # use this to filter data (next line) and also with
     # data_table row_index to Bold the school's name.
+
     school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
 
     # Only want to display categories where the selected school has data - this
@@ -857,7 +858,10 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     data.reset_index(drop=True,inplace=True)
 
     # remove trailing string
-    data.columns = data.columns.str.split('|').str[0]
+    # "School Total" is for SAT and includes all three subjects - so we dont want to split
+    if ~data.columns.str.contains("School Total").any():
+        print(data.columns)
+        data.columns = data.columns.str.split('|').str[0]
 
     # replace any '***' values (insufficient n-size) with NaN
     data = data.replace('***', np.nan)
@@ -865,6 +869,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     # force non-string columns to numeric
     cols = [i for i in data.columns if i not in ['School Name','Year']]
 
+    print(cols)
     for col in cols:
         data[col]=pd.to_numeric(data[col], errors='coerce')
 

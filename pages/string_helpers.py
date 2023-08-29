@@ -54,7 +54,7 @@ def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
 
     return result
 
-def create_chart_label(final_data: pd.DataFrame) -> str:
+def create_chart_label(data: pd.DataFrame) -> str:
     """
     Takes a dataframe of academic data and creates a chart label based on
     the df columns
@@ -66,19 +66,42 @@ def create_chart_label(final_data: pd.DataFrame) -> str:
         label (str): chart label
     """
 
-    final_data_columns = final_data.columns.tolist()
+    data = data.columns.tolist()
 
     # the list returns any strings in final_data_columns that are in the
     # ethnicity list or subgroup list. Label is based on whichever list
     # of substrings matches the column list
-    if len([i for e in ethnicity for i in final_data_columns if e in i]) > 0:
+
+    # if len([i for e in ethnicity for i in data if e in i and "Proficiency" in i]) > 0:
+    if len([col for col in data if 'Proficient' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
         label_category = " Proficiency by Ethnicity"
 
-    elif len([i for e in subgroup for i in final_data_columns if e in i]) > 0:
-        label_category = " Proficiency by Subgroup"                      
+    elif len([col for col in data if 'Graduation Rate' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
+        #len([i for e in ethnicity for i in data if e in i and "Graduation Rate" in i]) > 0:
+        label_category = " Graduation Rate by Ethnicity"
+
+    elif len([col for col in data if 'Benchmark' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
+        #len([i for e in ethnicity for i in data if e in i and "Benchmark" in i]) > 0:
+        label_category = " SAT by Ethnicity" 
+
+    elif len([col for col in data if 'School Total' in col and "Benchmark" in col]): #and any(substring for substring in ethnicity if substring in col)]) > 0:
+        #len([i for e in ethnicity for i in data if e in i and "Benchmark" in i]) > 0:
+        label_category = " SAT School Total" 
+
+    elif len([col for col in data if 'Proficient' in col and any(substring for substring in subgroup if substring in col)]) > 0:
+        #len([i for s in subgroup for i in data if s in i and "Proficiency" in i]) > 0:
+        label_category = " Proficiency by Subgroup"
+
+    elif len([col for col in data if 'Graduation Rate' in col and any(substring for substring in subgroup if substring in col)]) > 0:
+        #len([i for s in subgroup for i in data if s in i and "Graduation Rate" in i]) > 0:
+        label_category = " Graduation Rate by Subgroup" 
+
+    elif len([col for col in data if 'Benchmark' in col and any(substring for substring in subgroup if substring in col)]) > 0:
+        #len([i for s in subgroup for i in data if s in i and "Benchmark" in i]) > 0:
+        label_category = " SAT by Subgroup" 
 
     # get the subject using regex
-    label_subject = re.search(r"(?<=\|)(.*?)(?=\s)",final_data_columns[0]).group() # type: ignore
+    label_subject = re.search(r"(?<=\|)(.*?)(?=\s)",data[1]).group() # type: ignore
 
     label = "Comparison: " + label_subject + label_category
 
@@ -95,13 +118,16 @@ def create_school_label(data: pd.DataFrame) -> str:
     Returns:
         label (str): school label with name and gradespan
     """
-
-    label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
-        "-" + data["High Grade"].fillna("").astype(str) + ")"
-    
-    # removes empty parentheses from School Corp & trailing .0
-    label = label.str.replace("\(-\)", "",regex=True)
-    label = label.str.replace(".0","",regex=True)
+    # TODO: Add for HS
+    if 'Low Grade' in data:
+        label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
+            "-" + data["High Grade"].fillna("").astype(str) + ")"
+        
+        # removes empty parentheses from School Corp & trailing .0
+        label = label.str.replace("\(-\)", "",regex=True)
+        label = label.str.replace(".0","",regex=True)
+    else:
+        label = data["School Name"]
 
     return label
 
@@ -115,10 +141,11 @@ def combine_school_name_and_grade_levels(data: pd.DataFrame) -> pd.DataFrame:
 
     Returns:
         data (pd.DataFrame): dataframe
-    """    
+    """
     school_names = create_school_label(data)
 
-    data = data.drop(["Low Grade", "High Grade"], axis = 1)
+    if 'Low Grade' in data:
+        data = data.drop(["Low Grade", "High Grade"], axis = 1)
 
     # shift the "School Name" column to the first position and replace
     # the values in "School Name" column with the school_names series
