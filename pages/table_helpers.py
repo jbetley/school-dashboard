@@ -1768,14 +1768,15 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
+# TODO: Next two lines should be redundant for HS data, Check for k8 data
     # find the index of the row containing the school name
     school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
 
     # drop all columns where the row at school_name_idx has a NaN value
     data = data.loc[:, ~data.iloc[school_name_idx].isna()]
-
-    # sort dataframe by the "first" proficiency column and reset index
-    data = data.sort_values(data.columns[1], ascending=False)
+          
+    # sort dataframe by the first column and reset index
+    data = data.sort_values(data.columns[1], ascending=False, na_position="last")
 
     data = data.reset_index(drop=True)
 
@@ -1792,6 +1793,8 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
 #       pip install dash-ag-grid==2.0.0
 #       import dash_ag_grid as dag
 
+# TODO: Fix: DataFrame columns are not unique, some columns will be omitted.
+# TODO: Issue is "School Total" - also may be issue for Grad Rate
     table = dash_table.DataTable(
         data.to_dict("records"),
         columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],

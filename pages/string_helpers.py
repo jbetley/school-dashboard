@@ -66,44 +66,46 @@ def create_chart_label(data: pd.DataFrame) -> str:
         label (str): chart label
     """
 
-    data = data.columns.tolist()
+    data_columns = data.columns.tolist()
 
-    # the list returns any strings in final_data_columns that are in the
-    # ethnicity list or subgroup list. Label is based on whichever list
-    # of substrings matches the column list
-
-    # if len([i for e in ethnicity for i in data if e in i and "Proficiency" in i]) > 0:
-    if len([col for col in data if 'Proficient' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
+    # set category depending on data cols
+    if len([col for col in data_columns if 'Proficient' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
         label_category = " Proficiency by Ethnicity"
 
-    elif len([col for col in data if 'Graduation Rate' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
-        #len([i for e in ethnicity for i in data if e in i and "Graduation Rate" in i]) > 0:
+    elif len([col for col in data_columns if 'Graduation Rate' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
         label_category = " Graduation Rate by Ethnicity"
 
-    elif len([col for col in data if 'Benchmark' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
-        #len([i for e in ethnicity for i in data if e in i and "Benchmark" in i]) > 0:
+    elif len([col for col in data_columns if 'Benchmark' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
         label_category = " SAT by Ethnicity" 
 
-    elif len([col for col in data if 'School Total' in col and "Benchmark" in col]): #and any(substring for substring in ethnicity if substring in col)]) > 0:
-        #len([i for e in ethnicity for i in data if e in i and "Benchmark" in i]) > 0:
+    elif len([col for col in data_columns if 'School Total' in col and "Benchmark" in col]):
         label_category = " SAT School Total" 
 
-    elif len([col for col in data if 'Proficient' in col and any(substring for substring in subgroup if substring in col)]) > 0:
-        #len([i for s in subgroup for i in data if s in i and "Proficiency" in i]) > 0:
+    elif len([col for col in data_columns if 'Proficient' in col and any(substring for substring in subgroup if substring in col)]) > 0:
         label_category = " Proficiency by Subgroup"
 
-    elif len([col for col in data if 'Graduation Rate' in col and any(substring for substring in subgroup if substring in col)]) > 0:
-        #len([i for s in subgroup for i in data if s in i and "Graduation Rate" in i]) > 0:
+    elif len([col for col in data_columns if 'Graduation Rate' in col and any(substring for substring in subgroup if substring in col)]) > 0:
         label_category = " Graduation Rate by Subgroup" 
 
-    elif len([col for col in data if 'Benchmark' in col and any(substring for substring in subgroup if substring in col)]) > 0:
-        #len([i for s in subgroup for i in data if s in i and "Benchmark" in i]) > 0:
+    elif len([col for col in data_columns if 'Benchmark' in col and any(substring for substring in subgroup if substring in col)]) > 0:
         label_category = " SAT by Subgroup" 
 
-    # get the subject using regex
-    label_subject = re.search(r"(?<=\|)(.*?)(?=\s)",data[1]).group() # type: ignore
 
-    label = "Comparison: " + label_subject + label_category
+    # Create Label - different methodology for Grad Rate vs everything else
+# TODO: Add another elif for ToTal Grad Rate and then fix the Grad Rate subject thing
+# TODO: Really this is tghe easiiest?
+    # if "Graduation Rate" in data.columns:
+    if data.columns.str.contains("Graduation Rate").any() == True:
+        label = "Comparison: " + label_category
+        print(label)
+    else:
+
+        # pull subject from the first "subject" column using regex
+        subject_columns = [c for c in data_columns if c not in ['School Name', 'Low Grade', 'High Grade']]
+
+        label_subject = re.search(r"(?<=\|)(.*?)(?=\s)",subject_columns[0]).group() # type: ignore
+
+        label = "Comparison: " + label_subject + label_category
 
     return label
     
@@ -118,7 +120,7 @@ def create_school_label(data: pd.DataFrame) -> str:
     Returns:
         label (str): school label with name and gradespan
     """
-    # TODO: Add for HS
+    # TODO: Add Low/High grades for HS
     if 'Low Grade' in data:
         label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
             "-" + data["High Grade"].fillna("").astype(str) + ")"
@@ -176,10 +178,14 @@ def identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.
             school_string (str): a string of schools which have no data
         ]
     """
+    categories = [c for c in categories if c not in ["School Name","Low Grade", "High Grade"]]
     all_categories = categories + info_categories
+
+    school_name = school_data["School Name"].values[0]
 
     school_columns = [i for i in categories if i in school_data.columns]
 
+    # TODO: IS SCHOOL AND CORP ALREADY COMBINED? MAYBE JUST FOR HS?
     # sort corp data by the school columns (this excludes any categories
     # not in the school data)
     corporation_data = corporation_data.loc[:, (corporation_data.columns.isin(school_columns))].copy()
@@ -218,15 +224,20 @@ def identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.
     # to build a list of schools that is made up of schools that are missing
     # all data + schools that are missing some data + what data they are
     # missing
+
     check_data = final_data.copy()
-    check_data = check_data.drop(["Low Grade","High Grade"], axis = 1)
-    check_data = check_data.reset_index(drop=True)
+    # TODO: Need to figure out when LowGrade nad HighGrade are necessary and when to drop
+    # TODO: and how the current logic works - cause it is inconsistent
+    if check_data.columns.isin(["Low Grade","High Grade"]).any(): #"Low Grade" in check_data.columns or "High Grade" in check_data.columns:
+        check_data = check_data.drop(["Low Grade","High Grade"], axis = 1)
+        check_data = check_data.reset_index(drop=True)
 
     # get a list of the categories that are missing from selected school data and
     # strip everything following "|" delimeter for annotation
     # NOTE: this is doing a slightly different thing than the check_for_insufficient_n_size()
     # & check_for_no_data() functions (calculations.py), but may want to check at some point
     # to see which process is faster
+
     missing_categories = [i for i in categories if i not in check_data.columns]                
     missing_categories = [s.split("|")[0] for s in missing_categories]
 

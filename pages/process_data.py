@@ -56,7 +56,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     
     # NOTE: update is twice as fast as fillna?? (.015s vs .045s)
     data.update(data.apply(pd.to_numeric, errors="coerce"))
-    
+
     # Drop all columns for a Category if the value of "Total Tested" for that Category is "0"
     # This method works even if data is inconsistent, e.g., where no data could be (and is)
     # alternately represented by NULL, None, or "0"
