@@ -67,16 +67,17 @@ def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
 
 def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
 
-    tested = data[data.columns[data.columns.str.contains(r"Total Tested")]].columns.tolist()
+    final_data = data.copy()
+    tested = final_data[final_data.columns[final_data.columns.str.contains(r"Total Tested")]].columns.tolist()
 
     for test in tested:
-        if test in data.columns:
+        if test in final_data.columns:
             
             # get Category + Subject string
             cat_sub = test.split(" Total Tested")[0]
-            data[cat_sub + " Benchmark %"] = calculate_percentage(data[cat_sub + " At Benchmark"], data[test])
+            final_data[cat_sub + " Benchmark %"] = calculate_percentage(final_data[cat_sub + " At Benchmark"], final_data[test])
 
-    return data
+    return final_data
 
 # TODO: This is slow. Refactor
 def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:

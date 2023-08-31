@@ -56,8 +56,7 @@ def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
 
 def create_chart_label(data: pd.DataFrame) -> str:
     """
-    Takes a dataframe of academic data and creates a chart label based on
-    the df columns
+    Takes a dataframe of academic data and creates a chart label based on the columns
 
     Args:
         final_data (pd.DataFrame): dataframe of academic data
@@ -68,44 +67,51 @@ def create_chart_label(data: pd.DataFrame) -> str:
 
     data_columns = data.columns.tolist()
 
-    # set category depending on data cols
-    if len([col for col in data_columns if 'Proficient' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
-        label_category = " Proficiency by Ethnicity"
-
-    elif len([col for col in data_columns if 'Graduation Rate' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
-        label_category = " Graduation Rate by Ethnicity"
-
-    elif len([col for col in data_columns if 'Benchmark' in col and any(substring for substring in ethnicity if substring in col)]) > 0:
-        label_category = " SAT by Ethnicity" 
-
-    elif len([col for col in data_columns if 'School Total' in col and "Benchmark" in col]):
-        label_category = " SAT School Total" 
-
-    elif len([col for col in data_columns if 'Proficient' in col and any(substring for substring in subgroup if substring in col)]) > 0:
-        label_category = " Proficiency by Subgroup"
-
-    elif len([col for col in data_columns if 'Graduation Rate' in col and any(substring for substring in subgroup if substring in col)]) > 0:
-        label_category = " Graduation Rate by Subgroup" 
-
-    elif len([col for col in data_columns if 'Benchmark' in col and any(substring for substring in subgroup if substring in col)]) > 0:
-        label_category = " SAT by Subgroup" 
-
-
-    # Create Label - different methodology for Grad Rate vs everything else
-# TODO: Add another elif for ToTal Grad Rate and then fix the Grad Rate subject thing
-# TODO: Really this is tghe easiiest?
-    # if "Graduation Rate" in data.columns:
-    if data.columns.str.contains("Graduation Rate").any() == True:
-        label = "Comparison: " + label_category
-        print(label)
+    if data.columns.str.contains("Total Graduation|Non Waiver Graduation").any() == True:
+        label = "Comparison: Total/Non Waiver Graduation Rate" 
+    
     else:
 
-        # pull subject from the first "subject" column using regex
-        subject_columns = [c for c in data_columns if c not in ['School Name', 'Low Grade', 'High Grade']]
+        if data.columns.str.contains("Graduation Rate").any() == True:
+            if len([col for col in data_columns if any(substring for substring in ethnicity if substring in col)]) > 0:
+                label = "Comparison: Graduation Rate by Ethnicity"
+            
+            elif len([col for col in data_columns if any(substring for substring in subgroup if substring in col)]) > 0:
+                label = "Comparison: Graduation Rate by Subgroup"
+            
+            else:
+                label = ""
+    
+        elif data.columns.str.contains("Proficient").any() == True:
 
-        label_subject = re.search(r"(?<=\|)(.*?)(?=\s)",subject_columns[0]).group() # type: ignore
+            # pull subject from the first "subject" column using regex
+            subject_columns = [c for c in data_columns if c not in ['School Name', 'Low Grade', 'High Grade']]
+            label_subject = re.search(r"(?<=\|)(.*?)(?=\s)",subject_columns[0]).group() # type: ignore
 
-        label = "Comparison: " + label_subject + label_category
+            if len([col for col in data_columns if any(substring for substring in ethnicity if substring in col)]) > 0:
+                label_category = " Proficiency by Ethnicity"
+
+            elif len([col for col in data_columns if any(substring for substring in subgroup if substring in col)]) > 0:
+                label_category = " Proficiency by Subgroup"               
+
+            else:
+                label_category = ""
+
+            label = "Comparison: " + label_subject + label_category
+
+        elif data.columns.str.contains("Benchmark").any() == True:
+            
+            if len([col for col in data_columns if any(substring for substring in ethnicity if substring in col)]) > 0:
+                label = "Comparison: SAT Proficiency by Ethnicity" 
+
+            elif len([col for col in data_columns if any(substring for substring in subgroup if substring in col)]) > 0:
+                label = "Comparison: SAT Proficiency by Subgroup"
+
+            elif len([col for col in data_columns if 'School Total' in col and "Benchmark" in col]) > 0:
+                label = "Comparison: School Total SAT Proficiency"
+
+            else:
+                label = ""
 
     return label
     
@@ -120,16 +126,14 @@ def create_school_label(data: pd.DataFrame) -> str:
     Returns:
         label (str): school label with name and gradespan
     """
-    # TODO: Add Low/High grades for HS
-    if 'Low Grade' in data:
-        label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
-            "-" + data["High Grade"].fillna("").astype(str) + ")"
-        
-        # removes empty parentheses from School Corp & trailing .0
-        label = label.str.replace("\(-\)", "",regex=True)
-        label = label.str.replace(".0","",regex=True)
-    else:
-        label = data["School Name"]
+
+    label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
+        "-" + data["High Grade"].fillna("").astype(str) + ")"
+
+    label = label.str.replace("\(-\)", "",regex=True)
+    label = label.str.replace(".0","",regex=True)
+
+    label = data["School Name"]
 
     return label
 
@@ -185,7 +189,10 @@ def identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.
 
     school_columns = [i for i in categories if i in school_data.columns]
 
-    # TODO: IS SCHOOL AND CORP ALREADY COMBINED? MAYBE JUST FOR HS?
+    # print('PREMERGE')
+    # print(school_data)
+    # TODO: School and Corp are already combined for HS - either move to separate merge function
+    # TODO: or do not merge in body 
     # sort corp data by the school columns (this excludes any categories
     # not in the school data)
     corporation_data = corporation_data.loc[:, (corporation_data.columns.isin(school_columns))].copy()
@@ -239,6 +246,124 @@ def identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.
     # to see which process is faster
 
     missing_categories = [i for i in categories if i not in check_data.columns]                
+    missing_categories = [s.split("|")[0] for s in missing_categories]
+
+    # get index and columns where there are null values (numpy array)
+    idx, idy = np.where(pd.isnull(check_data))
+
+    # np.where returns an index for each column, resulting in duplicate
+    # indexes for schools missing multiple categories. But we only need one
+    # unique value for each school that is missing data
+    schools_with_missing = np.unique(idx, axis=0)
+
+    schools_with_missing_list = []
+    if schools_with_missing.size != 0:
+        for i in schools_with_missing:
+
+            schools_with_missing_name = check_data.iloc[i]["School Name"]
+
+            # get missing categories as a list, remove everything
+            # after the "|", and filter down to unique categories
+            with_missing_categories = list(check_data.columns[idy])
+            with_missing_categories = [s.split("|")[0] for s in with_missing_categories]
+            unique__missing_categories = list(set(with_missing_categories))
+
+            # create a list of ["School Name (Cat 1, Cat2)"]
+            schools_with_missing_list.append(schools_with_missing_name + " (" + ", ".join(unique__missing_categories) + ")")
+
+    else:
+        schools_with_missing_list = []
+
+    # create the string. Yes this is ugly, and i will probably fix it later, but
+    # we need to make sure that all conditions match proper punctuation.
+    if len(schools_with_missing_list) != 0:
+        if len(schools_with_missing_list) > 1:
+
+            schools_with_missing_string = ", ".join(schools_with_missing_list)
+        else:
+            schools_with_missing_string = schools_with_missing_list[0]
+
+        if missing_schools:
+            missing_schools = [i + " (All)" for i in missing_schools]
+            school_string = ", ".join(list(map(str, missing_schools))) + "."
+            school_string = schools_with_missing_string + ", " + school_string
+        else:
+            school_string = schools_with_missing_string + "."
+    else:
+        if missing_schools:
+            missing_schools = [i + " (All)" for i in missing_schools]
+            school_string = ", ".join(list(map(str, missing_schools))) + "."
+        else:
+            school_string = "None."
+
+    # Create string for categories for which the selected school has
+    # no data. These categories are not shown at all.
+    if missing_categories:
+        category_string = ", ".join(list(map(str, missing_categories))) + "."
+    else:
+        category_string = "None."
+
+    return final_data, category_string, school_string
+
+def identify_missing_categories_pure(raw_data: pd.DataFrame, categories: list) -> Tuple[pd.DataFrame, str, str]:
+    """
+    Processes several dataframes for display in comparison tables while tracking both schools that are missing data for 
+    a particulary category (category_string) and schools that are missing data for all categories (school_string).
+
+    Args:
+        school_data (pd.DataFrame): academic data from the selected school
+        corporation_data (pd.DataFrame): academic data from the school corporation where the school is located
+        comparison_data (pd.DataFrame): academic data from comparable schools (may or may not be in school corp)
+        categories (list): a list of academic categories
+        corp_name (str): the name of the school corporation
+
+    Returns:
+        Tuple[
+            final_data (pd.DataFrame): all dataframes cleaned up and combined
+            category_string (str): a string of categories for which the selected school has no data. 
+            school_string (str): a string of schools which have no data
+        ]
+    """
+    subject_categories = [c for c in categories if c not in ["School Name","Low Grade", "High Grade"]]
+    
+    # all_categories = subject_categories + info_categories
+
+    # school_name = raw_data["School Name"].values[0]
+
+    school_columns = [i for i in subject_categories if i in raw_data.columns]
+
+    # get a list of all of the Categories (each one a column)
+    school_categories = [ele for ele in school_columns if ele not in info_categories]
+
+    # test all school columns and drop any where all columns (proficiency data) is nan/null
+    final_data = raw_data.dropna(subset=school_categories, how="all")  
+
+    # replace any blanks with NaN
+    final_data = final_data.replace(r"^\s*$", np.nan, regex=True)
+
+    # get the names of the schools that have no data by comparing the
+    # column sets before and after the drop
+    missing_schools = list(set(raw_data["School Name"]) - set(final_data["School Name"]))
+
+    # Now comes the hard part. Get the names and categories of schools that
+    # have data for some categories and not others. In the end we want
+    # to build a list of schools that is made up of schools that are missing
+    # all data + schools that are missing some data + what data they are
+    # missing
+
+    check_data = raw_data.copy()
+
+    if check_data.columns.isin(["Low Grade","High Grade"]).any():
+        check_data = check_data.drop(["Low Grade","High Grade"], axis = 1)
+        check_data = check_data.reset_index(drop=True)
+
+    # get a list of the categories that are missing from selected school data and
+    # strip everything following "|" delimeter for annotation
+    # NOTE: this is doing a slightly different thing than the check_for_insufficient_n_size()
+    # & check_for_no_data() functions (calculations.py), but may want to check at some point
+    # to see which process is faster
+
+    missing_categories = [i for i in subject_categories if i not in check_data.columns]                
     missing_categories = [s.split("|")[0] for s in missing_categories]
 
     # get index and columns where there are null values (numpy array)

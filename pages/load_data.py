@@ -1,31 +1,9 @@
-#############################################
-# ICSB Dashboard - Database Queries (SQLite #
-#############################################
+##############################################
+# ICSB Dashboard - Database Queries (SQLite) #
+##############################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
-
-# Resources:
-# https://realpython.com/python-sqlite-sqlalchemy/
-# https://www.fullstackpython.com/blog/export-pandas-dataframes-sqlite-sqlalchemy.html
-# https://community.plotly.com/t/sqlite-in-multi-page-dash-app/71879/19
-# https://stackoverflow.com/questions/68139493/dash-app-connections-to-aws-postgres-db-very-slow
-# https://stackoverflow.com/questions/61943505/when-trying-to-connect-to-mysql-db-using-ploty-dash-app-iam-getting-an-error
-# https://stackoverflow.com/questions/53999681/using-flask-with-sqlalchemy-and-dash
-# https://stackoverflow.com/questions/52286507/how-to-merge-flask-login-with-a-dash-application
-# https://community.plotly.com/t/dash-interacting-with-sqlite-and-creating-a-table/11844
-
-# Examples:
-# https://github.com/plotly/dash-sqlite-uber-rides-demo/blob/master/uberDatabase.py
-# https://github.com/plotly/dash-recipes/blob/master/sql_dash_dropdown.py
-# https://github.com/plotly/dash-recipes/blob/master/dash_sqlite.py
-
-### AWS LIVE DATABASE ###
-# https://www.youtube.com/watch?v=DWqEVpOfYxE
-# https://www.youtube.com/watch?v=zIHOOuCdLAM
-# https://medium.com/@rodkey/deploying-a-flask-application-on-aws-a72daba6bb80
-# https://stackoverflow.com/questions/14850341/connect-to-aws-rds-mysql-database-instance-with-flask-sqlalchemy?rq=1
-# https://stackoverflow.com/questions/62059016/connecting-flask-to-aws-rds-using-flask-sqlalchemy
+# version:  1.10
+# date:     08/31/23
 
 import pandas as pd
 from sqlalchemy import create_engine
@@ -85,16 +63,10 @@ grades_ordinal = [
     "8th"
 ]
 
-# Create a simple database
 engine = create_engine('sqlite:///data/db_all.db')
-# import importlib.resources as resources
-# with resources.path("dashboard_0123.db") as sqlite_filepath:
-#     engine = create_engine(f"sqlite:///{sqlite_filepath}")
-
 print('Database Engine Created . . .')
 
 def get_current_year():
-
     db = engine.raw_connection()
     cur = db.cursor()
     cur.execute(''' SELECT MAX(Year) FROM academic_data_k8 ''')
@@ -103,13 +75,11 @@ def get_current_year():
 
     return year
 
-# another global variable
 current_academic_year = get_current_year()
 
 # TODO: Refactor so everything passed in as a tuple of a dict for named placeholders, even if only a single val
-# Return Dataframe (read_sql is a convenience function wrapper around
-# read_sql_query or read_sql_table depending on input)
-# If no data matches query, run_query returns an empty dataframe
+# Return Dataframe (read_sql is a convenience function wrapper around read_sql_query)
+# If no data matches query, returns an empty dataframe
 def run_query(q, *args):
     conditions = None
 
@@ -137,14 +107,12 @@ def get_academic_dropdown_years(*args):
     params = dict(zip(keys, args))
 
     if params['type'] == 'K8' or params['type'] == 'K12':
-
         q = text(''' 
             SELECT DISTINCT	Year
             FROM academic_data_k8
             WHERE SchoolID = :id
         ''')
     else:
-
         q = text('''
             SELECT DISTINCT	Year
             FROM academic_data_hs
@@ -226,7 +194,6 @@ def get_financial_analysis_dropdown_years(school_id):
     return years
 
 def get_school_dropdown_list():
-
     q = text('''
         SELECT SchoolName, SchoolID, SchoolType
         FROM school_index '''
@@ -265,16 +232,16 @@ def get_school_index(school_id):
 
     return run_query(q, params)
 
-def get_info(school_id):
-    params = dict(id=school_id)
+# def get_school_info(school_id):
+#     params = dict(id=school_id)
 
-    q = text('''
-        SELECT SchoolName, City, Principal, OpeningYear
-            FROM school_index
-            WHERE school_index.SchoolID = :id
-        ''')
+#     q = text('''
+#         SELECT SchoolName, City, Principal, OpeningYear
+#             FROM school_index
+#             WHERE school_index.SchoolID = :id
+#         ''')
 
-    return run_query(q, params)
+#     return run_query(q, params)
 
 def get_financial_data(school_id):
     params = dict(id=school_id)
@@ -393,31 +360,43 @@ def get_growth_data(*args):
         ''')
     return run_query(q, params)
 
-# "SchoolTotal|ELATotalTested" is a proxy for school size. 
+# "SchoolTotal|ELATotalTested" is a proxy for school size for k8 schools. 
 def get_school_coordinates(*args):
-    keys = ['year']
+    keys = ['year','type']
     params = dict(zip(keys, args))
 
-    q = text('''
-        SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade, "SchoolTotal|ELATotalTested"
-            FROM academic_data_k8 
-            WHERE Year = :year
+    if params['type'] == 'K8' or params['type'] == 'K12':
+        q = text('''
+            SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade, "SchoolTotal|ELATotalTested"
+                FROM academic_data_k8 
+                WHERE Year = :year
         ''')
-    
+    else:
+        q = text('''
+            SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade
+                FROM academic_data_hs 
+                WHERE Year = :year
+        ''')
+
     return run_query(q, params)
 
 def get_comparable_schools(*args):
-
-    keys = ['schools','year']
+    keys = ['schools','year','type']
     params = dict(zip(keys, args))
 
     school_str = ', '.join( [ str(int(v)) for v in params['schools'] ] )
 
-    query_string = '''
-        SELECT *
-            FROM academic_data_k8
-            WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
-
+    if params['type'] == 'K8' or params['type'] == 'K12':
+        query_string = '''
+            SELECT *
+                FROM academic_data_k8
+                WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
+    else:
+        query_string = '''
+            SELECT *
+                FROM academic_data_hs
+                WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
+        
     q = text(query_string)
 
     return run_query(q, params)

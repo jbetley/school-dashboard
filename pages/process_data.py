@@ -219,6 +219,7 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
     return corp_data
 
 def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
+    # Used for Academic Information and Metrics only
     # NOTE: Drop columns without data. Generally, we want to keep "result" (e.g., "Graduates", "Pass N",
     # "Benchmark") columns with "0" values if the "tested" (e.g., "Cohort Count", "Total Tested",
     # "Test N") values are greater than "0". The data is pretty shitty as well, using blank, null,
@@ -236,9 +237,11 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     # Also Drop "Pass N" and "Test N" (Grade 10 ECA is no longer used)
     data = data[data.columns[~data.columns.str.contains(r"Graduation Rate|Percent Pass|ELA and Math|Test N|Pass N")]].copy()
 
+    # Get N-Size for all categories with data
+
     # Drop: all SAT related columns ("Approaching Benchmark", "At Benchmark", etc.)
     # for a Category if the value of "Total Tested" for that Category is "0"
-    tested_cols = data.filter(regex="Total Tested|Cohort Count").columns.tolist() #|Test N").columns.tolist()
+    tested_cols = data.filter(regex="Total Tested|Cohort Count").columns.tolist()
     drop_columns=[]
 
     for col in tested_cols:
@@ -248,8 +251,6 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
                 match_string = " Total Tested"
             elif "Cohort Count" in col:
                 match_string = "|Cohort Count"
-            # elif "Test N" in col:
-            #     match_string = " Test N"
 
             matching_cols = data.columns[pd.Series(data.columns).str.startswith(col.split(match_string)[0])]
             drop_columns.append(matching_cols.tolist())   
@@ -432,6 +433,92 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
             final_data = final_data[final_cols]
 
     return final_data
+
+def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.DataFrame:
+
+    # All df at this point should have a minimum of eight cols (Year, Corporation ID,
+    # Corporation Name, School ID, School Name, School Type, AHS|Grad, & All AHS|CCR). If
+    # a df has eight or fewer cols, it means they have no data. Note this includes an AHS
+    # because if they have no grad data then both AHS|Grad and AHS|CCR will be None.
+    if (len(raw_data.index) == 0) or (len(raw_data.columns) <= 8) or (raw_data.empty):
+
+        data = pd.DataFrame()
+    
+    else:
+
+        school_info = raw_data[["School Name"]].copy()
+        school_type = raw_data['School Type'].values[0]
+
+        # school data: coerce, but keep strings ("***" and "^")
+        for col in raw_data.columns:
+            raw_data[col] = pd.to_numeric(raw_data[col], errors="coerce").fillna(raw_data[col])
+
+        data = raw_data.filter(regex=r"Cohort Count$|Graduates$|AHS|At Benchmark|Total Tested|Year|Low Grade|High Grade", axis=1).copy()
+
+        # remove "Both" columns
+        # data = data.drop(list(data.filter(regex="ELA and Math")), axis=1)
+
+        # Calculate Grad Rate
+        if "Total|Cohort Count" in data.columns:
+            data = calculate_graduation_rate(data)
+
+        # Calculate Non Waiver Grad Rate #
+        # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
+        # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
+        # cohort, there were no "waiver" graduates (which means no Non Waiver data).
+        # so we replace 0 with NaN (to ensure a NaN result rather than 0)
+        # if "Non Waiver|Cohort Count" in data.columns:
+        #data = calculate_nonwaiver_graduation_rate(data)
+
+        # Calculate SAT Rates #
+        if "School Total|EBRW Total Tested" in data.columns:
+            data = calculate_sat_rate(data)
+
+        # Calculate AHS Only Data #
+        # NOTE: All other values pulled from HS dataframe required for AHS calculations
+        # should be addressed in this block        
+
+        # CCR Rate
+        if school_type == "AHS":
+
+            if "AHS|CCR" in data.columns:
+                data["AHS|CCR"] = pd.to_numeric(data["AHS|CCR"], errors="coerce")
+
+            if "AHS|Grad All" in data.columns:                
+                data["AHS|Grad All"] = pd.to_numeric(data["AHS|Grad All"], errors="coerce")
+
+            if {"AHS|CCR","AHS|Grad All"}.issubset(data.columns):
+                data["CCR Percentage"] = (data["AHS|CCR"] / data["AHS|Grad All"])
+
+        # Need to check data again to see if anything is left after the above operations
+        # if all columns in data other than the 1st (Year) are null then return empty df
+        
+        if data.iloc[:, 1:].isna().all().all():
+            
+            data = pd.DataFrame()
+        
+        else:
+
+            data = data.filter(
+                regex=r"Graduation Rate$|CCR Percentage|Benchmark \%|^CCR Percentage|^Year$|Low Grade|High Grade",
+                axis=1,
+            )
+
+            school_info = school_info.reset_index(drop=True)
+            data = data.reset_index(drop=True)
+
+            data = pd.concat([data, school_info], axis=1, join="inner")
+
+            data.columns = data.columns.astype(str)
+
+            data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+
+            data = data.reset_index(drop=True)
+
+            # make sure there are no lingering NoneTypes 
+            data = data.fillna(value=np.nan)
+
+    return data
 
 def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.DataFrame) -> pd.DataFrame:
 
