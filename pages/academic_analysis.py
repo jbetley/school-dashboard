@@ -292,6 +292,9 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
         Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
 
+
+## TODO: SPlit case for K12 - Radio Button - Otherwise dropdown will not work
+
     if school_type == "HS" or school_type == "AHS" or school_type == "K12":
          
         if school_type == "HS" or school_type == "AHS":
@@ -305,13 +308,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         # filter by selected year
         raw_hs_school_data = raw_hs_school_data.loc[raw_hs_school_data["Year"] == numeric_year]
         raw_hs_school_data = raw_hs_school_data.reset_index(drop=True)
-
-# toDO: THis is great for academic info, but defeats the purpose of Analysis- filter has to happen
-# TODO: AFTER missing categories are counted.
-        # remove categories for which there is no tested data
-        # filtered_hs_school_data = filter_high_school_academic_data(raw_hs_school_data)
-
-        # if not filtered_hs_school_data.empty:
         
         # get data for corporation
         raw_hs_corp_data = get_hs_corporation_academic_data(school)
@@ -329,59 +325,25 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         raw_hs_corp_data = raw_hs_corp_data.reindex(columns = add_columns)
         
         raw_hs_corp_data['School Name'] = hs_corporation_name
-        # raw_hs_corp_data['Corporation Name'] = hs_corporation_name
         raw_hs_corp_data['School ID'] = hs_corporation_id
         raw_hs_corp_data['School Type'] = "School Corporation"
         raw_hs_corp_data = raw_hs_corp_data.drop(raw_hs_corp_data.filter(regex="Benchmark %").columns, axis=1)
 
         # get data for comparable schools (already filtered by selected year in SQL query)
-        raw_hs_comparison_data = get_comparable_schools(comparison_school_list, numeric_year, school_type)
+        raw_hs_comparison_data = get_comparable_schools(comparison_school_list, numeric_year, "HS")
 
         # concatenate all three dataframes together
         combined_hs_data = pd.concat([raw_hs_school_data, raw_hs_corp_data, raw_hs_comparison_data], ignore_index = True)
         
-        # force values to numeric (changing "***" into NaN)
-        # for col in combined_hs_data.columns:
-        #     combined_hs_data[col] = pd.to_numeric(combined_hs_data[col], errors="coerce")
-
         # calculate values
         processed_hs_data = process_high_school_academic_analysis_data(combined_hs_data)
-        # processed_hs_data['School Name'] = hs_school_name
 
         hs_analysis_data = processed_hs_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
-        
-        # print(processed_hs_school_data)
-        # print('POST')
-        # # remove columns used for calculation
-        # hs_analysis_data = processed_hs_school_data[processed_hs_school_data["Category"].str.contains("At Benchmark") == False]
-        
-        # print(hs_analysis_data)
 
-        # hs_school_data = processed_hs_school_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
-
-        # hs_school_data = hs_school_data[hs_school_data.columns[hs_school_data.columns.str.contains(r"Benchmark \%|Graduation Rate|Low Grade|High Grade")]]
-        
-# TODO: Explore adding Low and High Grade later in the chain so we don't have to keep dropping/ignoring
-        # low_grade =  raw_hs_school_data.loc[(raw_hs_school_data["Year"] == numeric_year), "Low Grade"].values[0]
-        # high_grade =  raw_hs_school_data.loc[(raw_hs_school_data["Year"] == numeric_year), "High Grade"].values[0]
-
-        # # Grade range data is used for the chart "hovertemplate"         
-        # hs_school_data["Low Grade"] =  raw_hs_school_data.loc[(raw_hs_school_data["Year"] == numeric_year), "Low Grade"].values[0]
-        # hs_school_data["High Grade"] =  raw_hs_school_data.loc[(raw_hs_school_data["Year"] == numeric_year), "High Grade"].values[0]
-
-        # processed_hs_comparison_data = process_high_school_academic_data(raw_hs_comparison_data, school)
-        
-        # # print('END')
-        # # print(processed_hs_comparison_data)
-        # hs_comparison_data = processed_hs_comparison_data[processed_hs_comparison_data.columns[processed_hs_comparison_data.columns.str.contains(r"Benchmark \%|Graduation Rate|Low Grade|High Grade")]]
-        
 # TODO: Add Math
-# TODO: Which are Single and Which are Multi Bar?
+        # hs_analysis_data.columns = hs_analysis_data.columns.astype(str)
 
-        # combined_hs_data = pd.concat([hs_school_data, hs_comparison_data], ignore_index = True)
-
-        # TODO: Do we want to keep *** at this point?
-        hs_cols = [c for c in hs_analysis_data if "School Name" not in c]
+        hs_cols = [c for c in hs_analysis_data if c != "School Name"]
         
         # force all to numeric (this removes '***' strings) - we later use NaN as a proxy
         for col in hs_cols:
@@ -391,6 +353,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         school_name_idx = hs_analysis_data.index[hs_analysis_data["School Name"].str.contains(hs_school_name)].tolist()[0]
         hs_analysis_data = hs_analysis_data.loc[:, ~hs_analysis_data.iloc[school_name_idx].isna()]
 
+# TODO: What is Nonwaiver Rate? Grad rate without Nonwaiver Diplomas?
         # Graduation Rate Overview
         grad_overview_cols = ["School Name","Total Graduation Rate", "Non Waiver Graduation Rate","Low Grade","High Grade"]
 
@@ -409,6 +372,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             grad_overview_data, grad_overview_category_string, grad_overview_school_string = \
                 identify_missing_categories_pure(grad_overview_data, grad_overview_cols)
+            
             # Once missing category and strings are built, we need to drop any columns for which the
             # school has no data (we only want to display columns including the school)
 
@@ -446,12 +410,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         grad_ethnicity_cols = info_categories + grad_ethnicity_cols
         grad_ethnicity_data = hs_analysis_data[grad_ethnicity_cols]
 
-# TODO: Grad Data has Low/High at this point and SAT does not. WHY?
-
         if len(grad_ethnicity_data.columns) > 3:
-
-            # grad_ethnicity_data, grad_ethnicity_category_string, grad_ethnicity_school_string = \
-            #     identify_missing_categories(grad_ethnicity_data, hs_corp_data, hs_corp_data, grad_ethnicity_cols, hs_corporation_name)
 
             grad_ethnicity_data, grad_ethnicity_category_string, grad_ethnicity_school_string = \
                 identify_missing_categories_pure(grad_ethnicity_data, grad_ethnicity_cols)
@@ -484,15 +443,12 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         grad_subgroup_cols = [col for col in hs_analysis_data.columns if 'Graduation Rate' in col and any(substring for substring in subgroup if substring in col)]
         grad_subgroup_cols = info_categories + grad_subgroup_cols
         grad_subgroup_data = hs_analysis_data[grad_subgroup_cols]
-
+        
         if len(grad_subgroup_data.columns) > 3:
 
             grad_subgroup_data, grad_subgroup_category_string, grad_subgroup_school_string = \
                 identify_missing_categories_pure(grad_subgroup_data, grad_subgroup_cols)
             
-            # grad_subgroup_data, grad_subgroup_category_string, grad_subgroup_school_string = \
-            #     identify_missing_categories(grad_subgroup_data, hs_corp_data, hs_corp_data, grad_subgroup_cols, hs_corporation_name)
-
             school_name_idx = grad_subgroup_data.index[grad_subgroup_data["School Name"].str.contains(hs_school_name)].tolist()[0]
             grad_subgroup_data = grad_subgroup_data.loc[:, ~grad_subgroup_data.iloc[school_name_idx].isna()]
 
@@ -522,21 +478,12 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         sat_overview_cols = info_categories + sat_overview_cols
         sat_overview_data = hs_analysis_data[sat_overview_cols]
 
-        if len(sat_overview_data.columns) > 1:
-
-            # sat_overview_data, sat_overview_category_string, sat_overview_school_string = \
-            #     identify_missing_categories(sat_overview_data, hs_corp_data, hs_corp_data, sat_overview_cols, hs_corporation_name)
+        if len(sat_overview_data.columns) > 3:
 
             sat_overview_data, sat_overview_category_string, sat_overview_school_string = \
                 identify_missing_categories_pure(sat_overview_data, sat_overview_cols)
             
-            # Once missing category and strings are built, we need to drop any columns for which the
-            # school has no data (we only want to display columns including the school)
-
-            # find the index of the row containing the school name
             school_name_idx = sat_overview_data.index[sat_overview_data["School Name"].str.contains(hs_school_name)].tolist()[0]
-
-            # drop all columns where the row at school_name_idx has a NaN value
             sat_overview_data = sat_overview_data.loc[:, ~sat_overview_data.iloc[school_name_idx].isna()]
 
             if len(sat_overview_data.columns) > 1:
@@ -565,14 +512,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         sat_ethnicity_cols = info_categories + sat_ethnicity_cols
         sat_ethnicity_data = hs_analysis_data[sat_ethnicity_cols]
 
-        # sat_ethnicity_data =  sat_ethnicity_data[[col for col in sat_ethnicity_data.columns if col in ["EBRW","School Name","Low Grade","High Grade"]]]
         sat_ethnicity_data = sat_ethnicity_data.filter(regex="|".join(["EBRW","School Name","Low Grade","High Grade"]))
 
-        if len(sat_ethnicity_data.columns) > 1:
+        if len(sat_ethnicity_data.columns) > 3:
 
-            # sat_ethnicity_data, sat_ethnicity_category_string, sat_ethnicity_school_string = \
-            #     identify_missing_categories(sat_ethnicity_data, hs_corp_data, hs_corp_data, sat_ethnicity_cols, hs_corporation_name)
-            
             sat_ethnicity_data, sat_ethnicity_category_string, sat_ethnicity_school_string = \
                 identify_missing_categories_pure(sat_ethnicity_data, sat_ethnicity_cols)
             
@@ -607,13 +550,10 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
         sat_subgroup_data =  sat_subgroup_data.filter(regex="|".join(["EBRW","School Name","Low Grade","High Grade"]))
 
-        if len(sat_subgroup_data.columns) > 1:
+        if len(sat_subgroup_data.columns) > 3:
 
             sat_subgroup_data, sat_subgroup_category_string, sat_subgroup_school_string = \
                 identify_missing_categories_pure(sat_subgroup_data, sat_subgroup_cols)
-            
-            # sat_subgroup_data, sat_subgroup_category_string, sat_subgroup_school_string = \
-            #     identify_missing_categories(sat_subgroup_data, hs_corp_data, hs_corp_data, sat_subgroup_cols, hs_corporation_name)
             
             school_name_idx = sat_subgroup_data.index[sat_subgroup_data["School Name"].str.contains(hs_school_name)].tolist()[0]
             sat_subgroup_data = sat_subgroup_data.loc[:, ~sat_subgroup_data.iloc[school_name_idx].isna()]
@@ -715,7 +655,7 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
                     for col in current_corp_data.columns:
                         current_corp_data[col]=pd.to_numeric(current_corp_data[col], errors="coerce")
 
-                    comparison_schools_filtered = get_comparable_schools(comparison_school_list, numeric_year, school_type)
+                    comparison_schools_filtered = get_comparable_schools(comparison_school_list, numeric_year, "K8")
 
                     comparison_schools_filtered = comparison_schools_filtered.filter(regex = r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year|School Name|School ID|Distance|Low Grade|High Grade",axis=1)
 

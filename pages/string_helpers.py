@@ -2,8 +2,8 @@
 # ICSB Dashboard - String Maninpulation Functions #
 ###################################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import pandas as pd
 import numpy as np
@@ -102,20 +102,20 @@ def create_chart_label(data: pd.DataFrame) -> str:
         elif data.columns.str.contains("Benchmark").any() == True:
             
             if len([col for col in data_columns if any(substring for substring in ethnicity if substring in col)]) > 0:
-                label = "Comparison: SAT Proficiency by Ethnicity" 
+                label = "Comparison: SAT At Benchmark by Ethnicity" 
 
             elif len([col for col in data_columns if any(substring for substring in subgroup if substring in col)]) > 0:
-                label = "Comparison: SAT Proficiency by Subgroup"
+                label = "Comparison: SAT At Benchmark by Subgroup"
 
             elif len([col for col in data_columns if 'School Total' in col and "Benchmark" in col]) > 0:
-                label = "Comparison: School Total SAT Proficiency"
+                label = "Comparison: School Total SAT At Benchmark"
 
             else:
                 label = ""
 
     return label
     
-def create_school_label(data: pd.DataFrame) -> str:
+def create_school_label(data: pd.DataFrame) -> pd.Series:
     """
     Takes a dataframe of academic data and creates a label for each school including
     the school"s gradespan.
@@ -189,13 +189,11 @@ def identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.
 
     school_columns = [i for i in categories if i in school_data.columns]
 
-    # print('PREMERGE')
-    # print(school_data)
-    # TODO: School and Corp are already combined for HS - either move to separate merge function
-    # TODO: or do not merge in body 
+    # TODO: Move the merge-y bits to separate merge function for K8 and use pure function to find strings
+
     # sort corp data by the school columns (this excludes any categories
     # not in the school data)
-    corporation_data = corporation_data.loc[:, (corporation_data.columns.isin(school_columns))].copy()
+    corporation_data = corporation_data.loc[:, corporation_data.columns.isin(school_columns)].copy()
 
     # add the school corporation name
     corporation_data["School Name"] = corp_name

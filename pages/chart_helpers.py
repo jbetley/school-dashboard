@@ -844,6 +844,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     if 'Low Grade' in data:
         data = data.drop(['Low Grade', 'High Grade'], axis = 1)
 
+# TODO: Test to see if need
     # find the index of the row containing the school name,
     # use this to filter data (next line) and also with
     # data_table row_index to Bold the school's name.
@@ -858,7 +859,11 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
 
     # remove trailing string
     # "School Total" is for SAT and includes all three subjects - so we dont want to split
-    if ~data.columns.str.contains("School Total").any():
+    if data.columns.str.contains("School Total").any() == True:
+        # keep everything between | and "Benchmark %"
+        data.columns = data.columns.str.replace("Benchmark %","")
+        data.columns = data.columns.str.replace("School Total\|","")
+    else:
         data.columns = data.columns.str.split('|').str[0]
 
     # replace any '***' values (insufficient n-size) with NaN

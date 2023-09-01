@@ -386,7 +386,7 @@ def get_comparable_schools(*args):
 
     school_str = ', '.join( [ str(int(v)) for v in params['schools'] ] )
 
-    if params['type'] == 'K8' or params['type'] == 'K12':
+    if params['type'] == 'K8':
         query_string = '''
             SELECT *
                 FROM academic_data_k8

@@ -1771,7 +1771,6 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
 # TODO: Next two lines should be redundant for HS data, Check for k8 data
     # find the index of the row containing the school name
     school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
-
     # drop all columns where the row at school_name_idx has a NaN value
     data = data.loc[:, ~data.iloc[school_name_idx].isna()]
           
@@ -1786,15 +1785,18 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     # hide the header "School Name"
     data = data.rename(columns = {"School Name" : ""})
 
-    # simplify and clarify column names (remove everything between | & %)
-    data.columns = data.columns.str.replace(r"\|(.*?)\%", "", regex=True)
+    if data.columns.str.contains("School Total").any() == True:
+        # keep everything between | and "Benchmark %"
+        data.columns = data.columns.str.replace("Benchmark %","")
+        data.columns = data.columns.str.replace("School Total\|","")
+    else:
+        # remove everything between | & % in column name
+        data.columns = data.columns.str.replace(r"\|(.*?)\%", "", regex=True)
 
 # NOTE: Try AG Grid for more responsive table
 #       pip install dash-ag-grid==2.0.0
 #       import dash_ag_grid as dag
 
-# TODO: Fix: DataFrame columns are not unique, some columns will be omitted.
-# TODO: Issue is "School Total" - also may be issue for Grad Rate
     table = dash_table.DataTable(
         data.to_dict("records"),
         columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
