@@ -98,7 +98,7 @@ def loading_fig() -> dict:
 
     return fig
 
-def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> list:
+def no_data_fig_label(label: str = 'No Data to Display', height: int = 400, table_type: str = "ugly") -> list:
     """
     Creates a blank fig with with a label and default height
 
@@ -142,14 +142,30 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400) -> l
         plot_bgcolor='rgba(0,0,0,0)'
     )
 
-    fig_layout = [
-        html.Div(
-            [
-                html.Label(label, className = 'header_label'),
-                dcc.Graph(figure = fig),
-            ]
-        )
-    ]
+    if table_type == "pretty":
+        fig_layout = [
+            html.Div(
+                [            
+            html.Div(
+                [
+                    html.Label(label, className = 'header_label'),
+                    dcc.Graph(figure = fig),
+                ],
+                className = "pretty_container ten columns",
+            )
+                ],
+                className = "bare_center_container twelve columns",
+            )            
+        ]        
+    else:
+        fig_layout = [
+            html.Div(
+                [
+                    html.Label(label, className = 'header_label'),
+                    dcc.Graph(figure = fig),
+                ]
+            )
+        ]
 
     return fig_layout
 

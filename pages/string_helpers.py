@@ -100,12 +100,20 @@ def create_chart_label(data: pd.DataFrame) -> str:
             label = "Comparison: " + label_subject + label_category
 
         elif data.columns.str.contains("Benchmark").any() == True:
-            
+
             if len([col for col in data_columns if any(substring for substring in ethnicity if substring in col)]) > 0:
-                label = "Comparison: SAT At Benchmark by Ethnicity" 
+
+                if data.columns.str.contains("EBRW").any():
+                    label = "Comparison: SAT At Benchmark by Ethnicity (EBRW)"
+                else:
+                    label = "Comparison: SAT At Benchmark by Ethnicity (Math)"
 
             elif len([col for col in data_columns if any(substring for substring in subgroup if substring in col)]) > 0:
-                label = "Comparison: SAT At Benchmark by Subgroup"
+
+                if data.columns.str.contains("EBRW").any():
+                    label = "Comparison: SAT At Benchmark by Subgroup (EBRW)"
+                else:
+                    label = "Comparison: SAT At Benchmark by Subgroup (Math)"
 
             elif len([col for col in data_columns if 'School Total' in col and "Benchmark" in col]) > 0:
                 label = "Comparison: School Total SAT At Benchmark"
