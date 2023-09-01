@@ -145,18 +145,24 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400, tabl
     if table_type == "pretty":
         fig_layout = [
             html.Div(
-                [            
-            html.Div(
-                [
-                    html.Label(label, className = 'header_label'),
-                    dcc.Graph(figure = fig),
+                [                  
+                    html.Div(
+                        [            
+                            html.Div(
+                                [
+                                    html.Label(label, className = 'header_label'),
+                                    dcc.Graph(figure = fig),
+                                ],
+                                className = "pretty_container ten columns",
+                            )
+                        ],
+                        className = "bare_container_center twelve columns",
+                    ) 
                 ],
-                className = "pretty_container ten columns",
-            )
-                ],
-                className = "bare_center_container twelve columns",
-            )            
-        ]        
+                className = "row",
+            )                        
+        ]
+        
     else:
         fig_layout = [
             html.Div(

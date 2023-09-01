@@ -6,7 +6,8 @@
 # date:     08/31/23
 
 import dash
-from dash import ctx, dcc, html, Input, Output, callback
+from dash import ctx, dcc, html, Input, State, Output, callback
+import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
@@ -26,6 +27,43 @@ from .calculate_metrics import calculate_k8_comparison_metrics
 from .subnav import subnav_academic
 
 dash.register_page(__name__, path = "/academic_analysis", order=6)
+
+#TODO: Spacing not working
+# Display type - K12 only
+@callback(      
+    Output("analysis-radio-type-input", "options"),
+    Output("analysis-radio-type-input","value"),
+    Output('analysis-radio-input-container', 'style'),
+    Input("charter-dropdown", "value"),
+    State("analysis-radio-type-input", "value"),
+)
+def radio_type_selector(school: str, radio_type_value: str):
+
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
+
+    value_default = "k8"
+    
+    if school_type == "K12":
+    
+        options = [
+            {"label": "K-8", "value": "k8"},
+            {"label": "High School", "value": "highschool"},
+        ]
+        radio_input_container = {'display': 'block'}
+
+    else:
+        options = []
+        radio_input_container = {'display': 'none'}
+
+    if radio_type_value:
+        type_value = radio_type_value
+    else:
+        type_value = value_default
+    
+    print(options)
+
+    return options, type_value, radio_input_container
 
 # Set dropdown options for comparison schools
 @callback(
@@ -268,13 +306,13 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
     k8_analysis_main_container = {"display": "none"}
     k8_analysis_empty_container = {"display": "block"}
 
-    grad_overview = []  # type: ignore
+    grad_overview = []
     grad_overview_container = {"display": "none"}
 
-    grad_ethnicity = [] # type: ignore
+    grad_ethnicity = []
     grad_ethnicity_container = {"display": "none"}
 
-    grad_subgroup = []  # type: ignore
+    grad_subgroup = []
     grad_subgroup_container = {"display": "none"}
 
     sat_overview = []   
@@ -302,7 +340,11 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
         if school_type == "HS" or school_type == "AHS":
 
             k8_analysis_empty_container = {"display": "none"}
-        
+            # hide k8/hs radio selection
+            
+        # if school_type == "K12":
+        #     # display K8/High School Radio Selection
+
         # get data for school
         raw_hs_school_data = get_high_school_academic_data(school)
 
@@ -351,9 +393,6 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
 
             hs_analysis_data = processed_hs_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
 
-    # TODO: Add Math
-            # hs_analysis_data.columns = hs_analysis_data.columns.astype(str)
-
             hs_cols = [c for c in hs_analysis_data if c != "School Name"]
             
             # force all to numeric (this removes '***' strings) - we later use NaN as a proxy
@@ -364,311 +403,156 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             school_name_idx = hs_analysis_data.index[hs_analysis_data["School Name"].str.contains(hs_school_name)].tolist()[0]
             hs_analysis_data = hs_analysis_data.loc[:, ~hs_analysis_data.iloc[school_name_idx].isna()]
 
-    # TODO: What is Nonwaiver Rate? Grad rate without Nonwaiver Diplomas?
-            # Graduation Rate Overview
-            grad_overview_cols = ["School Name","Total Graduation Rate", "Non Waiver Graduation Rate","Low Grade","High Grade"]
+            def create_hs_analysis_set(data_type: str, data: pd.DataFrame, categories: list, school_name: str) -> list:
 
-            grad_overview_data = hs_analysis_data.loc[:, (hs_analysis_data.columns.isin(grad_overview_cols))]
+                if data_type == "EBRW" or data_type == "Math" or data_type == "School Total":
+                    search_string = "Benchmark"
+                elif data_type == "Graduation Rate":
+                    search_string = data_type
+                else:
+                    final_analysis_group = []   # type:list
 
-            # df will always have at least three cols (School Name, Low Grade, High Grade)
-            if len(grad_overview_data.columns) > 3:
-
-            # NOTE: For transparency purposes, we want to identify all categories that are missing from
-            # the possible dataset, including those that aren't going to be displayed (because the school
-            # is missing them). Because there are many cases where there wont be any data at all (eg, it
-            # hasn't yet been released, or there is no data for a particular yet. So we need to check whether
-            # there is any data to display before and after we collect the missing category information. After
-            # we collect any missing information, we need to drop any columns where the school has no data and
-            # then check again to see if the dataframe has any info.
-
-                grad_overview_data, grad_overview_category_string, grad_overview_school_string = \
-                    identify_missing_categories_pure(grad_overview_data, grad_overview_cols)
+                    return final_analysis_group
                 
-                # Once missing category and strings are built, we need to drop any columns for which the
-                # school has no data (we only want to display columns including the school)
+                analysis_cols = [col for col in data.columns if search_string in col and any(substring for substring in categories if substring in col)]
+                analysis_cols = info_categories + analysis_cols
+                analysis_data = data[analysis_cols]
 
-                # find the index of the row containing the school name
-                school_name_idx = grad_overview_data.index[grad_overview_data["School Name"].str.contains(hs_school_name)].tolist()[0]
+                analysis_data = analysis_data.filter(regex="|".join([data_type,"School Name","Low Grade","High Grade"]))
 
-                # drop all columns where the row at school_name_idx has a NaN value
-                grad_overview_data = grad_overview_data.loc[:, ~grad_overview_data.iloc[school_name_idx].isna()]
+                # data will always have at least three cols (School Name, Low Grade, High Grade)
+                if len(analysis_data.columns) > 3:
 
-                if len(grad_overview_data.columns) > 1:
-                    grad_overview_label = create_chart_label(grad_overview_data)
-                    grad_overview_chart = make_group_bar_chart(grad_overview_data, school_name, grad_overview_label)
-                    grad_overview_table_data = combine_school_name_and_grade_levels(grad_overview_data)
-
-                    # TODO: Last arg is for a label - determine if it is needed
-                    grad_overview_table = create_comparison_table(grad_overview_table_data, school_name,"")
-
-                    grad_overview = combine_group_barchart_and_table(grad_overview_chart,grad_overview_table, grad_overview_category_string, grad_overview_school_string)
+                    # NOTE: For transparency purposes, we want to identify all categories that are missing from
+                    # the possible dataset, including those that aren't going to be displayed (because the school
+                    # is missing them). Because there are many cases where there wont be any data at all (eg, it
+                    # hasn't yet been released, or there is no data for a particular yet. So we need to check whether
+                    # there is any data to display before and after we collect the missing category information. After
+                    # we collect any missing information, we need to drop any columns where the school has no data and
+                    # then check again to see if the dataframe has any info.
+                    analysis_data, category_string, school_string = identify_missing_categories_pure(analysis_data, analysis_cols)
                     
+                    # Once the missing category and missing school strings are built, we drop any columns
+                    # where the school has no data by finding the index of the row containing the school
+                    # name and dropping all columns where the row at school_name_idx has a NaN value                    
+                    school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
+                    analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
+                    
+                    if len(analysis_data.columns) > 1:
+                        analysis_label = create_chart_label(analysis_data)
+                        analysis_chart = make_group_bar_chart(analysis_data, school_name, analysis_label)
+                        analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
+                        # TODO: Need to parse whether label is needed here (for K8 groups)
+                        analysis_table = create_comparison_table(analysis_table_data, school_name,"")
+
+                        final_analysis_group = combine_group_barchart_and_table(analysis_chart,analysis_table, category_string, school_string)
+
+                    else:
+                        final_analysis_group = []
+
+                else:
+                    final_analysis_group = []
+
+                return final_analysis_group
+
+            # Graduation Comparison Sets
+
+            grad_overview_categories = ["Total", "Non Waiver"]
+            grad_overview = create_hs_analysis_set("Graduation Rate", hs_analysis_data, grad_overview_categories, hs_school_name)
+            grad_ethnicity = create_hs_analysis_set("Graduation Rate", hs_analysis_data, ethnicity, hs_school_name)
+            grad_subgroup = create_hs_analysis_set("Graduation Rate", hs_analysis_data, subgroup, hs_school_name)
+
+            if not grad_overview and not grad_ethnicity and not grad_subgroup:
+                grad_overview = no_data_fig_label("Comparison: Graduation Rate", 200, "pretty")
+                grad_overview_container = {"display": "block"}
+                hs_analysis_main_container = {"display": "block"}
+                hs_analysis_empty_container = {"display": "none"}
+                dropdown_container = {"display": "block"}
+            else:                    
+
+                if grad_overview:
                     grad_overview_container = {"display": "block"}
                     hs_analysis_main_container = {"display": "block"}
                     hs_analysis_empty_container = {"display": "none"}
                     dropdown_container = {"display": "block"}
-
                 else:
-                    grad_overview = no_data_fig_label("Comparison: Graduation Rate by Ethnicity", 200)
-                    grad_overview_container = {"display": "none"}
+                    grad_overview = no_data_fig_label("Comparison: Total/Non Waiver Graduation Rate", 200, "pretty")
+                    grad_overview_container = {"display": "block"}
+
+                if grad_ethnicity:
+                    grad_ethnicity_container = {"display": "block"}
+                    hs_analysis_main_container = {"display": "block"}
+                    hs_analysis_empty_container = {"display": "none"}
+                    dropdown_container = {"display": "block"}
+                else:
+                    grad_ethnicity = no_data_fig_label("Comparison: Graduation Rate by Ethnicity", 200, "pretty")
+                    grad_ethnicity_container = {"display": "block"}
+
+                if grad_subgroup:
+                    grad_subgroup_container = {"display": "block"}
+                    hs_analysis_main_container = {"display": "block"}
+                    hs_analysis_empty_container = {"display": "none"}
+                    dropdown_container = {"display": "block"}
+                else:
+                    grad_subgroup = no_data_fig_label("Comparison: Graduation Rate by Subgroup", 200, "pretty")
+                    grad_subgroup_container = {"display": "block"}
+
+            # SAT Comparison Sets
+
+            overview_category = ["School Total"]
+            sat_overview = create_hs_analysis_set("School Total", hs_analysis_data, overview_category, hs_school_name)   
+            sat_ethnicity_ebrw = create_hs_analysis_set("EBRW", hs_analysis_data, ethnicity, hs_school_name)
+            sat_ethnicity_math = create_hs_analysis_set("Math", hs_analysis_data, ethnicity, hs_school_name)
+            sat_subgroup_ebrw = create_hs_analysis_set("EBRW", hs_analysis_data, subgroup, hs_school_name)
+            sat_subgroup_math = create_hs_analysis_set("Math", hs_analysis_data, subgroup, hs_school_name)
+            
+            if not sat_overview and not sat_ethnicity_ebrw and not sat_ethnicity_math and not \
+                sat_subgroup_ebrw and not sat_subgroup_math:
+                grad_overview = no_data_fig_label("Comparison: SAT At Benchmark %", 200, "pretty")
+                grad_overview_container = {"display": "block"}
+                hs_analysis_main_container = {"display": "block"}
+                hs_analysis_empty_container = {"display": "none"}
+                dropdown_container = {"display": "block"}
 
             else:
-                grad_overview = no_data_fig_label("Comparison: Total/Non Waiver Graduation Rate", 200)
-                grad_overview_container = {"display": "none"}
 
-            # Graduation Rate Ethnicity
-            grad_ethnicity_cols = [col for col in hs_analysis_data.columns if 'Graduation Rate' in col and any(substring for substring in ethnicity if substring in col)]
-            grad_ethnicity_cols = info_categories + grad_ethnicity_cols
-            grad_ethnicity_data = hs_analysis_data[grad_ethnicity_cols]
+                if sat_overview:
+                    sat_overview_container = {"display": "block"}
+                    hs_analysis_main_container = {"display": "block"}
+                    hs_analysis_empty_container = {"display": "none"}
+                    dropdown_container = {"display": "block"}
+                else:
+                    sat_overview = no_data_fig_label("Comparison: School Total SAT At Benchmark", 200, "pretty")
+                    sat_overview_container = {"display": "block"}
+            
+                if sat_ethnicity_math or sat_ethnicity_ebrw:
 
-            if len(grad_ethnicity_data.columns) > 3:
+                    if sat_ethnicity_math:
+                        sat_ethnicity_ebrw = no_data_fig_label("Comparison: SAT At Benchmark by Ethnicity (EBRW)", 200, "pretty")
+                    else:
+                        sat_ethnicity_math = no_data_fig_label("Comparison: SAT At Benchmark by Ethnicity (Math)", 200, "pretty")
 
-                grad_ethnicity_data, grad_ethnicity_category_string, grad_ethnicity_school_string = \
-                    identify_missing_categories_pure(grad_ethnicity_data, grad_ethnicity_cols)
-                
-                school_name_idx = grad_ethnicity_data.index[grad_ethnicity_data["School Name"].str.contains(hs_school_name)].tolist()[0]
-                grad_ethnicity_data = grad_ethnicity_data.loc[:, ~grad_ethnicity_data.iloc[school_name_idx].isna()]
+                    sat_ethnicity_container = {"display": "block"}
+                    hs_analysis_main_container = {"display": "block"}
+                    hs_analysis_empty_container = {"display": "none"}
+                    dropdown_container = {"display": "block"}
+                else:
+                    sat_ethnicity_container = {"display": "none"}    
 
-                if len(grad_ethnicity_data.columns) > 1:
-                    grad_ethnicity_label = create_chart_label(grad_ethnicity_data)
-                    grad_ethnicity_chart = make_group_bar_chart(grad_ethnicity_data, school_name, grad_ethnicity_label)
-                    grad_ethnicity_table_data = combine_school_name_and_grade_levels(grad_ethnicity_data)
-                    grad_ethnicity_table = create_comparison_table(grad_ethnicity_table_data, school_name,"")
-
-                    grad_ethnicity = combine_group_barchart_and_table(grad_ethnicity_chart,grad_ethnicity_table, grad_ethnicity_category_string, grad_ethnicity_school_string)
+                if sat_subgroup_math or sat_subgroup_ebrw:
                     
-                    grad_ethnicity_container = {"display": "block"}
+                    if sat_subgroup_math:
+                        sat_subgroup_ebrw = no_data_fig_label("Comparison: SAT At Benchmark by Subgroup (EBRW)", 200, "pretty")
+                    else:
+                        sat_subgroup_math = no_data_fig_label("Comparison: SAT At Benchmark by Subgroup (Math)", 200, "pretty")                
+                    
+                    sat_subgroup_container = {"display": "block"}
                     hs_analysis_main_container = {"display": "block"}
                     hs_analysis_empty_container = {"display": "none"}
                     dropdown_container = {"display": "block"}
 
                 else:
-                    grad_ethnicity = no_data_fig_label("Comparison: Graduation Rate by Ethnicity", 200)
-                    grad_ethnicity_container = {"display": "none"}
-
-            else:
-                grad_ethnicity = no_data_fig_label("Comparison: Graduation Rate by Ethnicity", 200)
-                grad_ethnicity_container = {"display": "none"}
-
-            # Graduation Rate Subgroup
-            grad_subgroup_cols = [col for col in hs_analysis_data.columns if 'Graduation Rate' in col and any(substring for substring in subgroup if substring in col)]
-            grad_subgroup_cols = info_categories + grad_subgroup_cols
-            grad_subgroup_data = hs_analysis_data[grad_subgroup_cols]
-            
-            if len(grad_subgroup_data.columns) > 3:
-
-                grad_subgroup_data, grad_subgroup_category_string, grad_subgroup_school_string = \
-                    identify_missing_categories_pure(grad_subgroup_data, grad_subgroup_cols)
-                
-                school_name_idx = grad_subgroup_data.index[grad_subgroup_data["School Name"].str.contains(hs_school_name)].tolist()[0]
-                grad_subgroup_data = grad_subgroup_data.loc[:, ~grad_subgroup_data.iloc[school_name_idx].isna()]
-
-                if len(grad_subgroup_data.columns) > 1:
-                    grad_subgroup_label = create_chart_label(grad_subgroup_data)
-                    grad_subgroup_chart = make_group_bar_chart(grad_subgroup_data, school_name, grad_subgroup_label)
-                    grad_subgroup_table_data = combine_school_name_and_grade_levels(grad_subgroup_data)
-                    grad_subgroup_table = create_comparison_table(grad_subgroup_table_data, school_name,"")
-
-                    grad_subgroup = combine_group_barchart_and_table(grad_subgroup_chart,grad_subgroup_table, grad_subgroup_category_string, grad_subgroup_school_string)
-                    
-                    grad_subgroup_container = {"display": "block"}
-                    hs_analysis_main_container = {"display": "block"}
-                    hs_analysis_empty_container = {"display": "none"}                
-                    dropdown_container = {"display": "block"}
-
-                else:
-                    grad_subgroup = no_data_fig_label("Comparison: Graduation Rate by Subgroup", 200)
-                    grad_subgroup_container = {"display": "none"}
-
-            else:
-                grad_subgroup = no_data_fig_label("Comparison: Graduation Rate by Subgroup", 200)
-                grad_subgroup_container = {"display": "none"}
-
-            # SAT Total
-            sat_overview_cols = [col for col in hs_analysis_data.columns if 'School Total' in col]
-            sat_overview_cols = info_categories + sat_overview_cols
-            sat_overview_data = hs_analysis_data[sat_overview_cols]
-
-            if len(sat_overview_data.columns) > 3:
-
-                sat_overview_data, sat_overview_category_string, sat_overview_school_string = \
-                    identify_missing_categories_pure(sat_overview_data, sat_overview_cols)
-                
-                school_name_idx = sat_overview_data.index[sat_overview_data["School Name"].str.contains(hs_school_name)].tolist()[0]
-                sat_overview_data = sat_overview_data.loc[:, ~sat_overview_data.iloc[school_name_idx].isna()]
-
-                if len(sat_overview_data.columns) > 1:
-                    sat_overview_label = create_chart_label(sat_overview_data)
-                    sat_overview_chart = make_group_bar_chart(sat_overview_data, school_name, sat_overview_label)
-                    sat_overview_table_data = combine_school_name_and_grade_levels(sat_overview_data)
-                    sat_overview_table = create_comparison_table(sat_overview_table_data, school_name,"")
-
-                    sat_overview = combine_group_barchart_and_table(sat_overview_chart,sat_overview_table,sat_overview_category_string, sat_overview_school_string)
-                    
-                    sat_overview_container = {"display": "block"}
-                    hs_analysis_main_container = {"display": "block"}
-                    hs_analysis_empty_container = {"display": "none"}                
-                    dropdown_container = {"display": "block"}
-
-                else:
-                    sat_overview = no_data_fig_label("Comparison: SAT School Total", 200)
-                    sat_overview_container = {"display": "none"}
-
-            else:
-                sat_overview = no_data_fig_label("Comparison: SAT School Total", 200)
-                sat_overview_container = {"display": "none"}
-            
-            # NOTE: We have 4 SAT table/fig combinations to create (EBRW, Math) * (ethnicity, subgroup).
-            
-            def create_sat_analysis(data: pd.DataFrame, subject: str, categories: list, school_name: str) -> list:
-
-                sat_cols = [col for col in data.columns if 'Benchmark' in col and any(substring for substring in categories if substring in col)]
-                sat_cols = info_categories + sat_cols
-                sat_data = data[sat_cols]
-
-                sat_data = sat_data.filter(regex="|".join([subject,"School Name","Low Grade","High Grade"]))
-
-                if len(sat_data.columns) > 3:
-
-                    sat_data, sat_category_string, sat_school_string = identify_missing_categories_pure(sat_data, sat_cols)
-                    
-                    school_name_idx = sat_data.index[sat_data["School Name"].str.contains(school_name)].tolist()[0]
-                    sat_data = sat_data.loc[:, ~sat_data.iloc[school_name_idx].isna()]
-                    
-                    if len(sat_data.columns) > 1:
-                        sat_label = create_chart_label(sat_data)
-                        sat_chart = make_group_bar_chart(sat_data, school_name, sat_label)
-                        sat_table_data = combine_school_name_and_grade_levels(sat_data)
-                        sat_table = create_comparison_table(sat_table_data, school_name,"")
-
-                        sat_analysis = combine_group_barchart_and_table(sat_chart,sat_table, sat_category_string, sat_school_string)
-
-                    else:
-                        sat_analysis = [] #no_data_fig_label("Comparison: SAT By Ethnicity", 200)
-
-                else:
-                    sat_analysis = [] #no_data_fig_label("Comparison: SAT By Ethnicity", 200)
-
-                return sat_analysis
-            
-            # SAT Ethnicity
-            sat_ethnicity_ebrw = create_sat_analysis(hs_analysis_data, "EBRW", ethnicity, hs_school_name)
-            sat_ethnicity_math = create_sat_analysis(hs_analysis_data, "Math", ethnicity, hs_school_name)
-
-            if sat_ethnicity_math or sat_ethnicity_ebrw:
-
-# TODO: EMpty tables not working 
-                if sat_ethnicity_math:
-                    sat_ethnicity_ebrw = no_data_fig_label("Comparison: SAT At Benchmark by Ethnicity (EBRW)", 200, "pretty")
-                else:
-                    sat_ethnicity_math = no_data_fig_label("Comparison: SAT At Benchmark by Ethnicity (Math)", 200, "pretty")
-
-                sat_ethnicity_container = {"display": "block"}
-                hs_analysis_main_container = {"display": "block"}
-                hs_analysis_empty_container = {"display": "none"}
-                dropdown_container = {"display": "block"}
-            else:
-                sat_ethnicity_container = {"display": "none"}    
-
-            # SAT Subgroup
-            sat_subgroup_ebrw = create_sat_analysis(hs_analysis_data, "EBRW", subgroup, hs_school_name)
-            sat_subgroup_math = create_sat_analysis(hs_analysis_data, "Math", subgroup, hs_school_name)
-
-            if sat_subgroup_math or sat_subgroup_ebrw:
-                
-                if sat_subgroup_math:
-                    sat_subgroup_ebrw = no_data_fig_label("Comparison: SAT At Benchmark by Subgroup (EBRW)", 200, "pretty")
-                else:
-                    sat_subgroup_math = no_data_fig_label("Comparison: SAT At Benchmark by Subgroup (Math)", 200, "pretty")                
-                
-                sat_subgroup_container = {"display": "block"}
-                hs_analysis_main_container = {"display": "block"}
-                hs_analysis_empty_container = {"display": "none"}
-                dropdown_container = {"display": "block"}
-
-            else:
-                sat_subgroup_container = {"display": "none"}  
-
-            # if sat_ethnicity:
-            #     sat_ethnicity_container = {"display": "block"}
-            #     hs_analysis_main_container = {"display": "block"}
-            #     hs_analysis_empty_container = {"display": "none"}
-            #     dropdown_container = {"display": "block"}
-            # else:
-            #     sat_ethnicity_math = [] #no_data_fig_label("Comparison: SAT By Ethnicity", 200)
-            #     sat_ethnicity_container = {"display": "none"}  
-
-            # sat_ethnicity_cols = [col for col in hs_analysis_data.columns if 'Benchmark' in col and any(substring for substring in ethnicity if substring in col)]
-            # sat_ethnicity_cols = info_categories + sat_ethnicity_cols
-            # sat_ethnicity_data = hs_analysis_data[sat_ethnicity_cols]
-
-            # sat_ethnicity_data = sat_ethnicity_data.filter(regex="|".join(["EBRW","School Name","Low Grade","High Grade"]))
-
-            # if len(sat_ethnicity_data.columns) > 3:
-
-            #     sat_ethnicity_data, sat_ethnicity_category_string, sat_ethnicity_school_string = \
-            #         identify_missing_categories_pure(sat_ethnicity_data, sat_ethnicity_cols)
-                
-            #     school_name_idx = sat_ethnicity_data.index[sat_ethnicity_data["School Name"].str.contains(hs_school_name)].tolist()[0]
-            #     sat_ethnicity_data = sat_ethnicity_data.loc[:, ~sat_ethnicity_data.iloc[school_name_idx].isna()]
-                
-            #     if len(sat_ethnicity_data.columns) > 1:
-            #         sat_ethnicity_label = create_chart_label(sat_ethnicity_data)
-            #         sat_ethnicity_chart = make_group_bar_chart(sat_ethnicity_data, school_name, sat_ethnicity_label)
-            #         sat_ethnicity_table_data = combine_school_name_and_grade_levels(sat_ethnicity_data)
-            #         sat_ethnicity_table = create_comparison_table(sat_ethnicity_table_data, school_name,"")
-
-            #         sat_ethnicity = combine_group_barchart_and_table(sat_ethnicity_chart,sat_ethnicity_table, sat_ethnicity_category_string, sat_ethnicity_school_string)
-                    
-            #         sat_ethnicity_container = {"display": "block"}
-            #         hs_analysis_main_container = {"display": "block"}
-            #         hs_analysis_empty_container = {"display": "none"}                
-            #         dropdown_container = {"display": "block"}
-
-            #     else:
-            #         sat_ethnicity = no_data_fig_label("Comparison: SAT By Ethnicity", 200)
-            #         sat_ethnicity_container = {"display": "none"}
-
-            # else:
-            #     sat_ethnicity = no_data_fig_label("Comparison: SAT By Ethnicity", 200)
-            #     sat_ethnicity_container = {"display": "none"}
-
-            # # SAT Subgroup - EBRW
-
-            # sat_subgroup_cols = [col for col in hs_analysis_data.columns if 'Benchmark' in col and any(substring for substring in subgroup if substring in col)]
-            # sat_subgroup_cols = info_categories + sat_subgroup_cols
-            # sat_subgroup_data = hs_analysis_data[sat_subgroup_cols]
-
-            # sat_subgroup_data =  sat_subgroup_data.filter(regex="|".join(["EBRW","School Name","Low Grade","High Grade"]))
-
-            # if len(sat_subgroup_data.columns) > 3:
-
-            #     sat_subgroup_data, sat_subgroup_category_string, sat_subgroup_school_string = \
-            #         identify_missing_categories_pure(sat_subgroup_data, sat_subgroup_cols)
-                
-            #     school_name_idx = sat_subgroup_data.index[sat_subgroup_data["School Name"].str.contains(hs_school_name)].tolist()[0]
-            #     sat_subgroup_data = sat_subgroup_data.loc[:, ~sat_subgroup_data.iloc[school_name_idx].isna()]
-
-            #     if len(sat_subgroup_data.columns) > 1:
-            #         sat_subgroup_label = create_chart_label(sat_subgroup_data)
-            #         sat_subgroup_chart = make_group_bar_chart(sat_subgroup_data, school_name, sat_subgroup_label)
-            #         sat_subgroup_table_data = combine_school_name_and_grade_levels(sat_subgroup_data)
-            #         sat_subgroup_table = create_comparison_table(sat_subgroup_table_data, school_name,"")
-
-            #         sat_subgroup = combine_group_barchart_and_table(sat_subgroup_chart,sat_subgroup_table, sat_subgroup_category_string, sat_subgroup_school_string)
-                    
-            #         sat_subgroup_container = {"display": "block"}
-            #         hs_analysis_main_container = {"display": "block"}
-            #         hs_analysis_empty_container = {"display": "none"}                
-            #         dropdown_container = {"display": "block"}
-
-            #     else:
-            #         sat_subgroup = no_data_fig_label("Comparison: SAT By Subgroup", 200)
-            #         sat_subgroup_container = {"display": "none"}   
-
-            # else:
-            #     sat_subgroup = no_data_fig_label("Comparison: SAT By Subgroup", 200)
-            #     sat_subgroup_container = {"display": "none"}   
+                    sat_subgroup_container = {"display": "none"}
 
     if school_type != "HS" or school_type != "AHS":
         
@@ -1035,6 +919,54 @@ def update_academic_analysis(school: str, year: str, comparison_school_list: lis
             )        
         ]
 
+# TODO: Figure out logic
+
+# default display is k8 for K12 and K8 schools
+# default display is HS for HS and AHS schools
+
+# if K12:
+    # show radio type (k8/hs)
+        # if k8:
+            # build k8
+            # hide hs (and preferably do not build)
+        # if hs:
+            # build hs
+            # hide k8 (preferably do not build)
+
+# if HS/AHS:
+    # do not show radio type (k8/hs)
+    # build hs
+    # hide k8
+
+# if K8:
+    # do not show radio type (k8/hs)
+    # build k8
+    # hide hs
+
+
+    # if radio_category == "k8":
+            #     proficiency_ela_grades_container = {"display": "block"}
+            #     proficiency_math_grades_container = {"display": "block"}
+            #     proficiency_ethnicity_math = []
+            #     math_ethnicity_bar_fig = []
+            #     proficiency_subgroup_math = []
+            #     math_subgroup_bar_fig = []
+            #     proficiency_ethnicity_ela = []
+            #     ela_ethnicity_bar_fig = []
+            #     proficiency_subgroup_ela = []
+            #     ela_subgroup_bar_fig = []
+            # elif radio_category == "high school":
+            #     proficiency_ela_ethnicity_container = {"display": "block"}
+            #     proficiency_math_ethnicity_container = {"display": "block"}
+            #     proficiency_grades_ela = []
+            #     ela_grade_bar_fig = []
+            #     proficiency_subgroup_ela = []
+            #     ela_subgroup_bar_fig = []
+            #     proficiency_grades_math = []
+            #     math_grade_bar_fig = []
+            #     proficiency_subgroup_math = []
+            #     math_subgroup_bar_fig = []
+
     return (
         academic_analysis_notes, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
         fig16a1_container, fig16b1, fig16b1_container, fig16a2, fig16a2_container, fig16b2,
@@ -1069,6 +1001,31 @@ def layout():
                                 ],
                                 className="row"
                             ),
+                            html.Div(
+                                [                            
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    dbc.RadioItems(
+                                                        id="analysis-radio-type-input",
+                                                        className="btn-group",
+                                                        inputClassName="btn-check",
+                                                        labelClassName="btn btn-outline-primary",
+                                                        labelCheckedClassName="active",
+                                                        value=[],
+                                                        persistence=False,
+                                                        # persistence_type="memory",
+                                                    ),
+                                                ],
+                                                className="radio-group-academic",
+                                            )
+                                        ],
+                                        className = "bare_container_center twelve columns",
+                                    ),
+                                ],
+                                id = "analysis-radio-input-container",
+                            ),           
                             html.Div(
                                 [                                        
                                     html.Div(
