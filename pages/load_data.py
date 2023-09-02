@@ -365,18 +365,25 @@ def get_school_coordinates(*args):
     keys = ['year','type']
     params = dict(zip(keys, args))
 
-    if params['type'] == 'K8' or params['type'] == 'K12':
-        q = text('''
-            SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade, "SchoolTotal|ELATotalTested"
-                FROM academic_data_k8 
-                WHERE Year = :year
-        ''')
-    else:
+    if params['type'] == 'HS':
         q = text('''
             SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade
                 FROM academic_data_hs 
                 WHERE Year = :year
         ''')
+    elif params['type'] == 'AHS':
+        q = text('''
+            SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade
+                FROM academic_data_hs 
+                WHERE Year = :year and SchoolType = "AHS"
+        ''')
+    else:
+        q = text('''
+            SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade, "SchoolTotal|ELATotalTested"
+                FROM academic_data_k8 
+                WHERE Year = :year
+        ''')
+
 
     return run_query(q, params)
 
@@ -386,15 +393,21 @@ def get_comparable_schools(*args):
 
     school_str = ', '.join( [ str(int(v)) for v in params['schools'] ] )
 
-    if params['type'] == 'K8':
-        query_string = '''
-            SELECT *
-                FROM academic_data_k8
-                WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
-    else:
+    if params['type'] == 'HS':
         query_string = '''
             SELECT *
                 FROM academic_data_hs
+                WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
+    
+    elif params['type'] == 'AHS':
+        query_string = '''
+            SELECT *
+                FROM academic_data_hs
+                WHERE Year = :year AND SchoolType = "AHS" AND SchoolID IN ({})'''.format( school_str )
+    else:   # K8
+        query_string = '''
+            SELECT *
+                FROM academic_data_k8
                 WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
         
     q = text(query_string)

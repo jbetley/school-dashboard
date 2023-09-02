@@ -941,6 +941,10 @@ a.nav-link:hover {
   padding-bottom: 10px;
 }
 
+#analysis-radio-type-input {
+  margin-top: 5px; 
+}
+
 /** Strings & Labels **/
 label,
 legend {

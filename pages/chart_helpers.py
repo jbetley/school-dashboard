@@ -882,9 +882,10 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     # remove trailing string
     # "School Total" is for SAT and includes all three subjects - so we dont want to split
     if data.columns.str.contains("School Total").any() == True:
+        
         # keep everything between | and "Benchmark %"
         data.columns = data.columns.str.replace("Benchmark %","")
-        data.columns = data.columns.str.replace("School Total\|","")
+        data.columns = data.columns.str.replace("School Total\|","", regex = True)
     else:
         data.columns = data.columns.str.split('|').str[0]
 

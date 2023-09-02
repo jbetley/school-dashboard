@@ -1788,7 +1788,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     if data.columns.str.contains("School Total").any() == True:
         # keep everything between | and "Benchmark %"
         data.columns = data.columns.str.replace("Benchmark %","")
-        data.columns = data.columns.str.replace("School Total\|","")
+        data.columns = data.columns.str.replace("School Total\|","", regex = True)
     else:
         # remove everything between | & % in column name
         data.columns = data.columns.str.replace(r"\|(.*?)\%", "", regex=True)

@@ -92,6 +92,7 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
         {"label": "By Ethnicity", "value": "ethnicity"},
         {"label": "By Subgroup", "value": "subgroup"}
     ]
+    
     value_default = "all"
 
     if not ctx.triggered:
