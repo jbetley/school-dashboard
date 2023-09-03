@@ -278,6 +278,7 @@ def no_data_page(label: str = "Academic Data", text: str = "No Data to Display")
 #     """
 #     Creates an empty table with no cells. Will be automatically hidden
 #     ("display": "none") by css selector chaining for pretty_container.
+#     Not sure why I created this.
 #     See stylesheet.css
 
 #     Args:
@@ -298,8 +299,20 @@ def no_data_page(label: str = "Academic Data", text: str = "No Data to Display")
     
 #     return table_layout
 
-def create_growth_table_and_fig(table: list, fig, label: str):    # : plotly.graph_objs._figure.Figure
-    
+def create_growth_table_and_fig(table: list, fig: list, label: str) -> list:
+    """
+    Takes two lists, one a simply html.Div layout containing a dash.DataTable and
+    another simply html.Div layout with a plotly Go.Scatter object. Also a label.
+    returns a layout for a plotly dash app
+
+    Args:
+        table (list): dash datatable html.Div layout
+        fig (list): plotly fig html.Div layout
+        label (str): string
+
+    Returns:
+        list: table layout
+    """    
     table_layout = [
         html.Div(
             [
