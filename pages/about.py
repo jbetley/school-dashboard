@@ -14,8 +14,8 @@ import numpy as np
 
 from .load_data import ethnicity, subgroup, max_display_years, current_academic_year, get_school_index, \
     get_financial_data, get_demographic_data
-from .chart_helpers import loading_fig, no_data_fig_label
-from .table_helpers import no_data_table, no_data_page, create_key_table
+from .charts import loading_fig, no_data_fig_label
+from .tables import no_data_table, no_data_page, create_key_table
 from .calculations import get_excluded_years
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
@@ -51,7 +51,7 @@ def update_about_page(year: str, school: str):
     
     excluded_years = get_excluded_years(selected_year_string)
 
-    # see full color list in chart_helpers.py
+    # see full color list in charts.py
     linecolor = ["#df8f2d"]
     bar_colors = ["#74a2d7", "#df8f2d"]
 

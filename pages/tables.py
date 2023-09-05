@@ -2,8 +2,8 @@
 # ICSB Dashboard - DataTable Functions #
 ########################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import pandas as pd
 from dash import dash_table, html
@@ -299,53 +299,6 @@ def no_data_page(label: str = "Academic Data", text: str = "No Data to Display")
     
 #     return table_layout
 
-def create_growth_table_and_fig(table: list, fig: list, label: str) -> list:
-    """
-    Takes two lists, one a simply html.Div layout containing a dash.DataTable and
-    another simply html.Div layout with a plotly Go.Scatter object. Also a label.
-    returns a layout for a plotly dash app
-
-    Args:
-        table (list): dash datatable html.Div layout
-        fig (list): plotly fig html.Div layout
-        label (str): string
-
-    Returns:
-        list: table layout
-    """    
-    table_layout = [
-        html.Div(
-            [
-                html.Div(
-                    [                    
-                        html.Label(label, className="header_label"),                    
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(table, style={"marginTop": "20px"}),
-                                    ],
-                                    className="pretty_container six columns",
-                                ),
-                                html.Div(
-                                    [
-                                        html.Div(fig),
-                                    ],
-                                    className="pretty_container six columns",
-                                ),
-                            ],
-                            className="bare_container twelve columns",
-                        ),
-                    ],
-                    className="bare_container_outline twelve columns",
-                ),       
-            ],
-            className="bare_container_center twelve columns",
-        ),             
-    ]
-
-    return table_layout
-
 def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     """
     Takes a label, a dataframe, and a descriptive (type) string and creates a multi-header
@@ -393,7 +346,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
                                 "border": "none",
                                 "textAlign": "center",
                                 "color": "#6783a9",
-                                "fontFamily": "Open Sans, sans-serif",
+                                "fontFamily": "Jost, sans-serif",
                             },
                         )
                     )
@@ -520,7 +473,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
 def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> list:
     """
-    Takes a dataframe, a string, and an int (optional) and creates a simple
+    Takes a dataframe, a string, and a width (optional) and creates a simple
     header table with a border around the edge.
     
     Args:
@@ -565,7 +518,6 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
     first_column = data.columns[0]
     other_columns = data.columns[1:]
 
-    # set column widths
     first_column_width = category_width + 10
     remaining_width = 100 - category_width
     other_column_width = remaining_width / table_size
@@ -675,7 +627,7 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
 
     return table_layout
 
-def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
+def create_single_header_table(data: pd.DataFrame, label: str) -> list:
     """
     Takes a dataframe of two or more columns and a label and creates a single
     header table with borders around each cell. If more rows are added, need
@@ -720,7 +672,6 @@ def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
     first_column = data.columns[0]
     other_columns = data.columns[1:]
 
-    # set column widths
     first_column_width = category_width + 10
     remaining_width = 100 - category_width
     other_column_width = remaining_width / table_size
@@ -861,7 +812,7 @@ def create_basic_info_table(data: pd.DataFrame, label: str) -> list:
 
     return table_layout
 
-def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
+def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> list:
     """
     Takes a dataframe of two or more columns and a label, and creates a table with multi-headers.
     
@@ -943,7 +894,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
         class_name = "pretty_container " + col_width + " columns"
 
-        # rename columns n_size before getting n col list
+        # rename all n_size columns before getting n col list
         data.columns = data.columns.str.replace("N-Size|SN-Size", "n-size", regex=True)
 
         if "SAT" in label:
@@ -955,10 +906,8 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
         
         nsize_headers = [y for y in data.columns if "n-size" in y]
 
-        # get new list of cols after replacing N-Size
         all_cols = data.columns.tolist()
 
-        # set column widths
         if table_size <= 3:
             data_width = 100 - category_width
             nsize_width = year_width = data_width / (table_size - 1)          
@@ -968,7 +917,6 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
             data_width = 100 - category_width - nsize_width
             year_width = data_width / (table_size - 1)
 
-        # formatting logic is slightly different for a multi-header table
         table_cell_conditional = [
             {
                 "if": {
@@ -1166,7 +1114,7 @@ def create_academic_info_table(data: pd.DataFrame, label: str) -> list:
 
     return table_layout
 
-def create_simple_academic_info_table(data: pd.DataFrame) -> list:
+def create_multi_header_table(data: pd.DataFrame) -> list:
     """
     Takes a dataframe of two or more columns and a label, and creates a table with multi-headers.
     
@@ -1411,8 +1359,6 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
         # splits column width evenly for all columns other than "Category"
         # can adjust individual categories by adjusting formula
-
-        # set column widths
         if table_size <= 3:
             data_width = 100 - category_width
             nsize_width = year_width = rating_width = diff_width = data_width / (table_size - 1)          
@@ -1474,7 +1420,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             } for diff in diff_headers
         ]
  
-        # drop subject
+        # drop subject from category strings
         data["Category"] = data["Category"].map(lambda x: x.split("|")[0])
 
         # Build list of lists, top level and secondary level column names
@@ -1715,57 +1661,6 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
     return table
 
-def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
-    """
-    Determines table layout depending on the size (# of cols) of the tables,
-    either side by side or on an individual row
-
-    Args:
-        table1 (list): dash DataTable
-        table2 (list): dash DataTable
-        cols (pandas.core.indexes.Base.index): Pandas series of column headers
-
-    Returns:
-        table_layout (list): an html Div enclosing dash DataTables and css formatting
-    """
-
-    # if same table is passed twice, we force single table layout
-    if table1 == table2:
-        table_layout = [
-                html.Div(
-                    table1,
-                    className = "bare_container_center twelve columns",
-                )
-        ]
-
-    else:
-
-        if len(cols) >= 4:
-            table_layout = [
-                    html.Div(
-                        table1,
-                        className = "bare_container_center twelve columns",
-                    ),
-                    html.Div(
-                        table2,
-                        className = "bare_container_center twelve columns",
-                    ),
-            ]
-
-        else:
-
-            table_layout = [
-                    html.Div(
-                        [
-                            table1[0],
-                            table2[0],
-                        ],
-                        className = "bare_container_center twelve columns",
-                    ),
-            ]
-
-    return table_layout
-
 def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) -> list:
     """
     Takes a dataframe that is a column of schools and one or more columns
@@ -1781,12 +1676,11 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
-# TODO: Next two lines should be redundant for HS data, Check for k8 data
-    # find the index of the row containing the school name
-    school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
     # drop all columns where the row at school_name_idx has a NaN value
-    data = data.loc[:, ~data.iloc[school_name_idx].isna()]
-          
+    # TODO: Next two lines should be redundant for HS data, Check for k8 data
+    # school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
+    # data = data.loc[:, ~data.iloc[school_name_idx].isna()]
+
     # sort dataframe by the first column and reset index
     data = data.sort_values(data.columns[1], ascending=False, na_position="last")
 
@@ -1806,10 +1700,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         # remove everything between | & % in column name
         data.columns = data.columns.str.replace(r"\|(.*?)\%", "", regex=True)
 
-# NOTE: Try AG Grid for more responsive table
-#       pip install dash-ag-grid==2.0.0
-#       import dash_ag_grid as dag
-
+    # sort on native DataTable is ugly - explore migration to AG Grid 
     table = dash_table.DataTable(
         data.to_dict("records"),
         columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
@@ -1884,122 +1775,3 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         ]
 
     return table_layout
-
-def combine_group_barchart_and_table(fig,table,category_string,school_string):
-
-    layout = [
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Div(fig, style={"marginBottom": "-20px"})
-                    ],
-                    className = "pretty_close_container twelve columns",
-                ),
-            ],
-            className="row"
-        ),
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Div(table),
-                        html.P(
-                            children=[
-                            html.Span("Categories with no data to display:", className = "category_string_label"),
-                            html.Span(category_string, className = "category_string"),
-                            ],
-                            style={"marginTop": -10, "marginBottom": -10}
-                        ),
-                        html.P(
-                            children=[
-                            html.Span("School Categories with insufficient n-size or no data:",className = "school_string_label"),
-                            html.Span(school_string, className = "school_string"),
-                            ],
-                            
-                        ),
-                    ],
-                    className = "close_container twelve columns"
-                )
-                ],
-                className="row"
-            )
-    ]
-    return layout
-
-def combine_barchart_and_table(fig: list, table: list) -> list:
-    """
-    A little helper function to combine a px.bar fig and a dash datatable
-
-    Args:
-        fig (list): a px.bar
-        table (list): a dash DataTable
-
-    Returns:
-        layout (list): a dash html.Div layout with fig and DataTable
-    """    
-    layout = [
-                html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(fig)           
-                        ],
-                        className = 'pretty_container nine columns',
-                    ),
-                    html.Div(
-                        [
-                            html.Div(table)           
-                        ],
-                        className = 'pretty_container three columns'
-                    ),
-                ],
-                className='row'
-            )
-    ]
-
-    return layout
-
-def create_line_fig_layout(table: list, fig: list, label: str) -> list:
-
-    layout =  [                          
-
-        html.Div(
-            [    
-        html.Label(label, className="header_label"),                 
-        html.Div(
-            [                                       
-                html.Div(
-                    [
-                        html.Div(table, style={"marginTop": "20px"}),
-                        html.P(""),
-                        html.P("Hover over each data point to see N-Size.",
-                        style={
-                            "color": "#6783a9",
-                            "fontSize": 10,
-                            "textAlign": "left",
-                            "marginLeft": "10px",
-                            "marginRight": "10px",
-                            "marginTop": "20px",
-                            "paddingTop": "5px",
-                            "borderTop": ".5px solid #c9d3e0",
-                            },
-                        ), 
-                    ],
-                    className="pretty_container six columns",
-                ),
-                html.Div(
-                    [
-                        html.Div(fig),
-                    ],
-                    className="pretty_container six columns",
-                ),
-            ],
-            className="bare_container_center twelve columns",
-        ),
-            ],
-            className="relatively_bare_container twelve columns",
-        ),                               
-    ]
-
-    return layout

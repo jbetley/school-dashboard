@@ -15,7 +15,8 @@ from .load_data import ethnicity, subgroup, grades_all, get_school_index, get_k8
     get_high_school_academic_data, get_hs_corporation_academic_data, get_k8_corporation_academic_data
 from .process_data import process_k8_academic_data, process_high_school_academic_data, merge_high_school_data, \
     filter_high_school_academic_data, process_k8_corp_academic_data
-from .table_helpers import no_data_page, no_data_table, create_metric_table, set_table_layout, create_proficiency_key
+from .tables import no_data_page, no_data_table, create_metric_table, create_proficiency_key
+from .layouts import set_table_layout
 from .string_helpers import convert_to_svg_circle
 from .calculate_metrics import calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, calculate_high_school_metrics, \
     calculate_adult_high_school_metrics, calculate_attendance_metrics

@@ -38,6 +38,7 @@ from pages.load_data import get_school_index, get_academic_dropdown_years, get_f
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 
 external_stylesheets = ["https://fonts.googleapis.com/css2?family=Jost:400", FONT_AWESOME]
+# external_stylesheets = ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans&display=swap", FONT_AWESOME]
 
 # NOTE: Cannot get static folder to work (images do not load and give 302 Found error)
 server = Flask(__name__, static_folder="static")
@@ -320,7 +321,7 @@ def layout():
                                     [
                                         html.Label("Select Year:"),
                                     ],
-                                    className="dash_label",
+                                    className="dash-label",
                                     id="year_dash_label",
                                 ),
                                 dcc.Dropdown(

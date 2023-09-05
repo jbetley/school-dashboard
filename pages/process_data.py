@@ -22,7 +22,16 @@ from .calculations import calculate_percentage, calculate_difference, calculate_
 print("#### Loading Data. . . . . ####")
 
 def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
+    """
+    Process attendance rate data.
 
+    Args:
+        data (pd.DataFrame): dataFrame
+        year (str): selected year in format (YYYY)
+
+    Returns:
+        pd.DataFrame: Process attendance rate data.
+    """
     excluded_years = get_excluded_years(year)
 
     demographic_data = data[~data["Year"].isin(excluded_years)]
@@ -45,7 +54,15 @@ def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
     return attendance_rate
 
 def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Process a dataframe with ILEARN/IREAD data
 
+    Args:
+        data (pd.DataFrame): ilearn/iread data
+
+    Returns:
+        pd.DataFrame: removes categories with no data/calculates proficiency
+    """
     data = data.reset_index(drop = True)
 
     school_info = data[["School Name","Low Grade","High Grade"]].copy()
@@ -155,7 +172,15 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     return final_data
 
 def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Process a dataframe with ILEARN/IREAD data at corporation level (aggregated)
 
+    Args:
+        data (pd.DataFrame): ilearn/iread data
+
+    Returns:
+        pd.DataFrame: removes categories with no data/calculates proficiency
+    """
     if len(corp_data.index) == 0:
         corp_data = pd.DataFrame()
     
@@ -219,13 +244,21 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
     return corp_data
 
 def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
-    # Used for Academic Information and Metrics only
-    # NOTE: Drop columns without data. Generally, we want to keep "result" (e.g., "Graduates", "Pass N",
+    """
+    Process a dataframe with grad rate/sat data. Used for Academic Information and Metrics only
+    # Drop columns without data. Generally, we want to keep "result" (e.g., "Graduates", "Pass N",
     # "Benchmark") columns with "0" values if the "tested" (e.g., "Cohort Count", "Total Tested",
     # "Test N") values are greater than "0". The data is pretty shitty as well, using blank, null,
     # and "0" interchangeably depending on the type. This makes it difficult to simply use dropna() or
     # masking with any() because they may erroneously drop a 0 value that we want to keep. So we need to
     # iterate through each tested category, if it is NaN or 0, we drop it and all associate categories.
+
+    Args:
+        data (pd.DataFrame): grad rate/sat data
+
+    Returns:
+        pd.DataFrame: removes categories with no data/calculates grad rate/benchmark proficiency
+    """
 
     data = data.replace({"^": "***"})
 
@@ -267,7 +300,15 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     return data
     
 def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.DataFrame:
+    """
+    Process a dataframe with grad rate/sat data.
 
+    Args:
+        data (pd.DataFrame): grad rate/sat data
+
+    Returns:
+        pd.DataFrame: removes categories with no data/calculates grad rate/benchmark proficiency
+    """
     school_information = get_school_index(school)
 
     # use these to determine if data belongs to school or corporation
@@ -303,7 +344,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         data_tested = data.filter(regex="Total Tested|Cohort Count|Year", axis=1).copy()
         data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
-        #TODO: remove CN-Size altogether
+        #TODO: we don't use CN-Size at all- need to remove
         # temp name N-Size cols in order to differentiate.
         if data_geo_code == school_geo_code:
             data_tested = data_tested.rename(columns={c: str(c)+"CN-Size" for c in data_tested.columns if c not in ["Category"]})
@@ -435,7 +476,15 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
     return final_data
 
 def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Process a dataframe with grad rate/sat data for academic analysis page.
 
+    Args:
+        data (pd.DataFrame): grad rate/sat data
+
+    Returns:
+        pd.DataFrame: removes categories with no data/calculates grad rate/benchmark proficiency
+    """
     # All df at this point should have a minimum of eight cols (Year, Corporation ID,
     # Corporation Name, School ID, School Name, School Type, AHS|Grad, & All AHS|CCR). If
     # a df has eight or fewer cols, it means they have no data. Note this includes an AHS

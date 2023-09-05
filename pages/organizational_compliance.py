@@ -1,15 +1,15 @@
 ##############################################
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 
 from .load_data import get_financial_data
-from .table_helpers import no_data_table, create_proficiency_key
+from .tables import no_data_table, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
 
 dash.register_page(__name__, top_nav=True, order=7)

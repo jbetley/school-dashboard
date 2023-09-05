@@ -17,11 +17,12 @@ from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_k8_s
     get_hs_corporation_academic_data
 from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
-from .chart_helpers import no_data_fig_label, make_bar_chart, make_group_bar_chart
-from .table_helpers import create_comparison_table, no_data_page, no_data_table, combine_group_barchart_and_table, \
-    combine_barchart_and_table
-from .string_helpers import create_school_label, identify_missing_categories, combine_school_name_and_grade_levels, \
-    create_school_label, create_chart_label, identify_missing_categories_pure
+from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
+from .tables import create_comparison_table, no_data_page, no_data_table
+from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout
+from .string_helpers import create_school_label, merge_and_identify_missing_categories, combine_school_name_and_grade_levels, \
+    create_chart_label
+
 from .calculate_metrics import calculate_k8_comparison_metrics
 from .subnav import subnav_academic
 
@@ -29,11 +30,11 @@ dash.register_page(__name__, path = "/academic_analysis", order=6)
 
 # Display type - K12 only
 @callback(      
-    Output("analysis-radio-type-input", "options"),
-    Output("analysis-radio-type-input","value"),
-    Output('analysis-radio-input-container', 'style'),
+    Output("radio-analysis-type", "options"),
+    Output("radio-analysis-type","value"),
+    Output('radio-analysis-type-container', 'style'),
     Input("charter-dropdown", "value"),
-    State("analysis-radio-type-input", "value"),
+    State("radio-analysis-type", "value"),
 )
 def radio_type_selector(school: str, radio_type_value: str):
 
@@ -68,7 +69,7 @@ def radio_type_selector(school: str, radio_type_value: str):
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("comparison-dropdown", "value"),
-    Input("analysis-radio-type-input", "value"),    
+    Input("radio-analysis-type", "value"),    
 )
 def set_dropdown_options(school: str, year: str, comparison_schools: list, academic_type = str):
 
@@ -273,7 +274,7 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
     Output("hs-analysis-no-data", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("analysis-radio-type-input", "value"),    
+    Input("radio-analysis-type", "value"),    
     [Input("comparison-dropdown", "value")],
 )
 def update_academic_analysis(school: str, year: str, academic_type: str, comparison_school_list: list):
@@ -394,64 +395,64 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
             school_name_idx = hs_analysis_data.index[hs_analysis_data["School Name"].str.contains(hs_school_name)].tolist()[0]
             hs_analysis_data = hs_analysis_data.loc[:, ~hs_analysis_data.iloc[school_name_idx].isna()]
 
-            def create_hs_analysis_set(data_type: str, data: pd.DataFrame, categories: list, school_name: str) -> list:
+            # def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: list, school_name: str) -> list:
 
-                if data_type == "EBRW" or data_type == "Math" or data_type == "School Total":
-                    search_string = "Benchmark"
-                elif data_type == "Graduation Rate":
-                    search_string = data_type
-                else:
-                    final_analysis_group = []   # type:list
+            #     if data_type == "EBRW" or data_type == "Math" or data_type == "School Total":
+            #         search_string = "Benchmark"
+            #     elif data_type == "Graduation Rate":
+            #         search_string = data_type
+            #     else:
+            #         final_analysis_group = []   # type:list
 
-                    return final_analysis_group
+            #         return final_analysis_group
                 
-                analysis_cols = [col for col in data.columns if search_string in col and any(substring for substring in categories if substring in col)]
-                analysis_cols = info_categories + analysis_cols
-                analysis_data = data[analysis_cols]
+            #     analysis_cols = [col for col in data.columns if search_string in col and any(substring for substring in categories if substring in col)]
+            #     analysis_cols = info_categories + analysis_cols
+            #     analysis_data = data[analysis_cols]
 
-                analysis_data = analysis_data.filter(regex="|".join([data_type,"School Name","Low Grade","High Grade"]))
+            #     analysis_data = analysis_data.filter(regex="|".join([data_type,"School Name","Low Grade","High Grade"]))
 
-                # data will always have at least three cols (School Name, Low Grade, High Grade)
-                if len(analysis_data.columns) > 3:
+            #     # data will always have at least three cols (School Name, Low Grade, High Grade)
+            #     if len(analysis_data.columns) > 3:
 
-                    # NOTE: For transparency purposes, we want to identify all categories that are missing from
-                    # the possible dataset, including those that aren't going to be displayed (because the school
-                    # is missing them). Because there are many cases where there wont be any data at all (eg, it
-                    # hasn't yet been released, or there is no data for a particular yet. So we need to check whether
-                    # there is any data to display before and after we collect the missing category information. After
-                    # we collect any missing information, we need to drop any columns where the school has no data and
-                    # then check again to see if the dataframe has any info.
-                    analysis_data, category_string, school_string = identify_missing_categories_pure(analysis_data, analysis_cols)
+            #         # NOTE: For transparency purposes, we want to identify all categories that are missing from
+            #         # the possible dataset, including those that aren't going to be displayed (because the school
+            #         # is missing them). Because there are many cases where there wont be any data at all (eg, it
+            #         # hasn't yet been released, or there is no data for a particular yet. So we need to check whether
+            #         # there is any data to display before and after we collect the missing category information. After
+            #         # we collect any missing information, we need to drop any columns where the school has no data and
+            #         # then check again to see if the dataframe has any info.
+            #         analysis_data, category_string, school_string = identify_missing_categories(analysis_data, analysis_cols)
                     
-                    # Once the missing category and missing school strings are built, we drop any columns
-                    # where the school has no data by finding the index of the row containing the school
-                    # name and dropping all columns where the row at school_name_idx has a NaN value                    
-                    school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
-                    analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
+            #         # Once the missing category and missing school strings are built, we drop any columns
+            #         # where the school has no data by finding the index of the row containing the school
+            #         # name and dropping all columns where the row at school_name_idx has a NaN value                    
+            #         school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
+            #         analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
                     
-                    if len(analysis_data.columns) > 1:
-                        analysis_label = create_chart_label(analysis_data)
-                        analysis_chart = make_group_bar_chart(analysis_data, school_name, analysis_label)
-                        analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
-                        # TODO: Need to parse whether label is needed here (for K8 groups)
-                        analysis_table = create_comparison_table(analysis_table_data, school_name,"")
+            #         if len(analysis_data.columns) > 1:
+            #             analysis_label = create_chart_label(analysis_data)
+            #             analysis_chart = make_group_bar_chart(analysis_data, school_name, analysis_label)
+            #             analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
+            #             # TODO: Need to parse whether label is needed here (for K8 groups)
+            #             analysis_table = create_comparison_table(analysis_table_data, school_name,"")
 
-                        final_analysis_group = combine_group_barchart_and_table(analysis_chart,analysis_table, category_string, school_string)
+            #             final_analysis_group = create_group_barchart_layout(analysis_chart,analysis_table, category_string, school_string)
 
-                    else:
-                        final_analysis_group = []
+            #         else:
+            #             final_analysis_group = []
 
-                else:
-                    final_analysis_group = []
+            #     else:
+            #         final_analysis_group = []
 
-                return final_analysis_group
+            #     return final_analysis_group
 
             # Graduation Comparison Sets
 
             grad_overview_categories = ["Total", "Non Waiver"]
-            grad_overview = create_hs_analysis_set("Graduation Rate", hs_analysis_data, grad_overview_categories, hs_school_name)
-            grad_ethnicity = create_hs_analysis_set("Graduation Rate", hs_analysis_data, ethnicity, hs_school_name)
-            grad_subgroup = create_hs_analysis_set("Graduation Rate", hs_analysis_data, subgroup, hs_school_name)
+            grad_overview = create_hs_analysis_layout("Graduation Rate", hs_analysis_data, grad_overview_categories, hs_school_name)
+            grad_ethnicity = create_hs_analysis_layout("Graduation Rate", hs_analysis_data, ethnicity, hs_school_name)
+            grad_subgroup = create_hs_analysis_layout("Graduation Rate", hs_analysis_data, subgroup, hs_school_name)
 
             if not grad_overview and not grad_ethnicity and not grad_subgroup:
                 grad_overview = no_data_fig_label("Comparison: Graduation Rate", 200, "pretty")
@@ -491,11 +492,11 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
             # SAT Comparison Sets
 
             overview_category = ["School Total"]
-            sat_overview = create_hs_analysis_set("School Total", hs_analysis_data, overview_category, hs_school_name)   
-            sat_ethnicity_ebrw = create_hs_analysis_set("EBRW", hs_analysis_data, ethnicity, hs_school_name)
-            sat_ethnicity_math = create_hs_analysis_set("Math", hs_analysis_data, ethnicity, hs_school_name)
-            sat_subgroup_ebrw = create_hs_analysis_set("EBRW", hs_analysis_data, subgroup, hs_school_name)
-            sat_subgroup_math = create_hs_analysis_set("Math", hs_analysis_data, subgroup, hs_school_name)
+            sat_overview = create_hs_analysis_layout("School Total", hs_analysis_data, overview_category, hs_school_name)   
+            sat_ethnicity_ebrw = create_hs_analysis_layout("EBRW", hs_analysis_data, ethnicity, hs_school_name)
+            sat_ethnicity_math = create_hs_analysis_layout("Math", hs_analysis_data, ethnicity, hs_school_name)
+            sat_subgroup_ebrw = create_hs_analysis_layout("EBRW", hs_analysis_data, subgroup, hs_school_name)
+            sat_subgroup_math = create_hs_analysis_layout("Math", hs_analysis_data, subgroup, hs_school_name)
             
             if not sat_overview and not sat_ethnicity_ebrw and not sat_ethnicity_math and not \
                 sat_subgroup_ebrw and not sat_subgroup_math:
@@ -712,7 +713,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                             fig14c_chart = no_data_fig_label("Comparison: Current Year ELA Proficiency",200)
                             fig14c_table = no_data_table(["Proficiency"])
 
-                        fig14c = combine_barchart_and_table(fig14c_chart,fig14c_table)
+                        fig14c = create_barchart_layout(fig14c_chart,fig14c_table)
 
                         #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
                         category = "School Total|Math Proficient %"
@@ -746,7 +747,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                             fig14d_chart = no_data_fig_label("Comparison: Current Year Math Proficiency",200)
                             fig14d_table = no_data_table(["Proficiency"])
 
-                        fig14d = combine_barchart_and_table(fig14d_chart,fig14d_table)
+                        fig14d = create_barchart_layout(fig14d_chart,fig14d_table)
 
                         #### Current Year IREAD Proficiency Compared to Similar Schools #
                         category = "IREAD Proficient %"
@@ -782,7 +783,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                             fig_iread_chart = no_data_fig_label("Comparison: Current Year IREAD Proficiency",200)
                             fig_iread_table = no_data_table(["Proficiency"])
 
-                        fig_iread = combine_barchart_and_table(fig_iread_chart,fig_iread_table)
+                        fig_iread = create_barchart_layout(fig_iread_chart,fig_iread_table)
 
                         # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
                         headers_16a1 = []
@@ -796,13 +797,13 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
 
                         if len(fig16a1_k8_school_data.columns) > 3:
                             fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = \
-                                identify_missing_categories(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
+                                merge_and_identify_missing_categories(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
                             fig16a1_label = create_chart_label(fig16a1_final_data)
                             fig16a1_chart = make_group_bar_chart(fig16a1_final_data, school_name, fig16a1_label)
                             fig16a1_table_data = combine_school_name_and_grade_levels(fig16a1_final_data)
                             fig16a1_table = create_comparison_table(fig16a1_table_data, school_name,"")
 
-                            fig16a1 = combine_group_barchart_and_table(fig16a1_chart,fig16a1_table,fig16a1_category_string,fig16a1_school_string)
+                            fig16a1 = create_group_barchart_layout(fig16a1_chart,fig16a1_table,fig16a1_category_string,fig16a1_school_string)
                             
                             fig16a1_container = {"display": "block"}
                             dropdown_container = {"display": "block"}
@@ -823,13 +824,13 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                         if len(fig16b1_k8_school_data.columns) > 3:
                             
                             fig16b1_final_data, fig16b1_category_string, fig16b1_school_string = \
-                                identify_missing_categories(fig16b1_k8_school_data, current_corp_data, comparison_schools, headers_16b1, corp_name)
+                                merge_and_identify_missing_categories(fig16b1_k8_school_data, current_corp_data, comparison_schools, headers_16b1, corp_name)
                             fig16b1_label = create_chart_label(fig16b1_final_data)
                             fig16b1_chart = make_group_bar_chart(fig16b1_final_data, school_name, fig16b1_label)
                             fig16b1_table_data = combine_school_name_and_grade_levels(fig16b1_final_data)
                             fig16b1_table = create_comparison_table(fig16b1_table_data, school_name,"")
 
-                            fig16b1 = combine_group_barchart_and_table(fig16b1_chart,fig16b1_table,fig16b1_category_string,fig16b1_school_string)
+                            fig16b1 = create_group_barchart_layout(fig16b1_chart,fig16b1_table,fig16b1_category_string,fig16b1_school_string)
 
                             fig16b1_container = {"display": "block"}
                             dropdown_container = {"display": "block"}                   
@@ -851,13 +852,13 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                         if len(fig16a2_k8_school_data.columns) > 3:
                 
                             fig16a2_final_data, fig16a2_category_string, fig16a2_school_string = \
-                                identify_missing_categories(fig16a2_k8_school_data, current_corp_data, comparison_schools, headers_16a2, corp_name)
+                                merge_and_identify_missing_categories(fig16a2_k8_school_data, current_corp_data, comparison_schools, headers_16a2, corp_name)
                             fig16a2_label = create_chart_label(fig16a2_final_data)
                             fig16a2_chart = make_group_bar_chart(fig16a2_final_data, school_name, fig16a2_label)
                             fig16a2_table_data = combine_school_name_and_grade_levels(fig16a2_final_data)
                             fig16a2_table = create_comparison_table(fig16a2_table_data, school_name,"")
                             
-                            fig16a2 = combine_group_barchart_and_table(fig16a2_chart, fig16a2_table,fig16a2_category_string,fig16a2_school_string)
+                            fig16a2 = create_group_barchart_layout(fig16a2_chart, fig16a2_table,fig16a2_category_string,fig16a2_school_string)
                             fig16a2_container = {"display": "block"}
                             dropdown_container = {"display": "block"}                
                         
@@ -877,13 +878,13 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                         if len(fig16b2_k8_school_data.columns) > 3:
 
                             fig16b2_final_data, fig16b2_category_string, fig16b2_school_string = \
-                                identify_missing_categories(fig16b2_k8_school_data, current_corp_data, comparison_schools, headers_16b2, corp_name)
+                                merge_and_identify_missing_categories(fig16b2_k8_school_data, current_corp_data, comparison_schools, headers_16b2, corp_name)
                             fig16b2_label = create_chart_label(fig16b2_final_data)
                             fig16b2_chart = make_group_bar_chart(fig16b2_final_data, school_name, fig16b2_label)
                             fig16b2_table_data = combine_school_name_and_grade_levels(fig16b2_final_data)
                             fig16b2_table = create_comparison_table(fig16b2_table_data, school_name,"")
 
-                            fig16b2 = combine_group_barchart_and_table(fig16b2_chart, fig16b2_table,fig16b2_category_string,fig16b2_school_string)
+                            fig16b2 = create_group_barchart_layout(fig16b2_chart, fig16b2_table,fig16b2_category_string,fig16b2_school_string)
                             fig16b2_container = {"display": "block"}
                             dropdown_container = {"display": "block"}
                         
@@ -957,7 +958,7 @@ def layout():
                                                     html.Div(
                                                         [
                                                             dbc.RadioItems(
-                                                                id="analysis-radio-type-input",
+                                                                id="radio-analysis-type",
                                                                 className="btn-group",
                                                                 inputClassName="btn-check",
                                                                 labelClassName="btn btn-outline-primary",
@@ -976,7 +977,7 @@ def layout():
                                         className = "row",
                                     ),                                    
                                 ],
-                                id = "analysis-radio-input-container",
+                                id = "radio-analysis-type-container",
                             ),           
                             html.Div(
                                 [                                        

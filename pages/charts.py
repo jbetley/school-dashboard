@@ -2,8 +2,8 @@
 # ICSB Dashboard - Charting Functions #
 #######################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import plotly.express as px
 import pandas as pd
@@ -478,7 +478,6 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                         [
                             html.Div(
                                 [
-                                # html.Label(label, className = 'hollow_header_label'),
                                 dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
                             ),
@@ -515,7 +514,6 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                         [
                             html.Div(
                                 [
-                                # html.Label(label, className = 'hollow_header_label'),
                                 dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
                             ),
@@ -546,7 +544,6 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                         [
                             html.Div(
                                 [
-                                # html.Label(label, className = 'hollow_header_label'),
                                 dcc.Graph(figure = fig, config={'displayModeBar': False})
                                 ],
                             ),
@@ -575,7 +572,6 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                 fig_layout = [
                     html.Div(
                         [
-                        # html.Label(label, className = 'hollow_header_label'),
                         dcc.Graph(figure = fig, config={'displayModeBar': False})
                         ],
                     )
@@ -589,7 +585,6 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                     [
                         html.Div(
                             [
-                            # html.Label(label, className = 'header_label'),
                             dcc.Graph(figure = fig, config={'displayModeBar': False})
                             ],
                         ),
@@ -866,14 +861,10 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     if 'Low Grade' in data:
         data = data.drop(['Low Grade', 'High Grade'], axis = 1)
 
-# TODO: Test to see if need
-    # find the index of the row containing the school name,
-    # use this to filter data (next line) and also with
-    # data_table row_index to Bold the school's name.
-    school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
-
+    # TODO: Test to see if this is necessary here
     # Only want to display categories where the selected school has data - this
-    # drops all columns where the row at school_name_idx has a NaN value
+    # drops all columns where the row at school_name_idx has a NaN value    
+    school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
     data = data.loc[:, ~data.iloc[school_name_idx].isna()]
 
     # reset index
@@ -909,7 +900,6 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     data_set.reset_index(drop=True, inplace=True)
 
     # Create text values for display.
-    
     # NOTE: This can be 99.9% done by setting 'text_auto=True'
     # in 'fig' without setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
     # that is displayed for ''. So this code converts the series to a string in the proper format

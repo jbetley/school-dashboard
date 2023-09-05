@@ -56,7 +56,7 @@ def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
 
 def create_chart_label(data: pd.DataFrame) -> str:
     """
-    Takes a dataframe of academic data and creates a chart label based on the columns
+    Takes a dataframe of academic data and creates a chart label based on the column content
 
     Args:
         final_data (pd.DataFrame): dataframe of academic data
@@ -125,14 +125,15 @@ def create_chart_label(data: pd.DataFrame) -> str:
     
 def create_school_label(data: pd.DataFrame) -> pd.Series:
     """
-    Takes a dataframe of academic data and creates a label for each school including
-    the school"s gradespan.
+    Takes a dataframe of academic data and creates a label for each school merging school name
+    and grade span. Used by the combine_school_name_and_grade_levels() function and by certain
+    comparison tables.
 
     Args:
         final_data (pd.DataFrame): dataframe of academic data
 
     Returns:
-        label (str): school label with name and gradespan
+        label (pd.Series): a series of labels one for each school 
     """
 
     label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
@@ -171,7 +172,10 @@ def combine_school_name_and_grade_levels(data: pd.DataFrame) -> pd.DataFrame:
     
     return data
 
-def identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: list, corp_name: str) -> Tuple[pd.DataFrame, str, str]:
+# TODO: Next two functions are duplicative. Move the merge-y from this function to a separate merge function for K8 and
+# TODO: use the plain identify function to find strings
+
+def merge_and_identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: list, corp_name: str) -> Tuple[pd.DataFrame, str, str]:
     """
     Processes several dataframes for display in comparison tables while tracking both schools that are missing data for 
     a particulary category (category_string) and schools that are missing data for all categories (school_string).
@@ -196,8 +200,6 @@ def identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.
     school_name = school_data["School Name"].values[0]
 
     school_columns = [i for i in categories if i in school_data.columns]
-
-    # TODO: Move the merge-y bits to separate merge function for K8 and use pure function to find strings
 
     # sort corp data by the school columns (this excludes any categories
     # not in the school data)
@@ -239,8 +241,7 @@ def identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.
     # missing
 
     check_data = final_data.copy()
-    # TODO: Need to figure out when LowGrade nad HighGrade are necessary and when to drop
-    # TODO: and how the current logic works - cause it is inconsistent
+
     if check_data.columns.isin(["Low Grade","High Grade"]).any(): #"Low Grade" in check_data.columns or "High Grade" in check_data.columns:
         check_data = check_data.drop(["Low Grade","High Grade"], axis = 1)
         check_data = check_data.reset_index(drop=True)
@@ -311,7 +312,7 @@ def identify_missing_categories(school_data: pd.DataFrame, corporation_data: pd.
 
     return final_data, category_string, school_string
 
-def identify_missing_categories_pure(raw_data: pd.DataFrame, categories: list) -> Tuple[pd.DataFrame, str, str]:
+def identify_missing_categories(raw_data: pd.DataFrame, categories: list) -> Tuple[pd.DataFrame, str, str]:
     """
     Processes several dataframes for display in comparison tables while tracking both schools that are missing data for 
     a particulary category (category_string) and schools that are missing data for all categories (school_string).
@@ -331,27 +332,21 @@ def identify_missing_categories_pure(raw_data: pd.DataFrame, categories: list) -
         ]
     """
     subject_categories = [c for c in categories if c not in ["School Name","Low Grade", "High Grade"]]
-    
-    # all_categories = subject_categories + info_categories
-
-    # school_name = raw_data["School Name"].values[0]
 
     school_columns = [i for i in subject_categories if i in raw_data.columns]
 
-    # get a list of all of the Categories (each one a column)
     school_categories = [ele for ele in school_columns if ele not in info_categories]
 
     # test all school columns and drop any where all columns (proficiency data) is nan/null
     final_data = raw_data.dropna(subset=school_categories, how="all")  
 
-    # replace any blanks with NaN
     final_data = final_data.replace(r"^\s*$", np.nan, regex=True)
 
     # get the names of the schools that have no data by comparing the
     # column sets before and after the drop
     missing_schools = list(set(raw_data["School Name"]) - set(final_data["School Name"]))
 
-    # Now comes the hard part. Get the names and categories of schools that
+    # Get the names and categories of schools that
     # have data for some categories and not others. In the end we want
     # to build a list of schools that is made up of schools that are missing
     # all data + schools that are missing some data + what data they are

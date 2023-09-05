@@ -18,10 +18,10 @@ from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal,
     get_high_school_academic_data, get_demographic_data, get_school_index, get_growth_data
 from .process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
     filter_high_school_academic_data, process_growth_data
-from .table_helpers import no_data_page, no_data_table, create_academic_info_table, create_key_table, \
-    create_growth_table, set_table_layout, create_basic_info_table, create_growth_table_and_fig, create_simple_academic_info_table, \
-    create_line_fig_layout
-from .chart_helpers import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
+from .tables import no_data_page, no_data_table, create_multi_header_table_with_container, create_key_table, \
+    create_growth_table, create_single_header_table, create_multi_header_table
+from .charts import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
+from .layouts import set_table_layout, create_growth_layout, create_line_fig_layout
 from .calculations import round_percentages, conditional_fillna, get_excluded_years
 from .subnav import subnav_academic
 
@@ -34,13 +34,13 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
 #   If K8 - Radio Type Display & Basic Radio Category Display
 #   If K12 - Radio Type Display With Additional -> Proficiency/Growth/High School
 
-# Type - and display check
+# Academic Data Type (proficiency or growth)
 @callback(      
-    Output("radio-type-input", "options"),
-    Output("radio-type-input","value"),
-    Output('radio-input-container', 'style'),
+    Output("radio-academic-type", "options"),
+    Output("radio-academic-type","value"),
+    Output('radio-academic-info-container', 'style'),
     Input("charter-dropdown", "value"),
-    State("radio-type-input", "value"),
+    State("radio-academic-type", "value"),
 )
 def radio_type_selector(school: str, radio_type_value: str):
 
@@ -76,13 +76,13 @@ def radio_type_selector(school: str, radio_type_value: str):
             
     return type_options, type_value, radio_input_container
 
-# Category
+# Academic Proficiency data Category
 @callback(
-    Output("radio-category-input", "options"),
-    Output("radio-category-input","value"),
-    Input("radio-type-input", "value"),
-    State("radio-category-input", "options"),
-    State("radio-category-input", "value")  
+    Output("radio-academic-category", "options"),
+    Output("radio-academic-category","value"),
+    Input("radio-academic-type", "value"),
+    State("radio-academic-category", "options"),
+    State("radio-academic-category", "value")  
 )
 def radio_category_selector(radio_type: str, radio_category_options: list, radio_category_value: str):
 
@@ -99,7 +99,7 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
         raise PreventUpdate()
     
     else:
-        if ctx.triggered_id == 'radio-type-input':
+        if ctx.triggered_id == 'radio-academic-type':
 
             if radio_type == "growth" or radio_type == "proficiency":
                 if radio_category_value:
@@ -164,8 +164,8 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
     Output("academic-information-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="radio-type-input", component_property="value"),
-    Input(component_id="radio-category-input", component_property="value"),  
+    Input(component_id="radio-academic-type", component_property="value"),
+    Input(component_id="radio-academic-category", component_property="value"),  
 )
 def update_academic_information_page(school: str, year: str, radio_type: str, radio_category: str):
     if not school:
@@ -284,19 +284,19 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     grad_overview = graduation_data[graduation_data["Category"].str.contains("|".join(grad_overview_categories))]
                     grad_overview = grad_overview.dropna(axis=1,how="all")
 
-                    hs_grad_overview_table = create_academic_info_table(grad_overview,"Graduation Rate Overview")
+                    hs_grad_overview_table = create_multi_header_table_with_container(grad_overview,"Graduation Rate Overview")
                     hs_grad_overview_table = set_table_layout(hs_grad_overview_table, hs_grad_overview_table, grad_overview.columns)
 
                     grad_ethnicity = graduation_data[graduation_data["Category"].str.contains("|".join(ethnicity))]
                     grad_ethnicity = grad_ethnicity.dropna(axis=1,how="all")
 
-                    hs_grad_ethnicity_table = create_academic_info_table(grad_ethnicity,"Graduation Rate by Ethnicity")
+                    hs_grad_ethnicity_table = create_multi_header_table_with_container(grad_ethnicity,"Graduation Rate by Ethnicity")
                     hs_grad_ethnicity_table = set_table_layout(hs_grad_ethnicity_table, hs_grad_ethnicity_table, grad_ethnicity.columns)
 
                     grad_subgroup = graduation_data[graduation_data["Category"].str.contains("|".join(subgroup))]
                     grad_subgroup = grad_subgroup.dropna(axis=1,how="all")
 
-                    hs_grad_subgroup_table = create_academic_info_table(grad_subgroup,"Graduation Rate by Subgroup")
+                    hs_grad_subgroup_table = create_multi_header_table_with_container(grad_subgroup,"Graduation Rate by Subgroup")
                     hs_grad_subgroup_table = set_table_layout(hs_grad_subgroup_table, hs_grad_subgroup_table, grad_subgroup.columns)
 
                 # SAT Benchmark Table
@@ -311,19 +311,19 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     sat_overview = sat_table_data[sat_table_data["Category"].str.contains("School Total")]
                     sat_overview = sat_overview.dropna(axis=1,how="all")
 
-                    sat_overview_table = create_academic_info_table(sat_overview,"SAT Overview")
+                    sat_overview_table = create_multi_header_table_with_container(sat_overview,"SAT Overview")
                     sat_overview_table = set_table_layout(sat_overview_table, sat_overview_table, sat_overview.columns)
 
                     sat_ethnicity = sat_table_data[sat_table_data["Category"].str.contains("|".join(ethnicity))]
                     sat_ethnicity = sat_ethnicity.dropna(axis=1,how="all")
 
-                    sat_ethnicity_table = create_academic_info_table(sat_ethnicity,"SAT Benchmarks by Ethnicity")
+                    sat_ethnicity_table = create_multi_header_table_with_container(sat_ethnicity,"SAT Benchmarks by Ethnicity")
                     sat_ethnicity_table = set_table_layout(sat_ethnicity_table, sat_ethnicity_table, sat_ethnicity.columns)
 
                     sat_subgroup = sat_table_data[sat_table_data["Category"].str.contains("|".join(subgroup))]
                     sat_subgroup = sat_subgroup.dropna(axis=1,how="all")
 
-                    sat_subgroup_table = create_academic_info_table(sat_subgroup,"SAT Benchmarks by Subgroup")
+                    sat_subgroup_table = create_multi_header_table_with_container(sat_subgroup,"SAT Benchmarks by Subgroup")
                     sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
 
                     # SAT Cut-Score Table
@@ -398,7 +398,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                             all_k8_school_data["Category"].str.contains("ELA")) | \
                         (all_k8_school_data["Category"] == "IREAD Proficiency (Grade 3)")]
 
-                    ela_grade_table = create_simple_academic_info_table(years_by_grade_ela)
+                    ela_grade_table = create_multi_header_table(years_by_grade_ela)
 
                     # by Grade Year over Year Line Chart
                     ela_grade_fig_data = year_over_year_data.filter(regex = r"^Grade \d\|ELA|IREAD|^School Name$|^Year$",axis=1)
@@ -409,7 +409,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     # by Subgroup Table
                     years_by_subgroup_ela = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(subgroup)) & all_k8_school_data["Category"].str.contains("ELA"))]
 
-                    ela_subgroup_table = create_simple_academic_info_table(years_by_subgroup_ela)
+                    ela_subgroup_table = create_multi_header_table(years_by_subgroup_ela)
 
                     # get column lists for each subject/category combination
                     categories_ela_subgroup = []
@@ -434,7 +434,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     # by Ethnicity
                     years_by_ethnicity_ela = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(ethnicity)) & all_k8_school_data["Category"].str.contains("ELA"))]
 
-                    ela_ethnicity_table = create_simple_academic_info_table(years_by_ethnicity_ela)
+                    ela_ethnicity_table = create_multi_header_table(years_by_ethnicity_ela)
 
                     # by Ethnicity Year over Year Line Chart
                     ela_ethnicity_fig_data = year_over_year_data.loc[:, (year_over_year_data.columns.isin(categories_ela_ethnicity)) | \
@@ -448,7 +448,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     # by Grade Table
                     years_by_grade_math = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(grades_all)) & all_k8_school_data["Category"].str.contains("Math"))]
 
-                    math_grade_table = create_simple_academic_info_table(years_by_grade_math)
+                    math_grade_table = create_multi_header_table(years_by_grade_math)
 
                     # by Grade Year over Year Line Chart
                     math_grade_fig_data = year_over_year_data.filter(regex = r"^Grade \d\|Math|^School Name$|^Year$",axis=1)
@@ -459,7 +459,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     # by Subgroup Table
                     years_by_subgroup_math = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(subgroup)) & all_k8_school_data["Category"].str.contains("Math"))]
 
-                    math_subgroup_table = create_simple_academic_info_table(years_by_subgroup_math)
+                    math_subgroup_table = create_multi_header_table(years_by_subgroup_math)
 
                     # by Subgroup Year over Year Line Chart
                     math_subgroup_fig_data = year_over_year_data.loc[:, (year_over_year_data.columns.isin(categories_math_subgroup)) | \
@@ -471,7 +471,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     # by Ethnicity
                     years_by_ethnicity_math = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(ethnicity)) & all_k8_school_data["Category"].str.contains("Math"))]
 
-                    math_ethnicity_table = create_simple_academic_info_table(years_by_ethnicity_math)
+                    math_ethnicity_table = create_multi_header_table(years_by_ethnicity_math)
 
                     # by Ethnicity Year over Year Line Chart
                     math_ethnicity_fig_data = year_over_year_data.loc[:, (year_over_year_data.columns.isin(categories_math_ethnicity)) | \
@@ -486,7 +486,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     attendance_rate = get_attendance_data(school_demographic_data, selected_year_string)
 
                     if len(attendance_rate.index) > 0:
-                        attendance_table = create_basic_info_table(attendance_rate,"Attendance Data")
+                        attendance_table = create_single_header_table(attendance_rate,"Attendance Data")
                     else:
                         attendance_table = no_data_table(["Attendance Data"])
 
@@ -806,7 +806,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                 table_grades_growth_ela = create_growth_table(table_data_grades_growth_ela,label_grades_growth_ela)
                 fig_grades_growth_ela = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, label_grades_growth_ela)
 
-                growth_grades_ela = create_growth_table_and_fig(table_grades_growth_ela, fig_grades_growth_ela, label_grades_growth_ela)
+                growth_grades_ela = create_growth_layout(table_grades_growth_ela, fig_grades_growth_ela, label_grades_growth_ela)
 
                 # grades growth math table/fig #3
                 table_data_grades_growth_math= table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("Math"))]
@@ -819,7 +819,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                 table_grades_growth_math = create_growth_table(table_data_grades_growth_math, label_grades_growth_math)
                 fig_grades_growth_math = make_growth_chart(growth_data_me_grades_math, growth_data_162_grades_math, label_grades_growth_math)
 
-                growth_grades_math = create_growth_table_and_fig(table_grades_growth_math, fig_grades_growth_math, label_grades_growth_math)
+                growth_grades_math = create_growth_layout(table_grades_growth_math, fig_grades_growth_math, label_grades_growth_math)
 
             ## By ethnicity
 
@@ -834,7 +834,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                 table_ethnicity_growth_ela = create_growth_table(table_data_ethnicity_growth_ela, label_ethnicity_growth_ela)
                 fig_ethnicity_growth_ela = make_growth_chart(growth_data_me_ethnicity_ela, growth_data_162_ethnicity_ela, label_ethnicity_growth_ela)
 
-                growth_ethnicity_ela = create_growth_table_and_fig(table_ethnicity_growth_ela, fig_ethnicity_growth_ela, label_ethnicity_growth_ela)
+                growth_ethnicity_ela = create_growth_layout(table_ethnicity_growth_ela, fig_ethnicity_growth_ela, label_ethnicity_growth_ela)
 
                 # ethnicity growth math table/fig #7
                 table_data_ethnicity_growth_math = table_data_ethnicity_growth[(table_data_ethnicity_growth["Category"].str.contains("Math"))]
@@ -847,7 +847,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                 table_ethnicity_growth_math = create_growth_table(table_data_ethnicity_growth_math, label_ethnicity_growth_math)
                 fig_ethnicity_growth_math = make_growth_chart(growth_data_me_ethnicity_math, growth_data_162_ethnicity_math, label_ethnicity_growth_math)
 
-                growth_ethnicity_math = create_growth_table_and_fig(table_ethnicity_growth_math, fig_ethnicity_growth_math, label_ethnicity_growth_math)
+                growth_ethnicity_math = create_growth_layout(table_ethnicity_growth_math, fig_ethnicity_growth_math, label_ethnicity_growth_math)
 
             ## By subgroup
 
@@ -862,7 +862,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                 table_subgroup_growth_ela = create_growth_table(table_data_subgroup_growth_ela, label_subgroup_growth_ela)
                 fig_subgroup_growth_ela = make_growth_chart(growth_data_me_subgroup_ela, growth_data_162_subgroup_ela, label_subgroup_growth_ela)
 
-                growth_subgroup_ela = create_growth_table_and_fig(table_subgroup_growth_ela, fig_subgroup_growth_ela, label_subgroup_growth_ela)
+                growth_subgroup_ela = create_growth_layout(table_subgroup_growth_ela, fig_subgroup_growth_ela, label_subgroup_growth_ela)
 
                 # subgroup growth math table/fig #11
                 table_data_subgroup_growth_math= table_data_subgroup_growth[(table_data_subgroup_growth["Category"].str.contains("Math"))]
@@ -875,7 +875,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                 table_subgroup_growth_math = create_growth_table(table_data_subgroup_growth_math, label_subgroup_growth_math)
                 fig_subgroup_growth_math = make_growth_chart(growth_data_me_subgroup_math, growth_data_162_subgroup_math, label_subgroup_growth_math)
 
-                growth_subgroup_math = create_growth_table_and_fig(table_subgroup_growth_math, fig_subgroup_growth_math, label_subgroup_growth_math)
+                growth_subgroup_math = create_growth_layout(table_subgroup_growth_math, fig_subgroup_growth_math, label_subgroup_growth_math)
 
                 if radio_category == "grade":
                     growth_ethnicity_ela = []
@@ -973,7 +973,7 @@ def layout():
                             html.Div(
                                 [
                                     dbc.RadioItems(
-                                        id="radio-type-input",
+                                        id="radio-academic-type",
                                         className="btn-group",
                                         inputClassName="btn-check",
                                         labelClassName="btn btn-outline-primary",
@@ -993,7 +993,7 @@ def layout():
                             html.Div(
                                 [
                                     dbc.RadioItems(
-                                        id="radio-category-input",
+                                        id="radio-academic-category",
                                         className="btn-group",
                                         inputClassName="btn-check",
                                         labelClassName="btn btn-outline-primary",
@@ -1003,13 +1003,13 @@ def layout():
                                         # persistence_type="memory",
                                     ),
                                 ],
-                                className="radio-group-academic",
+                                className="radio-group-academic-subheader",
                             )
                         ],
                         className = "bare_container_center twelve columns",
                     ),
                 ],
-                id = "radio-input-container",
+                id = "radio-academic-info-container",
             ),
             html.Div(
                 [

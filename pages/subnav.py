@@ -2,13 +2,14 @@
 # ICSB Dashboard - Subnavigation #
 ##################################
 # author:   jbetley
-# version:  1.03
-# date:     5/22/23
+# version:  1.10
+# date:     08/31/23
 
 import dash
 from dash import html
 import dash_bootstrap_components as dbc
 
+# subnav tabs for financial information and academic information
 def subnav_finance():
     return html.Div (
         dbc.Nav(

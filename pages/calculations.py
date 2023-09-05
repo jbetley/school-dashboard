@@ -2,8 +2,10 @@
 # ICSB Dashboard - Calculation Functions #
 ##########################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
+
+# NOTE: having a lot of mypy typing issues. Not sure how to resolve.
 
 import pandas as pd
 import numpy as np
@@ -13,8 +15,17 @@ import scipy.spatial as spatial
 from .load_data import current_academic_year
 
 def get_excluded_years(year: str) -> list:
-    # "excluded years" is a list of year strings (format YYYY) of all years
-    # that are more recent than the selected year. it is used to filter data
+    """
+    "excluded years" is a list of year strings (format YYYY) of all years
+    that are more recent than the selected year. it is used to filter data
+
+    Args:
+        year (str): a year string in format YYYY
+
+    Returns:
+        list: a list of year strings - all years more recent than selected year
+    """    
+
     excluded_years = []
 
     excluded_academic_years = int(current_academic_year) - int(year)
@@ -49,7 +60,16 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Wrapper around calculate_percentage() used to calculate graduation rate from a
+    dataframe (Graduates / Cohort Count)
 
+    Args:
+        data (pd.DataFrame): dataframe of graduation data
+
+    Returns:
+        pd.DataFrame: the same dataframe with "Graduation Rate" column added.
+    """
     cohorts = data[data.columns[data.columns.str.contains(r"Cohort Count")]].columns.tolist()
 
     for cohort in cohorts:
@@ -59,31 +79,41 @@ def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-# def calculate_strength_of_diploma(data: pd.DataFrame) -> pd.DataFrame:
-#     data["Strength of Diploma"] = pd.to_numeric((data["Non Waiver|Cohort Count"] * 1.08)) \
-#          / pd.to_numeric(data["Total|Cohort Count"])
-
-#     return data
-
 def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Wrapper around calculate_percentage() used to calculate SAT At Benchmark %
+    dataframe (At Benchmark / Total Tested)
 
-    final_data = data.copy()
-    tested = final_data[final_data.columns[final_data.columns.str.contains(r"Total Tested")]].columns.tolist()
+    Args:
+        data (pd.DataFrame): dataframe of SAT data
+
+    Returns:
+        pd.DataFrame: the same dataframe with "Benchmark %" column added.
+    """
+    tested = data[data.columns[data.columns.str.contains(r"Total Tested")]].columns.tolist()
 
     for test in tested:
-        if test in final_data.columns:
+        if test in data.columns:
             
             # get Category + Subject string
             cat_sub = test.split(" Total Tested")[0]
-            final_data[cat_sub + " Benchmark %"] = calculate_percentage(final_data[cat_sub + " At Benchmark"], final_data[test])
+            data[cat_sub + " Benchmark %"] = calculate_percentage(data[cat_sub + " At Benchmark"], data[test])
 
-    return final_data
+    return data
 
 # TODO: This is slow. Refactor
 def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Wrapper around calculate_percentage() used to calculate ILEARN Proficiency from academic
+    dataframe (Total Proficient / Total Tested). If Total Tested == 0 or NaN or if Total Tested > 0,
+    but Total Proficient is NaN, all associated columns are dropped
 
-# Calculates proficiency. If Total Tested == 0 or NaN or if Total Tested > 0, but Total Proficient is
-# NaN, all associated columns are dropped
+    Args:
+        data (pd.DataFrame): dataframe of ILEARN data
+
+    Returns:
+        pd.DataFrame: the same dataframe with "Proficient %" column added.
+    """
 
     # Get a list of all "Total Tested" columns except those for ELA & Math
     tested_categories = data[data.columns[data.columns.str.contains(r"Total Tested")]].columns.tolist()
@@ -146,9 +176,9 @@ def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataF
     return corp_data
 
 def calculate_percentage(numerator: str, denominator: str) -> np.ndarray: #[float|None|str]:
-    """Incompatible return value type (got "ndarray[Any, dtype[Any]]
+    """
     Calculates a percentage given a numerator and a denominator, while accounting for two
-    special case: a string representing insufficent n-size ('***') and certain conditions
+    special cases: a string representing insufficent n-size ('***') and certain conditions
     where a '0' value has a different result. The function does the following:
         1) When either the numerator or the denominator is equal to '***', the function returns '****'
         2) When either the numerator or the denominator is null/nan, the function returns 'None'
@@ -161,7 +191,7 @@ def calculate_percentage(numerator: str, denominator: str) -> np.ndarray: #[floa
     Returns:
         float|None|str: see conditions
     """
-    return np.where(
+    result = np.where(
         (numerator == "***") | (denominator == "***"),
         "***",
         np.where(
@@ -174,6 +204,8 @@ def calculate_percentage(numerator: str, denominator: str) -> np.ndarray: #[floa
             ),
         ),
     )
+
+    return result
 
 def calculate_difference(value1: str, value2: str) -> np.ndarray:
     """
@@ -188,7 +220,7 @@ def calculate_difference(value1: str, value2: str) -> np.ndarray:
         float|None|str: see conditions
     """
 
-    return np.where(
+    result = np.where(
         (value1 == "***") | (value2 == "***"),
         "***",
         np.where(
@@ -197,6 +229,8 @@ def calculate_difference(value1: str, value2: str) -> np.ndarray:
             pd.to_numeric(value1, errors="coerce") - pd.to_numeric(value2, errors="coerce"),
         ),
     )
+
+    return result
 
 def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) -> np.ndarray:
     """
@@ -221,7 +255,7 @@ def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) 
         np.ndarray: Either the difference between the current and previous year values, None, 
         or a string ('***')
     """
-    return np.where(
+    result = np.where(
         (current_year == 0) & ((previous_year.isna()) | (previous_year == "***")), "-***",
         np.where(
             (current_year == "***") | (previous_year == "***"), "***",
@@ -234,6 +268,8 @@ def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) 
             ),
         ),
     )
+
+    return result
 
 def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str:
     """
@@ -327,7 +363,7 @@ def round_nearest(data: pd.DataFrame, step: int) -> int:
         a. sets a baseline tick amount (50,000 or 500,000) based on the proportionate value
         b. and then calculates a multipler that is the result of proportionate value
             divided by the baseline tick amount
-    NOTE: Currently only used in finacial_analysis.py
+    Currently only used in finacial_analysis.py.
 
     Args:
         data (pd.DataFrame): pandas dataframe
@@ -413,11 +449,11 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
         
     """
 
-    # Identify and drop rows with no or insufficient data ('***' or NaN/None)
     tmp = data.copy()
     tmp = tmp.drop('School Name', axis=1)
     tmp = tmp.set_index('Year')
 
+    # Identify and drop rows with no or insufficient data ('***' or NaN/None)
     # the nunique test will always be true for a single column (e.g., IREAD). so we
     # need to test one column dataframes separately
     if len(tmp.columns) == 1:

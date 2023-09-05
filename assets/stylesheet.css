@@ -1,9 +1,13 @@
-/* Original Source
-https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css
+/*  ICSB Dashboard - Stylesheet
+    author:   jbetley
+    version:  1.10
+    date:     08/31/23
+
+    source: https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css
 */
 
 /* Google Font */
-/* jost-regular - latin */
+/* Jost-regular - latin */
 @font-face {
 font-family: 'Jost';
 font-style: normal;
@@ -16,6 +20,11 @@ src: local(''),
       url('../assets/fonts/jost-v13-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
       url('../assets/fonts/jost-v13-latin-regular.svg#Jost') format('svg'); /* Legacy iOS */
 }
+
+/*Inter*/
+/* <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans&display=swap" rel="stylesheet"> */
 
 /* roboto-regular - latin */
 /* @font-face {
@@ -32,6 +41,11 @@ src: local(''),
 } */
 
 /** Grid  **/
+#mainContainer {
+  display: flex;
+  flex-direction: column;
+}
+
 .container {
   position: relative;
   width: 100%;
@@ -159,7 +173,7 @@ ol {
 }
 
 body {
-  font-size: 1em; /* currently ems cause chrome bug misinterpreting rems on body element */
+  font-size: 1em;
   line-height: 1.6;
   font-weight: 400;
   font-family: 'Jost', sans-serif;
@@ -258,15 +272,6 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
   }
 
-/* .pretty_container_grey {
-  border-radius: 5px;
-  background-color: #f9f9f9;
-  margin: 10px;
-  padding: 15px;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-} */
-
 .pretty_key_container {
   border-radius: 5px;
   background-color: #ffffff;
@@ -316,17 +321,6 @@ hr {
   display: flex;
   margin-top: 45px;
 }  
-
-/* .nav_container::after {
-  content:"";
-  background: rgb(201,211,224);
-  position: absolute;
-  top: 21.5%;
-  left: 25%;
-  height: 2px;
-  width: 50%;
-  z-index: 0;
-} */
 
 .mini_container {
   border-radius: 5px;
@@ -393,6 +387,13 @@ hr {
   vertical-align: middle;
   float: left;
 }
+#year_dash_label {
+  width: 45%;
+}
+
+#school_dash_label {
+  width: 25%;
+}
 
 .multi_dropdown {
   margin: 0;
@@ -403,14 +404,6 @@ hr {
 .control_label {
   padding-left: 25px;
   font-size: 1.1rem;
-}
-
-#year_dash_label {
-  width: 45%;
-}
-
-#school_dash_label {
-  width: 25%;
 }
 
 .school_dash_control {
@@ -494,10 +487,9 @@ hr {
   color: steelblue !important;
 }
 
-/* removes legendpoint borders */
-/*  This is a kludge to remove grey marker border from legend markers when
-    the marker_line_color is set to grey in order to show a bar in a fig
-    where there is a 0 value */
+/* removes legendpoint borders - removes grey marker border from legend markers when
+    the marker_line_color is set to grey in order to show a bar in a fig where there
+    is a 0 value */
 .legendundefined {
   stroke-opacity: 0 !important;
 }
@@ -836,10 +828,6 @@ fieldset:disabled .btn {
   flex: 3;
 }
 
-#mainContainer {
-  display: flex;
-  flex-direction: column;
-}
 /*****************/
 
 
@@ -927,23 +915,22 @@ a.nav-link:hover {
   position: relative;
 }
 
-.radio_group_finance {
+.radio-group-finance {
   margin-top: 7px;
 }
 
-#radio-type-input {
-  padding-top: 7px;  
-  padding-bottom: 5px;
+.radio-group-academic {
+  margin-top: 7px;
 }
 
-#radio-category-input {
-  padding-top: 5px;  
-  padding-bottom: 10px;
+.radio-group-academic-subheader  {
+  margin-top: 10px;
+  margin-bottom: 7px;
 }
 
-#analysis-radio-type-input {
+/* #analysis-radio-type-input {
   margin-top: 5px; 
-}
+} */
 
 /** Strings & Labels **/
 label,
@@ -1172,7 +1159,7 @@ td:last-child {
 }
 
 /** Media Queries **/
-
+/* TODO: Fix Media Queries */
 /*
 Note: The best way to structure the use of media queries is to create the queries
 near the relevant code. For example, if you wanted to change the styles for buttons

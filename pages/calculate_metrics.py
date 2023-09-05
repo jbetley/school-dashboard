@@ -2,8 +2,8 @@
 # ICSB Dashboard - Metric Calculations #
 ########################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import pandas as pd
 import numpy as np
@@ -219,7 +219,6 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
             )
 
     return data
-
 
 def calculate_k8_comparison_metrics(school_data: pd.DataFrame, corp_data: pd.DataFrame, year: str) -> pd.DataFrame:
     """

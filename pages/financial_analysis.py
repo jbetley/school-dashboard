@@ -16,8 +16,8 @@ import numpy as np
 import plotly.graph_objects as go
 
 from .load_data import max_display_years, get_school_index, get_financial_data, get_financial_ratios
-from .table_helpers import no_data_page, no_data_table
-from .chart_helpers import loading_fig
+from .tables import no_data_page, no_data_table
+from .charts import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
 

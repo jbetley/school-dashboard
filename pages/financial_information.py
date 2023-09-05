@@ -6,28 +6,65 @@
 # date:     08/31/23
 
 import dash
-from dash import html, dash_table, Input, Output, callback
+from dash import html, dash_table, Input, State, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
 
 from .load_data import max_display_years, get_school_index, get_financial_data
-from .table_helpers import no_data_page
+from .tables import no_data_page
 from .subnav import subnav_finance
 
 dash.register_page(__name__, top_nav=True, path = "/financial_information", order=1)
 
+# Financial data type (school or network)
+@callback(      
+    Output("radio-finance-info", "options"),
+    Output("radio-finance-info","value"),
+    Output('radio-finance-info-container', 'style'),
+    Input("charter-dropdown", "value"),
+    State("radio-finance-info", "value"),
+)
+def radio_finance_info_selector(school: str, finance_value_state: str):
+
+    selected_school = get_school_index(school)
+
+    value_default = "school-finance"
+    finance_value = value_default
+
+    if selected_school["Network"].values[0] == "None":
+    
+        finance_options = []       
+        radio_input_container = {'display': 'none'}
+        
+    else:
+
+        finance_options = [
+            {"label": "School", "value": "school-finance"},
+            {"label": "Network", "value": "network-finance"},
+        ]
+        radio_input_container = {'display': 'block'}
+    
+    if finance_value_state:
+        # when changing dropdown from a school with network to one without, we need to reset state
+        if finance_value_state == "network-finance" and selected_school["Network"].values[0] == "None":
+            finance_value = value_default
+        else:    
+            finance_value = finance_value_state
+    else:
+        finance_value = value_default
+            
+    return finance_options, finance_value, radio_input_container
+
 @callback(
     Output("financial-information-table", "children"),
-    Output("radio-finance-info-display", "style"),
-    Output("radio-finance-info-content", "children"),
     Output("financial-information-main-container", "style"),
     Output("financial-information-empty-container", "style"),
     Output("financial-information-no-data", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="radio-button-finance-info", component_property="value")
+    Input(component_id="radio-finance-info", component_property="value")
 )
 def update_financial_information_page(school: str, year: str, radio_value: str):
     if not school:
@@ -41,83 +78,6 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
     selected_year_numeric = int(selected_year_string)
     selected_school = get_school_index(school)
 
-    # Displays either School or Network level financials, if a school is not
-    # part of a network, no radio buttons are displayed at all. If a school
-    # is part of a network, define and display radio button. Storing the radio
-    # buttons in a variable ensures there is no flickering of the component as
-    # it is drawn and then hidden - as the button variable has no content until
-    # it also meets the display condition.
-    if selected_school["Network"].values[0] != "None":
-        if radio_value == "network-finance":
-
-            radio_content = html.Div(
-                                [
-                                    dbc.RadioItems(
-                                        id="radio-button-finance-info",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        options=[
-                                            {"label": "School", "value": "school-finance"},
-                                            {"label": "Network", "value": "network-finance"},
-                                        ],
-                                        value="network-finance",
-                                        persistence=True,
-                                        persistence_type="local",
-                                    ),
-                                ],
-                                className="radio_group_finance",
-            )
-
-        else:
-
-            radio_content = html.Div(
-                                [
-                                    dbc.RadioItems(
-                                        id="radio-button-finance-info",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        options=[
-                                            {"label": "School", "value": "school-finance"},
-                                            {"label": "Network", "value": "network-finance"},
-                                        ],
-                                        value="school-finance",
-                                        persistence = False,
-                                        # persistence_type = "memory",
-                                    ),
-                                ],
-                                className="radio_group_finance",
-            )
-            
-            radio_value = "school-metrics"
-        
-        display_radio = {}
-
-    else:
-        radio_content = html.Div(
-                            [
-                                dbc.RadioItems(
-                                    id="radio-button-finance-info",
-                                    className="btn-group",
-                                    inputClassName="btn-check",
-                                    labelClassName="btn btn-outline-primary",
-                                    labelCheckedClassName="active",
-                                    options=[],
-                                    value="",
-                                    persistence = False,
-                                    # persistence_type = "memory",
-                                ),
-                            ],
-                            className="radio_group_finance",
-        )
-        
-        # radio_value defaults to school if "Network" value is None in school_index
-        radio_value = "school-metrics"
-        display_radio = {"display": "none"}
-
     if radio_value == "network-finance":
         
         network_id = selected_school["Network"].values[0]
@@ -127,7 +87,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             financial_data = get_financial_data(network_id)
 
         else:
-            financial_data = {}
+            financial_data = pd.DataFrame()
         
         table_title = "Audited Financial Information (" + financial_data["School Name"][0] + ")"
 
@@ -356,8 +316,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             main_container = {"display": "none"}
             empty_container = {"display": "block"}
 
-    return financial_information_table, display_radio,radio_content, \
-        main_container, empty_container, no_data_to_display
+    return financial_information_table, main_container, empty_container, no_data_to_display
 
 def layout():
     return html.Div(
@@ -380,20 +339,24 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Div(
-                                            [
-                                                html.Div(id="radio-finance-info-content", children=[]),
-                                            ],
-                                            id = "radio-button-finance-info",
+                                        dbc.RadioItems(
+                                            id="radio-finance-info",
+                                            className="btn-group",
+                                            inputClassName="btn-check",
+                                            labelClassName="btn btn-outline-primary",
+                                            labelCheckedClassName="active",
+                                            value=[],
+                                            persistence=False,
+                                            # persistence_type="memory",
                                         ),
                                     ],
-                                    id = "radio-finance-info-display",
-                                ),
+                                    className="radio-group-finance",
+                                )
                             ],
                             className = "bare_container_center twelve columns",
                         ),
                     ],
-                    className = "row",
+                    id = "radio-finance-info-container",
                 ),
                 html.Div(
                     [
