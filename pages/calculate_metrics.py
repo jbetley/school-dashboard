@@ -528,7 +528,9 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a dataframe of float values and returns the same dataframe with one
     extra 'Rating' column for each year of data. Ratings are calculated based
-    on specific thresholds according to ICSB Accountability System (MS, DNMS, or N/A (or null)) 
+    on specific thresholds according to ICSB Accountability System (MS, DNMS,
+    or N/A (or null)). The calculations use all years of available data (later
+    truncated in body of financial_metrics.py to display a maximum of 5 years)
     NOTE: This was refactored (03.01.23) to use vectorized operations. Not sure
     that the refactored version is easier to comprehend than the previous
     loop version. it is also longer.

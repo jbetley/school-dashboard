@@ -164,16 +164,12 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 if len(financial_data[financial_data[c] == 0].index) > 31:
                     financial_data.drop([c], inplace=True, axis=1)
 
-            # Ensure only "max_display_years" of financial data
-            # is displayed (add +1 to max_display_years to account for the
-            # category column). To show all financial data, comment out this
-            # line. This may cause unexpected errors elsewhere.
-            financial_data = financial_data.iloc[: , :(max_display_years+1)]
-
             # remove audit and other indicator data (it is displayed on the financial metrics page)
             financial_values = financial_data.loc[:(financial_data["Category"] == "Audit Information").idxmax()-1]
 
             # Release The Hounds!
+            # NOTE: We use all years of data to calculate metrics because several metrics (e.g. ATYM and MYCF)
+            # require multiple prior years of data to properly calculate.
             financial_metrics = calculate_financial_metrics(financial_values)
             
             # Catches edge case where school has empty df _after_ the metric calculation
@@ -185,7 +181,16 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 empty_container = {"display": "block"}
 
             else:
+
+                # Once metrics are calculated, we limit the maximum number of years
+                # displayed to max_display_years (adding +1 to account for the
+                # category column). Because we have added a new Rating column for
+                # each year, we need to multiple max by 2 (up to a max of 11).
+                # To show all financial data, comment out this line
+                metric_display_years = max_display_years*2
                 
+                financial_metrics = financial_metrics.iloc[: , :(metric_display_years+1)]
+      
                 # convert ratings to purty colored circles
                 financial_metrics = convert_to_svg_circle(financial_metrics)
 

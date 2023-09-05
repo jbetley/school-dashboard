@@ -313,13 +313,12 @@ hr {
 }
 
 .nav_container {
-  margin: 0 0 0 0;
   padding: 50px 50px 60px 50px;
   justify-content: center;
   text-align: center;
   align-items: center;
   display: flex;
-  margin-top: 45px;
+  margin-top: 60px;
 }  
 
 .mini_container {

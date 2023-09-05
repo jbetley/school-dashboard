@@ -38,9 +38,14 @@ def update_organizational_compliance(school, year):
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
-        # Drop partial years
+        # Drop partial years (except Q4)
         if "Q" in financial_data.columns[1]:
-            financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
+            if "Q4" in financial_data.columns[1]:
+                 financial_data = financial_data.rename(columns={c: c[:4] for c in financial_data.columns if c not in ["Category"]})
+
+                # financial_data.columns[1] = str(financial_data.columns[1])[:4]
+            else:
+                financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
         available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
         available_years = [int(c[:4]) for c in available_years]
