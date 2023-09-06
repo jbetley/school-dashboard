@@ -36,8 +36,8 @@ from pages.load_data import get_school_index, get_academic_dropdown_years, get_f
 
 # Used to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
-
-external_stylesheets = ["https://fonts.googleapis.com/css2?family=Jost:400", FONT_AWESOME]
+FONT_FAMILY = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans&display=swap"
+external_stylesheets = [FONT_FAMILY, FONT_AWESOME]
 # external_stylesheets = ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans&display=swap", FONT_AWESOME]
 
 # NOTE: Cannot get static folder to work (images do not load and give 302 Found error)
@@ -302,7 +302,7 @@ def layout():
                                 dcc.Dropdown(
                                     id="charter-dropdown",
                                     style={
-                                        "fontFamily": "Jost, sans-serif",
+                                        "fontFamily": "Inter, sans-serif",
                                         "fontSize": "12px",
                                         "color": "steelblue",
                                     },
@@ -327,7 +327,7 @@ def layout():
                                 dcc.Dropdown(
                                     id="year-dropdown",
                                     style={
-                                        "fontFamily": "Jost, sans-serif",
+                                        "fontFamily": "Inter, sans-serif",
                                         "fontSize": "12px",                                        
                                         "color": "steelblue",
                                     },

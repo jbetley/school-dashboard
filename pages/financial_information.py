@@ -229,7 +229,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                                         columns = [{"name": i, "id": i} for i in financial_data.columns],
                                         style_data={
                                             "fontSize": "12px",
-                                            "fontFamily": "Jost, sans-serif",
+                                            "fontFamily": "Inter, sans-serif",
                                             "border": "none"
                                         },
                                         style_data_conditional=[
@@ -267,7 +267,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                                             "border": "none",
                                             "borderBottom": ".5px solid #6783a9",
                                             "fontSize": "12px",
-                                            "fontFamily": "Jost, sans-serif",
+                                            "fontFamily": "Inter, sans-serif",
                                             "color": "#6783a9",
                                             "textAlign": "center",
                                             "fontWeight": "bold"

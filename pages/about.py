@@ -137,7 +137,7 @@ def update_about_page(year: str, school: str):
                     columns = [{"name": i, "id": i} for i in school_enrollment.columns],
                     style_data={
                         "fontSize": "12px",
-                        "fontFamily": "Jost, sans-serif",
+                        "fontFamily": "Inter, sans-serif",
                         "border": "none"
                     },
                     style_data_conditional=[
@@ -244,7 +244,7 @@ def update_about_page(year: str, school: str):
             ethnicity_fig.update_layout(
                 margin=dict(l=10, r=40, t=60, b=70,pad=0),
                 font = dict(
-                    family="Jost, sans-serif",
+                    family="Inter, sans-serif",
                     color="#6783a9",
                     size=11
                     ),
@@ -336,7 +336,7 @@ def update_about_page(year: str, school: str):
             subgroup_fig.update_layout(
                 margin=dict(l=10, r=40, t=60, b=70,pad=0),
                 font = dict(
-                    family="Jost, sans-serif",
+                    family="Inter, sans-serif",
                     color="#6783a9",
                     size=11
                     ),
@@ -464,7 +464,7 @@ def update_about_page(year: str, school: str):
             adm_fig.update_layout(
                 margin=dict(l=40, r=40, t=40, b=40),
                 font = dict(
-                    family="Jost, sans-serif",
+                    family="Inter, sans-serif",
                     color="#6783a9",
                     size=12
                     ),
@@ -487,8 +487,8 @@ layout = html.Div(
                 fullscreen = True,
                 style={
                     "position": "absolute",
-                    "align-self": "center",
-                    "background-color": "#F2F2F2",
+                    "alignSelf": "center",
+                    "backgroundColor": "#F2F2F2",
                     },
                 children=[
                     html.Div(

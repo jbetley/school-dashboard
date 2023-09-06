@@ -53,7 +53,7 @@ def no_data_fig_blank() -> dict:
                 'font': {
                     'size': 16,
                     'color': '#6783a9',
-                    'family': 'Jost, sans-serif'
+                    'family': 'Inter, sans-serif'
                 }
             }
         ],
@@ -89,7 +89,7 @@ def loading_fig() -> dict:
                     'font': {
                         'size': 16,
                         'color': '#6783a9',
-                        'family': 'Jost, sans-serif'
+                        'family': 'Inter, sans-serif'
                     }
                 }
             ]
@@ -133,7 +133,7 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400, tabl
                 'font': {
                     'size': 16,
                     'color': '#6783a9',
-                    'family': 'Jost, sans-serif'
+                    'family': 'Inter, sans-serif'
                 }
             }
         ],
@@ -232,7 +232,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
 
     fig.update_layout(
         margin=dict(l=10, r=10, t=20, b=0),
-        font_family='Jost, sans-serif',
+        font_family='Inter, sans-serif',
         font_color='steelblue',
         font_size = 9,
         bargroupgap = 0,
@@ -407,7 +407,7 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                 margin=dict(l=40, r=40, t=40, b=0),
                 title_x=0.5,
                 font = dict(
-                    family = 'Jost, sans-serif',
+                    family = 'Inter, sans-serif',
                     color = 'steelblue',
                     size = 12
                     ),
@@ -668,7 +668,7 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
         margin=dict(l=40, r=40, t=40, b=0),
         title_x=0.5,
         font = dict(
-            family = 'Jost, sans-serif',
+            family = 'Inter, sans-serif',
             color = 'steelblue',
             size = 10
             ),
@@ -801,7 +801,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
             title_x=0.5,
             margin=dict(l=40, r=40, t=40, b=60),
             font = dict(
-                family='Jost, sans-serif',
+                family='Inter, sans-serif',
                 color='steelblue',
                 size = 11
                 ),
@@ -818,7 +818,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
                 bgcolor='white',
                 font_color='steelblue',
                 font_size=11,
-                font_family='Jost, sans-serif',
+                font_family='Inter, sans-serif',
             ),
             hoverlabel_align = 'left'
         )
@@ -948,7 +948,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         title_x=0.5,
         margin=dict(l=40, r=40, t=40, b=10),
         font = dict(
-            family='Jost, sans-serif',
+            family='Inter, sans-serif',
             color='steelblue',
             size = 11
         ),
@@ -962,7 +962,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
             bgcolor='white',
             font_color='steelblue',
             font_size = 11,
-            font_family='Jost, sans-serif',
+            font_family='Inter, sans-serif',
         ),
         hoverlabel_align = 'left'
     )        

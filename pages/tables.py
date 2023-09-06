@@ -14,7 +14,7 @@ from dash.dash_table.Format import Format, Scheme, Sign
 table_style = {
     "fontSize": "12px",
     "border": "none",
-    "fontFamily": "Jost, sans-serif"
+    "fontFamily": "Inter, sans-serif"
 }
 
 table_cell = {
@@ -30,7 +30,7 @@ table_cell = {
 table_header = {
     "backgroundColor": "#ffffff",
     "fontSize": "12px",
-    "fontFamily": "Jost, sans-serif",
+    "fontFamily": "Montserrat, sans-serif",
     "color": "#6783a9",
     "textAlign": "center",
     "fontWeight": "bold",
@@ -116,9 +116,9 @@ def create_proficiency_key() -> list:
             markdown_options={"html": True},
             style_table={
                 "paddingTop": "15px",
-                "fontSize": "1em",
+                "fontSize": "1.2em",
                 "border": "none",
-                "fontFamily": "Jost, sans-serif",
+                "fontFamily": "Inter, sans-serif",
             },
             style_cell = {
                 "whiteSpace": "normal",
@@ -211,7 +211,7 @@ def no_data_table(label: list = ["Academic Data"], text: list = ["No Data to Dis
                             "border": "none",
                             "textAlign": "center",
                             "color": "#6783a9",
-                            "fontFamily": "Jost, sans-serif",
+                            "fontFamily": "Inter, sans-serif",
                             "height": "30vh",
                         },
                     ),
@@ -253,7 +253,7 @@ def no_data_page(label: str = "Academic Data", text: str = "No Data to Display")
                                             "border": "none",
                                             "textAlign": "center",
                                             "color": "#6783a9",
-                                            "fontFamily": "Jost, sans-serif",
+                                            "fontFamily": "Montserrat, sans-serif",
                                             "height": "30vh",
                                         },
                                         style_data={
@@ -346,7 +346,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
                                 "border": "none",
                                 "textAlign": "center",
                                 "color": "#6783a9",
-                                "fontFamily": "Jost, sans-serif",
+                                "fontFamily": "Montserrat, sans-serif",
                             },
                         )
                     )
@@ -591,13 +591,13 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
                                 columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
                                 style_data = {
                                     "fontSize": "12px",
-                                    "fontFamily": "Jost, sans-serif",
+                                    "fontFamily": "Inter, sans-serif",
                                     "border": "none",
                                     "color": "#6783a9",
                                 },
                                 style_header = {
                                     "fontSize": "12px",
-                                    "fontFamily": "Jost, sans-serif",
+                                    "fontFamily": "Montserrat, sans-serif",
                                     "color": "#6783a9",
                                     "textAlign": "center",
                                     "fontWeight": "bold",
@@ -783,7 +783,7 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
                                 columns = [{"name": i, "id": i, "type":"numeric","format": FormatTemplate.percentage(2)} for i in data.columns],
                                 style_data = {
                                     "fontSize": "12px",
-                                    "fontFamily": "Jost, sans-serif",
+                                    "fontFamily": "Inter, sans-serif",
                                     "border": "none",
                                 },    
                                 style_header = table_header,
@@ -1099,7 +1099,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
                                 "border": "none",
                                 "textAlign": "center",
                                 "color": "#6783a9",
-                                "fontFamily": "Jost, sans-serif",
+                                "fontFamily": "Montserrat, sans-serif",
                                 "height": "30vh",
                             },
                             style_data={
@@ -1260,7 +1260,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
                                 "border": "none",
                                 "textAlign": "center",
                                 "color": "#6783a9",
-                                "fontFamily": "Jost, sans-serif",
+                                "fontFamily": "Montserrat, sans-serif",
                                 "height": "30vh",
                             },
                             style_data={
@@ -1306,7 +1306,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                                 "border": "none",
                                 "textAlign": "center",
                                 "color": "#6783a9",
-                                "fontFamily": "Open Sans, sans-serif",
+                                "fontFamily": "Inter, sans-serif",
                             },
                         )
                     )
@@ -1391,7 +1391,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                     "column_id": year
                 },
                 "textAlign": "center",
-                "fontWeight": "500",
+                "fontWeight": "600",
                 "width": str(year_width) + "%",
             } for year in year_headers
         ]  + [
@@ -1415,7 +1415,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "column_id": diff
             },
                 "textAlign": "center",
-                "fontWeight": "500",
+                "fontWeight": "600",
                 "width": str(diff_width) + "%"
             } for diff in diff_headers
         ]
@@ -1477,7 +1477,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "header_index": 1,
             },
                 "textAlign": "center",
-                "fontWeight": "400",
+                "fontWeight": "500",
                 "fontSize": "12px",
                 "borderTop": ".5px solid #b2bdd4",
                 "borderBottom": ".5px solid #b2bdd4",
@@ -1555,7 +1555,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "if": {
                     "column_id": nsize,
                 },
-                "fontSize": "10px",
+                "fontSize": "11px",
                 "textAlign": "center",
             } for nsize in nsize_headers
         ] + [

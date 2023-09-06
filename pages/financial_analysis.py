@@ -313,7 +313,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             revenue_expenses_bar_fig.update_layout(
                 margin=dict(l=40, r=40, t=40, b=60),
                 font=dict(
-                    family="Jost, sans-serif",
+                    family="Inter, sans-serif",
                     color="#6783a9",
                     size=12
                     ),
@@ -392,7 +392,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             assets_liabilities_bar_fig.update_layout(
                 margin=dict(l=40, r=40, t=40, b=60),
                 font = dict(
-                    family="Jost, sans-serif",
+                    family="Inter, sans-serif",
                     color="#6783a9",
                     size=12
                     ),
@@ -435,7 +435,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             table_data = {
                 "fontSize": "12px",
                 "border": "none",
-                "fontFamily": "Jost, sans-serif",
+                "fontFamily": "Inter, sans-serif",
             }
 
             table_header = {
@@ -444,7 +444,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 "border": "none",
                 "borderBottom": ".5px solid #6783a9",
                 "fontSize": "12px",
-                "fontFamily": "Jost, sans-serif",
+                "fontFamily": "Inter, sans-serif",
                 "color": "#6783a9",
                 "textAlign": "center",
                 "fontWeight": "bold"
@@ -974,8 +974,8 @@ def layout():
                             fullscreen = True,
                             style={
                                 "position": "absolute",
-                                "align-self": "center",
-                                "background-color": "#F2F2F2",
+                                "alignSelf": "center",
+                                "backgroundColor": "#F2F2F2",
                                 },
                             children=[                            
                                 html.Div(

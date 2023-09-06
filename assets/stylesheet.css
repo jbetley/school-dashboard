@@ -8,20 +8,23 @@
 
 /* Google Font */
 /* Jost-regular - latin */
-@font-face {
+/* @font-face {
 font-family: 'Jost';
 font-style: normal;
-font-weight: 400;
-src: url('../assets/fonts/jost-v13-latin-regular.eot'); /* IE9 Compat Modes */
-src: local(''),
-      url('../assets/fonts/jost-v13-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
-      url('../assets/fonts/jost-v13-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
-      url('../assets/fonts/jost-v13-latin-regular.woff') format('woff'), /* Modern Browsers */
-      url('../assets/fonts/jost-v13-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
-      url('../assets/fonts/jost-v13-latin-regular.svg#Jost') format('svg'); /* Legacy iOS */
-}
+font-weight: 400; */
+/* src: url('../assets/fonts/jost-v13-latin-regular.eot'); IE9 Compat Modes */
+/* src: local(''), */
+      /* url('../assets/fonts/jost-v13-latin-regular.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
+      /* url('../assets/fonts/jost-v13-latin-regular.woff2') format('woff2'), Super Modern Browsers */
+      /* url('../assets/fonts/jost-v13-latin-regular.woff') format('woff'), Modern Browsers */
+      /* url('../assets/fonts/jost-v13-latin-regular.ttf') format('truetype'), Safari, Android, iOS */
+      /* url('../assets/fonts/jost-v13-latin-regular.svg#Jost') format('svg'); Legacy iOS */
+ /* } */
 
 /*Inter*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
+
 /* <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans&display=swap" rel="stylesheet"> */
@@ -61,6 +64,7 @@ src: local(''),
   box-sizing: border-box;
 }
 
+/* TODO: Adapt and Test media queries */
 /* For devices larger than 400px */
 @media (min-width: 400px) {
   .container {
@@ -145,6 +149,8 @@ src: local(''),
 are based on 10px sizing. So basically 1.5rem = 15px */
 html {
   font-size: 62.5%;
+  /* letter-spacing: 1px; */
+
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -176,7 +182,7 @@ body {
   font-size: 1em;
   line-height: 1.6;
   font-weight: 400;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: steelblue;
   background-color: #F2F2F2;
   margin: 0 8px 8px 8px;
@@ -227,7 +233,7 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-.pretty-container--bare {
+/* .pretty-container--bare {
   background-color: #ffffff;
   margin: 10px;
   padding: 15px;
@@ -241,7 +247,7 @@ hr {
   position: relative;
 }
 
-.pretty-container--bare--line::after {
+.pretty-container--bare::after {
   content:"";  
   background: lightgrey;
   position: absolute;
@@ -250,7 +256,7 @@ hr {
   height: 80%;
   width: 1px;
   z-index: 999;
-}
+} */
 
 /* same as pretty_container but adds min-width. Used for left side of 'About' page
   to ensure the width of the tables and figs are aligned. Gets screwy when the window
@@ -320,14 +326,14 @@ hr {
   margin-top: 60px;
 }  
 
-.container__mini {
+/* .container__mini {
   border-radius: 5px;
   background-color: #f9f9f9;
   margin: 10px;
   padding: 15px;
   position: relative;
   box-shadow: 2px 2px 2px lightgrey;
-}
+} */
 
 .container__close {
   border-bottom-left-radius: 5px;
@@ -350,7 +356,7 @@ hr {
   position: relative;
 }
 
-.container__nodata {
+/* .container__nodata {
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   background-color: #ffffff;
@@ -364,7 +370,7 @@ hr {
   display: block;
   margin-left: auto;
   margin-right: auto;
-}
+} */
 
 /* .container__map {
   border-radius: 5px;
@@ -557,7 +563,7 @@ button:not(:disabled) {
 .btn {
   margin-top: -5px;
   text-transform: uppercase;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: steelblue;
   background-color: #ffffff;
   font-size: 14px;
@@ -573,7 +579,7 @@ button:not(:disabled) {
   box-sizing: border-box;  
   /* --bs-btn-padding-x: 0.75rem;
   --bs-btn-padding-y: 0.375rem;
-  --bs-btn-font-family: 'Jost', sans-serif;
+  --bs-btn-font-family: 'Inter', sans-serif;
   --bs-btn-text-transform: 'uppercase';
   --bs-btn-font-size: 1.5rem;
   --bs-btn-font-weight: 400;
@@ -614,7 +620,7 @@ button:not(:disabled) {
 }
 .btn:hover {
   text-transform: uppercase;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: white;
   background-color: #c0c1c7;
   font-size: 14px;
@@ -679,7 +685,7 @@ fieldset:disabled .btn {
 } */
 .btn.active {
   text-transform: uppercase;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: white;
   background-color: #c0c1c7;
   font-size: 14px;
@@ -844,7 +850,7 @@ a:link {
 
 a.nav-link:hover {
   text-transform: uppercase;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: white;
   background-color: #c0c1c7;
   font-size: 14px;
@@ -862,7 +868,7 @@ a.nav-link:hover {
 
 .nav-link.active {
   text-transform: uppercase;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: white;
   background-color: #c0c1c7;
   font-size: 14px;
@@ -880,7 +886,7 @@ a.nav-link:hover {
 
 .tab {
   text-transform: uppercase;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: steelblue;
   background-color: #ffffff;
   font-size: 14px;
@@ -951,11 +957,11 @@ label > .label-body {
   height: auto;
   background-color: #6783a9;
   font-size: 14px;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   color: #ffffff;
   text-align: center;
   margin:auto;
-  font-weight: bold;
+  font-weight: 700;
   padding-bottom: 5px;
   padding-top: 5px;
   width: 80%;
@@ -967,22 +973,8 @@ label > .label-body {
   height: auto;
   background-color: #ffffff;
   font-size: 12px;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   color: #6783a9;
-  text-align: center;
-  font-weight: bold;
-  padding-bottom: 5px;
-  padding-top: 5px;
-}
-
-.half_header_label {
-  height: auto;
-  background-color: #6783a9;
-  font-size: 12px;
-  font-family: 'Jost', sans-serif;
-  color: #ffffff;
-  width: 50%;
-  margin: auto;
   text-align: center;
   font-weight: bold;
   padding-bottom: 5px;
@@ -993,7 +985,7 @@ label > .label-body {
   height: auto;
   background-color: #ffffff;
   font-size: 12px;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   color: #6783a9;
   text-align: center;
   width: 50%;
@@ -1094,10 +1086,11 @@ label > .label-body {
 /** Logout Button **/
 .logout-button {
   text-transform: uppercase;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: steelblue;
   background-color: #ffffff;
   font-size: 12px;
+  margin-top: 10px;
   font-weight: 200;
   line-height: 1;
   align-items: center;
@@ -1113,7 +1106,7 @@ label > .label-body {
 
 a.logout-button:hover {
   text-transform: uppercase;
-  font-family: 'Jost', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: white;
   background-color: #c0c1c7;
   font-size: 12px;

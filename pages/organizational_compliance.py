@@ -8,7 +8,7 @@ import dash
 from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 
-from .load_data import get_financial_data
+from .load_data import get_financial_data, max_display_years
 from .tables import no_data_table, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
 
@@ -38,12 +38,11 @@ def update_organizational_compliance(school, year):
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
-        # Drop partial years (except Q4)
+        # Drop partial years (except for Q4)
         if "Q" in financial_data.columns[1]:
             if "Q4" in financial_data.columns[1]:
                  financial_data = financial_data.rename(columns={c: c[:4] for c in financial_data.columns if c not in ["Category"]})
 
-                # financial_data.columns[1] = str(financial_data.columns[1])[:4]
             else:
                 financial_data = financial_data.drop(financial_data.columns[[1]],axis = 1)
 
@@ -57,6 +56,11 @@ def update_organizational_compliance(school, year):
             financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
 
         if len(financial_data.columns) > 1:
+
+            # Ensure that only the "max_display_years" number of years worth of financial
+            # data is displayed (add +1 to max_display_years to account for the category
+            # column). To show all years of data, comment out this line.
+            financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
             organizational_indicators = financial_data[financial_data["Category"].str.startswith("3.")].copy()
             organizational_indicators[["Standard","Description"]] = organizational_indicators["Category"].str.split("|", expand=True)
@@ -90,7 +94,7 @@ def update_organizational_compliance(school, year):
                             style_data={
                                 "fontSize": "12px",
                                 "border": "none",
-                                "fontFamily": "Jost, sans-serif",
+                                "fontFamily": "Inter, sans-serif",
                             },
                             style_data_conditional=
                             [
@@ -124,7 +128,7 @@ def update_organizational_compliance(school, year):
                                 "border": "none",
                                 "borderBottom": ".5px solid #6783a9",
                                 "fontSize": "12px",
-                                "fontFamily": "Jost, sans-serif",
+                                "fontFamily": "Montserrat, sans-serif",
                                 "color": "#6783a9",
                                 "textAlign": "center",
                                 "fontWeight": "bold"
@@ -214,7 +218,7 @@ def update_organizational_compliance(school, year):
             style_data={
                 "fontSize": "12px",
                 "border": "none",
-                "fontFamily": "Jost, sans-serif",
+                "fontFamily": "Inter, sans-serif",
             },
             style_data_conditional=[
                 {
@@ -244,7 +248,7 @@ def update_organizational_compliance(school, year):
                 "border": "none",
                 "borderBottom": ".5px solid #6783a9",
                 "fontSize": "12px",
-                "fontFamily": "Jost, sans-serif",
+                "fontFamily": "Montserrat, sans-serif",
                 "color": "#6783a9",
                 "textAlign": "center",
                 "fontWeight": "bold"

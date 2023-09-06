@@ -1019,8 +1019,8 @@ def layout():
                     fullscreen = True,
                     style={
                         "position": "absolute",
-                        "align-self": "center",
-                        "background-color": "#F2F2F2",
+                        "alignSelf": "center",
+                        "backgroundColor": "#F2F2F2",
                         },
                     children=[
                         html.Div(

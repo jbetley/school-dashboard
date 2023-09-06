@@ -272,7 +272,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                             style_data={
                                                 "fontSize": "12px",
                                                 "border": "none",
-                                                "fontFamily": "Jost, sans-serif",
+                                                "fontFamily": "Inter, sans-serif",
                                             },
                                             style_data_conditional=
                                             [
@@ -304,7 +304,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                                 "border": "none",
                                                 "borderBottom": ".5px solid #6783a9",
                                                 "fontSize": "12px",
-                                                "fontFamily": "Jost, sans-serif",
+                                                "fontFamily": "Inter, sans-serif",
                                                 "color": "#6783a9",
                                                 "textAlign": "center",
                                                 "fontWeight": "bold"
@@ -399,7 +399,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                                 ],                                                   
                                                 style_data={
                                                     "fontSize": "12px",
-                                                    "fontFamily": "Jost, sans-serif",
+                                                    "fontFamily": "Inter, sans-serif",
                                                     "border": "none"
                                                 },
                                                 style_data_conditional=
@@ -434,7 +434,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                                     "border": "none",
                                                     "borderBottom": ".5px solid #6783a9",
                                                     "fontSize": "12px",
-                                                    "fontFamily": "Jost, sans-serif",
+                                                    "fontFamily": "Inter, sans-serif",
                                                     "color": "#6783a9",
                                                     "textAlign": "center",
                                                     "fontWeight": "bold"
@@ -505,7 +505,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                     style_data={
                                         "fontSize": "12px",
                                         "border": "none",
-                                        "fontFamily": "Jost, sans-serif",
+                                        "fontFamily": "Inter, sans-serif",
                                     },
                                     style_data_conditional=[
                                         {
@@ -532,7 +532,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                     style_header={
                                         "backgroundColor": "#ffffff",
                                         "fontSize": "12px",
-                                        "fontFamily": "Jost, sans-serif",
+                                        "fontFamily": "Inter, sans-serif",
                                         "color": "#6783a9",
                                         "textAlign": "center",
                                         "fontWeight": "bold",
