@@ -36,11 +36,11 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
 
 # Academic Data Type (proficiency or growth)
 @callback(      
-    Output("radio-academic-type", "options"),
-    Output("radio-academic-type","value"),
-    Output('radio-academic-info-container', 'style'),
+    Output("academic-information-radio-type", "options"),
+    Output("academic-information-radio-type","value"),
+    Output('academic-information-radio-container', 'style'),
     Input("charter-dropdown", "value"),
-    State("radio-academic-type", "value"),
+    State("academic-information-radio-type", "value"),
 )
 def radio_type_selector(school: str, radio_type_value: str):
 
@@ -78,11 +78,11 @@ def radio_type_selector(school: str, radio_type_value: str):
 
 # Academic Proficiency data Category
 @callback(
-    Output("radio-academic-category", "options"),
-    Output("radio-academic-category","value"),
-    Input("radio-academic-type", "value"),
-    State("radio-academic-category", "options"),
-    State("radio-academic-category", "value")  
+    Output("academic-information-radio-category", "options"),
+    Output("academic-information-radio-category","value"),
+    Input("academic-information-radio-type", "value"),
+    State("academic-information-radio-category", "options"),
+    State("academic-information-radio-category", "value")  
 )
 def radio_category_selector(radio_type: str, radio_category_options: list, radio_category_value: str):
 
@@ -99,7 +99,7 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
         raise PreventUpdate()
     
     else:
-        if ctx.triggered_id == 'radio-academic-type':
+        if ctx.triggered_id == 'academic-information-radio-type':
 
             if radio_type == "growth" or radio_type == "proficiency":
                 if radio_category_value:
@@ -164,8 +164,8 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
     Output("academic-information-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="radio-academic-type", component_property="value"),
-    Input(component_id="radio-academic-category", component_property="value"),  
+    Input(component_id="academic-information-radio-type", component_property="value"),
+    Input(component_id="academic-information-radio-category", component_property="value"),  
 )
 def update_academic_information_page(school: str, year: str, radio_type: str, radio_category: str):
     if not school:
@@ -960,7 +960,7 @@ def layout():
                         [
                             html.Div(subnav_academic(), className="tabs"),
                         ],
-                        className="bare_container_center twelve columns",
+                        className="bare-container--flex--center twelve columns",
                     ),
                 ],
                 className="row",
@@ -973,7 +973,7 @@ def layout():
                             html.Div(
                                 [
                                     dbc.RadioItems(
-                                        id="radio-academic-type",
+                                        id="academic-information-radio-type",
                                         className="btn-group",
                                         inputClassName="btn-check",
                                         labelClassName="btn btn-outline-primary",
@@ -986,14 +986,14 @@ def layout():
                                 className="radio-group-academic",
                             )
                         ],
-                        className = "bare_container_center twelve columns",
+                        className = "bare-container--flex--center twelve columns",
                     ),
                     html.Div(
                         [
                             html.Div(
                                 [
                                     dbc.RadioItems(
-                                        id="radio-academic-category",
+                                        id="academic-information-radio-category",
                                         className="btn-group",
                                         inputClassName="btn-check",
                                         labelClassName="btn btn-outline-primary",
@@ -1006,10 +1006,10 @@ def layout():
                                 className="radio-group-academic-subheader",
                             )
                         ],
-                        className = "bare_container_center twelve columns",
+                        className = "bare-container--flex--center twelve columns",
                     ),
                 ],
-                id = "radio-academic-info-container",
+                id = "academic-information-radio-container",
             ),
             html.Div(
                 [
@@ -1036,10 +1036,10 @@ def layout():
                                                                 [
                                                                     html.Div(id="ela-grade-bar-fig"),
                                                                 ],
-                                                                className="pretty_close_top_container six columns",
+                                                                className="pretty-container--close--top six columns",
                                                     ),
                                                 ],
-                                                className="bare_container_center twelve columns",
+                                                className="bare-container--flex--center twelve columns",
                                             ),
                                         ],
                                         id="proficiency-ela-grades-container",
@@ -1053,10 +1053,10 @@ def layout():
                                                                 [
                                                                     html.Div(id="ela-ethnicity-bar-fig"),
                                                                 ],
-                                                                className="pretty_close_top_container six columns",
+                                                                className="pretty-container--close--top six columns",
                                                     ),
                                                 ],
-                                                className="bare_container_center twelve columns",
+                                                className="bare-container--flex--center twelve columns",
                                             ),
                                         ],
                                         id="proficiency-ela-ethnicity-container",
@@ -1070,10 +1070,10 @@ def layout():
                                                                 [
                                                                     html.Div(id="ela-subgroup-bar-fig"),
                                                                 ],
-                                                                className="pretty_close_top_container six columns",
+                                                                className="pretty-container--close--top six columns",
                                                     ),
                                                 ],
-                                                className="bare_container_center twelve columns",
+                                                className="bare-container--flex--center twelve columns",
                                             ),
                                         ],
                                         id="proficiency-ela-subgroup-container",
@@ -1087,10 +1087,10 @@ def layout():
                                                                 [
                                                                     html.Div(id="math-grade-bar-fig"),
                                                                 ],
-                                                                className="pretty_close_top_container six columns",
+                                                                className="pretty-container--close--top six columns",
                                                     ),
                                                 ],
-                                                className="bare_container_center twelve columns",
+                                                className="bare-container--flex--center twelve columns",
                                             ),
                                         ],
                                         id="proficiency-math-grades-container",
@@ -1104,10 +1104,10 @@ def layout():
                                                                 [
                                                                     html.Div(id="math-ethnicity-bar-fig"),
                                                                 ],
-                                                                className="pretty_close_top_container six columns",
+                                                                className="pretty-container--close--top six columns",
                                                     ),
                                                 ],
-                                                className="bare_container_center twelve columns",
+                                                className="bare-container--flex--center twelve columns",
                                             ),
                                         ],
                                         id="proficiency-math-ethnicity-container",
@@ -1121,10 +1121,10 @@ def layout():
                                                                 [
                                                                     html.Div(id="math-subgroup-bar-fig"),
                                                                 ],
-                                                                className="pretty_close_top_container six columns",
+                                                                className="pretty-container--close--top six columns",
                                                     ),
                                                 ],
-                                                className="bare_container_center twelve columns",
+                                                className="bare-container--flex--center twelve columns",
                                             ),
                                         ],
                                         id="proficiency-math-subgroup-container",
@@ -1137,9 +1137,9 @@ def layout():
                                     [
                                 html.Div(
                                     [                                        
-                                        html.Label("Graduation Rate", className="header_label", style = {"marginTop": "5px"}),
+                                        html.Label("Graduation Rate", className="label__header", style = {"marginTop": "5px"}),
                                     ],
-                                    className="bare_container_center twelve columns",                                    
+                                    className="bare-container--flex--center twelve columns",                                    
                                 ),
                                         html.Div(id="hs-grad-overview-table"),
                                         html.Div(id="hs-grad-ethnicity-table"),
@@ -1151,9 +1151,9 @@ def layout():
                                     [                                
                                 html.Div(
                                     [
-                                        html.Label("SAT", className="header_label", style = {'marginTop': "20px"}),
+                                        html.Label("SAT", className="label__header", style = {'marginTop': "20px"}),
                                    ],
-                                    className="bare_container_center twelve columns",                                    
+                                    className="bare-container--flex--center twelve columns",                                    
                                 ),                                        
                                         html.Div(id="sat-cut-scores-table", children=[]),
                                         html.Div(id="sat-overview-table"),
@@ -1198,7 +1198,7 @@ def layout():
             [
                 html.Div(
                     [
-                        html.Label("Notes:", className="key_header_label"),
+                        html.Label("Notes:", className="key-label__header"),
                         html.P(""),
                             html.P(id="academic-information-notes-string",
                                 style={
@@ -1211,11 +1211,11 @@ def layout():
                                 }
                             ),
                     ],
-                    className = "pretty_key_container ten columns"
+                    className = "pretty-container__key ten columns"
                 ),
             ],
-            className = "bare_container_center twelve columns"
+            className = "bare-container--flex--center twelve columns"
         ),
     ],
-    id="mainContainer",
+    id="main-container",
 )

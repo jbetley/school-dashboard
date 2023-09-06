@@ -6,7 +6,7 @@
 # date:     08/31/23
 
 import dash
-from dash import dcc, html, dash_table, Input, Output, callback
+from dash import dcc, html, dash_table, Input, State, Output, callback
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 from dash.dash_table import FormatTemplate
@@ -23,13 +23,53 @@ from .subnav import subnav_finance
 
 dash.register_page(__name__, path = "/financial_analysis", order=3)
 
+# Financial data type (school or network)
+@callback(      
+    Output("financial-analysis-radio", "options"),
+    Output("financial-analysis-radio","value"),
+    Output("financial-analysis-radio-container", "style"),
+    Input("charter-dropdown", "value"),
+    State("financial-analysis-radio", "value"),
+)
+def financial_analysis_radio_selector(school: str, finance_value_state: str):
+
+    selected_school = get_school_index(school)
+
+    value_default = "school-finance"
+    finance_value = value_default
+
+    if selected_school["Network"].values[0] == "None":
+    
+        finance_options = []       
+        radio_input_container = {"display": "none"}
+        
+    else:
+
+        finance_options = [
+            {"label": "School", "value": "school-finance"},
+            {"label": "Network", "value": "network-finance"},
+        ]
+        radio_input_container = {"display": "block"}
+    
+    if finance_value_state:
+        # when changing dropdown from a school with network to one without, we need to reset state
+        if finance_value_state == "network-finance" and selected_school["Network"].values[0] == "None":
+            finance_value = value_default
+        else:    
+            finance_value = finance_value_state
+    else:
+        finance_value = value_default
+            
+    return finance_options, finance_value, radio_input_container
+
+
 @callback(
     Output("revenue-expenses-fig", "figure"),
     Output("assets-liabilities-fig", "figure"),
     Output("financial-position-table", "children"),
     Output("financial-activities-table", "children"),
-    Output("radio-finance-analysis-content", "children"),
-    Output("radio-finance-analysis-display", "style"),
+    # Output("financial-analysis-radio", "children"),
+    # Output("financial-analysis-radio-container", "style"),
     Output("finance-analysis-RandE-title", "children"),
     Output("finance-analysis-AandL-title", "children"),
     Output("finance-analysis-FP-title", "children"),
@@ -43,7 +83,7 @@ dash.register_page(__name__, path = "/financial_analysis", order=3)
     Output("financial-analysis-notes-string", "children"),    
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="radio-button-finance-analysis", component_property="value")
+    Input(component_id="financial-analysis-radio", component_property="value")
 )
 def update_financial_analysis_page(school: str, year: str, radio_value: str):
     if not school:
@@ -64,74 +104,72 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     
     financial_analysis_notes_string = "Only the most recent years of audited data are shown."
 
-# TODO: If this operation is similar enough for information, metrics, and analysis - make into function
-    # See financial_information.py for comments
-    if selected_school["Network"].values[0] != "None":
-        if radio_value == "network-analysis":
+    # # See financial_information.py for comments
+    # if selected_school["Network"].values[0] != "None":
+    #     if radio_value == "network-analysis":
 
-            radio_content = html.Div(
-                                [
-                                    dbc.RadioItems(
-                                        id="radio-button-finance-analysis",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        options=[
-                                            {"label": "School", "value": "school-analysis"},
-                                            {"label": "Network", "value": "network-analysis"},
-                                        ],
-                                        value="network-analysis",
-                                    ),
-                                ],
-                                className="radio-group"
-            )
+    #         radio_content = html.Div(
+    #                             [
+    #                                 dbc.RadioItems(
+    #                                     id="radio-button-finance-analysis",
+    #                                     className="btn-group",
+    #                                     inputClassName="btn-check",
+    #                                     labelClassName="btn btn-outline-primary",
+    #                                     labelCheckedClassName="active",
+    #                                     options=[
+    #                                         {"label": "School", "value": "school-analysis"},
+    #                                         {"label": "Network", "value": "network-analysis"},
+    #                                     ],
+    #                                     value="network-analysis",
+    #                                 ),
+    #                             ],
+    #                             className="radio-group"
+    #         )
 
-        else:
-            radio_content = html.Div(
-                                [
-                                    dbc.RadioItems(
-                                        id="radio-button-finance-analysis",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        options=[
-                                            {"label": "School", "value": "school-analysis"},
-                                            {"label": "Network", "value": "network-analysis"},
-                                        ],
-                                        value="school-analysis",
-                                    ),
-                                ],
-                                className="radio-group"
-            )
+    #     else:
+    #         radio_content = html.Div(
+    #                             [
+    #                                 dbc.RadioItems(
+    #                                     id="radio-button-finance-analysis",
+    #                                     className="btn-group",
+    #                                     inputClassName="btn-check",
+    #                                     labelClassName="btn btn-outline-primary",
+    #                                     labelCheckedClassName="active",
+    #                                     options=[
+    #                                         {"label": "School", "value": "school-analysis"},
+    #                                         {"label": "Network", "value": "network-analysis"},
+    #                                     ],
+    #                                     value="school-analysis",
+    #                                 ),
+    #                             ],
+    #                             className="radio-group"
+    #         )
 
-            radio_value = "school-metrics"
+    #         radio_value = "school-metrics"
 
-        display_radio = {}
+    #     display_radio = {}
 
-    else:
-        radio_content = html.Div(
-                            [
-                                dbc.RadioItems(
-                                    id="radio-button-finance-analysis",
-                                    className="btn-group",
-                                    inputClassName="btn-check",
-                                    labelClassName="btn btn-outline-primary",
-                                    labelCheckedClassName="active",
-                                    options=[],
-                                    value="",
-                                ),
-                            ],
-                            className="radio-group"
-            )
+    # else:
+    #     radio_content = html.Div(
+    #                         [
+    #                             dbc.RadioItems(
+    #                                 id="radio-button-finance-analysis",
+    #                                 className="btn-group",
+    #                                 inputClassName="btn-check",
+    #                                 labelClassName="btn btn-outline-primary",
+    #                                 labelCheckedClassName="active",
+    #                                 options=[],
+    #                                 value="",
+    #                             ),
+    #                         ],
+    #                         className="radio-group"
+    #         )
 
-        # ensure val is always set to school if the school does not have a network tag
-        radio_value = "school-metrics"
-        display_radio = {"display": "none"}
+    #     # ensure val is always set to school if the school does not have a network tag
+    #     radio_value = "school-metrics"
+    #     display_radio = {"display": "none"}
 
-    if radio_value == "network-analysis":
-
+    if radio_value == "network-finance":
         network_id = selected_school["Network"].values[0]
         
         if network_id != "None":
@@ -718,7 +756,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                         final_ratios_data[year] = pd.Series(["{0:.2f}%".format(val * 100) for val in final_ratios_data[year]], index = final_ratios_data.index)
 
                 financial_ratios_table = [
-                    html.Label("Financial Ratios", className = "header_label"),
+                    html.Label("Financial Ratios", className = "label__header"),
                     html.P(""),
                     html.Div(
                         dash_table.DataTable(
@@ -884,8 +922,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     return (
         revenue_expenses_fig, assets_liabilities_fig, financial_position_table,financial_activities_table,
-        radio_content, display_radio, RandE_title, AandL_title, FP_title, FA_title, financial_ratios_table,
-        per_student_table, main_container, empty_container, no_data_to_display, financial_analysis_notes_string
+        RandE_title, AandL_title, FP_title, FA_title, financial_ratios_table, per_student_table,
+        main_container, empty_container, no_data_to_display, financial_analysis_notes_string
      ) # audit_findings_table,
 
 def layout():
@@ -897,12 +935,37 @@ def layout():
                                 [
                                     html.Div(subnav_finance(), className="tabs"),
                                 ],
-                            className="bare_container_center twelve columns",
+                            className="bare-container--flex--center twelve columns",
                             ),
                         ],
                         className="row"
                     ),
-                    html.Hr(),                    
+                    html.Hr(),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            dbc.RadioItems(
+                                                id="financial-analysis-radio",
+                                                className="btn-group",
+                                                inputClassName="btn-check",
+                                                labelClassName="btn btn-outline-primary",
+                                                labelCheckedClassName="active",
+                                                value=[],
+                                                persistence=False,
+                                                # persistence_type="memory",
+                                            ),
+                                        ],
+                                        className="radio-group-finance",
+                                    )
+                                ],
+                                className = "bare-container--flex--center twelve columns",
+                            ),
+                        ],
+                        id = "financial-analysis-radio-container",
+                    ),                                        
                     html.Div(
                         [
                         dcc.Loading(
@@ -919,7 +982,7 @@ def layout():
                                     [
                                         html.Div(
                                             [
-                                                html.Label("Notes:", className="key_header_label"),
+                                                html.Label("Notes:", className="key-label__header"),
                                                 html.P(""),
                                                     html.P(id="financial-analysis-notes-string",
                                                         style={
@@ -932,68 +995,68 @@ def layout():
                                                         }
                                                     ),
                                             ],
-                                            className = "pretty_container five columns",
+                                            className = "pretty-container five columns",
                                         ),
                                     ],
-                                    className = "bare_container_center twelve columns"
+                                    className = "bare-container--flex--center twelve columns"
                                 ),
-                                html.Div(
-                                    [                                
-                                        html.Div(
-                                            [
-                                                html.Div(
-                                                    [
-                                                        html.Div(id="radio-finance-analysis-content", children=[]),
-                                                    ],
-                                                    id = "radio-button-finance-analysis",
-                                                    ),
-                                            ],
-                                            id = "radio-finance-analysis-display",
-                                        ),
-                                    ],
-                                    className = "bare_container_center twelve columns",
-                                ),                                
+                                # html.Div(
+                                #     [                                
+                                #         html.Div(
+                                #             [
+                                #                 html.Div(
+                                #                     [
+                                #                         html.Div(id="financial-analysis-radio", children=[]),
+                                #                     ],
+                                #                     id = "radio-group-finance",
+                                #                     ),
+                                #             ],
+                                #             id = "financial-analysis-radio-container",
+                                #         ),
+                                #     ],
+                                #     className = "bare-container--flex--center twelve columns",
+                                # ),                                
                                 html.Div(
                                     [     
                                         html.Div(
                                             [
                                                 html.Div(
                                                     [
-                                                        html.Label(id="finance-analysis-RandE-title", className = "header_label"),                                    
+                                                        html.Label(id="finance-analysis-RandE-title", className = "label__header"),                                    
                                                         dcc.Graph(id="revenue-expenses-fig", figure = loading_fig(),config={"displayModeBar": False})
                                                     ],
-                                                    className = "pretty_container six columns"
+                                                    className = "pretty-container six columns"
                                                 ),
                                                 html.Div(
                                                     [
-                                                        html.Label(id="finance-analysis-AandL-title", className = "header_label"),                                       
+                                                        html.Label(id="finance-analysis-AandL-title", className = "label__header"),                                       
                                                         dcc.Graph(id="assets-liabilities-fig", figure = loading_fig(),config={"displayModeBar": False})
                                                     ],
-                                                    className = "pretty_container six columns"
+                                                    className = "pretty-container six columns"
                                                 )
                                             ],
-                                            className="bare_container_no_center twelve columns",
+                                            className="bare-container--flex--nocenter twelve columns",
                                         ),
                                         html.Div(
                                             [
                                                 html.Div(
                                                     [
-                                                        html.Label(id="finance-analysis-FP-title", className = "header_label"),                                      
+                                                        html.Label(id="finance-analysis-FP-title", className = "label__header"),                                      
                                                         html.P(""),
                                                         html.Div(id="financial-position-table")
                                                     ],
-                                                    className = "pretty_container_left six columns"
+                                                    className = "pretty-container--left six columns"
                                                 ),
                                                 html.Div(
                                                     [
-                                                        html.Label(id="finance-analysis-FA-title", className = "header_label"),                                        
+                                                        html.Label(id="finance-analysis-FA-title", className = "label__header"),                                        
                                                         html.P(""),
                                                         html.Div(id="financial-activities-table")
                                                     ],
-                                                    className = "pretty_container six columns",
+                                                    className = "pretty-container six columns",
                                                 ),
                                             ],
-                                            className = "bare_container twelve columns",
+                                            className = "bare-container--flex twelve columns",
                                         ),
                                         # html.Div(
                                         #     [
@@ -1009,18 +1072,18 @@ def layout():
                                                     [                    
                                                         html.Div(id="financial-ratios-table", children=[]),
                                                     ],
-                                                    className = "pretty_container_left six columns",                                        
+                                                    className = "pretty-container--left six columns",                                        
                                                 ),
                                                 html.Div(
                                                     [
-                                                        html.Label("Revenues and Expenditures Per Student", className = "header_label"),
+                                                        html.Label("Revenues and Expenditures Per Student", className = "label__header"),
                                                         html.P(""),
                                                         html.Div(id="per-student-table")
                                                     ],
-                                                    className = "pretty_container six columns",
+                                                    className = "pretty-container six columns",
                                                 ),
                                             ],
-                                            className = "bare_container twelve columns",
+                                            className = "bare-container--flex twelve columns",
                                         ),
                                     ],
                                     id = "financial-analysis-main-container",
@@ -1036,5 +1099,5 @@ def layout():
                     id = "financial-analysis-empty-container",
                 ),
             ],
-            id="mainContainer"
+            id="main-container"
         )

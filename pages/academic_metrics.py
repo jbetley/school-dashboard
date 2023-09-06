@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Metrics #
 #####################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import dash
 from dash import html, Input, Output, callback
@@ -27,7 +27,7 @@ dash.register_page(__name__,  path = "/academic_metrics", order=5)
 
 @callback(
     Output("table-container-11ab", "children"),
-    Output("display-attendance", "style"),
+    Output("attendance-container", "style"),
     Output("table-container-11cd", "children"),
     Output("table-container-14ab", "children"),
     Output("table-container-14cd", "children"),
@@ -36,13 +36,13 @@ dash.register_page(__name__,  path = "/academic_metrics", order=5)
     # Output("table-container-15abcd", "children"),
     Output("table-container-16ab", "children"),
     Output("table-container-16cd", "children"),  
-    Output("display-k8-metrics", "style"),
+    Output("k8-metrics-container", "style"),
     Output("table-container-17ab", "children"),
     Output("table-container-17cd", "children"),
-    Output("display-hs-metrics", "style"),
+    Output("hs-metrics-container", "style"),
     Output("table-container-ahs-113", "children"),
     Output("table-container-ahs-1214", "children"),
-    Output("display-ahs-metrics", "style"),
+    Output("ahs-metrics-container", "style"),
     Output("academic-metrics-main-container", "style"),
     Output("academic-metrics-empty-container", "style"),
     Output("academic-metrics-no-data", "children"),
@@ -70,16 +70,16 @@ def update_academic_metrics(school: str, year: str):
     # table_container_15abcd = []   # Growth
     table_container_16ab = []
     table_container_16cd = []     
-    display_attendance = {"display": "none"}
-    display_k8_metrics = {"display": "none"}
+    attendance_container = {"display": "none"}
+    k8_metrics_container = {"display": "none"}
 
     table_container_17ab = []
     table_container_17cd = []
-    display_hs_metrics = {"display": "none"}
+    hs_metrics_container = {"display": "none"}
     
     ahs_table_container_113 = []
     ahs_table_container_1214 = []
-    display_ahs_metrics = {"display": "none"}
+    ahs_metrics_container = {"display": "none"}
 
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
@@ -106,7 +106,7 @@ def update_academic_metrics(school: str, year: str):
 
             if not clean_school_data.empty:
 
-                display_k8_metrics = {"display": "block"}
+                k8_metrics_container = {"display": "block"}
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
@@ -192,6 +192,7 @@ def update_academic_metrics(school: str, year: str):
                     table_container_14g = no_data_table(["1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment."])
 
                 # Placeholders for Growth data metrics (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
+                
                 # growth_metrics_empty = pd.DataFrame(columns = simple_cols)
                 # growth_metrics_dict = {
                 #     "Category": ["1.5.a Percentage of students achieving “typical” or “high” growth on the state assessment in \
@@ -255,7 +256,7 @@ def update_academic_metrics(school: str, year: str):
                 # Adult High School Metrics
                 if selected_school_type == "AHS":
 
-                    display_ahs_metrics = {"display": "block"}
+                    ahs_metrics_container = {"display": "block"}
                     main_container = {"display": "block"}
                     empty_container = {"display": "none"}
 
@@ -314,7 +315,7 @@ def update_academic_metrics(school: str, year: str):
 
                     if not clean_hs_school_data.empty:
 
-                        display_hs_metrics = {"display": "block"}
+                        hs_metrics_container = {"display": "block"}
                         main_container = {"display": "block"}
                         empty_container = {"display": "none"}
 
@@ -398,14 +399,14 @@ def update_academic_metrics(school: str, year: str):
 
         table_container_11ab = no_data_table(metric_11ab_label)
         table_container_11cd = no_data_table(metric_11cd_label)        
-        display_attendance = {"display": "none"}
+        attendance_container = {"display": "none"}
      
     return (
-        table_container_11ab, display_attendance, table_container_11cd, table_container_14ab,
+        table_container_11ab, attendance_container, table_container_11cd, table_container_14ab,
         table_container_14cd, table_container_14ef, table_container_14g,
-        table_container_16ab, table_container_16cd, display_k8_metrics,
-        table_container_17ab, table_container_17cd, display_hs_metrics,
-        ahs_table_container_113, ahs_table_container_1214, display_ahs_metrics,
+        table_container_16ab, table_container_16cd, k8_metrics_container,
+        table_container_17ab, table_container_17cd, hs_metrics_container,
+        ahs_table_container_113, ahs_table_container_1214, ahs_metrics_container,
         main_container, empty_container, no_data_to_display
     ) # table_container_15abcd, 
 
@@ -418,7 +419,7 @@ def layout():
                             [
                                 html.Div(subnav_academic(),className="tabs"),
                             ],
-                            className="bare_container_center twelve columns",
+                            className="bare-container--flex--center twelve columns",
                         ),
                     ],
                     className="row"
@@ -430,13 +431,13 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label("Key", className = "header_label"),        
+                                        html.Label("Key", className = "label__header"),        
                                         html.Div(create_proficiency_key()),
                                     ],
-                                    className = "pretty_container six columns"
+                                    className = "pretty-container six columns"
                                 ),
                             ],
-                            className = "bare_container_center twelve columns"
+                            className = "bare-container--flex--center twelve columns"
                         ),
                         # Display attendance data in div outside of the metrics containers, because
                         # individual schools may have attendance data even if they have no academic data
@@ -444,7 +445,7 @@ def layout():
                             [
                                 html.Div(id="table-container-11ab", children=[]),
                             ],
-                            id = "display-attendance",
+                            id = "attendance-container",
                         ),                         
                         html.Div(
                             [
@@ -457,21 +458,21 @@ def layout():
                                 html.Div(id="table-container-16cd", children=[]),                                 
                                 html.Div(id="table-container-16ab", children=[]),
                             ],
-                            id = "display-k8-metrics",
+                            id = "k8-metrics-container",
                         ),
                         html.Div(
                             [
                                 html.Div(id="table-container-17ab", children=[]),
                                 html.Div(id="table-container-17cd", children=[]),
                             ],
-                            id = "display-hs-metrics",
+                            id = "hs-metrics-container",
                         ),
                         html.Div(
                             [
                                 html.Div(id="table-container-ahs-113", children=[]),
                                 html.Div(id="table-container-ahs-1214", children=[]),
                             ],
-                            id = "display-ahs-metrics",
+                            id = "ahs-metrics-container",
                         ),
                     ],
                     id = "academic-metrics-main-container",
@@ -483,5 +484,5 @@ def layout():
                     id = "academic-metrics-empty-container",
                 ),   
         ],
-        id="mainContainer"
+        id="main-container"
     )

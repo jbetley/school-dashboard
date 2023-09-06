@@ -200,7 +200,7 @@ def no_data_table(label: list = ["Academic Data"], text: list = ["No Data to Dis
     """
 
     table_layout = [
-                html.Label(label, className="header_label"),
+                html.Label(label, className="label__header"),
                 html.Div(
                     dash_table.DataTable(
                         columns = [
@@ -241,7 +241,7 @@ def no_data_page(label: str = "Academic Data", text: str = "No Data to Display")
                     [
                         html.Div(
                             [
-                                html.Label(label, className="header_label"),
+                                html.Label(label, className="label__header"),
                                 html.Div(
                                     dash_table.DataTable(
                                         data=empty_dict,
@@ -262,13 +262,13 @@ def no_data_page(label: str = "Academic Data", text: str = "No Data to Display")
                                     ),
                                 ),
                             ],
-                            className = "pretty_container eight columns"
+                            className = "pretty-container eight columns"
                         ),
                     ],
-                    className = "bare_container_center twelve columns",
+                    className = "bare-container--flex--center twelve columns",
                 ),
             ],
-            className = "empty_table",
+            className = "empty-table",
         )
     ]
 
@@ -277,7 +277,7 @@ def no_data_page(label: str = "Academic Data", text: str = "No Data to Display")
 # def hidden_table() -> list:
 #     """
 #     Creates an empty table with no cells. Will be automatically hidden
-#     ("display": "none") by css selector chaining for pretty_container.
+#     ("display": "none") by css selector chaining for pretty-container.
 #     Not sure why I created this.
 #     See stylesheet.css
 
@@ -335,7 +335,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className="header_label"),
+                    html.Label(label, className="label__header"),
                     html.Div(
                         dash_table.DataTable(
                             columns = [
@@ -351,7 +351,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
                         )
                     )
                 ],
-                className = "pretty_container ten columns"
+                className = "pretty-container ten columns"
             )
         ]
 
@@ -513,7 +513,7 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
     if width:
         category_width = width
 
-    class_name = "pretty_key_container " + col_width + " columns"
+    class_name = "pretty-container__key " + col_width + " columns"
 
     first_column = data.columns[0]
     other_columns = data.columns[1:]
@@ -584,7 +584,7 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
             [
                 html.Div(
                     [
-                        html.Label(label, className="key_header_label"),
+                        html.Label(label, className="key-label__header"),
                         html.Div(
                             dash_table.DataTable(
                                 data.to_dict("records"),
@@ -621,7 +621,7 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
                     className = class_name
                 )
             ],
-            className = "bare_container_center twelve columns"
+            className = "bare-container--flex--center twelve columns"
         )                
     ]
 
@@ -667,7 +667,7 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
         col_width = "ten"
         category_width = 15
 
-    class_name = "pretty_container " + col_width + " columns"
+    class_name = "pretty-container " + col_width + " columns"
 
     first_column = data.columns[0]
     other_columns = data.columns[1:]
@@ -776,7 +776,7 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
             [
                 html.Div(
                     [
-                        html.Label(label, className="header_label"),
+                        html.Label(label, className="label__header"),
                         html.Div(
                             dash_table.DataTable(
                                 data.to_dict("records"),
@@ -806,7 +806,7 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
                     className = class_name
                 )
             ],
-            className = "bare_container_center twelve columns"
+            className = "bare-container--flex--center twelve columns"
         )                
     ]
 
@@ -892,7 +892,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
             col_width = "ten"
             category_width = 15
 
-        class_name = "pretty_container " + col_width + " columns"
+        class_name = "pretty-container " + col_width + " columns"
 
         # rename all n_size columns before getting n col list
         data.columns = data.columns.str.replace("N-Size|SN-Size", "n-size", regex=True)
@@ -1062,7 +1062,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className="hollow_header_label"),
+                    html.Label(label, className="hollow-label__header"),
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict("records"),
@@ -1087,7 +1087,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className="header_label"),
+                    html.Label(label, className="label__header"),
                     html.Div(
                         dash_table.DataTable(
                             data=empty_dict,
@@ -1108,7 +1108,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
                         ),
                     ),
                 ],
-                className = "pretty_container four columns"
+                className = "pretty-container four columns"
             )
         ]
 
@@ -1269,7 +1269,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
                         ),
                     ),                   
                 ],
-                className = "pretty_container four columns"
+                className = "pretty-container four columns"
             )
         ]
 
@@ -1295,7 +1295,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         table = [
             html.Div(
                 [
-                    html.Label(label, className="header_label"),
+                    html.Label(label, className="label__header"),
                     html.Div(
                         dash_table.DataTable(
                             columns = [
@@ -1311,7 +1311,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                         )
                     )
                 ],
-                className = "pretty_container ten columns"
+                className = "pretty-container ten columns"
             )
         ]
 
@@ -1373,7 +1373,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             year_width = data_col_width + data_col_width/4
             diff_width = data_col_width + data_col_width/4
 
-        class_name = "pretty_container " + col_width + " columns"
+        class_name = "pretty-container " + col_width + " columns"
 
         table_cell_conditional = [
             {
@@ -1627,7 +1627,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         table = [
             html.Div(
                 [
-                    html.Label(label, className="header_label"),
+                    html.Label(label, className="label__header"),
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict("records"),
@@ -1707,7 +1707,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         # sort_action="native",
         merge_duplicate_headers=True,
         style_as_list_view=True,
-        id="tst-table",
+        id="comparison-table",
         style_data = table_style,
         style_data_conditional=[
             {
@@ -1760,7 +1760,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         table_layout = [
             html.Div(
                 [
-                html.Label(label, className = "header_label"),
+                html.Label(label, className = "label__header"),
                 html.Div(table)
                 ]
             )

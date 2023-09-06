@@ -279,32 +279,32 @@ layout = html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Label("Key", className = "header_label"),
+                                            html.Label("Key", className = "label__header"),
                                             html.Div(create_proficiency_key()),
                                         ],
-                                        className = "pretty_container six columns"
+                                        className = "pretty-container six columns"
                                     ),
                                 ],
-                                className = "bare_container_center twelve columns"
+                                className = "bare-container--flex--center twelve columns"
                             ),
                         ],
                         className = "row",
                     ),
-                    html.Div("",className="hide_line"),
+                    html.Div(""), #className="hide_line"),
                     html.Div(
                         [
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Label("Organizational and Operational Accountability", className = "header_label"),
+                                            html.Label("Organizational and Operational Accountability", className = "label__header"),
                                             html.Div(id="org-compliance-table")
 
                                         ],
-                                        className = "pretty_container ten columns",
+                                        className = "pretty-container ten columns",
                                     ),
                                 ],
-                                className = "bare_container_center twelve columns"
+                                className = "bare-container--flex--center twelve columns"
                             ),
                         ],
                         className = "row",
@@ -315,17 +315,17 @@ layout = html.Div(
                                 [
                                     html.Div(
                                         [
-                                        html.Label("Organizational and Operational Accountability Definitions", className = "header_label"),
+                                        html.Label("Organizational and Operational Accountability Definitions", className = "label__header"),
                                         html.Div(id="org-compliance-definitions-table")
                                         ],
-                                        className = "pretty_container ten columns"
+                                        className = "pretty-container ten columns"
                                     ),
                                 ],
-                                className = "bare_container_center twelve columns",
+                                className = "bare-container--flex--center twelve columns",
                             )
                         ],
                         className = "row"
                     ),
             ],
-            id="mainContainer"
+            id="main-container"
         )

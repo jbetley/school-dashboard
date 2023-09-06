@@ -151,11 +151,11 @@ app = dash.Dash(
     suppress_callback_exceptions=True,
     # compress=False, # testing
     meta_tags=[
-    {
-        "name": "viewport",
-        "content": "width=device-width, initial-scale=1, maximum-scale=1",
-    }
-],
+        {
+            "name": "viewport",
+            "content": "width=device-width, initial-scale=1, maximum-scale=1",
+        }
+    ],
 )
 
 # Dropdown shows single school if school login is used
@@ -288,7 +288,7 @@ def layout():
                             [
                                 html.A("logout", href="../logout", className="logout-button"),
                             ],
-                            className="bare_container_center one columns",
+                            className="bare-container--flex--center one columns",
                         ),
                         html.Div(
                             [
@@ -296,8 +296,8 @@ def layout():
                                     [
                                         html.Label("Select School:"),
                                     ],
-                                    className="dash_label",
-                                    id="school_dash_label",
+                                    className="dash-label",
+                                    id="charter-dropdown-label",
                                 ),
                                 dcc.Dropdown(
                                     id="charter-dropdown",
@@ -308,12 +308,12 @@ def layout():
                                     },
                                     multi=False,
                                     clearable=False,
-                                    className="school_dash_control",
+                                    className="charter-dropdown-control",
                                 ),
                                 # Dummy input for dropdown
                                 html.Div(id="application-state", style={"display": "none"}),
                             ],
-                            className="pretty_container five columns",
+                            className="pretty-container five columns",
                         ),
                         html.Div(
                             [
@@ -322,7 +322,7 @@ def layout():
                                         html.Label("Select Year:"),
                                     ],
                                     className="dash-label",
-                                    id="year_dash_label",
+                                    id="year-dropdown-label",
                                 ),
                                 dcc.Dropdown(
                                     id="year-dropdown",
@@ -333,16 +333,16 @@ def layout():
                                     },
                                     multi=False,
                                     clearable=False,
-                                    className="year_dash_control",
+                                    className="year-dropdown-control",
                                 ),
                             ],
-                            className="pretty_container three columns",
+                            className="pretty-container three columns",
                         ),
                     ],
-                    className="fixed-row",
+                    className="row--fixed",
                 ),
             ],
-            className="fixed-row",
+            className="row--fixed",
         ),
         html.Div(
             [
@@ -365,7 +365,7 @@ def layout():
                                     className="tabs",
                                 ),
                             ],
-                            className="nav_container twelve columns", 
+                            className="nav-container twelve columns", 
                         ),
                     ],
                     className="row",
@@ -376,7 +376,8 @@ def layout():
     ],
 )
 
-app.layout = layout # testing layout as a function - not sure its faster
+# testing layout as a function - not sure its faster
+app.layout = layout 
 
 if __name__ == "__main__":
     app.run_server(debug=True)

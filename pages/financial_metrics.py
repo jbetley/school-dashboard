@@ -21,11 +21,11 @@ dash.register_page(__name__, path="/financial_metrics", order=2)
 
 # Financial data type (school or network)
 @callback(      
-    Output("radio-finance-metric", "options"),
-    Output("radio-finance-metric","value"),
-    Output('radio-finance-metric-container', 'style'),
+    Output("financial-metrics-radio", "options"),
+    Output("financial-metrics-radio","value"),
+    Output("financial-metrics-radio-container", "style"),
     Input("charter-dropdown", "value"),
-    State("radio-finance-metric", "value"),
+    State("financial-metrics-radio", "value"),
 )
 def radio_finance_info_selector(school: str, finance_value_state: str):
 
@@ -37,7 +37,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
     if selected_school["Network"].values[0] == "None":
     
         finance_options = []       
-        radio_input_container = {'display': 'none'}
+        radio_input_container = {"display": "none"}
         
     else:
 
@@ -45,7 +45,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
             {"label": "School", "value": "school-finance"},
             {"label": "Network", "value": "network-finance"},
         ]
-        radio_input_container = {'display': 'block'}
+        radio_input_container = {"display": "block"}
     
     if finance_value_state:
         # when changing dropdown from a school with network to one without, we need to reset state
@@ -68,7 +68,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
     Output("financial-metrics-no-data", "children"),      
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="radio-finance-metric", component_property="value")
+    Input(component_id="financial-metrics-radio", component_property="value")
 )
 def update_financial_metrics(school:str, year:str, radio_value:str):
     if not school:
@@ -252,14 +252,14 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 rating_width = year_width = data_col_width
                 rating_width = rating_width / 2
 
-                class_name = "pretty_container " + col_width + " columns"
+                class_name = "pretty-container " + col_width + " columns"
 
                 financial_metrics_table = [
                     html.Div(
                         [                
                             html.Div(
                                 [
-                                    html.Label(table_title, className="header_label"),
+                                    html.Label(table_title, className="label__header"),
                                     html.Div(
                                         dash_table.DataTable(
                                             financial_metrics.to_dict("records"),
@@ -354,7 +354,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                 className = class_name,
                             ),
                         ],
-                        className = "bare_container_center twelve columns",
+                        className = "bare-container--flex--center twelve columns",
                     )
                 ]
 
@@ -387,7 +387,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                             [             
                                 html.Div(
                                     [
-                                        html.Label("Other Financial Accountability Indicators", className="header_label"),
+                                        html.Label("Other Financial Accountability Indicators", className="labe__header"),
                                         html.Div(
                                             dash_table.DataTable(
                                                 financial_indicators.to_dict("records"),
@@ -468,10 +468,10 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                             ),
                                         ),
                                     ],
-                                    className = "pretty_container eight columns",
+                                    className = "pretty-container eight columns",
                                 ),
                             ],
-                            className = "bare_container_center twelve columns",
+                            className = "bare-container--flex--center twelve columns",
                         )
                     ]
             
@@ -497,7 +497,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                     [             
                         html.Div(
                             [
-                            html.Label("Accountability Metrics Definitions & Requirements", className="header_label"),
+                            html.Label("Accountability Metrics Definitions & Requirements", className="label_header"),
                             html.Div(
                                 dash_table.DataTable(
                                     data = financial_metrics_definitions_dict,
@@ -558,10 +558,10 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                                         ),
                                     ),
                                 ],
-                                className = "pretty_container eight columns",
+                                className = "pretty-container eight columns",
                             ),
                         ],
-                        className = "bare_container_center twelve columns",
+                        className = "bare-container--flex--center twelve columns",
                     )
                 ]
 
@@ -579,7 +579,7 @@ def layout():
                             [
                                 html.Div(subnav_finance(),className="tabs"),
                             ],
-                        className="bare_container_center twelve columns",
+                        className="bare-container--flex--center twelve columns",
                         ),
                     ],
                     className="row"
@@ -591,13 +591,13 @@ def layout():
                             [
                                 html.Div(
                                     [
-                                        html.Label("Key", className = "header_label"),
+                                        html.Label("Key", className = "label__header"),
                                         html.Div(create_proficiency_key()),
                                     ],
-                                    className = "pretty_container six columns"
+                                    className = "pretty-container six columns"
                                 ),
                             ],
-                            className = "bare_container_center twelve columns"
+                            className = "bare-container--flex--center twelve columns"
                         ),
                     ],
                     className = "row",
@@ -609,7 +609,7 @@ def layout():
                                 html.Div(
                                     [
                                         dbc.RadioItems(
-                                            id="radio-finance-metric",
+                                            id="financial-metrics-radio",
                                             className="btn-group",
                                             inputClassName="btn-check",
                                             labelClassName="btn btn-outline-primary",
@@ -622,10 +622,10 @@ def layout():
                                     className="radio-group-finance",
                                 )
                             ],
-                            className = "bare_container_center twelve columns",
+                            className = "bare-container--flex--center twelve columns",
                         ),
                     ],
-                    id = "radio-finance-metric-container",
+                    id = "financial-metrics-radio-container",
                 ),
                 html.Div(
                     [                      
@@ -642,5 +642,5 @@ def layout():
                     id = "financial-metrics-empty-container",
                 ),                            
             ],
-            id="mainContainer"
+            id="main-container"
         )

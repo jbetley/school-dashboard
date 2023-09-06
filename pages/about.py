@@ -2,8 +2,8 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -493,45 +493,45 @@ layout = html.Div(
                 children=[
                     html.Div(
                         [
-                            html.Div("",className="hide_line"),                            
+                            html.Div(""), #,className="hide_line"),                            
                             html.Div(id="update-table", children=[]),
                             html.Div(
                                 [                                
                                     html.Div(
                                         [
-                                            html.Label(id="enroll-title", className = "header_label"),
+                                            html.Label(id="enroll-title", className = "label__header"),
                                             html.Div(id="enroll-table")
                                         ],
-                                        className="pretty_container_left six columns",
+                                        className="pretty-container--left six columns",
                                     ),
                                     html.Div(
                                         [
-                                            html.Label("Average Daily Membership History", className = "header_label"),
+                                            html.Label("Average Daily Membership History", className = "label__header"),
                                             dcc.Graph(id="adm-fig", figure = loading_fig(),config={"displayModeBar": False})
                                         ],
-                                        className = "pretty_container six columns"
+                                        className = "pretty-container six columns"
                                     ),
                                 ],
-                                className="bare_container twelve columns",
+                                className="bare-container--flex twelve columns",
                             ),                  
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Label(id="subgroup-title", className = "header_label"),
+                                            html.Label(id="subgroup-title", className = "label__header"),
                                             dcc.Graph(id="subgroup-fig", figure = loading_fig(),config={"displayModeBar": False})
                                         ],
-                                        className = "pretty_container six columns"
+                                        className = "pretty-container six columns"
                                     ),
                                     html.Div(
                                         [
-                                            html.Label(id="ethnicity-title", className = "header_label"),
+                                            html.Label(id="ethnicity-title", className = "label__header"),
                                             dcc.Graph(id="ethnicity-fig", figure = loading_fig(),config={"displayModeBar": False})
                                         ],
-                                        className = "pretty_container six columns"
+                                        className = "pretty-container six columns"
                                     ),
                                 ],
-                                className="bare_container_center twelve columns",
+                                className="bare-container--flex--center twelve columns",
                             ),
                         ],
                         id = "about-main-container",
@@ -545,5 +545,5 @@ layout = html.Div(
                 id = "about-empty-container",
             ),
         ],
-        id="mainContainer"
+        id="main-container"
     )

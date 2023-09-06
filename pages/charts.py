@@ -150,13 +150,13 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400, tabl
                         [            
                             html.Div(
                                 [
-                                    html.Label(label, className = 'header_label'),
+                                    html.Label(label, className = 'label__header'),
                                     dcc.Graph(figure = fig),
                                 ],
-                                className = "pretty_container ten columns",
+                                className = "pretty-container ten columns",
                             )
                         ],
-                        className = "bare_container_center twelve columns",
+                        className = "bare-container--flex--center twelve columns",
                     ) 
                 ],
                 className = "row",
@@ -167,7 +167,7 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400, tabl
         fig_layout = [
             html.Div(
                 [
-                    html.Label(label, className = 'header_label'),
+                    html.Label(label, className = 'label__header'),
                     dcc.Graph(figure = fig),
                 ]
             )
@@ -265,7 +265,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     fig_layout = [
         html.Div(
             [
-                html.Label(label, className = 'hollow_header_label'),
+                html.Label(label, className = 'hollow-label__header'),
                 dcc.Graph(
                     figure = fig,
                     config={
@@ -487,18 +487,18 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                                         [
                                             html.P(
                                                 children=[
-                                                html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
-                                                html.Span(no_data_string, className = 'no_data_string'),
+                                                html.Span('Years with insufficient or no data:', className = 'msg-string__label'),
+                                                html.Span(no_data_string, className = 'nodata-string'),
                                                 ],
                                             ),
                                             html.P(
                                                 children=[
-                                                html.Span('Insufficient n-size:', className = 'nsize_string_label'),
-                                                html.Span(nsize_string, className = 'nsize_string'),
+                                                html.Span('Insufficient n-size:', className = 'msg-string__label'),
+                                                html.Span(nsize_string, className = 'nsize-string'),
                                                 ],
                                             ),
                                         ],
-                                        className = 'close_clean_container twelve columns'
+                                        className = 'container--close--noborder twelve columns'
                                     )
                                 ],
                                 className='row'
@@ -523,12 +523,12 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                                         [                              
                                             html.P(
                                                 children=[
-                                                html.Span('Insufficient n-size:', className = 'nsize_string_label'),
-                                                html.Span(nsize_string, className = 'nsize_string'),
+                                                html.Span('Insufficient n-size:', className = 'msg-string__label'),
+                                                html.Span(nsize_string, className = 'nsize-string'),
                                                 ],
                                             ),
                                         ],
-                                        className = 'close_clean_container twelve columns'
+                                        className = 'container--close--noborder twelve columns'
                                     )
                                 ],
                                 className='row'
@@ -553,12 +553,12 @@ def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
                                         [
                                             html.P(
                                                 children=[
-                                                html.Span('Years with insufficient or no data:', className = 'nsize_string_label'),
-                                                html.Span(no_data_string, className = 'no_data_string'),
+                                                html.Span('Years with insufficient or no data:', className = 'msg-string__label'),
+                                                html.Span(no_data_string, className = 'nodata-string'),
                                                 ],
                                             ),
                                         ],
-                                        className = 'close_clean_container twelve columns'
+                                        className = 'container--close--noborder twelve columns'
                                     )
                                     ],
                                     className='row'
@@ -835,7 +835,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
     fig_layout = [
         html.Div(
             [
-            html.Label(label, className = 'header_label'),
+            html.Label(label, className = 'label__header'),
             dcc.Graph(figure = fig, config={'displayModeBar': False})
             ]
         )
@@ -925,7 +925,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         barmode = 'group',
         custom_data = ['School Name'],
         text = text_values,
-        # title=label,    # ADD BACKGROUND (style like header_label)
+        # title=label,    # ADD BACKGROUND (style like label__header)
     )
 
     fig.update_yaxes(
@@ -1028,7 +1028,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     fig_layout = [
         html.Div(
             [
-            html.Label(label, className = 'header_label'),
+            html.Label(label, className = 'label__header'),
             dcc.Graph(figure = fig, config={'displayModeBar': False})
             ]
         )

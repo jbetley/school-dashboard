@@ -20,11 +20,11 @@ dash.register_page(__name__, top_nav=True, path = "/financial_information", orde
 
 # Financial data type (school or network)
 @callback(      
-    Output("radio-finance-info", "options"),
-    Output("radio-finance-info","value"),
-    Output('radio-finance-info-container', 'style'),
+    Output("financial-information-radio", "options"),
+    Output("financial-information-radio","value"),
+    Output("financial-information-radio-container", "style"),
     Input("charter-dropdown", "value"),
-    State("radio-finance-info", "value"),
+    State("financial-information-radio", "value"),
 )
 def radio_finance_info_selector(school: str, finance_value_state: str):
 
@@ -36,7 +36,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
     if selected_school["Network"].values[0] == "None":
     
         finance_options = []       
-        radio_input_container = {'display': 'none'}
+        radio_input_container = {"display": "none"}
         
     else:
 
@@ -44,7 +44,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
             {"label": "School", "value": "school-finance"},
             {"label": "Network", "value": "network-finance"},
         ]
-        radio_input_container = {'display': 'block'}
+        radio_input_container = {"display": "block"}
     
     if finance_value_state:
         # when changing dropdown from a school with network to one without, we need to reset state
@@ -64,7 +64,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
     Output("financial-information-no-data", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="radio-finance-info", component_property="value")
+    Input(component_id="financial-information-radio", component_property="value")
 )
 def update_financial_information_page(school: str, year: str, radio_value: str):
     if not school:
@@ -215,14 +215,14 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             data_width = 100 - category_width
             year_width = data_width / (table_size - 1)
 
-            class_name = "pretty_container " + col_width + " columns"
+            class_name = "pretty-container " + col_width + " columns"
 
             financial_information_table = [
                 html.Div(
                     [
                         html.Div(
                             [
-                                html.Label(table_title, className = "header_label"),
+                                html.Label(table_title, className = "label__header"),
                                 html.Div(
                                     dash_table.DataTable(
                                         financial_data.to_dict("records"),
@@ -306,7 +306,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                             className = class_name,
                         ),
                     ],
-                    className = "bare_container_center twelve columns",
+                    className = "bare-container--flex--center twelve columns",
                 )
             ]
 
@@ -327,7 +327,7 @@ def layout():
                             [
                                 html.Div(subnav_finance(),className="tabs"),
                             ],
-                        className="bare_container_center twelve columns",
+                        className="bare-container--flex--center twelve columns",
                         ),
                     ],
                     className="row"
@@ -340,7 +340,7 @@ def layout():
                                 html.Div(
                                     [
                                         dbc.RadioItems(
-                                            id="radio-finance-info",
+                                            id="financial-information-radio",
                                             className="btn-group",
                                             inputClassName="btn-check",
                                             labelClassName="btn btn-outline-primary",
@@ -353,10 +353,10 @@ def layout():
                                     className="radio-group-finance",
                                 )
                             ],
-                            className = "bare_container_center twelve columns",
+                            className = "bare-container--flex--center twelve columns",
                         ),
                     ],
-                    id = "radio-finance-info-container",
+                    id = "financial-information-radio-container",
                 ),
                 html.Div(
                     [
@@ -371,5 +371,5 @@ def layout():
                     id = "financial-information-empty-container",
                 ),
             ],
-            id="mainContainer",
+            id="main-container",
         )

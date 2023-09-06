@@ -2,8 +2,8 @@
 # ICSB Dashboard - Clean & Process Data #
 #########################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 # TODO: Explore serverside disk caching for data loading
 #https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
@@ -135,8 +135,6 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         data_tested = data_tested.drop("Category", axis=1)
 
         # this cross-merge and substring match process takes about .3s - there must be a faster way
-        # t20 = time.process_time()
-
         final_data = data_proficiency.merge(data_tested, how="cross")
 
         # Need to temporarily rename "English Learner" because otherwise it 
@@ -165,9 +163,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         # Add Low Grade, and High Grade rows back (missing cols will populate with NaN)
         # df"s should have different indexes, but just to be safe, we will reset them both
         # otherwise could remove the individual reset_index()
-        final_data = pd.concat([final_data.reset_index(drop=True), other_rows.reset_index(drop=True)], axis=0).reset_index(drop=True)
-
-        # print(f"Time to Cross Merge : " + str(time.process_time() - t20))    
+        final_data = pd.concat([final_data.reset_index(drop=True), other_rows.reset_index(drop=True)], axis=0).reset_index(drop=True) 
 
     return final_data
 
@@ -290,7 +286,6 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
 
     drop_all = [i for sub_list in drop_columns for i in sub_list]
 
-    # ALT: data = data.loc[:,~data.columns.str.contains(drop_all, case=False)] 
     data = data.drop(drop_all, axis=1).copy()
 
     if len(data.columns) <= 1:
@@ -344,7 +339,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         data_tested = data.filter(regex="Total Tested|Cohort Count|Year", axis=1).copy()
         data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
-        #TODO: we don't use CN-Size at all- need to remove
+        #TODO: we don't use CN-Size at all- remove (think only in this file - but check)
         # temp name N-Size cols in order to differentiate.
         if data_geo_code == school_geo_code:
             data_tested = data_tested.rename(columns={c: str(c)+"CN-Size" for c in data_tested.columns if c not in ["Category"]})
@@ -483,7 +478,7 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
         data (pd.DataFrame): grad rate/sat data
 
     Returns:
-        pd.DataFrame: removes categories with no data/calculates grad rate/benchmark proficiency
+        pd.DataFrame: removes categories with no data and calculates grad rate & benchmark proficiency
     """
     # All df at this point should have a minimum of eight cols (Year, Corporation ID,
     # Corporation Name, School ID, School Name, School Type, AHS|Grad, & All AHS|CCR). If

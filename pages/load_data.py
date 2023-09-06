@@ -384,7 +384,6 @@ def get_school_coordinates(*args):
                 WHERE Year = :year
         ''')
 
-
     return run_query(q, params)
 
 def get_comparable_schools(*args):

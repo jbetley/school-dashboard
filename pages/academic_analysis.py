@@ -30,11 +30,11 @@ dash.register_page(__name__, path = "/academic_analysis", order=6)
 
 # Display type - K12 only
 @callback(      
-    Output("radio-analysis-type", "options"),
-    Output("radio-analysis-type","value"),
-    Output('radio-analysis-type-container', 'style'),
+    Output("academic-analysis-radio-type", "options"),
+    Output("academic-analysis-radio-type","value"),
+    Output('academic-analysis-radio-type-container', 'style'),
     Input("charter-dropdown", "value"),
-    State("radio-analysis-type", "value"),
+    State("academic-analysis-radio-type", "value"),
 )
 def radio_type_selector(school: str, radio_type_value: str):
 
@@ -69,7 +69,7 @@ def radio_type_selector(school: str, radio_type_value: str):
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("comparison-dropdown", "value"),
-    Input("radio-analysis-type", "value"),    
+    Input("academic-analysis-radio-type", "value"),    
 )
 def set_dropdown_options(school: str, year: str, comparison_schools: list, academic_type = str):
 
@@ -274,7 +274,7 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
     Output("hs-analysis-no-data", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("radio-analysis-type", "value"),    
+    Input("academic-analysis-radio-type", "value"),    
     [Input("comparison-dropdown", "value")],
 )
 def update_academic_analysis(school: str, year: str, academic_type: str, comparison_school_list: list):
@@ -897,7 +897,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                 [        
                     html.Div(
                         [
-                            html.Label(academic_analysis_notes_label, className="key_header_label"),
+                            html.Label(academic_analysis_notes_label, className="key-label__header"),
                             html.P(""),
                                 html.P(academic_analysis_notes_string,
                                     style={
@@ -908,10 +908,10 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                                     }
                                 ),
                         ],
-                        className = "pretty_key_container seven columns"
+                        className = "pretty-container__key seven columns"
                     )
                 ],
-                className = "bare_container_center twelve columns"
+                className = "bare-container--flex--center twelve columns"
             )        
         ]
 
@@ -935,7 +935,7 @@ def layout():
                                 [
                                     html.Div(subnav_academic(),className="tabs"),
                                 ],
-                                className="bare_container_center twelve columns",
+                                className="bare-container--flex--center twelve columns",
                             ),
                         ],
                         className="row"
@@ -958,7 +958,7 @@ def layout():
                                                     html.Div(
                                                         [
                                                             dbc.RadioItems(
-                                                                id="radio-analysis-type",
+                                                                id="academic-analysis-radio-type",
                                                                 className="btn-group",
                                                                 inputClassName="btn-check",
                                                                 labelClassName="btn btn-outline-primary",
@@ -971,13 +971,13 @@ def layout():
                                                         className="radio-group-academic",
                                                     )
                                                 ],
-                                                className = "bare_container_center twelve columns",
+                                                className = "bare-container--flex--center twelve columns",
                                             ),
                                         ],
                                         className = "row",
                                     ),                                    
                                 ],
-                                id = "radio-analysis-type-container",
+                                id = "academic-analysis-radio-type-container",
                             ),           
                             html.Div(
                                 [                                        
@@ -985,13 +985,13 @@ def layout():
                                         [
                                             html.Div(
                                                 [
-                                                    html.P("Add or Remove Schools: ", className="control_label"),
+                                                    html.P("Add or Remove Schools: ", className="comparison-dropdown-label"),
                                                     dcc.Dropdown(
                                                         id="comparison-dropdown",
                                                         style={"fontSize": "1.1rem"},
                                                         multi = True,
                                                         clearable = False,
-                                                        className="multi_dropdown"
+                                                        className="comparison-dropdown-control"
                                                     ),
                                                     html.Div(id="input-warning"),
                                                 ],
@@ -1104,5 +1104,5 @@ def layout():
                         id="academic-analysis-page"
                     )                            
                 ],
-                id="mainContainer"
+                id="main-container"
             )

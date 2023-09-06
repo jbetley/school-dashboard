@@ -41,7 +41,7 @@ src: local(''),
 } */
 
 /** Grid  **/
-#mainContainer {
+#main-container {
   display: flex;
   flex-direction: column;
 }
@@ -196,7 +196,7 @@ hr {
   display: flex;
 }
 
-.pretty_container {
+.pretty-container {
   border-radius: 5px;
   background-color: #ffffff;
   margin: 10px;
@@ -205,7 +205,7 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-.pretty_close_top_container {
+.pretty-container--close--top {
   border-radius: 5px;  
   background-color: #ffffff;
   margin: 5px 10px 30px 10px;
@@ -214,7 +214,7 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-.pretty_close_container {
+.pretty-container--close {
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   background-color: #ffffff;
@@ -227,28 +227,21 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-.pretty_bare_container {
+.pretty-container--bare {
   background-color: #ffffff;
   margin: 10px;
   padding: 15px;
   position: relative;
 }
 
-.bare_container_outline {
-  background-color: #F2F2F2;
-  padding: 15px;
-  position: relative;
-  border-radius: 5px;
-}
-
-.pretty_bare_line_container {
+.pretty-container--bare--line {
   background-color: #ffffff;
   margin: 10px;
   padding: 15px;
   position: relative;
 }
 
-.pretty_bare_line_container::after {
+.pretty-container--bare--line::after {
   content:"";  
   background: lightgrey;
   position: absolute;
@@ -262,7 +255,7 @@ hr {
 /* same as pretty_container but adds min-width. Used for left side of 'About' page
   to ensure the width of the tables and figs are aligned. Gets screwy when the window
   is too small tho. */
-.pretty_container_left {
+.pretty-container--left {
   border-radius: 5px;
   background-color: #ffffff;
   margin: 10px;
@@ -272,7 +265,7 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
   }
 
-.pretty_key_container {
+.pretty-container__key {
   border-radius: 5px;
   background-color: #ffffff;
   margin: 10px;
@@ -283,19 +276,26 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-.bare_container {
+.bare-container--flex {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
   display: flex;
 }
 
-.relatively_bare_container {
+.bare-container--relative {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
   position: relative;  
 }
 
-.bare_container_no_center {
+.bare-container--flex--outline {
+  background-color: #F2F2F2;
+  padding: 15px;
+  position: relative;
+  border-radius: 5px;
+}
+
+.bare-container--flex--nocenter {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
   text-align: center;
@@ -303,16 +303,15 @@ hr {
   display: flex;
 }
 
-.bare_container_center {
+.bare-container--flex--center {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
   justify-content: center;
   text-align: center;
-  /* align-items: center; */
   display: flex;
 }
 
-.nav_container {
+.nav-container {
   padding: 50px 50px 60px 50px;
   justify-content: center;
   text-align: center;
@@ -321,7 +320,7 @@ hr {
   margin-top: 60px;
 }  
 
-.mini_container {
+.container__mini {
   border-radius: 5px;
   background-color: #f9f9f9;
   margin: 10px;
@@ -330,7 +329,7 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-.close_container {
+.container__close {
   border-bottom-left-radius: 5px;
   border-bottom-right-radius: 5px;
   background-color: #ffffff;
@@ -342,7 +341,7 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-.close_clean_container {
+.container--close--noborder {
   background-color: #ffffff;
   padding-top: 0px;
   padding-right: 15px;
@@ -351,7 +350,7 @@ hr {
   position: relative;
 }
 
-.no_data_container {
+.container__nodata {
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   background-color: #ffffff;
@@ -367,7 +366,7 @@ hr {
   margin-right: auto;
 }
 
-/* .map_container {
+/* .container__map {
   border-radius: 5px;
   background-color: #ffffff;
   margin: 10px;
@@ -379,47 +378,47 @@ hr {
 
 /** Other Navigation **/
 
-.dash_label {
+.dash-label {
   margin-right: 0;
   padding-top: 10px;
   color: steelblue;
   vertical-align: middle;
   float: left;
 }
-#year_dash_label {
+#year-dropdown-label {
   width: 45%;
 }
 
-#school_dash_label {
+#charter-dropdown-label {
   width: 25%;
 }
 
-.multi_dropdown {
+.comparison-dropdown-control {
   margin: 0;
   padding-left: 25px;
   float: left;
 }
 
-.control_label {
+.comparison-dropdown-label {
   padding-left: 25px;
   font-size: 1.1rem;
 }
 
-.school_dash_control {
+.charter-dropdown-control {
   margin: 0;
   padding: 0;
   float: left;
   width: 70%;
 }
 
-.year_dash_control {
+.year-dropdown-control {
   margin: 0;
   padding: 0;
   float: left;
   width: 50%;
 }
 
-.fixed-row {
+.row--fixed {
   display: flex;
   width: 100%;
   position: fixed;
@@ -519,7 +518,7 @@ hr {
   it needs to have a cell. The blank cell shows up as a 30px empty space
   unless we use the following rule. It sets the height of the second row
   of an empty_table to 0 */
-.empty_table tr:nth-of-type(2) {
+.empty-table tr:nth-of-type(2) {
   height: 0px !important;
 }
 
@@ -948,7 +947,7 @@ label > .label-body {
   font-weight: normal;
 }
 
-.header_label {
+.label__header {
   height: auto;
   background-color: #6783a9;
   font-size: 14px;
@@ -964,7 +963,7 @@ label > .label-body {
   margin-bottom: 10px;
 }
 
-.key_header_label {
+.key-label__header {
   height: auto;
   background-color: #ffffff;
   font-size: 12px;
@@ -990,7 +989,7 @@ label > .label-body {
   padding-top: 5px;
 }
 
-.hollow_header_label {
+.hollow-label__header {
   height: auto;
   background-color: #ffffff;
   font-size: 12px;
@@ -1006,7 +1005,7 @@ label > .label-body {
   border-radius: .5rem;
 }
 
-.school_string {
+.school-string {
   color: #6783a9;
   font-size: 11px;
   margin-left: 10px;
@@ -1014,7 +1013,7 @@ label > .label-body {
   font-weight: normal;
 }
 
-.school_string_label {
+.school-string__label {
   color: #6783a9;
   font-size: 11px;
   margin-left: 0px;
@@ -1022,7 +1021,7 @@ label > .label-body {
   font-weight: bold;
 }
 
-.category_string {
+.category-string {
   color: #6783a9;
   font-size: 11px;
   margin-left: 10px;
@@ -1031,7 +1030,7 @@ label > .label-body {
   font-weight: normal;
 }
 
-.category_string_label {
+.category-string__label {
   color: #6783a9;
   font-size: 11px;
   margin-left: 10px;
@@ -1043,7 +1042,7 @@ label > .label-body {
   font-weight: bold;
 }
 
-.category_string_label:before {
+.category-string__label:before {
   content: '';
   /* position: relative; */
   display: block;
@@ -1054,7 +1053,7 @@ label > .label-body {
   border-top: .5px solid rgb(201,211,224);
 }
 
-.nsize_string {
+.nsize-string {
   color: #6783a9;
   font-size: 11px;
   margin-left: 0px;
@@ -1063,7 +1062,7 @@ label > .label-body {
   font-weight: normal;
 }
 
-.no_data_string {
+.nodata-string {
   color: #6783a9;
   font-size: 11px;
   margin-left: 0px;
@@ -1073,7 +1072,7 @@ label > .label-body {
   text-align: left;
 }
 
-.nsize_string_label {
+.msg-string__label {
   color: #6783a9;
   font-size: 11px;
   margin-left: 0px;
@@ -1082,7 +1081,7 @@ label > .label-body {
   font-weight: bold;
 }
 
-.nsize_string_label:before {
+.msg-string__label:before {
   content: '';
   position: absolute;
   display: block;

@@ -83,29 +83,29 @@ def create_growth_layout(table: list, fig: list, label: str) -> list:
             [
                 html.Div(
                     [                    
-                        html.Label(label, className="header_label"),                    
+                        html.Label(label, className="label__header"),                    
                         html.Div(
                             [
                                 html.Div(
                                     [
                                         html.Div(table, style={"marginTop": "20px"}),
                                     ],
-                                    className="pretty_container six columns",
+                                    className="pretty-container six columns",
                                 ),
                                 html.Div(
                                     [
                                         html.Div(fig),
                                     ],
-                                    className="pretty_container six columns",
+                                    className="pretty-container six columns",
                                 ),
                             ],
-                            className="bare_container twelve columns",
+                            className="bare-container--flex twelve columns",
                         ),
                     ],
-                    className="bare_container_outline twelve columns",
+                    className="bare-container--flex--outline twelve columns",
                 ),       
             ],
-            className="bare_container_center twelve columns",
+            className="bare-container--flex--center twelve columns",
         ),             
     ]
 
@@ -130,7 +130,7 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
         table_layout = [
                 html.Div(
                     table1,
-                    className = "bare_container_center twelve columns",
+                    className = "bare-container--flex--center twelve columns",
                 )
         ]
 
@@ -140,11 +140,11 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
             table_layout = [
                     html.Div(
                         table1,
-                        className = "bare_container_center twelve columns",
+                        className = "bare-container--flex--center twelve columns",
                     ),
                     html.Div(
                         table2,
-                        className = "bare_container_center twelve columns",
+                        className = "bare-container--flex--center twelve columns",
                     ),
             ]
 
@@ -156,7 +156,7 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
                             table1[0],
                             table2[0],
                         ],
-                        className = "bare_container_center twelve columns",
+                        className = "bare-container--flex--center twelve columns",
                     ),
             ]
 
@@ -185,7 +185,7 @@ def create_group_barchart_layout(fig: list, table: list,category_string: str, sc
                     [
                         html.Div(fig, style={"marginBottom": "-20px"})
                     ],
-                    className = "pretty_close_container twelve columns",
+                    className = "pretty-container--close twelve columns",
                 ),
             ],
             className="row"
@@ -197,20 +197,20 @@ def create_group_barchart_layout(fig: list, table: list,category_string: str, sc
                         html.Div(table),
                         html.P(
                             children=[
-                            html.Span("Categories with no data to display:", className = "category_string_label"),
-                            html.Span(category_string, className = "category_string"),
+                            html.Span("Categories with no data to display:", className = "category-string__label"),
+                            html.Span(category_string, className = "category-string"),
                             ],
                             style={"marginTop": -10, "marginBottom": -10}
                         ),
                         html.P(
                             children=[
-                            html.Span("School Categories with insufficient n-size or no data:",className = "school_string_label"),
-                            html.Span(school_string, className = "school_string"),
+                            html.Span("School Categories with insufficient n-size or no data:",className = "school-string__label"),
+                            html.Span(school_string, className = "school-string"),
                             ],
                             
                         ),
                     ],
-                    className = "close_container twelve columns"
+                    className = "container__close twelve columns"
                 )
                 ],
                 className="row"
@@ -236,13 +236,13 @@ def create_barchart_layout(fig: list, table: list) -> list:
                         [
                             html.Div(fig)           
                         ],
-                        className = 'pretty_container nine columns',
+                        className = 'pretty-container nine columns',
                     ),
                     html.Div(
                         [
                             html.Div(table)           
                         ],
-                        className = 'pretty_container three columns'
+                        className = 'pretty-container three columns'
                     ),
                 ],
                 className='row'
@@ -266,7 +266,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
 
         html.Div(
             [    
-        html.Label(label, className="header_label"),                 
+        html.Label(label, className="label__header"),
         html.Div(
             [                                       
                 html.Div(
@@ -286,19 +286,19 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
                             },
                         ), 
                     ],
-                    className="pretty_container six columns",
+                    className="pretty-container six columns",
                 ),
                 html.Div(
                     [
                         html.Div(fig),
                     ],
-                    className="pretty_container six columns",
+                    className="pretty-container six columns",
                 ),
             ],
-            className="bare_container_center twelve columns",
+            className="bare-container--flex--center twelve columns",
         ),
             ],
-            className="relatively_bare_container twelve columns",
+            className="bare-container--relative twelve columns",
         ),                               
     ]
 
