@@ -84,12 +84,14 @@ def update_about_page(year: str, school: str):
         # Updates Table - Right Now hardcoded - may want to add to DB
         update_table_label = ""
         update_table_dict = {
-            "Date": ["07.12.23", "08.16.23", "08.18.23", "08.18.23", "08.24.23"],
+            "Date": ["07.12.23", "08.16.23", "08.18.23", "08.18.23", "08.24.23", "09.07.23"],
             "Update": ["Added 2023 ILEARN data for all K-8 schools and school corporations.",
                 "Added 2023 IREAD Data for all K-8 schools and school corporations.",
                 "Added 2023 SAT Scores  for all high schools and school corporations.",
                 "Added 2023 Demographic Data  for all schools and school corporations.",
-                "Added 2019-22 Growth Data  for all schools and school corporations."],                
+                "Added 2019-22 Growth Data  for all schools and school corporations.",
+                "Beta version of site released to production."
+                ],                
         }
         
         update_table_df = pd.DataFrame(update_table_dict)

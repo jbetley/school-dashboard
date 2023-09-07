@@ -527,8 +527,6 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
             "if": {
                 "column_id": other
             },
-            "textAlign": "left",
-            "fontWeight": "600",
             "width": str(other_column_width) + "%",
         } for other in other_columns        
     ] + [
@@ -538,7 +536,7 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
             },
             "textAlign": "left",
             "paddingLeft": "20px",
-            "fontWeight": "500",
+            "fontWeight": "600",
             "width": str(first_column_width) + "%"
         }
     ]
@@ -574,7 +572,8 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
                 "column_id": other,
             },
             "fontSize": "10px",
-            "textAlign": "left",
+            "textAlign": "center",
+            "fontWeight": "500",
             "borderLeft": ".5px solid #b2bdd4",
         } for other in other_columns
     ]
@@ -828,7 +827,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
 
         # if "SAT" in label:
         #     data.columns = data.columns.str.replace("School", "At Benchmark", regex=True)
-        #     year_headers = [y for y in data.columns if "At Benchmark" in y]            
+        #     school_headers = [y for y in data.columns if "At Benchmark" in y]            
         # else:
         #     data.columns = data.columns.str.replace("School", "", regex=True)
 
@@ -863,7 +862,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
         # tst = APL(data)
         # tst = tst.reset_index(drop=True)
 
-        # year_headers = [y for y in data.columns if "Category" not in y]
+        # school_headers = [y for y in data.columns if "Category" not in y]
 
     table_size = len(data.columns)
 
@@ -873,12 +872,12 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
         if table_size <= 3:
             col_width = "four"
             category_width = 60
-        if table_size > 3 and table_size <=5:
+        if table_size > 3 and table_size < 5:
             col_width = "five"
-            category_width = 20
-        elif table_size > 5 and table_size <= 7:
+            category_width = 30
+        elif table_size >= 5 and table_size <= 7:
             col_width = "six"
-            category_width = 20
+            category_width = 30
         elif table_size > 7 and table_size <= 9:
             col_width = "seven"
             category_width = 20
@@ -895,27 +894,27 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
         class_name = "pretty-container " + col_width + " columns"
 
         # rename all n_size columns before getting n col list
-        data.columns = data.columns.str.replace("N-Size|SN-Size", "n-size", regex=True)
+        data.columns = data.columns.str.replace("N-Size|SN-Size", "(N)", regex=True)
 
         if "SAT" in label:
             data.columns = data.columns.str.replace("School", "At Benchmark", regex=True)
-            year_headers = [y for y in data.columns if "At Benchmark" in y]            
+            school_headers = [y for y in data.columns if "At Benchmark" in y]            
         else:
             data.columns = data.columns.str.replace("School", "Proficiency", regex=True)
-            year_headers = [y for y in data.columns if "Proficiency" in y]
+            school_headers = [y for y in data.columns if "Proficiency" in y]
         
-        nsize_headers = [y for y in data.columns if "n-size" in y]
+        nsize_headers = [y for y in data.columns if "(N)" in y]
 
         all_cols = data.columns.tolist()
 
         if table_size <= 3:
             data_width = 100 - category_width
-            nsize_width = year_width = data_width / (table_size - 1)          
+            nsize_width = school_width = data_width / (table_size - 1)          
         
         else:
-            nsize_width = 2
+            nsize_width = 3
             data_width = 100 - category_width - nsize_width
-            year_width = data_width / (table_size - 1)
+            school_width = data_width / (table_size - 1)
 
         table_cell_conditional = [
             {
@@ -925,24 +924,26 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
                 "textAlign": "left",
                 "paddingLeft": "20px",
                 "fontWeight": "500",
+                "fontSize": "11px",
                 "width": str(category_width) + "%"
             },
         ] + [
             {
                 "if": {
-                    "column_id": year
+                    "column_id": school
                 },
                 "textAlign": "center",
                 "fontWeight": "500",
-                "width": str(year_width) + "%",
-            } for year in year_headers
+                "fontSize": "11px",
+                "width": str(school_width) + "%",
+            } for school in school_headers
         ]  + [
             {   "if": {
                 "column_id": nsize
             },
                 "textAlign": "center",
                 "fontWeight": "500",
-                "fontSize": "8px",
+                "fontSize": "11px",
                 "width": str(nsize_width) + "%"
             } for nsize in nsize_headers
         ]
@@ -950,21 +951,23 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
         table_header_conditional = [
             {
                 "if": {
-                    "column_id": year,
+                    "column_id": school,
                     "header_index": 1,
                 },
+                "fontWeight": "500",
+                "fontSize": "10px",                
                 "borderLeft": ".5px solid #b2bdd4",
                 "borderTop": ".5px solid #b2bdd4",
                 "borderBottom": ".5px solid #b2bdd4"
-            } for year in year_headers
+            } for school in school_headers
         ] + [
             {   "if": {
                 "column_id": nsize,
                 "header_index": 1,
             },
                 "textAlign": "center",
-                "fontWeight": "600",
-                "fontSize": "12px",
+                "fontWeight": "500",
+                "fontSize": "10px",
                 "borderRight": ".5px solid #b2bdd4",
                 "borderTop": ".5px solid #b2bdd4",
                 "borderBottom": ".5px solid #b2bdd4"
@@ -1026,7 +1029,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
                 "if": {
                     "column_id": nsize,
                 },
-                "fontSize": "10px",
+                "fontSize": "11px",
                 "textAlign": "center",
                 "borderRight": ".5px solid #b2bdd4",
             } for nsize in nsize_headers
@@ -1141,14 +1144,14 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
         data.columns = data.columns.str.replace("School", "", regex=True)
         data = data.replace("No Data", "\u2014", regex=True)
-        year_headers = [y for y in data.columns if "Category" not in y]
+        school_headers = [y for y in data.columns if "Category" not in y]
 
         all_cols = data.columns.tolist()
 
         # nsize_width = 2
         category_width = 20
         data_width = 100 - category_width
-        year_width = data_width / (table_size - 1)        
+        school_width = data_width / (table_size - 1)        
 
         # formatting logic is slightly different for a multi-header table
         table_cell_conditional = [
@@ -1164,12 +1167,12 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
         ] + [
             {
                 "if": {
-                    "column_id": year
+                    "column_id": school
                 },
                 "textAlign": "center",
                 "fontWeight": "500",
-                "width": str(year_width) + "%",
-            } for year in year_headers
+                "width": str(school_width) + "%",
+            } for school in school_headers
         ]
 
         table_header_conditional = [
@@ -1178,7 +1181,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
                     "column_id": col,
                 },
                 "borderBottom": ".5px solid #b2bdd4",
-            } for col in year_headers
+            } for col in school_headers
         ]
 
         table_data_conditional = [
@@ -1335,22 +1338,22 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             col_width = "eight"
             category_width = 15
         elif table_size > 13 and table_size <=17:
-            col_width = "ten"
-            category_width = 15
-        elif table_size > 17:
             col_width = "eleven"
             category_width = 15
+        elif table_size > 17:
+            col_width = "twelve"
+            category_width = 15
 
-        list_cols = data.columns.tolist()
-
-        # used for formatting purposes
-        year_headers = [y for y in list_cols if "School" in y]
-        rating_headers = [y for y in list_cols if "Rate" in y]
-        diff_headers = [y for y in list_cols if "Diff" in y]
-
-        # rename n_size before getting col list
-        data.columns = data.columns.str.replace("N-Size", "Tested", regex=True)
-        nsize_headers = [y for y in data.columns.tolist() if "Tested" in y]
+        # TODO: Testing longer column header names - if keeping, should change in df prior to
+        # TODO: sending to table function
+        data.columns = data.columns.str.replace("N-Size", "(N)", regex=True)
+        data.columns = data.columns.str.replace("Rate", "Rating", regex=True)
+        data.columns = data.columns.str.replace("Diff", "Difference", regex=True)
+        data.columns = data.columns.str.replace("School", "%", regex=True) 
+        nsize_headers = [y for y in data.columns.tolist() if "N" in y]
+        rating_headers = [y for y in data.columns.tolist() if "Rating" in y]
+        diff_headers = [y for y in data.columns.tolist() if "Difference" in y]
+        school_headers = [y for y in data.columns.tolist() if "%" in y]
 
         # get new col list after renaming N-Size
         all_cols = data.columns.tolist()
@@ -1361,18 +1364,19 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # can adjust individual categories by adjusting formula
         if table_size <= 3:
             data_width = 100 - category_width
-            nsize_width = year_width = rating_width = diff_width = data_width / (table_size - 1)          
+            nsize_width = school_width = rating_width = diff_width = data_width / (table_size - 1)          
         
         else:
 
-            nsize_width = 5
-            remaining_width = 100 - category_width - nsize_width
+            nsize_width = 3
+            rating_width = 4
+            remaining_width = 100 - category_width - (nsize_width + rating_width)
 
             data_col_width = remaining_width / (table_size - 1)
-            rating_width = data_col_width/2
-            year_width = data_col_width + data_col_width/4
-            diff_width = data_col_width + data_col_width/4
-
+            
+            school_width = data_col_width - (data_col_width * .15)
+            diff_width = data_col_width + (data_col_width * .15)
+            
         class_name = "pretty-container " + col_width + " columns"
 
         table_cell_conditional = [
@@ -1383,23 +1387,26 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "textAlign": "left",
                 "paddingLeft": "20px",
                 "fontWeight": "500",
+                "fontSize": "11px",
                 "width": str(category_width) + "%"
             },
         ] + [
             {
                 "if": {
-                    "column_id": year
+                    "column_id": school
                 },
                 "textAlign": "center",
-                "fontWeight": "600",
-                "width": str(year_width) + "%",
-            } for year in year_headers
+                "fontWeight": "500",
+                "fontSize": "11px",
+                "width": str(school_width) + "%",
+            } for school in school_headers
         ]  + [
             {   "if": {
                 "column_id": nsize
             },
                 "textAlign": "center",
                 "fontWeight": "500",
+                "fontSize": "11px",
                 "width": str(nsize_width) + "%"
             } for nsize in nsize_headers
         ]  + [            
@@ -1407,7 +1414,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "column_id": rating
             },
                 "textAlign": "center",
-                "fontWeight": "700",
+                "fontWeight": "500",
+                "fontSize": "11px",
                 "width": str(rating_width) + "%"
             } for rating in rating_headers
         ]  + [
@@ -1415,7 +1423,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "column_id": diff
             },
                 "textAlign": "center",
-                "fontWeight": "600",
+                "fontWeight": "500",
+                "fontSize": "11px",
                 "width": str(diff_width) + "%"
             } for diff in diff_headers
         ]
@@ -1429,24 +1438,24 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
         for item in all_cols:
             if item.startswith("20"):
-                if "Rate" in item:
-                    item = item[:8]
+                if "Rating" in item:
+                    item = item[:10]
 
                 name_cols.append([item[:4],item[4:]])
 
         # Each year of an academic metrics data file has a possible 4 columns:
-        # School, Tested, Diff, and Rate. So if the last column for an academic metrics
+        # School, (N), Diff, and Rate. So if the last column for an academic metrics
         # dataframe is "Rate," then we have a full years worth of data for all calculations
         # (both comparison, which requires 1 year of data AND year over year, which requires
         # two years of data). However, the first year of data for a school means Diff and Rate
-        # will not be calculated. So if the last column is a "Tested" column, we need to add
+        # will not be calculated. So if the last column is a "(N)" column, we need to add
         # '(Initial Year)' to the header for all columns of that year. Thus also applies in the
         # case where the last column is 'School' (impacts one table)
-        if name_cols[-1][1] == 'Tested':
+        if name_cols[-1][1] == '(N)':
             name_cols[-1][0] = name_cols[-1][0] + ' (Initial Year)'   # the first item in the last list
             name_cols[-2][0] = name_cols[-2][0] + ' (Initial Year)'   # the first item in the second to last list
 
-        if name_cols[-1][1] == 'School':
+        if name_cols[-1][1] == '%':
             name_cols[-1][0] = name_cols[-1][0] + ' (Initial Year)'
 
         # NOTE: This add a border to header_index:1 for each category
@@ -1456,18 +1465,22 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         table_header_conditional = [
             {
                 "if": {
-                    "column_id": year,
+                    "column_id": school,
                     "header_index": 1,
                 },
+                "fontWeight": "600",
+                "fontSize": "10px",
                 "borderLeft": ".5px solid #b2bdd4",
                 "borderTop": ".5px solid #b2bdd4",
                 "borderBottom": ".5px solid #b2bdd4",
-            } for year in year_headers
+            } for school in school_headers
         ] + [
             {   "if": {
                 "column_id": rating,
                 "header_index": 1,
             },
+                "fontWeight": "500",
+                "fontSize": "10px",            
                 "borderTop": ".5px solid #b2bdd4",
                 "borderBottom": ".5px solid #b2bdd4",
         } for rating in rating_headers
@@ -1478,7 +1491,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             },
                 "textAlign": "center",
                 "fontWeight": "500",
-                "fontSize": "12px",
+                "fontSize": "10px",
                 "borderTop": ".5px solid #b2bdd4",
                 "borderBottom": ".5px solid #b2bdd4",
         } for diff in diff_headers
@@ -1488,8 +1501,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "header_index": 1,
             },
                 "textAlign": "center",
-                "fontWeight": "400",
-                "fontSize": "12px",
+                "fontWeight": "500",
+                "fontSize": "10px",
                 "borderTop": ".5px solid #b2bdd4",
                 "borderBottom": ".5px solid #b2bdd4",
         } for nsize in nsize_headers
@@ -1551,11 +1564,11 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "borderBottom": "none",
             },
         ] + [
-            {   # NOTE: This doesn't work as cell_conditional - is it because its markdown?
+            {   
                 "if": {
                     "column_id": nsize,
                 },
-                "fontSize": "11px",
+                "fontSize": "11px", # NOTE: This doesn't work as cell_conditional - is it because its markdown?
                 "textAlign": "center",
             } for nsize in nsize_headers
         ] + [
@@ -1572,9 +1585,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                     "filter_query": '{{{col}}} < 0'.format(col=col),
                     "column_id": col
                 },
-                "fontWeight": "bold",
                 "color": "#b44655",
-                "fontSize": "10px",
             } for col in format_cols
         ] + [
             {
@@ -1582,9 +1593,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                     "filter_query": "{{{col}}} = '-***'".format(col=col),
                     "column_id": col
                 },
-                "fontWeight": "bold",
                 "color": "#b44655",
-                "fontSize": "10px",
             } for col in format_cols
         ] + [
             {
@@ -1592,9 +1601,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                     "filter_query": "{{{col}}} > 0".format(col=col),
                     "column_id": col
                 },
-                "fontWeight": "bold",
                 "color": "#81b446",
-                "fontSize": "10px",
             } for col in format_cols
         ]
 
@@ -1604,7 +1611,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "id": all_cols[idx],
                 "presentation": "markdown"
             }
-            if "Rate" in col or "Tested" in col
+            if "Rating" in col or "(N)" in col
 
             # NOTE: Cannot figure out how to have three different col formatting conditions   
             # { 
