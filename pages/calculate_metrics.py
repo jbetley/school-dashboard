@@ -402,7 +402,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
     
     return combined_grad_metrics
 
-def calculate_adult_high_school_metrics(school: str, data: pd.DataFrame) -> pd.DataFrame:
+def calculate_adult_high_school_metrics(school: str, values: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a school dataframe and school ID string and assigns an academic rating
     for each category for each year.
@@ -416,6 +416,7 @@ def calculate_adult_high_school_metrics(school: str, data: pd.DataFrame) -> pd.D
     """
     # AHS metrics is such a small subset of all metrics, instead of pulling in the
     # entire HS DF, we just pull the three datapoints we need directly from the DB.
+    data = values.copy()
 
     if len(data.index) > 0:
         data.columns = data.columns.astype(str)
@@ -426,11 +427,14 @@ def calculate_adult_high_school_metrics(school: str, data: pd.DataFrame) -> pd.D
 
         # transpose dataframe and clean headers
         ahs_data = (ahs_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-            
+        
+        # reorder year columns and apply to df headers
+        data_columns = list(ahs_data.columns[:0:-1])
+        data_columns.sort(reverse=True)
+        ahs_data.columns = ['Category'] + data_columns
+
         # format for multi-header display
         ahs_data.columns = ahs_data.columns.astype(str)
-        data_columns = list(ahs_data.columns[:0:-1])
-        data_columns.reverse()
 
         ahs_data = (ahs_data.set_index(["Category"]).add_suffix("School").reset_index())
 
@@ -452,14 +456,24 @@ def calculate_adult_high_school_metrics(school: str, data: pd.DataFrame) -> pd.D
         school_letter_grades = get_letter_grades(school)
         school_letter_grades = (school_letter_grades.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
-        # strip second row (Federal Rating)
+        # strip second row (Federal Rating) - for now
         ahs_state_grades = school_letter_grades.iloc[0:1, :]
 
+        grade_columns = list(ahs_state_grades.columns[:0:-1])
+        grade_columns.sort(reverse=True)
+        ahs_state_grades.columns = ['Category'] + grade_columns
+
         ahs_state_grades.columns = ahs_state_grades.columns.astype(str)
+
+        null_years = ["2023", "2022"]
+        for n in null_years:
+            if n in ahs_state_grades.columns:
+                ahs_state_grades[n] = "No Grade"
+
         ahs_state_grades = (ahs_state_grades.set_index(["Category"]).add_suffix("School").reset_index())
 
-        # ensure state_grades df contains same years of data as ahs_metric_cols
-        ahs_state_grades = ahs_state_grades.loc[:,ahs_state_grades.columns.str.contains("|".join(data_columns + ["Category"]))]
+        # drop any cols (years) that aren't in CCR data
+        ahs_state_grades = ahs_state_grades[ahs_state_grades.columns.intersection(ahs_data.columns)]
 
         letter_grade_limits = ["A", "B", "C", "D", "F"]
 
@@ -484,7 +498,9 @@ def calculate_adult_high_school_metrics(school: str, data: pd.DataFrame) -> pd.D
         ahs_data = ahs_data.reset_index(drop=True)
         ahs_metric_nums = ["1.1.", "1.3."]
         ahs_data.insert(loc=0, column="Metric", value=ahs_metric_nums)
-    
+
+        ahs_data = ahs_data.fillna("No Data")
+
     else:
         ahs_data = pd.DataFrame()
 

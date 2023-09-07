@@ -261,6 +261,10 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
 
             if not all_hs_school_data.empty:
 
+                # no radio buttons are displayed but still need type set for correct academic note
+                if (selected_school_type == "HS" or selected_school_type == "AHS"):
+                    radio_type == "highschool"
+
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 

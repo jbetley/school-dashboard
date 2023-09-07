@@ -44,17 +44,17 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
         data (pd.DataFrame): academic data dataframe
 
     Returns:
-        pd.DataFrame: the same dataframe with the nan's filled
+        pd.DataFrame: the same dataframe with the nans filled
     """
     data.columns = data.columns.astype(str)
 
-    fill_with_na = [i for i in data.columns if 'Rate' in i]
-    data[fill_with_na] = data[fill_with_na].fillna(value="N/A")
+    fill_with_na = [i for i in data.columns if "Rate" in i or "Rating" in i]
+    data[fill_with_na] = data[fill_with_na].fillna(value="")
 
-    fill_with_dash = [i for i in data.columns if 'Diff' in i or 'Tested' in i or 'N-Size' in i]
-    data[fill_with_dash] = data[fill_with_dash].fillna(value='\u2014') # em dash (—)
+    fill_with_dash = [i for i in data.columns if "Diff" in i or "Tested" in i or "N-Size" in i or "(N)" in i]
+    data[fill_with_dash] = data[fill_with_dash].fillna(value="\u2014") # em dash (—)
 
-    fill_with_no_data = [i for i in data.columns if 'Rate' not in i or 'Diff' not in i or 'Tested' not in i]
+    fill_with_no_data = [i for i in data.columns if "Rate" not in i or "Diff" not in i or "Tested" not in i]
     data[fill_with_no_data] = data[fill_with_no_data].fillna(value="No Data")
 
     return data
@@ -156,14 +156,14 @@ def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataF
         pd.DataFrame: the corp_data dataframe after Total Proficiency is recalculated
     """
 
-    school_grades = school_data.loc[school_data['Category'].str.contains(r"Grade.[345678]", regex=True), 'Category'].to_list()
-    school_grades = [i.split('|')[0] for i in school_grades]
+    school_grades = school_data.loc[school_data["Category"].str.contains(r"Grade.[345678]", regex=True), "Category"].to_list()
+    school_grades = [i.split("|")[0] for i in school_grades]
     school_grades = list(set(school_grades))
 
-    math_prof = [e + '|Math Total Proficient' for e in school_grades]
-    math_test = [e + '|Math Total Tested' for e in school_grades]
-    ela_prof = [e + '|ELA Total Proficient' for e in school_grades]
-    ela_test = [e + '|ELA Total Tested' for e in school_grades]
+    math_prof = [e + "|Math Total Proficient" for e in school_grades]
+    math_test = [e + "|Math Total Tested" for e in school_grades]
+    ela_prof = [e + "|ELA Total Proficient" for e in school_grades]
+    ela_test = [e + "|ELA Total Tested" for e in school_grades]
 
     adj_corp_math_prof = corp_data[corp_data.columns.intersection(math_prof)]
     adj_corp_math_test = corp_data[corp_data.columns.intersection(math_test)]
@@ -178,11 +178,11 @@ def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataF
 def calculate_percentage(numerator: str, denominator: str) -> np.ndarray: #[float|None|str]:
     """
     Calculates a percentage given a numerator and a denominator, while accounting for two
-    special cases: a string representing insufficent n-size ('***') and certain conditions
-    where a '0' value has a different result. The function does the following:
-        1) When either the numerator or the denominator is equal to '***', the function returns '****'
-        2) When either the numerator or the denominator is null/nan, the function returns 'None'
-        3) When the numerator is null/nan, but the denominator is not, the function returns '0'
+    special cases: a string representing insufficent n-size ("***") and certain conditions
+    where a "0" value has a different result. The function does the following:
+        1) When either the numerator or the denominator is equal to "***", the function returns "****"
+        2) When either the numerator or the denominator is null/nan, the function returns "None"
+        3) When the numerator is null/nan, but the denominator is not, the function returns "0"
         4) if none of the above are true, the function divides the numerator by the denominator.
     Args:
         numerator (str): numerator (is a str to account for special cases)
@@ -234,12 +234,12 @@ def calculate_difference(value1: str, value2: str) -> np.ndarray:
 
 def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) -> np.ndarray:
     """
-    Calculates year_over_year differences, accounting for string representation ('***')
+    Calculates year_over_year differences, accounting for string representation ("***")
     of insufficent n-size (there is available data, but not enough of it to show under privacy laws).
-        1) If both the current_year and previous_year values are '***' -> the result is '***'
-        2) If the previous year is either NaN or '***' and the current_year is 0 (that is 0% of students
-           were proficient) -> the result is '-***", which is a special flag used for accountability
-           purposes (a '-***' is generally treated as a Did Not Meet Standard rather than a No Rating).
+        1) If both the current_year and previous_year values are "***" -> the result is "***"
+        2) If the previous year is either NaN or "***" and the current_year is 0 (that is 0% of students
+           were proficient) -> the result is "-***", which is a special flag used for accountability
+           purposes (a "-***" is generally treated as a Did Not Meet Standard rather than a No Rating).
     Thus:
         if None in Either Column -> None
         if *** in either column -> ***
@@ -253,7 +253,7 @@ def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) 
 
     Returns:
         np.ndarray: Either the difference between the current and previous year values, None, 
-        or a string ('***')
+        or a string ("***")
     """
     result = np.where(
         (current_year == 0) & ((previous_year.isna()) | (previous_year == "***")), "-***",
@@ -274,7 +274,7 @@ def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) 
 def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str:
     """
     Takes a value (which may be of type str, float, or None), a list (consisting of
-    floats defining the thresholds of the ratings), and an integer 'flag,' that tells the
+    floats defining the thresholds of the ratings), and an integer "flag," that tells the
     function which switch to use.
 
     Args:
@@ -358,7 +358,7 @@ def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str
 def round_nearest(data: pd.DataFrame, step: int) -> int:
     """
     Determine a tick value for a plotly chart based on the maximum value in a
-    dataframe. The function divides the max valus by an arbitrarily determined 'step' value
+    dataframe. The function divides the max valus by an arbitrarily determined "step" value
     (which can be adjusted to increase/decrease of ticks). It then:
         a. sets a baseline tick amount (50,000 or 500,000) based on the proportionate value
         b. and then calculates a multipler that is the result of proportionate value
@@ -367,7 +367,7 @@ def round_nearest(data: pd.DataFrame, step: int) -> int:
 
     Args:
         data (pd.DataFrame): pandas dataframe
-        step (int): the 'number' of ticks we ultimately want
+        step (int): the "number" of ticks we ultimately want
     
     Returns:
         int: an integer representing the value of each tick
@@ -437,7 +437,7 @@ def round_percentages(percentages: list) -> list:
 
 def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     """
-    Takes a dataframe, finds the Years where all values are '***', nan, or none
+    Takes a dataframe, finds the Years where all values are "***", nan, or none
     and turns the results into a single string listing the year(s) meeting the condition
 
     Args:
@@ -450,39 +450,39 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     """
 
     tmp = data.copy()
-    tmp = tmp.drop('School Name', axis=1)
-    tmp = tmp.set_index('Year')
+    tmp = tmp.drop("School Name", axis=1)
+    tmp = tmp.set_index("Year")
 
-    # Identify and drop rows with no or insufficient data ('***' or NaN/None)
+    # Identify and drop rows with no or insufficient data ("***" or NaN/None)
     # the nunique test will always be true for a single column (e.g., IREAD). so we
     # need to test one column dataframes separately
     if len(tmp.columns) == 1:
 
         # the safest way is to coerce all strings to numeric and then test for null
-        tmp[tmp.columns[0]] = pd.to_numeric(tmp[tmp.columns[0]], errors='coerce')
+        tmp[tmp.columns[0]] = pd.to_numeric(tmp[tmp.columns[0]], errors="coerce")
         no_data_years = tmp.index[tmp[tmp.columns[0]].isnull()].values.tolist()
     
     else:
         no_data_years = tmp[tmp.apply(pd.Series.nunique, axis=1) == 1].index.values.tolist()
 
     if no_data_years:
-        data = data[~data['Year'].isin(no_data_years)]
+        data = data[~data["Year"].isin(no_data_years)]
         
         if len(no_data_years) > 1:
-            string = ', '.join(no_data_years) + '.'
+            string = ", ".join(no_data_years) + "."
         else:
-            string = no_data_years[0] + '.'
+            string = no_data_years[0] + "."
     else:
-        string =''                    
+        string =""                    
 
     return data, string
 
 def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
     """
     Takes a dataframe, finds the Categories and Years where the value is equal
-    to '***'(insufficient n-size), and turns the results into a single string,
+    to "***"(insufficient n-size), and turns the results into a single string,
     grouped by year, where duplicates have one or more years in parenthesis.
-    E.g., 'White (2021, 2022); Hispanic, Multiracial (2019)'
+    E.g., "White (2021, 2022); Hispanic, Multiracial (2019)"
     NOTE: This turned out to be more complicated that I thought. The below solution
     seems overly convoluted, but works. Felt cute, may refactor later.
 
@@ -494,52 +494,52 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
     """
 
     #  returns the indices of elements in a tuple of arrays where the condition is satisfied
-    insufficient_n_size = np.where(data == '***')
+    insufficient_n_size = np.where(data == "***")
 
     # creates a new dataframe from the respective indicies
-    df = pd.DataFrame(np.column_stack(insufficient_n_size),columns=['Year','Category'])
+    df = pd.DataFrame(np.column_stack(insufficient_n_size),columns=["Year","Category"])
 
     if len(df.index) > 0:
         # use map, in conjunction with mask, to replace the index values in the dataframes with the Year
         # and Category values
-        df['Category'] = df['Category'].mask(df['Category'] >= 0, df['Category'].map(dict(enumerate(data.columns.tolist()))))
-        df['Year'] = df['Year'].mask(df['Year'] >= 0, df['Year'].map(dict(enumerate(data['Year'].tolist()))))
+        df["Category"] = df["Category"].mask(df["Category"] >= 0, df["Category"].map(dict(enumerate(data.columns.tolist()))))
+        df["Year"] = df["Year"].mask(df["Year"] >= 0, df["Year"].map(dict(enumerate(data["Year"].tolist()))))
         
-        # strip everything after '|'
-        df["Category"] = (df["Category"].str.replace('\|.*$', '', regex=True))
+        # strip everything after "|"
+        df["Category"] = (df["Category"].str.replace("\|.*$", "", regex=True))
 
         # sort so earliest year is first
-        df = df.sort_values(by=['Year'], ascending=True)
+        df = df.sort_values(by=["Year"], ascending=True)
 
         # Shift the Year column one unit down then compare the shifted column with the
         # non-shifted one to create a boolean mask which can be used to identify the
         # boundaries between adjacent duplicate rows. then take the cumulative sum on
         # the boolean mask to identify the blocks of rows where the value stays the same
-        c = df['Category'].ne(df['Category'].shift()).cumsum()
+        c = df["Category"].ne(df["Category"].shift()).cumsum()
 
         # group the dataframe on the above identfied blocks and aggregate the Year column
         # using first and Message using .join
-        df = df.groupby(c, as_index=False).agg({'Category': 'first', 'Year': ', '.join})    
+        df = df.groupby(c, as_index=False).agg({"Category": "first", "Year": ", ".join})    
 
         # then do the same thing for year
-        y = df['Year'].ne(df['Year'].shift()).cumsum()
-        df = df.groupby(y, as_index=False).agg({'Year': 'first', 'Category': ', '.join})   
+        y = df["Year"].ne(df["Year"].shift()).cumsum()
+        df = df.groupby(y, as_index=False).agg({"Year": "first", "Category": ", ".join})   
         
         # reverse order of columns
         df = df[df.columns[::-1]]
         
         # add parentheses around year values
-        df['Year'] = '(' + df['Year'].astype(str) + ')'
+        df["Year"] = "(" + df["Year"].astype(str) + ")"
 
         # Finally combine all rows into a single string.
-        int_string = [', '.join(val) for val in df.astype(str).values.tolist()]
-        df_string = '; '.join(int_string) + '.'
+        int_string = [", ".join(val) for val in df.astype(str).values.tolist()]
+        df_string = "; ".join(int_string) + "."
 
         # clean up extra comma
         df_string = df_string.replace(", (", " (" )
 
     else:
-        df_string = ''
+        df_string = ""
 
     return df_string
 
@@ -574,21 +574,21 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> Tuple[np.ndarray,n
     # the radius of earth in miles. For kilometers use 6372.8 km
     R = 3959.87433 
 
-    # as the selected school already exists in the 'data' df,
+    # as the selected school already exists in the "data" df,
     # just pass in index and use that to find it
     for col in data.columns:
         data[col] = pd.to_numeric(data[col], errors="coerce")
     
-    phi = np.deg2rad(data['Lat'])
-    theta = np.deg2rad(data['Lon'])
-    data['x'] = R * np.cos(phi) * np.cos(theta)
-    data['y'] = R * np.cos(phi) * np.sin(theta)
-    data['z'] = R * np.sin(phi)
+    phi = np.deg2rad(data["Lat"])
+    theta = np.deg2rad(data["Lon"])
+    data["x"] = R * np.cos(phi) * np.cos(theta)
+    data["y"] = R * np.cos(phi) * np.sin(theta)
+    data["z"] = R * np.sin(phi)
 
-    tree = spatial.KDTree(data[['x', 'y','z']])
+    tree = spatial.KDTree(data[["x", "y","z"]])
 
     # gets a list of the indexes and distances in the data tree that
-    # match the [num_hits] number of 'nearest neighbor' schools
-    distance, index = tree.query(data.iloc[school_idx][['x', 'y','z']], k = num_hits)
+    # match the [num_hits] number of "nearest neighbor" schools
+    distance, index = tree.query(data.iloc[school_idx][["x", "y","z"]], k = num_hits)
 
     return index, distance

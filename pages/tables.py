@@ -1344,17 +1344,24 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             col_width = "twelve"
             category_width = 15
 
-        # TODO: Testing longer column header names - if keeping, should change in df prior to
-        # TODO: sending to table function
+        # TODO: Modify headers prior to sending to table function
         data.columns = data.columns.str.replace("N-Size", "(N)", regex=True)
         data.columns = data.columns.str.replace("Rate", "Rating", regex=True)
         data.columns = data.columns.str.replace("Diff", "Difference", regex=True)
-        data.columns = data.columns.str.replace("School", "%", regex=True) 
+
+        # different column headers for AHS
+
+        if data['Category'].str.contains('1.1.|1.2.a.').any() == True:
+            data.columns = data.columns.str.replace("School", "Value", regex=True)
+            school_headers = [y for y in data.columns.tolist() if "Value" in y]
+        else:
+            data.columns = data.columns.str.replace("School", "%", regex=True)
+            school_headers = [y for y in data.columns.tolist() if "%" in y]
+
         nsize_headers = [y for y in data.columns.tolist() if "N" in y]
         rating_headers = [y for y in data.columns.tolist() if "Rating" in y]
         diff_headers = [y for y in data.columns.tolist() if "Difference" in y]
-        school_headers = [y for y in data.columns.tolist() if "%" in y]
-
+        
         # get new col list after renaming N-Size
         all_cols = data.columns.tolist()
 

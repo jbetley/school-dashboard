@@ -290,8 +290,11 @@ def update_academic_metrics(school: str, year: str):
                     ahs_metric_data_1214 = pd.concat([ahs_nocalc_empty, ahs_no_calc], ignore_index = True)
                     ahs_metric_data_1214.reset_index()
 
-                    ahs_metric_data_1214 = conditional_fillna(ahs_metric_data_1214)
-                 
+                    # fill only value columns with "No Data" (until we actually HAVE the data)
+                    empty_year_cols = [col for col in ahs_metric_data_1214.columns if "Value" in col]
+                    for col in empty_year_cols:
+                        ahs_metric_data_1214[col] = "No Data"
+                    
                     ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b (Not Calculated)"]
                     ahs_metric_data_1214 = convert_to_svg_circle(ahs_metric_data_1214) 
                     ahs_table_1214 = create_metric_table(ahs_metric_label_1214, ahs_metric_data_1214)
@@ -330,7 +333,7 @@ def update_academic_metrics(school: str, year: str):
                         # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
                         all_cols = combined_grad_metrics_data.columns.tolist()
 
-                        simple_cols = [x for x in all_cols if (not x.endswith("+/-") and not x.endswith("N-Size"))]
+                        simple_cols = [x for x in all_cols if (not x.endswith("+/-") and not x.endswith("Difference"))]
 
                         grad_metrics_empty = pd.DataFrame(columns = simple_cols)
 
@@ -345,8 +348,13 @@ def update_academic_metrics(school: str, year: str):
                         metric_17cd_data = pd.concat([grad_metrics_empty, grad_metrics], ignore_index = True)
                         metric_17cd_data.reset_index()
 
-                        metric_17cd_data = conditional_fillna(metric_17cd_data)
+                        # fill only value columns with "No Data" (until we actually HAVE the data)
+                        empty_year_cols = [col for col in metric_17cd_data.columns if "%" in col]
+                        for col in empty_year_cols:
+                            metric_17cd_data[col] = "No Data"
                     
+                        metric_17cd_data = conditional_fillna(metric_17cd_data)
+
                         metric_17cd_label = ["High School Accountability Metrics 1.7.c & 1.7.d"]
                         metric_17cd_data = convert_to_svg_circle(metric_17cd_data)          
                         table_17cd = create_metric_table(metric_17cd_label, metric_17cd_data)

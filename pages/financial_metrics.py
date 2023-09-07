@@ -387,7 +387,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                             [             
                                 html.Div(
                                     [
-                                        html.Label("Other Financial Accountability Indicators", className="labe__header"),
+                                        html.Label("Other Financial Accountability Indicators", className="label__header"),
                                         html.Div(
                                             dash_table.DataTable(
                                                 financial_indicators.to_dict("records"),
@@ -497,7 +497,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                     [             
                         html.Div(
                             [
-                            html.Label("Accountability Metrics Definitions & Requirements", className="label_header"),
+                            html.Label("Accountability Metrics Definitions & Requirements", className="label__header"),
                             html.Div(
                                 dash_table.DataTable(
                                     data = financial_metrics_definitions_dict,
