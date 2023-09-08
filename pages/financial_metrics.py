@@ -125,8 +125,8 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
         if selected_year_numeric < most_recent_finance_year:
             financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
-            
-        # create empty tablie if after dropping out of scope years,  df has no financial
+        
+        # create empty table if, after dropping out of scope years, df has no financial
         # data, or file exists and has one year of data, but does not have a value for
         # State Grants (because the school is in Pre-Opening)
         # NOTE: To show schools in Pre-Opening year, remove the "or" condition
@@ -141,10 +141,22 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         
         else:
 
+            # sort years so they are displayed in ascending order from right to left
+            tmp_category = financial_data["Category"]
+            financial_data = financial_data.drop("Category", axis=1)
+
+            sorted_data_columns = financial_data.columns.to_list()
+            sorted_data_columns.sort()
+
+            financial_data = financial_data[sorted_data_columns] 
+
+            # add back "Category" column
+            financial_data.insert(loc=0, column="Category", value = tmp_category)
+
             # in order for metrics to be calculated properly, we need
             # to temporarily store and remove the (Q#) part of string
             financial_quarter = ""
-            financial_quarter = financial_data.columns[1][5:] if len(financial_data.columns[1]) > 4 else ""
+            financial_quarter = financial_data.columns[-1][5:] if len(financial_data.columns[-1]) > 4 else ""
             financial_data = financial_data.rename(columns = lambda x : str(x)[:4] if x != "Category" else x)
 
             for col in financial_data.columns:
@@ -183,14 +195,26 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
             else:
 
                 # Once metrics are calculated, we limit the maximum number of years
-                # displayed to max_display_years (adding +1 to account for the
-                # category column). Because we have added a new Rating column for
-                # each year, we need to multiple max by 2 (up to a max of 11).
-                # To show all financial data, comment out this line
-                metric_display_years = max_display_years*2
+                # displayed to max_display_years. Because we have added a new Rating
+                # column for each year, we need to multiply max by 2 (so this will
+                # be equal to 10). To show all available financial metric data, comment
+                # out this line
+                metric_display_years = max_display_years * 2
                 
-                financial_metrics = financial_metrics.iloc[: , :(metric_display_years+1)]
-      
+                # drop "Metric" (category) column
+                tmp_metric = financial_metrics["Metric"]
+                financial_metrics = financial_metrics.drop("Metric", axis=1)
+                
+                if len(financial_metrics.columns) < metric_display_years:
+                    metric_display_years = len(financial_metrics.columns)
+                
+                # because the years are ascending, we count from (keep) the end of the df
+                # up to metric_display_years # of columns.
+                financial_metrics = financial_metrics.iloc[:,-metric_display_years:]
+
+                # add back "Metric" column
+                financial_metrics.insert(loc=0, column="Metric", value = tmp_metric)
+
                 # convert ratings to purty colored circles
                 financial_metrics = convert_to_svg_circle(financial_metrics)
 
@@ -207,14 +231,9 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                     if financial_metrics.iat[10,x]:
                         financial_metrics.iat[10,x] = "{:,.2f}".format(financial_metrics.iat[10,x])
 
-                # Add financial quarter back to financial header for display purposes (if partial
-                # year is being displayed)
-                if int(financial_metrics.columns[1]) > current_academic_year:
-                    financial_metrics = financial_metrics.rename(columns={financial_metrics.columns[1]: financial_metrics.columns[1] + financial_quarter})
-
-                # add quarter (Q#) back (current year only) if one exists
+                # add quarter (Q#) back to header (current year only) if one exists
                 if financial_quarter:
-                    financial_metrics.columns.values[1] = financial_metrics.columns.values[1] + " " + financial_quarter
+                    financial_metrics.columns.values[-2] = financial_metrics.columns.values[-2] + " " + financial_quarter
 
                 headers = financial_metrics.columns.tolist()
 

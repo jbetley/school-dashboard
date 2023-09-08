@@ -567,11 +567,12 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # NOTE: A more precise fix would be to keep all columns (including those with
     # no value in grant columns), but ignore/except (N/A) any calculation that requires
     # either grant revenue or adm. Need to test
+    state_grant_idx = data.index[data["Category"].str.contains("State Grants")].tolist()[0]
+    operating_data = data.loc[:,~(data.iloc[state_grant_idx]==0)].copy()
 
-    operating_data = data.loc[:,~(data.iloc[1]==0)].copy()
-
-    # If school only has opening year data, the slice above will drop it, resulting in a single
-    # column df ('Category')
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)
+    
     if len(operating_data.columns) <=1:
 
         final_grid = pd.DataFrame()
@@ -584,58 +585,59 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
             operating_data[col] = pd.to_numeric(operating_data[col], errors='coerce')
 
         # transpose financial information
-        metrics = (
+        metric_data = (
             operating_data.set_index("Category")
             .T.rename_axis("Year")
             .rename_axis(None, axis=1)
             .reset_index()
         )
 
+        # NOTE: After transposition, row data is in descending order, from earliest year at row_index 0
+        # to latest row at row_index -1. All subsequent operations reflect this order.
+
+        # The vectorized way to run calculations between different rows of the
+        # same column is to shift a copy of the column either up or down using
+        # shift. shift(shift_value) moves the column up one row. Shift(1) moves the column
+        # down one row.  A shift value of 1 should be used in this case (descending).
+        # If the columns are in ascending order, use a shift value of -1
+        # NOTE: if switch to ascending order, uncomment the next block AND flip the
+        # arithmetic operation of any modified (e.g., -1 becomes +1)
+        # shift_value = -1  # ascending
+        shift_value = 1     # descending
+
         # create a dataframe for the financial metric table
         metric_grid = pd.DataFrame()
 
         # Current Ratio calculation
-        metric_grid['Current Ratio'] = metrics['Current Assets']/metrics['Current Liabilities']
+        metric_grid['Current Ratio'] = metric_data['Current Assets'] / metric_data['Current Liabilities']
         
         # returns true if 'Current Ratio' is > 1.1 or > 1 and CY > PY 
         def ratio_metric_calc(cur,diff):
             return 'MS' if ((cur > 1.1) | ((cur > 1) & (diff == True))) else 'DNMS'
         
-        # The vectorized way to run calculations between different rows of the
-        # same column is to shift a copy of the column either up or down using
-        # shift. Shift(-1) moves the column up one row. Shift(1) moves the column
-        # down one row. In some cases, this causes the calculated value to be offset by
-        # the amount of the shift. For display purposes, we need to account for this by
-        # shifting the calculated column up by the amount of the original shift
-        metric_grid['Current Ratio Previous'] = metric_grid['Current Ratio'].shift(-1)
-
         metric_grid['Current Ratio Trend'] = \
-            metric_grid['Current Ratio'] > metric_grid['Current Ratio Previous']
-        
+            metric_grid['Current Ratio'] > metric_grid['Current Ratio'].shift(shift_value)
+
         metric_grid['Current Ratio Metric'] = \
             metric_grid.apply(lambda x: ratio_metric_calc(x['Current Ratio'], x['Current Ratio Trend']), axis=1)
 
         # Day's Cash calculation
         metric_grid['Days Cash on Hand'] = \
-            metrics['Unrestricted Cash'] / ((metrics['Operating Expenses'] - metrics['Depreciation/Amortization'])/365)
+            metric_data['Unrestricted Cash'] / ((metric_data['Operating Expenses'] - metric_data['Depreciation/Amortization'])/365)
 
         # returns true if day's cash is > 45 or >= 30 and CY > PY
         def days_cash_metric_calc(cur,diff):
             return 'MS' if ((cur > 45) | ((cur >= 30) & (diff == True))) else 'DNMS'
     
-        metric_grid['Days Cash Previous'] = metric_grid['Days Cash on Hand'].shift(-1)
-        metric_grid['Days Cash Trend'] = metric_grid['Days Cash on Hand'] > metric_grid['Days Cash Previous']
+        metric_grid['Days Cash Trend'] = metric_grid['Days Cash on Hand'] > metric_grid['Days Cash on Hand'].shift(shift_value)
         
         metric_grid['Days Cash Metric'] = \
             metric_grid.apply(lambda x: days_cash_metric_calc(x['Days Cash on Hand'], x['Days Cash Trend']), axis=1)
 
         # Annual Enrollment Change calculation
         metric_grid['Annual Enrollment Change'] = \
-            (metrics['ADM Average'].shift(1) - metrics['ADM Average']) / metrics['ADM Average']
+            (metric_data['ADM Average'].shift(shift_value) - metric_data['ADM Average']) / metric_data['ADM Average']
         
-        # See above, because we used a shift down in the above calculation, we have to shift the
-        # row back up post calculation
-        metric_grid['Annual Enrollment Change'] = metric_grid['Annual Enrollment Change'].shift(-1)
         metric_grid['Annual Enrollment Change Metric'] = \
             metric_grid['Annual Enrollment Change'].apply(lambda x: 'MS' if (x > -0.1) else 'DNMS')    
 
@@ -643,26 +645,21 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         metric_grid.loc[metric_grid['Annual Enrollment Change'].isnull(), 'Annual Enrollment Change Metric'] = 'N/A'
 
         # Primary Reserve Ratio calculation
-        metric_grid['Primary Reserve Ratio'] = metrics['Unrestricted Net Assets'] / metrics['Operating Expenses']
+        metric_grid['Primary Reserve Ratio'] = metric_data['Unrestricted Net Assets'] / metric_data['Operating Expenses']
         metric_grid['Primary Reserve Ratio Metric'] = \
             metric_grid['Primary Reserve Ratio'].apply(lambda x: 'MS' if (x > 0.25) else 'DNMS')
 
         # Change in Net Assets Margin/Aggregated Three-Year Margin
-        metric_grid['Change in Net Assets Margin'] = metrics['Change in Net Assets'] / metrics['Operating Revenues'] 
+        metric_grid['Change in Net Assets Margin'] = metric_data['Change in Net Assets'] / metric_data['Operating Revenues'] 
         metric_grid['Aggregated Three-Year Margin'] = (
-            metrics['Change in Net Assets'] + metrics['Change in Net Assets'].shift() + metrics['Change in Net Assets'].shift(2)
+            metric_data['Change in Net Assets'] + metric_data['Change in Net Assets'].shift(shift_value) + metric_data['Change in Net Assets'].shift(shift_value + 1)
             ) / (
-            metrics['Operating Revenues'] + metrics['Operating Revenues'].shift() + metrics['Operating Revenues'].shift(2)
+            metric_data['Operating Revenues'] + metric_data['Operating Revenues'].shift(shift_value) + metric_data['Operating Revenues'].shift(shift_value + 1)
             )
 
-        metric_grid['Aggregated Three-Year Margin'] = metric_grid['Aggregated Three-Year Margin'].shift(-2)
-
-        # create temporary columns for calculations include values from previous year
-        metric_grid['AgMar Previous'] = metric_grid['Aggregated Three-Year Margin'].shift(-1)
-        metric_grid['AgMar Previous 2'] = metric_grid['Aggregated Three-Year Margin'].shift(-2)
         metric_grid['AgMar Trend'] = (
-            (metric_grid['Aggregated Three-Year Margin'] > metric_grid['AgMar Previous']) &
-            (metric_grid['AgMar Previous'] > metric_grid['AgMar Previous 2']))
+            (metric_grid['Aggregated Three-Year Margin'] > metric_grid['Aggregated Three-Year Margin'].shift(shift_value)) & \
+            (metric_grid['Aggregated Three-Year Margin'].shift(shift_value) > metric_grid['Aggregated Three-Year Margin'].shift(shift_value+1)))
 
         # A school meets standard if: Aggregated Three-Year Margin is positive and the most
         # recent year Change in Net Assets Margin is positive; or Aggregated Three-Year Margin
@@ -672,7 +669,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         def asset_margin_calc(chcur,agcur,diff):
             return 'MS' if (
                 ((chcur > 0) & (agcur > 0)) | 
-                (((chcur > 0) & (agcur > .015)) & (diff == True))
+                (((chcur > 0) & (agcur > -.015)) & (diff == True))
             ) else 'DNMS'
 
         metric_grid['Aggregated Three-Year Margin Metric'] = \
@@ -684,35 +681,36 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         # if value is NaN (no calculation is possible), the Metric should be N/A
         metric_grid.loc[metric_grid['Aggregated Three-Year Margin'].isnull(), 'Aggregated Three-Year Margin Metric'] = 'N/A'
 
-        # in the dataframe, each row is a year, with earliest years at the end. In YR 1 and Y2
-        # CHNM Metric is 'MS' if the cumulative value of CHNM is > 0 (positive)
-        if metric_grid.loc[metric_grid.index[-1],'Change in Net Assets Margin'] > 0:
-            metric_grid.loc[metric_grid.index[-1], 'Change in Net Assets Margin Metric'] = 'MS'
+        # Remember, each row is a year, with earliest years at the top (lower row index). In YR 1 and Y2
+        # CHNM Metric is 'MS' if the cumulative value of CHNM is > 0 (positive). We use shift_value -1
+        # to account for zero-based indexing to get first year value
+
+        if metric_grid.loc[metric_grid.index[shift_value-1], 'Change in Net Assets Margin'] > 0:
+            metric_grid.loc[metric_grid.index[shift_value-1], 'Change in Net Assets Margin Metric'] = 'MS'
         else:
-            metric_grid.loc[metric_grid.index[-1], 'Change in Net Assets Margin Metric'] = 'DNMS'
+            metric_grid.loc[metric_grid.index[shift_value-1], 'Change in Net Assets Margin Metric'] = 'DNMS'
         
         # CHNM Metric is 'MS' if first + second year value is > 0
         # Only test if there are at least 2 years of data
         if len(metric_grid.index) >= 2:
-            if (metric_grid.loc[metric_grid.index[-1],'Change in Net Assets Margin'] + metric_grid.loc[metric_grid.index[-2],'Change in Net Assets Margin']) > 0:
-                metric_grid.loc[metric_grid.index[-2],'Change in Net Assets Margin Metric'] = 'MS'
+            if (metric_grid.loc[metric_grid.index[shift_value-1], 'Change in Net Assets Margin'] + metric_grid.loc[metric_grid.index[shift_value],'Change in Net Assets Margin']) > 0:
+                metric_grid.loc[metric_grid.index[shift_value], 'Change in Net Assets Margin Metric'] = 'MS'
             else:
-                metric_grid.loc[metric_grid.index[-2], 'Change in Net Assets Margin Metric'] = 'DNMS'
+                metric_grid.loc[metric_grid.index[shift_value], 'Change in Net Assets Margin Metric'] = 'DNMS'
 
         # Debt to Asset Ratio
-        metric_grid['Debt to Asset Ratio'] = metrics['Total Liabilities'] / metrics['Total Assets']
+        metric_grid['Debt to Asset Ratio'] = metric_data['Total Liabilities'] / metric_data['Total Assets']
         metric_grid['Debt to Asset Ratio Metric'] = \
             metric_grid['Debt to Asset Ratio'].apply(lambda x: 'MS' if (x < 0.9) else 'DNMS')    
 
         # Cash Flow and Multi-Year Cash Flow
-        metric_grid['Cash Flow'] = metrics['Unrestricted Cash'].shift() - metrics['Unrestricted Cash']
-        metric_grid['Cash Flow'] = metric_grid['Cash Flow'].shift(-1)
+        metric_grid['Cash Flow'] = metric_data['Unrestricted Cash'] - metric_data['Unrestricted Cash'].shift()
 
         # the YR1 value of 'Cash Flow' is equal to the YR1 value of 'Unrestricted Cash'
-        metric_grid.loc[len(metric_grid['Cash Flow'])-1,'Cash Flow'] = metrics['Unrestricted Cash'].iloc[-1]
+        metric_grid.loc[shift_value-1,'Cash Flow'] = metric_data['Unrestricted Cash'].iloc[shift_value-1]
 
-        metric_grid['Multi-Year Cash Flow'] = metrics['Unrestricted Cash'].shift(2) - metrics['Unrestricted Cash']
-        metric_grid['Multi-Year Cash Flow'] = metric_grid['Multi-Year Cash Flow'].shift(-2)
+        # 'Multi-Year Cash Flow' is equal to CY Cash - 2YR Previous Cash
+        metric_grid['Multi-Year Cash Flow'] = metric_data['Unrestricted Cash'] - metric_data['Unrestricted Cash'].shift(shift_value+1)
 
         # A school meets standard if both CY Multi-Year Cash Flow and One Year Cash Flow
         # are positive and one out of the two previous One Year Cash Flows are positive
@@ -720,16 +718,17 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         # Cash Flow (for purposes of calculating Cash Flow, the school's Year 0 balance is
         # assumed to be zero).
 
-        # NOTE: I am positive there is a more pythonic way to do this, but I'm too tired
-        # to figure it out, maybe later
-        for i in range(len(metric_grid['Cash Flow'])-2):
+        # NOTE: Once again, remember that the current year is at the highest index (end) of
+        # the df - so we loop from back to front - because we need at least 3 years of data
+        # for the first test, we stop the loop when i == 1 (the second to last item in the
+        # loop)
+        for i in range(len(metric_grid['Cash Flow'])-1, 1, -1):
             
             # get current year value
             current_year_cash = metric_grid.loc[i,'Cash Flow']
-            
-            # determine if two previous years are greater than zero (TRUE or FALSE)
-            previous_year_cash = metric_grid.loc[i+1,'Cash Flow'] > 0
-            second_previous_year_cash = metric_grid.loc[i+2,'Cash Flow'] > 0
+
+            previous_year_cash = metric_grid.loc[i-1,'Cash Flow'] > 0
+            second_previous_year_cash = metric_grid.loc[i-2,'Cash Flow'] > 0
 
             # school meets standard if current year Cash Flow value and current
             # year Multi-Year Cash Flow value are positive and at least one of 
@@ -746,34 +745,34 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
                 metric_grid.loc[i,'Multi-Year Cash Flow Metric'] = 'DNMS'
                 metric_grid.loc[i,'Cash Flow Metric'] = 'DNMS'
 
-        # A school meets standard if Cash Flow is positive in first two years (see above)
-        if metric_grid.loc[metric_grid.index[-1],'Cash Flow'] > 0:
-            metric_grid.loc[metric_grid.index[-1], 'Cash Flow Metric'] = 'MS'
+        # A school meets standard if Cash Flow is positive in first year (see above)
+        if metric_grid.loc[metric_grid.index[shift_value-1],'Cash Flow'] > 0:
+            metric_grid.loc[metric_grid.index[shift_value-1], 'Cash Flow Metric'] = 'MS'
         else:
-            metric_grid.loc[metric_grid.index[-1],'Cash Flow Metric'] = 'DNMS'
+            metric_grid.loc[metric_grid.index[shift_value-1],'Cash Flow Metric'] = 'DNMS'
 
-        # Metric is 'MS' if first + second year value is > 0
+        # A school meets standard if first + second year value is > 0
         # Only test if there are at least 2 years of data
         if len(metric_grid.index) >= 2:        
-            if (metric_grid.loc[metric_grid.index[-1],'Cash Flow'] > 0) & (metric_grid.loc[metric_grid.index[-2],'Cash Flow'] > 0):
-                metric_grid.loc[metric_grid.index[-2],'Cash Flow Metric'] = 'MS'
+            if (metric_grid.loc[metric_grid.index[shift_value-1],'Cash Flow'] > 0) & (metric_grid.loc[metric_grid.index[shift_value],'Cash Flow'] > 0):
+                metric_grid.loc[metric_grid.index[shift_value],'Cash Flow Metric'] = 'MS'
             else:
-                metric_grid.loc[metric_grid.index[-2],'Cash Flow Metric'] = 'DNMS'
+                metric_grid.loc[metric_grid.index[shift_value],'Cash Flow Metric'] = 'DNMS'
 
         # if Multi-Year Cash Flow is NaN (no calculation is possible), Multi-Year Cash Flow Metric should be N/A
         metric_grid.loc[metric_grid['Multi-Year Cash Flow'].isnull(), 'Multi-Year Cash Flow Metric'] = 'N/A'
 
         # Debt Service Coverage Ratio
         metric_grid['Debt Service Coverage Ratio'] = \
-            (metrics['Change in Net Assets'] + metrics['Lease/Mortgage Payments'] + metrics['Depreciation/Amortization'] + metrics['Interest Expense']) / (metrics['Lease/Mortgage Payments'] + metrics['Principal Payments'] + metrics['Interest Expense'])
+            (metric_data['Change in Net Assets'] + metric_data['Lease/Mortgage Payments'] + metric_data['Depreciation/Amortization'] + metric_data['Interest Expense']) / (metric_data['Lease/Mortgage Payments'] + metric_data['Principal Payments'] + metric_data['Interest Expense'])
 
         metric_grid['Debt Service Coverage Ratio Metric'] = \
             metric_grid['Debt Service Coverage Ratio'].apply(lambda x: 'MS' if (x > 1) else 'DNMS')    
         
         # Drop all temporary (calculation) columns
-        metric_grid = metric_grid.drop(columns=['Days Cash Previous','Days Cash Trend','Current Ratio Previous','Current Ratio Trend','AgMar Previous','AgMar Previous 2','AgMar Trend'], axis=1)
+        metric_grid = metric_grid.drop(columns=['Days Cash Trend','Current Ratio Trend','AgMar Trend'], axis=1)
 
-        metric_grid['Year'] = metrics['Year']
+        metric_grid['Year'] = metric_data['Year']
 
         # Transpose Again
         metric_grid = (

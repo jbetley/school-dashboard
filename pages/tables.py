@@ -1090,7 +1090,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className="label__header"),
+                    html.Label(label, className="hollow-label__header"),
                     html.Div(
                         dash_table.DataTable(
                             data=empty_dict,

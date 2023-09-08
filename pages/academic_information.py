@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Information #
 #########################################
 # author:   jbetley
-# version:  1.09
-# date:     08/14/23
+# version:  1.10
+# date:     08/31/23
 
 import dash
 from dash import dcc, html, Input, Output, callback, State, ctx
@@ -29,11 +29,6 @@ dash.register_page(__name__, top_nav=True, path="/academic_information", order=4
 
 # https://community.plotly.com/t/can-persistence-be-used-to-clear-cached-memory-from-previous-user-sessions/60370
 
-# Sub sub navigation buttons
-#   IF AHS or HS - No Type or Category Buttons displayed
-#   If K8 - Radio Type Display & Basic Radio Category Display
-#   If K12 - Radio Type Display With Additional -> Proficiency/Growth/High School
-
 # Academic Data Type (proficiency or growth)
 @callback(      
     Output("academic-information-radio-type", "options"),
@@ -47,33 +42,47 @@ def radio_type_selector(school: str, radio_type_value: str):
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
-    value_default = "proficiency"
+    # HS/AHS have only one type ("highschool") and no buttons are displayed
+    if school_type == "HS" or school_type == "AHS":
+
+        radio_input_container = {'display': 'none'}
+        type_options = []
+        type_value = "highschool"
     
-    if school_type == "K8":
-        options_default = [
+    elif school_type == "K8":
+
+        radio_input_container = {'display': 'block'}
+        type_options = [
             {"label": "Proficiency", "value": "proficiency"},
             {"label": "Growth", "value": "growth"},
         ]
 
-    else:
-        options_default = [
+        # also returns false if radio_type_value is empty
+        if radio_type_value in ["proficiency","growth"]: # radio_type_value and
+            type_value = radio_type_value
+        else:
+            type_value = "proficiency"
+
+    elif school_type == "K12":
+        radio_input_container = {'display': 'block'}
+        
+        type_options = [
             {"label": "Proficiency", "value": "proficiency"},
             {"label": "Growth", "value": "growth"},
             {"label": "High School", "value": "highschool"}        
         ]
 
-    type_options = options_default
+        if radio_type_value in ["proficiency","growth","highschool"]:
+            type_value = radio_type_value
+        else:
+            type_value = "proficiency"
 
-    if radio_type_value:
-        type_value = radio_type_value
+    # on fail - display nothing
     else:
-        type_value = value_default
-
-    if school_type == "HS" or school_type == "AHS":
         radio_input_container = {'display': 'none'}
-    else:
-        radio_input_container = {'display': 'block'}
-            
+        type_options = []
+        type_value = ""
+
     return type_options, type_value, radio_input_container
 
 # Academic Proficiency data Category

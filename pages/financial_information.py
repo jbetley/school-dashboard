@@ -113,6 +113,10 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.max_rows', None)
+        print('RAW FINANCE DATA')
+        print(financial_data)
         # Financial will almost always have more recent data than academic
         # data. This is the only time we want do display "future" data,
         # that is data from a year more recent than the maximum dropdown
@@ -155,10 +159,23 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
             # Ensure that only the "max_display_years" number of years worth of financial
             # data is displayed (add +1 to max_display_years to account for the category
-            # column). To show all years of data, comment out this line.
+            # column). To show all years of data, comment out this line. NOTE: column (years)
+            # are descending at this point, so we count from the front of the df
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
-            string_years=financial_data.columns.tolist()
+            # sort years so they are displayed in ascending order from right to left
+            tmp_category = financial_data["Category"]
+            financial_data = financial_data.drop("Category", axis=1)
+
+            sorted_data_columns = financial_data.columns.to_list() #list(financial_data.columns[:0:-1])
+            sorted_data_columns.sort()
+
+            financial_data = financial_data[sorted_data_columns] 
+
+            # add back "Category" column
+            financial_data.insert(loc=0, column="Category", value = tmp_category)
+
+            string_years = financial_data.columns.tolist()
             string_years.pop(0)
             string_years.reverse()
 
@@ -197,23 +214,30 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
             # display size depends on the # of columns in the dataframe
             if table_size == 2:
+                col_width = "four"
+                category_width = 55
+            elif table_size == 3:
                 col_width = "five"
-                category_width = 55
-            if table_size == 3:
+                category_width = 50
+            elif table_size == 4:
                 col_width = "six"
-                category_width = 55
-            if table_size > 3 and table_size <=8:
-                col_width = "eight"
+                category_width = 40
+            elif table_size == 5:
+                col_width = "seven"
                 category_width = 35
-            elif table_size >= 9:
+            elif table_size == 6:
+                col_width = "eight"
+                category_width = 30                   
+            else:
                 col_width = "ten"
                 category_width = 25
-            elif table_size >= 10:
-                col_width = "twelve"
-                category_width = 15
 
             data_width = 100 - category_width
             year_width = data_width / (table_size - 1)
+
+            # NOTE: Adds conditional padding to right size of value cells. Could be more precise with
+            # a dash-extensions EventListener (re: size of Div), but that is for another day.
+            pad_right = str(year_width / 3) + "%"
 
             class_name = "pretty-container " + col_width + " columns"
 
@@ -294,7 +318,8 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                                                 "if": {
                                                     "column_id": year
                                                 },
-                                                "textAlign": "center",
+                                                "textAlign": "right",
+                                                "paddingRight": pad_right,
                                                 "fontWeight": "500",
                                                 "width": str(year_width) + "%",
                                             } for year in year_headers
