@@ -3,7 +3,7 @@
 ######################################
 # author:   jbetley
 # version:  1.10
-# date:     08/31/23
+# date:     09/10/23
 
 import dash
 from dash import html, dash_table, Input, State, Output, callback
@@ -141,17 +141,8 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         
         else:
 
-            # sort years so they are displayed in ascending order from right to left
-            tmp_category = financial_data["Category"]
-            financial_data = financial_data.drop("Category", axis=1)
-
-            sorted_data_columns = financial_data.columns.to_list()
-            sorted_data_columns.sort()
-
-            financial_data = financial_data[sorted_data_columns] 
-
-            # add back "Category" column
-            financial_data.insert(loc=0, column="Category", value = tmp_category)
+            # sort Year cols in ascending order (ignore Category)
+            financial_data = financial_data.set_index('Category').sort_index(ascending=True, axis=1).reset_index()
 
             # in order for metrics to be calculated properly, we need
             # to temporarily store and remove the (Q#) part of string

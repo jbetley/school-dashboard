@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley
 # version:  1.10
-# date:     08/31/23
+# date:     09/10/23
 
 import pandas as pd
 from dash import dash_table, html
@@ -822,47 +822,6 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
     """
-
-# NOTE: This was an experiment to combine prof and n-size cols into one - May revisit later
-
-        # if "SAT" in label:
-        #     data.columns = data.columns.str.replace("School", "At Benchmark", regex=True)
-        #     school_headers = [y for y in data.columns if "At Benchmark" in y]            
-        # else:
-        #     data.columns = data.columns.str.replace("School", "", regex=True)
-
-        # # Merge every other Column such that result is Year (n-size)
-
-        # # adjust formatting before merge because it will be a string afterwards
-        # proficiency_headers = [y for y in data.columns if "Category" not in y and "n-size" not in y]
-        # nsize_headers = [y for y in data.columns if "n-size" in y and 'Category' not in y]
-
-        # for n in nsize_headers:
-        #     data[n] = data[n].astype(int)
-        #     data[n] = data[n].map('({})'.format)
-
-        # for p in proficiency_headers:
-        #     data[p] = data[p].astype(float)
-        #     data[p] = data[p].map('{:.2%}'.format)
-
-        # # text_values = text_values.str.replace('nan%','')
-        # data = data.set_index("Category")
-
-        # def APL(df):
-        #     def make_func(offset=0):
-        #         def func(x):
-        #             return '{} {}'.format(x[0 + offset], x[1 + offset])
-        #         return func
-
-        #     df2 = pd.DataFrame()
-        #     for offset in range(0, df.shape[1], 2):
-        #         df2['{} (n-size)'.format(df.columns[offset])] = df.apply(make_func(offset), axis=1)
-        #     return df2
-        
-        # tst = APL(data)
-        # tst = tst.reset_index(drop=True)
-
-        # school_headers = [y for y in data.columns if "Category" not in y]
 
     table_size = len(data.columns)
 

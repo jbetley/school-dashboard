@@ -3,7 +3,7 @@
 #########################################
 # author:   jbetley
 # version:  1.10
-# date:     08/31/23
+# date:     09/10/23
 
 # TODO: Explore serverside disk caching for data loading
 #https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
@@ -45,6 +45,9 @@ def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
     attendance_rate["Category"] =  attendance_rate["Category"].replace(["Avg Attendance"], "Attendance Rate")
 
     attendance_rate = conditional_fillna(attendance_rate)
+
+    # sort Year cols in ascending order (ignore Category)
+    attendance_rate = attendance_rate.set_index('Category').sort_index(ascending=True, axis=1).reset_index()
 
     attendance_rate.columns = attendance_rate.columns.astype(str)
 
@@ -124,7 +127,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         data_proficiency = data_proficiency[data_proficiency["Category"].str.contains("School Name") == False]
         data_proficiency = data_proficiency.reset_index(drop=True)
         data_proficiency = data_proficiency.rename(columns={c: str(c)+"School" for c in data_proficiency.columns if c not in ["Category"]})
-
+        
         # temporarily store Low Grade, and High Grade rows
         other_rows = data_proficiency[data_proficiency["Category"].str.contains(r"Low|High")]
 
@@ -152,8 +155,8 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         # reorder columns for display
         school_cols = [e for e in final_data.columns if "School" in e]
         nsize_cols = [e for e in final_data.columns if "N-Size" in e]
-        school_cols.sort(reverse=True)
-        nsize_cols.sort(reverse=True)
+        school_cols.sort()
+        nsize_cols.sort()
 
         final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
         final_cols.insert(0, "Category")
@@ -161,7 +164,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         final_data = final_data[final_cols]
         
         # Add Low Grade, and High Grade rows back (missing cols will populate with NaN)
-        # df"s should have different indexes, but just to be safe, we will reset them both
+        # df's should have different indexes, but just to be safe, we will reset them both
         # otherwise could remove the individual reset_index()
         final_data = pd.concat([final_data.reset_index(drop=True), other_rows.reset_index(drop=True)], axis=0).reset_index(drop=True) 
 
@@ -364,14 +367,6 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         if "Total|Cohort Count" in data.columns:
             data = calculate_graduation_rate(data)
 
-        # Calculate Non Waiver Grad Rate #
-        # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
-        # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
-        # cohort, there were no "waiver" graduates (which means no Non Waiver data).
-        # so we replace 0 with NaN (to ensure a NaN result rather than 0)
-        # if "Non Waiver|Cohort Count" in data.columns:
-        # data = calculate_nonwaiver_graduation_rate(data)
-
         # Calculate SAT Rates #
         if "School Total|EBRW Total Tested" in data.columns:
             data = calculate_sat_rate(data)
@@ -460,8 +455,8 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
                 school_cols = [e for e in final_data.columns if "School" in e]
                 nsize_cols = [e for e in final_data.columns if "SN-Size" in e]
 
-            school_cols.sort(reverse=True)
-            nsize_cols.sort(reverse=True)
+            school_cols.sort()
+            nsize_cols.sort()
 
             final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
 

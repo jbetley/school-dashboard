@@ -3,7 +3,7 @@
 #########################
 # author:    jbetley
 # version:  1.10
-# date:     08/31/23
+# date:     09/10/23
 
 # NOTE: Because of the way data is store and presented by IDOE, there are
 # cases in which data points need to be manually calculated that the school
@@ -38,7 +38,6 @@ from pages.load_data import get_school_index, get_academic_dropdown_years, get_f
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 FONT_FAMILY = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans&display=swap"
 external_stylesheets = [FONT_FAMILY, FONT_AWESOME]
-# external_stylesheets = ["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans&display=swap", FONT_AWESOME]
 
 # NOTE: Cannot get static folder to work (images do not load and give 302 Found error)
 server = Flask(__name__, static_folder="static")
@@ -275,7 +274,6 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 def layout():
     return html.Div(
         [
-        # dcc.Store(id="dash-session", storage_type="session"),
         # the next two components are used by the year dropdown callback to determine the current url
         dcc.Location(id="current-page", refresh=False),
         html.Div(id="hidden", style={"display": "none"}),

@@ -2,7 +2,7 @@
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
 # version:  1.10
-# date:     08/31/23
+# date:     09/10/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -62,6 +62,9 @@ def update_organizational_compliance(school, year):
             # column). To show all years of data, comment out this line.
             financial_data = financial_data.iloc[: , :(max_display_years+1)]
 
+            # sort Year cols in ascending order (ignore Category)
+            financial_data = financial_data.set_index('Category').sort_index(ascending=True, axis=1).reset_index()
+            
             organizational_indicators = financial_data[financial_data["Category"].str.startswith("3.")].copy()
             organizational_indicators[["Standard","Description"]] = organizational_indicators["Category"].str.split("|", expand=True)
 

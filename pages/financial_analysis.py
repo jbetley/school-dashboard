@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley
 # version:  1.10
-# date:     08/31/23
+# date:     09/10/23
 
 import dash
 from dash import dcc, html, dash_table, Input, State, Output, callback
@@ -504,6 +504,9 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
                 financial_data.insert(loc = i, column = missing_year[0], value = 0)
                 financial_data = financial_data[default_headers]
+
+            # sort Year cols in ascending order (ignore Category)
+            financial_data = financial_data.set_index('Category').sort_index(ascending=True, axis=1).reset_index()
 
             # Table 1: 2-Year Financial Position
 

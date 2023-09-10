@@ -3,7 +3,7 @@
 #########################################
 # author:   jbetley
 # version:  1.10
-# date:     08/31/23
+# date:     09/10/23
 
 import dash
 from dash import dcc, html, Input, Output, callback, State, ctx
@@ -26,8 +26,6 @@ from .calculations import round_percentages, conditional_fillna, get_excluded_ye
 from .subnav import subnav_academic
 
 dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
-
-# https://community.plotly.com/t/can-persistence-be-used-to-clear-cached-memory-from-previous-user-sessions/60370
 
 # Academic Data Type (proficiency or growth)
 @callback(      
@@ -58,7 +56,7 @@ def radio_type_selector(school: str, radio_type_value: str):
         ]
 
         # also returns false if radio_type_value is empty
-        if radio_type_value in ["proficiency","growth"]: # radio_type_value and
+        if radio_type_value in ["proficiency","growth"]:
             type_value = radio_type_value
         else:
             type_value = "proficiency"
