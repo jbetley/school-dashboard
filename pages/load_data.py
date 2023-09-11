@@ -345,7 +345,8 @@ def get_hs_corporation_academic_data(*args):
         ''')
 
     results = run_query(q, params)
-    results = results.sort_values(by = 'Year',ascending = False)
+
+    results = results.sort_values(by = 'Year')
 
     return results
 

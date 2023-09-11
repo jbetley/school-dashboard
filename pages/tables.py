@@ -6,6 +6,7 @@
 # date:     09/10/23
 
 import pandas as pd
+import dash
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
@@ -1241,7 +1242,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
     """
     Takes a label and a dataframe consisting of Rating and Metric Columns and returns
     a dash datatable. NOTE: could possibly be less complicated than it is, or maybe not-
-    gonna leave it up to future me
+    gonna leave it up to future me. Also, beware of some tricksy bits.
 
     Args:
         label (String): Table title
@@ -1417,14 +1418,14 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # is 'a' way to tell when we need to add str "Initial Year" to idx 1 & 2.
         # we also want to save the name of the second column header (in format YYYY(N)), so
         # we can apply a right hand border to that column when styling the table
-
-        if name_cols[1][1] == '%' and name_cols[2][1] == "(N)" and name_cols[3][1] == "%":
-            name_cols[1][0] = name_cols[1][0] + ' (Initial Year)'
-            first_year = name_cols[2][0] + name_cols[2][1]
-            name_cols[2][0] = name_cols[2][0] + ' (Initial Year)'
-        else:
-            first_year = None
-
+        first_year = None
+        
+        if any("Rating" in s for s in all_cols):
+            if name_cols[1][1] == '%' and name_cols[2][1] == "(N)" and name_cols[3][1] == "%":
+                name_cols[1][0] = name_cols[1][0] + ' (Initial Year)'
+                first_year = name_cols[2][0] + name_cols[2][1]
+                name_cols[2][0] = name_cols[2][0] + ' (Initial Year)'
+            
         # NOTE: This add a border to header_index:1 for each category
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
@@ -1486,6 +1487,13 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             "borderRight": ".5px solid #b2bdd4",
             }
         ]
+
+        # NOTE: A wee kludge here. Typically, we want a border on the right side of every Rating
+        # column to signify the right edge of a year. However, for IREAD, we actually want the 
+        # border on the right side of the Difference column and not on the Rating column. So we
+        # simply swap rating headers for diff headers if we are dealing with the IREAD data.
+        if "IREAD-3" in label[0]:
+            rating_headers = diff_headers
 
         # formatting logic is slightly different for a multi-header table
         table_data_conditional = [
@@ -1606,6 +1614,21 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             for (idx, col) in enumerate(name_cols)
         ]
 
+#         markdown_table = """
+# | Rating            |      | Metric                                                           |
+# | :-----------------| :--: | :--------------------------------------------------------------- |
+# | Exceeds           |      | Above the school corporation average.                            |
+# | Meets             |      | At or within one percent (1%) of the school corporation average. |
+# | Does Not Meet     |      | More than one percent (1%) below the school corporation average. |"""
+
+        markdown_table = """
+| Rating            |      | Metric                                                           |
+| :-----------------| :--: | :--------------------------------------------------------------- |
+| **Exceeds**           |      | Ten percent (10%) or higher than comparable public schools.      |   
+| Meets             |      | Between two and ten percent (2 - 10%) higher than comparable schools. |
+| Approaches        |      | Between the same as and two percent (2%) higher than comparable schools. |
+| Does Not Meet     |      | Less than comparable schools.                          |"""
+
         table = [
             html.Div(
                 [
@@ -1622,6 +1645,18 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                             style_cell_conditional = table_cell_conditional,
                             merge_duplicate_headers=True,
                             markdown_options={"html": True},
+                            tooltip_header={
+                                    # col: {
+                                    #     'value': f"![Metric 1.1a]({dash.get_relative_path('/assets/1.1a.jpg')})",
+                                    #     'type': 'markdown'
+                                    # }
+                                    col: {'value': markdown_table, 'type': 'markdown'}
+                                    for col in data.columns
+                            },
+                            css=[{
+                                "selector": ".dash-table-tooltip",
+                                "rule": "background-color: white; color: #6783a9; font-size: 10px; font-family: Inter; max-width:480px !important;",
+                            }],                            
                             tooltip_conditional=[
                                 {
                                     "if": {

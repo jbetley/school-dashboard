@@ -285,7 +285,6 @@ def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str
     Returns:
         str: metric rating
     """
-
     # NOTE: The order of these operations matters
 
     # if data is a string
@@ -330,7 +329,7 @@ def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str
             indicator = "MS"
         elif data >= threshold[2]:
             indicator = "AS"
-        elif data <= threshold[3]:
+        else:
             indicator = "DNMS"
 
     # graduation rate ratings (numeric)
@@ -546,9 +545,10 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
 def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> Tuple[np.ndarray,np.ndarray]:
     """
     Based on https://stackoverflow.com/q/43020919/190597
-    https://stackoverflow.com/questions/45127141/find-the-nearest-point-in-distance-for-all-the-points-in-the-dataset-python
-    https://stackoverflow.com/questions/43020919/scipy-how-to-convert-kd-tree-distance-from-query-to-kilometers-python-pandas
-    https://kanoki.org/2020/08/05/find-nearest-neighbor-using-kd-tree/
+
+    Other (maybe faster) options:
+    https://stackoverflow.com/questions/64996186/find-closest-lat-lon-observation-from-one-pandas-dataframe-for-each-observatio
+    https://stackoverflow.com/questions/71553537/how-to-find-nearest-nearest-place-by-lat-long-quickly
 
     Used to find the [20] nearest schools to the selected school.
  

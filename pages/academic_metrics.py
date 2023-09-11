@@ -19,7 +19,7 @@ from .tables import no_data_page, no_data_table, create_metric_table, create_pro
 from .layouts import set_table_layout
 from .string_helpers import convert_to_svg_circle
 from .calculate_metrics import calculate_k8_yearly_metrics, calculate_k8_comparison_metrics, calculate_high_school_metrics, \
-    calculate_adult_high_school_metrics, calculate_attendance_metrics
+    calculate_adult_high_school_metrics, calculate_attendance_metrics, calculate_iread_metrics
 from .calculations import conditional_fillna, get_excluded_years
 from .subnav import subnav_academic
 
@@ -148,14 +148,14 @@ def update_academic_metrics(school: str, year: str):
 
                 table_container_14cd = set_table_layout(table_14c,table_14d,combined_delta.columns)
 
-                # Create placeholders (Accountability Metrics 1.4.e & 1.4.f)
+                # Accountability Metrics 1.4.e & 1.4.f (Placeholder)
                 all_cols = combined_years.columns.tolist()
 
-                simple_cols = [x for x in all_cols if (not x.endswith("+/-") and not x.endswith("N-Size"))]
+                simple_cols = [x for x in all_cols if "School" in x or "N-Size" in x]
+                simple_cols = ["Category"] + simple_cols
 
                 year_proficiency_empty = pd.DataFrame(columns = simple_cols)
 
-# TODO: Fix styling of placeholder tables
                 year_proficiency_dict = {
                     "Category": [
                         "1.4.e. Two (2) year student proficiency in ELA.", 
@@ -166,11 +166,8 @@ def update_academic_metrics(school: str, year: str):
 
                 metric_14ef_data = pd.concat([year_proficiency_empty, year_proficiency], ignore_index = True)
                 metric_14ef_data.reset_index()
-
                 metric_14ef_data = conditional_fillna(metric_14ef_data)
-
                 metric_14ef_label = ["Percentage of students enrolled for at least two (2) school years achieving proficiency on the state assessment in English Language Arts (1.4.e.) and Math (1.4.f.)"]
-                metric_14ef_data = convert_to_svg_circle(metric_14ef_data)
                 table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
                 table_container_14ef = set_table_layout(table_14ef, table_14ef, metric_14ef_data.columns)
 
@@ -183,6 +180,8 @@ def update_academic_metrics(school: str, year: str):
                     iread_data.loc[iread_data["Category"] == "IREAD", "Category"] = "IREAD Proficient %"
 
                     iread_data = iread_data.reset_index(drop=True)
+
+                    iread_data = calculate_iread_metrics(iread_data)
 
                     metric_14g_label = ["1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment."]
                     iread_data = convert_to_svg_circle(iread_data)   
@@ -251,7 +250,7 @@ def update_academic_metrics(school: str, year: str):
         if len(selected_raw_hs_school_data.index) > 0:
 
             raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
-            
+
             if not raw_hs_school_data.empty:
 
                 # Adult High School Metrics
@@ -370,6 +369,8 @@ def update_academic_metrics(school: str, year: str):
     attendance_data = calculate_attendance_metrics(school, selected_year_string)
 
     if len(attendance_data.index) > 0:
+        
+        attendance_container = {"display": "block"}
 
         # Create placeholders (Acountability Metric 1.1.b.)
         teacher_retention_rate = pd.DataFrame({"Category": ["1.1.b. Teacher Retention Rate"]})

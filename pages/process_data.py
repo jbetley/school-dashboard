@@ -365,7 +365,8 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
             data = data.groupby(["Year"]).sum(numeric_only=True)
             
             # reverse order of rows (Year) and reset index to bring Year back as column
-            data = data.loc[::-1].reset_index()
+            # data = data.loc[::-1].reset_index()
+            data = data.reset_index()
 
         # Calculate Grad Rate
         if "Total|Cohort Count" in data.columns:
@@ -571,7 +572,7 @@ def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.Data
     # Add State Graduation Average to Corp DataFrame
     state_grad_average = get_graduation_data()
     state_grad_average = state_grad_average.loc[::-1].reset_index(drop=True)
-    
+
     # merge state_grad_average with corp_data
     state_grad_average = (state_grad_average.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
@@ -599,7 +600,7 @@ def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.Data
     year_cols = list(all_school_data.columns[:0:-1])
     year_cols = [c[0:4] for c in year_cols]  # keeps only YYYY part of string]
     year_cols = list(set(year_cols))
-    year_cols.sort(reverse=True)
+    year_cols.sort()
 
     # last bit of cleanup is to drop "Corporation Name" Category from corp df
     all_corp_data = all_corp_data.drop(all_corp_data.loc[all_corp_data["Category"]=="Corporation Name"].index).reset_index(drop=True)
@@ -611,10 +612,10 @@ def merge_high_school_data(all_school_data: pd.DataFrame, all_corp_data: pd.Data
     cnsize_cols = [e for e in all_corp_data.columns if "CN-Size" in e]
     school_cols = [e for e in all_school_data.columns if "School" in e]
     snsize_cols = [e for e in all_school_data.columns if "SN-Size" in e]
-    school_cols.sort(reverse=True)
-    snsize_cols.sort(reverse=True) 
-    corp_cols.sort(reverse=True)
-    cnsize_cols.sort(reverse=True)
+    school_cols.sort()
+    snsize_cols.sort() 
+    corp_cols.sort()
+    cnsize_cols.sort()
 
     result_cols = [str(s) + "Diff" for s in year_cols]
 
