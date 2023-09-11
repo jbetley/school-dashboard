@@ -1409,25 +1409,27 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
                 name_cols.append([item[:4],item[4:]])
 
-        # Each year of an academic metrics data file has a possible 4 columns:
-        # School, (N), Diff, and Rate. So if the last column for an academic metrics
-        # dataframe is "Rate," then we have a full years worth of data for all calculations
-        # (both comparison, which requires 1 year of data AND year over year, which requires
-        # two years of data). However, the first year of data for a school means Diff and Rate
-        # will not be calculated. So if the last column is a "(N)" column, we need to add
-        # '(Initial Year)' to the header for all columns of that year. Thus also applies in the
-        # case where the last column is 'School' (impacts one table)
-        if name_cols[-1][1] == '(N)':
-            name_cols[-1][0] = name_cols[-1][0] + ' (Initial Year)'   # the first item in the last list
-            name_cols[-2][0] = name_cols[-2][0] + ' (Initial Year)'   # the first item in the second to last list
+        # NOTE: Can't think of any non-stupid way to do this. We need some way to determine which
+        # column is the "first" year of data, such that no rating is calculated and then mark it
+        # with "Initial Year." The problem is in the variety of dataframes. We can't just check one
+        # index to make a determination. I'm sure there is a more elegant way, but right now, we
+        # check the 2nd, 3rd, and 4th cols looking for the pattern "%, (N), %", which (trust me),
+        # is 'a' way to tell when we need to add str "Initial Year" to idx 1 & 2.
+        # we also want to save the name of the second column header (in format YYYY(N)), so
+        # we can apply a right hand border to that column when styling the table
 
-        if name_cols[-1][1] == '%':
-            name_cols[-1][0] = name_cols[-1][0] + ' (Initial Year)'
+        if name_cols[1][1] == '%' and name_cols[2][1] == "(N)" and name_cols[3][1] == "%":
+            name_cols[1][0] = name_cols[1][0] + ' (Initial Year)'
+            first_year = name_cols[2][0] + name_cols[2][1]
+            name_cols[2][0] = name_cols[2][0] + ' (Initial Year)'
+        else:
+            first_year = None
 
         # NOTE: This add a border to header_index:1 for each category
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
         # and uncomment style_as_list in table declaration
+
         table_header_conditional = [
             {
                 "if": {
@@ -1440,7 +1442,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 "borderTop": ".5px solid #b2bdd4",
                 "borderBottom": ".5px solid #b2bdd4",
             } for school in school_headers
-        ] + [
+        ] + [            
             {   "if": {
                 "column_id": rating,
                 "header_index": 1,
@@ -1569,6 +1571,13 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 },
                 "color": "#81b446",
             } for col in format_cols
+        ] + [
+            {
+                "if": {
+                    "column_id": first_year,
+                },
+                "borderRight": ".5px solid #b2bdd4",
+            }
         ]
 
         table_columns = [

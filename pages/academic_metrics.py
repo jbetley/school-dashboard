@@ -116,7 +116,7 @@ def update_academic_metrics(school: str, year: str):
 
                 clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
 
-                combined_delta = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, selected_year_string) # selected_year_numeric
+                combined_delta = calculate_k8_comparison_metrics(clean_school_data, clean_corp_data, selected_year_string)
 
                 category = ethnicity + subgroup
 
@@ -155,6 +155,7 @@ def update_academic_metrics(school: str, year: str):
 
                 year_proficiency_empty = pd.DataFrame(columns = simple_cols)
 
+# TODO: Fix styling of placeholder tables
                 year_proficiency_dict = {
                     "Category": [
                         "1.4.e. Two (2) year student proficiency in ELA.", 

@@ -238,6 +238,10 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
         corp_data = (corp_data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
         corp_data = corp_data[corp_data["Category"].str.contains("School Name") == False]
         corp_data = corp_data.reset_index(drop=True)
+
+        # sort Year cols in ascending order (ignore Category)
+        corp_data = corp_data.set_index('Category').sort_index(ascending=True, axis=1).reset_index()
+        
         corp_data.columns = corp_data.columns.astype(str)
 
     return corp_data
