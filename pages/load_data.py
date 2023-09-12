@@ -63,7 +63,130 @@ grades_ordinal = [
     "8th"
 ]
 
+# Not currently used:
+# {
+
+#   "1.1.b": ["Above the school corporation average.", 
+#              "At or within one percent (1%) of the school corporation average.",
+#              "", 
+#               "More than one percent (1%) below the school corporation average."],
+#
+#   "1.4.f": ["More than eighty percent (80%).",
+#               "Between seventy and eighty percent (70% - 80%).",
+#               "Between sixty and seventy percent (60% - 70%).",
+#               "Less than sixty percent (60%)."],
+# 
+#   "1.5.c": ["The median SGP for all students is more than sixty (60).",
+#               "The median SGP for all students is between fifty (50) and sixty (60).",
+#               "The median SGP for all students is between thirty (30) and fifty (50).",
+#               "The median SGP for all students is less than thirty (30)."],
+# 
+#   "1.5.d": ["The median SGP for all students is more than sixty (60).",
+#               "The median SGP for all students is between fifty (50) and sixty (60).",
+#               "The median SGP for all students is between thirty (30) and fifty (50).",
+#               "The median SGP for all students is less than thirty (30)."],
+# 
+#   "1.7.d": ["Ninety-five percent (95%) or more.",
+#               "Between eighty-five and ninety-five percent (85-95%).",
+#               "Between seventy-five and eighty-five percent (75-85%).",
+#               "Less than seventy-five percent (75%)."],
+# 
+# }
+
+# Mission Specific - not included in dashboard:
+# 1.3.a, 1.3.b
+
+# Deprecated:
+# 1.2.a, 1.2.b, 1.5.a, 1.5.b, 1.7.d, 1.7.e
+
+metric_strings = {
+    # same as 1.1.b
+    "1.1.a": ["Above the school corporation average.", 
+                "At or within one percent (1%) of the school corporation average.",
+                "", 
+                "More than one percent (1%) below the school corporation average."],
+
+    "1.1.c": ["More than ninety percent (90%) of the students eligible to return to the school re-enrolled.",
+              "Between eighty and ninety percent (80-90%) of the students eligible to return to the school re-enrolled.",
+              "Between seventy and eighty percent (70-80%) of the students eligible to return to the school re-enrolled.",
+              "Less than seventy percent (70%) of the students eligible to return to the school re-enrolled."],
+
+    "1.1.d": ["More than eighty-five percent (85%) of the students eligible to return to the school re-enrolled over time.",
+              "Between seventy-five and eighty-five percent (75-85%) of the students eligible to return to the school re-enrolled over time.",
+              "Between seventy and seventy-five percent (70-75%) of the students eligible to return to the school re-enrolled over time.",
+              "Less than seventy percent (70%) of the students eligible to return to the school re-enrolled over time."],
+
+    "1.4.a": ["Increase of more than five percent (5%) from the previous year.",
+                "Increase of more than five percent (5%) from the previous year.",
+                "Less than a two percent (2%) increase from the previous year.",
+                "Decrease from the previous school year."],
+
+    "1.4.b": ["Increase of more than five percent (5%) from the previous year.",
+                "Increase of more than five percent (5%) from the previous year.",
+                "Less than a two percent (2%) increase from the previous year.",
+                "Decrease from the previous school year."],                
+
+    "1.4.c": ["Ten percent (10%) or higher than comparable public schools.",
+                "Between two and ten percent (2-10%) higher than comparable schools.",
+                "Between the same as and two percent (2%) higher than comparable schools.",
+                "Less than comparable schools."],
+
+    "1.4.d": ["Ten percent (10%) or higher than comparable public schools.",
+                "Between two and ten percent (2-10%) higher than comparable schools.",
+                "Between the same as and two percent (2%) higher than comparable schools.",
+                "Less than comparable schools."],                
+
+    # same as 1.4.f
+    "1.4.e": ["More than eighty percent (80%).",
+              "Between seventy and eighty percent (70-80%).",
+              "Between sixty and seventy percent (60-70%).",
+              "Less than sixty percent (60%)."],
+
+    "1.4.g": ["More than ninety percent (90%).",
+                "Between eighty and ninety percent (80-90%).",
+                "Between seventy and eighty percent (70-80%).",
+                "Less than seventy percent (70%)."],
+
+    "1.6.a": ["Ten percent (10%) or higher than comparable public schools for the subgroup.",
+                "Between two and ten percent (2-10%) higher than comparable schools for the subgroup.",
+                "Between the same as and two percent (2%) higher than comparable schools for the subgroup.",
+                "Less than comparable schools for the subgroup."],
+
+    "1.6.b": ["Ten percent (10%) or higher than comparable public schools for the subgroup.",
+                "Between two and ten percent (2-10%) higher than comparable schools for the subgroup.",
+                "Between the same as and two percent (2%) higher than comparable schools for the subgroup.",
+                "Less than comparable schools for the subgroup."],
+
+    "1.6.c": ["Increase of more than five percent (5%) from the previous year for the subgroup.",
+                "Increase of more than five percent (5%) from the previous year for the subgroup.",
+                "Less than a two percent (2%) increase from the previous year for the subgroup.",
+                "Decrease from the previous school year for the subgroup."],
+
+    "1.6.d": ["Increase of more than five percent (5%) from the previous year for the subgroup.",
+                "Increase of more than five percent (5%) from the previous year for the subgroup.",
+                "Less than a two percent (2%) increase from the previous year for the subgroup.",
+                "Decrease from the previous school year for the subgroup."],   
+
+    "1.7.a": ["Equal to or greater than the state average.",
+                "Within five percent (5%) of the state average.",
+                "Between six and fifteen percent (6-15%) below the state average.",
+                "More than fifteen percent (15%) below the state average."],   
+
+    "1.7.b": ["Equal to or greater than traditional public school(s).",
+                "Within five percent (5%) of traditional public school(s).",
+                "Between six and ten percent (6-10%) below traditional public school(s).",
+                "More than ten percent (10%) below traditional public school(s)."],   
+
+    # same as 1.7.d
+    "1.7.c": ["Ninety-five percent (95%) or more.",
+                "Between eighty-five and ninety-five percent (85-95%).",
+                "Between seventy-five and eighty-five percent (75-85%).",
+                "Less than seventy-five percent (75%)."],
+}
+
+# sqlite
 engine = create_engine('sqlite:///data/db_all.db')
+
 print('Database Engine Created . . .')
 
 def get_current_year():

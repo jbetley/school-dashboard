@@ -47,9 +47,9 @@ def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     # Use regex and beginning(^) and end-of-line ($) regex anchors to ensure exact matches only
     # NOTE: Using font-awesome circle icon.
     result = result.replace(["^DNMS$","Does Not Meet Expectations"],"<span style='font-size: 1em; color: #ea5545;'><i class='fa fa-circle center-icon'></i></span>", regex=True)
-    result = result.replace(["^AS$","Approaches Expectations"],"<span style='font-size: 1em; color: #ede15b;'><i class='fa fa-circle center-icon'></i></span>", regex=True)
+    result = result.replace(["^AS$","Approaches Expectations"],"<span style='font-size: 1em; color: #F5A30F;'><i class='fa fa-circle center-icon'></i></span>", regex=True)
     result = result.replace(["^MS$","Meets Expectations"],"<span style='font-size: 1em; color: #87bc45;'><i class='fa fa-circle center-icon'></i></span>", regex=True)
-    result = result.replace(["^ES$","Exceeds Expectations"],"<span style='font-size: 1em; color: #b33dc6;'><i class='fa fa-circle center-icon'></i></span>", regex=True)
+    result = result.replace(["^ES$","Exceeds Expectations"],"<span style='font-size: 1em; color: #0D9FE1;'><i class='fa fa-circle center-icon'></i></span>", regex=True)
     result = result.replace(["N/A","NA","No Rating",np.nan],"", regex=True)
 
     return result

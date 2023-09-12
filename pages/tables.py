@@ -6,10 +6,14 @@
 # date:     09/10/23
 
 import pandas as pd
-import dash
+from typing import Tuple
+import re
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
+import dash_mantine_components as dmc
+
+from .load_data import metric_strings
 
 # Global table styles
 table_style = {
@@ -150,7 +154,7 @@ def create_proficiency_key() -> list:
                         "filter_query": "{Rate} = 'Exceeds Standard'",
                         "column_id": "icon",
                     },
-                    "color": "#b33dc6",
+                    "color": "#0D9FE1", ##b33dc6",
                 },
                 {
                     "if": {"filter_query": "{Rate2} = 'Meets Standard'",
@@ -162,7 +166,7 @@ def create_proficiency_key() -> list:
                     "if": {"filter_query": "{Rate3} = 'Approaches Standard'",
                         "column_id": "icon3"
                     },
-                    "color": "#ede15b",
+                    "color": "#F5A30F", ##ede15b",
                 },
                 {
                     "if": {"filter_query": "{Rate4} = 'Does Not Meet Standard'",
@@ -1614,25 +1618,102 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             for (idx, col) in enumerate(name_cols)
         ]
 
-#         markdown_table = """
-# | Rating            |      | Metric                                                           |
-# | :-----------------| :--: | :--------------------------------------------------------------- |
-# | Exceeds           |      | Above the school corporation average.                            |
-# | Meets             |      | At or within one percent (1%) of the school corporation average. |
-# | Does Not Meet     |      | More than one percent (1%) below the school corporation average. |"""
+        # Create custom tooltip with metric/rating definitions- because the default tooltip is limited,
+        # we use dash-mantine-components: a dmc.Table inside of a dmc.HoverCard
 
-        markdown_table = """
-| Rating            |      | Metric                                                           |
-| :-----------------| :--: | :--------------------------------------------------------------- |
-| **Exceeds**           |      | Ten percent (10%) or higher than comparable public schools.      |   
-| Meets             |      | Between two and ten percent (2 - 10%) higher than comparable schools. |
-| Approaches        |      | Between the same as and two percent (2%) higher than comparable schools. |
-| Does Not Meet     |      | Less than comparable schools.                          |"""
+        # These definitions are static and lengthy, so we move this process to a function after
+        # retrieving the metric number from the label.
+        metric_id = re.findall(r"[\d+\.]+[a-z]", label[0])
+
+        def create_tooltip(id: list) -> Tuple[list,list]:
+
+# TODO: Add metric number to table
+            
+            header = [
+                html.Thead([
+                    html.Tr(
+                        [
+                            html.Th(id),
+                        ]
+                    ),
+                    html.Tr(
+                        [
+                            html.Th("Rating"),
+                            html.Th("Metric"),
+                        ]
+                    )
+                ])
+            ]
+        
+            rows = []
+            ratings = ["Exceeds", "Meets", "Approaches", "Does Not Meet"]
+
+# TODO: FIX!! NOT WORKING! Style "secondary" table, where metrics share same table
+            # only want one header row in this case
+            if id[0] == "1.1.a" or id[0] == "1.4.e" or id[0] == "1.7.c":
+                rows.append(
+                    html.Thead([
+                        html.Tr(
+                            [
+                                html.Th(id[0] + " & " + id[1]),
+                            ]
+                        ),
+                        html.Tr(
+                            [
+                                html.Th("Rating"),
+                                html.Th("Metric"),
+                            ]
+                        )
+                    ])
+                )
+            
+            for i in id:
+                if i != "1.1.a" or i != "1.4.b" or i != "1.7.c" or i != "1.1.b" or i != "1.4.c" or i != "1.7.d":
+                    rows.append(
+                        html.Thead([
+                            html.Tr(
+                                [
+                                    html.Th(i),
+                                ]
+                            ),
+                            html.Tr(
+                                [
+                                    html.Th("Rating"),
+                                    html.Th("Metric"),
+                                ]
+                            )
+                        ])
+                    )
+
+                if i in metric_strings:
+                    for s in range(0, len(metric_strings[i])):
+                        if metric_strings[i][s]:
+                            rows.append(html.Tr([html.Td(ratings[s]), html.Td(metric_strings[i][s])]))
+
+            body = [html.Tbody(rows)]
+
+            return body
+
+        body = create_tooltip(metric_id)
 
         table = [
             html.Div(
-                [
-                    html.Label(label, className="label__header"),
+                [   
+                    dmc.HoverCard(
+                        className="hover_card",
+                        withArrow=False,
+                        width=300,
+                        shadow="md",
+                        position="top",
+                        children=[
+                            dmc.HoverCardTarget(
+                                html.Label(label, className="label__header"),
+                            ),
+                            dmc.HoverCardDropdown(
+                                dmc.Table(body)
+                            ),
+                        ],
+                    ),
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict("records"),
@@ -1645,18 +1726,6 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                             style_cell_conditional = table_cell_conditional,
                             merge_duplicate_headers=True,
                             markdown_options={"html": True},
-                            tooltip_header={
-                                    # col: {
-                                    #     'value': f"![Metric 1.1a]({dash.get_relative_path('/assets/1.1a.jpg')})",
-                                    #     'type': 'markdown'
-                                    # }
-                                    col: {'value': markdown_table, 'type': 'markdown'}
-                                    for col in data.columns
-                            },
-                            css=[{
-                                "selector": ".dash-table-tooltip",
-                                "rule": "background-color: white; color: #6783a9; font-size: 10px; font-family: Inter; max-width:480px !important;",
-                            }],                            
                             tooltip_conditional=[
                                 {
                                     "if": {

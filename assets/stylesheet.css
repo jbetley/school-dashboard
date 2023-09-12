@@ -472,6 +472,92 @@ hr {
   align-items: center;
 }
 
+/** Dash Mantine Components Overrides **/
+/* This css is solely for the dmc.HoverCard and Table elements on the academic_metric page. Overriding
+  with substring matches ended up being easier than trying to style the DMC components directly */
+
+/* Overrides dmc.HoverCard attributes */
+[id^=mantine] {
+  width: 100% !important;
+}
+
+[class*="mantine"] {
+  width: auto !important;
+}
+
+.mantine-HoverCard-dropdown {
+  width:400px !important;
+  padding: 0 0 0 0 !important;
+  border-radius: 10px;
+  border: none;
+  background-color: #F1F1F1;
+}
+
+/* Overrides dmc.Table styling */
+[class*="mantine"] > table
+{
+  width: 100% !important;
+  border-spacing: 0;
+  border-collapse: separate;
+  border-radius: 10px;
+  border: 1px solid #6783a9;
+}
+
+[class*="mantine"] thead tr th
+{
+  line-height: .5;
+  font-size: 10px;
+  font-weight: 700;
+  border-bottom: 1px solid #b2bdd4;
+  text-align: center;
+}
+
+[class*="mantine"] thead tr:first-of-type th:first-child
+{
+  text-decoration: underline;
+  text-decoration-color: #b2bdd4;
+  color: #b2bdd4;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: none;
+}
+
+[class*="mantine"] tbody tr td
+{
+  line-height: 1.25;
+  font-size: 8px;
+  font-weight: 700;
+  border: none;
+  text-align: left;
+}
+
+[class*="mantine"] tbody tr:first-of-type td:first-child
+{
+  color:#0D9FE1;
+  font-weight: 700;
+  border-right: 1px solid #b2bdd4; 
+}
+
+[class*="mantine"] tbody tr:nth-of-type(2) td:first-child
+{
+  color:#87bc45;
+  font-weight: 800;
+  border-right: 1px solid rgba(192,193,199, 2);
+}
+[class*="mantine"] tbody tr:nth-of-type(3) td:first-child
+{
+  color:#F5A30F;
+  font-weight: 800;
+  border-right: 1px solid rgba(192,193,199, 2);
+}
+[class*="mantine"] tbody tr:nth-of-type(4) td:first-child
+{
+  color:#ea5545;
+  font-weight: 800;
+  border-right: 1px solid rgba(192,193,199, 2);
+}
+
 /** Plotly Dash Overrides **/
 
 /* Overides base color of all dropdown menu options */
@@ -957,7 +1043,7 @@ label > .label-body {
   height: auto;
   background-color: #6783a9;
   font-size: 14px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Inter', sans-serif;
   color: #ffffff;
   text-align: center;
   margin:auto;
@@ -1123,7 +1209,7 @@ a.logout-button:hover {
 }
 
 /** Tables **/
-table {
+/* table {
     border-collapse: collapse;
 }
 
@@ -1138,7 +1224,7 @@ td:first-child {
 th:last-child,
 td:last-child {
   padding-right: 0;
-}
+} */
 
 /** Self Clearing **/
 .container:after,

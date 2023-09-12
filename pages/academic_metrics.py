@@ -121,13 +121,13 @@ def update_academic_metrics(school: str, year: str):
                 category = ethnicity + subgroup
 
                 metric_14a_data = combined_years[(combined_years["Category"].str.contains("|".join(grades_all))) & (combined_years["Category"].str.contains("ELA"))]
-                metric_14a_label = ["1.4a Grade level proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " compared with the previous school year."]
+                metric_14a_label = ["1.4.a Grade level proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " compared with the previous school year."]
 
                 metric_14a_data = convert_to_svg_circle(metric_14a_data)
                 table_14a = create_metric_table(metric_14a_label, metric_14a_data)
 
                 metric_14b_data = combined_years[(combined_years["Category"].str.contains("|".join(grades_all))) & (combined_years["Category"].str.contains("Math"))]
-                metric_14b_label = ["1.4b Grade level proficiency on the state assessment in",html.Br(), html.U("Math"), " compared with the previous school year."]
+                metric_14b_label = ["1.4.b Grade level proficiency on the state assessment in",html.Br(), html.U("Math"), " compared with the previous school year."]
                 
                 metric_14b_data = convert_to_svg_circle(metric_14b_data)
                 table_14b = create_metric_table(metric_14b_label, metric_14b_data)
@@ -135,7 +135,7 @@ def update_academic_metrics(school: str, year: str):
                 table_container_14ab = set_table_layout(table_14a,table_14b,combined_years.columns)
 
                 metric_14c_data = combined_delta[(combined_delta["Category"].str.contains("|".join(grades_all))) & (combined_delta["Category"].str.contains("ELA"))]
-                metric_14c_label = ["1.4c Grade level proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " compared with traditional school corporation."]
+                metric_14c_label = ["1.4.c Grade level proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " compared with traditional school corporation."]
 
                 metric_14c_data = convert_to_svg_circle(metric_14c_data)
                 table_14c = create_metric_table(metric_14c_label, metric_14c_data)
@@ -215,24 +215,24 @@ def update_academic_metrics(school: str, year: str):
                 # table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
 
                 metric_16a_data = combined_delta[(combined_delta["Category"].str.contains("|".join(category))) & (combined_delta["Category"].str.contains("ELA"))]
-                metric_16a_label = ["1.6a Proficiency on the state assessment in ", html.U("English Language Arts"), html.Br(),"for each subgroup compared with traditional school corporation."]
+                metric_16a_label = ["1.6.a Proficiency on the state assessment in ", html.U("English Language Arts"), html.Br(),"for each subgroup compared with traditional school corporation."]
                 metric_16a_data = convert_to_svg_circle(metric_16a_data)
                 table_16a = create_metric_table(metric_16a_label,metric_16a_data)
 
                 metric_16b_data = combined_delta[(combined_delta["Category"].str.contains("|".join(category))) & (combined_delta["Category"].str.contains("Math"))]            
-                metric_16b_label = ["1.6b Proficiency on the state assessment in ", html.U("Math"), " for each", html.Br(), "subgroup compared with traditional school corporation."]
+                metric_16b_label = ["1.6.b Proficiency on the state assessment in ", html.U("Math"), " for each", html.Br(), "subgroup compared with traditional school corporation."]
                 metric_16b_data = convert_to_svg_circle(metric_16b_data)
                 table_16b = create_metric_table(metric_16b_label, metric_16b_data)
 
                 table_container_16ab = set_table_layout(table_16a,table_16b,combined_delta.columns)
 
                 metric_16c_data = combined_years[(combined_years["Category"].str.contains("|".join(category))) & (combined_years["Category"].str.contains("ELA"))]
-                metric_16c_label = ["1.6c The change in proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " for each subgroup compared with the previous school year."]
+                metric_16c_label = ["1.6.c The change in proficiency on the state assessment in",html.Br(), html.U("English Language Arts"), " for each subgroup compared with the previous school year."]
                 metric_16c_data = convert_to_svg_circle(metric_16c_data)
                 table_16c = create_metric_table(metric_16c_label,metric_16c_data)
 
                 metric_16d_data = combined_years[(combined_years["Category"].str.contains("|".join(category))) & (combined_years["Category"].str.contains("Math"))]
-                metric_16d_label = ["1.6d The change in proficiency on the state assessment in",html.Br(), html.U("Math"), " for each subgroup compared with the previous school year."]
+                metric_16d_label = ["1.6.d The change in proficiency on the state assessment in",html.Br(), html.U("Math"), " for each subgroup compared with the previous school year."]
                 metric_16d_data = convert_to_svg_circle(metric_16d_data)
                 table_16d = create_metric_table(metric_16d_label,metric_16d_data)
 
