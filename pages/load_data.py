@@ -63,44 +63,27 @@ grades_ordinal = [
     "8th"
 ]
 
-# Not currently used:
-# {
-
-#   "1.1.b": ["Above the school corporation average.", 
-#              "At or within one percent (1%) of the school corporation average.",
-#              "", 
-#               "More than one percent (1%) below the school corporation average."],
-#
-#   "1.4.f": ["More than eighty percent (80%).",
-#               "Between seventy and eighty percent (70% - 80%).",
-#               "Between sixty and seventy percent (60% - 70%).",
-#               "Less than sixty percent (60%)."],
-# 
-#   "1.5.c": ["The median SGP for all students is more than sixty (60).",
-#               "The median SGP for all students is between fifty (50) and sixty (60).",
-#               "The median SGP for all students is between thirty (30) and fifty (50).",
-#               "The median SGP for all students is less than thirty (30)."],
-# 
-#   "1.5.d": ["The median SGP for all students is more than sixty (60).",
-#               "The median SGP for all students is between fifty (50) and sixty (60).",
-#               "The median SGP for all students is between thirty (30) and fifty (50).",
-#               "The median SGP for all students is less than thirty (30)."],
-# 
-#   "1.7.d": ["Ninety-five percent (95%) or more.",
-#               "Between eighty-five and ninety-five percent (85-95%).",
-#               "Between seventy-five and eighty-five percent (75-85%).",
-#               "Less than seventy-five percent (75%)."],
-# 
-# }
-
-# Mission Specific - not included in dashboard:
-# 1.3.a, 1.3.b
-
-# Deprecated:
-# 1.2.a, 1.2.b, 1.5.a, 1.5.b, 1.7.d, 1.7.e
+# K8 Deprecated: 1.2.a, 1.2.b, 1.5.a, 1.5.b
+# K8 Not YET included: 1.3.a, 1.3.b (Mission Specific)
+# HS Depracted:  1.7.d, 1.7.e
+# AHS Deprecated: 1.2.a, 1.2b
+# AHS Not Calculated (K8 standards 1.4a & 1.4b)
 
 metric_strings = {
-    # same as 1.1.b
+
+    # AHS
+    "1.1": ["The school received an A on under the State's Adult Accountability system.", 
+            "The school received an B on under the State's Adult Accountability system.",
+            "The school received an C on under the State's Adult Accountability system.", 
+            "The school received an D on under the State's Adult Accountability system."],
+
+    # AHS
+    "1.3": ["Fifty percent (50%) or more of graduates achieved at least one CCR indicator.", 
+            "Between (36.8-49.9%) of graduates achieved at least one CCR indicator.",
+            "Between (23.4-36.7%) of graduates achieved at least one CCR indicator.", 
+            "Less than (23.4%) of of graduates achieved at least one CCR indicator."],
+
+    # same ratings as 1.1.b
     "1.1.a": ["Above the school corporation average.", 
                 "At or within one percent (1%) of the school corporation average.",
                 "", 
@@ -117,12 +100,12 @@ metric_strings = {
               "Less than seventy percent (70%) of the students eligible to return to the school re-enrolled over time."],
 
     "1.4.a": ["Increase of more than five percent (5%) from the previous year.",
-                "Increase of more than five percent (5%) from the previous year.",
+                "Increase of between two and five percent (2-5%) from the previous year.",
                 "Less than a two percent (2%) increase from the previous year.",
                 "Decrease from the previous school year."],
 
     "1.4.b": ["Increase of more than five percent (5%) from the previous year.",
-                "Increase of more than five percent (5%) from the previous year.",
+                "Increase of between two and five percent (2-5%) from the previous year.",
                 "Less than a two percent (2%) increase from the previous year.",
                 "Decrease from the previous school year."],                
 
@@ -136,7 +119,7 @@ metric_strings = {
                 "Between the same as and two percent (2%) higher than comparable schools.",
                 "Less than comparable schools."],                
 
-    # same as 1.4.f
+    # same ratings as 1.4.f
     "1.4.e": ["More than eighty percent (80%).",
               "Between seventy and eighty percent (70-80%).",
               "Between sixty and seventy percent (60-70%).",
@@ -146,6 +129,16 @@ metric_strings = {
                 "Between eighty and ninety percent (80-90%).",
                 "Between seventy and eighty percent (70-80%).",
                 "Less than seventy percent (70%)."],
+
+    "1.5.c": ["The median SGP for all students is more than sixty (60).",
+                "The median SGP for all students is between fifty (50) and sixty (60).",
+                "The median SGP for all students is between thirty (30) and fifty (50).",
+                "The median SGP for all students is less than thirty (30)."],
+
+    "1.5.d": ["The median SGP for all students is more than sixty (60).",
+                "The median SGP for all students is between fifty (50) and sixty (60).",
+                "The median SGP for all students is between thirty (30) and fifty (50).",
+                "The median SGP for all students is less than thirty (30)."],
 
     "1.6.a": ["Ten percent (10%) or higher than comparable public schools for the subgroup.",
                 "Between two and ten percent (2-10%) higher than comparable schools for the subgroup.",
@@ -158,12 +151,12 @@ metric_strings = {
                 "Less than comparable schools for the subgroup."],
 
     "1.6.c": ["Increase of more than five percent (5%) from the previous year for the subgroup.",
-                "Increase of more than five percent (5%) from the previous year for the subgroup.",
+                "Increase of between two and five percent (2-5%) from the previous year.",
                 "Less than a two percent (2%) increase from the previous year for the subgroup.",
                 "Decrease from the previous school year for the subgroup."],
 
     "1.6.d": ["Increase of more than five percent (5%) from the previous year for the subgroup.",
-                "Increase of more than five percent (5%) from the previous year for the subgroup.",
+                "Increase of between two and five percent (2-5%) from the previous year.",
                 "Less than a two percent (2%) increase from the previous year for the subgroup.",
                 "Decrease from the previous school year for the subgroup."],   
 
@@ -177,14 +170,14 @@ metric_strings = {
                 "Between six and ten percent (6-10%) below traditional public school(s).",
                 "More than ten percent (10%) below traditional public school(s)."],   
 
-    # same as 1.7.d
+    # same ratings as 1.7.d
     "1.7.c": ["Ninety-five percent (95%) or more.",
                 "Between eighty-five and ninety-five percent (85-95%).",
                 "Between seventy-five and eighty-five percent (75-85%).",
                 "Less than seventy-five percent (75%)."],
 }
 
-# sqlite
+# Get stuff from db
 engine = create_engine('sqlite:///data/db_all.db')
 
 print('Database Engine Created . . .')

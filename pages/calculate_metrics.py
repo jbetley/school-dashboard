@@ -521,8 +521,6 @@ def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # accurate ratings.
     data = data[data.columns.drop(list(data.filter(regex='Rate')))]
 
-#TODO: This is wrong?
-
     # another slight variation left as an exercise for the reader
     [
         data.insert(

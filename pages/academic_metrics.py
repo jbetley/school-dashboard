@@ -184,7 +184,7 @@ def update_academic_metrics(school: str, year: str):
 
                     iread_data = calculate_iread_metrics(iread_data)
 
-                    metric_14g_label = ["1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment."]
+                    metric_14g_label = ["1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment."]
                     iread_data = convert_to_svg_circle(iread_data)   
                     table_14g = create_metric_table(metric_14g_label, iread_data)
                     table_container_14g = set_table_layout(table_14g, table_14g, iread_data.columns)
@@ -296,7 +296,7 @@ def update_academic_metrics(school: str, year: str):
                     for col in empty_year_cols:
                         ahs_metric_data_1214[col] = "No Data"
                     
-                    ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b (Not Calculated)"]
+                    ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a & 1.2.b"]
                     ahs_metric_data_1214 = convert_to_svg_circle(ahs_metric_data_1214) 
                     ahs_table_1214 = create_metric_table(ahs_metric_label_1214, ahs_metric_data_1214)
                     ahs_table_container_1214 = set_table_layout(ahs_table_1214, ahs_table_1214, ahs_metric_data_1214.columns)
@@ -409,7 +409,7 @@ def update_academic_metrics(school: str, year: str):
     else:
 
         table_container_11ab = no_data_table(metric_11ab_label)
-        table_container_11cd = no_data_table(metric_11cd_label)        
+        table_container_11cd = no_data_table(metric_11cd_label)
         attendance_container = {"display": "none"}
      
     return (

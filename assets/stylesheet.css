@@ -558,6 +558,14 @@ hr {
   border-right: 1px solid rgba(192,193,199, 2);
 }
 
+/* The im-very-special id is a td id for situations where there are only 3 metrics and
+  we want to make sure that the 3rd metric is colored red and not orange */
+#im-very-special {
+  color:#ea5545;
+  font-weight: 800;
+  border-right: 1px solid rgba(192,193,199, 2);
+}
+
 /** Plotly Dash Overrides **/
 
 /* Overides base color of all dropdown menu options */

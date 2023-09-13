@@ -1621,44 +1621,55 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # Create custom tooltip with metric/rating definitions- because the default tooltip is limited,
         # we use dash-mantine-components: a dmc.Table inside of a dmc.HoverCard
 
-        # These definitions are static and lengthy, so we move this process to a function after
-        # retrieving the metric number from the label.
-        metric_id = re.findall(r"[\d+\.]+[a-z]", label[0])
+        # Metric definitions are stored in a dictionary keyed to the metric number in load_data.py.
+        metric_id = re.findall(r"[\d\.]+[a-z]{1}|[\d\.]+", label[0]) # [\d+\.]+[a-z]
 
         def create_tooltip(id: list) -> Tuple[list,list]:
 
-# TODO: Fix 1.7.a and 1.7.b
-# NOTE: There is a known bug in HoverCard that can cause the browser to hang if the pop
-# up opens in a space where there is no room for it (e.g., if it is set to position "top"
-# and it is triggered by something at the top of the browser window. One workaround is to
-# set the position of the Card to bottom, where it is less likely to have no space. This
-# is not a fix however.
-# See: https://github.com/snehilvj/dash-mantine-components/issues/180
-# https://community.plotly.com/t/dash-mantine-datepicker/75251/2
+            # TODO: Fix seperation of 1.7.a and 1.7.b (HS) - move to separate table
+            # TODO: Fix separation of AHS 1.2.a and 1.2.b
+            # NOTE: There is a known bug in HoverCard that can cause the browser to hang if the pop
+            # up opens in a space where there is no room for it (e.g., if it is set to position "top"
+            # and it is triggered by something at the top of the browser window. One workaround is to
+            # set the position of the Card to bottom, where it is less likely to have no space. This
+            # is not a fix however.
+            # See: https://github.com/snehilvj/dash-mantine-components/issues/180
+            # https://community.plotly.com/t/dash-mantine-datepicker/75251/2
 
-            if id[0] == "1.1.a" or id[0] == "1.4.e" or id[0] == "1.7.c":
-                header_string = id[0] + " & " + id[1]
+            print(id)
+            if not id:
+                header = []
+                body = []
             else:
-                header_string = id[0]
+                if id[0] == "1.1.a" or id[0] == "1.4.e" or id[0] == "1.7.c":
+                    header_string = id[0] + " & " + id[1]
+                else:
+                    header_string = id[0]
+                
+                header = [
+                    html.Tr(
+                        [
+                            html.Th("Rating"),
+                            html.Th("Metric (" + header_string + ")"),
+                        ]
+                    )
+                ]
             
-            header = [
-                html.Tr(
-                    [
-                        html.Th("Rating"),
-                        html.Th("Metric (" + header_string + ")"),
-                    ]
-                )
-            ]
-        
-            rows = []
-            ratings = ["Exceeds", "Meets", "Approaches", "Does Not Meet"]
+                rows = []
+                ratings = ["Exceeds", "Meets", "Approaches", "Does Not Meet"]
 
-            if id[0] in metric_strings:
-                for s in range(0, len(metric_strings[id[0]])):
-                    if metric_strings[id[0]][s]:
-                        rows.append(html.Tr([html.Td(ratings[s]), html.Td(metric_strings[id[0]][s])]))
+                if id[0] in metric_strings:
+                    for s in range(0, len(metric_strings[id[0]])):
+                        if metric_strings[id[0]][s]:
 
-            body = [html.Tbody(rows)]
+                            # use actual id and 'im-very-special' class to ensure metrics with only three
+                            # ratings have the third rating colored red rather than orange
+                            if id[0] == "1.1.a" and s == 3:
+                                rows.append(html.Tr([html.Td(ratings[s],id="im-very-special"), html.Td(metric_strings[id[0]][s])]))
+                            else:
+                                rows.append(html.Tr([html.Td(ratings[s]), html.Td(metric_strings[id[0]][s])]))
+
+                body = [html.Tbody(rows)]
 
             return header, body
 
