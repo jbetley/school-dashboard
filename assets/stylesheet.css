@@ -486,7 +486,7 @@ hr {
 }
 
 .mantine-HoverCard-dropdown {
-  width:400px !important;
+  width: 500px !important;
   padding: 0 0 0 0 !important;
   border-radius: 10px;
   border: none;
@@ -506,13 +506,13 @@ hr {
 [class*="mantine"] thead tr th
 {
   line-height: .5;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   border-bottom: 1px solid #b2bdd4;
   text-align: center;
 }
 
-[class*="mantine"] thead tr:first-of-type th:first-child
+/* [class*="mantine"] thead tr:first-of-type th:first-child
 {
   text-decoration: underline;
   text-decoration-color: #b2bdd4;
@@ -521,13 +521,13 @@ hr {
   font-weight: 700;
   text-align: left;
   border-bottom: none;
-}
+} */
 
 [class*="mantine"] tbody tr td
 {
   line-height: 1.25;
-  font-size: 8px;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 500;
   border: none;
   text-align: left;
 }

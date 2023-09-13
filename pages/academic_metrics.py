@@ -177,6 +177,7 @@ def update_academic_metrics(school: str, year: str):
                 if len(iread_data.columns) > 1:
 
                     iread_data = combined_delta[combined_delta["Category"] == "IREAD"]
+
                     iread_data.loc[iread_data["Category"] == "IREAD", "Category"] = "IREAD Proficient %"
 
                     iread_data = iread_data.reset_index(drop=True)

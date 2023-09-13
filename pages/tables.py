@@ -1627,74 +1627,42 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
         def create_tooltip(id: list) -> Tuple[list,list]:
 
-# TODO: Add metric number to table
+# TODO: Fix 1.7.a and 1.7.b
+# NOTE: There is a known bug in HoverCard that can cause the browser to hang if the pop
+# up opens in a space where there is no room for it (e.g., if it is set to position "top"
+# and it is triggered by something at the top of the browser window. One workaround is to
+# set the position of the Card to bottom, where it is less likely to have no space. This
+# is not a fix however.
+# See: https://github.com/snehilvj/dash-mantine-components/issues/180
+# https://community.plotly.com/t/dash-mantine-datepicker/75251/2
+
+            if id[0] == "1.1.a" or id[0] == "1.4.e" or id[0] == "1.7.c":
+                header_string = id[0] + " & " + id[1]
+            else:
+                header_string = id[0]
             
             header = [
-                html.Thead([
-                    html.Tr(
-                        [
-                            html.Th(id),
-                        ]
-                    ),
-                    html.Tr(
-                        [
-                            html.Th("Rating"),
-                            html.Th("Metric"),
-                        ]
-                    )
-                ])
+                html.Tr(
+                    [
+                        html.Th("Rating"),
+                        html.Th("Metric (" + header_string + ")"),
+                    ]
+                )
             ]
         
             rows = []
             ratings = ["Exceeds", "Meets", "Approaches", "Does Not Meet"]
 
-# TODO: FIX!! NOT WORKING! Style "secondary" table, where metrics share same table
-            # only want one header row in this case
-            if id[0] == "1.1.a" or id[0] == "1.4.e" or id[0] == "1.7.c":
-                rows.append(
-                    html.Thead([
-                        html.Tr(
-                            [
-                                html.Th(id[0] + " & " + id[1]),
-                            ]
-                        ),
-                        html.Tr(
-                            [
-                                html.Th("Rating"),
-                                html.Th("Metric"),
-                            ]
-                        )
-                    ])
-                )
-            
-            for i in id:
-                if i != "1.1.a" or i != "1.4.b" or i != "1.7.c" or i != "1.1.b" or i != "1.4.c" or i != "1.7.d":
-                    rows.append(
-                        html.Thead([
-                            html.Tr(
-                                [
-                                    html.Th(i),
-                                ]
-                            ),
-                            html.Tr(
-                                [
-                                    html.Th("Rating"),
-                                    html.Th("Metric"),
-                                ]
-                            )
-                        ])
-                    )
-
-                if i in metric_strings:
-                    for s in range(0, len(metric_strings[i])):
-                        if metric_strings[i][s]:
-                            rows.append(html.Tr([html.Td(ratings[s]), html.Td(metric_strings[i][s])]))
+            if id[0] in metric_strings:
+                for s in range(0, len(metric_strings[id[0]])):
+                    if metric_strings[id[0]][s]:
+                        rows.append(html.Tr([html.Td(ratings[s]), html.Td(metric_strings[id[0]][s])]))
 
             body = [html.Tbody(rows)]
 
-            return body
+            return header, body
 
-        body = create_tooltip(metric_id)
+        header, body = create_tooltip(metric_id)
 
         table = [
             html.Div(
@@ -1704,13 +1672,13 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                         withArrow=False,
                         width=300,
                         shadow="md",
-                        position="top",
+                        position="bottom",
                         children=[
                             dmc.HoverCardTarget(
                                 html.Label(label, className="label__header"),
                             ),
                             dmc.HoverCardDropdown(
-                                dmc.Table(body)
+                                dmc.Table(header + body)
                             ),
                         ],
                     ),

@@ -349,7 +349,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
     """
     data = merged_data.copy()
 
-    grad_limits_state = [0.15, 0.15, 0.05, 0]
+    grad_limits_state = [0, -0.05, -0.15]
     state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
 
     [
@@ -360,7 +360,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
             + str(i),
             state_grad_metric.apply(
                 lambda x: set_academic_rating(
-                    x[state_grad_metric.columns[i]], grad_limits_state, 1
+                    x[state_grad_metric.columns[i]], grad_limits_state, 2
                 ),
                 axis=1,
             ),
@@ -368,7 +368,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
         for i in range(state_grad_metric.shape[1]-1, 1, -3)
     ]
 
-    grad_limits_local = [.10, .10, .05, 0]
+    grad_limits_local = [0, -0.05, -0.10]
     local_grad_metric = data[data["Category"].isin(["Total Graduation Rate", "Non Waiver Graduation Rate"])]
 
     [
@@ -377,7 +377,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
             str(local_grad_metric.columns[i-1])[: 7 - 3] + "Rate" + str(i),
             local_grad_metric.apply(
                 lambda x: set_academic_rating(
-                    x[local_grad_metric.columns[i]], grad_limits_local, 1
+                    x[local_grad_metric.columns[i]], grad_limits_local, 2
                 ),
                 axis=1,
             ),
@@ -520,6 +520,8 @@ def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # proficiency and not on the difference, so we need to recalculate the metrics in order to get
     # accurate ratings.
     data = data[data.columns.drop(list(data.filter(regex='Rate')))]
+
+#TODO: This is wrong?
 
     # another slight variation left as an exercise for the reader
     [

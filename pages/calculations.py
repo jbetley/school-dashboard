@@ -288,7 +288,7 @@ def set_academic_rating(data: str|float|None, threshold: list, flag: int) -> str
     # NOTE: The order of these operations matters
 
     # if data is a string
-    if data == "***" or data == "No Grade":
+    if data == "***" or data == "No Grade" or data == "No Data":
         indicator = "NA"
         return indicator
 
