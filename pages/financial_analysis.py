@@ -12,11 +12,10 @@ from dash.exceptions import PreventUpdate
 from dash.dash_table import FormatTemplate
 import plotly.express as px
 import pandas as pd
-import numpy as np
 import plotly.graph_objects as go
 
 from .load_data import max_display_years, get_school_index, get_financial_data, get_financial_ratios
-from .tables import no_data_page, no_data_table
+from .tables import no_data_page, no_data_table, create_financial_analysis_table
 from .charts import loading_fig
 from .calculations import round_nearest
 from .subnav import subnav_finance
@@ -68,14 +67,11 @@ def financial_analysis_radio_selector(school: str, finance_value_state: str):
     Output("assets-liabilities-fig", "figure"),
     Output("financial-position-table", "children"),
     Output("financial-activities-table", "children"),
-    # Output("financial-analysis-radio", "children"),
-    # Output("financial-analysis-radio-container", "style"),
     Output("finance-analysis-RandE-title", "children"),
     Output("finance-analysis-AandL-title", "children"),
     Output("finance-analysis-FP-title", "children"),
     Output("finance-analysis-FA-title", "children"),
     Output("financial-ratios-table", "children"),
-#    Output("audit-findings-table", "children"),    # not currently displayed
     Output("per-student-table", "children"),
     Output("financial-analysis-main-container", "style"),
     Output("financial-analysis-empty-container", "style"),
@@ -100,74 +96,9 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     selected_school = get_school_index(school)
 
     # ensure consistent data display throughout
-    display_years = [year] + [str(previous_year_numeric)]
+    display_years = [str(previous_year_numeric)] + [year]
     
     financial_analysis_notes_string = "Only the most recent years of audited data are shown."
-
-    # # See financial_information.py for comments
-    # if selected_school["Network"].values[0] != "None":
-    #     if radio_value == "network-analysis":
-
-    #         radio_content = html.Div(
-    #                             [
-    #                                 dbc.RadioItems(
-    #                                     id="radio-button-finance-analysis",
-    #                                     className="btn-group",
-    #                                     inputClassName="btn-check",
-    #                                     labelClassName="btn btn-outline-primary",
-    #                                     labelCheckedClassName="active",
-    #                                     options=[
-    #                                         {"label": "School", "value": "school-analysis"},
-    #                                         {"label": "Network", "value": "network-analysis"},
-    #                                     ],
-    #                                     value="network-analysis",
-    #                                 ),
-    #                             ],
-    #                             className="radio-group"
-    #         )
-
-    #     else:
-    #         radio_content = html.Div(
-    #                             [
-    #                                 dbc.RadioItems(
-    #                                     id="radio-button-finance-analysis",
-    #                                     className="btn-group",
-    #                                     inputClassName="btn-check",
-    #                                     labelClassName="btn btn-outline-primary",
-    #                                     labelCheckedClassName="active",
-    #                                     options=[
-    #                                         {"label": "School", "value": "school-analysis"},
-    #                                         {"label": "Network", "value": "network-analysis"},
-    #                                     ],
-    #                                     value="school-analysis",
-    #                                 ),
-    #                             ],
-    #                             className="radio-group"
-    #         )
-
-    #         radio_value = "school-metrics"
-
-    #     display_radio = {}
-
-    # else:
-    #     radio_content = html.Div(
-    #                         [
-    #                             dbc.RadioItems(
-    #                                 id="radio-button-finance-analysis",
-    #                                 className="btn-group",
-    #                                 inputClassName="btn-check",
-    #                                 labelClassName="btn btn-outline-primary",
-    #                                 labelCheckedClassName="active",
-    #                                 options=[],
-    #                                 value="",
-    #                             ),
-    #                         ],
-    #                         className="radio-group"
-    #         )
-
-    #     # ensure val is always set to school if the school does not have a network tag
-    #     radio_value = "school-metrics"
-    #     display_radio = {"display": "none"}
 
     if radio_value == "network-finance":
         network_id = selected_school["Network"].values[0]
@@ -210,6 +141,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         empty_container = {"display": "block"}
 
     else:
+
+        # If Guest School - load dummy data
+        if (financial_data.isna().sum() > 30).sum() > 10:
+            financial_data = get_financial_data("9999")
 
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
@@ -427,60 +362,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             assets_liabilities_fig["data"][0]["name"]="Net Asset Position"
             assets_liabilities_fig["data"][0]["hovertemplate"]="Net Asset Position<br>$ %{y:,.2f}<extra></extra>"
 
-            ## Two Year Finance Tables (Financial Position and Financial Activities)        
+            ## Two Year Finance Tables (Financial Position and Financial Activities)
+
             # display years is a list of [CY, PY]
             default_headers = ["Category"] + display_years
-            
-            # default table styles
-            table_data = {
-                "fontSize": "12px",
-                "border": "none",
-                "fontFamily": "Inter, sans-serif",
-            }
-
-            table_header = {
-                "height": "20px",
-                "backgroundColor": "#ffffff",
-                "border": "none",
-                "borderBottom": ".5px solid #6783a9",
-                "fontSize": "12px",
-                "fontFamily": "Inter, sans-serif",
-                "color": "#6783a9",
-                "textAlign": "center",
-                "fontWeight": "bold"
-            }
-
-            table_header_conditional = [
-                {
-                    "if": {
-                        "column_id": "Category",
-                    },
-                    "borderRight": ".5px solid #6783a9",
-                    "borderBottom": ".5px solid #6783a9",
-                    "textAlign": "left"
-                },
-            ]
-
-            table_cell = {
-                "whiteSpace": "normal",
-                "height": "auto",
-                "textAlign": "center",
-                "color": "#6783a9",
-                "minWidth": "25px", "width": "25px", "maxWidth": "25px"
-            }
-
-            table_cell_conditional = [
-                {
-                    "if": {
-                        "column_id": "Category"
-                    },
-                    "textAlign": "left",
-                    "borderRight": ".5px solid #4682b4",
-                    "borderBottom": ".5px solid #4682b4",
-                    "paddingLeft": "20px",
-                    "width": "40%"
-                },
-            ]            
 
             # there may be columns with no or partial data at beginning or ending of dataframe,
             # this deletes any column where more than 80% of the columns values are == 0
@@ -509,211 +394,19 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             financial_data = financial_data.set_index('Category').sort_index(ascending=True, axis=1).reset_index()
 
             # Table 1: 2-Year Financial Position
-
-            # get financial position data for applicable 2 year period
             financial_position_categories = ["Total Assets","Current Assets","Total Liabilities","Current Liabilities","Net Asset Position"]
-            financial_position_data = financial_data.loc[financial_data["Category"].isin(financial_position_categories)]
-
-            tmp_category = financial_position_data["Category"]
-            financial_position_data = financial_position_data.drop("Category", axis=1)
-
-            # only calculate "% Change" if the number of columns with all zeros is
-            # equal to 0 (e.g., all columns have nonzero values) force % formatting
-            if financial_position_data.sum().eq(0).sum() == 0:
-
-                financial_position_data["% Change"] = (financial_position_data[display_years[0]] - financial_position_data[display_years[1]]).div(abs(financial_position_data[display_years[1]]))
-                financial_position_data["% Change"] = pd.Series(["{0:.2f}%".format(val * 100) for val in financial_position_data["% Change"]], index = financial_position_data.index)
-
-            else:
-
-                financial_position_data["% Change"] = "N/A"
-
-            # format numbers (since we are converting values to strings, we cannot vectorize,
-            # need to iterate through each series)
-            for year in display_years:
-                financial_position_data[year] = pd.Series(["{:,.2f}".format(val) for val in financial_position_data[year]], index = financial_position_data.index)
-
-            # other clean-up for display purposes
-            financial_position_data.replace("nan","0", inplace=True)
-            financial_position_data.replace(["inf%", "0.00", "0.0", "0", np.inf, -np.inf], "N/A", inplace=True)
-
-            financial_position_data.insert(loc=0,column="Category",value = tmp_category)
-
-            financial_position_table = [
-                dash_table.DataTable(
-                    financial_position_data.to_dict("records"),
-                    columns = [{"name": i, "id": i} for i in financial_position_data.columns],
-                    style_data = table_data,
-                    style_data_conditional=[
-                        {
-                            "if": {
-                                "column_id": "Category",
-                            },
-                            "borderRight": ".5px solid #4682b4",
-                        },
-                        {
-                            "if": {
-                                "filter_query": "{Category} eq 'Total Assets'"
-                            },
-                            "borderTop": ".5px solid #4682b4",
-                        },
-                        {
-                            "if": {
-                                "state": "selected"
-                            },
-                            "backgroundColor": "rgba(112,128,144, .3)",
-                            "border": "thin solid silver"
-                        }                        
-                    ],
-                    style_header = table_header,
-                    style_header_conditional = table_header_conditional,
-                    style_cell = table_cell,
-                    style_cell_conditional = table_cell_conditional
-                )
-            ]
-
+            financial_position_table = create_financial_analysis_table(financial_data, financial_position_categories) 
+  
             # Table 2: 2-Year Financial Activities
             financial_activity_categories = ["Operating Revenues", "Operating Expenses", "Change in Net Assets"]
-            financial_activity_data = financial_data.loc[financial_data["Category"].isin(financial_activity_categories)]
-
-            # temporarily store and drop "Category" column
-            tmp_category = financial_activity_data["Category"]
+            financial_activities_table = create_financial_analysis_table(financial_data, financial_activity_categories) 
             
-            financial_activity_data = financial_activity_data.drop("Category", axis=1)
-
-            # find percentage difference (df will have minimum of 1 column,
-            # maximum of two columns) only calculates change if the number
-            # of columns with all zeros is equal to 0 (e.g., all columns have nonzero values)
-            if financial_activity_data.sum().eq(0).sum() == 0:
-
-                financial_activity_data["% Change"] = (financial_activity_data[display_years[0]] - financial_activity_data[display_years[1]]).div(abs(financial_activity_data[display_years[1]]))
-
-            else:
-
-                financial_activity_data["% Change"] = "N/A"
-            
-            # Force correct formats for display of df in datatable
-            if financial_activity_data.sum().eq(0).sum() == 0:
-                financial_activity_data["% Change"] = pd.Series(["{0:.2f}%".format(val * 100) for val in financial_activity_data["% Change"]], index = financial_activity_data.index)
-
-            # since we are converting values to strings, we need to iterate
-            # through each series (cannot vectorize)
-            for year in display_years:
-                financial_activity_data[year] = pd.Series(["{:,.2f}".format(val) for val in financial_activity_data[year]], index = financial_activity_data.index)
-
-            financial_activity_data.replace("nan","0", inplace=True)
-            financial_activity_data.replace(["inf%", "0.00", "0.0", "0", np.inf, -np.inf], "N/A", inplace=True)
-
-            financial_activity_data.insert(loc=0,column="Category",value = tmp_category)
-
-            financial_activities_table = [
-                dash_table.DataTable(
-                    financial_activity_data.to_dict("records"),
-                    columns = [{"name": i, "id": i} for i in financial_activity_data.columns],                                    
-                    style_data = table_data,
-                    style_data_conditional=[
-                        {
-                            "if": {
-                                "column_id": "Category",
-                            },
-                            "borderRight": ".5px solid #6783a9",
-                        },
-                        { 
-                            "if": {
-                                "filter_query": "{Category} eq 'Operating Revenues'"
-                            },
-                            "borderTop": ".5px solid #6783a9",
-                        },
-                        {
-                            "if": {
-                                "state": "selected"
-                            },
-                            "backgroundColor": "rgba(112,128,144, .3)",
-                            "border": "thin solid silver"
-                        }                        
-                    ],
-                    style_header = table_header,
-                    style_header_conditional = table_header_conditional,
-                    style_cell = table_cell,
-                    style_cell_conditional = table_cell_conditional
-                )
-            ]
-
             # Table #3: Per-Student Expenditures
-
-            # get per student data for applicable 2 year period
-            per_student_categories = ["State Grants", "Contributions and Donations", "Operating Revenues", "Operating Expenses", "Change in Net Assets", "ADM Average"]
-            per_student_data = financial_data.loc[financial_data["Category"].isin(per_student_categories)].copy()
-
-            # change all cols to numeric except for Category
-            for col in per_student_data.columns[1:]:
-                per_student_data[col]=pd.to_numeric(per_student_data[col], errors="coerce")
-
-            # temporarily store and drop "Category" column
-            tmp_category = per_student_data["Category"]
-            per_student_data = per_student_data.drop("Category", axis=1)
-
-            # divide each row by the last row in the df (which should be ADM Average)
-            per_student_data = per_student_data.div(per_student_data.iloc[len(per_student_data)-1])
-            
-            # calculate "% Change" if both years have non-zero values
-            if per_student_data.sum().eq(0).sum() == 0:
-                per_student_data["% Change"] = (per_student_data[display_years[0]] - per_student_data[display_years[1]]).div(abs(per_student_data[display_years[1]]))
-            else:
-                per_student_data["% Change"] = "N/A"
-
-            # drop last row (ADM Average) for display
-            per_student_data = per_student_data.iloc[:-1]
-
-            # Force correct format for display of df in datatable
-            if per_student_data.sum().eq(0).sum() == 0:
-                per_student_data["% Change"] = pd.Series(["{0:.2f}%".format(val * 100) for val in per_student_data["% Change"]], index = per_student_data.index)
-
-            # since we are converting values to strings, we need to iterate through each series (cannot vectorize)
-            for year in display_years:
-                per_student_data[year] = pd.Series(["{:,.2f}".format(val) for val in per_student_data[year]], index = per_student_data.index)
-
-            # clean up for display (this is lazy)
-            per_student_data.replace("nan","0", inplace=True)
-            per_student_data.replace(["inf%", "nan%", "0.00", "0.0", "0", np.inf, -np.inf], "N/A", inplace=True)
-
-            per_student_data.insert(loc=0,column="Category",value = tmp_category)
-
-            per_student_table = [
-                dash_table.DataTable(
-                    per_student_data.to_dict("records"),
-                    columns = [{"name": i, "id": i} for i in per_student_data.columns],
-                    style_data = table_data,
-                    style_data_conditional=[
-                        {
-                            "if": {
-                                "column_id": "Category",
-                            },
-                            "borderRight": ".5px solid #6783a9",
-                        },
-                        {
-                            "if": {
-                                "filter_query": "{Category} eq 'State Grants'"
-                            },
-                            "borderTop": ".5px solid #6783a9",
-                        },
-                        {
-                            "if": {
-                                "state": "selected"
-                            },
-                            "backgroundColor": "rgba(112,128,144, .3)",
-                            "border": "thin solid silver"
-                        }                        
-                    ],
-                    style_header = table_header,
-                    style_header_conditional = table_header_conditional,
-                    style_cell = table_cell,
-                    style_cell_conditional = table_cell_conditional
-                )        
-            ]
+            per_student_categories = ["State Grants", "Operating Revenues", "Operating Expenses", "Change in Net Assets", "ADM Average"]
+            per_student_table = create_financial_analysis_table(financial_data, per_student_categories) 
 
             # Table 4: Financial Ratios
-
+            # cannot use create_analysis_table() function here because of need for special operations
             school_corp = int(selected_school["Corporation ID"].values[0])
             financial_ratios_data = get_financial_ratios(school_corp)
             ratio_years = financial_ratios_data["Year"].astype(str).tolist()
@@ -740,11 +433,16 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 for col in financial_ratios_data.columns[1:]:
                     financial_ratios_data[col]=pd.to_numeric(financial_ratios_data[col], errors="coerce")
 
+                # # sort Year cols in ascending order (ignore Category)
+                # financial_ratios_data = financial_ratios_data.set_index('Category').sort_index(ascending=True, axis=1).reset_index()
+
                 # Create an empty df in the shape and order that we want (e.g., Category, YYYY, YYYY-1), use
                 # combine_first to update all null elements in the empty df with a value in the same location
                 # in the existing df and then merge 
                 # https://stackoverflow.com/questions/56842140/pandas-merge-dataframes-with-shared-column-fillna-in-left-with-right
+                
                 default_df = pd.DataFrame(columns=default_headers)
+                
                 default_df["Category"] = financial_ratios_data["Category"]
 
                 non_duplicate_cols = ["Category"] + [i for i in default_df.columns.to_list() if i not in financial_ratios_data.columns.to_list()]
@@ -753,7 +451,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 final_ratios_data = final_ratios_data[default_headers]
 
                 final_ratios_data = final_ratios_data.fillna("N/A")
-
+                
                 for year in display_years:
                     if (final_ratios_data[year] != "N/A").any():
                         final_ratios_data[year] = pd.Series(["{0:.2f}%".format(val * 100) for val in final_ratios_data[year]], index = final_ratios_data.index)
@@ -809,7 +507,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                                 }
                             ],
                             tooltip_duration=None,
-                            style_data = table_data,
+                            style_data = {
+                                "fontSize": "12px",
+                                "fontFamily": "Inter, sans-serif",
+                            },
                             style_data_conditional=[
                                 {
                                     "if": {
@@ -831,11 +532,48 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                                     "border": "thin solid silver"
                                 }                                
                             ],
-                            style_header = table_header,
-                            style_header_conditional = table_header_conditional,
-                            style_cell = table_cell,
-                            style_cell_conditional = table_cell_conditional
-                        ),
+                            style_header = {
+                                "height": "20px",
+                                "backgroundColor": "#ffffff",
+                                "borderBottom": ".5px solid #6783a9",
+                                "borderTop": "none",
+                                "borderRight": "none",
+                                "borderLeft": "none",                
+                                "fontSize": "12px",
+                                "fontFamily": "Inter, sans-serif",
+                                "color": "#6783a9",
+                                "textAlign": "center",
+                                "fontWeight": "bold"
+                            },
+                            style_header_conditional = [
+                                {
+                                    "if": {
+                                        "column_id": "Category",
+                                    },
+                                    "borderRight": ".5px solid #6783a9",
+                                    "borderBottom": ".5px solid #6783a9",
+                                    "textAlign": "left"
+                                },
+                            ],
+                            style_cell = {
+                                "border": "none",
+                                "whiteSpace": "normal",
+                                "height": "auto",
+                                "textAlign": "center",
+                                "color": "#6783a9",
+                                "minWidth": "25px", "width": "25px", "maxWidth": "25px"
+                            },
+                            style_cell_conditional = [
+                                {
+                                    "if": {
+                                        "column_id": "Category"
+                                    },
+                                    "textAlign": "left",
+                                    "paddingLeft": "20px",
+                                    "width": "40%"
+                                }
+                            ]
+                        )
                     ),
                     html.P(""),
                     html.P("Source: IDOE Form 9 (hover over category for details).",
@@ -853,81 +591,11 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             else:
                 financial_ratios_table  = no_data_table(["Financial Ratios"])
 
-            # NOTE: Uncomment to add federal audit findings
-            # # federal_audit_findings_json
-            # if not data["9"]:
-            #     audit_findings_table = [
-            #             dash_table.DataTable(
-            #             columns = [
-            #                 {"id": "emptytable", "name": "No Data to Display"},
-            #             ],
-            #             style_header={
-            #                 "fontSize": "14px",
-            #                 "border": "none",
-            #                 "textAlign": "center",
-            #                 "color": "#6783a9",
-            #                 "fontFamily": "Roboto, sans-serif",
-            #             },
-            #         )
-            #     ]
-
-            # else:
-
-            #     # federal_audit_findings_json            
-            #     json_data = json.loads(data["9"])
-            #     audit_findings = pd.DataFrame.from_dict(json_data)
-
-            #     audit_findings_table = [
-            #                     dash_table.DataTable(
-            #                         data = audit_findings.to_dict("records"),
-            #                         columns = [{"name": i, "id": i} for i in audit_findings.columns],
-            #                         style_data = table_data,
-            #                         style_data_conditional=[
-            #                             {
-            #                                 "if": {
-            #                                     "column_id": "Federal Audit Findings",
-            #                                 },
-            #                                 "borderRight": ".5px solid #6783a9",
-            #                             },
-            #                             { # Kludge to get bottom header border to show in first column
-            #                                 "if": {
-            #                                     "filter_query": "{Federal Audit Findings} eq "Audit is free of findings of material weakness""
-            #                                 },
-            #                                 "borderTop": ".5px solid #6783a9",
-            #                             },
-            #                         ],
-            #                         style_header = table_header,
-            #                         style_header_conditional=[
-            #                             {
-            #                                 "if": {
-            #                                     "column_id": "Federal Audit Findings",
-            #                                 },
-            #                                 "borderRight": ".5px solid #6783a9",
-            #                                 "borderBottom": ".5px solid #6783a9",
-            #                                 "textAlign": "left"
-            #                             },
-            #                         ],
-            #                         style_cell = table_cell,
-            #                         style_cell_conditional=[
-            #                             {
-            #                                 "if": {
-            #                                     "column_id": "Federal Audit Findings"
-            #                                 },
-            #                                 "textAlign": "left",
-            #                                 "borderRight": ".5px solid #6783a9",
-            #                                 "borderBottom": ".5px solid #6783a9",
-            #                                 "paddingLeft": "20px",
-            #                                 "width": "70%"
-            #                         },
-            #                         ],
-            #                     )
-            #     ]
-
     return (
         revenue_expenses_fig, assets_liabilities_fig, financial_position_table,financial_activities_table,
         RandE_title, AandL_title, FP_title, FA_title, financial_ratios_table, per_student_table,
         main_container, empty_container, no_data_to_display, financial_analysis_notes_string
-     ) # audit_findings_table,
+     )
 
 def layout():
     return html.Div(
@@ -1002,23 +670,7 @@ def layout():
                                         ),
                                     ],
                                     className = "bare-container--flex--center twelve columns"
-                                ),
-                                # html.Div(
-                                #     [                                
-                                #         html.Div(
-                                #             [
-                                #                 html.Div(
-                                #                     [
-                                #                         html.Div(id="financial-analysis-radio", children=[]),
-                                #                     ],
-                                #                     id = "radio-group-finance",
-                                #                     ),
-                                #             ],
-                                #             id = "financial-analysis-radio-container",
-                                #         ),
-                                #     ],
-                                #     className = "bare-container--flex--center twelve columns",
-                                # ),                                
+                                ),                              
                                 html.Div(
                                     [     
                                         html.Div(
@@ -1061,14 +713,6 @@ def layout():
                                             ],
                                             className = "bare-container--flex twelve columns",
                                         ),
-                                        # html.Div(
-                                        #     [
-                                        #         html.Label("Federal Audit Findings", style=label_style),
-                                        #         html.P(""),
-                                        #         html.Div(id="audit-findings-table")
-                                        #     ],
-                                        #     className = "pretty_container six columns"
-                                        # ),
                                         html.Div(
                                             [
                                                 html.Div(

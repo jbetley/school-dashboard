@@ -346,7 +346,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
         data_tested = data.filter(regex="Total Tested|Cohort Count|Year", axis=1).copy()
         data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
 
-        #TODO: we don't use CN-Size at all- remove (think only in this file - but check)
+        # NOTE: Currently do not use CN-Size (Corp N-Size) for anything, but leaving here just in case
         # temp name N-Size cols in order to differentiate.
         if data_geo_code == school_geo_code:
             data_tested = data_tested.rename(columns={c: str(c)+"CN-Size" for c in data_tested.columns if c not in ["Category"]})

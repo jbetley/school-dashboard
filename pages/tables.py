@@ -8,6 +8,7 @@
 import pandas as pd
 from typing import Tuple
 import re
+import numpy as np
 from dash import dash_table, html
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
@@ -1626,7 +1627,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
         def create_tooltip(id: list) -> Tuple[list,list]:
 
-            # TODO: Fix seperation of 1.7.a and 1.7.b (HS) - move to separate table
+            # TODO: Fix 1.7.a and 1.7.b (HS) - move to separate tables
             # TODO: Fix separation of AHS 1.2.a and 1.2.b
             # NOTE: There is a known bug in HoverCard that can cause the browser to hang if the pop
             # up opens in a space where there is no room for it (e.g., if it is set to position "top"
@@ -1636,11 +1637,11 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             # See: https://github.com/snehilvj/dash-mantine-components/issues/180
             # https://community.plotly.com/t/dash-mantine-datepicker/75251/2
 
-            print(id)
             if not id:
                 header = []
                 body = []
             else:
+                # These metrics share ratings with their counterparts (1.1.b,1.4.f,& 1.7.d)
                 if id[0] == "1.1.a" or id[0] == "1.4.e" or id[0] == "1.7.c":
                     header_string = id[0] + " & " + id[1]
                 else:
@@ -1662,7 +1663,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                     for s in range(0, len(metric_strings[id[0]])):
                         if metric_strings[id[0]][s]:
 
-                            # use actual id and 'im-very-special' class to ensure metrics with only three
+                            # use id and 'im-very-special' class to ensure metrics with only three
                             # ratings have the third rating colored red rather than orange
                             if id[0] == "1.1.a" and s == 3:
                                 rows.append(html.Tr([html.Td(ratings[s],id="im-very-special"), html.Td(metric_strings[id[0]][s])]))
@@ -1840,3 +1841,113 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         ]
 
     return table_layout
+
+def create_financial_analysis_table(data: pd.DataFrame, categories: list) -> list:
+
+    category_data = data.loc[data["Category"].isin(categories)]
+
+    years = [c for c in category_data if "Category" not in c]
+
+    print(years)
+    tmp_category = category_data["Category"]
+    category_data = category_data.drop("Category", axis=1)
+
+    # only calculate "% Change" if the number of columns with all zeros is
+    # equal to 0 (e.g., all columns have nonzero values) force % formatting
+
+    # special case for revenue per student table
+    if "ADM Average" in categories:
+        # divide category by ADM and then drop ADM row
+        category_data = category_data.div(category_data.iloc[len(category_data)-1])
+        category_data = category_data.iloc[:-1]
+    
+    # Find % change for all tables
+    if category_data.sum().eq(0).sum() == 0:
+
+        category_data["% Change"] = (category_data[years[1]] - category_data[years[0]]).div(abs(category_data[years[0]]))
+        category_data["% Change"] = pd.Series(["{0:.2f}%".format(val * 100) for val in category_data["% Change"]], index = category_data.index)
+
+    else:
+
+        category_data["% Change"] = "N/A"
+
+    # format numbers (since we are converting values to strings, we cannot vectorize,
+    # need to iterate through each series)
+    for year in years:
+        category_data[year] = pd.Series(["{:,.2f}".format(val) for val in category_data[year]], index = category_data.index)
+
+    # other clean-up for display purposes
+    category_data.replace("nan","0", inplace=True)
+    category_data.replace(["inf%", "0.00", "0.0", "0", np.inf, -np.inf], "N/A", inplace=True)
+
+    category_data.insert(loc=0,column="Category",value = tmp_category)
+
+    category_data = category_data.reset_index(drop=True)
+
+    table = [
+        dash_table.DataTable(
+            category_data.to_dict("records"),
+            columns = [{"name": i, "id": i} for i in category_data.columns],
+            style_data = {
+                "fontSize": "12px",
+                "fontFamily": "Inter, sans-serif",
+            },
+            style_data_conditional = [
+                {
+                    "if": {
+                        "column_id": "Category",
+                    },
+                    "borderRight": ".5px solid #4682b4",
+                },
+                {
+                    "if": {
+                        "state": "selected"
+                    },
+                    "backgroundColor": "rgba(112,128,144, .3)",
+                    "border": "thin solid silver"
+                }                        
+            ],
+            style_header = {
+                "height": "20px",
+                "backgroundColor": "#ffffff",
+                "borderBottom": ".5px solid #6783a9",
+                "borderTop": "none",
+                "borderRight": "none",
+                "borderLeft": "none",                
+                "fontSize": "12px",
+                "fontFamily": "Inter, sans-serif",
+                "color": "#6783a9",
+                "textAlign": "center",
+                "fontWeight": "bold"
+            },
+            style_header_conditional = [
+                {
+                    "if": {
+                        "column_id": "Category",
+                    },
+                    "borderRight": ".5px solid #6783a9",
+                    "borderBottom": ".5px solid #6783a9",
+                    "textAlign": "left"
+                },
+            ],
+            style_cell = {
+                "border": "none",
+                "whiteSpace": "normal",
+                "height": "auto",
+                "textAlign": "center",
+                "color": "#6783a9",
+                "minWidth": "25px", "width": "25px", "maxWidth": "25px"
+            },
+            style_cell_conditional = [
+                {
+                    "if": {
+                        "column_id": "Category"
+                    },
+                    "textAlign": "left",
+                    "paddingLeft": "20px",
+                    "width": "40%"
+                },
+            ]  
+        )
+    ]
+    return table
