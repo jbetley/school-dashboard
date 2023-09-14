@@ -14,11 +14,16 @@
 #   Christel House South (CHS/CHWMHS)
 #   Circle City Prep (Ele/Mid)
 
-# flask and flask-login #
-# https://levelup.gitconnected.com/how-to-setup-user-authentication-for-dash-apps-using-python-and-flask-6c2e430cdb51
+# The Flask login code was adapted for Pages based on Nader Elshehabi's article:
+# https://dev.to/naderelshehabi/securing-plotly-dash-using-flask-login-4ia2
+# https://github.com/naderelshehabi/dash-flask-login
+# and has been made available under the MIT license.
+# (See https://github.com/naderelshehabi/dash-flask-login/blob/main/LICENSE.md)
+
+# This version was updated by Dash community member @jinnyzor. For more info, see:
+# https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507
 # https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/38
-# https://stackoverflow.com/questions/52286507/how-to-merge-flask-login-with-a-dash-application
-# https://python-adv-web-apps.readthedocs.io/en/latest/flask_db2.html
+# https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/55
 
 import os
 from flask import Flask, url_for, redirect, request, render_template, session, jsonify
@@ -79,7 +84,7 @@ def load_user(id):
 @server.before_request
 def check_login():
     if request.method == "GET":
-        if request.path in ["/login"]:
+        if request.path in ["/login", "/logout"]: # testing /logout
             return
         if current_user:
             if current_user.is_authenticated:
@@ -88,7 +93,6 @@ def check_login():
                 for pg in dash.page_registry:
                     if request.path == dash.page_registry[pg]["path"]:
                         session["url"] = request.url
-
         return redirect(url_for("login"))
     else:
         if current_user:
@@ -96,19 +100,17 @@ def check_login():
                 return
         return jsonify({"status": "401", "statusText": "unauthorized access"})
 
-# Login logic
-message = "Invalid username and/or password."
-
 @server.route("/login", methods=["GET", "POST"])
-def login():
+def login(message = ""):
     if request.method == "GET":
+
         # if user is authenticated - redirect to dash app
         if current_user.is_authenticated:
             return redirect("/")
 
         # otherwise show the login page
         return render_template("login.html", message=message)
-
+        
     if request.method == "POST":
         if request.form:
             user = request.form["username"]
@@ -117,6 +119,7 @@ def login():
             # Get user_data from the User object matching the provided username
             user_data = User.query.filter_by(username=user).first()
 
+            message = "Invalid username and/or password."
             if user_data:
                 # check a hash of the provided password against the hashed password stored in the
                 # User object
@@ -131,9 +134,16 @@ def login():
                             session["url"] = None
                             return redirect(url)    # redirect to target url
                     return redirect("/")            # redirect to home
-
-    # Redirect to login page on error
-    return redirect(url_for("login", error=1))
+                return render_template('login.html', message=message)
+            else:
+                return render_template('login.html', message=message)
+    else:
+        if current_user:
+            if current_user.is_authenticated:
+                return redirect('/')
+    
+    return render_template('login.html', message=message)
+    # return redirect(url_for("login", error=1))
 
 @server.route("/logout", methods=["GET"])
 def logout():

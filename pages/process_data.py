@@ -8,13 +8,12 @@
 # TODO: Explore serverside disk caching for data loading
 #https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
 
-# import time
 from typing import Tuple
 import pandas as pd
 import numpy as np
 import itertools
 
-from .load_data import grades, ethnicity, subgroup, get_school_index, get_graduation_data
+from .load_data import grades, ethnicity, subgroup, info_categories, get_school_index, get_graduation_data
 from .calculations import calculate_percentage, calculate_difference, calculate_proficiency, recalculate_total_proficiency, \
     calculate_graduation_rate, calculate_sat_rate, conditional_fillna, get_excluded_years
 
@@ -724,3 +723,43 @@ def process_growth_data(data: pd.DataFrame, category: str) -> Tuple[pd.DataFrame
     table_data = table_data.reset_index()
 
     return fig_data, table_data
+
+def merge_schools(school_data: pd.DataFrame, corporation_data: pd.DataFrame, comparison_data: pd.DataFrame, categories: list, corp_name: str) -> pd.DataFrame:
+    """
+    Takes three dataframes of school academic data, drops Categories not tested by the school and merges them.
+
+    Args:
+        school_data (pd.DataFrame): academic data from the selected school
+        corporation_data (pd.DataFrame): academic data from the school corporation where the school is located
+        comparison_data (pd.DataFrame): academic data from comparable schools (may or may not be in school corp)
+        categories (list): a list of academic categories
+        corp_name (str): the name of the school corporation
+
+    Returns:
+        final_data (pd.DataFrame): all dataframes cleaned up and combined
+    """
+    categories = [c for c in categories if c not in ["School Name","Low Grade", "High Grade"]]
+    all_categories = categories + info_categories
+
+    school_columns = [i for i in categories if i in school_data.columns]
+
+    # sort corp data by the school columns (this excludes any categories
+    # not in the school data)
+    corporation_data = corporation_data.loc[:, corporation_data.columns.isin(school_columns)].copy()
+
+    # add the school corporation name
+    corporation_data["School Name"] = corp_name
+
+    # concatenate the school and corporation dataframes, filling empty values (e.g., Low and High Grade) with ""
+    first_merge_data = pd.concat([school_data, corporation_data], sort=False).fillna("")
+
+    # print("Merging")
+    # # filter comparable schools
+    # print(school_columns)
+    comparison_data = comparison_data.loc[:, comparison_data.columns.isin(all_categories)].copy()
+
+    # concatenate school/corp and comparison dataframes
+    combined_data = pd.concat([first_merge_data,comparison_data])
+    combined_data = combined_data.reset_index(drop=True)
+
+    return combined_data

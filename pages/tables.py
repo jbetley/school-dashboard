@@ -863,7 +863,10 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
 
         if "SAT" in label:
             data.columns = data.columns.str.replace("School", "At Benchmark", regex=True)
-            school_headers = [y for y in data.columns if "At Benchmark" in y]            
+            school_headers = [y for y in data.columns if "At Benchmark" in y]
+        elif "Graduation Rate":
+            data.columns = data.columns.str.replace("School", "Rate", regex=True)
+            school_headers = [y for y in data.columns if "Rate" in y]
         else:
             data.columns = data.columns.str.replace("School", "Proficiency", regex=True)
             school_headers = [y for y in data.columns if "Proficiency" in y]
@@ -1015,7 +1018,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
                     "type": "numeric",
                     "format": Format(scheme=Scheme.percentage, precision=2, sign=Sign.parantheses),
                 }
-                if "Proficiency" in col or "At Benchmark" in col
+                if "Proficiency" in col or "At Benchmark" in col or "Rate" in col
                 
                 else
                     {
@@ -1816,13 +1819,20 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
                 "textAlign": "left",
                 "paddingLeft": "30px"
             }
-        ]
+        ],
+        # This has the effect of hiding the header row
+        css=[
+            {
+                'selector': 'tr:first-child',
+                'rule': 'display: none',
+            },
+        ],
     )
 
-    # bar-chart tables (Math, ELA, & IREAD) should have a label
-    # multi-bar chart tables (by Subgroup, by Ethnicity) should not have a label
-    # this is for formatting reasons
-    if data.columns.str.contains("Total").any() == True or data.columns.str.contains("IREAD").any() == True:
+    # bar-chart tables (Math, ELA, & IREAD) should have a label multi-bar chart tables
+    # (by Subgroup, by Ethnicity) should not have a label this is for formatting reasons.
+    # this assumes label is set to "" for multi-bar charts
+    if label:
         table_layout = [
             html.Div(
                 [

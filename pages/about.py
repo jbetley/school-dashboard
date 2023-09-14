@@ -89,7 +89,7 @@ def update_about_page(year: str, school: str):
                 "Added 2023 IREAD Data for all K-8 schools and school corporations.",
                 "Added 2023 SAT Scores  for all high schools and school corporations.",
                 "Added 2023 Demographic Data  for all schools and school corporations.",
-                "Added 2019-22 Growth Data  for all schools and school corporations.",
+                "Added 2019-22 Growth Data  for all ICSB schools.",
                 "Beta version of site released to production."
                 ],                
         }

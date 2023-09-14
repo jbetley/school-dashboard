@@ -371,6 +371,7 @@ def round_nearest(data: pd.DataFrame, step: int) -> int:
     Returns:
         int: an integer representing the value of each tick
     """
+
     max_val = data.melt().value.max()
     
     x = max_val / step
@@ -546,16 +547,18 @@ def find_nearest(school_idx: pd.Index, data: pd.DataFrame) -> Tuple[np.ndarray,n
     """
     Based on https://stackoverflow.com/q/43020919/190597
 
-    Other (maybe faster) options:
-    https://stackoverflow.com/questions/64996186/find-closest-lat-lon-observation-from-one-pandas-dataframe-for-each-observatio
-    https://stackoverflow.com/questions/71553537/how-to-find-nearest-nearest-place-by-lat-long-quickly
-
     Used to find the [20] nearest schools to the selected school.
  
     Takes a dataframe of schools and their Lat and Lon coordinates and the index of the
     selected school within that list. Calculates the distances of all schools in the
     dataframe from the lat/lon coordinates of the selected school using the scipy.spatial
     KDTree method, which is reasonably quick.
+
+    Other (maybe faster) options:
+    https://stackoverflow.com/questions/64996186/find-closest-lat-lon-observation-from-one-pandas-dataframe-for-each-observatio
+    https://stackoverflow.com/questions/71553537/how-to-find-nearest-nearest-place-by-lat-long-quickly
+    https://medium.com/bukalapak-data/geolocation-search-optimization-5b2ff11f013b
+    https://stackoverflow.com/questions/57974283/retreiving-neighbors-with-geohash-algorithm
 
     Args:
         school_idx (pd.Index): the dataFrame index of the selected school

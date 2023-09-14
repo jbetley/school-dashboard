@@ -282,7 +282,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     print(f'Time to process stacked bar chart: ' + str(time.process_time() - t12))    
     return fig_layout
 
-def make_line_chart(values: pd.DataFrame) -> list: #, label: str) -> list:
+def make_line_chart(values: pd.DataFrame) -> list:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
     series of strings (if applicable) detailing missing data.
@@ -877,6 +877,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         # keep everything between | and "Benchmark %"
         data.columns = data.columns.str.replace("Benchmark %","")
         data.columns = data.columns.str.replace("School Total\|","", regex = True)
+    
     else:
         data.columns = data.columns.str.split('|').str[0]
 
@@ -925,7 +926,6 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
         barmode = 'group',
         custom_data = ['School Name'],
         text = text_values,
-        # title=label,    # ADD BACKGROUND (style like label__header)
     )
 
     fig.update_yaxes(

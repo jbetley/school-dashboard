@@ -14,16 +14,32 @@ from .tables import create_comparison_table
 
 def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: list, school_name: str) -> list:
 
-    if data_type == "EBRW" or data_type == "Math" or data_type == "School Total":
-        search_string = "Benchmark"
+    tested_categories = []
+
+    if data_type == "School Total":
+        search_string = data_type
+
+        for c in categories:
+            tested_categories.append(c + " Benchmark %")
+
+    elif data_type == "EBRW" or data_type == "Math":
+        search_string = data_type + " Benchmark %"
+        
+        for c in categories:
+            tested_categories.append(c + "|" + search_string)
+
     elif data_type == "Graduation Rate":
         search_string = data_type
+    
+        for c in categories:
+            tested_categories.append(c + "|" + search_string)
     else:
         final_analysis_group = []   # type:list
 
         return final_analysis_group
-    
+
     analysis_cols = [col for col in data.columns if search_string in col and any(substring for substring in categories if substring in col)]
+
     analysis_cols = info_categories + analysis_cols
     analysis_data = data[analysis_cols]
 
@@ -32,26 +48,25 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
     # data will always have at least three cols (School Name, Low Grade, High Grade)
     if len(analysis_data.columns) > 3:
 
-        # NOTE: For transparency purposes, we want to identify all categories that are missing from
+         # NOTE: For transparency purposes, we want to identify all categories that are missing from
         # the possible dataset, including those that aren't going to be displayed (because the school
         # is missing them). Because there are many cases where there wont be any data at all (eg, it
         # hasn't yet been released, or there is no data for a particular yet. So we need to check whether
         # there is any data to display before and after we collect the missing category information. After
         # we collect any missing information, we need to drop any columns where the school has no data and
         # then check again to see if the dataframe has any info.
-        analysis_data, category_string, school_string = identify_missing_categories(analysis_data, analysis_cols)
-        
+        analysis_data, category_string, school_string = identify_missing_categories(analysis_data, tested_categories)
+
         # Once the missing category and missing school strings are built, we drop any columns
         # where the school has no data by finding the index of the row containing the school
-        # name and dropping all columns where the row at school_name_idx has a NaN value                    
+        # name and dropping all columns where the row at school_name_idx has a NaN value
         school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
         analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
-        
+
         if len(analysis_data.columns) > 1:
             analysis_label = create_chart_label(analysis_data)
             analysis_chart = make_group_bar_chart(analysis_data, school_name, analysis_label)
             analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
-            # TODO: Need to parse whether label is needed here (for K8 groups)
             analysis_table = create_comparison_table(analysis_table_data, school_name,"")
 
             final_analysis_group = create_group_barchart_layout(analysis_chart,analysis_table, category_string, school_string)
