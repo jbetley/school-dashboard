@@ -98,7 +98,10 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
         # don't display the school name in table title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
-            table_title = "Audited Financial Information"
+            if selected_school["Guest"].values[0] == "Y":
+                table_title = "Financial Information (Unavailable)"
+            else:
+                table_title = "Audited Financial Information"                
         else:
             table_title = "Audited Financial Information (" + financial_data["School Name"][0] + ")"
 

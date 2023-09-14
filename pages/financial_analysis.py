@@ -98,7 +98,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     # ensure consistent data display throughout
     display_years = [str(previous_year_numeric)] + [year]
     
-    financial_analysis_notes_string = "Only the most recent years of audited data are shown."
+    if selected_school["Guest"].values[0] == "Y":
+        financial_analysis_notes_string = "SAMPLE DATA"
+    else:
+        financial_analysis_notes_string = "Only the most recent years of audited data are shown."
 
     if radio_value == "network-finance":
         network_id = selected_school["Network"].values[0]
@@ -143,7 +146,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     else:
 
         # If Guest School - load dummy data
-        if (financial_data.isna().sum() > 30).sum() > 10:
+        if selected_school["Guest"].values[0] == "Y":
             financial_data = get_financial_data("9999")
 
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)

@@ -600,7 +600,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
         # The vectorized way to run calculations between different rows of the
         # same column is to shift a copy of the column either up or down using
-        # shift. shift(shift_value) moves the column up one row. Shift(1) moves the column
+        # shift. shift(-1) moves the column up one row. Shift(1) moves the column
         # down one row.  A shift value of 1 should be used in this case (descending).
         # If the columns are in ascending order, use a shift value of -1
         # NOTE: if switch to ascending order, uncomment the next block AND flip the
@@ -627,20 +627,20 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         # Day's Cash calculation
         metric_grid['Days Cash on Hand'] = \
             metric_data['Unrestricted Cash'] / ((metric_data['Operating Expenses'] - metric_data['Depreciation/Amortization'])/365)
-
+             
         # returns true if day's cash is > 45 or >= 30 and CY > PY
         def days_cash_metric_calc(cur,diff):
             return 'MS' if ((cur > 45) | ((cur >= 30) & (diff == True))) else 'DNMS'
     
         metric_grid['Days Cash Trend'] = metric_grid['Days Cash on Hand'] > metric_grid['Days Cash on Hand'].shift(shift_value)
-        
+
         metric_grid['Days Cash Metric'] = \
             metric_grid.apply(lambda x: days_cash_metric_calc(x['Days Cash on Hand'], x['Days Cash Trend']), axis=1)
 
         # Annual Enrollment Change calculation
         metric_grid['Annual Enrollment Change'] = \
-            (metric_data['ADM Average'].shift(shift_value) - metric_data['ADM Average']) / metric_data['ADM Average']
-        
+            (metric_data['ADM Average'] - metric_data['ADM Average'].shift(shift_value)) / metric_data['ADM Average'].shift(shift_value)
+
         metric_grid['Annual Enrollment Change Metric'] = \
             metric_grid['Annual Enrollment Change'].apply(lambda x: 'MS' if (x > -0.1) else 'DNMS')    
 
@@ -654,6 +654,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
         # Change in Net Assets Margin/Aggregated Three-Year Margin
         metric_grid['Change in Net Assets Margin'] = metric_data['Change in Net Assets'] / metric_data['Operating Revenues'] 
+
         metric_grid['Aggregated Three-Year Margin'] = (
             metric_data['Change in Net Assets'] + metric_data['Change in Net Assets'].shift(shift_value) + metric_data['Change in Net Assets'].shift(shift_value + 1)
             ) / (
@@ -707,8 +708,8 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
             metric_grid['Debt to Asset Ratio'].apply(lambda x: 'MS' if (x < 0.9) else 'DNMS')    
 
         # Cash Flow and Multi-Year Cash Flow
-        metric_grid['Cash Flow'] = metric_data['Unrestricted Cash'] - metric_data['Unrestricted Cash'].shift()
-
+        metric_grid['Cash Flow'] = metric_data['Unrestricted Cash'] - metric_data['Unrestricted Cash'].shift(shift_value)
+    
         # the YR1 value of 'Cash Flow' is equal to the YR1 value of 'Unrestricted Cash'
         metric_grid.loc[shift_value-1,'Cash Flow'] = metric_data['Unrestricted Cash'].iloc[shift_value-1]
 

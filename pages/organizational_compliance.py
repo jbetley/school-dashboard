@@ -8,7 +8,7 @@ import dash
 from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 
-from .load_data import get_financial_data, max_display_years
+from .load_data import get_financial_data, get_school_index, max_display_years
 from .tables import no_data_table, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
 
@@ -24,6 +24,7 @@ def update_organizational_compliance(school, year):
     if not school:
         raise PreventUpdate
 
+    selected_school = get_school_index(school)
     selected_year_numeric = int(year)
 
     # get organizational comliance data from financial data and clean-up
@@ -34,6 +35,9 @@ def update_organizational_compliance(school, year):
         org_compliance_table = no_data_table("Organizational and Operational Accountability")    
 
     else:
+
+        if selected_school["Guest"].values[0] == "Y":        
+            financial_data = get_financial_data("9999")
 
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")

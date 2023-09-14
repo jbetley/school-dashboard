@@ -786,7 +786,13 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
             if excluded_years:
                 growth_data = growth_data[~growth_data["Test Year"].isin(excluded_years)]
 
-            if len(growth_data.index) > 0:
+            if len(growth_data.index) == 0 or selected_school["Guest"].values[0] == "Y":
+
+                main_growth_container = {"display": "none"}
+                empty_growth_container = {"display": "block"}
+                empty_container = {"display": "none"}
+                
+            else:
 
                 main_growth_container = {"display": "block"}
 

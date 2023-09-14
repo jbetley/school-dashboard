@@ -11,7 +11,7 @@ import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
-from .load_data import max_display_years, current_academic_year, get_school_index, get_financial_data
+from .load_data import max_display_years, get_school_index, get_financial_data
 from .calculate_metrics import calculate_financial_metrics
 from .tables import no_data_page, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
@@ -99,7 +99,10 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
         # don't display school name in title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
-            table_title = "Financial Accountability Metrics"
+            if selected_school["Guest"].values[0] == "Y":
+                table_title = "Financial Accountability (SAMPLE DATA)"
+            else:            
+                table_title = "Financial Accountability Metrics"
         else:
             table_title = "Financial Accountability Metrics (" + financial_data["School Name"][0] + ")"
 
@@ -314,20 +317,16 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     # if df is empty
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 
-        financial_metrics_table = []                #type: list
-        financial_indicators_table = []             #type: list
-        financial_metrics_definitions_table = []    #type: list
+        # financial_metrics_table = []                #type: list
+        # financial_indicators_table = []             #type: list
+        # financial_metrics_definitions_table = []    #type: list
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
 
     else:
 
-        # if a df only has ADM cols, it is likely a Non-ICSB charter school added for demonstration
-        # purposes - in this case we want to display all of the tables without datadf[df.drop(cols, axis=1).isna().all(1)]
-
-        # NOTE: Going to find a better way, but this sums the number of columns that have more than 30 null values
-        # and is true if that number is greater than 10. - We load dummy data.
-        if (financial_data.isna().sum() > 30).sum() > 10:
+        # NOTE: If the selected school is a guest school, load dummy data.
+        if selected_school["Guest"].values[0] == "Y":        
             financial_data = get_financial_data("9999")
 
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
@@ -350,9 +349,9 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         # maybe think twice (or three times) before doing it)
         if (len(financial_data.columns) <= 1) | ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == "0")):
 
-            financial_metrics_table = []
-            financial_indicators_table = []
-            financial_metrics_definitions_table = []
+            # financial_metrics_table = []
+            # financial_indicators_table = []
+            # financial_metrics_definitions_table = []
             main_container = {"display": "none"}
             empty_container = {"display": "block"}        
         

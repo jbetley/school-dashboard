@@ -1848,7 +1848,6 @@ def create_financial_analysis_table(data: pd.DataFrame, categories: list) -> lis
 
     years = [c for c in category_data if "Category" not in c]
 
-    print(years)
     tmp_category = category_data["Category"]
     category_data = category_data.drop("Category", axis=1)
 
