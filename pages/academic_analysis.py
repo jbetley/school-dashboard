@@ -15,7 +15,7 @@ import numpy as np
 # import local functions
 from .load_data import grades, ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
     get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data, get_black_box
+    get_hs_corporation_academic_data, get_black_box, get_gradespan
 from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
     merge_schools
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
@@ -62,6 +62,71 @@ def radio_type_selector(school: str, radio_type_value: str):
         type_value = "k8"   # default
 
     return options, type_value, radio_input_container
+
+# Grade selector
+@callback(
+    Output("academic-analysis-radio-grades", "options"),
+    Output("academic-analysis-radio-grades","value"),
+    Input("charter-dropdown", "value")
+)
+def radio_grade_selector(school: str):
+
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
+
+    grades = get_gradespan(school)
+
+    options = [
+        {"label": "3rd", "value": "3"},
+        {"label": "4th", "value": "4"},
+        {"label": "5th", "value": "5"},
+        {"label": "6th", "value": "6"},
+        {"label": "7th", "value": "7"},
+        {"label": "8th", "value": "8"},
+        {"label": "Total", "value": "total"},        
+    ]
+
+    if school_type == "K12":
+    
+        options = [
+            {"label": "K-8", "value": "k8"},
+            {"label": "High School", "value": "highschool"},
+        ]
+        radio_input_container = {'display': 'block'}
+
+    else:
+        type_value = "k8"
+        options = []
+        radio_input_container = {'display': 'none'}
+
+
+    grade_options = []
+    grade_value = []
+    # value_default = "all"
+
+    # if not ctx.triggered:
+    #     raise PreventUpdate()
+    
+    # else:
+    #     if ctx.triggered_id == 'academic-information-radio-type':
+
+    #         if radio_type == "growth" or radio_type == "proficiency":
+    #             if radio_category_value:
+    #                 category_value = radio_category_value
+    #             else:
+    #                 category_value = value_default
+
+    #             if radio_category_options:
+    #                 category_options = radio_category_options
+    #             else:
+    #                 category_options = options_default
+
+    #         else:   # highschool
+    #             category_value = ""
+    #             category_options = []
+    
+    return grade_options, grade_value
+
 
 # Set dropdown options for comparison schools
 @callback(
@@ -120,6 +185,7 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
         # the variable "overlap" is one less than the the number of grades that we want as a
         # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
 
+        grades = get_gradespan(school)
         # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
         if school_type != "AHS":
 

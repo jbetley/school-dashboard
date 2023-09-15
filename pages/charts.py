@@ -352,16 +352,6 @@ def make_cool_line_chart(values: pd.DataFrame, label: str) -> list:
                 color_discrete_sequence=color,
             )
 
-            # legend shenanigans - adjust location based on columns
-            # if data.columns.str.contains("Grade").any():
-            #     y_value = -0.5
-            # elif data.columns.str.contains("Black").any():
-            #     y_value = -0.4
-            # elif data.columns.str.contains("Free").any():
-            #     y_value = -0.7
-            # else:
-            #     y_value = -0.4
-
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
             fig.update_traces(hovertemplate=None)   # type: ignore
             fig.update_layout(                      # type: ignore
@@ -376,14 +366,8 @@ def make_cool_line_chart(values: pd.DataFrame, label: str) -> list:
                 xaxis = dict(
                     title='',
                     type='date',
-                    # tickmode = 'array',
-                    # tickmode = 'linear',
                     tickvals = data['Year'],
                     tickformat='%Y',
-                    # tick0 = data['Year'][0] - 1,
-                    # dtick ='M6',
-                    # categoryorder = 'array',
-                    # categoryarray = data['Year'],
                     mirror=True,
                     showline=True,
                     linecolor='#b0c4de',
@@ -392,24 +376,21 @@ def make_cool_line_chart(values: pd.DataFrame, label: str) -> list:
                     showgrid=True,
                     gridcolor='#b0c4de',
                     zeroline=False,
-                    # range = add_years
                     ),   
                 legend=dict(
-                    orientation='h',
+                    orientation='v',
                     yanchor="bottom",
                     y= .5,
-                    xanchor="left",
-                    x=0.01
+                    xanchor="right",
+                    x=-.05
                 ),
                 hovermode='x unified',
                 height=300,
                 legend_title='',
             )
 
-            # NOTE: Set the range based on the highest single value in the dataframe. IREAD is set to 100%.
-            # At higher ranges, the values compress together and are hard to read (unfortunately).
-            data['Year'] = data['Year'].astype(str)
 
+            data['Year'] = data['Year'].astype(str)
             data_max = data.max(numeric_only=True).max()
 
             if data_max < .5:
