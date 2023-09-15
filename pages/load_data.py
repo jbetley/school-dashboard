@@ -547,6 +547,7 @@ def get_black_box(*args):
     search_param = params['category'].replace(" ", "")
     proficient_query = search_param + "TotalProficient"
     tested_query = search_param + "TotalTested"
+
     school_query_str = 'Year, SchoolName, ' + '"' + proficient_query + '", "' + tested_query + '"'
     corp_query_str = 'Year, CorporationName, ' + '"' + proficient_query + '", "' + tested_query + '"'
 
@@ -595,9 +596,9 @@ def get_black_box(*args):
     q3 = text(query_string3)
     
     comp_data = run_query(q3, params)
-
+    
     comp_data[result] = pd.to_numeric(comp_data[proficient], errors='coerce') / pd.to_numeric(comp_data[tested], errors='coerce')
-    comp_data = comp_data.pivot(index='Year', columns='School Name', values='Grade 3|ELA Proficient')
+    comp_data = comp_data.pivot(index='Year', columns='School Name', values=result)
     comp_data = comp_data.reset_index()
 
     result = pd.merge(pd.merge(school_data,corp_data,on='Year'),comp_data,on='Year')

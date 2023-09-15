@@ -19,7 +19,7 @@ from .load_data import grades, ethnicity, subgroup, ethnicity, info_categories, 
 from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
     merge_schools
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
-from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
+from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart, make_cool_line_chart
 from .tables import create_comparison_table, no_data_page, no_data_table
 from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout
 from .string_helpers import create_school_label, combine_school_name_and_grade_levels, create_chart_label, \
@@ -241,7 +241,8 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
         return options, input_warning, comparison_schools
 
 @callback(
-    Output("academic-analysis-notes", "children"),    
+    Output("academic-analysis-notes", "children"),
+    Output("chartz", "children"),    
     Output("fig14c", "children"),
     Output("fig14d", "children"),
     Output("fig-iread", "children"),
@@ -615,14 +616,27 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                         # reset indicies
                         comparison_schools = comparison_schools.reset_index(drop=True)
 
-
         #                 # ELA Proficiency by Grade
 
                         # pd.set_option('display.max_columns', None)
                         # pd.set_option('display.max_rows', None)
                         # TODO This works - Need to add way to change "Grade 3|ELA" variable and create fig
-                        tst = get_black_box(school,comparison_school_list, "Grade 3|ELA")
-                        print(tst)
+
+                        grade_options = grades + ["School Total"]
+
+                        # format grade_option + "|" + subject
+                        
+                        grade_fig_data = get_black_box(school,comparison_school_list, "School Total|ELA") #Grade 3|ELA
+
+                        grade_table_data = grade_fig_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
+
+                        chartz_fig = make_cool_line_chart(grade_fig_data, "Year over Year - School Total|ELA Proficiency")
+
+                        chartz_table = create_comparison_table(grade_table_data, school_name,"")
+                        chartz_category_string = ""
+                        chartz_school_string = ""
+                        chartz = create_group_barchart_layout(chartz_fig, chartz_table,chartz_category_string,chartz_school_string)
+
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
 
@@ -751,6 +765,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                             fig16a1_label = create_chart_label(fig16a1_final_data)
                             fig16a1_chart = make_group_bar_chart(fig16a1_final_data, school_name, fig16a1_label)
                             fig16a1_table_data = combine_school_name_and_grade_levels(fig16a1_final_data)
+
                             fig16a1_table = create_comparison_table(fig16a1_table_data, school_name,"")
 
                             fig16a1 = create_group_barchart_layout(fig16a1_chart,fig16a1_table,fig16a1_category_string,fig16a1_school_string)
@@ -878,7 +893,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
         ]
 
     return (
-        academic_analysis_notes, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
+        academic_analysis_notes, chartz, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
         fig16a1_container, fig16b1, fig16b1_container, fig16a2, fig16a2_container, fig16b2,
         fig16b2_container, k8_analysis_main_container, k8_analysis_empty_container, k8_analysis_no_data,
         grad_overview, grad_overview_container, grad_ethnicity, grad_ethnicity_container,
@@ -966,7 +981,8 @@ def layout():
                                 style= {"display": "none"},
                             ),
                             html.Div(
-                                [                                                                    
+                                [      
+                                    html.Div(id="chartz", children=[]),
                                     html.Div(id="fig14c", children=[]),
                                     html.Div(id="fig14d", children=[]),
                                     html.Div(id="fig-iread", children=[]),

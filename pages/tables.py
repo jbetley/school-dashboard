@@ -1745,6 +1745,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
+# TODO: YEAR COLS TURNING INTO NANS SOMEWHER BETWEEN HERE AND ENXT PRINT
     # drop all columns where the row at school_name_idx has a NaN value
     # TODO: Next two lines should be redundant for HS data, Check for k8 data
     # school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
@@ -1756,10 +1757,16 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     data = data.reset_index(drop=True)
 
     # need to find the index again because the sort has jumbled things up
+    # NOTE: this does not apply to year_over_year analysis tables, which have the school
+    # name in the column header
+    
     school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
 
     # hide the header "School Name"
     data = data.rename(columns = {"School Name" : ""})
+
+# TODO: HERER
+# TODO: columns[1].name in DataTable with ID "comparison-table" is required but it was not provided.
 
     if data.columns.str.contains("School Total").any() == True:
         # keep everything between | and "Benchmark %"
@@ -1769,6 +1776,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         # remove everything between | & % in column name
         data.columns = data.columns.str.replace(r"\|(.*?)\%", "", regex=True)
 
+    print(data)
     # sort on native DataTable is ugly - explore migration to AG Grid 
     table = dash_table.DataTable(
         data.to_dict("records"),

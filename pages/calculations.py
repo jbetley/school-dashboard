@@ -450,7 +450,10 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     """
 
     tmp = data.copy()
-    tmp = tmp.drop("School Name", axis=1)
+    
+    if "School Name" in tmp.columns:
+        tmp = tmp.drop("School Name", axis=1)
+    
     tmp = tmp.set_index("Year")
 
     # Identify and drop rows with no or insufficient data ("***" or NaN/None)
