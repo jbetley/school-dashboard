@@ -15,7 +15,7 @@ import numpy as np
 # import local functions
 from .load_data import grades, ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
     get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data
+    get_hs_corporation_academic_data, get_black_box
 from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
     merge_schools
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
@@ -615,31 +615,14 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                         # reset indicies
                         comparison_schools = comparison_schools.reset_index(drop=True)
 
-                        pd.set_option('display.max_columns', None)
-                        pd.set_option('display.max_rows', None)
 
-                        # ELA Proficiency by Grade
-                        headers_by_grade_ela = []
-                        for g in grades:
-                            headers_by_grade_ela.append(g + "|ELA Proficient %")
-        # TODO: This feels VERY repetitive
-                        fig_by_grade_ela = merge_schools(current_school_data, current_corp_data, comparison_schools, headers_by_grade_ela, corp_name)
+        #                 # ELA Proficiency by Grade
 
-        # TODO: FIx NAN year
-                        headers_by_grade_ela = ["Year"] + info_categories + headers_by_grade_ela
-                        tested_cols = [c for c in headers_by_grade_ela if c in fig_by_grade_ela.columns]
-                        fig_by_grade_ela = fig_by_grade_ela[tested_cols]
-
-                        # drop all columns where the row at school_name_idx has a NaN value
-                        school_name_idx = fig_by_grade_ela.index[fig_by_grade_ela["School Name"].str.contains(school_name)].tolist()[0]
-                        fig_by_grade_ela = fig_by_grade_ela.loc[:, ~fig_by_grade_ela.iloc[school_name_idx].isna()]
-
-                        # No idea what this does                        
-                        fig_by_grade_ela = fig_by_grade_ela.replace(r"^\s*$", np.nan, regex=True)
-
-                        print("WTF")
-                        print(fig_by_grade_ela)
-
+                        # pd.set_option('display.max_columns', None)
+                        # pd.set_option('display.max_rows', None)
+                        # TODO This works - Need to add way to change "Grade 3|ELA" variable and create fig
+                        tst = get_black_box(school,comparison_school_list, "Grade 3|ELA")
+                        print(tst)
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
 

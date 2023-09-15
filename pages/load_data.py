@@ -521,11 +521,85 @@ def get_comparable_schools(*args):
                 FROM academic_data_hs
                 WHERE Year = :year AND SchoolType = "AHS" AND SchoolID IN ({})'''.format( school_str )
     else:   # K8
-        query_string = '''
-            SELECT *
-                FROM academic_data_k8
-                WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
+        if params['year'] == "All":
+            query_string = '''
+                SELECT *
+                    FROM academic_data_k8
+                    WHERE SchoolID IN ({})'''.format( school_str )
+        else:
+            query_string = '''
+                SELECT *
+                    FROM academic_data_k8
+                    WHERE Year = :year AND SchoolID IN ({})'''.format( school_str )
         
     q = text(query_string)
 
     return run_query(q, params)
+
+def get_black_box(*args):
+    keys = ['school_id','comp_list','category']
+    
+    params = dict(zip(keys, args))
+
+    school_str = ', '.join( [ str(int(v)) for v in params['comp_list'] ] )
+    
+    # Query strings (param must be passed in with spaces)
+    search_param = params['category'].replace(" ", "")
+    proficient_query = search_param + "TotalProficient"
+    tested_query = search_param + "TotalTested"
+    school_query_str = 'Year, SchoolName, ' + '"' + proficient_query + '", "' + tested_query + '"'
+    corp_query_str = 'Year, CorporationName, ' + '"' + proficient_query + '", "' + tested_query + '"'
+
+    # Result strings
+    tested = params['category'] + " Total Tested"
+    proficient = params['category'] + " Total Proficient"
+    result = params['category'] + " Proficient"
+    
+    # School Data
+    query_string1 = '''
+        SELECT {}
+            FROM academic_data_k8
+	        WHERE SchoolID = :school_id
+        '''.format( school_query_str )
+    
+    q1 = text(query_string1)
+
+    school_data = run_query(q1, params)
+
+    school_data[school_data["School Name"][0]] = pd.to_numeric(school_data[proficient], errors='coerce') / pd.to_numeric(school_data[tested], errors='coerce')
+    school_data = school_data.drop(['School Name', proficient, tested], axis = 1)
+
+    # Corp Data
+    query_string2 = '''
+        SELECT {}
+	        FROM corporation_data_k8
+	        WHERE CorporationID = (
+		        SELECT GEOCorp
+			        FROM school_index
+			        WHERE SchoolID = :school_id)
+        '''.format( corp_query_str )
+
+    q2 = text(query_string2)
+    
+    corp_data = run_query(q2, params)
+
+    corp_data[corp_data["Corporation Name"][0]] = pd.to_numeric(corp_data[proficient], errors='coerce') / pd.to_numeric(corp_data[tested], errors='coerce')
+    corp_data = corp_data.drop(['Corporation Name', proficient, tested], axis = 1)
+
+    # Comparison School Data
+    query_string3 = '''
+            SELECT {}
+                FROM academic_data_k8
+                WHERE SchoolID IN ({})'''.format( school_query_str, school_str )
+
+    q3 = text(query_string3)
+    
+    comp_data = run_query(q3, params)
+
+    comp_data[result] = pd.to_numeric(comp_data[proficient], errors='coerce') / pd.to_numeric(comp_data[tested], errors='coerce')
+    comp_data = comp_data.pivot(index='Year', columns='School Name', values='Grade 3|ELA Proficient')
+    comp_data = comp_data.reset_index()
+
+    result = pd.merge(pd.merge(school_data,corp_data,on='Year'),comp_data,on='Year')
+
+    return result
