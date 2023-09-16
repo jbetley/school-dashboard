@@ -67,64 +67,33 @@ def radio_type_selector(school: str, radio_type_value: str):
 @callback(
     Output("academic-analysis-radio-grades", "options"),
     Output("academic-analysis-radio-grades","value"),
-    Input("charter-dropdown", "value")
+    Output("academic-analysis-radio-grades-container","style"),    
+    Input("charter-dropdown", "value"),
+    State("academic-analysis-radio-grades","value"),
 )
-def radio_grade_selector(school: str):
+def radio_grade_selector(school: str, current_value: str):
 
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
-    if school_type == "K8" or school_type = "K12":
+    if school_type == "K8" or school_type == "K12":
         grades = get_gradespan(school)
 
-# TODO: HERE - build options from grades. Make sure no errors for HS or AHS
-        options = [
-            {"label": "3rd", "value": "3"},
-            {"label": "4th", "value": "4"},
-            {"label": "5th", "value": "5"},
-            {"label": "6th", "value": "6"},
-            {"label": "7th", "value": "7"},
-            {"label": "8th", "value": "8"},
-            {"label": "Total", "value": "total"},        
-        ]
-        options = [
-            {"label": "K-8", "value": "k8"},
-            {"label": "High School", "value": "highschool"},
-        ]
-        radio_input_container = {'display': 'block'}
+        grade_options = [{"label": g, "value": g} for g in grades]
+        grade_options.append({"label": "Total", "value": "total"})
+        grade_container = {'display': 'block'}
 
     else:
-        type_value = "k8"
-        options = []
-        radio_input_container = {'display': 'none'}
+        grade_value = "total"
+        grade_options = [{}]  # type: list
+        grade_container = {'display': 'none'}
 
+    if current_value and current_value in grades:
+        grade_value = current_value
+    else:
+        grade_value = "total"   # default
 
-    grade_options = []
-    grade_value = []
-    # value_default = "all"
-
-    # if not ctx.triggered:
-    #     raise PreventUpdate()
-    
-    # else:
-    #     if ctx.triggered_id == 'academic-information-radio-type':
-
-    #         if radio_type == "growth" or radio_type == "proficiency":
-    #             if radio_category_value:
-    #                 category_value = radio_category_value
-    #             else:
-    #                 category_value = value_default
-
-    #             if radio_category_options:
-    #                 category_options = radio_category_options
-    #             else:
-    #                 category_options = options_default
-
-    #         else:   # highschool
-    #             category_value = ""
-    #             category_options = []
-    
-    return grade_options, grade_value
+    return grade_options, grade_value, grade_container
 
 
 # Set dropdown options for comparison schools
@@ -341,10 +310,11 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
     Output("hs-analysis-no-data", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("academic-analysis-radio-type", "value"),    
+    Input("academic-analysis-radio-type", "value"),
+    Input("academic-analysis-radio-grades", "value"),    
     [Input("comparison-dropdown", "value")],
 )
-def update_academic_analysis(school: str, year: str, academic_type: str, comparison_school_list: list):
+def update_academic_analysis(school: str, year: str, academic_type: str, grade_radio: str, comparison_school_list: list):
     if not school:
         raise PreventUpdate
 
@@ -680,17 +650,18 @@ def update_academic_analysis(school: str, year: str, academic_type: str, compari
                         # reset indicies
                         comparison_schools = comparison_schools.reset_index(drop=True)
 
-        #                 # ELA Proficiency by Grade
+        
+                    ## ELA Year over Year Proficiency by Grade
 
-                        # pd.set_option('display.max_columns', None)
-                        # pd.set_option('display.max_rows', None)
-                        # TODO This works - Need to add way to change "Grade 3|ELA" variable and create fig
-
-                        grade_options = grades + ["School Total"]
-
+# TODO: ADD By GRADE FOR MATH - Could also add YoY for Other Categories
+# TODO: Academic Analysis PAge - Current / Academic Analysis Page - Year over Year
                         # format grade_option + "|" + subject
-                        
-                        grade_fig_data = get_black_box(school,comparison_school_list, "School Total|ELA") #Grade 3|ELA
+                        if grade_radio == "total":
+                            grade_category = "School Total|ELA"
+                        else:
+                            grade_category = "Grade " + grade_radio + "|ELA"
+
+                        grade_fig_data = get_black_box(school,comparison_school_list, grade_category)
 
                         grade_table_data = grade_fig_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
 
@@ -1047,6 +1018,36 @@ def layout():
                             html.Div(
                                 [      
                                     html.Div(id="chartz", children=[]),
+                                    html.Div(
+                                            [   
+                                                html.Div(
+                                                    [                                                             
+                                                        html.Div(
+                                                            [
+                                                                html.Div(
+                                                                    [
+                                                                        dbc.RadioItems(
+                                                                            id="academic-analysis-radio-grades",
+                                                                            className="btn-group",
+                                                                            inputClassName="btn-check",
+                                                                            labelClassName="btn btn-outline-primary",
+                                                                            labelCheckedClassName="active",
+                                                                            value=[],
+                                                                            persistence=False,
+                                                                            # persistence_type="memory",
+                                                                        ),
+                                                                    ],
+                                                                    className="radio-group-academic",
+                                                                )
+                                                            ],
+                                                            className = "bare-container--flex--center twelve columns",
+                                                        ),
+                                                    ],
+                                                    className = "row",
+                                                ),                                    
+                                            ],
+                                            id = "academic-analysis-radio-grades-container",
+                                    ),
                                     html.Div(id="fig14c", children=[]),
                                     html.Div(id="fig14d", children=[]),
                                     html.Div(id="fig-iread", children=[]),
