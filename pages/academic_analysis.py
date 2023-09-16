@@ -74,20 +74,19 @@ def radio_grade_selector(school: str):
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
-    grades = get_gradespan(school)
+    if school_type == "K8" or school_type = "K12":
+        grades = get_gradespan(school)
 
-    options = [
-        {"label": "3rd", "value": "3"},
-        {"label": "4th", "value": "4"},
-        {"label": "5th", "value": "5"},
-        {"label": "6th", "value": "6"},
-        {"label": "7th", "value": "7"},
-        {"label": "8th", "value": "8"},
-        {"label": "Total", "value": "total"},        
-    ]
-
-    if school_type == "K12":
-    
+# TODO: HERE - build options from grades. Make sure no errors for HS or AHS
+        options = [
+            {"label": "3rd", "value": "3"},
+            {"label": "4th", "value": "4"},
+            {"label": "5th", "value": "5"},
+            {"label": "6th", "value": "6"},
+            {"label": "7th", "value": "7"},
+            {"label": "8th", "value": "8"},
+            {"label": "Total", "value": "total"},        
+        ]
         options = [
             {"label": "K-8", "value": "k8"},
             {"label": "High School", "value": "highschool"},
@@ -185,7 +184,6 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
         # the variable "overlap" is one less than the the number of grades that we want as a
         # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
 
-        grades = get_gradespan(school)
         # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
         if school_type != "AHS":
 

@@ -6,6 +6,7 @@
 # date:     09/10/23
 
 import pandas as pd
+import re
 from sqlalchemy import create_engine
 from sqlalchemy import text
 
@@ -351,27 +352,20 @@ def get_school_index(school_id):
 def get_gradespan(school_id):
     params = dict(id=school_id)
 
-    print('SQLERATING')
-    query_string = '"Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested"'
     q = text('''
-        SELECT "Grade3|ELATotalTested" as COL1 FROM academic_data_k8 WHERE SchoolID = :id AND "Grade3|ELATotalTested" is NOT NULL
-        UNION
-        SELECT "Grade4|ELATotalTested" as COL2 FROM academic_data_k8 WHERE SchoolID = :id AND "Grade4|ELATotalTested" is NOT NULL
-        UNION
-        SELECT "Grade5|ELATotalTested" FROM academic_data_k8 WHERE SchoolID = :id AND "Grade5|ELATotalTested" is NOT NULL
-        UNION
-        SELECT "Grade6|ELATotalTested" FROM academic_data_k8 WHERE SchoolID = :id AND "Grade6|ELATotalTested" is NOT NULL
-        UNION
-        SELECT "Grade7|ELATotalTested" FROM academic_data_k8 WHERE SchoolID = :id AND "Grade7|ELATotalTested" is NOT NULL
-        UNION
-        SELECT "Grade8|ELATotalTested" FROM academic_data_k8 WHERE SchoolID = :id AND "Grade8|ELATotalTested" is NOT NULL                                                 
-        ''')
+        SELECT "Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested"
+        FROM academic_data_k8
+            WHERE SchoolID = :id
+             ''')
 
     result = run_query(q, params)
 
-    print(result)
+    result = result.dropna(axis=1, how='all')
 
-    return result
+    regex = re.compile(r'\b\d\b')
+    grades = [regex.search(i).group() for i in result.columns.tolist()]
+
+    return grades
 
 def get_financial_data(school_id):
     params = dict(id=school_id)
