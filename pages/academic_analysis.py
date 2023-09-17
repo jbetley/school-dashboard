@@ -15,7 +15,7 @@ import numpy as np
 # import local functions
 from .load_data import grades, ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
     get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data, get_black_box, get_gradespan
+    get_hs_corporation_academic_data, get_black_box, get_gradespan, get_ethnicity
 from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
     merge_schools
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
@@ -79,22 +79,54 @@ def radio_grade_selector(school: str, current_value: str):
     if school_type == "K8" or school_type == "K12":
         grades = get_gradespan(school)
 
-        grade_options = [{"label": g, "value": g} for g in grades]
-        grade_options.append({"label": "Total", "value": "total"})
+        grade_options = [{"label": g, "value": "Grade " + g} for g in grades]
+        grade_options.append({"label": "Total", "value": "School Total"})
         grade_container = {'display': 'block'}
 
     else:
-        grade_value = "total"
+        grade_value = "School Total"
         grade_options = [{}]  # type: list
         grade_container = {'display': 'none'}
 
     if current_value and current_value in grades:
         grade_value = current_value
     else:
-        grade_value = "total"   # default
+        grade_value = "School Total"   # default
 
     return grade_options, grade_value, grade_container
 
+# Ethnicity selector
+# @callback(
+#     Output("academic-analysis-radio-grades", "options"),
+#     Output("academic-analysis-radio-grades","value"),
+#     Output("academic-analysis-radio-grades-container","style"),    
+#     Input("charter-dropdown", "value"),
+#     State("academic-analysis-radio-grades","value"),
+# )
+# def radio_ethnicity_selector(school: str, current_value: str):
+
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
+
+#     if school_type == "K8" or school_type == "K12":
+#         # TODO: Get ethnicities for which school has data
+#         ethnicity = get_ethnicity(school)
+
+#         ethnicity_options = [{"label": g, "value": "Grade " + g} for g in ethnicity]
+#         # grade_options.append({"label": "Total", "value": "School Total"})
+#         ethnicity_container = {'display': 'block'}
+
+#     else:
+#         ethnicity_value = "Black"
+#         ethnicity_options = [{}]  # type: list
+#         ethnicity_container = {'display': 'none'}
+
+#     if current_value and current_value in ethnicity:
+#         ethnicity_value = current_value
+#     else:
+#         ethnicity_value = "Black"   # default
+
+#     return ethnicity_options, ethnicity_value, ethnicity_container
 
 # Set dropdown options for comparison schools
 @callback(
@@ -275,7 +307,8 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
 
 @callback(
     Output("academic-analysis-notes", "children"),
-    Output("chartz", "children"),    
+    Output("yoy-grade-ela", "children"),
+    Output("yoy-grade-math", "children"),        
     Output("fig14c", "children"),
     Output("fig14d", "children"),
     Output("fig-iread", "children"),
@@ -656,22 +689,34 @@ def update_academic_analysis(school: str, year: str, academic_type: str, grade_r
 # TODO: ADD By GRADE FOR MATH - Could also add YoY for Other Categories
 # TODO: Academic Analysis PAge - Current / Academic Analysis Page - Year over Year
                         # format grade_option + "|" + subject
-                        if grade_radio == "total":
-                            grade_category = "School Total|ELA"
-                        else:
-                            grade_category = "Grade " + grade_radio + "|ELA"
+                        ela_grade_category = grade_radio + "|ELA"
+                        math_grade_category = grade_radio + "|Math"
 
-                        grade_fig_data = get_black_box(school,comparison_school_list, grade_category)
+                        # # ethnicity_radio
+                        # ela_ethnicity_category = ethnicity_radio + "|ELA"
+                        # math_ethnicity_category = ethnicity_radio + "|Math"
 
-                        grade_table_data = grade_fig_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
+                        # # subgroup_radio
+                        # ela_subgroup_category = subgroup_radio + "|ELA"
+                        # math_subgroup_category = subgroup_radio + "|Math"
 
-                        chartz_fig = make_cool_line_chart(grade_fig_data, "Year over Year - School Total|ELA Proficiency")
+                        # TODO: Remove duplicate info - passing school, dont need name
+                        def make_yoy_layout (school, name, school_list, category):
+                            fig_data = get_black_box(school,school_list, category)
+                            table_data = fig_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
+                            fig = make_cool_line_chart(fig_data, "Year over Year - FIX ME")
+                            table = create_comparison_table(table_data, name,"")
+                            category_string = ""
+                            school_string = ""
+                            layout = create_group_barchart_layout(fig, table, category_string, school_string)
 
-                        chartz_table = create_comparison_table(grade_table_data, school_name,"")
-                        chartz_category_string = ""
-                        chartz_school_string = ""
-                        chartz = create_group_barchart_layout(chartz_fig, chartz_table,chartz_category_string,chartz_school_string)
+                            return layout
 
+                        yoy_grade_ela = make_yoy_layout(school, school_name, comparison_school_list,ela_grade_category)
+                        yoy_grade_math = make_yoy_layout(school,school_name, comparison_school_list,math_grade_category)
+                        
+                        tst = get_ethnicity(school)
+                        print(tst)
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
 
@@ -928,7 +973,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, grade_r
         ]
 
     return (
-        academic_analysis_notes, chartz, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
+        academic_analysis_notes, yoy_grade_ela, yoy_grade_math, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
         fig16a1_container, fig16b1, fig16b1_container, fig16a2, fig16a2_container, fig16b2,
         fig16b2_container, k8_analysis_main_container, k8_analysis_empty_container, k8_analysis_no_data,
         grad_overview, grad_overview_container, grad_ethnicity, grad_ethnicity_container,
@@ -1017,7 +1062,8 @@ def layout():
                             ),
                             html.Div(
                                 [      
-                                    html.Div(id="chartz", children=[]),
+                                    html.Div(id="yoy-grade-ela", children=[]),
+                                    html.Div(id="yoy-grade-math", children=[]),                                    
                                     html.Div(
                                             [   
                                                 html.Div(

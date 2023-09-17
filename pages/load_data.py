@@ -6,6 +6,7 @@
 # date:     09/10/23
 
 import pandas as pd
+import numpy as np
 import re
 from sqlalchemy import create_engine
 from sqlalchemy import text
@@ -360,12 +361,41 @@ def get_gradespan(school_id):
 
     result = run_query(q, params)
 
+    for col in result.columns:
+        result[col] = pd.to_numeric(result[col], errors="coerce")
+
     result = result.dropna(axis=1, how='all')
 
     regex = re.compile(r'\b\d\b')
     grades = [regex.search(i).group() for i in result.columns.tolist()]
 
     return grades
+
+def get_ethnicity(school_id):
+    params = dict(id=school_id)
+
+# TODO: This doesn't necessarily work because Total Proficient may be '***'
+    q = text('''
+        SELECT "AmericanIndian|ELATotalTested", "Asian|ELATotalTested", "Black|ELATotalTested", "Hispanic|ELATotalTested", "Multiracial|ELATotalTested","NativeHawaiianorOtherPacificIslander|ELATotalTested", "White|ELATotalTested"
+        FROM academic_data_k8
+            WHERE SchoolID = :id
+             ''')
+
+    result = run_query(q, params)
+
+    # removes '***'
+    for col in result.columns:
+        result[col] = pd.to_numeric(result[col], errors="coerce")
+    
+    # removes '0'
+    result.replace(0, np.nan, inplace=True)
+
+    result = result.dropna(axis=1, how='all')
+
+    # second part of string is always same length so this is quickest
+    ethnicity = [e[:-17] for e in result.columns.tolist()]
+
+    return ethnicity
 
 def get_financial_data(school_id):
     params = dict(id=school_id)
