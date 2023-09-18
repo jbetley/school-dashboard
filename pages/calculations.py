@@ -468,13 +468,14 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     else:
         no_data_years = tmp[tmp.apply(pd.Series.nunique, axis=1) == 1].index.values.tolist()
 
+    print(no_data_years)
     if no_data_years:
         data = data[~data["Year"].isin(no_data_years)]
         
         if len(no_data_years) > 1:
-            string = ", ".join(no_data_years) + "."
+            string = ", ".join(str(no_data_years)) + "."
         else:
-            string = no_data_years[0] + "."
+            string = str(no_data_years[0]) + "."
     else:
         string =""                    
 

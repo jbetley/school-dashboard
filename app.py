@@ -158,6 +158,7 @@ app = dash.Dash(
     use_pages=True,
     external_stylesheets=external_stylesheets,
     suppress_callback_exceptions=True,
+    prevent_initial_callbacks="initial_duplicate",
     # compress=False, # testing
     meta_tags=[
         {
@@ -292,9 +293,11 @@ def layout():
             [
                 html.Div(
                     [
+                        
                         html.Div(
                             [
-                                html.A("logout", href="../logout", className="logout-button"),
+                                html.A("logout", href="../logout", className="logout-button no-print"),
+                                   
                             ],
                             className="bare-container--flex--center one columns",
                         ),
@@ -321,7 +324,7 @@ def layout():
                                 # Dummy input for dropdown
                                 html.Div(id="application-state", style={"display": "none"}),
                             ],
-                            className="pretty-container five columns",
+                            className="pretty-container five columns no-print",
                         ),
                         html.Div(
                             [
@@ -344,7 +347,7 @@ def layout():
                                     className="year-dropdown-control",
                                 ),
                             ],
-                            className="pretty-container three columns",
+                            className="pretty-container three columns no-print",
                         ),
                     ],
                     className="row--fixed",
@@ -355,29 +358,34 @@ def layout():
         html.Div(
             [
                 html.Div(
-                    [
+                    [                
                         html.Div(
                             [
-                                dbc.Nav(
+                                html.Div(
                                     [
-                                        dbc.NavLink(
-                                            page["name"],
-                                            href=page["path"],
-                                            className="tab",
-                                            active="exact",
-                                        )
-                                        for page in dash.page_registry.values()
-                                        if page.get("top_nav")
-                                        if page["module"] != "pages.not_found_404"
+                                        dbc.Nav(
+                                            [
+                                                dbc.NavLink(
+                                                    page["name"],
+                                                    href=page["path"],
+                                                    className="tab",
+                                                    active="exact",
+                                                )
+                                                for page in dash.page_registry.values()
+                                                if page.get("top_nav")
+                                                if page["module"] != "pages.not_found_404"
+                                            ],
+                                            className="tabs",
+                                        ),
                                     ],
-                                    className="tabs",
+                                    className="nav-container twelve columns", 
                                 ),
                             ],
-                            className="nav-container twelve columns", 
+                            className="row",
                         ),
                     ],
-                    className="row",
-                ),
+                    className="no-print",
+                ),                
                 dash.page_container,
             ],
         )

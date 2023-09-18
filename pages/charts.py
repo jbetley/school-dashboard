@@ -309,6 +309,9 @@ def make_cool_line_chart(values: pd.DataFrame, label: str) -> list:
 
         nsize_string = check_for_insufficient_n_size(data)
 
+        print(no_data_string)
+        print(nsize_string)
+        
         for school in school_cols:
             data[school]=pd.to_numeric(data[school], errors='coerce')
 

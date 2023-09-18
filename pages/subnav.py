@@ -45,3 +45,21 @@ def subnav_academic():
             style={"marginTop": "-40px"}
         )
     )
+
+def subnav_academic_type():
+    return html.Div(
+        dbc.Nav(
+            [
+                dbc.NavLink(
+                    page['name'],
+                    href=page['path'],
+                    className = 'tab',
+                    active='partial'
+                )
+                for page in dash.page_registry.values()
+                if page["path"].startswith("/sub_academic")
+            ],
+            className='sub-tabs',
+            style={"marginTop": "-40px"}
+        )
+    )

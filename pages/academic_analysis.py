@@ -15,13 +15,13 @@ import numpy as np
 # import local functions
 from .load_data import grades, ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
     get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data, get_black_box, get_gradespan, get_ethnicity
+    get_hs_corporation_academic_data, get_year_over_year_data, get_gradespan, get_ethnicity, get_subgroup
 from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
     merge_schools
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
 from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart, make_cool_line_chart
 from .tables import create_comparison_table, no_data_page, no_data_table
-from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout
+from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout, create_radio_layout
 from .string_helpers import create_school_label, combine_school_name_and_grade_levels, create_chart_label, \
      identify_missing_categories
 
@@ -63,45 +63,136 @@ def radio_type_selector(school: str, radio_type_value: str):
 
     return options, type_value, radio_input_container
 
-# Grade selector
+### TODO ###
+# Category selector
 @callback(
-    Output("academic-analysis-radio-grades", "options"),
-    Output("academic-analysis-radio-grades","value"),
-    Output("academic-analysis-radio-grades-container","style"),    
+    # Output("academic-analysis-radio-grades", "options"),
+    # Output("academic-analysis-radio-subgroup", "options"),
+    # Output("academic-analysis-radio-ethnicity", "options"),        
+    # Output("academic-analysis-radio-grades-container","style"),
+    # Output("academic-analysis-radio-subgroup", "style"),
+    # Output("academic-analysis-radio-ethnicity", "style"),
+    Output("academic-analysis-radio-category", "options"),      
+    Output("academic-analysis-radio-category", "style"),        
+    Output("academic-analysis-radio-category","value"),
     Input("charter-dropdown", "value"),
-    State("academic-analysis-radio-grades","value"),
+    State("academic-analysis-radio-category","value"),
 )
-def radio_grade_selector(school: str, current_value: str):
+def radio_category_selector(school: str, current_value: str):
+
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
+
+    # get 3 lists of dictionaries for each category for which the school has data
+    # and then merge the dictionaries using pandas
+    if school_type == "K8" or school_type == "K12":
+        grades = get_gradespan(school)
+        ethnicity = get_ethnicity(school)
+        subgroup = get_subgroup(school)
+
+        grade_options = [{"label": g, "value": "Grade " + g} for g in grades]
+        grade_options.append({"label": "Total", "value": "School Total"})
+        grade_df = pd.DataFrame(grade_options)
+
+        subgroup_options = [{"label": s, "value": s} for s in subgroup]
+        subgroup_df = pd.DataFrame(subgroup_options)
+        
+        ethnicity_options = [{"label": e, "value": e} for e in ethnicity]
+        ethnicity_df = pd.DataFrame(ethnicity_options)
+
+        all_df = pd.concat([grade_df, subgroup_df, ethnicity_df])
+        category_options = all_df.to_dict('records')
+
+        # subgroup_container = {'display': 'block'}
+        # ethnicity_container = {'display': 'block'}
+        # grade_container = {'display': 'block'}
+        category_container = {'display': 'block'}
+    else:
+        category_value = ""
+        category_options = []  # type: list
+        category_container = {'display': 'none'}
+
+    if current_value:
+        category_value = current_value
+    else:
+        category_value = "School Total"   # default
+
+    print(category_value)
+    return category_options, category_container, category_value
+
+# Subject selector
+@callback(
+    Output("academic-analysis-radio-subject", "options"),
+    Output("academic-analysis-radio-subject","value"),
+    Output("academic-analysis-radio-subject-container","style"),    
+    Input("charter-dropdown", "value"),
+    State("academic-analysis-radio-subject","value"),
+)
+def radio_subject_selector(school: str, current_value: str):
 
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
     if school_type == "K8" or school_type == "K12":
-        grades = get_gradespan(school)
+        # grades = get_gradespan(school)
 
-        grade_options = [{"label": g, "value": "Grade " + g} for g in grades]
-        grade_options.append({"label": "Total", "value": "School Total"})
-        grade_container = {'display': 'block'}
-
+        subject_options = [
+            {"label": "ELA", "value": "ELA"},
+            {"label": "Math", "value": "Math"},
+        ]
+        subject_container = {'display': 'block'}
     else:
-        grade_value = "School Total"
-        grade_options = [{}]  # type: list
-        grade_container = {'display': 'none'}
+        subject_value = ""
+        subject_options = []  # type: list
+        subject_container = {'display': 'none'}
 
-    if current_value and current_value in grades:
-        grade_value = current_value
+    if current_value:
+        subject_value = current_value
     else:
-        grade_value = "School Total"   # default
+        subject_value = "ELA"   # default
 
-    return grade_options, grade_value, grade_container
+    return subject_options, subject_value, subject_container
 
-# Ethnicity selector
+# # Grade selector
 # @callback(
 #     Output("academic-analysis-radio-grades", "options"),
-#     Output("academic-analysis-radio-grades","value"),
+#     Output("academic-analysis-radio-category","value"),
 #     Output("academic-analysis-radio-grades-container","style"),    
 #     Input("charter-dropdown", "value"),
 #     State("academic-analysis-radio-grades","value"),
+# )
+# def radio_grade_selector(school: str, current_value: str):
+
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
+
+#     if school_type == "K8" or school_type == "K12":
+#         grades = get_gradespan(school)
+
+#         grade_options = [{"label": g, "value": "Grade " + g} for g in grades]
+#         grade_options.append({"label": "Total", "value": "School Total"})
+#         grade_container = {'display': 'block'}
+
+#     else:
+#         grade_value = "School Total"
+#         grade_options = [{}]  # type: list
+#         grade_container = {'display': 'none'}
+
+#     if current_value and current_value in grades:
+#         grade_value = current_value
+#     else:
+#         grade_value = "School Total"   # default
+
+#     return grade_options, grade_value, grade_container
+
+# # Ethnicity selector
+# @callback(
+#     Output("academic-analysis-radio-ethnicity", "options"),
+#     Output("academic-analysis-radio-category","value", allow_duplicate=True),
+#     Output("academic-analysis-radio-ethnicity-container","style"),    
+#     Input("charter-dropdown", "value"),
+#     State("academic-analysis-radio-ethnicity","value"),
+#     prevent_initial_call=True
 # )
 # def radio_ethnicity_selector(school: str, current_value: str):
 
@@ -109,11 +200,9 @@ def radio_grade_selector(school: str, current_value: str):
 #     school_type = selected_school["School Type"].values[0]
 
 #     if school_type == "K8" or school_type == "K12":
-#         # TODO: Get ethnicities for which school has data
 #         ethnicity = get_ethnicity(school)
 
-#         ethnicity_options = [{"label": g, "value": "Grade " + g} for g in ethnicity]
-#         # grade_options.append({"label": "Total", "value": "School Total"})
+#         ethnicity_options = [{"label": e, "value": e} for e in ethnicity]
 #         ethnicity_container = {'display': 'block'}
 
 #     else:
@@ -127,6 +216,38 @@ def radio_grade_selector(school: str, current_value: str):
 #         ethnicity_value = "Black"   # default
 
 #     return ethnicity_options, ethnicity_value, ethnicity_container
+
+# # Subgroup selector
+# @callback(
+#     Output("academic-analysis-radio-subgroup", "options"),
+#     Output("academic-analysis-radio-category","value", allow_duplicate=True),
+#     Output("academic-analysis-radio-subgroup-container","style"),    
+#     Input("charter-dropdown", "value"),
+#     State("academic-analysis-radio-subgroup","value"),
+#     prevent_initial_call=True
+# )
+# def radio_subgroup_selector(school: str, current_value: str):
+
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
+
+#     if school_type == "K8" or school_type == "K12":
+#         subgroup = get_subgroup(school)
+
+#         subgroup_options = [{"label": s, "value": s} for s in subgroup]
+#         subgroup_container = {'display': 'block'}
+
+#     else:
+#         subgroup_value = "General Education"
+#         subgroup_options = [{}]  # type: list
+#         subgroup_container = {'display': 'none'}
+
+#     if current_value and current_value in subgroup:
+#         subgroup_value = current_value
+#     else:
+#         subgroup_value = "General Education"   # default
+
+#     return subgroup_options, subgroup_value, subgroup_container
 
 # Set dropdown options for comparison schools
 @callback(
@@ -307,8 +428,8 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
 
 @callback(
     Output("academic-analysis-notes", "children"),
-    Output("yoy-grade-ela", "children"),
-    Output("yoy-grade-math", "children"),        
+    Output("yoy-grade", "children"),
+    # Output("yoy-grade-math", "children"),        
     Output("fig14c", "children"),
     Output("fig14d", "children"),
     Output("fig-iread", "children"),
@@ -344,10 +465,15 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("academic-analysis-radio-type", "value"),
-    Input("academic-analysis-radio-grades", "value"),    
+    Input("academic-analysis-radio-subject", "value"),
+    Input("academic-analysis-radio-category", "value"),    
+    # Input("academic-analysis-radio-grades", "value"),
+    # Input("academic-analysis-radio-ethnicity", "value"),
+    # Input("academic-analysis-radio-subgroup", "value"),
     [Input("comparison-dropdown", "value")],
 )
-def update_academic_analysis(school: str, year: str, academic_type: str, grade_radio: str, comparison_school_list: list):
+def update_academic_analysis(school: str, year: str, academic_type: str, subject_radio: str, category_radio: str,
+                             comparison_school_list: list): # grade_radio: str, ethnicity_radio: str, subgroup_radio: str,  
     if not school:
         raise PreventUpdate
 
@@ -684,27 +810,35 @@ def update_academic_analysis(school: str, year: str, academic_type: str, grade_r
                         comparison_schools = comparison_schools.reset_index(drop=True)
 
         
-                    ## ELA Year over Year Proficiency by Grade
+                        ## Year Over Year Chart
+                        button_id = ctx.triggered_id
+                        print(button_id)
+                        # if button_id == "academic-analysis-radio-subject":
+                        #     category = grade_radio + "|" + subject_radio
 
-# TODO: ADD By GRADE FOR MATH - Could also add YoY for Other Categories
-# TODO: Academic Analysis PAge - Current / Academic Analysis Page - Year over Year
-                        # format grade_option + "|" + subject
-                        ela_grade_category = grade_radio + "|ELA"
-                        math_grade_category = grade_radio + "|Math"
+                        print(category_radio)
+                        print(type(category_radio))
+                        print(type(subject_radio))
+                        category = category_radio + "|" + subject_radio
+                        print(category)
+                        # if button_id == "academic-analysis-radio-grades":
+                        #     category = grade_radio + "|" + subject_radio
+                        # elif button_id == "academic-analysis-radio-ethnicity":
+                        #     category = ethnicity_radio + "|" + subject_radio
+                        # elif button_id == "academic-analysis-radio-subgroup":
+                        #     category = subgroup_radio + "|" + subject_radio
+                        # else:
+                        #     category = "School Total|ELA"
 
-                        # # ethnicity_radio
-                        # ela_ethnicity_category = ethnicity_radio + "|ELA"
-                        # math_ethnicity_category = ethnicity_radio + "|Math"
+                        label = "Year over Year Comparison - " + category
+                        print(label)
+                        # TODO: Remove duplicate info - passing school, dont need name,
+                        # TODO: Fix Category/School issue (need separate functs)
 
-                        # # subgroup_radio
-                        # ela_subgroup_category = subgroup_radio + "|ELA"
-                        # math_subgroup_category = subgroup_radio + "|Math"
-
-                        # TODO: Remove duplicate info - passing school, dont need name
                         def make_yoy_layout (school, name, school_list, category):
-                            fig_data = get_black_box(school,school_list, category)
+                            fig_data = get_year_over_year_data(school,school_list, category)
                             table_data = fig_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
-                            fig = make_cool_line_chart(fig_data, "Year over Year - FIX ME")
+                            fig = make_cool_line_chart(fig_data, label)
                             table = create_comparison_table(table_data, name,"")
                             category_string = ""
                             school_string = ""
@@ -712,11 +846,20 @@ def update_academic_analysis(school: str, year: str, academic_type: str, grade_r
 
                             return layout
 
-                        yoy_grade_ela = make_yoy_layout(school, school_name, comparison_school_list,ela_grade_category)
-                        yoy_grade_math = make_yoy_layout(school,school_name, comparison_school_list,math_grade_category)
+                        # make grades one layout, ethnicity one layout, subgroup one layout
+                        # with ELA/Math selectors
+                        # OR one for YoY? one for single bar and one for multi-bar?
+                        yoy_grade = make_yoy_layout(school, school_name, comparison_school_list, category)
                         
-                        tst = get_ethnicity(school)
-                        print(tst)
+                        # yoy_grade_ela = make_yoy_layout(school, school_name, comparison_school_list,ela_grade_category)
+                        # yoy_grade_math = make_yoy_layout(school,school_name, comparison_school_list,math_grade_category)
+                        
+                        # yoy_ethnicity_ela = make_yoy_layout(school, school_name, comparison_school_list,ela_ethnicity_category)
+                        # yoy_ethnicity_math = make_yoy_layout(school,school_name, comparison_school_list,math_ethnicity_category)
+
+                        # yoy_subgroup_ela = make_yoy_layout(school, school_name, comparison_school_list,ela_subgroup_category)
+                        # yoy_subgroup_math = make_yoy_layout(school,school_name, comparison_school_list,math_subgroup_category)
+
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
 
@@ -973,7 +1116,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, grade_r
         ]
 
     return (
-        academic_analysis_notes, yoy_grade_ela, yoy_grade_math, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
+        academic_analysis_notes, yoy_grade, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
         fig16a1_container, fig16b1, fig16b1_container, fig16a2, fig16a2_container, fig16b2,
         fig16b2_container, k8_analysis_main_container, k8_analysis_empty_container, k8_analysis_no_data,
         grad_overview, grad_overview_container, grad_ethnicity, grad_ethnicity_container,
@@ -1062,38 +1205,63 @@ def layout():
                             ),
                             html.Div(
                                 [      
-                                    html.Div(id="yoy-grade-ela", children=[]),
-                                    html.Div(id="yoy-grade-math", children=[]),                                    
-                                    html.Div(
-                                            [   
-                                                html.Div(
-                                                    [                                                             
-                                                        html.Div(
-                                                            [
-                                                                html.Div(
-                                                                    [
-                                                                        dbc.RadioItems(
-                                                                            id="academic-analysis-radio-grades",
-                                                                            className="btn-group",
-                                                                            inputClassName="btn-check",
-                                                                            labelClassName="btn btn-outline-primary",
-                                                                            labelCheckedClassName="active",
-                                                                            value=[],
-                                                                            persistence=False,
-                                                                            # persistence_type="memory",
-                                                                        ),
-                                                                    ],
-                                                                    className="radio-group-academic",
-                                                                )
-                                                            ],
-                                                            className = "bare-container--flex--center twelve columns",
-                                                        ),
-                                                    ],
-                                                    className = "row",
-                                                ),                                    
-                                            ],
-                                            id = "academic-analysis-radio-grades-container",
+                                    html.Div(id="yoy-grade", children=[]),
+                                     html.Div(
+                                        [                                      
+                                            html.Div(
+                                                [
+                                                    html.Div(create_radio_layout("subject"),className="tabs"),
+                                                ],
+                                                className = "row",
+                                            ),
+                                        ],
+                                        className = "bare-container--flex--center twelve columns",
                                     ),
+                                    html.Div(
+                                        [                                      
+                                            html.Div(
+                                                [
+                                                    html.Div(create_radio_layout("category"),className="tabs"),
+                                                ],
+                                                className = "row",
+                                            ),
+                                        ],
+                                        className = "bare-container--flex--center twelve columns",
+                                    ),
+ 
+                                    # html.Div(
+                                    #     [                                      
+                                    #         html.Div(
+                                    #             [
+                                    #                 html.Div(create_radio_layout("grades"),className="tabs"),
+                                    #             ],
+                                    #             className = "row",
+                                    #         ),
+                                    #     ],
+                                    #     className = "bare-container--flex--center twelve columns",
+                                    # ),
+                                    # html.Div(
+                                    #     [                                        
+                                    #         html.Div(
+                                    #             [
+                                    #                 html.Div(create_radio_layout("ethnicity"),className="tabs"),
+                                    #             ],
+                                    #             className = "row",
+                                    #         ),
+                                    #     ],
+                                    #     className = "bare-container--flex--center twelve columns",
+                                    # ),
+                                    # html.Div(
+                                    #     [
+                                    #         html.Div(
+                                    #             [                        
+                                    #                 html.Div(create_radio_layout("subgroup"),className="tabs"),
+                                    #             ],
+                                    #             className = "row",
+                                    #         ),
+                                    #     ],
+                                    #     className = "bare-container--flex--center twelve columns",
+                                    # ),                                          
                                     html.Div(id="fig14c", children=[]),
                                     html.Div(id="fig14d", children=[]),
                                     html.Div(id="fig-iread", children=[]),

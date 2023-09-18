@@ -7,6 +7,7 @@
 
 import pandas as pd
 from dash import html
+import dash_bootstrap_components as dbc
 from .load_data import info_categories
 from .string_helpers import create_chart_label,combine_school_name_and_grade_levels, identify_missing_categories
 from .charts import make_group_bar_chart
@@ -318,3 +319,45 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     ]
 
     return layout
+
+def create_radio_layout(group_string: str = ""):
+    group = "academic-analysis-radio-" + group_string
+    container = group + "-container"
+
+    radio_button_group = html.Div(
+             [
+                html.Div(
+                    [  
+                    html.Div(
+                        [                                                                                   
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        dbc.RadioItems(
+                                            id=group,
+                                            className="btn-group",
+                                            inputClassName="btn-check",
+                                            labelClassName="btn btn-outline-primary",
+                                            labelCheckedClassName="active",
+                                            value=[],
+                                            persistence=False,
+                                            # persistence_type="memory",
+                                        ),
+                                    ],
+                                    className="radio-group-academic",
+                                )
+                            ],
+                            className = "pretty-container",
+                        ),                                
+                            ],
+                            className = "bare-container--flex--center twelve columns",
+                        ),
+                    ],
+                    className = "row",
+                ),
+            ],
+            id = container,
+        )
+    
+    return radio_button_group

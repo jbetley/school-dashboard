@@ -1060,6 +1060,7 @@ def layout():
                                             ),
                                         ],
                                         id="proficiency-ela-grades-container",
+                                        className="pagebreak-after",
                                     ),
                                     html.Div(
                                         [
@@ -1077,6 +1078,7 @@ def layout():
                                             ),
                                         ],
                                         id="proficiency-ela-ethnicity-container",
+                                        className="pagebreak-after",
                                     ),
                                     html.Div(
                                         [
@@ -1094,6 +1096,7 @@ def layout():
                                             ),
                                         ],
                                         id="proficiency-ela-subgroup-container",
+                                        className="pagebreak-after",
                                     ),
                                     html.Div(
                                         [
@@ -1111,6 +1114,7 @@ def layout():
                                             ),
                                         ],
                                         id="proficiency-math-grades-container",
+                                        className="pagebreak-after",
                                     ),
                                     html.Div(
                                         [
@@ -1128,6 +1132,7 @@ def layout():
                                             ),
                                         ],
                                         id="proficiency-math-ethnicity-container",
+                                        className="pagebreak-after",
                                     ),
                                     html.Div(
                                         [

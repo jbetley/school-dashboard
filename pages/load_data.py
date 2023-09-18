@@ -351,51 +351,101 @@ def get_school_index(school_id):
     return run_query(q, params)
 
 def get_gradespan(school_id):
+    # returns a list of grades for which a school has numbers for both Tested and Proficient students (so
+    # they are chartable
     params = dict(id=school_id)
 
     q = text('''
-        SELECT "Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested"
-        FROM academic_data_k8
+        SELECT "Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested",
+            "Grade3|ELATotalProficient", "Grade4|ELATotalProficient", "Grade5|ELATotalProficient", "Grade6|ELATotalProficient", "Grade7|ELATotalProficient","Grade8|ELATotalProficient"
+             FROM academic_data_k8
             WHERE SchoolID = :id
              ''')
 
     result = run_query(q, params)
 
+    # change '***' to nan
     for col in result.columns:
         result[col] = pd.to_numeric(result[col], errors="coerce")
 
-    result = result.dropna(axis=1, how='all')
-
-    regex = re.compile(r'\b\d\b')
-    grades = [regex.search(i).group() for i in result.columns.tolist()]
-
-    return grades
-
-def get_ethnicity(school_id):
-    params = dict(id=school_id)
-
-# TODO: This doesn't necessarily work because Total Proficient may be '***'
-    q = text('''
-        SELECT "AmericanIndian|ELATotalTested", "Asian|ELATotalTested", "Black|ELATotalTested", "Hispanic|ELATotalTested", "Multiracial|ELATotalTested","NativeHawaiianorOtherPacificIslander|ELATotalTested", "White|ELATotalTested"
-        FROM academic_data_k8
-            WHERE SchoolID = :id
-             ''')
-
-    result = run_query(q, params)
-
-    # removes '***'
-    for col in result.columns:
-        result[col] = pd.to_numeric(result[col], errors="coerce")
-    
-    # removes '0'
+    # change 0 to nan
     result.replace(0, np.nan, inplace=True)
 
     result = result.dropna(axis=1, how='all')
 
-    # second part of string is always same length so this is quickest
-    ethnicity = [e[:-17] for e in result.columns.tolist()]
+    # get a list of remaining grades (will be duplicates where both Tested and Proficient are
+    # not nan or 0)
+    regex = re.compile(r'\b\d\b')
+    test_cols = [regex.search(i).group() for i in result.columns.tolist()]
 
-    return ethnicity
+    # remove unique items (where Tested and Proficient are not both numbers)
+    dupe_cols = [i for i in test_cols if test_cols.count(i)>1]
+
+    # keep one of each item
+    result = list(set(dupe_cols))
+
+    result.sort()
+
+    return result
+
+def get_ethnicity(school_id):
+    # returns a list of ethnicities for which a school has numbers for both Tested and Proficient students (so
+    # they are chartable
+    params = dict(id=school_id)
+
+    q = text('''
+        SELECT "AmericanIndian|ELATotalTested", "Asian|ELATotalTested", "Black|ELATotalTested", "Hispanic|ELATotalTested", "Multiracial|ELATotalTested","NativeHawaiianorOtherPacificIslander|ELATotalTested", "White|ELATotalTested",
+                "AmericanIndian|ELATotalProficient", "Asian|ELATotalProficient", "Black|ELATotalProficient", "Hispanic|ELATotalProficient", "Multiracial|ELATotalProficient","NativeHawaiianorOtherPacificIslander|ELATotalProficient", "White|ELATotalProficient"
+            FROM academic_data_k8
+            WHERE SchoolID = :id
+             ''')
+
+    result = run_query(q, params)
+
+    for col in result.columns:
+        result[col] = pd.to_numeric(result[col], errors="coerce")
+
+    result.replace(0, np.nan, inplace=True)
+
+    result = result.dropna(axis=1, how='all')
+
+    test_cols= [item.split("|")[0] for item in result.columns.values]
+
+    dupe_cols = [i for i in test_cols if test_cols.count(i)>1]
+
+    result = list(set(dupe_cols))
+
+    return result
+
+def get_subgroup(school_id):
+    # returns a list of subgroups for which a school has numbers for both Tested and Proficient students (so
+    # they are chartable    
+    params = dict(id=school_id)
+
+    q = text('''
+        SELECT "PaidMeals|ELATotalTested", "FreeorReducedPriceMeals|ELATotalTested", "GeneralEducation|ELATotalTested", "SpecialEducation|ELATotalTested", "EnglishLanguageLearners|ELATotalTested","NonEnglishLanguageLearners|ELATotalTested",
+            "PaidMeals|ELATotalProficient", "FreeorReducedPriceMeals|ELATotalProficient", "GeneralEducation|ELATotalProficient", "SpecialEducation|ELATotalProficient", "EnglishLanguageLearners|ELATotalProficient","NonEnglishLanguageLearners|ELATotalProficient"
+        FROM academic_data_k8
+            WHERE SchoolID = :id
+             ''')
+
+    result = run_query(q, params)
+
+
+    for col in result.columns:
+        result[col] = pd.to_numeric(result[col], errors="coerce")
+
+    result.replace(0, np.nan, inplace=True)
+
+    result = result.dropna(axis=1, how='all')
+
+    test_cols= [item.split("|")[0] for item in result.columns.values]
+
+    dupe_cols = [i for i in test_cols if test_cols.count(i)>1]
+
+    result = list(set(dupe_cols))
+
+    return result
 
 def get_financial_data(school_id):
     params = dict(id=school_id)
@@ -574,7 +624,7 @@ def get_comparable_schools(*args):
 
     return run_query(q, params)
 
-def get_black_box(*args):
+def get_year_over_year_data(*args):
     keys = ['school_id','comp_list','category']
     
     params = dict(zip(keys, args))

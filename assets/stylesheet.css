@@ -134,14 +134,44 @@ font-weight: 400; */
 
 }
 
+/* This is a fucking mess */
 /** Hide on Print **/
 @media print {
+  
+  /* all */
   .no-print {
     display: none;
   }
   .pagebreak {
-    page-break-before: always; /* page-break-after works as well */
+    page-break-before: always;
   }
+  .pagebreak-after {
+    page-break-after: always;
+  }  
+  
+  /* charts */
+  div { 
+    float: none !important;
+  }
+
+  div.user-select-none.svg-container {
+  width: 50% !important;
+  }
+
+  /* tables */
+  .dash-cell {
+    font-size: 1.5rem !important;
+  }
+
+  /* comment out for charts */
+  tr { 
+  line-height: 2.25 !important;
+  }
+
+  .pretty-container {
+    width: 100% !important;
+  }
+
 }
 
 /** Base Styles **/
@@ -817,6 +847,14 @@ fieldset:disabled .btn {
   display: inline-flex;
   vertical-align: middle;
 }
+
+.btn-group2
+ {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
 /* .btn-group > .btn {
   position: relative;
   flex: 1 1 auto;
@@ -1013,12 +1051,20 @@ a.nav-link:hover {
   position: relative;
 }
 
+/* .form-check {
+  width: 100%;
+}  */
+
 .radio-group-finance {
   margin-top: 7px;
 }
 
 .radio-group-academic {
   margin-top: 7px;
+  width: fit-content;
+  white-space: nowrap;
+  /* width: 100%; */
+  /* display: block; */
 }
 
 .radio-group-academic-subheader  {
