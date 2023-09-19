@@ -12,29 +12,29 @@ import numpy as np
 from typing import Tuple
 import scipy.spatial as spatial
 
-from .load_data import current_academic_year
+# from .load_data import current_academic_year
 
-def get_excluded_years(year: str) -> list:
-    """
-    "excluded years" is a list of year strings (format YYYY) of all years
-    that are more recent than the selected year. it is used to filter data
+# def get_excluded_years(year: str) -> list:
+#     """
+#     "excluded years" is a list of year strings (format YYYY) of all years
+#     that are more recent than the selected year. it is used to filter data
 
-    Args:
-        year (str): a year string in format YYYY
+#     Args:
+#         year (str): a year string in format YYYY
 
-    Returns:
-        list: a list of year strings - all years more recent than selected year
-    """    
+#     Returns:
+#         list: a list of year strings - all years more recent than selected year
+#     """    
 
-    excluded_years = []
+#     excluded_years = []
 
-    excluded_academic_years = int(current_academic_year) - int(year)
+#     excluded_academic_years = int(current_academic_year) - int(year)
 
-    for i in range(excluded_academic_years):
-        excluded_year = int(current_academic_year) - i
-        excluded_years.append(excluded_year)
+#     for i in range(excluded_academic_years):
+#         excluded_year = int(current_academic_year) - i
+#         excluded_years.append(excluded_year)
 
-    return excluded_years
+#     return excluded_years
 
 def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     """
@@ -468,7 +468,6 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     else:
         no_data_years = tmp[tmp.apply(pd.Series.nunique, axis=1) == 1].index.values.tolist()
 
-    print(no_data_years)
     if no_data_years:
         data = data[~data["Year"].isin(no_data_years)]
         

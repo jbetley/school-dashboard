@@ -13,9 +13,9 @@ import pandas as pd
 import numpy as np
 import itertools
 
-from .load_data import grades, ethnicity, subgroup, info_categories, get_school_index, get_graduation_data
+from .load_data import grades, ethnicity, subgroup, info_categories, get_excluded_years, get_school_index, get_graduation_data
 from .calculations import calculate_percentage, calculate_difference, calculate_proficiency, recalculate_total_proficiency, \
-    calculate_graduation_rate, calculate_sat_rate, conditional_fillna, get_excluded_years
+    calculate_graduation_rate, calculate_sat_rate, conditional_fillna
 
 # NOTE: No K8 academic data exists for 2020
 print("#### Loading Data. . . . . ####")

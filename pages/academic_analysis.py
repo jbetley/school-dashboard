@@ -63,62 +63,62 @@ def radio_type_selector(school: str, radio_type_value: str):
 
     return options, type_value, radio_input_container
 
-### TODO ###
-# Category selector
-@callback(
-    # Output("academic-analysis-radio-grades", "options"),
-    # Output("academic-analysis-radio-subgroup", "options"),
-    # Output("academic-analysis-radio-ethnicity", "options"),        
-    # Output("academic-analysis-radio-grades-container","style"),
-    # Output("academic-analysis-radio-subgroup", "style"),
-    # Output("academic-analysis-radio-ethnicity", "style"),
-    Output("academic-analysis-radio-category", "options"),      
-    Output("academic-analysis-radio-category", "style"),        
-    Output("academic-analysis-radio-category","value"),
-    Input("charter-dropdown", "value"),
-    State("academic-analysis-radio-category","value"),
-)
-def radio_category_selector(school: str, current_value: str):
+# ### TODO ###
+# # Category selector
+# @callback(
+#     # Output("academic-analysis-radio-grades", "options"),
+#     # Output("academic-analysis-radio-subgroup", "options"),
+#     # Output("academic-analysis-radio-ethnicity", "options"),        
+#     # Output("academic-analysis-radio-grades-container","style"),
+#     # Output("academic-analysis-radio-subgroup", "style"),
+#     # Output("academic-analysis-radio-ethnicity", "style"),
+#     Output("academic-analysis-radio-category", "options"),      
+#     Output("academic-analysis-radio-category", "style"),        
+#     Output("academic-analysis-radio-category","value"),
+#     Input("charter-dropdown", "value"),
+#     State("academic-analysis-radio-category","value"),
+# )
+# def radio_category_selector(school: str, current_value: str):
 
-    selected_school = get_school_index(school)
-    school_type = selected_school["School Type"].values[0]
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
 
-    # get 3 lists of dictionaries for each category for which the school has data
-    # and then merge the dictionaries using pandas
-    if school_type == "K8" or school_type == "K12":
-        grades = get_gradespan(school)
-        ethnicity = get_ethnicity(school)
-        subgroup = get_subgroup(school)
+#     # get 3 lists of dictionaries for each category for which the school has data
+#     # and then merge the dictionaries using pandas
+#     if school_type == "K8" or school_type == "K12":
+#         grades = get_gradespan(school)
+#         ethnicity = get_ethnicity(school)
+#         subgroup = get_subgroup(school)
 
-        grade_options = [{"label": g, "value": "Grade " + g} for g in grades]
-        grade_options.append({"label": "Total", "value": "School Total"})
-        grade_df = pd.DataFrame(grade_options)
+#         grade_options = [{"label": g, "value": "Grade " + g} for g in grades]
+#         grade_options.append({"label": "Total", "value": "School Total"})
+#         grade_df = pd.DataFrame(grade_options)
 
-        subgroup_options = [{"label": s, "value": s} for s in subgroup]
-        subgroup_df = pd.DataFrame(subgroup_options)
+#         subgroup_options = [{"label": s, "value": s} for s in subgroup]
+#         subgroup_df = pd.DataFrame(subgroup_options)
         
-        ethnicity_options = [{"label": e, "value": e} for e in ethnicity]
-        ethnicity_df = pd.DataFrame(ethnicity_options)
+#         ethnicity_options = [{"label": e, "value": e} for e in ethnicity]
+#         ethnicity_df = pd.DataFrame(ethnicity_options)
 
-        all_df = pd.concat([grade_df, subgroup_df, ethnicity_df])
-        category_options = all_df.to_dict('records')
+#         all_df = pd.concat([grade_df, subgroup_df, ethnicity_df])
+#         category_options = all_df.to_dict('records')
 
-        # subgroup_container = {'display': 'block'}
-        # ethnicity_container = {'display': 'block'}
-        # grade_container = {'display': 'block'}
-        category_container = {'display': 'block'}
-    else:
-        category_value = ""
-        category_options = []  # type: list
-        category_container = {'display': 'none'}
+#         # subgroup_container = {'display': 'block'}
+#         # ethnicity_container = {'display': 'block'}
+#         # grade_container = {'display': 'block'}
+#         category_container = {'display': 'block'}
+#     else:
+#         category_value = ""
+#         category_options = []  # type: list
+#         category_container = {'display': 'none'}
 
-    if current_value:
-        category_value = current_value
-    else:
-        category_value = "School Total"   # default
+#     if current_value:
+#         category_value = current_value
+#     else:
+#         category_value = "School Total"   # default
 
-    print(category_value)
-    return category_options, category_container, category_value
+#     print(category_value)
+#     return category_options, category_container, category_value
 
 # Subject selector
 @callback(
@@ -134,7 +134,6 @@ def radio_subject_selector(school: str, current_value: str):
     school_type = selected_school["School Type"].values[0]
 
     if school_type == "K8" or school_type == "K12":
-        # grades = get_gradespan(school)
 
         subject_options = [
             {"label": "ELA", "value": "ELA"},
@@ -153,102 +152,124 @@ def radio_subject_selector(school: str, current_value: str):
 
     return subject_options, subject_value, subject_container
 
-# # Grade selector
-# @callback(
-#     Output("academic-analysis-radio-grades", "options"),
-#     Output("academic-analysis-radio-category","value"),
-#     Output("academic-analysis-radio-grades-container","style"),    
-#     Input("charter-dropdown", "value"),
-#     State("academic-analysis-radio-grades","value"),
-# )
-# def radio_grade_selector(school: str, current_value: str):
+# Grade selector
+@callback(
+    Output("academic-analysis-radio-grades", "options"),
+    # Output("academic-analysis-radio-grades","value"),
+    Output("academic-analysis-radio-grades-container","style"),    
+    Input("charter-dropdown", "value"),
+    # State("academic-analysis-radio-grades","value"),
+)
+def radio_grade_selector(school: str): #, current_value: str):
 
-#     selected_school = get_school_index(school)
-#     school_type = selected_school["School Type"].values[0]
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
 
-#     if school_type == "K8" or school_type == "K12":
-#         grades = get_gradespan(school)
+    if school_type == "K8" or school_type == "K12":
+        grades = get_gradespan(school)
 
-#         grade_options = [{"label": g, "value": "Grade " + g} for g in grades]
-#         grade_options.append({"label": "Total", "value": "School Total"})
-#         grade_container = {'display': 'block'}
+        grade_options = [{"label": g, "value": "Grade " + g} for g in grades]
+        grade_options.append({"label": "Total", "value": "School Total"})
+        grade_container = {'display': 'block'}
 
-#     else:
-#         grade_value = "School Total"
-#         grade_options = [{}]  # type: list
-#         grade_container = {'display': 'none'}
+    else:
+        # grade_value = "School Total"
+        grade_options = [{}]  # type: list
+        grade_container = {'display': 'none'}
 
-#     if current_value and current_value in grades:
-#         grade_value = current_value
-#     else:
-#         grade_value = "School Total"   # default
+    # if current_value and current_value in grades:
+    #     grade_value = current_value
+    # else:
+    #     grade_value = "School Total"   # default
 
-#     return grade_options, grade_value, grade_container
+    return grade_options, grade_container # grade_value, 
 
-# # Ethnicity selector
-# @callback(
-#     Output("academic-analysis-radio-ethnicity", "options"),
-#     Output("academic-analysis-radio-category","value", allow_duplicate=True),
-#     Output("academic-analysis-radio-ethnicity-container","style"),    
-#     Input("charter-dropdown", "value"),
-#     State("academic-analysis-radio-ethnicity","value"),
-#     prevent_initial_call=True
-# )
-# def radio_ethnicity_selector(school: str, current_value: str):
+# Ethnicity selector
+@callback(
+    Output("academic-analysis-radio-ethnicity", "options"),
+    # Output("academic-analysis-radio-ethnicity","value"),
+    Output("academic-analysis-radio-ethnicity-container","style"),    
+    Input("charter-dropdown", "value"),
+    # State("academic-analysis-radio-ethnicity","value"),
+    prevent_initial_call=True
+)
+def radio_ethnicity_selector(school: str): #, current_value: str):
 
-#     selected_school = get_school_index(school)
-#     school_type = selected_school["School Type"].values[0]
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
 
-#     if school_type == "K8" or school_type == "K12":
-#         ethnicity = get_ethnicity(school)
+    if school_type == "K8" or school_type == "K12":
+        ethnicity = get_ethnicity(school)
 
-#         ethnicity_options = [{"label": e, "value": e} for e in ethnicity]
-#         ethnicity_container = {'display': 'block'}
+        ethnicity_options = [{"label": e, "value": e} for e in ethnicity]
+        ethnicity_container = {'display': 'block'}
 
-#     else:
-#         ethnicity_value = "Black"
-#         ethnicity_options = [{}]  # type: list
-#         ethnicity_container = {'display': 'none'}
+    else:
+        # ethnicity_value = "Black"
+        ethnicity_options = [{}]  # type: list
+        ethnicity_container = {'display': 'none'}
 
-#     if current_value and current_value in ethnicity:
-#         ethnicity_value = current_value
-#     else:
-#         ethnicity_value = "Black"   # default
+    # if current_value and current_value in ethnicity:
+    #     ethnicity_value = current_value
+    # else:
+    #     ethnicity_value = "Black"   # default
 
-#     return ethnicity_options, ethnicity_value, ethnicity_container
+    return ethnicity_options, ethnicity_container # ethnicity_value, 
 
-# # Subgroup selector
-# @callback(
-#     Output("academic-analysis-radio-subgroup", "options"),
-#     Output("academic-analysis-radio-category","value", allow_duplicate=True),
-#     Output("academic-analysis-radio-subgroup-container","style"),    
-#     Input("charter-dropdown", "value"),
-#     State("academic-analysis-radio-subgroup","value"),
-#     prevent_initial_call=True
-# )
-# def radio_subgroup_selector(school: str, current_value: str):
+# Subgroup selector
+@callback(
+    Output("academic-analysis-radio-subgroup", "options"),
+    # Output("academic-analysis-radio-subgroup","value"),
+    Output("academic-analysis-radio-subgroup-container","style"),    
+    Input("charter-dropdown", "value"),
+    # State("academic-analysis-radio-subgroup","value"),
+    prevent_initial_call=True
+)
+def radio_subgroup_selector(school: str): #, current_value: str):
 
-#     selected_school = get_school_index(school)
-#     school_type = selected_school["School Type"].values[0]
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
 
-#     if school_type == "K8" or school_type == "K12":
-#         subgroup = get_subgroup(school)
+    if school_type == "K8" or school_type == "K12":
+        subgroup = get_subgroup(school)
 
-#         subgroup_options = [{"label": s, "value": s} for s in subgroup]
-#         subgroup_container = {'display': 'block'}
+        subgroup_options = [{"label": s, "value": s} for s in subgroup]
+        subgroup_container = {'display': 'block'}
 
-#     else:
-#         subgroup_value = "General Education"
-#         subgroup_options = [{}]  # type: list
-#         subgroup_container = {'display': 'none'}
+    else:
+        # subgroup_value = "General Education"
+        subgroup_options = [{}]  # type: list
+        subgroup_container = {'display': 'none'}
 
-#     if current_value and current_value in subgroup:
-#         subgroup_value = current_value
-#     else:
-#         subgroup_value = "General Education"   # default
+    # if current_value and current_value in subgroup:
+    #     subgroup_value = current_value
+    # else:
+    #     subgroup_value = "General Education"   # default
 
-#     return subgroup_options, subgroup_value, subgroup_container
+    return subgroup_options, subgroup_container # subgroup_value, 
 
+# Sync Category Dropdowns - so that only one button can be active
+# at a time even though they are not in the same radio-group
+@callback(
+    Output("academic-analysis-radio-grades", "value"),
+    Output("academic-analysis-radio-ethnicity", "value"),
+    Output("academic-analysis-radio-subgroup", "value"),
+    Input("academic-analysis-radio-grades", "value"),
+    Input("academic-analysis-radio-ethnicity", "value"),
+    Input("academic-analysis-radio-subgroup", "value"),
+)
+def sync_radio_items(grade_value, ethnicity_value, subgroup_value):
+
+    input_id = ctx.triggered_id
+    if input_id == "academic-analysis-radio-grades":
+        return grade_value, None, None
+    elif input_id == "academic-analysis-radio-ethnicity":
+        return None, ethnicity_value, None
+    elif input_id == "academic-analysis-radio-subgroup":
+        return None, None, subgroup_value
+    else:
+        return "School Total", None, None
+    
 # Set dropdown options for comparison schools
 @callback(
     Output("comparison-dropdown", "options"),
@@ -466,14 +487,14 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
     Input("year-dropdown", "value"),
     Input("academic-analysis-radio-type", "value"),
     Input("academic-analysis-radio-subject", "value"),
-    Input("academic-analysis-radio-category", "value"),    
-    # Input("academic-analysis-radio-grades", "value"),
-    # Input("academic-analysis-radio-ethnicity", "value"),
-    # Input("academic-analysis-radio-subgroup", "value"),
+    # Input("academic-analysis-radio-category", "value"),    
+    Input("academic-analysis-radio-grades", "value"),
+    Input("academic-analysis-radio-ethnicity", "value"),
+    Input("academic-analysis-radio-subgroup", "value"),
     [Input("comparison-dropdown", "value")],
 )
-def update_academic_analysis(school: str, year: str, academic_type: str, subject_radio: str, category_radio: str,
-                             comparison_school_list: list): # grade_radio: str, ethnicity_radio: str, subgroup_radio: str,  
+def update_academic_analysis(school: str, year: str, academic_type: str, subject_radio: str, grade_radio: str, 
+                             ethnicity_radio: str, subgroup_radio: str, comparison_school_list: list):
     if not school:
         raise PreventUpdate
 
@@ -811,33 +832,25 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
 
         
                         ## Year Over Year Chart
-                        button_id = ctx.triggered_id
-                        print(button_id)
-                        # if button_id == "academic-analysis-radio-subject":
-                        #     category = grade_radio + "|" + subject_radio
+                        # button_id = ctx.triggered_id
 
-                        print(category_radio)
-                        print(type(category_radio))
-                        print(type(subject_radio))
-                        category = category_radio + "|" + subject_radio
-                        print(category)
-                        # if button_id == "academic-analysis-radio-grades":
-                        #     category = grade_radio + "|" + subject_radio
-                        # elif button_id == "academic-analysis-radio-ethnicity":
-                        #     category = ethnicity_radio + "|" + subject_radio
-                        # elif button_id == "academic-analysis-radio-subgroup":
-                        #     category = subgroup_radio + "|" + subject_radio
-                        # else:
-                        #     category = "School Total|ELA"
+                        if grade_radio:
+                            category = grade_radio + "|" + subject_radio
+                        elif ethnicity_radio:
+                            category = ethnicity_radio + "|" + subject_radio
+                        elif subgroup_radio:
+                            category = subgroup_radio + "|" + subject_radio
+                        else:
+                            category = "School Total|ELA"
 
                         label = "Year over Year Comparison - " + category
-                        print(label)
-                        # TODO: Remove duplicate info - passing school, dont need name,
-                        # TODO: Fix Category/School issue (need separate functs)
 
-                        def make_yoy_layout (school, name, school_list, category):
-                            fig_data = get_year_over_year_data(school,school_list, category)
-                            table_data = fig_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
+                        # TODO: Remove duplicate info - passing school, dont need name,
+
+                        def make_yoy_layout (school, name, school_list, category, year):
+                            fig_data = get_year_over_year_data(school,school_list, category, year)
+                            table_data = fig_data.copy()
+                            table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
                             fig = make_cool_line_chart(fig_data, label)
                             table = create_comparison_table(table_data, name,"")
                             category_string = ""
@@ -849,7 +862,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
                         # make grades one layout, ethnicity one layout, subgroup one layout
                         # with ELA/Math selectors
                         # OR one for YoY? one for single bar and one for multi-bar?
-                        yoy_grade = make_yoy_layout(school, school_name, comparison_school_list, category)
+                        yoy_grade = make_yoy_layout(school, school_name, comparison_school_list, category, year)
                         
                         # yoy_grade_ela = make_yoy_layout(school, school_name, comparison_school_list,ela_grade_category)
                         # yoy_grade_math = make_yoy_layout(school,school_name, comparison_school_list,math_grade_category)
@@ -863,20 +876,38 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
 
+# TODO: PROB IS HERE - YEAR 2021
+                        pd.set_option('display.max_columns', None)
+                        pd.set_option('display.max_rows', None)  
                         # Get school value for specific category
                         if category in current_school_data.columns:
 
                             fig14c_k8_school_data = current_school_data[info_categories + [category]].copy()
 
+                            print('ORIG')
+                            print(fig14c_k8_school_data)
+                            print('INDEX LENGTH')
+                            print(len(fig14c_k8_school_data.index))
+
+#TODO: ERROR IS IN THE NEXT LINE - REPLACES SCHOOL INSTEAD OF ADDING ROW
                             # add corp average for category to dataframe - note we are using 'clean_corp_data'
                             # because the 'Corp' values have been dropped from raw_comparison_data
                             fig14c_k8_school_data.loc[len(fig14c_k8_school_data.index)] = \
                                 [corp_name,"3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
 
+                            print('Add Corp')
+                            print(fig14c_k8_school_data)
+
                             fig14c_comp_data = comparison_schools[info_categories + [category]]
+
+                            print('Comp')
+                            print(fig14c_comp_data)
 
                             # Combine data, fix dtypes, and send to chart function
                             fig14c_all_data = pd.concat([fig14c_k8_school_data,fig14c_comp_data])
+                            
+                            print('COMBINED!')
+                            print(fig14c_all_data)
 
                             fig14c_table_data = fig14c_all_data.copy()
 
@@ -888,9 +919,10 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
 
                             fig14c_table_data = fig14c_table_data[["School Name", category]]
                             fig14c_table_data = fig14c_table_data.reset_index(drop=True)
-
+                            print('TABLE DATA GOING IN')
+                            print(fig14c_table_data)
                             fig14c_table = create_comparison_table(fig14c_table_data, school_name,"ELA Proficiency")
-
+                            print('HERE?')
                         else:
                             # NOTE: This should never ever happen. So yeah.
                             fig14c_chart = no_data_fig_label("Comparison: Current Year ELA Proficiency",200)
@@ -1217,51 +1249,50 @@ def layout():
                                         ],
                                         className = "bare-container--flex--center twelve columns",
                                     ),
+                                    # html.Div(
+                                    #     [                                      
+                                    #         html.Div(
+                                    #             [
+                                    #                 html.Div(create_radio_layout("category"),className="tabs"),
+                                    #             ],
+                                    #             className = "row",
+                                    #         ),
+                                    #     ],
+                                    #     className = "bare-container--flex--center twelve columns",
+                                    # ),
                                     html.Div(
                                         [                                      
                                             html.Div(
                                                 [
-                                                    html.Div(create_radio_layout("category"),className="tabs"),
+                                                    html.Div(create_radio_layout("grades"),className="tabs"),
                                                 ],
                                                 className = "row",
                                             ),
                                         ],
                                         className = "bare-container--flex--center twelve columns",
                                     ),
- 
-                                    # html.Div(
-                                    #     [                                      
-                                    #         html.Div(
-                                    #             [
-                                    #                 html.Div(create_radio_layout("grades"),className="tabs"),
-                                    #             ],
-                                    #             className = "row",
-                                    #         ),
-                                    #     ],
-                                    #     className = "bare-container--flex--center twelve columns",
-                                    # ),
-                                    # html.Div(
-                                    #     [                                        
-                                    #         html.Div(
-                                    #             [
-                                    #                 html.Div(create_radio_layout("ethnicity"),className="tabs"),
-                                    #             ],
-                                    #             className = "row",
-                                    #         ),
-                                    #     ],
-                                    #     className = "bare-container--flex--center twelve columns",
-                                    # ),
-                                    # html.Div(
-                                    #     [
-                                    #         html.Div(
-                                    #             [                        
-                                    #                 html.Div(create_radio_layout("subgroup"),className="tabs"),
-                                    #             ],
-                                    #             className = "row",
-                                    #         ),
-                                    #     ],
-                                    #     className = "bare-container--flex--center twelve columns",
-                                    # ),                                          
+                                    html.Div(
+                                        [                                        
+                                            html.Div(
+                                                [
+                                                    html.Div(create_radio_layout("ethnicity"),className="tabs"),
+                                                ],
+                                                className = "row",
+                                            ),
+                                        ],
+                                        className = "bare-container--flex--center twelve columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [                        
+                                                    html.Div(create_radio_layout("subgroup"),className="tabs"),
+                                                ],
+                                                className = "row",
+                                            ),
+                                        ],
+                                        className = "bare-container--flex--center twelve columns",
+                                    ),                                          
                                     html.Div(id="fig14c", children=[]),
                                     html.Div(id="fig14d", children=[]),
                                     html.Div(id="fig-iread", children=[]),

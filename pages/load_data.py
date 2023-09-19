@@ -195,6 +195,28 @@ def get_current_year():
 
 current_academic_year = get_current_year()
 
+def get_excluded_years(year: str) -> list:
+    """
+    "excluded years" is a list of year strings (format YYYY) of all years
+    that are more recent than the selected year. it is used to filter data
+
+    Args:
+        year (str): a year string in format YYYY
+
+    Returns:
+        list: a list of year strings - all years more recent than selected year
+    """    
+
+    excluded_years = []
+
+    excluded_academic_years = int(current_academic_year) - int(year)
+
+    for i in range(excluded_academic_years):
+        excluded_year = int(current_academic_year) - i
+        excluded_years.append(excluded_year)
+
+    return excluded_years
+
 # TODO: Refactor so everything passed in as a tuple of a dict for named placeholders, even if only a single val
 # Return Dataframe (read_sql is a convenience function wrapper around read_sql_query)
 # If no data matches query, returns an empty dataframe
@@ -625,7 +647,7 @@ def get_comparable_schools(*args):
     return run_query(q, params)
 
 def get_year_over_year_data(*args):
-    keys = ['school_id','comp_list','category']
+    keys = ['school_id','comp_list','category','year']
     
     params = dict(zip(keys, args))
 
@@ -690,5 +712,11 @@ def get_year_over_year_data(*args):
     comp_data = comp_data.reset_index()
 
     result = pd.merge(pd.merge(school_data,corp_data,on='Year'),comp_data,on='Year')
+
+    # account for changes in the year
+    excluded_years = get_excluded_years(params['year'])
+    result = result[~result["Year"].isin(excluded_years)]
+
+    # TODO? if school has no data for the remaining years, return an empty df
 
     return result

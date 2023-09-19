@@ -1063,6 +1063,7 @@ a.nav-link:hover {
   margin-top: 7px;
   width: fit-content;
   white-space: nowrap;
+  float:left;
   /* width: 100%; */
   /* display: block; */
 }
