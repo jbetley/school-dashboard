@@ -18,9 +18,9 @@ from .load_data import max_display_years, get_school_index, get_financial_data, 
 from .tables import no_data_page, no_data_table, create_financial_analysis_table
 from .charts import loading_fig
 from .calculations import round_nearest
-from .subnav import subnav_finance
+# from .subnav import subnav_finance
 
-dash.register_page(__name__, path = "/financial_analysis", order=3)
+dash.register_page(__name__, path = "/financial_analysis", top_nav=True, order=3)
 
 # Financial data type (school or network)
 @callback(      
@@ -603,17 +603,17 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 def layout():
     return html.Div(
                 [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(subnav_finance(), className="tabs"),
-                                ],
-                            className="bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className="row"
-                    ),
+                    # html.Div(
+                    #     [
+                    #         html.Div(
+                    #             [
+                    #                 html.Div(subnav_finance(), className="tabs"),
+                    #             ],
+                    #         className="bare-container--flex--center twelve columns",
+                    #         ),
+                    #     ],
+                    #     className="row"
+                    # ),
                     html.Hr(),
                     html.Div(
                         [

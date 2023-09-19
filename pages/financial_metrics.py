@@ -15,9 +15,9 @@ from .load_data import max_display_years, get_school_index, get_financial_data
 from .calculate_metrics import calculate_financial_metrics
 from .tables import no_data_page, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
-from .subnav import subnav_finance
+# from .subnav import subnav_finance
 
-dash.register_page(__name__, path="/financial_metrics", order=2)
+dash.register_page(__name__, top_nav=True, path="/financial_metrics", order=2)
 
 # Financial data type (school or network)
 @callback(      
@@ -592,17 +592,17 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 def layout():
     return html.Div(
             [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Div(subnav_finance(),className="tabs"),
-                            ],
-                        className="bare-container--flex--center twelve columns",
-                        ),
-                    ],
-                    className="row"
-                ),
+                # html.Div(
+                #     [
+                #         html.Div(
+                #             [
+                #                 html.Div(subnav_finance(),className="tabs"),
+                #             ],
+                #         className="bare-container--flex--center twelve columns",
+                #         ),
+                #     ],
+                #     className="row"
+                # ),
                 html.Hr(),                
                 html.Div(
                     [

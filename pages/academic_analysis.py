@@ -15,10 +15,10 @@ import numpy as np
 # import local functions
 from .load_data import grades, ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
     get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data, get_year_over_year_data, get_gradespan, get_ethnicity, get_subgroup
+    get_hs_corporation_academic_data, get_year_over_year_data, get_gradespan, get_ethnicity, get_subgroup, get_excluded_years
 from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
     merge_schools
-from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency, get_excluded_years
+from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency
 from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart, make_cool_line_chart
 from .tables import create_comparison_table, no_data_page, no_data_table
 from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout, create_radio_layout
@@ -26,9 +26,9 @@ from .string_helpers import create_school_label, combine_school_name_and_grade_l
      identify_missing_categories
 
 from .calculate_metrics import calculate_k8_comparison_metrics
-from .subnav import subnav_academic
+# from .subnav import subnav_academic
 
-dash.register_page(__name__, path = "/academic_analysis", order=6)
+dash.register_page(__name__, path = "/academic_analysis", top_nav=True, order=8)
 
 # Display type - K12 only
 @callback(      
@@ -1161,17 +1161,17 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
 def layout():
     return html.Div(
                 [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(subnav_academic(),className="tabs"),
-                                ],
-                                className="bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className="row"
-                    ),
+                    # html.Div(
+                    #     [
+                    #         html.Div(
+                    #             [
+                    #                 html.Div(subnav_academic(),className="tabs"),
+                    #             ],
+                    #             className="bare-container--flex--center twelve columns",
+                    #         ),
+                    #     ],
+                    #     className="row"
+                    # ),
                     html.Hr(),
                     html.Div(
                         [

@@ -14,7 +14,7 @@ import numpy as np
 
 from .load_data import max_display_years, get_school_index, get_financial_data
 from .tables import no_data_page
-from .subnav import subnav_finance
+# from .subnav import subnav_finance
 
 dash.register_page(__name__, top_nav=True, path = "/financial_information", order=1)
 
@@ -336,17 +336,17 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 def layout():
     return html.Div(
             [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Div(subnav_finance(),className="tabs"),
-                            ],
-                        className="bare-container--flex--center twelve columns",
-                        ),
-                    ],
-                    className="row"
-                ),
+                # html.Div(
+                #     [
+                #         html.Div(
+                #             [
+                #                 html.Div(subnav_finance(),className="tabs"),
+                #             ],
+                #         className="bare-container--flex--center twelve columns",
+                #         ),
+                #     ],
+                #     className="row"
+                # ),
                 html.Hr(),
                 html.Div(
                     [

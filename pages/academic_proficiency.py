@@ -14,20 +14,20 @@ import pandas as pd
 import re
 
 # import local functions
-from .load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_k8_school_academic_data, \
-    get_high_school_academic_data, get_demographic_data, get_school_index, get_growth_data
-from .process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
+from pages.load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_k8_school_academic_data, \
+    get_high_school_academic_data, get_demographic_data, get_school_index, get_growth_data, get_excluded_years
+from pages.process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
     filter_high_school_academic_data, process_growth_data
-from .tables import no_data_page, no_data_table, create_multi_header_table_with_container, create_key_table, \
+from pages.tables import no_data_page, no_data_table, create_multi_header_table_with_container, create_key_table, \
     create_growth_table, create_single_header_table, create_multi_header_table
-from .charts import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
-from .layouts import set_table_layout, create_growth_layout, create_line_fig_layout
-from .calculations import round_percentages, conditional_fillna, get_excluded_years
-from .subnav import subnav_academic
+from pages.charts import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
+from pages.layouts import set_table_layout, create_growth_layout, create_line_fig_layout
+from pages.calculations import round_percentages, conditional_fillna
+# from pages.subnav import subnav_academic_type
 
-dash.register_page(__name__, top_nav=True, path="/academic_information", order=4)
+dash.register_page(__name__, name = "Academic Information", title = "Academic Proficiency", top_nav=True, order=4) #path="/info/proficiency", 
 
-# Academic Data Type (proficiency or growth)
+# Academic Data Type (k8 or hs)
 @callback(      
     Output("academic-information-radio-type", "options"),
     Output("academic-information-radio-type","value"),
@@ -40,47 +40,25 @@ def radio_type_selector(school: str, radio_type_value: str):
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
-    # HS/AHS have only one type ("highschool") and no buttons are displayed
-    if school_type == "HS" or school_type == "AHS":
-
-        radio_input_container = {'display': 'none'}
-        type_options = []
-        type_value = "highschool"
-    
-    elif school_type == "K8":
-
-        radio_input_container = {'display': 'block'}
-        type_options = [
-            {"label": "Proficiency", "value": "proficiency"},
-            {"label": "Growth", "value": "growth"},
-        ]
-
-        # also returns false if radio_type_value is empty
-        if radio_type_value in ["proficiency","growth"]:
-            type_value = radio_type_value
-        else:
-            type_value = "proficiency"
-
-    elif school_type == "K12":
+    if school_type == "K12":
         radio_input_container = {'display': 'block'}
         
         type_options = [
-            {"label": "Proficiency", "value": "proficiency"},
-            {"label": "Growth", "value": "growth"},
-            {"label": "High School", "value": "highschool"}        
+            {"label": "K-8", "value": "k8"},
+            {"label": "High School", "value": "hs"}        
         ]
 
-        if radio_type_value in ["proficiency","growth","highschool"]:
+        if radio_type_value in type_options:
             type_value = radio_type_value
         else:
-            type_value = "proficiency"
+            type_value = "k8"
 
-    # on fail - display nothing
     else:
+
         radio_input_container = {'display': 'none'}
         type_options = []
         type_value = ""
-
+    
     return type_options, type_value, radio_input_container
 
 # Academic Proficiency data Category
@@ -108,7 +86,7 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
     else:
         if ctx.triggered_id == 'academic-information-radio-type':
 
-            if radio_type == "growth" or radio_type == "proficiency":
+            if radio_type == "proficiency":
                 if radio_category_value:
                     category_value = radio_category_value
                 else:
@@ -159,16 +137,8 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
     Output("academic-information-main-container", "style"),
     Output("academic-information-empty-container", "style"),
     Output("academic-information-no-data", "children"),
-    Output("growth-grades-ela", "children"),
-    Output("growth-grades-math", "children"),
-    Output("growth-ethnicity-ela", "children"),
-    Output("growth-ethnicity-math", "children"),
-    Output("growth-subgroup-ela", "children"),
-    Output("growth-subgroup-math", "children"),
-    Output("academic-information-main-growth-container", "style"),
-    Output("academic-information-empty-growth-container", "style"),
-    Output("academic-information-no-growth-data", "children"),
     Output("academic-information-notes-string", "children"),
+    # Output("subnav", "children"),    
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input(component_id="academic-information-radio-type", component_property="value"),
@@ -188,26 +158,18 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
     selected_school_id = int(selected_school["School ID"].values[0])
     selected_school_name = selected_school["School Name"].values[0]
 
+    # subnav = [html.Div(subnav_academic_type(selected_school_type), className="tabs")]
+
     excluded_years = get_excluded_years(selected_year_string)
 
     # Radio buttons don't play nice
     if not radio_type:
-        radio_type = "proficiency"
+        radio_type = "k8"
 
     if not radio_category:
         radio_category = "all"
 
     # default styles (all values empty - only empty_container displayed)\
-    growth_grades_ela = []
-    growth_grades_math = []
-    growth_ethnicity_ela = []
-    growth_ethnicity_math = []
-    growth_subgroup_ela = []
-    growth_subgroup_math = []
-    main_growth_container = {"display": "none"}
-    empty_growth_container = {"display": "none"}
-
-    # proficiency
     hs_grad_overview_table = []
     hs_grad_ethnicity_table = []
     hs_grad_subgroup_table = []
@@ -245,7 +207,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
     empty_container = {"display": "block"}
 
     no_display_data = no_data_page("Academic Proficiency")
-    no_growth_data = no_data_page("Academic Growth")
 
     # NOTE: There is a special exception for Christel House South - prior to 2021,
     # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
@@ -253,6 +214,8 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
     if (selected_school_type == "HS" or selected_school_type == "AHS" or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric < 2021)):
 
+        main_container = {"display": "none"}
+        
         # load HS academic data
         selected_raw_hs_school_data = get_high_school_academic_data(school)
 
@@ -353,16 +316,11 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
     if (selected_school_type == "K8" or selected_school_type == "K12"):
 
         # If school is K12, we have already loaded HS data, so we just skip the K8 data
-        if radio_type == "highschool":
+        if radio_type == "hs":
             k8_table_container = {"display": "none"}
 
         # Proficiency Page
-        elif radio_type == "proficiency":
-
-            main_growth_container = {"display": "none"}
-            empty_growth_container = {"display": "none"}
-            sat_table_container = {"display": "none"}
-            grad_table_container = {"display": "none"}
+        else:
 
             selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
@@ -695,19 +653,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                     else:
                         math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-# Maybe Maybe Maybe
-            # if radio_category == "total":
-            #     proficiency_ela_grades_container = {"display": "block"}
-            #     proficiency_math_grades_container = {"display": "block"}
-            #     proficiency_ethnicity_math = []
-            #     math_ethnicity_bar_fig = []
-            #     proficiency_subgroup_math = []
-            #     math_subgroup_bar_fig = []
-            #     proficiency_ethnicity_ela = []
-            #     ela_ethnicity_bar_fig = []
-            #     proficiency_subgroup_ela = []
-            #     ela_subgroup_bar_fig = []
-
             if radio_category == "grade":
                 proficiency_ela_grades_container = {"display": "block"}
                 proficiency_math_grades_container = {"display": "block"}
@@ -762,179 +707,13 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                 proficiency_subgroup_math = []
                 math_subgroup_bar_fig = []
 
-        elif radio_type == "growth":
-
-            main_container = {"display": "none"}
-
-            # State Growth Data
-            # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
-            # 162 days. "Majority Enrolled" is misleading. It actually means "Greatest Number of Days." So the actual
-            # number of days could be less than half of the year (82) if, for example, a student transferred a few
-            # times, or was out of the system for most of the year. "Tested School" is where the student actually took
-            # the test. IDOE uses "Majority Enrolled" for their calculations. So we do the same here.
-
-            # ICSB growth metrics need to be updated, currently say:
-            #   Percentage of students achieving “typical” or “high” growth on the state assessment in ELA/Math
-            #   Median SGP of students achieving "adequate and sufficient growth" on the state assessment in ELA/Math
-
-            # NOTE: Growth data shows: byGrade, byEthnicity, bySES, byEL Status, & by Sped Status
-            # Also available in the data, but not currently shown: Homeless Status and High Ability Status
-
-            # all students who are coded as "Majority Enrolled" at the school
-            growth_data = get_growth_data(school)
-
-            if excluded_years:
-                growth_data = growth_data[~growth_data["Test Year"].isin(excluded_years)]
-
-            if len(growth_data.index) == 0 or selected_school["Guest"].values[0] == "Y":
-
-                main_growth_container = {"display": "none"}
-                empty_growth_container = {"display": "block"}
-                empty_container = {"display": "none"}
-                
-            else:
-
-                main_growth_container = {"display": "block"}
-
-                empty_growth_container = {"display": "none"}
-                empty_container = {"display": "none"}
-
-                # Percentage of students achieving "Adequate Growth"
-                fig_data_grades_growth, table_data_grades_growth = process_growth_data(growth_data,"Grade Level")
-                fig_data_ethnicity_growth, table_data_ethnicity_growth = process_growth_data(growth_data,"Ethnicity")
-                fig_data_ses_growth, table_data_ses_growth = process_growth_data(growth_data,"Socioeconomic Status")
-                fig_data_el_growth, table_data_el_growth = process_growth_data(growth_data,"English Learner Status")
-                fig_data_sped_growth, table_data_sped_growth = process_growth_data(growth_data,"Special Education Status")
-
-                # combine subgroups
-                table_data_subgroup_growth = pd.concat([table_data_ses_growth, table_data_el_growth, table_data_sped_growth])
-                fig_data_subgroup_growth = pd.concat([fig_data_ses_growth, fig_data_el_growth, fig_data_sped_growth], axis=1)
-
-            ## By grade
-
-                # grades growth ela table/fig #1
-                table_data_grades_growth_ela = table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("ELA"))]
-                growth_data_162_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
-                growth_data_162_grades_ela.columns = growth_data_162_grades_ela.columns.str.split("_").str[1]
-                growth_data_me_grades_ela = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("Majority Enrolled")) & (fig_data_grades_growth.columns.str.contains("ELA"))]
-                growth_data_me_grades_ela.columns = growth_data_me_grades_ela.columns.str.split("_").str[1]
-
-                label_grades_growth_ela="Percentage of Students with Adequate Growth - by Grade (ELA)"
-                table_grades_growth_ela = create_growth_table(table_data_grades_growth_ela,label_grades_growth_ela)
-                fig_grades_growth_ela = make_growth_chart(growth_data_me_grades_ela, growth_data_162_grades_ela, label_grades_growth_ela)
-
-                growth_grades_ela = create_growth_layout(table_grades_growth_ela, fig_grades_growth_ela, label_grades_growth_ela)
-
-                # grades growth math table/fig #3
-                table_data_grades_growth_math= table_data_grades_growth[(table_data_grades_growth["Category"].str.contains("Math"))]
-                growth_data_162_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("162")) & (fig_data_grades_growth.columns.str.contains("Math"))]
-                growth_data_me_grades_math = fig_data_grades_growth.loc[:,(fig_data_grades_growth.columns.str.contains("Majority Enrolled")) & (fig_data_grades_growth.columns.str.contains("Math"))]
-                growth_data_162_grades_math.columns = growth_data_162_grades_math.columns.str.split("_").str[1]
-                growth_data_me_grades_math.columns = growth_data_me_grades_math.columns.str.split("_").str[1]
-
-                label_grades_growth_math = "Percentage of Students with Adequate Growth - by Grade (Math)"
-                table_grades_growth_math = create_growth_table(table_data_grades_growth_math, label_grades_growth_math)
-                fig_grades_growth_math = make_growth_chart(growth_data_me_grades_math, growth_data_162_grades_math, label_grades_growth_math)
-
-                growth_grades_math = create_growth_layout(table_grades_growth_math, fig_grades_growth_math, label_grades_growth_math)
-
-            ## By ethnicity
-
-                # ethnicity growth ela table/fig #5
-                table_data_ethnicity_growth_ela = table_data_ethnicity_growth[(table_data_ethnicity_growth["Category"].str.contains("ELA"))]
-                growth_data_162_ethnicity_ela = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains("162")) & (fig_data_ethnicity_growth.columns.str.contains("ELA"))]
-                growth_data_162_ethnicity_ela.columns = growth_data_162_ethnicity_ela.columns.str.split("_").str[1]
-                growth_data_me_ethnicity_ela = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains("Majority Enrolled")) & (fig_data_ethnicity_growth.columns.str.contains("ELA"))]
-                growth_data_me_ethnicity_ela.columns = growth_data_me_ethnicity_ela.columns.str.split("_").str[1]
-
-                label_ethnicity_growth_ela = "Percentage of Students with Adequate Growth - by Ethnicity (ELA)"
-                table_ethnicity_growth_ela = create_growth_table(table_data_ethnicity_growth_ela, label_ethnicity_growth_ela)
-                fig_ethnicity_growth_ela = make_growth_chart(growth_data_me_ethnicity_ela, growth_data_162_ethnicity_ela, label_ethnicity_growth_ela)
-
-                growth_ethnicity_ela = create_growth_layout(table_ethnicity_growth_ela, fig_ethnicity_growth_ela, label_ethnicity_growth_ela)
-
-                # ethnicity growth math table/fig #7
-                table_data_ethnicity_growth_math = table_data_ethnicity_growth[(table_data_ethnicity_growth["Category"].str.contains("Math"))]
-                growth_data_162_ethnicity_math = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains("162")) & (fig_data_ethnicity_growth.columns.str.contains("Math"))]
-                growth_data_162_ethnicity_math.columns = growth_data_162_ethnicity_math.columns.str.split("_").str[1]
-                growth_data_me_ethnicity_math = fig_data_ethnicity_growth.loc[:,(fig_data_ethnicity_growth.columns.str.contains("Majority Enrolled")) & (fig_data_ethnicity_growth.columns.str.contains("Math"))]
-                growth_data_me_ethnicity_math.columns = growth_data_me_ethnicity_math.columns.str.split("_").str[1]
-
-                label_ethnicity_growth_math = "Percentage of Students with Adequate Growth - by Ethnicity (Math)"
-                table_ethnicity_growth_math = create_growth_table(table_data_ethnicity_growth_math, label_ethnicity_growth_math)
-                fig_ethnicity_growth_math = make_growth_chart(growth_data_me_ethnicity_math, growth_data_162_ethnicity_math, label_ethnicity_growth_math)
-
-                growth_ethnicity_math = create_growth_layout(table_ethnicity_growth_math, fig_ethnicity_growth_math, label_ethnicity_growth_math)
-
-            ## By subgroup
-
-                # subgroup growth ela table/fig #9
-                table_data_subgroup_growth_ela = table_data_subgroup_growth[(table_data_subgroup_growth["Category"].str.contains("ELA"))]
-                growth_data_162_subgroup_ela = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains("162")) & (fig_data_subgroup_growth.columns.str.contains("ELA"))]
-                growth_data_162_subgroup_ela.columns = growth_data_162_subgroup_ela.columns.str.split("_").str[1]
-                growth_data_me_subgroup_ela = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains("Majority Enrolled")) & (fig_data_subgroup_growth.columns.str.contains("ELA"))]
-                growth_data_me_subgroup_ela.columns = growth_data_me_subgroup_ela.columns.str.split("_").str[1]
-
-                label_subgroup_growth_ela = "Percentage of Students with Adequate Growth - by Subgroup (ELA)"
-                table_subgroup_growth_ela = create_growth_table(table_data_subgroup_growth_ela, label_subgroup_growth_ela)
-                fig_subgroup_growth_ela = make_growth_chart(growth_data_me_subgroup_ela, growth_data_162_subgroup_ela, label_subgroup_growth_ela)
-
-                growth_subgroup_ela = create_growth_layout(table_subgroup_growth_ela, fig_subgroup_growth_ela, label_subgroup_growth_ela)
-
-                # subgroup growth math table/fig #11
-                table_data_subgroup_growth_math= table_data_subgroup_growth[(table_data_subgroup_growth["Category"].str.contains("Math"))]
-                growth_data_162_subgroup_math = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains("162")) & (fig_data_subgroup_growth.columns.str.contains("Math"))]
-                growth_data_162_subgroup_math.columns = growth_data_162_subgroup_math.columns.str.split("_").str[1]
-                growth_data_me_subgroup_math = fig_data_subgroup_growth.loc[:,(fig_data_subgroup_growth.columns.str.contains("Majority Enrolled")) & (fig_data_subgroup_growth.columns.str.contains("Math"))]
-                growth_data_me_subgroup_math.columns = growth_data_me_subgroup_math.columns.str.split("_").str[1]
-
-                label_subgroup_growth_math = "Percentage of Students with Adequate Growth - by Subgroup (Math)"
-                table_subgroup_growth_math = create_growth_table(table_data_subgroup_growth_math, label_subgroup_growth_math)
-                fig_subgroup_growth_math = make_growth_chart(growth_data_me_subgroup_math, growth_data_162_subgroup_math, label_subgroup_growth_math)
-
-                growth_subgroup_math = create_growth_layout(table_subgroup_growth_math, fig_subgroup_growth_math, label_subgroup_growth_math)
-
-                if radio_category == "grade":
-                    growth_ethnicity_ela = []
-                    growth_ethnicity_math = []
-                    growth_subgroup_ela = []
-                    growth_subgroup_math = []
-                elif radio_category == "ethnicity":
-                    growth_grades_ela = []
-                    growth_grades_math = []
-                    growth_subgroup_ela = []
-                    growth_subgroup_math = []
-                elif radio_category == "subgroup":
-                    growth_grades_ela = []
-                    growth_grades_math = []
-                    growth_ethnicity_ela = []
-                    growth_ethnicity_math = []
-                elif radio_category == "all":
-                    pass
-                else:
-                    growth_grades_ela = []
-                    growth_grades_math = []
-                    growth_ethnicity_ela = []
-                    growth_ethnicity_math = []
-                    growth_subgroup_ela = []
-                    growth_subgroup_math = []
-
-    if radio_type == "proficiency":
+    if radio_type == "k8":
         academic_information_notes_string = "There are a number of factors that make it difficult to make \
             valid and reliable comparisons between test scores from 2019 to 2022. For example, ILEARN was \
             administered for the first time during the 2018-19 SY and represented an entirely new type and \
             mode of assessment (adaptive and online-only). No State assessment was administered in 2020 because \
             of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
             testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
-
-    if radio_type == "growth":
-        academic_information_notes_string = "State growth data comes from IDOE's LINK. Identifying information \
-            is scrubbed and data is aggregated before display. The calculation includes all students who were \
-            enrolled in the selected school for the most number of days that student was enrolled in any school \
-            over the entire school year (Majority Enrolled). This does not necessarily mean that the student was \
-            enrolled in the school for an actual majority of the year (e.g., 82 days). This calculation thus includes \
-            more students than previous year calculations which only included students who were enrolled in the \
-            school for 162 Days. The 162 Day value is included in the tooltip of each table and chart for comparison purposes."
 
     ahs_notes = "Adult High Schools enroll students who are over the age of 18, under credited, \
                 dropped out of high school for a variety of reasons, and are typically out of cohort from \
@@ -946,11 +725,13 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                 Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
                 Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
 
-    if radio_type == "highschool":
+    if radio_type == "hs":
         if selected_school_type == "AHS":
             academic_information_notes_string = ahs_notes + " " + hs_notes
         else:
             academic_information_notes_string = hs_notes
+
+
 
     return (
         proficiency_grades_ela, ela_grade_bar_fig, proficiency_ela_grades_container,
@@ -962,29 +743,28 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
         attendance_table, k8_table_container,
         hs_grad_overview_table, hs_grad_ethnicity_table, hs_grad_subgroup_table, grad_table_container,
         sat_cut_scores_table, sat_overview_table, sat_ethnicity_table, sat_subgroup_table, sat_table_container,
-        main_container, empty_container, no_display_data,
-        growth_grades_ela, growth_grades_math, growth_ethnicity_ela, growth_ethnicity_math,
-        growth_subgroup_ela, growth_subgroup_math, main_growth_container, empty_growth_container,
-        no_growth_data, academic_information_notes_string
+        main_container, empty_container, no_display_data, academic_information_notes_string #, subnav
     )
 
 def layout():
     return html.Div(
         [
+            # html.Div(
+            #     [
+            #         html.Div(
+            #             [
+            #                 html.Div(id="subnav"),
+            #                 # html.Div(subnav_academic_type(), className="tabs"),
+            #             ],
+            #             className="bare-container--flex--center twelve columns",
+            #         ),
+            #     ],
+            #     className="row",
+            # ),
+            # html.Hr(),
+            # TODO: Need to return radio buttons as functions as well
             html.Div(
                 [
-                    html.Div(
-                        [
-                            html.Div(subnav_academic(), className="tabs"),
-                        ],
-                        className="bare-container--flex--center twelve columns",
-                    ),
-                ],
-                className="row",
-            ),
-            html.Hr(),
-            html.Div(
-                [            
                     html.Div(
                         [
                             html.Div(
@@ -997,7 +777,6 @@ def layout():
                                         labelCheckedClassName="active",
                                         value=[],
                                         persistence=False,
-                                        # persistence_type="memory",
                                     ),
                                 ],
                                 className="radio-group-academic",
@@ -1017,7 +796,6 @@ def layout():
                                         labelCheckedClassName="active",
                                         value=[],
                                         persistence=False,
-                                        # persistence_type="memory",
                                     ),
                                 ],
                                 className="radio-group-academic-subheader",
@@ -1157,12 +935,12 @@ def layout():
                                 ),
                                 html.Div(
                                     [
-                                html.Div(
-                                    [                                        
-                                        html.Label("Graduation Rate", className="label__header", style = {"marginTop": "5px"}),
-                                    ],
-                                    className="bare-container--flex--center twelve columns",                                    
-                                ),
+                                        html.Div(
+                                            [                                        
+                                                html.Label("Graduation Rate", className="label__header", style = {"marginTop": "5px"}),
+                                            ],
+                                            className="bare-container--flex--center twelve columns",                                    
+                                        ),
                                         html.Div(id="hs-grad-overview-table"),
                                         html.Div(id="hs-grad-ethnicity-table"),
                                         html.Div(id="hs-grad-subgroup-table"),
@@ -1171,12 +949,12 @@ def layout():
                                 ),
                                 html.Div(
                                     [                                
-                                html.Div(
-                                    [
-                                        html.Label("SAT", className="label__header", style = {'marginTop': "20px"}),
-                                   ],
-                                    className="bare-container--flex--center twelve columns",                                    
-                                ),                                        
+                                        html.Div(
+                                            [
+                                                html.Label("SAT", className="label__header", style = {'marginTop': "20px"}),
+                                        ],
+                                            className="bare-container--flex--center twelve columns",                                    
+                                        ),                                        
                                         html.Div(id="sat-cut-scores-table", children=[]),
                                         html.Div(id="sat-overview-table"),
                                         html.Div(id="sat-ethnicity-table"),
@@ -1187,6 +965,28 @@ def layout():
                             ],
                             id = "academic-information-main-container",
                         ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Label("Notes:", className="key-label__header"),
+                                        html.P(""),
+                                            html.P(id="academic-information-notes-string",
+                                                style={
+                                                        "textAlign": "Left",
+                                                        "color": "#6783a9",
+                                                        "fontSize": 12,
+                                                        "marginLeft": "10px",
+                                                        "marginRight": "10px",
+                                                        "marginTop": "10px",
+                                                }
+                                            ),
+                                    ],
+                                    className = "pretty-container__key ten columns"
+                                ),
+                            ],
+                            className = "bare-container--flex--center twelve columns"
+                        ),                    
                     ],
                 ),
             ],
@@ -1196,47 +996,6 @@ def layout():
                 html.Div(id="academic-information-no-data"),
             ],
             id = "academic-information-empty-container",
-        ),
-        html.Div(
-            [
-                html.Div(id="growth-grades-ela", children=[]),
-                html.Div(id="growth-grades-math", children=[]),
-
-                html.Div(id="growth-ethnicity-ela", children=[]),
-                html.Div(id="growth-ethnicity-math", children=[]),
-
-                html.Div(id="growth-subgroup-ela", children=[]),
-                html.Div(id="growth-subgroup-math", children=[]),
-            ],
-            id = "academic-information-main-growth-container",
-        ),
-        html.Div(
-            [
-                html.Div(id="academic-information-no-growth-data"),
-            ],
-            id = "academic-information-empty-growth-container",
-        ),
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Label("Notes:", className="key-label__header"),
-                        html.P(""),
-                            html.P(id="academic-information-notes-string",
-                                style={
-                                        "textAlign": "Left",
-                                        "color": "#6783a9",
-                                        "fontSize": 12,
-                                        "marginLeft": "10px",
-                                        "marginRight": "10px",
-                                        "marginTop": "10px",
-                                }
-                            ),
-                    ],
-                    className = "pretty-container__key ten columns"
-                ),
-            ],
-            className = "bare-container--flex--center twelve columns"
         ),
     ],
     id="main-container",

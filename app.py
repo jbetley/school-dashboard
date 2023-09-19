@@ -33,7 +33,7 @@ from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 
 import dash
-from dash import dcc, html, Input, Output, callback
+from dash import dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 
 from pages.load_data import get_school_index, get_academic_dropdown_years, get_financial_info_dropdown_years, \
@@ -281,6 +281,11 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
     return year_options, year_value, current_page
 
+for page in dash.page_registry.values():
+    if page.get("top_nav"):
+        print(page["name"])
+        print(page["path"])
+
 # app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. variable
 def layout():
     return html.Div(
@@ -289,8 +294,8 @@ def layout():
         dcc.Location(id="current-page", refresh=False),
         html.Div(id="hidden", style={"display": "none"}),
         
-        html.Div(
-            [
+        # html.Div(
+        #     [
                 html.Div(
                     [
                         
@@ -352,9 +357,9 @@ def layout():
                     ],
                     className="row--fixed",
                 ),
-            ],
-            className="row--fixed",
-        ),
+        #     ],
+        #     className="row--fixed",
+        # ),
         html.Div(
             [
                 html.Div(
@@ -366,23 +371,80 @@ def layout():
                                         dbc.Nav(
                                             [
                                                 dbc.NavLink(
-                                                    page["name"],
-                                                    href=page["path"],
-                                                    className="tab",
-                                                    active="exact",
-                                                )
-                                                for page in dash.page_registry.values()
-                                                if page.get("top_nav")
-                                                if page["module"] != "pages.not_found_404"
+                                                    "About",
+                                                     href="/",
+                                                     className="tab",
+                                                     active="exact"
+                                                ),
+                                                dbc.NavLink(
+                                                    "Financial Information",
+                                                     href="/financial_information",
+                                                     className="tab",
+                                                     active="exact"
+                                                ),
+                                                dbc.NavLink(
+                                                    "Financial Metrics",
+                                                     href="/financial_metrics",
+                                                     className="tab",
+                                                     active="exact"
+                                                ),
+                                                dbc.NavLink(
+                                                    "Financial Analysis",
+                                                     href="/financial_analysis",
+                                                     className="tab",
+                                                     active="exact"
+                                                ),
+                                                dbc.NavLink(
+                                                    "Organizational Compliance",
+                                                     href="/organizational-compliance",
+                                                     className="tab",
+                                                     active="exact"
+                                                ),
+                                                html.Br(),                                                
+                                                html.Div(style={"marginTop": "15px"}),
+                                                dbc.NavLink(
+                                                    "Academic Proficiency",
+                                                     href="/academic-proficiency",
+                                                     className="tab",
+                                                     active="exact"
+                                                ),
+                                                dbc.NavLink(
+                                                    "Academic Growth",
+                                                     href="/academic-growth",
+                                                     className="tab",
+                                                     active="exact"
+                                                ),                                                
+                                                dbc.NavLink(
+                                                    "Academic Metrics",
+                                                     href="/academic_metrics",
+                                                     className="tab",
+                                                     active="exact"
+                                                ),
+                                                dbc.NavLink(
+                                                    "Academic Analysis",
+                                                     href="/academic_analysis",
+                                                     className="tab",
+                                                     active="exact"
+                                                ),                                                
+                                            #     dbc.NavLink(
+                                            #         page["name"],
+                                            #         href=page["path"],
+                                            #         className="tab",
+                                            #         active="exact",
+                                            #     )
+                                            #     for page in dash.page_registry.values()
+                                            #     if page.get("top_nav")
+                                            #     if page["module"] != "pages.not_found_404"
                                             ],
                                             className="tabs",
                                         ),
                                     ],
-                                    className="nav-container twelve columns", 
+                                    className="nav-container ten columns", 
                                 ),
                             ],
                             className="row",
                         ),
+                        # html.Hr(),
                     ],
                     className="no-print",
                 ),                
