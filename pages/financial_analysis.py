@@ -614,7 +614,6 @@ def layout():
                     #     ],
                     #     className="row"
                     # ),
-                    html.Hr(),
                     html.Div(
                         [
                             html.Div(

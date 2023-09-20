@@ -22,7 +22,7 @@ from .calculate_metrics import calculate_k8_yearly_metrics, calculate_k8_compari
     calculate_adult_high_school_metrics, calculate_attendance_metrics, calculate_iread_metrics
 from .calculations import conditional_fillna
 
-dash.register_page(__name__,  path = "/academic_metrics", top_nav=True, order=7)
+dash.register_page(__name__,  path = "/academic_metrics", top_nav=True, order=9)
 
 @callback(
     Output("table-container-11ab", "children"),
@@ -434,7 +434,6 @@ def layout():
                 #     ],
                 #     className="row"
                 # ),
-                html.Hr(),                
                 html.Div(
                     [       
                         html.Div(

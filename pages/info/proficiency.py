@@ -23,33 +23,37 @@ from pages.tables import no_data_page, no_data_table, create_multi_header_table_
 from pages.charts import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
 from pages.layouts import set_table_layout, create_growth_layout, create_line_fig_layout
 from pages.calculations import round_percentages, conditional_fillna
-# from pages.subnav import subnav_academic_type
+from pages.subnav import subnav_academic_type
 
-dash.register_page(__name__, name = "Academic Information", title = "Academic Proficiency", top_nav=True, order=4) #path="/info/proficiency", 
+dash.register_page(__name__, top_nav=False,  order=7) # path="/info/proficiency",
 
-# Academic Data Type (k8 or hs)
+# Proficiency School Type (applies only to K12 schools)
 @callback(      
-    Output("academic-information-radio-type", "options"),
-    Output("academic-information-radio-type","value"),
-    Output('academic-information-radio-container', 'style'),
+    Output("academic-proficiency-radio-type", "options"),
+    Output("academic-proficiency-radio-type","value"),
+    Output('academic-proficiency-radio-type-container', 'style'),
+    Output("hidden-proficiency", "children"),
+    Input("current-proficiency-page", "href"),
     Input("charter-dropdown", "value"),
-    State("academic-information-radio-type", "value"),
+    State("academic-proficiency-radio-type", "value"),
 )
-def radio_type_selector(school: str, radio_type_value: str):
+def radio_type_selector(current_page: str, school: str, radio_type_state: str):
+
+    current_page = current_page.rsplit("/", 1)[-1]
 
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
-    if school_type == "K12":
+    if school_type == "K12" and current_page == "proficiency":
         radio_input_container = {'display': 'block'}
-        
+
         type_options = [
             {"label": "K-8", "value": "k8"},
             {"label": "High School", "value": "hs"}        
         ]
 
-        if radio_type_value in type_options:
-            type_value = radio_type_value
+        if radio_type_state in type_options:
+            type_value = radio_type_state
         else:
             type_value = "k8"
 
@@ -59,18 +63,21 @@ def radio_type_selector(school: str, radio_type_value: str):
         type_options = []
         type_value = ""
     
-    return type_options, type_value, radio_input_container
+    return type_options, type_value, radio_input_container, current_page
 
-# Academic Proficiency data Category
+# Proficiency Category
 @callback(
-    Output("academic-information-radio-category", "options"),
-    Output("academic-information-radio-category","value"),
-    Input("academic-information-radio-type", "value"),
-    State("academic-information-radio-category", "options"),
-    State("academic-information-radio-category", "value")  
+    Output("academic-proficiency-radio-category", "options"),
+    Output("academic-proficiency-radio-category","value"),
+    Output("academic-proficiency-radio-category-container","style"),
+    # Input("charter-dropdown", "value"),
+    # Input("current-proficiency-page", "href"),
+    Input("academic-proficiency-radio-type", "value"),
+    State("academic-proficiency-radio-category", "options"),
+    State("academic-proficiency-radio-category", "value")  
 )
 def radio_category_selector(radio_type: str, radio_category_options: list, radio_category_value: str):
-
+# school: str, current_page: str, 
     options_default = [
         {"label": "All Data", "value": "all"},
         {"label": "By Grade", "value": "grade"},
@@ -80,31 +87,36 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
     
     value_default = "all"
 
-    if not ctx.triggered:
-        raise PreventUpdate()
+    # selected_school = get_school_index(school)
+    # school_type = selected_school["School Type"].values[0]
     
-    else:
-        if ctx.triggered_id == 'academic-information-radio-type':
+    # current_page = current_page.rsplit("/", 1)[-1]
+    # print(radio_type)
+    # print(current_page)
+    # if current_page == "academic_growth" or (current_page == "academic_proficiency" and radio_type != "hs"):
+    if radio_type != "hs":
+        if radio_category_value:
+            category_value = radio_category_value
+        else:
+            category_value = value_default
 
-            if radio_type == "proficiency":
-                if radio_category_value:
-                    category_value = radio_category_value
-                else:
-                    category_value = value_default
+        if radio_category_options:
+            category_options = radio_category_options
+        else:
+            category_options = options_default
 
-                if radio_category_options:
-                    category_options = radio_category_options
-                else:
-                    category_options = options_default
+        category_container = {"display": "block"}
 
-            else:   # highschool
-                category_value = ""
-                category_options = []
-    
-    return category_options, category_value
+    else:    
+        category_value = ""
+        category_options = []
+        category_container = {"display": "none"}
+
+    return category_options, category_value, category_container
 
 # Main
 @callback(
+    Output('redirect-proficiency-content', 'href'),
     Output("proficiency-grades-ela", "children"),
     Output("ela-grade-bar-fig", "children"),
     Output("proficiency-ela-grades-container", "style"),
@@ -125,26 +137,25 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
     Output("proficiency-math-subgroup-container", "style"),
     Output("attendance-table", "children"),
     Output("k8-table-container", "style"),
-    Output("hs-grad-overview-table", "children"),
-    Output("hs-grad-ethnicity-table", "children"),
-    Output("hs-grad-subgroup-table", "children"),
-    Output("grad-table-container", "style"),
-    Output("sat-cut-scores-table", "children"),
-    Output("sat-overview-table", "children"),
-    Output("sat-ethnicity-table", "children"),
-    Output("sat-subgroup-table", "children"),
-    Output("sat-table-container", "style"),
-    Output("academic-information-main-container", "style"),
-    Output("academic-information-empty-container", "style"),
-    Output("academic-information-no-data", "children"),
-    Output("academic-information-notes-string", "children"),
-    # Output("subnav", "children"),    
+    Output("k12-grad-overview-table", "children"),
+    Output("k12-grad-ethnicity-table", "children"),
+    Output("k12-grad-subgroup-table", "children"),
+    Output("k12-grad-table-container", "style"),
+    Output("k12-sat-cut-scores-table", "children"),
+    Output("k12-sat-overview-table", "children"),
+    Output("k12-sat-ethnicity-table", "children"),
+    Output("k12-sat-subgroup-table", "children"),
+    Output("k12-sat-table-container", "style"),    
+    Output("academic-proficiency-main-container", "style"),
+    Output("academic-proficiency-empty-container", "style"),
+    Output("academic-proficiency-no-data", "children"),
+    Output("academic-proficiency-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="academic-information-radio-type", component_property="value"),
-    Input(component_id="academic-information-radio-category", component_property="value"),  
+    Input(component_id="academic-proficiency-radio-type", component_property="value"),
+    Input(component_id="academic-proficiency-radio-category", component_property="value"),
 )
-def update_academic_information_page(school: str, year: str, radio_type: str, radio_category: str):
+def update_academic_proficiency_page(school: str, year: str, radio_type: str, radio_category: str):
     if not school:
         raise PreventUpdate
 
@@ -158,11 +169,6 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
     selected_school_id = int(selected_school["School ID"].values[0])
     selected_school_name = selected_school["School Name"].values[0]
 
-    # subnav = [html.Div(subnav_academic_type(selected_school_type), className="tabs")]
-
-    excluded_years = get_excluded_years(selected_year_string)
-
-    # Radio buttons don't play nice
     if not radio_type:
         radio_type = "k8"
 
@@ -170,15 +176,15 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
         radio_category = "all"
 
     # default styles (all values empty - only empty_container displayed)\
-    hs_grad_overview_table = []
-    hs_grad_ethnicity_table = []
-    hs_grad_subgroup_table = []
-    sat_overview_table = []
-    sat_ethnicity_table = []
-    sat_subgroup_table = []
-    sat_cut_scores_table = []
-    sat_table_container = {"display": "none"}
-    grad_table_container = {"display": "none"}
+    k12_grad_overview_table = []
+    k12_grad_ethnicity_table = []
+    k12_grad_subgroup_table = []
+    k12_sat_overview_table = []
+    k12_sat_ethnicity_table = []
+    k12_sat_subgroup_table = []
+    k12_sat_cut_scores_table = []
+    k12_sat_table_container = {"display": "none"}
+    k12_grad_table_container = {"display": "none"}
 
     proficiency_grades_ela = []
     ela_grade_bar_fig = []
@@ -202,127 +208,132 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
     attendance_table = []
     k8_table_container = {"display": "none"}
 
-    academic_information_notes_string = ""
+    academic_proficiency_notes_string = ""
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
 
     no_display_data = no_data_page("Academic Proficiency")
-
-    # NOTE: There is a special exception for Christel House South - prior to 2021,
-    # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
-    # Christel House Watanabe Manual HS
-    if (selected_school_type == "HS" or selected_school_type == "AHS" or selected_school_type == "K12"
-        or (selected_school_id == 5874 and selected_year_numeric < 2021)):
-
-        main_container = {"display": "none"}
+    
+    # HS and AHS do not have proficiency data
+    if selected_school_type == "K12":
+        pass
+    if selected_school_type == "HS" or selected_school_type == "AHS" or \
+            (selected_school_id == 5874 and selected_year_numeric < 2021):
         
-        # load HS academic data
-        selected_raw_hs_school_data = get_high_school_academic_data(school)
+        location = "/academic_information"
 
-        # exclude years later than the selected year
-        if excluded_years:
-            selected_raw_hs_school_data = selected_raw_hs_school_data[~selected_raw_hs_school_data["Year"].isin(excluded_years)]
+    else:
 
-        if len(selected_raw_hs_school_data.index) > 0:
+        # NOTE: This is not ideal, as we are having to load hs data and layout twice because of
+        # K12 schools having both proficiency and HS data and HS/AHS only having HS data
+        if selected_school_type == "K12" and radio_type == "hs":
 
-            selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
+            # load HS academic data
+            selected_raw_hs_school_data = get_high_school_academic_data(school)
 
-            all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
+            excluded_years = get_excluded_years(selected_year_string)
 
-            if not all_hs_school_data.empty:
+            # exclude years later than the selected year
+            if excluded_years:
+                selected_raw_hs_school_data = selected_raw_hs_school_data[~selected_raw_hs_school_data["Year"].isin(excluded_years)]
 
-                # no radio buttons are displayed but still need type set for correct academic note
-                if (selected_school_type == "HS" or selected_school_type == "AHS"):
-                    radio_type == "highschool"
+            if len(selected_raw_hs_school_data.index) > 0:
 
-                main_container = {"display": "block"}
-                empty_container = {"display": "none"}
+                selected_raw_hs_school_data = filter_high_school_academic_data(selected_raw_hs_school_data)
 
-                # Graduation Rate Tables ("Strength of Diploma" in data, but not currently displayed)
-                grad_overview_categories = ["Total", "Non Waiver", "State Average"]
+                all_hs_school_data = process_high_school_academic_data(selected_raw_hs_school_data, school)
 
-                if selected_school_type == "AHS":
-                    grad_overview_categories.append("CCR Percentage")
+                if not all_hs_school_data.empty:
 
-                all_hs_school_data.columns = all_hs_school_data.columns.astype(str)
+                    main_container = {"display": "block"}
+                    empty_container = {"display": "none"}
 
-                # Graduation Rate Tables
-                graduation_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Graduation")].copy()
+                    # Graduation Rate Tables ("Strength of Diploma" in data, but not currently displayed)
+                    grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
-                if len(graduation_data.columns) > 1 and len (graduation_data.index) > 0:
+                    if selected_school_type == "AHS":
+                        grad_overview_categories.append("CCR Percentage")
 
-                    grad_table_container = {"display": "block"}
+                    all_hs_school_data.columns = all_hs_school_data.columns.astype(str)
 
-                    graduation_data["Category"] = (graduation_data["Category"].str.replace("Graduation Rate", "").str.strip())
+                    # Graduation Rate Tables
+                    graduation_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Graduation")].copy()
 
-                    grad_overview = graduation_data[graduation_data["Category"].str.contains("|".join(grad_overview_categories))]
-                    grad_overview = grad_overview.dropna(axis=1,how="all")
+                    if len(graduation_data.columns) > 1 and len (graduation_data.index) > 0:
 
-                    hs_grad_overview_table = create_multi_header_table_with_container(grad_overview,"Graduation Rate Overview")
-                    hs_grad_overview_table = set_table_layout(hs_grad_overview_table, hs_grad_overview_table, grad_overview.columns)
+                        k12_grad_table_container = {"display": "block"}
 
-                    grad_ethnicity = graduation_data[graduation_data["Category"].str.contains("|".join(ethnicity))]
-                    grad_ethnicity = grad_ethnicity.dropna(axis=1,how="all")
+                        graduation_data["Category"] = (graduation_data["Category"].str.replace("Graduation Rate", "").str.strip())
 
-                    hs_grad_ethnicity_table = create_multi_header_table_with_container(grad_ethnicity,"Graduation Rate by Ethnicity")
-                    hs_grad_ethnicity_table = set_table_layout(hs_grad_ethnicity_table, hs_grad_ethnicity_table, grad_ethnicity.columns)
+                        grad_overview = graduation_data[graduation_data["Category"].str.contains("|".join(grad_overview_categories))]
+                        grad_overview = grad_overview.dropna(axis=1,how="all")
 
-                    grad_subgroup = graduation_data[graduation_data["Category"].str.contains("|".join(subgroup))]
-                    grad_subgroup = grad_subgroup.dropna(axis=1,how="all")
+                        k12_grad_overview_table = create_multi_header_table_with_container(grad_overview,"Graduation Rate Overview")
+                        k12_grad_overview_table = set_table_layout(k12_grad_overview_table, k12_grad_overview_table, grad_overview.columns)
 
-                    hs_grad_subgroup_table = create_multi_header_table_with_container(grad_subgroup,"Graduation Rate by Subgroup")
-                    hs_grad_subgroup_table = set_table_layout(hs_grad_subgroup_table, hs_grad_subgroup_table, grad_subgroup.columns)
+                        grad_ethnicity = graduation_data[graduation_data["Category"].str.contains("|".join(ethnicity))]
+                        grad_ethnicity = grad_ethnicity.dropna(axis=1,how="all")
 
-                # SAT Benchmark Table
-                sat_table_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Benchmark %")].copy()
+                        k12_grad_ethnicity_table = create_multi_header_table_with_container(grad_ethnicity,"Graduation Rate by Ethnicity")
+                        k12_grad_ethnicity_table = set_table_layout(k12_grad_ethnicity_table, k12_grad_ethnicity_table, grad_ethnicity.columns)
 
-                if len(sat_table_data.columns) > 1 and len (sat_table_data.index) > 0:
+                        grad_subgroup = graduation_data[graduation_data["Category"].str.contains("|".join(subgroup))]
+                        grad_subgroup = grad_subgroup.dropna(axis=1,how="all")
 
-                    sat_table_container = {"display": "block"}
+                        k12_grad_subgroup_table = create_multi_header_table_with_container(grad_subgroup,"Graduation Rate by Subgroup")
+                        k12_grad_subgroup_table = set_table_layout(k12_grad_subgroup_table, k12_grad_subgroup_table, grad_subgroup.columns)
 
-                    sat_table_data["Category"] = (sat_table_data["Category"].str.replace("Benchmark %", "").str.strip())
+                    # SAT Benchmark Table
+                    k12_sat_table_data = all_hs_school_data[all_hs_school_data["Category"].str.contains("Benchmark %")].copy()
 
-                    sat_overview = sat_table_data[sat_table_data["Category"].str.contains("School Total")]
-                    sat_overview = sat_overview.dropna(axis=1,how="all")
+                    if len(k12_sat_table_data.columns) > 1 and len (k12_sat_table_data.index) > 0:
 
-                    sat_overview_table = create_multi_header_table_with_container(sat_overview,"SAT Overview")
-                    sat_overview_table = set_table_layout(sat_overview_table, sat_overview_table, sat_overview.columns)
+                        k12_sat_table_container = {"display": "block"}
 
-                    sat_ethnicity = sat_table_data[sat_table_data["Category"].str.contains("|".join(ethnicity))]
-                    sat_ethnicity = sat_ethnicity.dropna(axis=1,how="all")
+                        k12_sat_table_data["Category"] = (k12_sat_table_data["Category"].str.replace("Benchmark %", "").str.strip())
 
-                    sat_ethnicity_table = create_multi_header_table_with_container(sat_ethnicity,"SAT Benchmarks by Ethnicity")
-                    sat_ethnicity_table = set_table_layout(sat_ethnicity_table, sat_ethnicity_table, sat_ethnicity.columns)
+                        k12_sat_overview = k12_sat_table_data[k12_sat_table_data["Category"].str.contains("School Total")]
+                        k12_sat_overview = k12_sat_overview.dropna(axis=1,how="all")
 
-                    sat_subgroup = sat_table_data[sat_table_data["Category"].str.contains("|".join(subgroup))]
-                    sat_subgroup = sat_subgroup.dropna(axis=1,how="all")
+                        k12_sat_overview_table = create_multi_header_table_with_container(k12_sat_overview,"SAT Overview")
+                        k12_sat_overview_table = set_table_layout(k12_sat_overview_table, k12_sat_overview_table, k12_sat_overview.columns)
 
-                    sat_subgroup_table = create_multi_header_table_with_container(sat_subgroup,"SAT Benchmarks by Subgroup")
-                    sat_subgroup_table = set_table_layout(sat_subgroup_table, sat_subgroup_table, sat_subgroup.columns)
+                        k12_sat_ethnicity = k12_sat_table_data[k12_sat_table_data["Category"].str.contains("|".join(ethnicity))]
+                        k12_sat_ethnicity = k12_sat_ethnicity.dropna(axis=1,how="all")
 
-                    # SAT Cut-Score Table
-                    # https://www.in.gov/sboe/files/2021-2022-SAT-Standard-Setting-SBOE-Review.pdf
-                    sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
-                    sat_cut_scores_dict = {
-                        "Content Area": ["Mathematics", "Evidenced-Based Reading and Writing"],
-                        "Below College-Ready Benchmark": ["200 - 450", "200 - 440"],
-                        "Approaching College-Ready Benchmark": ["460 - 520", "450 - 470"],
-                        "At College-Ready Benchmark": ["530 - 800", "480 - 800"]
-                    }
+                        k12_sat_ethnicity_table = create_multi_header_table_with_container(k12_sat_ethnicity,"SAT Benchmarks by Ethnicity")
+                        k12_sat_ethnicity_table = set_table_layout(k12_sat_ethnicity_table, k12_sat_ethnicity_table, k12_sat_ethnicity.columns)
 
-                    sat_cut_scores = pd.DataFrame(sat_cut_scores_dict)
-                    sat_cut_scores_table = create_key_table(sat_cut_scores, sat_cut_scores_label)
+                        k12_sat_subgroup = k12_sat_table_data[k12_sat_table_data["Category"].str.contains("|".join(subgroup))]
+                        k12_sat_subgroup = k12_sat_subgroup.dropna(axis=1,how="all")
 
-    if (selected_school_type == "K8" or selected_school_type == "K12"):
+                        k12_sat_subgroup_table = create_multi_header_table_with_container(k12_sat_subgroup,"SAT Benchmarks by Subgroup")
+                        k12_sat_subgroup_table = set_table_layout(k12_sat_subgroup_table, k12_sat_subgroup_table, k12_sat_subgroup.columns)
 
-        # If school is K12, we have already loaded HS data, so we just skip the K8 data
-        if radio_type == "hs":
-            k8_table_container = {"display": "none"}
+                        # SAT Cut-Score Table
+                        # https://www.in.gov/sboe/files/2021-2022-k12-sat-Standard-Setting-SBOE-Review.pdf
+                        k12_sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
+                        k12_sat_cut_scores_dict = {
+                            "Content Area": ["Mathematics", "Evidenced-Based Reading and Writing"],
+                            "Below College-Ready Benchmark": ["200 - 450", "200 - 440"],
+                            "Approaching College-Ready Benchmark": ["460 - 520", "450 - 470"],
+                            "At College-Ready Benchmark": ["530 - 800", "480 - 800"]
+                        }
 
-        # Proficiency Page
-        else:
+                        k12_sat_cut_scores = pd.DataFrame(k12_sat_cut_scores_dict)
+                        k12_sat_cut_scores_table = create_key_table(k12_sat_cut_scores, k12_sat_cut_scores_label)
+
+                    academic_proficiency_notes_string = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
+                        Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
+                        Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
+
+        elif (selected_school_type == "K8" or selected_school_type == "K12" or \
+            (selected_school_id == 5874 and selected_year_numeric >= 2021)) and radio_type == "k8":
+            # CHS PRE REORG WHERE DOES THE = GO?
 
             selected_raw_k8_school_data = get_k8_school_academic_data(school)
+
+            excluded_years = get_excluded_years(selected_year_string)
 
             if excluded_years:
                 selected_raw_k8_school_data = selected_raw_k8_school_data[~selected_raw_k8_school_data["Year"].isin(excluded_years)]
@@ -412,7 +423,7 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
 
                     proficiency_ethnicity_ela = create_line_fig_layout(ela_ethnicity_table, ela_ethnicity_line_fig, "ELA By Ethnicity")
 
-               ## Math
+                ## Math
 
                     # by Grade Table
                     years_by_grade_math = all_k8_school_data[(all_k8_school_data["Category"].str.contains("|".join(grades_all)) & all_k8_school_data["Category"].str.contains("Math"))]
@@ -707,33 +718,16 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
                 proficiency_subgroup_math = []
                 math_subgroup_bar_fig = []
 
-    if radio_type == "k8":
-        academic_information_notes_string = "There are a number of factors that make it difficult to make \
-            valid and reliable comparisons between test scores from 2019 to 2022. For example, ILEARN was \
-            administered for the first time during the 2018-19 SY and represented an entirely new type and \
-            mode of assessment (adaptive and online-only). No State assessment was administered in 2020 because \
-            of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
-            testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
+            academic_proficiency_notes_string = "There are a number of factors that make it difficult to make \
+                valid and reliable comparisons between test scores from 2019 to 2022. For example, ILEARN was \
+                administered for the first time during the 2018-19 SY and represented an entirely new type and \
+                mode of assessment (adaptive and online-only). No State assessment was administered in 2020 because \
+                of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
+                testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
 
-    ahs_notes = "Adult High Schools enroll students who are over the age of 18, under credited, \
-                dropped out of high school for a variety of reasons, and are typically out of cohort from \
-                their original graduation year. Because graduation rate is calculated at the end of the school \
-                year regardless of the length of time a student is enrolled at a school, it is not comparable to \
-                the graduation rate of a traditional high school."
+            location = "/info/proficiency"
 
-    hs_notes = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
-                Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
-                Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
-
-    if radio_type == "hs":
-        if selected_school_type == "AHS":
-            academic_information_notes_string = ahs_notes + " " + hs_notes
-        else:
-            academic_information_notes_string = hs_notes
-
-
-
-    return (
+    return (location,
         proficiency_grades_ela, ela_grade_bar_fig, proficiency_ela_grades_container,
         proficiency_ethnicity_ela, ela_ethnicity_bar_fig, proficiency_ela_ethnicity_container,
         proficiency_subgroup_ela, ela_subgroup_bar_fig, proficiency_ela_subgroup_container,
@@ -741,55 +735,60 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
         proficiency_ethnicity_math, math_ethnicity_bar_fig, proficiency_math_ethnicity_container,
         proficiency_subgroup_math, math_subgroup_bar_fig, proficiency_math_subgroup_container,
         attendance_table, k8_table_container,
-        hs_grad_overview_table, hs_grad_ethnicity_table, hs_grad_subgroup_table, grad_table_container,
-        sat_cut_scores_table, sat_overview_table, sat_ethnicity_table, sat_subgroup_table, sat_table_container,
-        main_container, empty_container, no_display_data, academic_information_notes_string #, subnav
+        k12_grad_overview_table, k12_grad_ethnicity_table, k12_grad_subgroup_table, k12_grad_table_container,
+        k12_sat_cut_scores_table, k12_sat_overview_table, k12_sat_ethnicity_table, k12_sat_subgroup_table,
+        k12_sat_table_container, main_container, empty_container, no_display_data, academic_proficiency_notes_string
     )
 
 def layout():
     return html.Div(
         [
-            # html.Div(
-            #     [
-            #         html.Div(
-            #             [
-            #                 html.Div(id="subnav"),
-            #                 # html.Div(subnav_academic_type(), className="tabs"),
-            #             ],
-            #             className="bare-container--flex--center twelve columns",
-            #         ),
-            #     ],
-            #     className="row",
-            # ),
-            # html.Hr(),
-            # TODO: Need to return radio buttons as functions as well
+            dcc.Location(id="current-proficiency-page", refresh=False),
+            html.Div(id="hidden-proficiency", style={"display": "none"}),
+            dcc.Location(id="redirect-proficiency-content",  refresh="callback-nav"),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(subnav_academic_type(), className="tabs"),
+                        ],
+                        className="bare-container--flex--center twelve columns",
+                    ),
+                ],
+                className="row",
+            ),
             html.Div(
                 [
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    dbc.RadioItems(
-                                        id="academic-information-radio-type",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        value=[],
-                                        persistence=False,
-                                    ),
+                                    html.Div(
+                                        [
+                                            dbc.RadioItems(
+                                                id="academic-proficiency-radio-type",
+                                                className="btn-group",
+                                                inputClassName="btn-check",
+                                                labelClassName="btn btn-outline-primary",
+                                                labelCheckedClassName="active",
+                                                value=[],
+                                                persistence=False,
+                                            ),
+                                        ],
+                                        className="radio-group-academic",
+                                    )
                                 ],
-                                className="radio-group-academic",
-                            )
+                                className = "bare-container--flex--center twelve columns",
+                            ),
                         ],
-                        className = "bare-container--flex--center twelve columns",
-                    ),
+                        id = "academic-proficiency-radio-type-container",
+                    ),                                        
                     html.Div(
                         [
                             html.Div(
                                 [
                                     dbc.RadioItems(
-                                        id="academic-information-radio-category",
+                                        id="academic-proficiency-radio-category",
                                         className="btn-group",
                                         inputClassName="btn-check",
                                         labelClassName="btn btn-outline-primary",
@@ -804,7 +803,7 @@ def layout():
                         className = "bare-container--flex--center twelve columns",
                     ),
                 ],
-                id = "academic-information-radio-container",
+                id = "academic-proficiency-radio-category-container",
             ),
             html.Div(
                 [
@@ -941,11 +940,11 @@ def layout():
                                             ],
                                             className="bare-container--flex--center twelve columns",                                    
                                         ),
-                                        html.Div(id="hs-grad-overview-table"),
-                                        html.Div(id="hs-grad-ethnicity-table"),
-                                        html.Div(id="hs-grad-subgroup-table"),
+                                        html.Div(id="k12-grad-overview-table"),
+                                        html.Div(id="k12-grad-ethnicity-table"),
+                                        html.Div(id="k12-grad-subgroup-table"),
                                     ],
-                                    id="grad-table-container",
+                                    id="k12-grad-table-container",
                                 ),
                                 html.Div(
                                     [                                
@@ -955,15 +954,15 @@ def layout():
                                         ],
                                             className="bare-container--flex--center twelve columns",                                    
                                         ),                                        
-                                        html.Div(id="sat-cut-scores-table", children=[]),
-                                        html.Div(id="sat-overview-table"),
-                                        html.Div(id="sat-ethnicity-table"),
-                                        html.Div(id="sat-subgroup-table"),
+                                        html.Div(id="k12-sat-cut-scores-table", children=[]),
+                                        html.Div(id="k12-sat-overview-table"),
+                                        html.Div(id="k12-sat-ethnicity-table"),
+                                        html.Div(id="k12-sat-subgroup-table"),
                                     ],
-                                    id="sat-table-container",
+                                    id="k12-sat-table-container",
                                 ),
                             ],
-                            id = "academic-information-main-container",
+                            id = "academic-proficiency-main-container",
                         ),
                         html.Div(
                             [
@@ -971,7 +970,7 @@ def layout():
                                     [
                                         html.Label("Notes:", className="key-label__header"),
                                         html.P(""),
-                                            html.P(id="academic-information-notes-string",
+                                            html.P(id="academic-proficiency-notes-string",
                                                 style={
                                                         "textAlign": "Left",
                                                         "color": "#6783a9",
@@ -993,9 +992,9 @@ def layout():
         ),
         html.Div(
             [
-                html.Div(id="academic-information-no-data"),
+                html.Div(id="academic-proficiency-no-data"),
             ],
-            id = "academic-information-empty-container",
+            id = "academic-proficiency-empty-container",
         ),
     ],
     id="main-container",

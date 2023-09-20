@@ -12,7 +12,7 @@ from .load_data import get_financial_data, get_school_index, max_display_years
 from .tables import no_data_table, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
 
-dash.register_page(__name__, top_nav=True, order=9)
+dash.register_page(__name__, top_nav=True, path="/organizational_compliance", order=5)
 
 @callback(
     Output("org-compliance-table", "children"),

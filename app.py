@@ -281,10 +281,11 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
     return year_options, year_value, current_page
 
-for page in dash.page_registry.values():
-    if page.get("top_nav"):
-        print(page["name"])
-        print(page["path"])
+
+# for page in dash.page_registry.values():
+#     if page.get("top_nav"):
+#         print(page["name"])
+#         print(page["path"])
 
 # app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. variable
 def layout():
@@ -396,24 +397,30 @@ def layout():
                                                 ),
                                                 dbc.NavLink(
                                                     "Organizational Compliance",
-                                                     href="/organizational-compliance",
+                                                     href="/organizational_compliance",
                                                      className="tab",
                                                      active="exact"
                                                 ),
                                                 html.Br(),                                                
-                                                html.Div(style={"marginTop": "15px"}),
+                                                html.Div(style={"marginTop": "17px"}),
                                                 dbc.NavLink(
-                                                    "Academic Proficiency",
-                                                     href="/academic-proficiency",
-                                                     className="tab",
-                                                     active="exact"
-                                                ),
-                                                dbc.NavLink(
-                                                    "Academic Growth",
-                                                     href="/academic-growth",
+                                                    "Academic Information",
+                                                     href="/academic_information",
                                                      className="tab",
                                                      active="exact"
                                                 ),                                                
+                                                # dbc.NavLink(
+                                                #     "Academic Proficiency",
+                                                #      href="/academic-proficiency",
+                                                #      className="tab",
+                                                #      active="exact"
+                                                # ),
+                                                # dbc.NavLink(
+                                                #     "Academic Growth",
+                                                #      href="/academic-growth",
+                                                #      className="tab",
+                                                #      active="exact"
+                                                # ),                                                
                                                 dbc.NavLink(
                                                     "Academic Metrics",
                                                      href="/academic_metrics",
@@ -425,7 +432,7 @@ def layout():
                                                      href="/academic_analysis",
                                                      className="tab",
                                                      active="exact"
-                                                ),                                                
+                                                ),
                                             #     dbc.NavLink(
                                             #         page["name"],
                                             #         href=page["path"],
@@ -444,7 +451,7 @@ def layout():
                             ],
                             className="row",
                         ),
-                        # html.Hr(),
+                        html.Hr(),
                     ],
                     className="no-print",
                 ),                

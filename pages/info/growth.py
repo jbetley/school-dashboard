@@ -23,19 +23,22 @@ from pages.tables import no_data_page, no_data_table, create_multi_header_table_
 from pages.charts import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
 from pages.layouts import set_table_layout, create_growth_layout, create_line_fig_layout
 from pages.calculations import round_percentages, conditional_fillna
-# from pages.subnav import subnav_academic_type
+from pages.subnav import subnav_academic_type
 
-dash.register_page(__name__, title = "Academic Growth", submenu='academic_information', order=5) # , path="/info/growth",
+dash.register_page(__name__,  top_nav=False, order=8) #path="/info/growth",
+# dash.register_page(__name__, title = "Academic Growth", submenu='academic_information', order=5) # , path="/info/growth",
 
 # Category
 @callback(
-    Output("academic-info-growth-radio-category", "options"),
-    Output("academic-info-growth-radio-category","value"),
-    Input("charter-dropdown", "value"),
-    State("academic-info-growth-radio-category", "options"),
-    State("academic-info-growth-radio-category", "value")  
+    Output("academic-growth-radio-category", "options"),
+    Output("academic-growth-radio-category","value"),
+    Output("academic-growth-radio-category-container","style"),
+    Output("hidden-growth", "children"),
+    Input("current-growth-page", "href"),        
+    State("academic-growth-radio-category", "options"),
+    State("academic-growth-radio-category", "value")  
 )
-def radio_category_selector(school: str, radio_category_options: list, radio_category_value: str):
+def radio_category_selector(current_page: str, radio_category_options: list, radio_category_value: str):
 
     options_default = [
         {"label": "All Data", "value": "all"},
@@ -46,37 +49,45 @@ def radio_category_selector(school: str, radio_category_options: list, radio_cat
     
     value_default = "all"
 
-    if not ctx.triggered:
-        raise PreventUpdate()
-    
-    if radio_category_value:
-        category_value = radio_category_value
-    else:
-        category_value = value_default
+    current_page = current_page.rsplit("/", 1)[-1]
 
-    if radio_category_options:
-        category_options = radio_category_options
+    if current_page == "growth":
+
+        if radio_category_value:
+            category_value = radio_category_value
+        else:
+            category_value = value_default
+
+        if radio_category_options:
+            category_options = radio_category_options
+        else:
+            category_options = options_default
+
+        category_container = {"display": "block"}
+
     else:
-        category_options = options_default
-    
-    return category_options, category_value
+        category_value = ""
+        category_options = []
+        category_container = {"display": "none"}
+
+    return category_options, category_value, category_container, current_page
 
 # Main
 @callback(
+    Output('redirect-growth-content', 'href'),
     Output("growth-grades-ela", "children"),
     Output("growth-grades-math", "children"),
     Output("growth-ethnicity-ela", "children"),
     Output("growth-ethnicity-math", "children"),
     Output("growth-subgroup-ela", "children"),
     Output("growth-subgroup-math", "children"),
-    Output("academic-info-growth-main-growth-container", "style"),
-    Output("academic-info-growth-empty-growth-container", "style"),
-    Output("academic-info-growth-no-growth-data", "children"),
+    Output("academic-growth-main-growth-container", "style"),
+    Output("academic-growth-empty-growth-container", "style"),
+    Output("academic-growth-no-growth-data", "children"),
     Output("academic-growth-notes-string", "children"),
-    # Output("subnav-growth", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="academic-info-growth-radio-category", component_property="value"),  
+    Input(component_id="academic-growth-radio-category", component_property="value"),  
 )
 def update_academic_info_growth_page(school: str, year: str, radio_category: str):
     if not school:
@@ -90,10 +101,6 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
     selected_school_id = int(selected_school["School ID"].values[0])
-
-    # subnav_growth = [html.Div(subnav_academic_type(selected_school_type), className="tabs"),]
-
-    excluded_years = get_excluded_years(selected_year_string)
 
     # Radio buttons don't play nice
     if not radio_category:
@@ -110,8 +117,6 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     empty_growth_container = {"display": "none"}
 
     academic_growth_notes_string = ""
-    main_container = {"display": "none"}
-    empty_container = {"display": "block"}
 
     # no_display_data = no_data_page("Academic Proficiency")
     no_growth_data = no_data_page("Academic Growth")
@@ -119,13 +124,12 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     # NOTE: There is a special exception for Christel House South - prior to 2021,
     # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
     # Christel House Watanabe Manual HS
-    if (selected_school_type == "HS" or selected_school_type == "AHS"
-        or (selected_school_id == 5874 and selected_year_numeric < 2021)):
+    if selected_school_type == "HS" or selected_school_type == "AHS" or \
+        (selected_school_id == 5874 and selected_year_numeric < 2021):
+        
+        location = "/academic_information"
 
-        main_container = {"display": "none"}
-        empty_container = {"display": "block"}
-
-    elif (selected_school_type == "K8" or selected_school_type == "K12"):
+    else:
 
         main_container = {"display": "block"}
 
@@ -145,6 +149,8 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
 
         # all students who are coded as "Majority Enrolled" at the school
         growth_data = get_growth_data(school)
+
+        excluded_years = get_excluded_years(selected_year_string)
 
         if excluded_years:
             growth_data = growth_data[~growth_data["Test Year"].isin(excluded_years)]
@@ -282,7 +288,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
                 growth_subgroup_ela = []
                 growth_subgroup_math = []
 
-    academic_growth_notes_string = "State growth data comes from IDOE's LINK. Identifying information \
+        academic_growth_notes_string = "State growth data comes from IDOE's LINK. Identifying information \
             is scrubbed and data is aggregated before display. The calculation includes all students who were \
             enrolled in the selected school for the most number of days that student was enrolled in any school \
             over the entire school year (Majority Enrolled). This does not necessarily mean that the student was \
@@ -290,28 +296,31 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
             more students than previous year calculations which only included students who were enrolled in the \
             school for 162 Days. The 162 Day value is included in the tooltip of each table and chart for comparison purposes."
 
-    return (
+        location = "/info/growth"
+
+    return (location,
         growth_grades_ela, growth_grades_math, growth_ethnicity_ela, growth_ethnicity_math,
         growth_subgroup_ela, growth_subgroup_math, main_growth_container, empty_growth_container,
-        no_growth_data, academic_growth_notes_string #, subnav_growth
+        no_growth_data, academic_growth_notes_string
     )
 
 def layout():
     return html.Div(
-        [
-            # html.Div(
-            #     [
-            #         html.Div(
-            #             [
-            #                 html.Div(id="subnav-growth"),
-            #                 # html.Div(subnav_academic_type(), className="tabs"),
-            #             ],
-            #             className="bare-container--flex--center twelve columns",
-            #         ),
-            #     ],
-            #     className="row",
-            # ),
-            # html.Hr(),
+            [
+            dcc.Location(id="current-growth-page", refresh=False),
+            html.Div(id="hidden-growth", style={"display": "none"}),            
+            dcc.Location(id="redirect-growth-content",  refresh="callback-nav"),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(subnav_academic_type(), className="tabs"),
+                        ],
+                        className="bare-container--flex--center twelve columns",
+                    ),
+                ],
+                className="row",
+            ),
             html.Div(
                 [            
                     html.Div(
@@ -319,7 +328,7 @@ def layout():
                             html.Div(
                                 [
                                     dbc.RadioItems(
-                                        id="academic-info-growth-radio-category",
+                                        id="academic-growth-radio-category",
                                         className="btn-group",
                                         inputClassName="btn-check",
                                         labelClassName="btn btn-outline-primary",
@@ -334,7 +343,7 @@ def layout():
                         className = "bare-container--flex--center twelve columns",
                     ),
                 ],
-                id = "academic-info-growth-radio-container",
+                id = "academic-growth-radio-category-container",
             ),
             html.Div(
                 [
@@ -359,13 +368,13 @@ def layout():
                                 html.Div(id="growth-subgroup-ela", children=[]),
                                 html.Div(id="growth-subgroup-math", children=[]),
                             ],
-                            id = "academic-info-growth-main-growth-container",
+                            id = "academic-growth-main-growth-container",
                         ),
                         html.Div(
                             [
-                                html.Div(id="academic-info-growth-no-growth-data"),
+                                html.Div(id="academic-growth-no-growth-data"),
                             ],
-                            id = "academic-info-growth-empty-growth-container",
+                            id = "academic-growth-empty-growth-container",
                         ),
                         html.Div(
                             [

@@ -28,7 +28,7 @@ from .string_helpers import create_school_label, combine_school_name_and_grade_l
 from .calculate_metrics import calculate_k8_comparison_metrics
 # from .subnav import subnav_academic
 
-dash.register_page(__name__, path = "/academic_analysis", top_nav=True, order=8)
+dash.register_page(__name__, path = "/academic_analysis", top_nav=True, order=10)
 
 # Display type - K12 only
 @callback(      
@@ -1172,7 +1172,6 @@ def layout():
                     #     ],
                     #     className="row"
                     # ),
-                    html.Hr(),
                     html.Div(
                         [
                             html.Div(
