@@ -25,7 +25,7 @@ from pages.layouts import set_table_layout, create_growth_layout, create_line_fi
 from pages.calculations import round_percentages, conditional_fillna
 from pages.subnav import subnav_academic_type
 
-dash.register_page(__name__, top_nav=False,  order=7) # path="/info/proficiency",
+dash.register_page(__name__, top_nav=False,  order=7)
 
 # Proficiency School Type (applies only to K12 schools)
 @callback(      
@@ -35,9 +35,10 @@ dash.register_page(__name__, top_nav=False,  order=7) # path="/info/proficiency"
     Output("hidden-proficiency", "children"),
     Input("current-proficiency-page", "href"),
     Input("charter-dropdown", "value"),
+    Input("academic-proficiency-radio-type", "value"),
     State("academic-proficiency-radio-type", "value"),
 )
-def radio_type_selector(current_page: str, school: str, radio_type_state: str):
+def radio_type_selector(current_page: str, school: str, radio_type_value: str, radio_type_state: str):
 
     current_page = current_page.rsplit("/", 1)[-1]
 
@@ -52,7 +53,9 @@ def radio_type_selector(current_page: str, school: str, radio_type_state: str):
             {"label": "High School", "value": "hs"}        
         ]
 
-        if radio_type_state in type_options:
+        # could check values against dictionary, but its far simpler to use a static list
+        # if any(d['label'] == 'k8' or d['label'] == 'hs' for d in a):
+        if radio_type_state in ["k8","hs"]:
             type_value = radio_type_state
         else:
             type_value = "k8"
@@ -62,7 +65,7 @@ def radio_type_selector(current_page: str, school: str, radio_type_state: str):
         radio_input_container = {'display': 'none'}
         type_options = []
         type_value = ""
-    
+
     return type_options, type_value, radio_input_container, current_page
 
 # Proficiency Category
@@ -70,13 +73,13 @@ def radio_type_selector(current_page: str, school: str, radio_type_state: str):
     Output("academic-proficiency-radio-category", "options"),
     Output("academic-proficiency-radio-category","value"),
     Output("academic-proficiency-radio-category-container","style"),
-    # Input("charter-dropdown", "value"),
+    Input("charter-dropdown", "value"),
     # Input("current-proficiency-page", "href"),
     Input("academic-proficiency-radio-type", "value"),
     State("academic-proficiency-radio-category", "options"),
     State("academic-proficiency-radio-category", "value")  
 )
-def radio_category_selector(radio_type: str, radio_category_options: list, radio_category_value: str):
+def radio_category_selector(school: str, radio_type: str, radio_category_options: list, radio_category_value: str):
 # school: str, current_page: str, 
     options_default = [
         {"label": "All Data", "value": "all"},
@@ -87,15 +90,16 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
     
     value_default = "all"
 
-    # selected_school = get_school_index(school)
-    # school_type = selected_school["School Type"].values[0]
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
+
+    if radio_type == "hs": # or (school_type == "K12" and radio_type == "hs"):
+        category_value = ""
+        category_options = []
+        category_container = {"display": "none"}
     
-    # current_page = current_page.rsplit("/", 1)[-1]
-    # print(radio_type)
-    # print(current_page)
-    # if current_page == "academic_growth" or (current_page == "academic_proficiency" and radio_type != "hs"):
-    if radio_type != "hs":
-        if radio_category_value:
+    else:                
+        if radio_category_value: 
             category_value = radio_category_value
         else:
             category_value = value_default
@@ -106,11 +110,6 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
             category_options = options_default
 
         category_container = {"display": "block"}
-
-    else:    
-        category_value = ""
-        category_options = []
-        category_container = {"display": "none"}
 
     return category_options, category_value, category_container
 
@@ -145,7 +144,8 @@ def radio_category_selector(radio_type: str, radio_category_options: list, radio
     Output("k12-sat-overview-table", "children"),
     Output("k12-sat-ethnicity-table", "children"),
     Output("k12-sat-subgroup-table", "children"),
-    Output("k12-sat-table-container", "style"),    
+    Output("k12-sat-table-container", "style"),
+    # Output('academic-proficiency-radio-type-container', 'style'),    
     Output("academic-proficiency-main-container", "style"),
     Output("academic-proficiency-empty-container", "style"),
     Output("academic-proficiency-no-data", "children"),
@@ -213,20 +213,24 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
     empty_container = {"display": "block"}
 
     no_display_data = no_data_page("Academic Proficiency")
-    
+
     # HS and AHS do not have proficiency data
-    if selected_school_type == "K12":
-        pass
+    # if selected_school_type == "K12":
+    #     pass
+
     if selected_school_type == "HS" or selected_school_type == "AHS" or \
             (selected_school_id == 5874 and selected_year_numeric < 2021):
         
         location = "/academic_information"
+        # radio_input_container = {"display": "none"}
 
     else:
 
         # NOTE: This is not ideal, as we are having to load hs data and layout twice because of
         # K12 schools having both proficiency and HS data and HS/AHS only having HS data
         if selected_school_type == "K12" and radio_type == "hs":
+
+            location = "/info/proficiency"
 
             # load HS academic data
             selected_raw_hs_school_data = get_high_school_academic_data(school)
@@ -247,6 +251,7 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
 
                     main_container = {"display": "block"}
                     empty_container = {"display": "none"}
+                    # radio_input_container = {'display': 'block'} # show k8/hs radio group
 
                     # Graduation Rate Tables ("Strength of Diploma" in data, but not currently displayed)
                     grad_overview_categories = ["Total", "Non Waiver", "State Average"]
@@ -329,7 +334,9 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
 
         elif (selected_school_type == "K8" or selected_school_type == "K12" or \
             (selected_school_id == 5874 and selected_year_numeric >= 2021)) and radio_type == "k8":
-            # CHS PRE REORG WHERE DOES THE = GO?
+            # CHS PRE REORG WHERE DOES THE =/=> GO?
+
+            location = "/info/proficiency"
 
             selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
@@ -725,8 +732,6 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
                 of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
                 testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
 
-            location = "/info/proficiency"
-
     return (location,
         proficiency_grades_ela, ela_grade_bar_fig, proficiency_ela_grades_container,
         proficiency_ethnicity_ela, ela_ethnicity_bar_fig, proficiency_ela_ethnicity_container,
@@ -763,26 +768,26 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    html.Div(
-                                        [
-                                            dbc.RadioItems(
-                                                id="academic-proficiency-radio-type",
-                                                className="btn-group",
-                                                inputClassName="btn-check",
-                                                labelClassName="btn btn-outline-primary",
-                                                labelCheckedClassName="active",
-                                                value=[],
-                                                persistence=False,
-                                            ),
-                                        ],
-                                        className="radio-group-academic",
-                                    )
+                                    dbc.RadioItems(
+                                        id="academic-proficiency-radio-type",
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        value=[],
+                                        persistence=False,
+                                    ),
                                 ],
-                                className = "bare-container--flex--center twelve columns",
-                            ),
+                                className="radio-group-academic",
+                            )
                         ],
-                        id = "academic-proficiency-radio-type-container",
-                    ),                                        
+                        className = "bare-container--flex--center twelve columns",
+                    ),
+                ],
+                id = "academic-proficiency-radio-type-container",
+            ),
+            html.Div(
+                [                    
                     html.Div(
                         [
                             html.Div(
@@ -936,7 +941,7 @@ def layout():
                                     [
                                         html.Div(
                                             [                                        
-                                                html.Label("Graduation Rate", className="label__header", style = {"marginTop": "5px"}),
+                                                html.Label("Graduation Rate", className="label__header", style = {"marginTop": "20px"}),
                                             ],
                                             className="bare-container--flex--center twelve columns",                                    
                                         ),

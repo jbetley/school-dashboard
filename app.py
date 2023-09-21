@@ -168,6 +168,11 @@ app = dash.Dash(
     ],
 )
 
+for page in dash.page_registry.values():
+    if page.get("top_nav"):
+        print(page["name"])
+        print(page["path"])
+        
 # Dropdown shows single school if school login is used
 # shows all schools if admin login is used.
 # NOTE: "application-state" is a dummy input
@@ -280,12 +285,6 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     ]
 
     return year_options, year_value, current_page
-
-
-# for page in dash.page_registry.values():
-#     if page.get("top_nav"):
-#         print(page["name"])
-#         print(page["path"])
 
 # app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. variable
 def layout():

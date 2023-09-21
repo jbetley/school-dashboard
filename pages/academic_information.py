@@ -26,8 +26,7 @@ from pages.calculations import round_percentages, conditional_fillna
 
 from pages.subnav import subnav_academic_type
 
-
-dash.register_page(__name__, top_nav=True,  order=6) #path="/academic_information",
+dash.register_page(__name__, path = "/academic_information",  top_nav=True,  order=6) #name="academic_information",
 
 @callback(
     Output('subnav-content', 'href'),
@@ -91,7 +90,7 @@ def update_academic_information_page(school: str, year: str):
         # NOTE: There is a special exception for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
         # Christel House Watanabe Manual HS
-    elif (selected_school_type == "HS" or selected_school_type == "AHS" or selected_school_type == "K12"
+    elif (selected_school_type == "HS" or selected_school_type == "AHS" #or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric < 2021)):
 
         location = "/academic_information"
