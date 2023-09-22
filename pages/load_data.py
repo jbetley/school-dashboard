@@ -647,67 +647,80 @@ def get_comparable_schools(*args):
     return run_query(q, params)
 
 def get_year_over_year_data(*args):
-    keys = ['school_id','comp_list','category','year']
+    keys = ['school_id','comp_list','category','year', 'flag']
     
     params = dict(zip(keys, args))
 
     school_str = ', '.join( [ str(int(v)) for v in params['comp_list'] ] )
     
+    school_table = "academic_data_hs"
+    corp_table = "corporation_data_hs"
+
+    if params['flag'] == "sat":
+        tested = params['category'] + " Total Tested"
+        passed = params['category'] + " At Benchmark"
+        result = params['category'] + " % At Benchmark"
+    elif params['flag'] == "grad":
+        tested = params['category'] + " Cohort Count"
+        passed = params['category'] + " Graduates"
+        result = params['category'] + " Graduation Rate"
+    else:   # k8 categories
+        tested = params['category'] + " Total Tested"
+        passed = params['category'] + " Total Proficient"
+        result = params['category'] + " Proficient"
+
+        school_table = "academic_data_k8"
+        corp_table = "corporation_data_k8"
+
     # Query strings (param must be passed in with spaces)
-    search_param = params['category'].replace(" ", "")
-    proficient_query = search_param + "TotalProficient"
-    tested_query = search_param + "TotalTested"
+    passed_query = passed.replace(" ", "")
+    tested_query = tested.replace(" ", "")
 
-    school_query_str = 'Year, SchoolName, ' + '"' + proficient_query + '", "' + tested_query + '"'
-    corp_query_str = 'Year, CorporationName, ' + '"' + proficient_query + '", "' + tested_query + '"'
-
-    # Result strings
-    tested = params['category'] + " Total Tested"
-    proficient = params['category'] + " Total Proficient"
-    result = params['category'] + " Proficient"
+    school_query_str = 'Year, SchoolName, ' + '"' + passed_query + '", "' + tested_query + '"'
+    corp_query_str = 'Year, CorporationName, ' + '"' + passed_query + '", "' + tested_query + '"'
     
     # School Data
     query_string1 = '''
         SELECT {}
-            FROM academic_data_k8
+            FROM {}
 	        WHERE SchoolID = :school_id
-        '''.format( school_query_str )
+        '''.format( school_query_str, school_table )
     
     q1 = text(query_string1)
 
     school_data = run_query(q1, params)
 
-    school_data[school_data["School Name"][0]] = pd.to_numeric(school_data[proficient], errors='coerce') / pd.to_numeric(school_data[tested], errors='coerce')
-    school_data = school_data.drop(['School Name', proficient, tested], axis = 1)
+    school_data[school_data["School Name"][0]] = pd.to_numeric(school_data[passed], errors='coerce') / pd.to_numeric(school_data[tested], errors='coerce')
+    school_data = school_data.drop(['School Name', passed, tested], axis = 1)
 
     # Corp Data
     query_string2 = '''
         SELECT {}
-	        FROM corporation_data_k8
+	        FROM {}
 	        WHERE CorporationID = (
 		        SELECT GEOCorp
 			        FROM school_index
 			        WHERE SchoolID = :school_id)
-        '''.format( corp_query_str )
+        '''.format( corp_query_str , corp_table)
 
     q2 = text(query_string2)
     
     corp_data = run_query(q2, params)
 
-    corp_data[corp_data["Corporation Name"][0]] = pd.to_numeric(corp_data[proficient], errors='coerce') / pd.to_numeric(corp_data[tested], errors='coerce')
-    corp_data = corp_data.drop(['Corporation Name', proficient, tested], axis = 1)
+    corp_data[corp_data["Corporation Name"][0]] = pd.to_numeric(corp_data[passed], errors='coerce') / pd.to_numeric(corp_data[tested], errors='coerce')
+    corp_data = corp_data.drop(['Corporation Name', passed, tested], axis = 1)
 
     # Comparison School Data
     query_string3 = '''
             SELECT {}
-                FROM academic_data_k8
-                WHERE SchoolID IN ({})'''.format( school_query_str, school_str )
+                FROM {}
+                WHERE SchoolID IN ({})'''.format( school_query_str, school_table, school_str )
 
     q3 = text(query_string3)
     
     comp_data = run_query(q3, params)
     
-    comp_data[result] = pd.to_numeric(comp_data[proficient], errors='coerce') / pd.to_numeric(comp_data[tested], errors='coerce')
+    comp_data[result] = pd.to_numeric(comp_data[passed], errors='coerce') / pd.to_numeric(comp_data[tested], errors='coerce')
     comp_data = comp_data.pivot(index='Year', columns='School Name', values=result)
     comp_data = comp_data.reset_index()
 
