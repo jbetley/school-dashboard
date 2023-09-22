@@ -358,7 +358,7 @@ def make_cool_line_chart(values: pd.DataFrame, label: str) -> list:
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
             fig.update_traces(hovertemplate=None)   # type: ignore
             fig.update_layout(                      # type: ignore
-                margin=dict(l=40, r=40, t=40, b=0),
+                margin=dict(l=40, r=40, t=10, b=0),
                 title_x=0.5,
                 font = dict(
                     family = 'Inter, sans-serif',

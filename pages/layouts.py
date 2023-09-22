@@ -320,38 +320,39 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
 
     return layout
 
-def create_radio_layout(group_string: str = ""):
+def create_radio_layout(group_string: str = "", width: str = "twelve"):
     group = "academic-analysis-radio-" + group_string
     container = group + "-container"
 
+    # NOTE: THis is dumb, need to find a better way to distinguish
+    if width == "twelve":
+        layout = "bare-container--flex--center " + width + " columns"
+    else:
+        layout = "bare-container--flex--center_subnav_float"
+
     radio_button_group = html.Div(
-             [
+            [
                 html.Div(
-                    [  
+                    [                                                                                   
                     html.Div(
-                        [                                                                                   
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        dbc.RadioItems(
-                                            id=group,
-                                            className="btn-group",
-                                            inputClassName="btn-check",
-                                            labelClassName="btn btn-outline-primary",
-                                            labelCheckedClassName="active",
-                                            value=[],
-                                            persistence=False,
-                                            # persistence_type="memory",
+                        [
+                            html.Div(
+                                [
+                                    dbc.RadioItems(
+                                        id=group,
+                                        className="btn-group",
+                                        inputClassName="btn-check",
+                                        labelClassName="btn btn-outline-primary",
+                                        labelCheckedClassName="active",
+                                        value=[],
+                                        persistence=False,
+                                        # persistence_type="memory",
                                         ),
                                     ],
                                     className="radio-group-academic",
                                 )
                             ],
-                            className = "pretty-container",
-                        ),                                
-                            ],
-                            className = "bare-container--flex--center twelve columns",
+                            className = layout,
                         ),
                     ],
                     className = "row",

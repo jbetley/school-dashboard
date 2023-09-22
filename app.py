@@ -329,7 +329,7 @@ def layout():
                                 # Dummy input for dropdown
                                 html.Div(id="application-state", style={"display": "none"}),
                             ],
-                            className="pretty-container five columns no-print",
+                            className="pretty-container--slim five columns no-print",
                         ),
                         html.Div(
                             [
@@ -352,7 +352,7 @@ def layout():
                                     className="year-dropdown-control",
                                 ),
                             ],
-                            className="pretty-container three columns no-print",
+                            className="pretty-container--slim three columns no-print",
                         ),
                     ],
                     className="row--fixed",
