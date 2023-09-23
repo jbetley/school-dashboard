@@ -19,7 +19,7 @@ from .load_data import grades, ethnicity, subgroup, ethnicity, info_categories, 
 from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
     merge_schools
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency
-from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart, make_cool_line_chart
+from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart, make_multi_line_chart
 from .tables import create_comparison_table, no_data_page, no_data_table
 from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout, create_radio_layout
 from .string_helpers import create_school_label, combine_school_name_and_grade_levels, create_chart_label, \
@@ -75,7 +75,10 @@ def radio_hs_category_selector(school: str, gradespan_value: str, hs_category_st
     hs_category_options = []
     hs_category_container = {'display': 'none'}
 
-    if gradespan_value == "hs":
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
+
+    if school_type == "HS" or school_type == "AHS" or (gradespan_value == "hs" and school_type == "K12"):
         hs_category_options = [
             {"label": "SAT", "value": "SAT"},
             {"label": "Graduation Rate", "value": "Graduation Rate"},
@@ -104,17 +107,18 @@ def radio_subject_selector(school: str, gradespan_value: str, hs_category_value:
     subject_value = ""
     subject_options = []
     subject_container = {'display': 'none'}
-    
-    print(hs_category_value)
-    
-    if hs_category_value == "Graduation Rate":
+
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
+
+    if hs_category_value == "Graduation Rate" and (school_type == "HS" or school_type == "AHS" or school_type == "K12"):
         return subject_options, subject_value, subject_container
     
     else:
-        selected_school = get_school_index(school)
-        school_type = selected_school["School Type"].values[0]
+        # selected_school = get_school_index(school)
+        # school_type = selected_school["School Type"].values[0]
 
-        if (school_type == "K8" or school_type == "K12") and gradespan_value == "k8":
+        if school_type == "K8" or (school_type == "K12" and gradespan_value == "k8"):
 
             subject_options = [
                 {"label": "ELA", "value": "ELA"},
@@ -161,7 +165,7 @@ def top_level_selector(school: str, gradespan_value: str, hs_category_value: str
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
-    if (school_type == "K8" or school_type == "K12") and gradespan_value == "k8":
+    if school_type == "K8" or (school_type == "K12" and gradespan_value == "k8"):
 
         category_options = [
             {"label": "By Grade", "value": "By Grade"},
@@ -176,9 +180,8 @@ def top_level_selector(school: str, gradespan_value: str, hs_category_value: str
             category_value = "By Grade"
 
     elif school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
-        print("HS CAT VALUE ON LOAD")
-        print(hs_category_value)
-        if hs_category_value == "Graduation Rate" or hs_category_value is None:
+
+        if hs_category_value == "Graduation Rate" or hs_category_value == "": # is None:
 
             category_options = [
                 {"label": "Total", "value": "Total"},
@@ -220,7 +223,6 @@ def top_level_selector(school: str, gradespan_value: str, hs_category_value: str
 )
 def radio_subcategory_selector(school: str, gradespan_value: str, category_value: str, hs_category_value: str, subcategory_state: str):
 
-    print(category_value)
     # selected_school = get_school_index(school)
     # school_type = selected_school["School Type"].values[0]
 
@@ -229,7 +231,6 @@ def radio_subcategory_selector(school: str, gradespan_value: str, category_value
     subcategory_options = []  # type: list
     subcategory_container = {'display': 'none'}
     
-    # TODO: ERROR MIGHT BE HERE ADD CATEGORIES FOR GRADUATION REATE!
     # if (school_type == "K8" or school_type == "K12") and type_value == "k8":
     if category_value == "By Grade":
         grades = get_gradespan(school)
@@ -266,8 +267,6 @@ def radio_subcategory_selector(school: str, gradespan_value: str, category_value
             subcategory_value = "General Education"
 
     subcategory_container = {'display': 'block'}
-
-    print(subcategory_options)
 
     return subcategory_options, subcategory_value, subcategory_container
     
@@ -450,8 +449,8 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
 
 @callback(
     Output("academic-analysis-notes", "children"),
-    Output("yoy-grade", "children"),
-    Output("yoy-hs", "children"),       
+    Output("year-over-year-grade", "children"),
+    Output("year-over-year-hs", "children"),       
     Output("fig14c", "children"),
     Output("fig14d", "children"),
     Output("fig-iread", "children"),
@@ -496,7 +495,7 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, acade
     [Input("comparison-dropdown", "value")],
 )
 def update_academic_analysis(school: str, year: str, academic_type: str, subject_radio: str, subcategory_radio: str, 
-                                hs_categories: str, comparison_school_list: list):
+                                hs_category: str, comparison_school_list: list):
     if not school:
         raise PreventUpdate
 
@@ -553,12 +552,10 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
     academic_analysis_notes_string = ""
 
 # TODO: Remove duplicate info - passing school, dont need name,
-
-    def make_yoy_layout (school_name, data):
-        # fig_data = get_year_over_year_data(school,school_list, category, year, flag)
+    def make_year_over_year_layout (school_name, data):
         table_data = data.copy()
         table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
-        fig = make_cool_line_chart(data, label)
+        fig = make_multi_line_chart(data, label)
         table = create_comparison_table(table_data, school_name,"")
         category_string = ""
         school_string = ""
@@ -569,6 +566,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
     if school_type == "HS" or school_type == "AHS" or (school_type == "K12" and academic_type == "hs"):
 
         k8_analysis_empty_container = {"display": "none"}
+        year_over_year_grade = []
 
         academic_analysis_notes_label = "Comparison Data - High School"
         academic_analysis_notes_string = "Use this page to view SAT and Graduation Rate comparison data for all ethnicities, \
@@ -584,13 +582,12 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
             hs_analysis_empty_container = {"display": "block"}
         
         else:
-            
             hs_school_name = raw_hs_school_data['School Name'].values[0]
 
             # filter by selected year
             raw_hs_school_data = raw_hs_school_data.loc[raw_hs_school_data["Year"] == numeric_year]
             raw_hs_school_data = raw_hs_school_data.reset_index(drop=True)
-            
+
             # get data for corporation
             raw_hs_corp_data = get_hs_corporation_academic_data(school)
             hs_corporation_name = raw_hs_corp_data['Corporation Name'].values[0]
@@ -641,12 +638,10 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
 
                 hs_analysis_main_container = {"display": "block"}
                 hs_analysis_empty_container = {"display": "none"}
-                yoy_grade = []
 
 # ! Begin HS Year over Year Section #
-                ## Year Over Year SAT and Graduation Rate Chart
-
-                if hs_categories == "SAT":
+                ## Year Over Year HS (SAT and Graduation Rate) Chart
+                if hs_category == "SAT":
                     if subcategory_radio:
                         category = subcategory_radio + "|" + subject_radio
                     else:
@@ -654,21 +649,19 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
 
                     label = "Year over Year Comparison (SAT At Benchmark) - " + category
 
-                    yoy_hs_data= get_year_over_year_data(school, comparison_school_list, category , year, "sat")
+                    year_over_year_hs_data= get_year_over_year_data(school, comparison_school_list, category , year, "sat")
 
-                elif hs_categories == "Graduation Rate":
+                elif hs_category == "Graduation Rate" or hs_category == "":
                     if subcategory_radio:
                         category = subcategory_radio + "|"
                     else:
-                        category = "Total|Graduation Rate"
+                        category = "Total|"
 
-                    label = "Year over Year Comparison (Graduation Rate) - " + category
+                    label = "Year over Year Comparison (Graduation Rate) - " + category[:-1]
 
-                    yoy_hs_data= get_year_over_year_data(school, comparison_school_list, category , year, "grad")                    
+                    year_over_year_hs_data= get_year_over_year_data(school, comparison_school_list, category , year, "grad")                    
 
-# TODO: Make adjustments to account for Grad Rate Calculations - Seems to be choking somehow, maybe the
-# TODO: split? KeyError: 'School Total| Graduates' 
-                yoy_hs = make_yoy_layout(school_name, yoy_hs_data)
+                year_over_year_hs = make_year_over_year_layout(school_name, year_over_year_hs_data)
 # ! End HS Year over Year Section #
 
                 # Graduation Comparison Sets
@@ -776,7 +769,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
 
                 if not clean_school_data.empty:
 
-                    yoy_hs = []
+                    year_over_year_hs = []
 
                     raw_corp_data = get_k8_corporation_academic_data(school)
 
@@ -878,9 +871,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
                         comparison_schools = comparison_schools.reset_index(drop=True)
 
 # ! Begin K8 Year over Year Section #
-                        ## Year Over Year Chart
-                        print(subcategory_radio)
-
+                        ## K8 Year Over Year Chart
                         if subcategory_radio:
                             category = subcategory_radio + "|" + subject_radio
                         else:
@@ -888,58 +879,30 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
 
                         label = "Year over Year Comparison - " + category
 
-                        # make grades one layout, ethnicity one layout, subgroup one layout
-                        # with ELA/Math selectors
-                        # OR one for YoY? one for single bar and one for multi-bar?
-                        yoy_k8_data = get_year_over_year_data(school,comparison_school_list, category, year, "k8")                        
-                        yoy_grade = make_yoy_layout(school_name, yoy_k8_data) #school_name, comparison_school_list, category, year, "k8")
-                        
-                        # yoy_grade_ela = make_yoy_layout(school, school_name, comparison_school_list,ela_grade_category)
-                        # yoy_grade_math = make_yoy_layout(school,school_name, comparison_school_list,math_grade_category)
-                        
-                        # yoy_ethnicity_ela = make_yoy_layout(school, school_name, comparison_school_list,ela_ethnicity_category)
-                        # yoy_ethnicity_math = make_yoy_layout(school,school_name, comparison_school_list,math_ethnicity_category)
-
-                        # yoy_subgroup_ela = make_yoy_layout(school, school_name, comparison_school_list,ela_subgroup_category)
-                        # yoy_subgroup_math = make_yoy_layout(school,school_name, comparison_school_list,math_subgroup_category)
-
+                        year_over_year_k8_data = get_year_over_year_data(school,comparison_school_list, category, year, "k8")                        
+                        year_over_year_grade = make_year_over_year_layout(school_name, year_over_year_k8_data)
 # ! End K8 Year over Year Section #
 
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
 
-# TODO: PROB IS HERE - YEAR 2021
-                        pd.set_option('display.max_columns', None)
-                        pd.set_option('display.max_rows', None)  
                         # Get school value for specific category
                         if category in current_school_data.columns:
 
+                            # need to reset_index because we are using the length of the index to
+                            # add the Corp Data
                             fig14c_k8_school_data = current_school_data[info_categories + [category]].copy()
+                            fig14c_k8_school_data = fig14c_k8_school_data.reset_index(drop=True)
 
-                            # print('ORIG')
-                            # print(fig14c_k8_school_data)
-                            # print('INDEX LENGTH')
-                            # print(len(fig14c_k8_school_data.index))
-
-#TODO: ERROR IS IN THE NEXT LINE - REPLACES SCHOOL INSTEAD OF ADDING ROW
                             # add corp average for category to dataframe - note we are using 'clean_corp_data'
                             # because the 'Corp' values have been dropped from raw_comparison_data
                             fig14c_k8_school_data.loc[len(fig14c_k8_school_data.index)] = \
                                 [corp_name,"3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
 
-                            # print('Add Corp')
-                            # print(fig14c_k8_school_data)
-
                             fig14c_comp_data = comparison_schools[info_categories + [category]]
-
-                            # print('Comp')
-                            # print(fig14c_comp_data)
 
                             # Combine data, fix dtypes, and send to chart function
                             fig14c_all_data = pd.concat([fig14c_k8_school_data,fig14c_comp_data])
-                            
-                            # print('COMBINED!')
-                            # print(fig14c_all_data)
 
                             fig14c_table_data = fig14c_all_data.copy()
 
@@ -951,10 +914,8 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
 
                             fig14c_table_data = fig14c_table_data[["School Name", category]]
                             fig14c_table_data = fig14c_table_data.reset_index(drop=True)
-                            # print('TABLE DATA GOING IN')
-                            # print(fig14c_table_data)
+
                             fig14c_table = create_comparison_table(fig14c_table_data, school_name,"ELA Proficiency")
-                            # print('HERE?')
                         else:
                             # NOTE: This should never ever happen. So yeah.
                             fig14c_chart = no_data_fig_label("Comparison: Current Year ELA Proficiency",200)
@@ -968,7 +929,8 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
                         if category in current_school_data.columns:
 
                             fig14d_k8_school_data = current_school_data[info_categories + [category]].copy()
-
+                            fig14d_k8_school_data = fig14d_k8_school_data.reset_index(drop=True)
+                            
                             fig14d_k8_school_data.loc[len(fig14d_k8_school_data.index)] = \
                                 [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
 
@@ -1002,6 +964,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
                         if category in current_school_data.columns:
 
                             fig_iread_k8_school_data = current_school_data[info_categories + [category]].copy()
+                            fig_iread_k8_school_data = fig_iread_k8_school_data.reset_index(drop=True)
 
                             fig_iread_k8_school_data.loc[len(fig_iread_k8_school_data.index)] = \
                                 [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
@@ -1180,7 +1143,7 @@ def update_academic_analysis(school: str, year: str, academic_type: str, subject
         ]
 
     return (
-        academic_analysis_notes, yoy_grade, yoy_hs, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
+        academic_analysis_notes, year_over_year_grade, year_over_year_hs, fig14c, fig14d, fig_iread, dropdown_container, fig16a1, 
         fig16a1_container, fig16b1, fig16b1_container, fig16a2, fig16a2_container, fig16b2,
         fig16b2_container, k8_analysis_main_container, k8_analysis_empty_container, k8_analysis_no_data,
         grad_overview, grad_overview_container, grad_ethnicity, grad_ethnicity_container,
@@ -1206,54 +1169,66 @@ def layout():
                     # ),
                     html.Div(
                         [
-                            html.Div(
-                                [   
-                                    html.Div(
-                                        [                                                             
-                                            html.Div(
-                                                [
-                                                    html.Div(
-                                                        [
-                                                            dbc.RadioItems(
-                                                                id="academic-analysis-radio-gradespan",
-                                                                className="btn-group",
-                                                                inputClassName="btn-check",
-                                                                labelClassName="btn btn-outline-primary",
-                                                                labelCheckedClassName="active",
-                                                                value=[],
-                                                                persistence=False,
-                                                                # persistence_type="memory",
-                                                            ),
-                                                        ],
-                                                        className="radio-group-academic",
-                                                    )
-                                                ],
-                                                className = "bare-container--flex--center twelve columns",
-                                            ),
-                                        ],
-                                        className = "row",
-                                    ),                                    
-                                ],
-                                id = "academic-analysis-radio-gradespan-container",
-                            ),
+                            # html.Div(
+                            #     [   
+                            #         html.Div(
+                            #             [                                                             
+                            #                 html.Div(
+                            #                     [
+                            #                         html.Div(
+                            #                             [
+                            #                                 dbc.RadioItems(
+                            #                                     id="academic-analysis-radio-gradespan",
+                            #                                     className="btn-group",
+                            #                                     inputClassName="btn-check",
+                            #                                     labelClassName="btn btn-outline-primary",
+                            #                                     labelCheckedClassName="active",
+                            #                                     value=[],
+                            #                                     persistence=False,
+                            #                                     # persistence_type="memory",
+                            #                                 ),
+                            #                             ],
+                            #                             className="radio-group-academic",
+                            #                         )
+                            #                     ],
+                            #                     className = "bare-container--flex--center twelve columns",
+                            #                 ),
+                            #             ],
+                            #             className = "row",
+                            #         ),                                    
+                            #     ],
+                            #     id = "academic-analysis-radio-gradespan-container",
+                            # ),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            html.Div(create_radio_layout("hs-category"),className="tabs"),
+                                            html.Div(create_radio_layout("academic-analysis", "gradespan"),className="tabs"),
 
                                         ],
                                         className = "bare-container--flex--center twelve columns",
                                     ),
                                 ],
                                 className = "row",
-                            ),                        
+                            ),                             
                             html.Div(
-                                [                                    
+                                [
                                     html.Div(
                                         [
-                                            html.Div(create_radio_layout("subject", "six"),className="tabs"),
-                                            html.Div(create_radio_layout("category", "six"),className="tabs"),
+                                            html.Div(create_radio_layout("academic-analysis", "hs-category"),className="tabs"),
+
+                                        ],
+                                        className = "bare-container--flex--center twelve columns",
+                                    ),
+                                ],
+                                className = "row",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(create_radio_layout("academic-analysis", "subject", "six"),className="tabs"),
+                                            html.Div(create_radio_layout("academic-analysis", "category", "six"),className="tabs"),
                                         ],
                                         className = "bare-container--flex--center_subnav twelve columns",
                                     ),
@@ -1264,14 +1239,15 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Div(create_radio_layout("subcategory"),className="tabs"),
+                                            html.Div(create_radio_layout("academic-analysis", "subcategory"),className="tabs"),
 
                                         ],
                                         className = "bare-container--flex--center twelve columns",
                                     ),
                                 ],
                                 className = "row",
-                            ),                        
+                            ),
+                            html.Hr(className = "line_bottom"),
                             html.Div(
                                 [
                                     html.Div(
@@ -1298,7 +1274,7 @@ def layout():
                             ),
                             html.Div(
                                 [      
-                                    html.Div(id="yoy-grade", children=[]),                               
+                                    html.Div(id="year-over-year-grade", children=[]),                               
                                     html.Div(id="fig14c", children=[]),
                                     html.Div(id="fig14d", children=[]),
                                     html.Div(id="fig-iread", children=[]),
@@ -1347,7 +1323,7 @@ def layout():
                             ),
                             html.Div(
                                 [
-                                    html.Div(id="yoy-hs", children=[]),                                         
+                                    html.Div(id="year-over-year-hs", children=[]),                                         
                                     html.Div(
                                         [
                                             html.Div(id="grad-overview"),

@@ -283,7 +283,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     return fig_layout
 
 ###
-def make_cool_line_chart(values: pd.DataFrame, label: str) -> list:
+def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
     series of strings (if applicable) detailing missing data.

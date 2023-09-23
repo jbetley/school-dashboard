@@ -21,7 +21,7 @@ from pages.process_data import process_k8_academic_data, get_attendance_data, pr
 from pages.tables import no_data_page, no_data_table, create_multi_header_table_with_container, create_key_table, \
     create_growth_table, create_single_header_table, create_multi_header_table
 from pages.charts import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
-from pages.layouts import set_table_layout, create_growth_layout, create_line_fig_layout
+from pages.layouts import set_table_layout, create_growth_layout, create_line_fig_layout, create_radio_layout
 from pages.calculations import round_percentages, conditional_fillna
 from pages.subnav import subnav_academic_type
 
@@ -755,61 +755,86 @@ def layout():
                 [
                     html.Div(
                         [
-                            html.Div(subnav_academic_type(), className="tabs"),
+                            html.Div(subnav_academic_type(), id="subnav_academic", className="tabs"),
                         ],
                         className="bare-container--flex--center twelve columns",
                     ),
                 ],
                 className="row",
             ),
+            # html.Div(
+            #     [
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         dbc.RadioItems(
+            #                             id="academic-proficiency-radio-type",
+            #                             className="btn-group",
+            #                             inputClassName="btn-check",
+            #                             labelClassName="btn btn-outline-primary",
+            #                             labelCheckedClassName="active",
+            #                             value=[],
+            #                             persistence=False,
+            #                         ),
+            #                     ],
+            #                     className="radio-group-academic",
+            #                 )
+            #             ],
+            #             className = "bare-container--flex--center twelve columns",
+            #         ),
+            #     ],
+            #     id = "academic-proficiency-radio-type-container",
+            # ),
             html.Div(
                 [
                     html.Div(
                         [
-                            html.Div(
-                                [
-                                    dbc.RadioItems(
-                                        id="academic-proficiency-radio-type",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        value=[],
-                                        persistence=False,
-                                    ),
-                                ],
-                                className="radio-group-academic",
-                            )
+                            html.Div(create_radio_layout("academic-proficiency", "type"),className="tabs"),
+
                         ],
                         className = "bare-container--flex--center twelve columns",
                     ),
                 ],
-                id = "academic-proficiency-radio-type-container",
-            ),
+                className = "row",
+            ),            
+            # html.Div(
+            #     [                    
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         dbc.RadioItems(
+            #                             id="academic-proficiency-radio-category",
+            #                             className="btn-group",
+            #                             inputClassName="btn-check",
+            #                             labelClassName="btn btn-outline-primary",
+            #                             labelCheckedClassName="active",
+            #                             value=[],
+            #                             persistence=False,
+            #                         ),
+            #                     ],
+            #                     className="radio-group-academic-subheader",
+            #                 )
+            #             ],
+            #             className = "bare-container--flex--center twelve columns",
+            #         ),
+            #     ],
+            #     id = "academic-proficiency-radio-category-container",
+            # ),
             html.Div(
-                [                    
+                [
                     html.Div(
                         [
-                            html.Div(
-                                [
-                                    dbc.RadioItems(
-                                        id="academic-proficiency-radio-category",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        value=[],
-                                        persistence=False,
-                                    ),
-                                ],
-                                className="radio-group-academic-subheader",
-                            )
+                            html.Div(create_radio_layout("academic-proficiency", "category"),className="tabs"),
+
                         ],
                         className = "bare-container--flex--center twelve columns",
                     ),
                 ],
-                id = "academic-proficiency-radio-category-container",
+                className = "row",
             ),
+            html.Hr(className = "line_bottom"),
             html.Div(
                 [
                 dcc.Loading(

@@ -343,7 +343,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
 
         # Get "Total Tested" & "Cohort Count" (nsize) data and store in separate dataframe.
         data_tested = data.filter(regex="Total Tested|Cohort Count|Year", axis=1).copy()
-        data_tested = (data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+        data_tested = data_tested.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index()
 
         # NOTE: Currently do not use CN-Size (Corp N-Size) for anything, but leaving here just in case
         # temp name N-Size cols in order to differentiate.
@@ -410,7 +410,7 @@ def process_high_school_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
 
             data.columns = data.columns.astype(str)
 
-            data = (data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
+            data = data.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index()
 
             # State/Federal grade rows not used at this point
             data = data[data["Category"].str.contains("State Grade|Federal Rating|School Name") == False]
@@ -504,6 +504,12 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
         # Calculate Grad Rate
         if "Total|Cohort Count" in data.columns:
             data = calculate_graduation_rate(data)
+
+        # TODO: Align column name reuqirements - the following line is a TEMP fix
+        # NOTE: Need to align academic info and academic analysis. academic info result does not have a "|"
+        # separator in category name - while academic analysis requires it - so a temporary fix is to add it
+        # back here
+        data.columns = data.columns.str.replace(" Graduation Rate", "|Graduation Rate")
 
         # Calculate Non Waiver Grad Rate #
         # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
@@ -753,9 +759,6 @@ def merge_schools(school_data: pd.DataFrame, corporation_data: pd.DataFrame, com
     # concatenate the school and corporation dataframes, filling empty values (e.g., Low and High Grade) with ""
     first_merge_data = pd.concat([school_data, corporation_data], sort=False).fillna("")
 
-    # print("Merging")
-    # # filter comparable schools
-    # print(school_columns)
     comparison_data = comparison_data.loc[:, comparison_data.columns.isin(all_categories)].copy()
 
     # concatenate school/corp and comparison dataframes

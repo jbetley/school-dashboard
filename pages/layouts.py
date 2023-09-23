@@ -51,8 +51,8 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
 
          # NOTE: For transparency purposes, we want to identify all categories that are missing from
         # the possible dataset, including those that aren't going to be displayed (because the school
-        # is missing them). Because there are many cases where there wont be any data at all (eg, it
-        # hasn't yet been released, or there is no data for a particular yet. So we need to check whether
+        # is missing them). Because there are many cases where there wont be any data at all (eg, data
+        # hasn't yet been released, or there is no data for a particular category). So we need to check whether
         # there is any data to display before and after we collect the missing category information. After
         # we collect any missing information, we need to drop any columns where the school has no data and
         # then check again to see if the dataframe has any info.
@@ -61,6 +61,7 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
         # Once the missing category and missing school strings are built, we drop any columns
         # where the school has no data by finding the index of the row containing the school
         # name and dropping all columns where the row at school_name_idx has a NaN value
+
         school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
         analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
 
@@ -320,8 +321,8 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
 
     return layout
 
-def create_radio_layout(group_string: str = "", width: str = "twelve"):
-    group = "academic-analysis-radio-" + group_string
+def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelve"):
+    group = page + "-radio-" + group_catagory
     container = group + "-container"
 
     # NOTE: THis is dumb, need to find a better way to distinguish

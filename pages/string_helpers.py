@@ -189,7 +189,6 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
             school_string (str): a string of schools which have no data
         ]
     """
-
     subject_categories = [c for c in tested_categories if c not in ["School Name","Low Grade", "High Grade"]]
 
     school_columns = [i for i in subject_categories if i in raw_data.columns]

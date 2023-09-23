@@ -222,13 +222,16 @@ body {
 hr {
   margin-top: -5px;
   /* margin-bottom: 17px; */
-  width: 60%;
+  width: 50%;
   margin-left: auto;
   margin-right: auto;
   border-bottom: solid steelblue;
   border-width: thin;
-
   }
+
+ .line_bottom {
+    margin-top: 5px;
+    }
 
 /** Containers **/
 .row {
@@ -944,7 +947,7 @@ a.nav-link:hover {
   font-family: 'Inter', sans-serif;
   color: white;
   background-color: #c0c1c7;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   align-items: center;
   justify-content: center;
@@ -1009,6 +1012,11 @@ a.nav-link:hover {
 .radio-group-academic-subheader  {
   margin-top: 10px;
   margin-bottom: 7px;
+}
+
+#subnav_academic {
+  margin-top: 13px;
+  margin-bottom: 7px;  
 }
 
 /** Strings & Labels **/

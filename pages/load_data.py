@@ -661,9 +661,9 @@ def get_year_over_year_data(*args):
         passed = params['category'] + " At Benchmark"
         result = params['category'] + " % At Benchmark"
     elif params['flag'] == "grad":
-        tested = params['category'] + " Cohort Count"
-        passed = params['category'] + " Graduates"
-        result = params['category'] + " Graduation Rate"
+        tested = params['category'] + "Cohort Count"
+        passed = params['category'] + "Graduates"
+        result = params['category'] + "Graduation Rate"
     else:   # k8 categories
         tested = params['category'] + " Total Tested"
         passed = params['category'] + " Total Proficient"

@@ -1744,12 +1744,8 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
     """
-    # print('CREATG TABLE')
-    # print(data)
-    # print('SCHOIOL NAME')
-    # print(school_name)
-    # drop all columns where the row at school_name_idx has a NaN value
     # TODO: Next two lines should be redundant for HS data, Check for k8 data
+    # drop all columns where the row at school_name_idx has a NaN value
     # school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
     # data = data.loc[:, ~data.iloc[school_name_idx].isna()]
 
@@ -1763,9 +1759,6 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     # NOTE: this does not apply to year_over_year analysis tables, which have the school
     # name in the column header
 
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)   
-    # print(data["School Name"])
     school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
 
     # hide the header "School Name"
