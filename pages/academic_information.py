@@ -26,7 +26,7 @@ from pages.calculations import round_percentages, conditional_fillna
 
 from pages.subnav import subnav_academic_type
 
-dash.register_page(__name__, path = "/academic_information",  top_nav=True,  order=6) #name="academic_information",
+dash.register_page(__name__, path = "/academic_information",  top_nav=False,  order=6) #name="academic_information",
 
 @callback(
     Output('subnav-content', 'href'),

@@ -428,7 +428,7 @@ def layout():
                                                 ),
                                                 dbc.NavLink(
                                                     "Academic Analysis",
-                                                     href="/academic_analysis",
+                                                     href="/analysis_single_year",
                                                      className="tab",
                                                      active="exact"
                                                 ),
