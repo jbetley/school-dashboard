@@ -2,8 +2,8 @@
 # ICSB Dashboard - Subnavigation #
 ##################################
 # author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# version:  1.11
+# date:     10/03/23
 
 import dash
 from dash import html
@@ -24,16 +24,14 @@ def subnav_academic_analysis():
                 if page["path"].startswith('/analysis')
             ],
             className='sub-tabs',
-            style={"marginTop": "-40px"}
         )
     )
 
-def subnav_academic_type():
+def subnav_academic_information():
     return html.Div(
         dbc.Nav(
             [
                 dbc.NavLink(
-                    
                     page['name'],
                     href=page['path'],
                     className = 'tab',
@@ -42,7 +40,5 @@ def subnav_academic_type():
                 for page in dash.page_registry.values()
                 if page["path"].startswith("/info")
             ],
-            className='sub-tabs',
-            # style={"marginTop": "-40px"}
         ),
     )

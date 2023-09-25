@@ -1,32 +1,23 @@
-#########################################
-# ICSB Dashboard - Academic Information #
-#########################################
+#######################################################
+# ICSB Dashboard - Academic Information - High School #
+#######################################################
 # author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# version:  1.11
+# date:     10/03/23
 
 import dash
-from dash import dcc, html, Input, Output, callback, State, ctx
+from dash import dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
-import dash_bootstrap_components as dbc
-import numpy as np
 import pandas as pd
-import re
 
 # import local functions
-from pages.load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_k8_school_academic_data, \
-    get_high_school_academic_data, get_demographic_data, get_school_index, get_growth_data, get_excluded_years
-from pages.process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
-    filter_high_school_academic_data, process_growth_data
-from pages.tables import no_data_page, no_data_table, create_multi_header_table_with_container, create_key_table, \
-    create_growth_table, create_single_header_table, create_multi_header_table
-from pages.charts import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
-from pages.layouts import set_table_layout, create_growth_layout, create_line_fig_layout
-from pages.calculations import round_percentages, conditional_fillna
+from pages.load_data import ethnicity, subgroup, get_high_school_academic_data, get_school_index, get_excluded_years
+from pages.process_data import process_high_school_academic_data, filter_high_school_academic_data
+from pages.tables import no_data_page, create_multi_header_table_with_container, create_key_table
+from pages.layouts import set_table_layout
+from pages.subnav import subnav_academic_information
 
-from pages.subnav import subnav_academic_type
-
-dash.register_page(__name__, path = "/academic_information",  top_nav=False,  order=6) #name="academic_information",
+dash.register_page(__name__, path = "/academic_information",  top_nav=False,  order=6)
 
 @callback(
     Output('subnav-content', 'href'),
@@ -90,7 +81,7 @@ def update_academic_information_page(school: str, year: str):
         # NOTE: There is a special exception for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
         # Christel House Watanabe Manual HS
-    elif (selected_school_type == "HS" or selected_school_type == "AHS" #or selected_school_type == "K12"
+    elif (selected_school_type == "HS" or selected_school_type == "AHS"
         or (selected_school_id == 5874 and selected_year_numeric < 2021)):
 
         location = "/academic_information"
@@ -206,11 +197,11 @@ def update_academic_information_page(school: str, year: str):
         else:
             academic_information_notes_string = hs_notes
 
-    return (location,
-        hs_grad_overview_table, hs_grad_ethnicity_table, hs_grad_subgroup_table, grad_table_container,
+    return (
+        location, hs_grad_overview_table, hs_grad_ethnicity_table, hs_grad_subgroup_table, grad_table_container,
         sat_cut_scores_table, sat_overview_table, sat_ethnicity_table, sat_subgroup_table, sat_table_container,
-        main_container, empty_container, no_display_data, academic_information_notes_string, academic_information_notes_container,
-        subnav_container
+        main_container, empty_container, no_display_data, academic_information_notes_string,
+        academic_information_notes_container, subnav_container
     )
 
 def layout():
@@ -222,7 +213,7 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    html.Div(subnav_academic_type(), className="tabs"),
+                                    html.Div(subnav_academic_information(), className="tabs"),
                                 ],
                                 className="bare-container--flex--center twelve columns",
                             ),

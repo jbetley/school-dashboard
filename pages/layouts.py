@@ -10,7 +10,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 from .load_data import info_categories
 from .string_helpers import create_chart_label,combine_school_name_and_grade_levels, identify_missing_categories
-from .charts import make_group_bar_chart
+from .charts import make_group_bar_chart, make_multi_line_chart
 from .tables import create_comparison_table
 
 def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: list, school_name: str) -> list:
@@ -322,7 +322,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     return layout
 
 def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelve"):
-    group = page + "-radio-" + group_catagory
+    group = page + "-" + group_catagory + "-radio"
     container = group + "-container"
 
     # NOTE: THis is dumb, need to find a better way to distinguish
@@ -363,3 +363,14 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
         )
     
     return radio_button_group
+
+def create_year_over_year_layout (school_name, data, label):
+    table_data = data.copy()
+    table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
+    fig = make_multi_line_chart(data, label)
+    table = create_comparison_table(table_data, school_name,"")
+    category_string = ""
+    school_string = ""
+    layout = create_group_barchart_layout(fig, table, category_string, school_string)
+
+    return layout

@@ -1,9 +1,9 @@
-######################################
-# ICSB Dashboard - Academic Analysis #
-######################################
+#######################################################
+# ICSB Dashboard - Academic Analysis - Year over Year #
+#######################################################
 # author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# version:  1.11
+# date:     10/03/23
 
 import dash
 from dash import ctx, dcc, html, Input, State, Output, callback
@@ -11,29 +11,25 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
+from .load_data import get_k8_school_academic_data, get_school_index, get_gradespan, get_ethnicity, get_subgroup, \
     get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data, get_year_over_year_data, get_gradespan, get_ethnicity, get_subgroup, get_excluded_years
-from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
-    merge_schools
+    get_hs_corporation_academic_data, get_year_over_year_data, get_excluded_years
+from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency
-from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart, make_multi_line_chart
-from .tables import create_comparison_table, no_data_page, no_data_table
-from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout, create_radio_layout
-from .string_helpers import create_school_label, combine_school_name_and_grade_levels, create_chart_label, \
-     identify_missing_categories
-from .subnav import subnav_academic_analysis
-
+from .tables import no_data_page
+from .layouts import create_radio_layout, create_year_over_year_layout
 from .calculate_metrics import calculate_k8_comparison_metrics
 
-dash.register_page(__name__, path = "/analysis_multiple_year", top_nav=False, order=11) # name = "Academic Analysis", 
+from .subnav import subnav_academic_analysis
+
+dash.register_page(__name__, name = "Year over Year", path = "/analysis_multiple_year", top_nav=False, order=11)
 
 # Gradespan selection (K12 Only)
 @callback(      
     Output("multi-year-gradespan-radio", "options"),
     Output("multi-year-gradespan-radio", "value"),
     Output('multi-year-gradespan-radio-container', 'style'),
-    Input("multi-year-charter-dropdown", "value"),
+    Input("charter-dropdown", "value"),
     State("multi-year-gradespan-radio", "value"),
 )
 def radio_gradespan_selector(school: str, gradespan_state: str):
@@ -52,8 +48,11 @@ def radio_gradespan_selector(school: str, gradespan_state: str):
         ]
         gradespan_container = {'display': 'block'}
 
-    if gradespan_state:
-        gradespan_value = gradespan_state
+        if gradespan_state:
+            gradespan_value = gradespan_state
+    
+    elif school_type == "AHS" or school_type == "HS":
+        gradespan_value = "hs"
 
     return gradespan_options, gradespan_value, gradespan_container
 
@@ -62,7 +61,7 @@ def radio_gradespan_selector(school: str, gradespan_state: str):
     Output("multi-year-hs-category-radio", "options"),
     Output("multi-year-hs-category-radio","value"),
     Output("multi-year-hs-category-radio-container", "style"),
-    Input("multi-year-charter-dropdown", "value"),
+    Input("charter-dropdown", "value"),
     Input("multi-year-gradespan-radio","value"),    
     State("multi-year-hs-category-radio", "value"),
 )
@@ -94,15 +93,15 @@ def radio_hs_category_selector(school: str, gradespan_value: str, hs_category_st
     Output("multi-year-subject-radio", "options"),
     Output("multi-year-subject-radio","value"),
     Output("multi-year-subject-radio-container","style"),  
-    Input("multi-year-charter-dropdown", "value"),
+    Input("charter-dropdown", "value"),
     Input("multi-year-gradespan-radio","value"),
-    Input("multi-year-hs-category-radio","value"),    
+    Input("multi-year-hs-category-radio","value"),
     State("multi-year-subject-radio","value"),
 )
 def radio_subject_selector(school: str, gradespan_value: str, hs_category_value: str, subject_state: str):
 
     subject_value = ""
-    subject_options = []
+    subject_options = []    # type:list
     subject_container = {'display': 'none'}
 
     selected_school = get_school_index(school)
@@ -146,7 +145,7 @@ def radio_subject_selector(school: str, gradespan_value: str, hs_category_value:
     Output("multi-year-category-radio", "options"),
     Output("multi-year-category-radio","value"),
     Output("multi-year-category-radio-container","style"),    
-    Input("multi-year-charter-dropdown", "value"),
+    Input("charter-dropdown", "value"),
     Input("multi-year-gradespan-radio","value"),
     Input("multi-year-hs-category-radio","value"),    
     State("multi-year-category-radio","value"),
@@ -210,13 +209,14 @@ def top_level_selector(school: str, gradespan_value: str, hs_category_value: str
     Output("multi-year-subcategory-radio", "options"),
     Output("multi-year-subcategory-radio","value"),
     Output("multi-year-subcategory-radio-container","style"),    
-    Input("multi-year-charter-dropdown", "value"),
-    # Input("multi-year-gradespan-radio","value"),    
+    Input("charter-dropdown", "value"),
     Input("multi-year-category-radio","value"),
-    # Input("multi-year-hs-category-radio","value"),       
-    State("multi-year-subcategory-radio","value"),    
+    State("multi-year-subcategory-radio","value"),
+    State("multi-year-gradespan-radio", "value"),
+    State("multi-year-hs-category-radio","value")
 )
-def radio_subcategory_selector(school: str, category_value: str, subcategory_state: str):
+def radio_subcategory_selector(school: str, category_value: str, subcategory_state: str, 
+                               gradespan_state: str, hs_category_state: str):
 
     # default values
     subcategory_value = ""
@@ -233,25 +233,32 @@ def radio_subcategory_selector(school: str, category_value: str, subcategory_sta
         else:
             subcategory_value = "School Total"
 
+        subcategory_container = {'display': 'block'}
+
     elif category_value == "By Ethnicity":
-        ethnicity = get_ethnicity(school)
+        ethnicity = get_ethnicity(school, gradespan_state, hs_category_state)
         subcategory_options = [{"label": e, "value": e} for e in ethnicity]
 
         if subcategory_state and subcategory_state in ethnicity:
             subcategory_value = subcategory_state
         else:
             subcategory_value = "Black"
+        
+        subcategory_container = {'display': 'block'}
 
     elif category_value == "By Subgroup":
-        subgroup = get_subgroup(school)
+        print(gradespan_state)
+        print(hs_category_state)
+        subgroup = get_subgroup(school, gradespan_state, hs_category_state)
         subcategory_options = [{"label": s, "value": s} for s in subgroup]           
 
+        print(subgroup)
         if subcategory_state and subcategory_state in subgroup:
             subcategory_value = subcategory_state
         else:         
             subcategory_value = "General Education"
 
-    subcategory_container = {'display': 'block'}
+        subcategory_container = {'display': 'block'}
 
     return subcategory_options, subcategory_value, subcategory_container
     
@@ -260,7 +267,7 @@ def radio_subcategory_selector(school: str, category_value: str, subcategory_sta
     Output("multi-year-comparison-dropdown", "options"),
     Output("multi-year-input-warning","children"),
     Output("multi-year-comparison-dropdown", "value"),
-    Input("multi-year-charter-dropdown", "value"),
+    Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("multi-year-comparison-dropdown", "value"),
     Input("multi-year-gradespan-radio", "value"),    
@@ -273,7 +280,7 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
     # clear the list of comparison_schools when a new school is
     # selected, otherwise comparison_schools will carry over
     input_trigger = ctx.triggered_id
-    if input_trigger == "multi-year-charter-dropdown":
+    if input_trigger == "charter-dropdown":
         comparison_schools = []
 
     selected_school = get_school_index(school)
@@ -436,35 +443,10 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
     Output("multi-year-analysis-notes", "children"),
     Output("year-over-year-grade", "children"),
     Output("year-over-year-hs", "children"),       
-    # Output("fig14c", "children"),
-    # Output("fig14d", "children"),
-    # Output("fig-iread", "children"),
     Output("multi-year-dropdown-container", "style"),
-    # Output("fig16a1", "children"),   
-    # Output("fig16a1-container", "style"),    
-    # Output("fig16b1", "children"),
-    # Output("fig16b1-container", "style"),
-    # Output("fig16a2", "children"),
-    # Output("fig16a2-container", "style"),
-    # Output("fig16b2", "children"),
-    # Output("fig16b2-container", "style"),
     Output("k8-analysis-multi-main-container", "style"),
     Output("k8-analysis-multi-empty-container", "style"),
     Output("k8-analysis-multi-no-data", "children"),
-    # Output("grad-overview", "children"),
-    # Output("grad-overview-container", "style"),    
-    # Output("grad-ethnicity", "children"),
-    # Output("grad-ethnicity-container", "style"),    
-    # Output("grad-subgroup", "children"),
-    # Output("grad-subgroup-container", "style"),    
-    # Output("sat-overview", "children"),
-    # Output("sat-overview-container", "style"),    
-    # Output("sat-ethnicity-ebrw", "children"),
-    # Output("sat-ethnicity-math", "children"),    
-    # Output("sat-ethnicity-container", "style"),    
-    # Output("sat-subgroup-ebrw", "children"),
-    # Output("sat-subgroup-math", "children"),    
-    # Output("sat-subgroup-container", "style"),    
     Output("hs-analysis-multi-main-container", "style"),
     Output("hs-analysis-multi-empty-container", "style"),
     Output("hs-analysis-multi-no-data", "children"),
@@ -497,53 +479,15 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
     hs_analysis_multi_main_container = {"display": "none"}
     hs_analysis_multi_empty_container = {"display": "none"}
     k8_analysis_multi_main_container = {"display": "none"}
-    k8_analysis_multi_empty_container = {"display": "block"}    # default display
+    k8_analysis_multi_empty_container = {"display": "block"}
 
-    # fig14c = []
-    # fig14d = []
-    # fig_iread = []    
-    # fig16a1 = []
-    # fig16a1_container = {"display": "none"}
-    # fig16b1 = []
-    # fig16b1_container = {"display": "none"}
-    # fig16a2 = []
-    # fig16a2_container = {"display": "none"}
-    # fig16b2 = []
-    # fig16b2_container = {"display": "none"}
     dropdown_container = {"display": "none"}
-
-    # grad_overview = []
-    # grad_overview_container = {"display": "none"}
-    # grad_ethnicity = []
-    # grad_ethnicity_container = {"display": "none"}
-    # grad_subgroup = []
-    # grad_subgroup_container = {"display": "none"}
-    # sat_overview = []   
-    # sat_overview_container = {"display": "none"}
-    # sat_ethnicity_ebrw = []
-    # sat_ethnicity_math = []
-    # sat_ethnicity_container = {"display": "none"}
-    # sat_subgroup_ebrw = []
-    # sat_subgroup_math = []
-    # sat_subgroup_container = {"display": "none"}
 
     k8_analysis_multi_no_data = no_data_page("Comparison Data - K-8 Academic Data")
     hs_analysis_multi_no_data = no_data_page("Comparison Data - High School Academic Data")
 
     analysis__multi_notes_label = ""    
     analysis__multi_notes_string = ""
-
-# TODO: Remove duplicate info - passing school, dont need name,
-    def make_year_over_year_layout (school_name, data):
-        table_data = data.copy()
-        table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
-        fig = make_multi_line_chart(data, label)
-        table = create_comparison_table(table_data, school_name,"")
-        category_string = ""
-        school_string = ""
-        layout = create_group_barchart_layout(fig, table, category_string, school_string)
-
-        return layout
 
     if school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
 
@@ -615,7 +559,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             if len(hs_analysis_multi_data.columns) <= 4:
                 dropdown_container = {"display": "none"}            
                 hs_analysis_multi_empty_container = {"display": "block"}
-            
+                year_over_year_hs = []
             else:
 
                 hs_analysis_multi_main_container = {"display": "block"}
@@ -630,7 +574,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
 
                     label = "Year over Year Comparison (SAT At Benchmark) - " + category
 
-                    year_over_year_hs_data= get_year_over_year_data(school, comparison_school_list, category , year, "sat")
+                    year_over_year_hs_data = get_year_over_year_data(school, comparison_school_list, category , year, "sat")
 
                 elif hs_category == "Graduation Rate" or hs_category == "":
                     if subcategory_radio:
@@ -642,85 +586,11 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
 
                     year_over_year_hs_data= get_year_over_year_data(school, comparison_school_list, category , year, "grad")                    
 
-                year_over_year_hs = make_year_over_year_layout(school_name, year_over_year_hs_data)
+                year_over_year_hs = create_year_over_year_layout(school_name, year_over_year_hs_data, label)
 
                 # show dropdown container
                 dropdown_container = {"display": "block"}
 
-                # # Graduation Comparison Sets
-                # grad_overview_categories = ["Total", "Non Waiver"]
-                # grad_overview = create_hs_analysis_multi_layout("Graduation Rate", hs_analysis_multi_data, grad_overview_categories, hs_school_name)
-                # grad_ethnicity = create_hs_analysis_multi_layout("Graduation Rate", hs_analysis_multi_data, ethnicity, hs_school_name)
-                # grad_subgroup = create_hs_analysis_multi_layout("Graduation Rate", hs_analysis_multi_data, subgroup, hs_school_name)
-
-                # # SAT Comparison Sets
-                # overview = ["School Total|Math", "School Total|EBRW", "School Total|Both"]
-                # sat_overview = create_hs_analysis_multi_layout("School Total", hs_analysis_multi_data, overview, hs_school_name)        
-                # sat_ethnicity_ebrw = create_hs_analysis_multi_layout("EBRW", hs_analysis_multi_data, ethnicity, hs_school_name)
-                # sat_ethnicity_math = create_hs_analysis_multi_layout("Math", hs_analysis_multi_data, ethnicity, hs_school_name)
-                # sat_subgroup_ebrw = create_hs_analysis_multi_layout("EBRW", hs_analysis_multi_data, subgroup, hs_school_name)
-                # sat_subgroup_math = create_hs_analysis_multi_layout("Math", hs_analysis_multi_data, subgroup, hs_school_name)
-
-                # # Display Logic
-                # if not grad_overview and not grad_ethnicity and not grad_subgroup:
-                #     grad_overview = no_data_fig_label("Comparison: Graduation Rates", 200, "pretty")
-                #     grad_overview_container = {"display": "block"}
-                # else:                    
-                #     if grad_overview:
-                #         grad_overview_container = {"display": "block"}
-                #     else:
-                #         grad_overview = no_data_fig_label("Comparison: Total/Non Waiver Graduation Rate", 200, "pretty")
-                #         grad_overview_container = {"display": "block"}
-
-                #     if grad_ethnicity:
-                #         grad_ethnicity_container = {"display": "block"}
-                #     else:
-                #         grad_ethnicity = no_data_fig_label("Comparison: Graduation Rate by Ethnicity", 200, "pretty")
-                #         grad_ethnicity_container = {"display": "block"}
-
-                #     if grad_subgroup:
-                #         grad_subgroup_container = {"display": "block"}
-                #     else:
-                #         grad_subgroup = no_data_fig_label("Comparison: Graduation Rate by Subgroup", 200, "pretty")
-                #         grad_subgroup_container = {"display": "block"}
-
-                # if not sat_overview and not sat_ethnicity_ebrw and not sat_ethnicity_math and not \
-                #     sat_subgroup_ebrw and not sat_subgroup_math:
-                #     sat_overview = no_data_fig_label("Comparison: SAT \% of Students At Benchmark", 200, "pretty")
-                #     sat_overview_container = {"display": "block"}
-                # else:
-                #     if sat_overview:
-                #         sat_overview_container = {"display": "block"}
-                #     else:
-                #         sat_overview = no_data_fig_label("Comparison: School Total SAT At Benchmark", 200, "pretty")
-                #         sat_overview_container = {"display": "block"}
-                
-                #     if sat_ethnicity_math or sat_ethnicity_ebrw:
-                #         if not sat_ethnicity_ebrw:
-                #             sat_ethnicity_ebrw = no_data_fig_label("Comparison: SAT At Benchmark by Ethnicity (EBRW)", 200, "pretty")
-                        
-                #         if not sat_ethnicity_math:
-                #             sat_ethnicity_math = no_data_fig_label("Comparison: SAT At Benchmark by Ethnicity (Math)", 200, "pretty")
-
-                #         sat_ethnicity_container = {"display": "block"}
-
-                #     else:
-                #         sat_ethnicity_container = {"display": "none"}    
-
-                #     if sat_subgroup_math or sat_subgroup_ebrw:
-                        
-                #         if not sat_subgroup_ebrw:
-                #             sat_subgroup_ebrw = no_data_fig_label("Comparison: SAT At Benchmark by Subgroup (EBRW)", 200, "pretty")
-                        
-                #         if not sat_subgroup_math:
-                #             sat_subgroup_math = no_data_fig_label("Comparison: SAT At Benchmark by Subgroup (Math)", 200, "pretty")                
-                        
-                #         sat_subgroup_container = {"display": "block"}
-                #     else:
-                #         sat_subgroup_container = {"display": "none"}
-                    
-
-    
     if school_type == "K8" or school_type == "K12":
                     
         # If school is K12 and highschool tab is selected, skip k8 data
@@ -861,232 +731,9 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
                         label = "Year over Year Comparison - " + category
 
                         year_over_year_k8_data = get_year_over_year_data(school,comparison_school_list, category, year, "k8")                        
-                        year_over_year_grade = make_year_over_year_layout(school_name, year_over_year_k8_data)
+                        year_over_year_grade = create_year_over_year_layout(school_name, year_over_year_k8_data, label)
 
                         dropdown_container = {"display": "block"}
-                        # #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
-                        # category = "School Total|ELA Proficient %"
-
-                        # # Get school value for specific category
-                        # if category in current_school_data.columns:
-
-                        #     # need to reset_index because we are using the length of the index to
-                        #     # add the Corp Data
-                        #     fig14c_k8_school_data = current_school_data[info_categories + [category]].copy()
-                        #     fig14c_k8_school_data = fig14c_k8_school_data.reset_index(drop=True)
-
-                        #     # add corp average for category to dataframe - note we are using 'clean_corp_data'
-                        #     # because the 'Corp' values have been dropped from raw_comparison_data
-                        #     fig14c_k8_school_data.loc[len(fig14c_k8_school_data.index)] = \
-                        #         [corp_name,"3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
-
-                        #     fig14c_comp_data = comparison_schools[info_categories + [category]]
-
-                        #     # Combine data, fix dtypes, and send to chart function
-                        #     fig14c_all_data = pd.concat([fig14c_k8_school_data,fig14c_comp_data])
-
-                        #     fig14c_table_data = fig14c_all_data.copy()
-
-                        #     fig14c_all_data[category] = pd.to_numeric(fig14c_all_data[category])
-
-                        #     fig14c_chart = make_bar_chart(fig14c_all_data, category, school_name, "Comparison: Current Year ELA Proficiency")
-
-                        #     fig14c_table_data["School Name"] = create_school_label(fig14c_table_data)
-
-                        #     fig14c_table_data = fig14c_table_data[["School Name", category]]
-                        #     fig14c_table_data = fig14c_table_data.reset_index(drop=True)
-
-                        #     fig14c_table = create_comparison_table(fig14c_table_data, school_name,"ELA Proficiency")
-                        # else:
-                        #     # NOTE: This should never ever happen. So yeah.
-                        #     fig14c_chart = no_data_fig_label("Comparison: Current Year ELA Proficiency",200)
-                        #     fig14c_table = no_data_table(["ELA Proficiency"])
-
-                        # fig14c = create_barchart_layout(fig14c_chart,fig14c_table)
-
-                        # #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
-                        # category = "School Total|Math Proficient %"
-
-                        # if category in current_school_data.columns:
-
-                        #     fig14d_k8_school_data = current_school_data[info_categories + [category]].copy()
-                        #     fig14d_k8_school_data = fig14d_k8_school_data.reset_index(drop=True)
-                            
-                        #     fig14d_k8_school_data.loc[len(fig14d_k8_school_data.index)] = \
-                        #         [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
-
-                        #     # Get comparable school values for the specific category
-                        #     fig14d_comp_data = comparison_schools[info_categories + [category]]
-
-                        #     fig14d_all_data = pd.concat([fig14d_k8_school_data,fig14d_comp_data])
-
-                        #     fig14d_table_data = fig14d_all_data.copy()
-
-                        #     fig14d_all_data[category] = pd.to_numeric(fig14d_all_data[category])
-
-                        #     fig14d_chart = make_bar_chart(fig14d_all_data,category, school_name, "Comparison: Current Year Math Proficiency")
-
-                        #     fig14d_table_data["School Name"] = create_school_label(fig14d_table_data)
-                            
-                        #     fig14d_table_data = fig14d_table_data[["School Name", category]]
-                        #     fig14d_table_data = fig14d_table_data.reset_index(drop=True)
-
-                        #     fig14d_table = create_comparison_table(fig14d_table_data, school_name, "Math Proficiency")
-                        
-                        # else:
-                        #     fig14d_chart = no_data_fig_label("Comparison: Current Year Math Proficiency",200)
-                        #     fig14d_table = no_data_table(["Math Proficiency"])
-
-                        # fig14d = create_barchart_layout(fig14d_chart,fig14d_table)
-
-                        # #### Current Year IREAD Proficiency Compared to Similar Schools #
-                        # category = "IREAD Proficient %"
-
-                        # if category in current_school_data.columns:
-
-                        #     fig_iread_k8_school_data = current_school_data[info_categories + [category]].copy()
-                        #     fig_iread_k8_school_data = fig_iread_k8_school_data.reset_index(drop=True)
-
-                        #     fig_iread_k8_school_data.loc[len(fig_iread_k8_school_data.index)] = \
-                        #         [corp_name, "3","8",clean_corp_data[clean_corp_data['Category'] == category][string_year].values[0]]
-
-                        #     fig_iread_comp_data = comparison_schools[info_categories + [category]]
-
-                        #     # drop schools that do not have grade 3
-                        #     fig_iread_comp_data = fig_iread_comp_data.loc[~((pd.to_numeric(fig_iread_comp_data["Low Grade"], errors="coerce") > 3))]
-
-                        #     fig_iread_all_data = pd.concat([fig_iread_k8_school_data,fig_iread_comp_data])
-
-                        #     fig_iread_table_data = fig_iread_all_data.copy()
-
-                        #     fig_iread_all_data[category] = pd.to_numeric(fig_iread_all_data[category])
-
-                        #     fig_iread_chart = make_bar_chart(fig_iread_all_data,category, school_name, "Comparison: Current Year IREAD Proficiency")
-
-                        #     fig_iread_table_data["School Name"] = create_school_label(fig_iread_table_data)
-
-                        #     fig_iread_table_data = fig_iread_table_data[["School Name", category]]
-                        #     fig_iread_table_data = fig_iread_table_data.reset_index(drop=True)
-
-                        #     fig_iread_table = create_comparison_table(fig_iread_table_data, school_name, "IREAD Proficiency")
-
-                        # else:
-                        #     fig_iread_chart = no_data_fig_label("Comparison: Current Year IREAD Proficiency",200)
-                        #     fig_iread_table = no_data_table(["IREAD Proficiency"])
-
-                        # fig_iread = create_barchart_layout(fig_iread_chart,fig_iread_table)
-
-                        # # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
-                        # headers_16a1 = []
-                        # for e in ethnicity:
-                        #     headers_16a1.append(e + "|" + "ELA Proficient %")
-
-                        # categories_16a1 =  info_categories + headers_16a1
-
-                        # # filter dataframe by categories
-                        # fig16a1_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16a1))]
-
-                        # if len(fig16a1_k8_school_data.columns) > 3:
-
-                        #     fig16a1_final_data = merge_schools(fig16a1_k8_school_data, current_corp_data, comparison_schools, headers_16a1, corp_name)
-                        #     fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = identify_missing_categories(fig16a1_final_data, categories_16a1)
-                            
-                        #     fig16a1_label = create_chart_label(fig16a1_final_data)
-                        #     fig16a1_chart = make_group_bar_chart(fig16a1_final_data, school_name, fig16a1_label)
-                        #     fig16a1_table_data = combine_school_name_and_grade_levels(fig16a1_final_data)
-
-                        #     fig16a1_table = create_comparison_table(fig16a1_table_data, school_name,"")
-
-                        #     fig16a1 = create_group_barchart_layout(fig16a1_chart,fig16a1_table,fig16a1_category_string,fig16a1_school_string)
-                            
-                        #     fig16a1_container = {"display": "block"}
-                        #     dropdown_container = {"display": "block"}
-                        
-                        # else:
-                        #     fig16a1 = no_data_fig_label("Comparison: ELA Proficiency by Ethnicity", 200)             
-                        #     fig16a1_container = {"display": "none"}
-
-                        # # Math Proficiency by Ethnicity Compared to Similar Schools (1.6.b.1)
-                        # headers_16b1 = []
-                        # for e in ethnicity:
-                        #     headers_16b1.append(e + "|" + "Math Proficient %")
-
-                        # categories_16b1 =  info_categories + headers_16b1
-
-                        # fig16b1_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16b1))]
-
-                        # if len(fig16b1_k8_school_data.columns) > 3:
-
-                        #     fig16b1_final_data = merge_schools(fig16b1_k8_school_data, current_corp_data, comparison_schools, headers_16b1, corp_name)
-                        #     fig16b1_final_data, fig16b1_category_string, fig16b1_school_string = identify_missing_categories(fig16b1_final_data, categories_16b1)                            
-                            
-                        #     fig16b1_label = create_chart_label(fig16b1_final_data)
-                        #     fig16b1_chart = make_group_bar_chart(fig16b1_final_data, school_name, fig16b1_label)
-                        #     fig16b1_table_data = combine_school_name_and_grade_levels(fig16b1_final_data)
-                        #     fig16b1_table = create_comparison_table(fig16b1_table_data, school_name,"")
-
-                        #     fig16b1 = create_group_barchart_layout(fig16b1_chart,fig16b1_table,fig16b1_category_string,fig16b1_school_string)
-
-                        #     fig16b1_container = {"display": "block"}
-                        #     dropdown_container = {"display": "block"}                   
-                        
-                        # else:
-                        #     fig16b1 = no_data_fig_label("Comparison: Math Proficiency by Ethnicity", 200)
-                        
-                        #     fig16b1_container = {"display": "none"}
-
-                        # # ELA Proficiency by Subgroup Compared to Similar Schools (1.6.a.2)
-                        # headers_16a2 = []
-                        # for s in subgroup:
-                        #     headers_16a2.append(s + "|" + "ELA Proficient %")
-                        
-                        # categories_16a2 =  info_categories + headers_16a2
-
-                        # fig16a2_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16a2))]
-
-                        # if len(fig16a2_k8_school_data.columns) > 3:
-                
-                        #     fig16a2_final_data = merge_schools(fig16a2_k8_school_data, current_corp_data, comparison_schools, headers_16a2, corp_name)
-                        #     fig16a2_final_data, fig16a2_category_string, fig16a2_school_string = identify_missing_categories(fig16a2_final_data, categories_16a2)                            
-
-                        #     fig16a2_label = create_chart_label(fig16a2_final_data)
-                        #     fig16a2_chart = make_group_bar_chart(fig16a2_final_data, school_name, fig16a2_label)
-                        #     fig16a2_table_data = combine_school_name_and_grade_levels(fig16a2_final_data)
-                        #     fig16a2_table = create_comparison_table(fig16a2_table_data, school_name,"")
-                            
-                        #     fig16a2 = create_group_barchart_layout(fig16a2_chart, fig16a2_table,fig16a2_category_string,fig16a2_school_string)
-                        #     fig16a2_container = {"display": "block"}
-                        #     dropdown_container = {"display": "block"}                
-                        
-                        # else:
-                        #     fig16a2 = no_data_fig_label("Comparison: ELA Proficiency by Subgroup", 200)                
-                        #     fig16a2_container = {"display": "none"}
-
-                        # # Math Proficiency by Subgroup Compared to Similar Schools (1.6.b.2)
-                        # headers_16b2 = []
-                        # for s in subgroup:
-                        #     headers_16b2.append(s + "|" + "Math Proficient %")
-
-                        # categories_16b2 =  info_categories + headers_16b2
-
-                        # fig16b2_k8_school_data = current_school_data.loc[:, (current_school_data.columns.isin(categories_16b2))]
-
-                        # if len(fig16b2_k8_school_data.columns) > 3:
-
-                        #     fig16b2_final_data = merge_schools(fig16b2_k8_school_data, current_corp_data, comparison_schools, headers_16b2, corp_name)
-                        #     fig16b2_final_data, fig16b2_category_string, fig16b2_school_string = identify_missing_categories(fig16b2_final_data, categories_16b2)
-
-                        #     fig16b2_label = create_chart_label(fig16b2_final_data)
-                        #     fig16b2_chart = make_group_bar_chart(fig16b2_final_data, school_name, fig16b2_label)
-                        #     fig16b2_table_data = combine_school_name_and_grade_levels(fig16b2_final_data)
-                        #     fig16b2_table = create_comparison_table(fig16b2_table_data, school_name,"")
-
-                        #     fig16b2 = create_group_barchart_layout(fig16b2_chart, fig16b2_table,fig16b2_category_string,fig16b2_school_string)
-                        #     fig16b2_container = {"display": "block"}
-                        
-                        # else:
-                        #     fig16b2 = no_data_fig_label("Comparison: Math Proficiency by Subgroup", 200)            
-                        #     fig16b2_container = {"display": "none"}
 
     analysis__multi_notes = [
             html.Div(
@@ -1122,22 +769,17 @@ def layout():
                 [
                     html.Div(
                         [
-                            # html.Div(
-                            #     [            
+                            html.Div(
+                                [
                                     html.Div(
                                         [
-                                            html.Div(
-                                                [
-                                                    html.Div(subnav_academic_analysis(), className="tabs"),
-                                                ],
-                                                className="bare-container--flex--center twelve columns",
-                                            ),
+                                            html.Div(subnav_academic_analysis(), id="subnav-academic", className="tabs"),
                                         ],
-                                        className="row",
+                                        className="bare-container--flex--center twelve columns",
                                     ),
-                            #     ],
-                            #     id="subnav-container",
-                            # ),  
+                                ],
+                                className="row",
+                            ),
                             html.Div(
                                 [
                                     html.Div(
@@ -1214,36 +856,6 @@ def layout():
                             html.Div(
                                 [      
                                     html.Div(id="year-over-year-grade", children=[]),                               
-                                    # html.Div(id="fig14c", children=[]),
-                                    # html.Div(id="fig14d", children=[]),
-                                    # html.Div(id="fig-iread", children=[]),
-                                    # html.Div(
-                                    #     [
-                                    #         html.Div(id="fig16a1"),
-                                    #     ],
-                                    #     id = "fig16a1-container",
-                                    #     style= {"display": "none"},
-                                    # ),
-                                    # html.Div([
-                                    #         html.Div(id="fig16b1"),
-                                    #     ],
-                                    #     id = "fig16b1-container",
-                                    #     style= {"display": "none"},
-                                    # ),
-                                    # html.Div(
-                                    #     [      
-                                    # html.Div(id="fig16a2"),
-                                    #     ],
-                                    #     id = "fig16a2-container",
-                                    #     style= {"display": "none"},
-                                    # ),                                 
-                                    # html.Div(
-                                    #     [                        
-                                    #         html.Div(id="fig16b2"),
-                                    #     ],
-                                    #     id = "fig16b2-container",
-                                    #     style= {"display": "none"},
-                                    # ),
                                     html.Div(
                                         [     
                                             html.Div(id="multi-year-analysis-notes", children=[]),
@@ -1263,49 +875,6 @@ def layout():
                             html.Div(
                                 [
                                     html.Div(id="year-over-year-hs", children=[]),                                         
-                                    # html.Div(
-                                    #     [
-                                    #         html.Div(id="grad-overview"),
-                                    #     ],
-                                    #     id = "grad-overview-container",
-                                    #     style= {"display": "none"},
-                                    # ),
-                                    # html.Div([
-                                    #         html.Div(id="grad-ethnicity"),
-                                    #     ],
-                                    #     id = "grad-ethnicity-container",
-                                    #     style= {"display": "none"},
-                                    # ),
-                                    # html.Div(
-                                    #     [      
-                                    # html.Div(id="grad-subgroup"),
-                                    #     ],
-                                    #     id = "grad-subgroup-container",
-                                    #     style= {"display": "none"},
-                                    # ),                                 
-                                    # html.Div(
-                                    #     [                        
-                                    #         html.Div(id="sat-overview"),
-                                    #     ],
-                                    #     id = "sat-overview-container",
-                                    #     style= {"display": "none"},
-                                    # ),
-                                    # html.Div(
-                                    #     [                        
-                                    #         html.Div(id="sat-ethnicity-ebrw"),
-                                    #         html.Div(id="sat-ethnicity-math"),                                            
-                                    #     ],
-                                    #     id = "sat-ethnicity-container",
-                                    #     style= {"display": "none"},
-                                    # ),
-                                    # html.Div(
-                                    #     [                        
-                                    #         html.Div(id="sat-subgroup-ebrw"),
-                                    #         html.Div(id="sat-subgroup-math"),                                            
-                                    #     ],
-                                    #     id = "sat-subgroup-container",
-                                    #     style= {"display": "none"},
-                                    # ),                                                        
                                 ],
                                 id = "hs-analysis-multi-main-container",
                                 style= {"display": "none"}, 

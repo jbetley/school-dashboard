@@ -1,42 +1,42 @@
-#########################################
-# ICSB Dashboard - Academic Information #
-#########################################
-# author:   jbetley
-# version:  1.10
-# date:     09/10/23
+#######################################################
+# ICSB Dashboard - Academic Information - Proficiency #
+#######################################################
+# author:   jbetley (james@jamesbetley.com)
+# version:  1.11
+# date:     10/03/23
 
 import dash
-from dash import dcc, html, Input, Output, callback, State, ctx
+from dash import dcc, html, Input, Output, callback, State
 from dash.exceptions import PreventUpdate
-import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
 import re
 
 # import local functions
 from pages.load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_k8_school_academic_data, \
-    get_high_school_academic_data, get_demographic_data, get_school_index, get_growth_data, get_excluded_years
+    get_high_school_academic_data, get_demographic_data, get_school_index, get_excluded_years
 from pages.process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
-    filter_high_school_academic_data, process_growth_data
+    filter_high_school_academic_data
 from pages.tables import no_data_page, no_data_table, create_multi_header_table_with_container, create_key_table, \
-    create_growth_table, create_single_header_table, create_multi_header_table
-from pages.charts import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
-from pages.layouts import set_table_layout, create_growth_layout, create_line_fig_layout, create_radio_layout
+    create_single_header_table, create_multi_header_table
+from pages.charts import no_data_fig_label, make_stacked_bar, make_line_chart
+from pages.layouts import set_table_layout, create_line_fig_layout, create_radio_layout
 from pages.calculations import round_percentages, conditional_fillna
-from pages.subnav import subnav_academic_type
+
+from pages.subnav import subnav_academic_information
 
 dash.register_page(__name__, top_nav=False,  order=7)
 
 # Proficiency School Type (applies only to K12 schools)
 @callback(      
-    Output("academic-proficiency-radio-type", "options"),
-    Output("academic-proficiency-radio-type","value"),
-    Output('academic-proficiency-radio-type-container', 'style'),
+    Output("academic-proficiency-type-radio", "options"),
+    Output("academic-proficiency-type-radio","value"),
+    Output('academic-proficiency-type-radio-container', 'style'),
     Output("hidden-proficiency", "children"),
     Input("current-proficiency-page", "href"),
     Input("charter-dropdown", "value"),
-    Input("academic-proficiency-radio-type", "value"),
-    State("academic-proficiency-radio-type", "value"),
+    Input("academic-proficiency-type-radio", "value"),
+    State("academic-proficiency-type-radio", "value"),
 )
 def radio_type_selector(current_page: str, school: str, radio_type_value: str, radio_type_state: str):
 
@@ -70,17 +70,16 @@ def radio_type_selector(current_page: str, school: str, radio_type_value: str, r
 
 # Proficiency Category
 @callback(
-    Output("academic-proficiency-radio-category", "options"),
-    Output("academic-proficiency-radio-category","value"),
-    Output("academic-proficiency-radio-category-container","style"),
+    Output("academic-proficiency-category-radio", "options"),
+    Output("academic-proficiency-category-radio","value"),
+    Output("academic-proficiency-category-radio-container","style"),
     Input("charter-dropdown", "value"),
-    # Input("current-proficiency-page", "href"),
-    Input("academic-proficiency-radio-type", "value"),
-    State("academic-proficiency-radio-category", "options"),
-    State("academic-proficiency-radio-category", "value")  
+    Input("academic-proficiency-type-radio", "value"),
+    State("academic-proficiency-category-radio", "options"),
+    State("academic-proficiency-category-radio", "value")  
 )
 def radio_category_selector(school: str, radio_type: str, radio_category_options: list, radio_category_value: str):
-# school: str, current_page: str, 
+
     options_default = [
         {"label": "All Data", "value": "all"},
         {"label": "By Grade", "value": "grade"},
@@ -90,10 +89,7 @@ def radio_category_selector(school: str, radio_type: str, radio_category_options
     
     value_default = "all"
 
-    selected_school = get_school_index(school)
-    school_type = selected_school["School Type"].values[0]
-
-    if radio_type == "hs": # or (school_type == "K12" and radio_type == "hs"):
+    if radio_type == "hs":
         category_value = ""
         category_options = []
         category_container = {"display": "none"}
@@ -145,15 +141,14 @@ def radio_category_selector(school: str, radio_type: str, radio_category_options
     Output("k12-sat-ethnicity-table", "children"),
     Output("k12-sat-subgroup-table", "children"),
     Output("k12-sat-table-container", "style"),
-    # Output('academic-proficiency-radio-type-container', 'style'),    
     Output("academic-proficiency-main-container", "style"),
     Output("academic-proficiency-empty-container", "style"),
     Output("academic-proficiency-no-data", "children"),
     Output("academic-proficiency-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="academic-proficiency-radio-type", component_property="value"),
-    Input(component_id="academic-proficiency-radio-category", component_property="value"),
+    Input(component_id="academic-proficiency-type-radio", component_property="value"),
+    Input(component_id="academic-proficiency-category-radio", component_property="value"),
 )
 def update_academic_proficiency_page(school: str, year: str, radio_type: str, radio_category: str):
     if not school:
@@ -215,14 +210,11 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
     no_display_data = no_data_page("Academic Proficiency")
 
     # HS and AHS do not have proficiency data
-    # if selected_school_type == "K12":
-    #     pass
 
     if selected_school_type == "HS" or selected_school_type == "AHS" or \
             (selected_school_id == 5874 and selected_year_numeric < 2021):
         
         location = "/academic_information"
-        # radio_input_container = {"display": "none"}
 
     else:
 
@@ -755,37 +747,13 @@ def layout():
                 [
                     html.Div(
                         [
-                            html.Div(subnav_academic_type(), id="subnav_academic", className="tabs"),
+                            html.Div(subnav_academic_information(), id="subnav-academic", className="tabs"),
                         ],
                         className="bare-container--flex--center twelve columns",
                     ),
                 ],
                 className="row",
             ),
-            # html.Div(
-            #     [
-            #         html.Div(
-            #             [
-            #                 html.Div(
-            #                     [
-            #                         dbc.RadioItems(
-            #                             id="academic-proficiency-radio-type",
-            #                             className="btn-group",
-            #                             inputClassName="btn-check",
-            #                             labelClassName="btn btn-outline-primary",
-            #                             labelCheckedClassName="active",
-            #                             value=[],
-            #                             persistence=False,
-            #                         ),
-            #                     ],
-            #                     className="radio-group-academic",
-            #                 )
-            #             ],
-            #             className = "bare-container--flex--center twelve columns",
-            #         ),
-            #     ],
-            #     id = "academic-proficiency-radio-type-container",
-            # ),
             html.Div(
                 [
                     html.Div(
@@ -798,30 +766,6 @@ def layout():
                 ],
                 className = "row",
             ),            
-            # html.Div(
-            #     [                    
-            #         html.Div(
-            #             [
-            #                 html.Div(
-            #                     [
-            #                         dbc.RadioItems(
-            #                             id="academic-proficiency-radio-category",
-            #                             className="btn-group",
-            #                             inputClassName="btn-check",
-            #                             labelClassName="btn btn-outline-primary",
-            #                             labelCheckedClassName="active",
-            #                             value=[],
-            #                             persistence=False,
-            #                         ),
-            #                     ],
-            #                     className="radio-group-academic-subheader",
-            #                 )
-            #             ],
-            #             className = "bare-container--flex--center twelve columns",
-            #         ),
-            #     ],
-            #     id = "academic-proficiency-radio-category-container",
-            # ),
             html.Div(
                 [
                     html.Div(

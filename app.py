@@ -293,9 +293,8 @@ def layout():
         # the next two components are used by the year dropdown callback to determine the current url
         dcc.Location(id="current-page", refresh=False),
         html.Div(id="hidden", style={"display": "none"}),
-        
-        # html.Div(
-        #     [
+        html.Div(
+            [
                 html.Div(
                     [
                         
@@ -357,9 +356,9 @@ def layout():
                     ],
                     className="row--fixed",
                 ),
-        #     ],
-        #     className="row--fixed",
-        # ),
+            ],
+            className="bare-container--flex--center twelve columns",
+        ),
         html.Div(
             [
                 html.Div(
@@ -408,18 +407,6 @@ def layout():
                                                      className="tab",
                                                      active="exact"
                                                 ),                                                
-                                                # dbc.NavLink(
-                                                #     "Academic Proficiency",
-                                                #      href="/academic-proficiency",
-                                                #      className="tab",
-                                                #      active="exact"
-                                                # ),
-                                                # dbc.NavLink(
-                                                #     "Academic Growth",
-                                                #      href="/academic-growth",
-                                                #      className="tab",
-                                                #      active="exact"
-                                                # ),                                                
                                                 dbc.NavLink(
                                                     "Academic Metrics",
                                                      href="/academic_metrics",
@@ -445,7 +432,7 @@ def layout():
                                             className="tabs",
                                         ),
                                     ],
-                                    className="nav-container ten columns", 
+                                    className="nav-container twelve columns", 
                                 ),
                             ],
                             className="row",

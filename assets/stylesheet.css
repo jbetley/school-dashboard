@@ -966,7 +966,7 @@ a.nav-link:hover {
   font-family: 'Inter', sans-serif;
   color: steelblue;
   background-color: #ffffff;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   align-items: center;
   justify-content: center;
@@ -1014,8 +1014,8 @@ a.nav-link:hover {
   margin-bottom: 7px;
 }
 
-#subnav_academic {
-  margin-top: 13px;
+#subnav-academic {
+  margin-top: 10px;
   margin-bottom: 7px;  
 }
 

@@ -373,17 +373,37 @@ def get_school_index(school_id):
     return run_query(q, params)
 
 def get_gradespan(school_id):
+    params = dict(id=school_id)
     # returns a list of grades for which a school has numbers for both Tested and Proficient students (so
     # they are chartable
-    params = dict(id=school_id)
+    
+    # keys = ['school_id','school_type','hs_category']
+    # params = dict(zip(keys, args))
 
+    # if params['school_type'] == "hs":
+    #     # GET TOTAL FOR HS
+    #     if params['hs_category'] == "SAT":
+    #         q = text('''
+    #             SELECT "Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested",
+    #                 "Grade3|ELATotalProficient", "Grade4|ELATotalProficient", "Grade5|ELATotalProficient", "Grade6|ELATotalProficient", "Grade7|ELATotalProficient","Grade8|ELATotalProficient"
+    #                 FROM academic_data_hs
+    #                 WHERE SchoolID = :id
+    #                 ''')
+    #     else:        
+    #         q = text('''
+    #         SELECT "Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested",
+    #             "Grade3|ELATotalProficient", "Grade4|ELATotalProficient", "Grade5|ELATotalProficient", "Grade6|ELATotalProficient", "Grade7|ELATotalProficient","Grade8|ELATotalProficient"
+    #             FROM academic_data_hs
+    #             WHERE SchoolID = :id
+    #             ''')
+    # else:
     q = text('''
         SELECT "Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested",
             "Grade3|ELATotalProficient", "Grade4|ELATotalProficient", "Grade5|ELATotalProficient", "Grade6|ELATotalProficient", "Grade7|ELATotalProficient","Grade8|ELATotalProficient"
-             FROM academic_data_k8
+            FROM academic_data_k8
             WHERE SchoolID = :id
-             ''')
-
+            ''')
+    
     result = run_query(q, params)
 
     # change '***' to nan
@@ -410,17 +430,36 @@ def get_gradespan(school_id):
 
     return result
 
-def get_ethnicity(school_id):
+def get_ethnicity(*args):
     # returns a list of ethnicities for which a school has numbers for both Tested and Proficient students (so
     # they are chartable
-    params = dict(id=school_id)
+    
+    keys = ['id','school_type','hs_category']
+    params = dict(zip(keys, args))
 
-    q = text('''
-        SELECT "AmericanIndian|ELATotalTested", "Asian|ELATotalTested", "Black|ELATotalTested", "Hispanic|ELATotalTested", "Multiracial|ELATotalTested","NativeHawaiianorOtherPacificIslander|ELATotalTested", "White|ELATotalTested",
-                "AmericanIndian|ELATotalProficient", "Asian|ELATotalProficient", "Black|ELATotalProficient", "Hispanic|ELATotalProficient", "Multiracial|ELATotalProficient","NativeHawaiianorOtherPacificIslander|ELATotalProficient", "White|ELATotalProficient"
-            FROM academic_data_k8
-            WHERE SchoolID = :id
-             ''')
+    if params['school_type'] == "hs":
+
+        if params['hs_category'] == "SAT":
+            q = text('''
+                SELECT "AmericanIndian|EBRWTotalTested", "Asian|EBRWTotalTested", "Black|EBRWTotalTested", "Hispanic|EBRWTotalTested", "Multiracial|EBRWTotalTested","NativeHawaiianorOtherPacificIslander|EBRWTotalTested", "White|EBRWTotalTested",
+                        "AmericanIndian|EBRWAtBenchmark", "Asian|EBRWAtBenchmark", "Black|EBRWAtBenchmark", "Hispanic|EBRWAtBenchmark", "Multiracial|EBRWAtBenchmark","NativeHawaiianorOtherPacificIslander|EBRWAtBenchmark", "White|EBRWAtBenchmark"
+                    FROM academic_data_hs
+                    WHERE SchoolID = :id
+                ''')     
+        else:
+            q = text('''
+                SELECT "AmericanIndian|CohortCount", "Asian|CohortCount", "Black|CohortCount", "Hispanic|CohortCount", "Multiracial|CohortCount","NativeHawaiianorOtherPacificIslander|CohortCount", "White|CohortCount",
+                        "AmericanIndian|Graduates", "Asian|Graduates", "Black|Graduates", "Hispanic|Graduates", "Multiracial|Graduates","NativeHawaiianorOtherPacificIslander|Graduates", "White|Graduates"
+                    FROM academic_data_hs
+                    WHERE SchoolID = :id
+                ''')     
+    else:
+        q = text('''
+            SELECT "AmericanIndian|ELATotalTested", "Asian|ELATotalTested", "Black|ELATotalTested", "Hispanic|ELATotalTested", "Multiracial|ELATotalTested","NativeHawaiianorOtherPacificIslander|ELATotalTested", "White|ELATotalTested",
+                    "AmericanIndian|ELATotalProficient", "Asian|ELATotalProficient", "Black|ELATotalProficient", "Hispanic|ELATotalProficient", "Multiracial|ELATotalProficient","NativeHawaiianorOtherPacificIslander|ELATotalProficient", "White|ELATotalProficient"
+                FROM academic_data_k8
+                WHERE SchoolID = :id
+                ''')
 
     result = run_query(q, params)
 
@@ -439,20 +478,38 @@ def get_ethnicity(school_id):
 
     return result
 
-def get_subgroup(school_id):
+def get_subgroup(*args):
     # returns a list of subgroups for which a school has numbers for both Tested and Proficient students (so
     # they are chartable    
-    params = dict(id=school_id)
+    keys = ['id','school_type','hs_category']
+    params = dict(zip(keys, args))
 
-    q = text('''
-        SELECT "PaidMeals|ELATotalTested", "FreeorReducedPriceMeals|ELATotalTested", "GeneralEducation|ELATotalTested", "SpecialEducation|ELATotalTested", "EnglishLanguageLearners|ELATotalTested","NonEnglishLanguageLearners|ELATotalTested",
-            "PaidMeals|ELATotalProficient", "FreeorReducedPriceMeals|ELATotalProficient", "GeneralEducation|ELATotalProficient", "SpecialEducation|ELATotalProficient", "EnglishLanguageLearners|ELATotalProficient","NonEnglishLanguageLearners|ELATotalProficient"
-        FROM academic_data_k8
-            WHERE SchoolID = :id
-             ''')
+    if params['school_type'] == "hs":
+# TODO: TEST THESE RESULTS!
+        if params['hs_category'] == "SAT":
+            q = text('''
+                SELECT "PaidMeals|EBRWTotalTested", "FreeorReducedPriceMeals|EBRWTotalTested", "GeneralEducation|EBRWTotalTested", "SpecialEducation|EBRWTotalTested", "EnglishLanguageLearners|EBRWTotalTested","NonEnglishLanguageLearners|EBRWTotalTested",
+                    "PaidMeals|EBRWAtBenchmark", "FreeorReducedPriceMeals|EBRWAtBenchmark", "GeneralEducation|EBRWAtBenchmark", "SpecialEducation|EBRWAtBenchmark", "EnglishLanguageLearners|EBRWAtBenchmark","NonEnglishLanguageLearners|EBRWAtBenchmark"
+                FROM academic_data_hs
+                    WHERE SchoolID = :id
+                    ''')
+        else:
+            q = text('''
+                SELECT "PaidMeals|CohortCount", "FreeorReducedPriceMeals|CohortCount", "GeneralEducation|CohortCount", "SpecialEducation|CohortCount", "EnglishLanguageLearners|CohortCount","NonEnglishLanguageLearners|CohortCount",
+                    "PaidMeals|Graduates", "FreeorReducedPriceMeals|Graduates", "GeneralEducation|Graduates", "SpecialEducation|Graduates", "EnglishLanguageLearners|Graduates","NonEnglishLanguageLearners|Graduates"
+                FROM academic_data_hs
+                    WHERE SchoolID = :id
+                    ''')            
+    else:
+
+        q = text('''
+            SELECT "PaidMeals|ELATotalTested", "FreeorReducedPriceMeals|ELATotalTested", "GeneralEducation|ELATotalTested", "SpecialEducation|ELATotalTested", "EnglishLanguageLearners|ELATotalTested","NonEnglishLanguageLearners|ELATotalTested",
+                "PaidMeals|ELATotalProficient", "FreeorReducedPriceMeals|ELATotalProficient", "GeneralEducation|ELATotalProficient", "SpecialEducation|ELATotalProficient", "EnglishLanguageLearners|ELATotalProficient","NonEnglishLanguageLearners|ELATotalProficient"
+            FROM academic_data_k8
+                WHERE SchoolID = :id
+                ''')
 
     result = run_query(q, params)
-
 
     for col in result.columns:
         result[col] = pd.to_numeric(result[col], errors="coerce")

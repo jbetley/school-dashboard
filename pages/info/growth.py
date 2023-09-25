@@ -1,42 +1,34 @@
-#########################################
-# ICSB Dashboard - Academic Growth Sub  #
-#########################################
+###################################################
+# ICSB Dashboard - Academic Information - Growth  #
+###################################################
 # author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# version:  1.11
+# date:     10/03/23
 
 import dash
-from dash import dcc, html, Input, Output, callback, State, ctx
+from dash import dcc, html, Input, Output, callback, State
 from dash.exceptions import PreventUpdate
-import dash_bootstrap_components as dbc
-import numpy as np
 import pandas as pd
-import re
 
 # import local functions
-from pages.load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_k8_school_academic_data, \
-    get_high_school_academic_data, get_demographic_data, get_school_index, get_growth_data, get_excluded_years
-from pages.process_data import process_k8_academic_data, get_attendance_data, process_high_school_academic_data, \
-    filter_high_school_academic_data, process_growth_data
-from pages.tables import no_data_page, no_data_table, create_multi_header_table_with_container, create_key_table, \
-    create_growth_table, create_single_header_table, create_multi_header_table
-from pages.charts import no_data_fig_label, make_stacked_bar, make_growth_chart, make_line_chart
-from pages.layouts import set_table_layout, create_growth_layout, create_line_fig_layout, create_radio_layout
-from pages.calculations import round_percentages, conditional_fillna
-from pages.subnav import subnav_academic_type
+from pages.load_data import get_school_index, get_growth_data, get_excluded_years
+from pages.process_data import process_growth_data
+from pages.tables import no_data_page, create_growth_table
+from pages.charts import make_growth_chart
+from pages.layouts import create_growth_layout, create_radio_layout
+from pages.subnav import subnav_academic_information
 
-dash.register_page(__name__,  top_nav=False, order=8) #path="/info/growth",
-# dash.register_page(__name__, title = "Academic Growth", submenu='academic_information', order=5) # , path="/info/growth",
+dash.register_page(__name__,  top_nav=False, order=8)
 
 # Category
 @callback(
-    Output("academic-growth-radio-category", "options"),
-    Output("academic-growth-radio-category","value"),
-    Output("academic-growth-radio-category-container","style"),
+    Output("academic-growth-category-radio", "options"),
+    Output("academic-growth-category-radio","value"),
+    Output("academic-growth-category-radio-container","style"),
     Output("hidden-growth", "children"),
     Input("current-growth-page", "href"),        
-    State("academic-growth-radio-category", "options"),
-    State("academic-growth-radio-category", "value")  
+    State("academic-growth-category-radio", "options"),
+    State("academic-growth-category-radio", "value")  
 )
 def radio_category_selector(current_page: str, radio_category_options: list, radio_category_value: str):
 
@@ -87,7 +79,7 @@ def radio_category_selector(current_page: str, radio_category_options: list, rad
     Output("academic-growth-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="academic-growth-radio-category", component_property="value"),  
+    Input(component_id="academic-growth-category-radio", component_property="value"),  
 )
 def update_academic_info_growth_page(school: str, year: str, radio_category: str):
     if not school:
@@ -131,8 +123,6 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
 
     else:
 
-        main_container = {"display": "block"}
-
         # State Growth Data
         # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
         # 162 days. "Majority Enrolled" is misleading. It actually means "Greatest Number of Days." So the actual
@@ -159,14 +149,12 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
 
             main_growth_container = {"display": "none"}
             empty_growth_container = {"display": "block"}
-            empty_container = {"display": "none"}
             
         else:
 
             main_growth_container = {"display": "block"}
 
             empty_growth_container = {"display": "none"}
-            empty_container = {"display": "none"}
 
             # Percentage of students achieving "Adequate Growth"
             fig_data_grades_growth, table_data_grades_growth = process_growth_data(growth_data,"Grade Level")
@@ -314,37 +302,13 @@ def layout():
                 [
                     html.Div(
                         [
-                            html.Div(subnav_academic_type(), id="subnav_academic", className="tabs"),
+                            html.Div(subnav_academic_information(), id="subnav-academic", className="tabs"),
                         ],
                         className="bare-container--flex--center twelve columns",
                     ),
                 ],
                 className="row",
             ),
-            # html.Div(
-            #     [            
-            #         html.Div(
-            #             [
-            #                 html.Div(
-            #                     [
-            #                         dbc.RadioItems(
-            #                             id="academic-growth-radio-category",
-            #                             className="btn-group",
-            #                             inputClassName="btn-check",
-            #                             labelClassName="btn btn-outline-primary",
-            #                             labelCheckedClassName="active",
-            #                             value=[],
-            #                             persistence=False,
-            #                         ),
-            #                     ],
-            #                     className="radio-group-academic-subheader",
-            #                 )
-            #             ],
-            #             className = "bare-container--flex--center twelve columns",
-            #         ),
-            #     ],
-            #     id = "academic-growth-radio-category-container",
-            # ),
             html.Div(
                 [
                     html.Div(
