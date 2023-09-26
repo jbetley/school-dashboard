@@ -3,7 +3,7 @@
 ##############################################
 # author:   jbetley
 # version:  1.10
-# date:     09/10/23
+# date:     10/03/23
 
 import pandas as pd
 import numpy as np
@@ -217,7 +217,6 @@ def get_excluded_years(year: str) -> list:
 
     return excluded_years
 
-# TODO: Refactor so everything passed in as a tuple of a dict for named placeholders, even if only a single val
 # Return Dataframe (read_sql is a convenience function wrapper around read_sql_query)
 # If no data matches query, returns an empty dataframe
 def run_query(q, *args):
@@ -374,29 +373,9 @@ def get_school_index(school_id):
 
 def get_gradespan(school_id):
     params = dict(id=school_id)
-    # returns a list of grades for which a school has numbers for both Tested and Proficient students (so
-    # they are chartable
+    # returns a list of grades for which a school has numbers for both Tested and Proficient students
+    # if no grades are found - returns an empty list
     
-    # keys = ['school_id','school_type','hs_category']
-    # params = dict(zip(keys, args))
-
-    # if params['school_type'] == "hs":
-    #     # GET TOTAL FOR HS
-    #     if params['hs_category'] == "SAT":
-    #         q = text('''
-    #             SELECT "Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested",
-    #                 "Grade3|ELATotalProficient", "Grade4|ELATotalProficient", "Grade5|ELATotalProficient", "Grade6|ELATotalProficient", "Grade7|ELATotalProficient","Grade8|ELATotalProficient"
-    #                 FROM academic_data_hs
-    #                 WHERE SchoolID = :id
-    #                 ''')
-    #     else:        
-    #         q = text('''
-    #         SELECT "Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested",
-    #             "Grade3|ELATotalProficient", "Grade4|ELATotalProficient", "Grade5|ELATotalProficient", "Grade6|ELATotalProficient", "Grade7|ELATotalProficient","Grade8|ELATotalProficient"
-    #             FROM academic_data_hs
-    #             WHERE SchoolID = :id
-    #             ''')
-    # else:
     q = text('''
         SELECT "Grade3|ELATotalTested", "Grade4|ELATotalTested", "Grade5|ELATotalTested", "Grade6|ELATotalTested", "Grade7|ELATotalTested","Grade8|ELATotalTested",
             "Grade3|ELATotalProficient", "Grade4|ELATotalProficient", "Grade5|ELATotalProficient", "Grade6|ELATotalProficient", "Grade7|ELATotalProficient","Grade8|ELATotalProficient"
@@ -413,6 +392,7 @@ def get_gradespan(school_id):
     # change 0 to nan
     result.replace(0, np.nan, inplace=True)
 
+    # drop those nas
     result = result.dropna(axis=1, how='all')
 
     # get a list of remaining grades (will be duplicates where both Tested and Proficient are
@@ -430,12 +410,8 @@ def get_gradespan(school_id):
 
     return result
 
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', None)  
-
 def get_ethnicity(*args):
-    # returns a list of ethnicities for which a school has numbers for both Tested and Proficient students (so
-    # they are chartable
+    # returns a list of ethnicities for which a school has numbers for both Tested and Proficient students
     
     keys = ['id','school_type','hs_category']
     params = dict(zip(keys, args))
@@ -457,6 +433,7 @@ def get_ethnicity(*args):
                     WHERE SchoolID = :id
                 ''')     
     else:
+        # k8
         q = text('''
             SELECT "AmericanIndian|ELATotalTested", "Asian|ELATotalTested", "Black|ELATotalTested", "Hispanic|ELATotalTested", "Multiracial|ELATotalTested","NativeHawaiianorOtherPacificIslander|ELATotalTested", "White|ELATotalTested",
                     "AmericanIndian|ELATotalProficient", "Asian|ELATotalProficient", "Black|ELATotalProficient", "Hispanic|ELATotalProficient", "Multiracial|ELATotalProficient","NativeHawaiianorOtherPacificIslander|ELATotalProficient", "White|ELATotalProficient"
@@ -471,9 +448,6 @@ def get_ethnicity(*args):
 
     result.replace(0, np.nan, inplace=True)
 
-    print('Ethnicity Values')
-    print(result)
-
     result = result.dropna(axis=1, how='all')
 
     test_cols= [item.split("|")[0] for item in result.columns.values]
@@ -485,12 +459,9 @@ def get_ethnicity(*args):
     return result
 
 def get_subgroup(*args):
-    # returns a list of subgroups for which a school has numbers for both Tested and Proficient students (so
-    # they are chartable    
+    # returns a list of subgroups for which a school has numbers for both Tested and Proficient students
     keys = ['id','school_type','hs_category']
     params = dict(zip(keys, args))
-
-# TODO: Test these for no return value
 
     if params['school_type'] == "hs":
 
@@ -509,7 +480,7 @@ def get_subgroup(*args):
                     WHERE SchoolID = :id
                     ''')            
     else:
-
+        # k8
         q = text('''
             SELECT "PaidMeals|ELATotalTested", "FreeorReducedPriceMeals|ELATotalTested", "GeneralEducation|ELATotalTested", "SpecialEducation|ELATotalTested", "EnglishLanguageLearners|ELATotalTested","NonEnglishLanguageLearners|ELATotalTested",
                 "PaidMeals|ELATotalProficient", "FreeorReducedPriceMeals|ELATotalProficient", "GeneralEducation|ELATotalProficient", "SpecialEducation|ELATotalProficient", "EnglishLanguageLearners|ELATotalProficient","NonEnglishLanguageLearners|ELATotalProficient"
@@ -523,9 +494,6 @@ def get_subgroup(*args):
         result[col] = pd.to_numeric(result[col], errors="coerce")
 
     result.replace(0, np.nan, inplace=True)
-
-    print('Subgroup Values')
-    print(result)
 
     result = result.dropna(axis=1, how='all')
 
@@ -715,14 +683,12 @@ def get_comparable_schools(*args):
     return run_query(q, params)
 
 def get_year_over_year_data(*args):
+
     keys = ['school_id','comp_list','category','year','flag']
     
     params = dict(zip(keys, args))
 
     school_str = ', '.join( [ str(int(v)) for v in params['comp_list'] ] )
-    
-    print('Comp Schools')
-    print(school_str)
 
     school_table = "academic_data_hs"
     corp_table = "corporation_data_hs"
@@ -743,9 +709,6 @@ def get_year_over_year_data(*args):
         school_table = "academic_data_k8"
         corp_table = "corporation_data_k8"
 
-    print(tested)
-    print(passed)
-    print(result)
     # Query strings (param must be passed in with spaces)
     passed_query = passed.replace(" ", "")
     tested_query = tested.replace(" ", "")
@@ -764,60 +727,58 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
-    school_data[school_data["School Name"][0]] = pd.to_numeric(school_data[passed], errors='coerce') / pd.to_numeric(school_data[tested], errors='coerce')
+    school_name = school_data["School Name"][0] 
+    school_data[school_name] = pd.to_numeric(school_data[passed], errors='coerce') / pd.to_numeric(school_data[tested], errors='coerce')
     school_data = school_data.drop(['School Name', passed, tested], axis = 1)
     school_data = school_data.sort_values("Year").reset_index(drop=True)
 
-    print('GET DATA AND SCHOOL CALC')
-    print(school_data)
+    # drop rows (years) where the school has no data
+    # if dataframe is empty after, just return empty df
+    school_data = school_data[school_data[school_name].notna()]
 
-    # Corp Data
-    query_string2 = '''
-        SELECT {}
-	        FROM {}
-	        WHERE CorporationID = (
-		        SELECT GEOCorp
-			        FROM school_index
-			        WHERE SchoolID = :school_id)
-        '''.format( corp_query_str , corp_table)
+    if len(school_data.columns) == 0:
 
-    q2 = text(query_string2)
-    
-    corp_data = run_query(q2, params)
+        result = school_data
 
-    corp_data[corp_data["Corporation Name"][0]] = pd.to_numeric(corp_data[passed], errors='coerce') / pd.to_numeric(corp_data[tested], errors='coerce')
-    corp_data = corp_data.drop(['Corporation Name', passed, tested], axis = 1)
-    corp_data = corp_data.sort_values("Year").reset_index(drop=True)
-    print('GET CORP DATA AND CALC')
-    print(corp_data)
+    else:
 
-    # Comparison School Data
-    query_string3 = '''
+        # Corp Data
+        query_string2 = '''
             SELECT {}
                 FROM {}
-                WHERE SchoolID IN ({})'''.format( school_query_str, school_table, school_str )
+                WHERE CorporationID = (
+                    SELECT GEOCorp
+                        FROM school_index
+                        WHERE SchoolID = :school_id)
+            '''.format( corp_query_str , corp_table)
 
-    q3 = text(query_string3)
-    
-    comp_data = run_query(q3, params)
-    
-    comp_data[result] = pd.to_numeric(comp_data[passed], errors='coerce') / pd.to_numeric(comp_data[tested], errors='coerce')
-    comp_data = comp_data.pivot(index='Year', columns='School Name', values=result)
-    comp_data = comp_data.reset_index()
-    comp_data = comp_data.sort_values("Year") #.reset_index(drop=True)
+        q2 = text(query_string2)
+        
+        corp_data = run_query(q2, params)
 
-    print('GET COMP DATA AND CALC')
-    print(corp_data)
+        corp_data[corp_data["Corporation Name"][0]] = pd.to_numeric(corp_data[passed], errors='coerce') / pd.to_numeric(corp_data[tested], errors='coerce')
+        corp_data = corp_data.drop(['Corporation Name', passed, tested], axis = 1)
+        corp_data = corp_data.sort_values("Year").reset_index(drop=True)
 
-    result = pd.merge(pd.merge(school_data,corp_data,on='Year'),comp_data,on='Year')
+        # Comparison School Data
+        query_string3 = '''
+                SELECT {}
+                    FROM {}
+                    WHERE SchoolID IN ({})'''.format( school_query_str, school_table, school_str )
 
-    print('GET DATA AND MERGE')
-    print(result)
+        q3 = text(query_string3)
+        
+        comp_data = run_query(q3, params)
+        
+        comp_data[result] = pd.to_numeric(comp_data[passed], errors='coerce') / pd.to_numeric(comp_data[tested], errors='coerce')
+        comp_data = comp_data.pivot(index='Year', columns='School Name', values=result)
+        comp_data = comp_data.reset_index()
+        comp_data = comp_data.sort_values("Year")
 
-    # account for changes in the year
-    excluded_years = get_excluded_years(params['year'])
-    result = result[~result["Year"].isin(excluded_years)]
+        result = pd.merge(pd.merge(school_data,corp_data,on='Year'),comp_data,on='Year')
 
-    # TODO? if school has no data for the remaining years, return an empty df
+        # account for changes in the year
+        excluded_years = get_excluded_years(params['year'])
+        result = result[~result["Year"].isin(excluded_years)]
 
     return result

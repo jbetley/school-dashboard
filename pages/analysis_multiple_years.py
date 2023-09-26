@@ -11,15 +11,11 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from .load_data import get_k8_school_academic_data, get_school_index, get_gradespan, get_ethnicity, get_subgroup, \
-    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data, get_year_over_year_data, get_excluded_years
-from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data
-from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency
+from .load_data import get_school_index, get_gradespan, get_ethnicity, get_subgroup, get_school_coordinates, \
+    get_year_over_year_data
+from .calculations import find_nearest
 from .tables import no_data_page
 from .layouts import create_radio_layout, create_year_over_year_layout
-from .calculate_metrics import calculate_k8_comparison_metrics
-
 from .subnav import subnav_academic_analysis
 
 dash.register_page(__name__, name = "Year over Year", path = "/analysis_multiple_year", top_nav=False, order=11)
@@ -34,7 +30,6 @@ dash.register_page(__name__, name = "Year over Year", path = "/analysis_multiple
 )
 def radio_gradespan_selector(school: str, gradespan_state: str):
 
-    gradespan_value = "k8"
     gradespan_options = []
     gradespan_container = {'display': 'none'}
 
@@ -50,9 +45,14 @@ def radio_gradespan_selector(school: str, gradespan_state: str):
 
         if gradespan_state:
             gradespan_value = gradespan_state
+        else:
+            gradespan_value = "k8"
     
     elif school_type == "AHS" or school_type == "HS":
         gradespan_value = "hs"
+
+    else:
+        gradespan_value = "k8"
 
     return gradespan_options, gradespan_value, gradespan_container
 
@@ -76,8 +76,8 @@ def radio_hs_category_selector(school: str, gradespan_value: str, hs_category_st
 
     if school_type == "HS" or school_type == "AHS" or (gradespan_value == "hs" and school_type == "K12"):
         hs_category_options = [
-            {"label": "SAT", "value": "SAT"},
             {"label": "Graduation Rate", "value": "Graduation Rate"},
+            {"label": "SAT", "value": "SAT"}
         ]
         hs_category_container = {'display': 'block'}
 
@@ -99,7 +99,8 @@ def radio_hs_category_selector(school: str, gradespan_value: str, hs_category_st
     State("multi-year-subject-radio","value"),
 )
 def radio_subject_selector(school: str, gradespan_value: str, hs_category_value: str, subject_state: str):
-
+    # Both ILEARN and SAT have subject categories, although the name for english is different: ELA/EBRW;
+    # Graduation Rate does not have subject categories
     subject_value = ""
     subject_options = []    # type:list
     subject_container = {'display': 'none'}
@@ -162,16 +163,16 @@ def top_level_selector(school: str, gradespan_value: str, hs_category_value: str
     if school_type == "K8" or (school_type == "K12" and gradespan_value == "k8"):
 
         category_options = [
-            {"label": "By Grade", "value": "By Grade"},
-            {"label": "By Subgroup", "value": "By Subgroup"},
-            {"label": "By Ethnicity", "value": "By Ethnicity"},
+            {"label": "Grade", "value": "Grade"},
+            {"label": "Subgroup", "value": "Subgroup"},
+            {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
         ]
         category_container = {'display': 'block'}
 
-        if category_state and category_state in ["By Grade", "By Subgroup", "By Ethnicity"]:
+        if category_state and category_state in ["Grade", "Subgroup", "Race/Ethnicity"]:
             category_value = category_state
         else:
-            category_value = "By Grade"
+            category_value = "Grade"
 
     elif school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
 
@@ -179,12 +180,12 @@ def top_level_selector(school: str, gradespan_value: str, hs_category_value: str
 
             category_options = [
                 {"label": "Total", "value": "Total"},
-                {"label": "By Subgroup", "value": "By Subgroup"},
-                {"label": "By Ethnicity", "value": "By Ethnicity"},
+                {"label": "Subgroup", "value": "Subgroup"},
+                {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
             ]
             category_container = {'display': 'block'}
 
-            if category_state and category_state in ["Total", "By Subgroup", "By Ethnicity"]:
+            if category_state and category_state in ["Total", "Subgroup", "Race/Ethnicity"]:
                 category_value = category_state
             else:
                 category_value = "Total"
@@ -192,12 +193,12 @@ def top_level_selector(school: str, gradespan_value: str, hs_category_value: str
         else:
             category_options = [
                 {"label": "School Total", "value": "School Total"},
-                {"label": "By Subgroup", "value": "By Subgroup"},
-                {"label": "By Ethnicity", "value": "By Ethnicity"},
+                {"label": "Subgroup", "value": "Subgroup"},
+                {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
             ]
             category_container = {'display': 'block'}
 
-            if category_state and category_state in ["School Total", "By Subgroup", "By Ethnicity"]:
+            if category_state and category_state in ["School Total", "Subgroup", "Race/Ethnicity"]:
                 category_value = category_state
             else:
                 category_value = "School Total"
@@ -223,7 +224,7 @@ def radio_subcategory_selector(school: str, category_value: str, subcategory_sta
     subcategory_options = []  # type: list
     subcategory_container = {'display': 'none'}
 
-    if category_value == "By Grade":
+    if category_value == "Grade":
         grades = get_gradespan(school)
 
         if grades:
@@ -240,7 +241,7 @@ def radio_subcategory_selector(school: str, category_value: str, subcategory_sta
         else:
             subcategory_value = "No Data"
     
-    elif category_value == "By Ethnicity":
+    elif category_value == "Race/Ethnicity":
         ethnicity = get_ethnicity(school, gradespan_state, hs_category_state)
         subcategory_options = [{"label": e, "value": e} for e in ethnicity]
         ethnicity.sort()
@@ -253,9 +254,9 @@ def radio_subcategory_selector(school: str, category_value: str, subcategory_sta
             
             subcategory_container = {'display': 'block'}
         else:
-            subcategory_value = "No Ethnicity Data"
+            subcategory_value = "No Race/Ethnicity Data"
 
-    elif category_value == "By Subgroup":
+    elif category_value == "Subgroup":
 
         subgroup = get_subgroup(school, gradespan_state, hs_category_state)
         subgroup.sort()
@@ -318,22 +319,18 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
 
     # Drop any school not testing at least 20 students. "SchoolTotal|ELATotalTested" is a proxy
     # for school size here (probably only impacts ~20 schools)
-    
-    # TODO: HERE IS PROBLEM - Fix below
-    # first pull out school
+    # the second condition ensures that the school is retained if it exists
     if school_type == "K8":
         schools_by_distance = schools_by_distance[(schools_by_distance["School Total|ELA Total Tested"] >= 20) | 
             (schools_by_distance["School ID"] == int(school))]
 
-    print(schools_by_distance)
-    # It is a year when the school didnt exist (DOH: this actually removes the school if it has less than 20 tested
-    # students)
+    # If school doesn't exist
     if int(school) not in schools_by_distance["School ID"].values:
         return [],[],[]
     
     else:
-        print('HERE')
-        # NOTE: Before we do the distance check, we reduce the size of the df by removing
+
+        # NOTE: Before we do the distance check, we reduce the size of the df removing
         # schools where there is no, or only a one grade overlap between the comparison schools.
         # the variable "overlap" is one less than the the number of grades that we want as a
         # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
@@ -405,7 +402,7 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
         distances = pd.DataFrame({"index":index_list, "y":distance_list})
         distances = distances.set_index(list(distances)[0])
 
-        # Merge School ID with Distances by index
+        # Merge School ID with Distances index
         combined = closest_schools.join(distances)
 
         # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
@@ -426,7 +423,7 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
         
         # final list will be displayed in order of increasing distance from selected school
         comparison_list = dict(comparison_dict.items())
-        print(comparison_list)
+
         # Set default display selections to all schools in the list
         default_options = [{"label":name,"value":id} for name, id in comparison_list.items()]
         options = default_options
@@ -434,7 +431,7 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
         # value for number of default display selections and maximum
         # display selections (because of zero indexing, max should be
         # 1 less than actual desired number)
-        default_num_to_display = 4
+        default_num_to_display = 3
         max_num_to_display = 7
 
         # used to display message if the number of selections exceeds the max
@@ -483,7 +480,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
         raise PreventUpdate
 
     # show 2019 instead of 2020 as 2020 has no academic data
-    string_year = "2019" if year == "2020" else year
+    year = "2019" if year == "2020" else year
 
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
@@ -507,9 +504,6 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
     analysis__multi_notes_label = ""    
     analysis__multi_notes_string = ""
 
-    print(school_type)
-    print(gradespan_value)
-
     if school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
 
         k8_analysis_multi_empty_container = {"display": "none"}
@@ -521,8 +515,8 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
             Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
         
-        # get data for school
-        if (subcategory_radio != "No Subgroup Data" and subcategory_radio != "No Ethnicity Data" and
+        # get data for school (these labels are used to generate the message on the empty tables)
+        if (subcategory_radio != "No Subgroup Data" and subcategory_radio != "No Race/Ethnicity Data" and
                 subcategory_radio != "No Data"):
                     
             if hs_category == "SAT":
@@ -547,37 +541,34 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
 
                 year_over_year_hs_data= get_year_over_year_data(school, comparison_school_list, category, year, "grad")                    
         else:
+
             year_over_year_hs_data = pd.DataFrame()
             
             if subcategory_radio == "No Data" or subcategory_radio == "":
                 label = "Year over Year Comparison (" + hs_category + ")"
                 msg = "No Data for Selected School."
             else:
-                label = "Year over Year Comparison (" + hs_category + ") - By " + subcategory_radio[3:-5:]
+                label = "Year over Year Comparison (" + hs_category + ") - " + subcategory_radio[3:-5:]
                 msg = subcategory_radio + " for Selected School."
 
         if year_over_year_hs_data.empty:
+
             dropdown_container = {"display": "none"}            
             hs_analysis_multi_empty_container = {"display": "block"}
             year_over_year_hs = []
 
         else:
             hs_analysis_multi_main_container = {"display": "block"}
-            hs_analysis_multi_empty_container = {"display": "none"}            
-            
-            # show dropdown container
+            hs_analysis_multi_empty_container = {"display": "none"}
             dropdown_container = {"display": "block"}
 
             ## Create Year Over Year HS (SAT and Graduation Rate) Chart
             year_over_year_hs = create_year_over_year_layout(school_name, year_over_year_hs_data, label, msg)
 
     elif school_type == "K8" or (school_type == "K12" and gradespan_value == "k8"):
-        
+                
+        hs_analysis_multi_main_container =  {"display": "none"}
         year_over_year_hs = []
-        
-        k8_analysis_multi_main_container = {"display": "block"}
-        k8_analysis_multi_empty_container = {"display": "none"}
-        dropdown_container = {"display": "block"}
 
         analysis__multi_notes_label = "Comparison Data - K-8"
         analysis__multi_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
@@ -586,16 +577,42 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
     
         ## K8 Year Over Year Chart
-        if subcategory_radio:
-            category = subcategory_radio + "|" + subject_radio
+        if (subcategory_radio != "No Subgroup Data" and subcategory_radio != "No Race/Ethnicity Data" and
+                subcategory_radio != "No Data"):
+
+            if subcategory_radio:
+                category = subcategory_radio + "|" + subject_radio
+            else:
+                category = "School Total|ELA"
+
+            label = "Year over Year Comparison - " + category
+            msg = ""
+
+            year_over_year_k8_data = get_year_over_year_data(school, comparison_school_list, category, year, "k8")
+        
         else:
-            category = "School Total|ELA"
 
-        label = "Year over Year Comparison - " + category
+            year_over_year_k8_data = pd.DataFrame()
+            
+            if subcategory_radio == "No Data" or subcategory_radio == "":
+                label = "Year over Year Comparison (" + subcategory_radio + "|" + subject_radio + ")"
+                msg = "No Data for Selected School."
+            else:
+                label = "Year over Year Comparison (" + subcategory_radio + "|" + subject_radio + ") - " + subcategory_radio[3:-5:]
+                msg = subcategory_radio + " for Selected School."
 
-        year_over_year_k8_data = get_year_over_year_data(school, comparison_school_list, category, year, "k8")                        
+        if year_over_year_k8_data.empty:
 
-        year_over_year_grade = create_year_over_year_layout(school_name, year_over_year_k8_data, label, subcategory_radio)
+            dropdown_container = {"display": "none"}            
+            k8_analysis_multi_empty_container = {"display": "block"}
+            year_over_year_hs = []
+
+        else:
+            k8_analysis_multi_main_container = {"display": "block"}
+            k8_analysis_multi_empty_container = {"display": "none"}
+            dropdown_container = {"display": "block"}
+            
+            year_over_year_grade = create_year_over_year_layout(school_name, year_over_year_k8_data, label, subcategory_radio)
 
     analysis__multi_notes = [
             html.Div(
