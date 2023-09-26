@@ -1759,6 +1759,12 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     # NOTE: this does not apply to year_over_year analysis tables, which have the school
     # name in the column header
 
+    # print('SO MUCH INDEX ERROR')
+    # print(school_name)
+    # print("X" + school_name + "X")
+    # print(data)
+    # print(data.index[data["School Name"].str.contains(school_name)])
+
     school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
 
     # hide the header "School Name"

@@ -167,11 +167,6 @@ app = dash.Dash(
         }
     ],
 )
-
-for page in dash.page_registry.values():
-    if page.get("top_nav"):
-        print(page["name"])
-        print(page["path"])
         
 # Dropdown shows single school if school login is used
 # shows all schools if admin login is used.
@@ -357,7 +352,7 @@ def layout():
                     className="row--fixed",
                 ),
             ],
-            className="bare-container--flex--center twelve columns",
+            className="bare-container--flex twelve columns",
         ),
         html.Div(
             [

@@ -282,7 +282,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     print(f'Time to process stacked bar chart: ' + str(time.process_time() - t12))    
     return fig_layout
 
-###
 def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
@@ -355,9 +354,9 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
                 color_discrete_sequence=color,
             )
 
-            # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
             fig.update_traces(hovertemplate=None)   # type: ignore
             fig.update_layout(                      # type: ignore
+                hoverlabel = dict(namelength = -1), 
                 margin=dict(l=40, r=40, t=10, b=0),
                 title_x=0.5,
                 font = dict(
@@ -392,14 +391,9 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
                 legend_title='',
             )
 
-
             data['Year'] = data['Year'].astype(str)
             data_max = data.max(numeric_only=True).max()
-
-            if data_max < .5:
-                range_vals = [0,.5] 
-            else:
-                range_vals = [0,data_max + .1]
+            range_vals = [0,data_max + .05]
 
             fig.update_yaxes(       # type: ignore
                 title='',
@@ -542,7 +536,7 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
                     )
             ]
 
-    print(f'Processing COOL line chart: ' + str(time.process_time() - t9))
+    print(f'Processing Multi-line chart: ' + str(time.process_time() - t9))
     
     return fig_layout
 ###

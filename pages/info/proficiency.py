@@ -163,7 +163,8 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
     selected_school_type = selected_school["School Type"].values[0]
     selected_school_id = int(selected_school["School ID"].values[0])
     selected_school_name = selected_school["School Name"].values[0]
-
+    selected_school_name = selected_school_name.strip()
+    
     if not radio_type:
         radio_type = "k8"
 

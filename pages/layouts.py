@@ -11,7 +11,7 @@ import dash_bootstrap_components as dbc
 from .load_data import info_categories
 from .string_helpers import create_chart_label,combine_school_name_and_grade_levels, identify_missing_categories
 from .charts import make_group_bar_chart, make_multi_line_chart
-from .tables import create_comparison_table
+from .tables import create_comparison_table, no_data_page
 
 def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: list, school_name: str) -> list:
 
@@ -25,13 +25,13 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
 
     elif data_type == "EBRW" or data_type == "Math":
         search_string = data_type + " Benchmark %"
-        
+
         for c in categories:
             tested_categories.append(c + "|" + search_string)
 
     elif data_type == "Graduation Rate":
         search_string = data_type
-    
+
         for c in categories:
             tested_categories.append(c + "|" + search_string)
     else:
@@ -94,13 +94,13 @@ def create_growth_layout(table: list, fig: list, label: str) -> list:
 
     Returns:
         list: table layout
-    """    
+    """
     table_layout = [
         html.Div(
             [
                 html.Div(
-                    [                    
-                        html.Label(label, className="label__header"),                    
+                    [
+                        html.Label(label, className="label__header"),
                         html.Div(
                             [
                                 html.Div(
@@ -120,10 +120,10 @@ def create_growth_layout(table: list, fig: list, label: str) -> list:
                         ),
                     ],
                     className="bare-container--flex--outline twelve columns",
-                ),       
+                ),
             ],
             className="bare-container--flex--center twelve columns",
-        ),             
+        ),
     ]
 
     return table_layout
@@ -183,7 +183,7 @@ def create_group_barchart_layout(fig: list, table: list,category_string: str, sc
     """
     Takes two lists, a simple html.Div layout containing a dash.DataTable and
     a simple html.Div layout with a plotly px.bar object. Also two strings generated
-    by the identify_missing_categories() function and return a combined layout for a plotly dash app.    
+    by the identify_missing_categories() function and return a combined layout for a plotly dash app.
 
     Args:
         fig (list): plotly px.bar object in a layout (create_group_bar_chart())
@@ -224,7 +224,7 @@ def create_group_barchart_layout(fig: list, table: list,category_string: str, sc
                             html.Span("School Categories with insufficient n-size or no data:",className = "school-string__label"),
                             html.Span(school_string, className = "school-string"),
                             ],
-                            
+
                         ),
                     ],
                     className = "container__close twelve columns"
@@ -245,19 +245,19 @@ def create_barchart_layout(fig: list, table: list) -> list:
 
     Returns:
         layout (list): a dash html.Div layout with fig and DataTable
-    """    
+    """
     layout = [
                 html.Div(
                 [
                     html.Div(
                         [
-                            html.Div(fig)           
+                            html.Div(fig)
                         ],
                         className = 'pretty-container nine columns',
                     ),
                     html.Div(
                         [
-                            html.Div(table)           
+                            html.Div(table)
                         ],
                         className = 'pretty-container three columns'
                     ),
@@ -278,14 +278,14 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
 
     Returns:
         layout (list): a dash html.Div layout with fig
-    """   
-    layout =  [                          
+    """
+    layout =  [
 
         html.Div(
-            [    
+            [
         html.Label(label, className="label__header"),
         html.Div(
-            [                                       
+            [
                 html.Div(
                     [
                         html.Div(table, style={"marginTop": "20px"}),
@@ -301,7 +301,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
                             "paddingTop": "5px",
                             "borderTop": ".5px solid #c9d3e0",
                             },
-                        ), 
+                        ),
                     ],
                     className="pretty-container six columns",
                 ),
@@ -316,7 +316,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
         ),
             ],
             className="bare-container--relative twelve columns",
-        ),                               
+        ),
     ]
 
     return layout
@@ -334,7 +334,7 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
     radio_button_group = html.Div(
             [
                 html.Div(
-                    [                                                                                   
+                    [
                     html.Div(
                         [
                             html.Div(
@@ -361,16 +361,33 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
             ],
             id = container,
         )
-    
+
     return radio_button_group
 
-def create_year_over_year_layout (school_name, data, label):
-    table_data = data.copy()
-    table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
-    fig = make_multi_line_chart(data, label)
-    table = create_comparison_table(table_data, school_name,"")
-    category_string = ""
-    school_string = ""
-    layout = create_group_barchart_layout(fig, table, category_string, school_string)
+def create_year_over_year_layout (school_name, data, label, msg):
+
+    # drop columns where all values are nan
+    data = data.dropna(axis=1, how="all")
+
+    if not msg:
+        msg = "No Data for Selected School."
+
+    # if school was dropped because it has no data return empty table
+    if school_name not in data.columns:
+        layout = no_data_page(label, msg)
+
+    else:
+
+        # drop rows (years) where the school has no data
+        data = data[data[school_name].notna()]
+
+        table_data = data.copy()
+        table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
+
+        fig = make_multi_line_chart(data, label)
+        table = create_comparison_table(table_data, school_name,"")
+        category_string = ""
+        school_string = ""
+        layout = create_group_barchart_layout(fig, table, category_string, school_string)
 
     return layout

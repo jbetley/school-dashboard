@@ -282,6 +282,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
     school_name = selected_school["School Name"].values[0]
+    school_name = school_name.strip()
 
     # Radio buttons don't play nice
     if not gradespan_value:
@@ -346,7 +347,8 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
         
         else:
             hs_school_name = raw_hs_school_data['School Name'].values[0]
-
+            hs_school_name = hs_school_name.strip()
+            
             # filter by selected year
             raw_hs_school_data = raw_hs_school_data.loc[raw_hs_school_data["Year"] == numeric_year]
             raw_hs_school_data = raw_hs_school_data.reset_index(drop=True)
@@ -902,16 +904,22 @@ def layout():
                                         [
                                             html.Div(
                                                 [
-                                                    html.P("Add or Remove Schools: ", className="single-year-comparison-dropdown-label"),
+                                                    html.Div("Add or Remove Schools: ", className="comparison-dropdown-label"),
+                                                ],
+                                                className="bare-container two columns"
+                                            ),
+                                            html.Div(
+                                                [                                            
                                                     dcc.Dropdown(
                                                         id="single-year-comparison-dropdown",
                                                         style={"fontSize": "1.1rem"},
                                                         multi = True,
                                                         clearable = False,
-                                                        className="single-year-comparison-dropdown-control"
+                                                        className="comparison-dropdown-control"
                                                     ),
                                                     html.Div(id="single-year-input-warning"),
                                                 ],
+                                                className="bare-container eight columns"
                                             ),
                                         ],
                                         className="row"

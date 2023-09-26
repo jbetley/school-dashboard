@@ -137,7 +137,7 @@ font-weight: 400; */
 /* This is a fucking mess */
 /** Hide on Print **/
 @media print {
-  
+
   /* all */
   .no-print {
     display: none;
@@ -147,10 +147,10 @@ font-weight: 400; */
   }
   .pagebreak-after {
     page-break-after: always;
-  }  
-  
+  }
+
   /* charts */
-  div { 
+  div {
     float: none !important;
   }
 
@@ -164,7 +164,7 @@ font-weight: 400; */
   }
 
   /* comment out for charts */
-  tr { 
+  tr {
   line-height: 2.25 !important;
   }
 
@@ -257,7 +257,7 @@ hr {
 }
 
 .pretty-container--close--top {
-  border-radius: 5px;  
+  border-radius: 5px;
   background-color: #ffffff;
   margin: 5px 10px 30px 10px;
   padding: 15px;
@@ -293,7 +293,7 @@ hr {
 }
 
 .pretty-container--bare::after {
-  content:"";  
+  content:"";
   background: lightgrey;
   position: absolute;
   top: 12%;
@@ -336,7 +336,7 @@ hr {
 .bare-container--relative {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
-  position: relative;  
+  position: relative;
 }
 
 .bare-container--flex--outline {
@@ -368,7 +368,7 @@ hr {
   justify-content: center;
   text-align: center;
   display: flex;
-  
+
 }
 
 .bare-container--flex--center_subnav_float {
@@ -403,7 +403,7 @@ hr {
   display: flex;
   margin-top: 60px;
   width: 100%;
-}  
+}
 
 .container__close {
   border-bottom-left-radius: 5px;
@@ -471,12 +471,11 @@ hr {
 
 .comparison-dropdown-control {
   margin: 0;
-  padding-left: 25px;
   float: left;
 }
 
 .comparison-dropdown-label {
-  padding-left: 25px;
+  padding-left: 5px;
   font-size: 1.1rem;
 }
 
@@ -606,7 +605,7 @@ hr {
 {
   color:#0D9FE1;
   font-weight: 700;
-  border-right: 1px solid #b2bdd4; 
+  border-right: 1px solid #b2bdd4;
 }
 
 [class*="mantine"] tbody tr:nth-of-type(2) td:first-child
@@ -642,6 +641,11 @@ hr {
 .VirtualizedSelectOption {
   background-color: white;
   color: steelblue;
+}
+
+/* Alignment of dash dropdown items within dropdown box */
+.Select--multi .Select-value {
+  vertical-align: middle;
 }
 
 /* Overides color for selected item in dropdown list */
@@ -1016,7 +1020,7 @@ a.nav-link:hover {
 
 #subnav-academic {
   margin-top: 10px;
-  margin-bottom: 7px;  
+  margin-bottom: 7px;
 }
 
 /** Strings & Labels **/
