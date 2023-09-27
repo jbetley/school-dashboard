@@ -610,9 +610,11 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                         # reset indicies
                         comparison_schools = comparison_schools.reset_index(drop=True)
 
+                        pd.set_option('display.max_columns', None)
+                        pd.set_option('display.max_rows', None)  
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
-
+# TODO: PLA 103 Weirdness here
                         # Get school value for specific category
                         if category in current_school_data.columns:
 

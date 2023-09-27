@@ -6,9 +6,10 @@
 # date:     09/10/23
 
 import pandas as pd
+import numpy as np
 from dash import html
 import dash_bootstrap_components as dbc
-from .load_data import info_categories
+from .load_data import info_categories, get_school_index
 from .string_helpers import create_chart_label,combine_school_name_and_grade_levels, identify_missing_categories
 from .charts import make_group_bar_chart, make_multi_line_chart
 from .tables import create_comparison_table, no_data_page
@@ -364,7 +365,10 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
 
     return radio_button_group
 
-def create_year_over_year_layout (school_name, data, label, msg):
+def create_year_over_year_layout (school, data, label, msg):
+
+    selected_school = get_school_index(school)
+    school_name = selected_school["School Name"].values[0]
 
     # drop columns where all values are nan
     data = data.dropna(axis=1, how="all")
@@ -373,17 +377,21 @@ def create_year_over_year_layout (school_name, data, label, msg):
         msg = "No Data for Selected School."
 
     # if school was dropped because it has no data return empty table
-    if school_name not in data.columns:
+    if data['School ID'][0] != np.int64(school): #np.int64(school) not in data['School ID']:df.iloc[:, 3]
         layout = no_data_page(label, msg)
 
     else:
 
-        # drop rows (years) where the school has no data
-        data = data[data[school_name].notna()]
+        print(data)
+        data = data.drop("School ID",axis=1)
+        # drop rows (years) where the school has no data (2nd column will always be selected school)
+        # NOTE: tried to use name, but there are too many differences in DOE data
+        data = data[data.iloc[:, 1].notna()]
 
         table_data = data.copy()
         table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
 
+        print(data)
         fig = make_multi_line_chart(data, label)
         table = create_comparison_table(table_data, school_name,"")
         category_string = ""

@@ -9,8 +9,8 @@
 # cases in which data points need to be manually calculated that the school
 # level for data that is stored at the corporation level. Specifically, this
 # is an issue for calculating demographic enrollment when there is a school
-# that crosses natural grade span splits, e.g., Split Grade K8 and 912 enrollment using
-# proportionate split for:
+# that crosses natural grade span splits, e.g., Split Grade K-5, 6-8 and 9-12
+# enrollment using proportionate split for:
 #   Christel House South (CHS/CHWMHS)
 #   Circle City Prep (Ele/Mid)
 
@@ -33,7 +33,7 @@ from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 
 import dash
-from dash import dcc, html, Input, Output, State, callback
+from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
 
 from pages.load_data import get_school_index, get_academic_dropdown_years, get_financial_info_dropdown_years, \
@@ -311,11 +311,6 @@ def layout():
                                 ),
                                 dcc.Dropdown(
                                     id="charter-dropdown",
-                                    style={
-                                        "fontFamily": "Inter, sans-serif",
-                                        "fontSize": "12px",
-                                        "color": "steelblue",
-                                    },
                                     multi=False,
                                     clearable=False,
                                     className="charter-dropdown-control",
@@ -323,7 +318,7 @@ def layout():
                                 # Dummy input for dropdown
                                 html.Div(id="application-state", style={"display": "none"}),
                             ],
-                            className="pretty-container--slim five columns no-print",
+                            className="bare-container--slim four columns no-print",
                         ),
                         html.Div(
                             [
@@ -336,20 +331,15 @@ def layout():
                                 ),
                                 dcc.Dropdown(
                                     id="year-dropdown",
-                                    style={
-                                        "fontFamily": "Inter, sans-serif",
-                                        "fontSize": "12px",                                        
-                                        "color": "steelblue",
-                                    },
                                     multi=False,
                                     clearable=False,
                                     className="year-dropdown-control",
                                 ),
                             ],
-                            className="pretty-container--slim three columns no-print",
+                            className="bare-container--slim two columns no-print",
                         ),
                     ],
-                    className="row--fixed",
+                    className="row--fixed--top",
                 ),
             ],
             className="bare-container--flex twelve columns",

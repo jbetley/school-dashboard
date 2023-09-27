@@ -563,7 +563,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             dropdown_container = {"display": "block"}
 
             ## Create Year Over Year HS (SAT and Graduation Rate) Chart
-            year_over_year_hs = create_year_over_year_layout(school_name, year_over_year_hs_data, label, msg)
+            year_over_year_hs = create_year_over_year_layout(school, year_over_year_hs_data, label, msg)
 
     elif school_type == "K8" or (school_type == "K12" and gradespan_value == "k8"):
                 
@@ -575,7 +575,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
             the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
             Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
-    
+
         ## K8 Year Over Year Chart
         if (subcategory_radio != "No Subgroup Data" and subcategory_radio != "No Race/Ethnicity Data" and
                 subcategory_radio != "No Data"):
@@ -589,7 +589,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             msg = ""
 
             year_over_year_k8_data = get_year_over_year_data(school, comparison_school_list, category, year, "k8")
-        
+
         else:
 
             year_over_year_k8_data = pd.DataFrame()
@@ -611,8 +611,8 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             k8_analysis_multi_main_container = {"display": "block"}
             k8_analysis_multi_empty_container = {"display": "none"}
             dropdown_container = {"display": "block"}
-            
-            year_over_year_grade = create_year_over_year_layout(school_name, year_over_year_k8_data, label, subcategory_radio)
+
+            year_over_year_grade = create_year_over_year_layout(school, year_over_year_k8_data, label, subcategory_radio)
 
     analysis__multi_notes = [
             html.Div(

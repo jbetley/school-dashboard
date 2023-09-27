@@ -713,7 +713,7 @@ def get_year_over_year_data(*args):
     passed_query = passed.replace(" ", "")
     tested_query = tested.replace(" ", "")
 
-    school_query_str = 'Year, SchoolName, ' + '"' + passed_query + '", "' + tested_query + '"'
+    school_query_str = 'Year, SchoolID, SchoolName, ' + '"' + passed_query + '", "' + tested_query + '"'
     corp_query_str = 'Year, CorporationName, ' + '"' + passed_query + '", "' + tested_query + '"'
     
     # School Data
