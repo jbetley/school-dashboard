@@ -170,6 +170,7 @@ def combine_school_name_and_grade_levels(data: pd.DataFrame) -> pd.DataFrame:
     
     return data
 
+# TODO: This is not working
 def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list) -> Tuple[pd.DataFrame, str, str]:
     """
     Processes several dataframes for display in comparison tables while tracking both schools that are missing data for 
@@ -189,6 +190,9 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
             school_string (str): a string of schools which have no data
         ]
     """
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)  
+
     subject_categories = [c for c in tested_categories if c not in ["School Name","Low Grade", "High Grade"]]
 
     school_columns = [i for i in subject_categories if i in raw_data.columns]
@@ -209,6 +213,8 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
     # all data + schools that are missing some data + what data they are
     # missing
 
+# TODO: Schools with missing data - duplicating "All" and a list of All
+# TODO: Incorrect for some schools "Victory College Prep Academy" - categories listed where data is shown
     check_data = raw_data.copy()
 
     if check_data.columns.isin(["Low Grade","High Grade"]).any():
@@ -235,13 +241,16 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
     schools_with_missing_list = []
     if schools_with_missing.size != 0:
         for i in schools_with_missing:
-
+            print('missing loop')
+            print (i)
             schools_with_missing_name = check_data.iloc[i]["School Name"]
-
+            print(schools_with_missing_name)
             # get missing categories as a list, remove everything
             # after the "|", and filter down to unique categories
             with_missing_categories = list(check_data.columns[idy])
-
+            print('with missing:')
+            print(with_missing_categories)
+            
             with_missing_categories = [s.split("|")[0] for s in with_missing_categories]
             unique__missing_categories = list(set(with_missing_categories))
 

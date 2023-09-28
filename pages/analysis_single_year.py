@@ -380,6 +380,10 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
             combined_hs_data = pd.concat([raw_hs_school_data, raw_hs_corp_data, raw_hs_comparison_data], ignore_index = True)
             
             # calculate values
+            # pd.set_option('display.max_columns', None)
+            # pd.set_option('display.max_rows', None)  
+
+            # print(raw_hs_school_data)
             processed_hs_data = process_high_school_academic_analysis_data(combined_hs_data)
 
             hs_analysis_data = processed_hs_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()

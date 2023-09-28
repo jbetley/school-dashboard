@@ -117,7 +117,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         FA_title = "2-Year Financial Activities (" + financial_data["School Name"][0] + ")"
 
     else:
-        
+        # NOTE: If the selected school is a guest school, load dummy data.
+        if selected_school["Guest"].values[0] == "Y":
+            school ="9999"
+
         financial_data = get_financial_data(school)
 
         if selected_school["Network"].values[0] == "None":

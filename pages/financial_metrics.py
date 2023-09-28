@@ -15,7 +15,6 @@ from .load_data import max_display_years, get_school_index, get_financial_data
 from .calculate_metrics import calculate_financial_metrics
 from .tables import no_data_page, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
-# from .subnav import subnav_finance
 
 dash.register_page(__name__, top_nav=True, path="/financial_metrics", order=2)
 
@@ -94,7 +93,11 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         table_title = "Financial Accountability Metrics (" + financial_data["School Name"][0] + ")"
     
     else:
-        
+
+        # NOTE: If the selected school is a guest school, load dummy data.
+        if selected_school["Guest"].values[0] == "Y":        
+            school ="9999"
+
         financial_data = get_financial_data(school)
 
         # don't display school name in title if the school isn't part of a network
@@ -317,17 +320,10 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     # if df is empty
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 
-        # financial_metrics_table = []                #type: list
-        # financial_indicators_table = []             #type: list
-        # financial_metrics_definitions_table = []    #type: list
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
 
     else:
-
-        # NOTE: If the selected school is a guest school, load dummy data.
-        if selected_school["Guest"].values[0] == "Y":        
-            financial_data = get_financial_data("9999")
 
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")

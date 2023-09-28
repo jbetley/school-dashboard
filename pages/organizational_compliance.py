@@ -27,17 +27,18 @@ def update_organizational_compliance(school, year):
     selected_school = get_school_index(school)
     selected_year_numeric = int(year)
 
-    # get organizational comliance data from financial data and clean-up
+    if selected_school["Guest"].values[0] == "Y":
+        school = "9999"    
+
     financial_data = get_financial_data(school)
 
+    print(financial_data)
+    
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 
         org_compliance_table = no_data_table("Organizational and Operational Accountability")    
 
     else:
-
-        if selected_school["Guest"].values[0] == "Y":        
-            financial_data = get_financial_data("9999")
 
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")

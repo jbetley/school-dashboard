@@ -1760,11 +1760,11 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     # name in the column header
 
 # TODO: Weirdness with Phalen 103 name?
-    print('SO MUCH INDEX ERROR')
-    print(school_name)
-    print("X" + school_name + "X")
-    print(data)
-    print(data.index[data["School Name"].str.contains(school_name)])
+    # print('SO MUCH INDEX ERROR')
+    # print(school_name)
+    # print("X" + school_name + "X")
+    # print(data)
+    # print(data.index[data["School Name"].str.contains(school_name)])
 
     school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
 

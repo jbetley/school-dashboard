@@ -380,7 +380,6 @@ def update_about_page(year: str, school: str):
         # has data we use it. If there is no financial_data, we use IDOE's
         # adm file instead. It usually lags behind the adm average in the financial
         # data table.
-        # TODO: TEST THIS
         if financial_data.empty:
 
             adm_values = get_adm(int(selected_school['Corporation ID'].values[0]))
@@ -416,8 +415,6 @@ def update_about_page(year: str, school: str):
                 adm_values = adm_values.loc[:, (adm_values != 0).any(axis=0)]
 
                 adm_values = adm_values[adm_values.columns[::-1]]
-
-        print(adm_values)
 
         # file exists, but there is no adm data
         if (int(adm_values.sum(axis=1).values[0]) == 0):
@@ -456,6 +453,7 @@ def update_about_page(year: str, school: str):
             # strip any (Q#) suffix
             adm_values.columns = adm_values.columns.str[:4]
 
+            print(adm_values)
             # turn single row dataframe into two lists (column headers and data)
             adm_data=adm_values.iloc[0].tolist()
             years=adm_values.columns.tolist()
