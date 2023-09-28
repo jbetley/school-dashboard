@@ -51,7 +51,7 @@ load_dotenv()
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 server.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
-    basedir, "users.db"
+    basedir, "icsb-users.db"
 )
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 server.config.update(SECRET_KEY=os.getenv("SECRET_KEY"))
@@ -73,7 +73,17 @@ class User(UserMixin, db.Model):    # type: ignore
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.Text, unique=True)
     password = db.Column(db.Text, unique=True)
+    groupid = db.Column(db.Integer, unique=False)
+    fullname = db.Column(db.Integer, unique=True)
 
+    @property
+    def group_id(self):
+        return self.groupid
+
+    @property
+    def full_name(self):
+        return self.fullname
+    
 # load_user is used by login_user, passes the user_id
 # and gets the User object that matches that id
 @login_manager.user_loader
@@ -84,7 +94,7 @@ def load_user(id):
 @server.before_request
 def check_login():
     if request.method == "GET":
-        if request.path in ["/login", "/logout"]: # testing /logout
+        if request.path in ["/login", "/logout"]:
             return
         if current_user:
             if current_user.is_authenticated:
@@ -179,19 +189,27 @@ def set_dropdown_options(app_state):
     # Get the current user id using the current_user proxy,
     # use the ._get_current_object() method to return the
     # underlying object (User)
+    # NOTE: user 0 is admin; users 1-6 are network logins; users 7- are individual schools
+    # Groups: CHA (-1); Excel (-2); GEI (-3); PLA (-4); Paramount (-5); Purdue (-6)
+
     authorized_user = current_user._get_current_object()
+    group_id = current_user.group_id
 
     available_charters = get_school_dropdown_list()
-    
+
     # admin user
     if authorized_user.id == 0:
         charters = available_charters
 
     else:
-        # select only the authorized school using the id field of the authorized_user
-        # object. need to subtract 1 from id to get correct school from index, because
-        # the admin login is at index 0
-        charters = available_charters.iloc[[(authorized_user.id - 1)]]
+        # check for network login (any group_id != 0)
+        if group_id != 0:
+            charters = available_charters[available_charters["GroupID"] == str(abs(group_id))]
+
+        else:
+            # select only the authorized school using the id field of the authorized_user
+            # object. need to subtract 7 to account for Admin and Network Logins (loc 0-6)
+            charters = available_charters.iloc[[(authorized_user.id-7)]]
 
     dropdown_dict = dict(zip(charters["SchoolName"], charters["SchoolID"]))
     dropdown_list = dict(sorted(dropdown_dict.items()))
@@ -231,8 +249,9 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     selected_school = get_school_index(school_id)    
     school_type = selected_school["School Type"].values[0]
 
-    # source of available years depends on selected tab
-    if "academic" in current_page:
+    # source of available years depends on selected tab (guest schools do not have
+    # financial data)
+    if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
         years = get_academic_dropdown_years(school_id,school_type)
 
     elif "financial_analysis" in current_page:

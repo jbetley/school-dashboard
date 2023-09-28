@@ -67,7 +67,7 @@ def create_chart_label(data: pd.DataFrame) -> str:
 
     data_columns = data.columns.tolist()
 
-    if data.columns.str.contains("Total Graduation|Non Waiver Graduation").any() == True:
+    if data.columns.str.contains("Total\|Graduation|Non Waiver").any() == True:
         label = "Comparison: Total/Non Waiver Graduation Rate" 
     
     else:

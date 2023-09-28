@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 
 from .load_data import ethnicity, subgroup, max_display_years, current_academic_year, get_school_index, \
-    get_financial_data, get_demographic_data, get_excluded_years
+    get_financial_data, get_demographic_data, get_excluded_years, get_adm
 from .charts import loading_fig, no_data_fig_label
 from .tables import no_data_table, no_data_page, create_key_table
 
@@ -377,70 +377,81 @@ def update_about_page(year: str, school: str):
         # Get ADM Data
         # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is
         # known for the year. So we check the first data column and if ADM Avg
-        # has data we use it.
-        financial_data = financial_data.drop(["School ID","School Name"], axis=1)
-        financial_data = financial_data.dropna(axis=1, how="all")
+        # has data we use it. If there is no financial_data, we use IDOE's
+        # adm file instead. It usually lags behind the adm average in the financial
+        # data table.
+        # TODO: TEST THIS
+        if financial_data.empty:
 
-        available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
-        available_years = [int(c[:4]) for c in available_years]
+            adm_values = get_adm(int(selected_school['Corporation ID'].values[0]))
 
-        most_recent_finance_year = max(available_years)
-
-        years_to_exclude = most_recent_finance_year -  selected_year_numeric
-
-        if selected_year_numeric < most_recent_finance_year:
-            financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
-
-        if len(financial_data.columns) <= 1:
-            adm_fig = no_data_fig_label("Average Daily Membership History",400)
-        
         else:
 
-            # ADM chart
-            adm_values = financial_data[financial_data["Category"].str.contains("ADM Average")]
-            adm_values = adm_values.drop("Category", axis=1)
-            adm_values = adm_values.reset_index(drop=True)
+            financial_data = financial_data.drop(["School ID","School Name"], axis=1)
+            financial_data = financial_data.dropna(axis=1, how="all")
 
-            for col in adm_values.columns:
-                adm_values[col] = pd.to_numeric(adm_values[col], errors="coerce")
-            
-            adm_values = adm_values.loc[:, (adm_values != 0).any(axis=0)]
+            available_years = financial_data.columns.difference(['Category'], sort=False).tolist()
+            available_years = [int(c[:4]) for c in available_years]
 
-            adm_values = adm_values[adm_values.columns[::-1]]
+            most_recent_finance_year = max(available_years)
 
-            # file exists, but there is no adm data
-            if (int(adm_values.sum(axis=1).values[0]) == 0):
+            years_to_exclude = most_recent_finance_year -  selected_year_numeric
 
+            if selected_year_numeric < most_recent_finance_year:
+                financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
+
+            if len(financial_data.columns) <= 1:
                 adm_fig = no_data_fig_label("Average Daily Membership History",400)
             
             else:
 
-                # ADM dataset can be longer than five years (maximum display), so
-                # need to filter both the selected year (the year to display) and the
-                # total # of years
-                operating_years_by_adm = len(adm_values.columns)
+                # ADM chart
+                adm_values = financial_data[financial_data["Category"].str.contains("ADM Average")]
+                adm_values = adm_values.drop("Category", axis=1)
+                adm_values = adm_values.reset_index(drop=True)
 
-                # if number of available years exceeds year_limit, drop excess columns (years)
-                if operating_years_by_adm > max_display_years:
-                    adm_values = adm_values.drop(columns = adm_values.columns[: (operating_years_by_adm - max_display_years)],axis=1)
+                for col in adm_values.columns:
+                    adm_values[col] = pd.to_numeric(adm_values[col], errors="coerce")
+                
+                adm_values = adm_values.loc[:, (adm_values != 0).any(axis=0)]
 
-                # "excluded years" is a list of YYYY strings (all years more
-                # recent than selected year) that can be used to filter data
-                # that should not be displayed
-                excluded_academic_years = current_academic_year - selected_year_numeric
-                
-                excluded_years = []
-                
-                for i in range(excluded_academic_years):
-                    excluded_year = current_academic_year - i
-                    excluded_years.append(str(excluded_year))
-                
-                # if the display year is less than current year
-                # drop columns where year matches any years in "excluded years" list
-                if excluded_years:
-                    adm_values = adm_values.loc[
-                        :, ~adm_values.columns.str.contains("|".join(excluded_years))
-                    ]
+                adm_values = adm_values[adm_values.columns[::-1]]
+
+        print(adm_values)
+
+        # file exists, but there is no adm data
+        if (int(adm_values.sum(axis=1).values[0]) == 0):
+
+            adm_fig = no_data_fig_label("Average Daily Membership History",400)
+        
+        else:
+
+            # ADM dataset can be longer than five years (maximum display), so
+            # need to filter both the selected year (the year to display) and the
+            # total # of years
+            operating_years_by_adm = len(adm_values.columns)
+
+            # if number of available years exceeds year_limit, drop excess columns (years)
+            if operating_years_by_adm > max_display_years:
+                adm_values = adm_values.drop(columns = adm_values.columns[: (operating_years_by_adm - max_display_years)],axis=1)
+
+            # "excluded years" is a list of YYYY strings (all years more
+            # recent than selected year) that can be used to filter data
+            # that should not be displayed
+            excluded_academic_years = current_academic_year - selected_year_numeric
+            
+            excluded_years = []
+            
+            for i in range(excluded_academic_years):
+                excluded_year = current_academic_year - i
+                excluded_years.append(str(excluded_year))
+            
+            # if the display year is less than current year
+            # drop columns where year matches any years in "excluded years" list
+            if excluded_years:
+                adm_values = adm_values.loc[
+                    :, ~adm_values.columns.str.contains("|".join(excluded_years))
+                ]
 
             # strip any (Q#) suffix
             adm_values.columns = adm_values.columns.str[:4]

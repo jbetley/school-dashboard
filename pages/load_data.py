@@ -298,6 +298,54 @@ def get_financial_info_dropdown_years(school_id):
 
     return years
 
+def get_adm(corp_id):
+    # Use this when there is no financial data - financial data will almost 
+    # always be more accurate, but some schools (Guests) don't have financial
+    # data.
+
+    params = dict(id=corp_id)
+
+    q = text('''
+        SELECT * 
+        FROM adm_all 
+        WHERE CorporationID = :id
+    ''')
+
+    results = run_query(q, params)
+
+    # NOTE: From 2016 - 2019  'SpringADM' & 'FallADM'; beginning with
+    # 2019-20SY: "2019Fall Non Virtual ADM" & "2020Spring Non Virtual ADM"
+
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)  
+
+    # drop "Virtual ADM"
+    results = results.drop(list(results.filter(regex="Fall Virtual ADM|Spring Virtual ADM|Corporation ID|Name")), axis=1)
+
+    # Each adm average requires 2 columns (Fall and Spring). If there are an odd number of columns
+    # after the above drop, that means that the last column is a Fall without a Spring, so
+    # we store that column, drop it, and add it back later
+    if (len(results.columns) % 2) != 0:
+        last_col = pd.DataFrame()
+        last_col_name = str(int(results.columns[-1][:4]) + 1)
+        last_col[last_col_name] = results[results.columns[-1]]
+        results = results.drop(results.columns[-1], axis=1)
+
+    adm_columns = [c[:4] for c in results.columns if "Spring" in c]
+
+    # make numbers
+    for col in results:
+        results[col]=pd.to_numeric(results[col], errors="coerce")
+
+    # Average each group of 2 columns and use name of 2nd column (Spring) for result
+    final = results.groupby(np.arange(len(results.columns))//2, axis=1).mean()
+    final.columns = adm_columns
+
+    if not last_col.empty:
+        final[last_col_name] = last_col[last_col_name]
+    
+    return final
+
 def get_financial_analysis_dropdown_years(school_id):
     params = dict(id=school_id)
     q = text('''
@@ -334,7 +382,7 @@ def get_financial_analysis_dropdown_years(school_id):
 
 def get_school_dropdown_list():
     q = text('''
-        SELECT SchoolName, SchoolID, SchoolType
+        SELECT SchoolName, SchoolID, SchoolType, GroupID
         FROM school_index '''
     )
 

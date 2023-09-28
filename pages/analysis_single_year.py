@@ -341,6 +341,10 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
         # get data for school
         raw_hs_school_data = get_high_school_academic_data(school)
 
+        # filter by selected year
+        raw_hs_school_data = raw_hs_school_data.loc[raw_hs_school_data["Year"] == numeric_year]
+        raw_hs_school_data = raw_hs_school_data.reset_index(drop=True)
+        
         if raw_hs_school_data.empty:
             dropdown_container = {"display": "none"}            
             hs_analysis_empty_container = {"display": "block"}
@@ -348,10 +352,6 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
         else:
             hs_school_name = raw_hs_school_data['School Name'].values[0]
             hs_school_name = hs_school_name.strip()
-            
-            # filter by selected year
-            raw_hs_school_data = raw_hs_school_data.loc[raw_hs_school_data["Year"] == numeric_year]
-            raw_hs_school_data = raw_hs_school_data.reset_index(drop=True)
 
             # get data for corporation
             raw_hs_corp_data = get_hs_corporation_academic_data(school)
@@ -419,6 +419,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                 sat_subgroup_math = create_hs_analysis_layout("Math", hs_analysis_data, subgroup, hs_school_name)
 
                 # Display Logic
+
                 if not grad_overview and not grad_ethnicity and not grad_subgroup:
                     grad_overview = no_data_fig_label("Comparison: Graduation Rates", 200, "pretty")
                     grad_overview_container = {"display": "block"}
@@ -443,13 +444,13 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
 
                 if not sat_overview and not sat_ethnicity_ebrw and not sat_ethnicity_math and not \
                     sat_subgroup_ebrw and not sat_subgroup_math:
-                    sat_overview = no_data_fig_label("Comparison: SAT \% of Students At Benchmark", 200, "pretty")
+                    sat_overview = no_data_fig_label("Comparison: % of Students At Benchmark (SAT)", 200, "pretty")
                     sat_overview_container = {"display": "block"}
                 else:
                     if sat_overview:
                         sat_overview_container = {"display": "block"}
                     else:
-                        sat_overview = no_data_fig_label("Comparison: School Total SAT At Benchmark", 200, "pretty")
+                        sat_overview = no_data_fig_label("Comparison: SAT At Benchmark School Total ", 200, "pretty")
                         sat_overview_container = {"display": "block"}
                 
                     if sat_ethnicity_math or sat_ethnicity_ebrw:

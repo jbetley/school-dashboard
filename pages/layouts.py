@@ -382,7 +382,7 @@ def create_year_over_year_layout (school, data, label, msg):
 
     else:
 
-        print(data)
+        # print(data)
         data = data.drop("School ID",axis=1)
         # drop rows (years) where the school has no data (2nd column will always be selected school)
         # NOTE: tried to use name, but there are too many differences in DOE data
@@ -391,7 +391,7 @@ def create_year_over_year_layout (school, data, label, msg):
         table_data = data.copy()
         table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
 
-        print(data)
+        # print(data)
         fig = make_multi_line_chart(data, label)
         table = create_comparison_table(table_data, school_name,"")
         category_string = ""
