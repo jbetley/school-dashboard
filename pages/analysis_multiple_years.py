@@ -302,10 +302,6 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
 
     # There is some time cost for running the dropdown selection function (typically
     # ~0.8 - 1.2s), so we want to exit out as early as possible if we know it isn't necessary
-    
-    # For AHS we use other AHS as a placeholder
-    # if (school_type == "AHS"):
-    #     return [],[],[]
         
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
     # SQL query depends on school type
@@ -562,6 +558,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             hs_analysis_multi_empty_container = {"display": "none"}
             dropdown_container = {"display": "block"}
 
+# TODO: Add identify_missing categories? Would need to be School (Category-Year)
             ## Create Year Over Year HS (SAT and Graduation Rate) Chart
             year_over_year_hs = create_year_over_year_layout(school, year_over_year_hs_data, label, msg)
 
@@ -587,7 +584,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
 
             label = "Year over Year Comparison - " + category
             msg = ""
-
+# TODO: Add identify_missing categories?
             year_over_year_k8_data = get_year_over_year_data(school, comparison_school_list, category, year, "k8")
 
         else:

@@ -170,7 +170,6 @@ def combine_school_name_and_grade_levels(data: pd.DataFrame) -> pd.DataFrame:
     
     return data
 
-# TODO: This is not working
 def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list) -> Tuple[pd.DataFrame, str, str]:
     """
     Processes several dataframes for display in comparison tables while tracking both schools that are missing data for 
@@ -190,8 +189,6 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
             school_string (str): a string of schools which have no data
         ]
     """
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)  
 
     subject_categories = [c for c in tested_categories if c not in ["School Name","Low Grade", "High Grade"]]
     school_columns = [i for i in subject_categories if i in raw_data.columns]
@@ -201,20 +198,14 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
     final_data = raw_data.dropna(subset=school_categories, how="all")  
     final_data = final_data.replace(r"^\s*$", np.nan, regex=True)
 
-    # get the names of the schools that have no data by comparing the
-    # column sets before and after the drop
+    # get the names of the schools that have no data by comparing the column sets before
+    # and after the drop - we use this later to clean up the school_string
     missing_schools = list(set(raw_data["School Name"]) - set(final_data["School Name"]))
+    
+    # Get the names and categories of schools that have data for some categories and not others.
+    # In the end we want  a list of schools that is made up of schools that are missing all data
+    # + schools that are missing some data + what data they are missing
 
-    print('Missing Sch:')
-    print(missing_schools)
-    # Get the names and categories of schools that
-    # have data for some categories and not others. In the end we want
-    # to build a list of schools that is made up of schools that are missing
-    # all data + schools that are missing some data + what data they are
-    # missing
-
-# TODO: Schools with missing data - duplicating "All" and a list of All
-# TODO: Incorrect for some schools "Victory College Prep Academy" - categories listed where data is shown
     check_data = raw_data.copy()
 
     if check_data.columns.isin(["Low Grade","High Grade"]).any():
@@ -223,146 +214,60 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
 
     # get a list of the categories that are missing from selected school data and
     # strip everything following "|" delimeter for annotation
-    # NOTE: this is doing a slightly different thing than the check_for_insufficient_n_size()
-    # & check_for_no_data() functions (calculations.py), but may want to check at some point
-    # to see which process is faster
-
     missing_categories = [i for i in subject_categories if i not in check_data.columns]                
     missing_categories = [s.split("|")[0] for s in missing_categories]
 
-## TODO: TEST INSUFF-N Func
-    # insufficient_data = np.where(pd.isnull(check_data))
+    category_string = ", ".join(missing_categories)
 
-    # print('WHERE')
-    # print(insufficient_data)
-    # # creates a new dataframe from the respective indicies
-    # df = pd.DataFrame(np.column_stack(insufficient_data),columns=["Category","School Name"])
-
-    # if len(df.index) > 0:
-    #     # use map, in conjunction with mask, to replace the index values in the dataframes with the Year
-    #     # and Category values
-    #     df["Category"] = df["Category"].mask(df["Category"] >= 0, df["Category"].map(dict(enumerate(check_data.columns.tolist()))))
-    
-    #     df["School Name"] = df["School Name"].mask(df["School Name"] >= 0, df["School Name"].map(dict(enumerate(check_data["School Name"].tolist()))))
-    #     print(df)        
-    #     # strip everything after "|"
-    #     df["Category"] = (df["Category"].str.replace("\|.*$", "", regex=True))
-
-    #     # sort so earliest year is first
-    #     # df = df.sort_values(by=["Year"], ascending=True)
-
-    #     # Shift the Year column one unit down then compare the shifted column with the
-    #     # non-shifted one to create a boolean mask which can be used to identify the
-    #     # boundaries between adjacent duplicate rows. then take the cumulative sum on
-    #     # the boolean mask to identify the blocks of rows where the value stays the same
-    #     c = df["Category"].ne(df["Category"].shift()).cumsum()
-
-    #     # group the dataframe on the above identfied blocks and aggregate the Year column
-    #     # using first and Message using .join
-    #     df = df.groupby(c, as_index=False).agg({"Category": "first", "Year": ", ".join})    
-
-    #     # then do the same thing for year
-    #     y = df["Year"].ne(df["Year"].shift()).cumsum()
-    #     df = df.groupby(y, as_index=False).agg({"Year": "first", "Category": ", ".join})   
-        
-    #     # reverse order of columns
-    #     df = df[df.columns[::-1]]
-        
-    #     # add parentheses around year values
-    #     df["Year"] = "(" + df["Year"].astype(str) + ")"
-
-    #     # Finally combine all rows into a single string.
-    #     int_string = [", ".join(val) for val in df.astype(str).values.tolist()]
-    #     df_string = "; ".join(int_string) + "."
-
-    #     # clean up extra comma
-    #     df_string = df_string.replace(", (", " (" )
-
-    # else:
-    #     df_string = ""
-## TODO: TEST INSUFF-N Func
-#         
-    # get index and columns where there are null values (numpy array)
+    # get index and columns where there are null values (each are a numpy array)
     idx, idy = np.where(pd.isnull(check_data))
 
-    # np.where returns an index for each column, resulting in duplicate
-    # indexes for schools missing multiple categories. But we only need one
-    # unique value for each school that is missing data
-    schools_with_missing = np.unique(idx, axis=0)
+    # create a list of lists of each School Name/Category combination using x and y indexes
+    with_missing_list=[]
+    for i in range(0, idx.size):
+        with_missing_list.append([check_data.iloc[idx[i]]["School Name"],check_data.columns[idy[i]]])
 
-    print(final_data)
-    print(schools_with_missing)
+    # NOTE: in the following for loop, head represents the first element of each list (the School Name),
+    # while *tail represents the remaining items in the list (using iterable unpacking). The
+    # asterisk means that the tail variable captures “all remaining iterable values” that are not
+    # captured by the head variables. setdefault() is used to set "head" as the default value of the dict key.
+    # if the key is present, a value is returned (tail). if there is no value, it simply adds the key ([head])
+    # as the default value. Extend adds the list as a single value to the dict entry, so we end up with:
+    # {School Name: [School Name, Category1, Category2], ...}
+    # we then create a list of the values of the dictionary
 
-    schools_with_missing_list = []
-    if schools_with_missing.size != 0:
-        for i in schools_with_missing:
+    missing_dict = {}   #type: dict
+    for head, *tail in with_missing_list:
+        missing_dict.setdefault(head, [head]).extend(tail)
 
-            schools_with_missing_name = check_data.iloc[i]["School Name"]
-            # print(schools_with_missing_name)
-            # get missing categories as a list, remove everything
-            # after the "|", and filter down to unique categories
-            with_missing_categories = list(check_data.columns[idy])
-            print('x')
-            print(idx)
-            print('sizeX')
-            print(idx.size)
-            print(type(idx))
-            print('y')
-            print(idy)
-            print('sizeY')
-            print(idy.size)          
-            print('with_missing_categories')
-            print(with_missing_categories)
-            # print('with missing:')
-            # print(with_missing_categories)
+    schools_with_missing_list = list(missing_dict.values())
 
-    # The number of times a school's index appears in idx is how many missing categories they have
-    # TODO: matxh idx and idy for each position [1 1 2] [3 4 3] = 
-    # TODO:     school_index[1] = category [3]; school_index[1] = category [4]; school_index[2] = category [3];
-    # 1) find number of times number appears in np ndarray
+    all_schools_with_missing = []
 
-    # ADD: For i in # of times school idx appears in idx: (e.g., 3 x 2 would mean iterate twice for school 3)
-    #           append categories at idy
-    
-    # OR: Wherever idx = schoolidx add categroy[idy]
-    # e.g., [2 2 3]
+    # iterate over the sublists and create strings for each school in the
+    # format: School (Missing Category, Missing Category). If the school
+    # is in the list of schools missing all data (missing_schools), we
+    # sub in word (All) for the list of missing categories
+    if schools_with_missing_list:
+        for sch in schools_with_missing_list:
 
-            with_missing_categories = [s.split("|")[0] for s in with_missing_categories]
-            unique__missing_categories = list(set(with_missing_categories))
+            clean_sch = [s.split("|")[0] for s in sch]
 
-            # create a list of ["School Name (Cat 1, Cat2)"]
-            schools_with_missing_list.append(schools_with_missing_name + " (" + ", ".join(unique__missing_categories) + ")")
+            if clean_sch[:1][0] in missing_schools:
+                school_string = clean_sch[:1][0] + " (All)"
+            else:
+                school_string = clean_sch[:1][0] + " (" + ", ".join(clean_sch[1:]) + ")"
+
+            all_schools_with_missing.append(school_string)
+
+        school_string = ", ".join(all_schools_with_missing)
 
     else:
-        schools_with_missing_list = []
+        school_string = "None"
+        category_string = "None"
 
-    # create the string. Yes this is ugly, and i will probably fix it later, but
-    # we need to make sure that all conditions match proper punctuation.
-    if len(schools_with_missing_list) != 0:
-        if len(schools_with_missing_list) > 1:
-
-            schools_with_missing_string = ", ".join(schools_with_missing_list)
-        else:
-            schools_with_missing_string = schools_with_missing_list[0]
-
-        if missing_schools:
-            missing_schools = [i + " (All)" for i in missing_schools]
-            school_string = ", ".join(list(map(str, missing_schools))) + "."
-            school_string = schools_with_missing_string + ", " + school_string
-        else:
-            school_string = schools_with_missing_string + "."
-    else:
-        if missing_schools:
-            missing_schools = [i + " (All)" for i in missing_schools]
-            school_string = ", ".join(list(map(str, missing_schools))) + "."
-        else:
-            school_string = "None."
-
-    # Create string for categories for which the selected school has
-    # no data. These categories are not shown at all.
-    if missing_categories:
-        category_string = ", ".join(list(map(str, missing_categories))) + "."
-    else:
-        category_string = "None."
+    # proper punctuation is very important
+    school_string = school_string + "."
+    category_string = category_string + "."
 
     return final_data, category_string, school_string

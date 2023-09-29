@@ -216,14 +216,14 @@ def create_group_barchart_layout(fig: list, table: list,category_string: str, sc
                         html.Div(table),
                         html.P(
                             children=[
-                            html.Span("Categories with no data to display:", className = "category-string__label"),
+                            html.Span("Selected school has insufficient n-size or no data for:", className = "category-string__label"),
                             html.Span(category_string, className = "category-string"),
                             ],
                             style={"marginTop": -10, "marginBottom": -10}
                         ),
                         html.P(
                             children=[
-                            html.Span("School Categories with insufficient n-size or no data:",className = "school-string__label"),
+                            html.Span("Schools with insufficient n-size or no data:",className = "school-string__label"),
                             html.Span(school_string, className = "school-string"),
                             ],
 
