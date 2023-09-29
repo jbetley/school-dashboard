@@ -194,9 +194,7 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
     pd.set_option('display.max_rows', None)  
 
     subject_categories = [c for c in tested_categories if c not in ["School Name","Low Grade", "High Grade"]]
-
     school_columns = [i for i in subject_categories if i in raw_data.columns]
-
     school_categories = [ele for ele in school_columns if ele not in info_categories]
 
     # test all school columns and drop any where all columns (proficiency data) is nan/null
@@ -207,6 +205,8 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
     # column sets before and after the drop
     missing_schools = list(set(raw_data["School Name"]) - set(final_data["School Name"]))
 
+    print('Missing Sch:')
+    print(missing_schools)
     # Get the names and categories of schools that
     # have data for some categories and not others. In the end we want
     # to build a list of schools that is made up of schools that are missing
@@ -230,6 +230,58 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
     missing_categories = [i for i in subject_categories if i not in check_data.columns]                
     missing_categories = [s.split("|")[0] for s in missing_categories]
 
+## TODO: TEST INSUFF-N Func
+    # insufficient_data = np.where(pd.isnull(check_data))
+
+    # print('WHERE')
+    # print(insufficient_data)
+    # # creates a new dataframe from the respective indicies
+    # df = pd.DataFrame(np.column_stack(insufficient_data),columns=["Category","School Name"])
+
+    # if len(df.index) > 0:
+    #     # use map, in conjunction with mask, to replace the index values in the dataframes with the Year
+    #     # and Category values
+    #     df["Category"] = df["Category"].mask(df["Category"] >= 0, df["Category"].map(dict(enumerate(check_data.columns.tolist()))))
+    
+    #     df["School Name"] = df["School Name"].mask(df["School Name"] >= 0, df["School Name"].map(dict(enumerate(check_data["School Name"].tolist()))))
+    #     print(df)        
+    #     # strip everything after "|"
+    #     df["Category"] = (df["Category"].str.replace("\|.*$", "", regex=True))
+
+    #     # sort so earliest year is first
+    #     # df = df.sort_values(by=["Year"], ascending=True)
+
+    #     # Shift the Year column one unit down then compare the shifted column with the
+    #     # non-shifted one to create a boolean mask which can be used to identify the
+    #     # boundaries between adjacent duplicate rows. then take the cumulative sum on
+    #     # the boolean mask to identify the blocks of rows where the value stays the same
+    #     c = df["Category"].ne(df["Category"].shift()).cumsum()
+
+    #     # group the dataframe on the above identfied blocks and aggregate the Year column
+    #     # using first and Message using .join
+    #     df = df.groupby(c, as_index=False).agg({"Category": "first", "Year": ", ".join})    
+
+    #     # then do the same thing for year
+    #     y = df["Year"].ne(df["Year"].shift()).cumsum()
+    #     df = df.groupby(y, as_index=False).agg({"Year": "first", "Category": ", ".join})   
+        
+    #     # reverse order of columns
+    #     df = df[df.columns[::-1]]
+        
+    #     # add parentheses around year values
+    #     df["Year"] = "(" + df["Year"].astype(str) + ")"
+
+    #     # Finally combine all rows into a single string.
+    #     int_string = [", ".join(val) for val in df.astype(str).values.tolist()]
+    #     df_string = "; ".join(int_string) + "."
+
+    #     # clean up extra comma
+    #     df_string = df_string.replace(", (", " (" )
+
+    # else:
+    #     df_string = ""
+## TODO: TEST INSUFF-N Func
+#         
     # get index and columns where there are null values (numpy array)
     idx, idy = np.where(pd.isnull(check_data))
 
@@ -238,19 +290,43 @@ def identify_missing_categories(raw_data: pd.DataFrame, tested_categories: list)
     # unique value for each school that is missing data
     schools_with_missing = np.unique(idx, axis=0)
 
+    print(final_data)
+    print(schools_with_missing)
+
     schools_with_missing_list = []
     if schools_with_missing.size != 0:
         for i in schools_with_missing:
-            print('missing loop')
-            print (i)
+
             schools_with_missing_name = check_data.iloc[i]["School Name"]
-            print(schools_with_missing_name)
+            # print(schools_with_missing_name)
             # get missing categories as a list, remove everything
             # after the "|", and filter down to unique categories
             with_missing_categories = list(check_data.columns[idy])
-            print('with missing:')
+            print('x')
+            print(idx)
+            print('sizeX')
+            print(idx.size)
+            print(type(idx))
+            print('y')
+            print(idy)
+            print('sizeY')
+            print(idy.size)          
+            print('with_missing_categories')
             print(with_missing_categories)
-            
+            # print('with missing:')
+            # print(with_missing_categories)
+
+    # The number of times a school's index appears in idx is how many missing categories they have
+    # TODO: matxh idx and idy for each position [1 1 2] [3 4 3] = 
+    # TODO:     school_index[1] = category [3]; school_index[1] = category [4]; school_index[2] = category [3];
+    # 1) find number of times number appears in np ndarray
+
+    # ADD: For i in # of times school idx appears in idx: (e.g., 3 x 2 would mean iterate twice for school 3)
+    #           append categories at idy
+    
+    # OR: Wherever idx = schoolidx add categroy[idy]
+    # e.g., [2 2 3]
+
             with_missing_categories = [s.split("|")[0] for s in with_missing_categories]
             unique__missing_categories = list(set(with_missing_categories))
 

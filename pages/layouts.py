@@ -57,15 +57,8 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
         # there is any data to display before and after we collect the missing category information. After
         # we collect any missing information, we need to drop any columns where the school has no data and
         # then check again to see if the dataframe has any info.
-        # pd.set_option('display.max_columns', None)
-        # pd.set_option('display.max_rows', None)
 
-        print('MISSING THEM STRINGS')
-        print(analysis_data)
         analysis_data, category_string, school_string = identify_missing_categories(analysis_data, tested_categories)
-
-        # print(category_string)
-        # print(school_string)
 
         # Once the missing category and missing school strings are built, we drop any columns
         # where the school has no data by finding the index of the row containing the school
