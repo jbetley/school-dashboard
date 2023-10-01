@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# version:  1.11
+# date:     10/03/23
 
 import dash
 from dash import html, dash_table, Input, State, Output, callback
@@ -47,6 +47,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
         radio_input_container = {"display": "block"}
     
     if finance_value_state:
+
         # when changing dropdown from a school with network to one without, we need to reset state
         if finance_value_state == "network-finance" and selected_school["Network"].values[0] == "None":
             finance_value = value_default
@@ -94,7 +95,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     
     else:
 
-        # NOTE: If the selected school is a guest school, load dummy data.
+        # NOTE: If the selected school is a guest school, load dummy data (Schooly McSchoolface).
         if selected_school["Guest"].values[0] == "Y":        
             school ="9999"
 
@@ -229,7 +230,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         ]
 
         # Financial Metric Definitions
-        # NOTE: At some point would like to style this better. Markdown?
+        # NOTE: At some point would like to style this better. Markdown? or DMC Table (see Academic Metrics tooltips)
         financial_metrics_definitions_data = [
         ["Current Ratio = Current Assets ÷ Current Liabilities","Current Ratio is greater than 1.1; or is between 1.0 and 1.1 and the one-year trend is not negative."],
         ["Days Cash on Hand = Unrestricted Cash ÷ ((Operating Expenses - Depreciation Expense) ÷ 365)","School has greater than 45 unrestricted days cash; or between 30 - 45 unrestricted days cash and the one-year trend is not negative."],
@@ -337,17 +338,14 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         if selected_year_numeric < most_recent_finance_year:
             financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
         
-        # create empty table if, after dropping out of scope years, df has no financial
+        # create empty table if, after dropping excluded years, df has no financial
         # data, or file exists and has one year of data, but does not have a value for
         # State Grants (because the school is in Pre-Opening)
         # NOTE: To show schools in Pre-Opening year, remove the "or" condition
         # (you would also need to modify the financial metric calculation function, so
-        # maybe think twice (or three times) before doing it)
+        # maybe think twice (or three times) before doing this)
         if (len(financial_data.columns) <= 1) | ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == "0")):
 
-            # financial_metrics_table = []
-            # financial_indicators_table = []
-            # financial_metrics_definitions_table = []
             main_container = {"display": "none"}
             empty_container = {"display": "block"}        
         
@@ -399,9 +397,8 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
                 # Once metrics are calculated, we limit the maximum number of years
                 # displayed to max_display_years. Because we have added a new Rating
-                # column for each year, we need to multiply max by 2 (so this will
-                # be equal to 10). To show all available financial metric data, comment
-                # out this line
+                # column for each year, we need to multiply max by 2. To show all
+                # available financial metric data, comment out this line
                 metric_display_years = max_display_years * 2
                 
                 # drop "Metric" (category) column
@@ -450,12 +447,11 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 # column based on the size on the dataframe
                 table_size = len(financial_metrics.columns)
 
-                # NOTE: Consider turning this table_size into a function()
-                # eleven columns is largest table size
+                # NOTE: Consider turning this table_size into a function
                 if table_size <= 3:
                     col_width = "four"
                     category_width = 70
-                if table_size > 3 and table_size <=4:
+                elif table_size > 3 and table_size <=4:
                     col_width = "six"
                     category_width = 35
                 elif table_size >= 5 and table_size <= 8:
@@ -588,17 +584,6 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 def layout():
     return html.Div(
             [
-                # html.Div(
-                #     [
-                #         html.Div(
-                #             [
-                #                 html.Div(subnav_finance(),className="tabs"),
-                #             ],
-                #         className="bare-container--flex--center twelve columns",
-                #         ),
-                #     ],
-                #     className="row"
-                # ),
                 html.Div(
                     [
                        html.Div(

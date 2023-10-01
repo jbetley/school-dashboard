@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Information #
 ##########################################
 # author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# version:  1.11
+# date:     10/03/23
 
 import dash
 from dash import html, dash_table, Input, State, Output, callback
@@ -14,7 +14,6 @@ import numpy as np
 
 from .load_data import max_display_years, get_school_index, get_financial_data
 from .tables import no_data_page
-# from .subnav import subnav_finance
 
 dash.register_page(__name__, top_nav=True, path = "/financial_information", order=1)
 
@@ -47,6 +46,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
         radio_input_container = {"display": "block"}
     
     if finance_value_state:
+
         # when changing dropdown from a school with network to one without, we need to reset state
         if finance_value_state == "network-finance" and selected_school["Network"].values[0] == "None":
             finance_value = value_default
@@ -98,6 +98,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
         # don't display the school name in table title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
+
             if selected_school["Guest"].values[0] == "Y":
                 table_title = "Financial Information (Unavailable)"
             else:
@@ -116,7 +117,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
-        # Financial will almost always have more recent data than academic
+        # Financial data will almost always be more recent than academic
         # data. This is the only time we want do display "future" data,
         # that is data from a year more recent than the maximum dropdown
         # (academic) year. The first (most recent) column of the financial
@@ -139,14 +140,9 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             for col in financial_data.columns[1:]:
                 financial_data[col]=pd.to_numeric(financial_data[col], errors="coerce")
 
-            # NOTE: there are certain calculated categories already in the df ("Total Grants",
-            # "Net Asset Position", and "Change in Net Assets"). Rather than
-            # rely on pre-calculated categories, we (re)calculate them from the 
-            # underlying data: 1) "Total Grants" = "State Grants" + "Federal Grants";
-            # 2) "Net Asset Position" = "Total Assets" - "Total Liabilities"; and
-            # 3) "Change in Net Assets" = "Operating Revenues" - "Operating Expenses"
-            # Because the rows already exist in the dataframe, we set Category as index
-            # (so we can use .loc with the Category names):
+            # NOTE: these categories already exist in the df, but we may remove them
+            # later, so they are calculated here. Because the rows already exist in the
+            # dataframe, we set Category as index (so we can use .loc with the Category names):
 
             financial_data = financial_data.set_index(["Category"])
             financial_data.loc["Total Grants"] = financial_data.loc["State Grants"] + financial_data.loc["Federal Grants"]
@@ -173,12 +169,12 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             financial_data = financial_data.loc[:(financial_data["Category"] == "Audit Information").idxmax()-1]
 
             # Each column (year) in the df must have at least 12 values to be valid. To avoid the
-            # situation where there is a column that only contains financial ratio data (e.g., 
+            # situation where there is a year column that only contains financial ratio data (e.g., 
             # when a school existed prior to being required to report financial data to ICSB),
             # drop any column where more than 31 rows contain empty strings (df has 43 total rows)
-            for c in financial_data.columns:
-                if len(financial_data[financial_data[c] == ""].index) > 31:
-                    financial_data.drop([c], inplace=True, axis=1)
+            # for c in financial_data.columns:
+            #     if len(financial_data[financial_data[c] == ""].index) > 31:
+            #         financial_data.drop([c], inplace=True, axis=1)
 
             # not currently used
             remove_categories = ["Administrative Staff", "Instructional Staff","Instructional and Support Staff","Non-Instructional Staff","Total Personnel Expenses",
@@ -336,17 +332,6 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 def layout():
     return html.Div(
             [
-                # html.Div(
-                #     [
-                #         html.Div(
-                #             [
-                #                 html.Div(subnav_finance(),className="tabs"),
-                #             ],
-                #         className="bare-container--flex--center twelve columns",
-                #         ),
-                #     ],
-                #     className="row"
-                # ),
                 html.Div(
                     [
                         html.Div(

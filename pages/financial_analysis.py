@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# version:  1.11
+# date:     10/03/23
 
 import dash
 from dash import dcc, html, dash_table, Input, State, Output, callback
@@ -18,7 +18,6 @@ from .load_data import max_display_years, get_school_index, get_financial_data, 
 from .tables import no_data_page, no_data_table, create_financial_analysis_table
 from .charts import loading_fig
 from .calculations import round_nearest
-# from .subnav import subnav_finance
 
 dash.register_page(__name__, path = "/financial_analysis", top_nav=True, order=3)
 
@@ -51,6 +50,7 @@ def financial_analysis_radio_selector(school: str, finance_value_state: str):
         radio_input_container = {"display": "block"}
     
     if finance_value_state:
+
         # when changing dropdown from a school with network to one without, we need to reset state
         if finance_value_state == "network-finance" and selected_school["Network"].values[0] == "None":
             finance_value = value_default
@@ -60,7 +60,6 @@ def financial_analysis_radio_selector(school: str, finance_value_state: str):
         finance_value = value_default
             
     return finance_options, finance_value, radio_input_container
-
 
 @callback(
     Output("revenue-expenses-fig", "figure"),
@@ -241,9 +240,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
             # revenue and expense data can vary widely (from 5 to 7 figures) from school to
             # school and from year to year. Use round_nearest() to determine tick value
-            # based on the max value in a dataframe.
-
-            # NOTE: change "step" value to increase/decrease the total number of ticks
+            # based on the max value in a dataframe. Change the "step" value to increase or
+            # decrease the total number of ticks
             step = 6
 
             tick_val = round_nearest(revenue_expenses_data, step)
@@ -376,7 +374,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             # there may be columns with no or partial data at beginning or ending of dataframe,
             # this deletes any column where more than 80% of the columns values are == 0
             # (otherwise empty columns may have some data, eg., ADM)
-            # NOTE: This could probably be more precise (compare with that other wierd 31 algorithm).
+            # NOTE: This could probably be more precise (compare with that other wierd >31 test).
             financial_data = financial_data.loc[:, (financial_data==0).mean() < .7]
 
             # if all of the years to display (+ Category) exist in (are a subset of) the dataframe,
@@ -417,14 +415,11 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             financial_ratios_data = get_financial_ratios(school_corp)
             ratio_years = financial_ratios_data["Year"].astype(str).tolist()
 
-            # Networks do not have ratios- only way to tell if network finances
-            # are being displayed is if the radio_value is equal to "network-finance."
-            # So we show an empty table if "network-finance" is being displayed.
-            # We also show empty table if there are no rows in financial_ratios_data
-            # (empty df) OR where there are no years of data in the dataframe that
-            # match the years being displayed (the last condition is True if the
-            # two lists share at least one item (e.g., at least one of the
-            # default_headers are in the Years dataframe column)).
+            # Networks do not have calculated financial ratios. So we show an empty table if:
+            # "network-finance" is being displayed; if there are no rows in financial_ratios_data
+            # (empty df); or where there are no years of data in the dataframe that match the years
+            # being displayed (the isdisjoint condition is True if the two lists share at least one
+            # element
            
             if radio_value != "network-finance" and (len(financial_ratios_data.index) != 0) and \
                 not set(ratio_years).isdisjoint(default_headers):
@@ -438,9 +433,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 # change all cols to numeric except for Category
                 for col in financial_ratios_data.columns[1:]:
                     financial_ratios_data[col]=pd.to_numeric(financial_ratios_data[col], errors="coerce")
-
-                # # sort Year cols in ascending order (ignore Category)
-                # financial_ratios_data = financial_ratios_data.set_index('Category').sort_index(ascending=True, axis=1).reset_index()
 
                 # Create an empty df in the shape and order that we want (e.g., Category, YYYY, YYYY-1), use
                 # combine_first to update all null elements in the empty df with a value in the same location
@@ -606,17 +598,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 def layout():
     return html.Div(
                 [
-                    # html.Div(
-                    #     [
-                    #         html.Div(
-                    #             [
-                    #                 html.Div(subnav_finance(), className="tabs"),
-                    #             ],
-                    #         className="bare-container--flex--center twelve columns",
-                    #         ),
-                    #     ],
-                    #     className="row"
-                    # ),
                     html.Div(
                         [
                             html.Div(

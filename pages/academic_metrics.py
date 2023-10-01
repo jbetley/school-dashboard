@@ -423,17 +423,6 @@ def update_academic_metrics(school: str, year: str):
 def layout():
     return html.Div(
             [
-                # html.Div(
-                #     [
-                #         html.Div(
-                #             [
-                #                 html.Div(subnav_academic(),className="tabs"),
-                #             ],
-                #             className="bare-container--flex--center twelve columns",
-                #         ),
-                #     ],
-                #     className="row"
-                # ),
                 html.Div(
                     [       
                         html.Div(

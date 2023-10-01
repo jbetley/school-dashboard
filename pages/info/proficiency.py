@@ -1,7 +1,7 @@
 #######################################################
 # ICSB Dashboard - Academic Information - Proficiency #
 #######################################################
-# author:   jbetley (james@jamesbetley.com)
+# author:   jbetley
 # version:  1.11
 # date:     10/03/23
 
@@ -154,9 +154,7 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
     if not school:
         raise PreventUpdate
 
-    # show 2019 instead of 2020 as 2020 has no academic data
-    string_year = year
-    selected_year_string = "2019" if string_year == "2020" else string_year
+    selected_year_string = year
     selected_year_numeric = int(selected_year_string)
 
     selected_school = get_school_index(school)
@@ -327,7 +325,7 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
 
         elif (selected_school_type == "K8" or selected_school_type == "K12" or \
             (selected_school_id == 5874 and selected_year_numeric >= 2021)) and radio_type == "k8":
-            # CHS PRE REORG WHERE DOES THE =/=> GO?
+            # TODO: Check CHS/CHWM timeline - what year did the change happen
 
             location = "/info/proficiency"
 
@@ -338,7 +336,8 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
             if excluded_years:
                 selected_raw_k8_school_data = selected_raw_k8_school_data[~selected_raw_k8_school_data["Year"].isin(excluded_years)]
 
-            if len(selected_raw_k8_school_data.index) > 0:
+            # No k8 academic data for 2020
+            if len(selected_raw_k8_school_data.index) > 0 and selected_year_string != "2020":
 
                 all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data)
 

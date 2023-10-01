@@ -1,9 +1,9 @@
 #######################################
 # ICSB Dashboard - About/Demographics #
 #######################################
-# author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# author:   jbetley 
+# version:  1.11
+# date:     10/03/23
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -83,13 +83,14 @@ def update_about_page(year: str, school: str):
         # Updates Table - Right Now hardcoded - may want to add to DB
         update_table_label = ""
         update_table_dict = {
-            "Date": ["07.12.23", "08.16.23", "08.18.23", "08.18.23", "08.24.23", "09.07.23"],
+            "Date": ["07.12.23", "08.16.23", "08.18.23", "08.18.23", "08.24.23", "09.27.23", "10.03.23"],
             "Update": ["Added 2023 ILEARN data for all K-8 schools and school corporations.",
                 "Added 2023 IREAD Data for all K-8 schools and school corporations.",
                 "Added 2023 SAT Scores  for all high schools and school corporations.",
                 "Added 2023 Demographic Data  for all schools and school corporations.",
                 "Added 2019-22 Growth Data  for all ICSB schools.",
-                "Beta version of site released to production."
+                "Added Year over Year academic analysis.",
+                "Beta site released."
                 ],                
         }
         
