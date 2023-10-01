@@ -2,8 +2,8 @@
 # ICSB Dashboard - Layout Functions #
 #####################################
 # author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# version:  1.11
+# date:     10/03/23
 
 import pandas as pd
 import numpy as np
@@ -197,44 +197,72 @@ def create_group_barchart_layout(fig: list, table: list,category_string: str, sc
         list: list layout html.Div object
     """
 
-    layout = [
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Div(fig, style={"marginBottom": "-20px"})
-                    ],
-                    className = "pretty-container--close twelve columns",
-                ),
-            ],
-            className="row"
-        ),
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Div(table),
-                        html.P(
-                            children=[
-                            html.Span("Selected school has insufficient n-size or no data for:", className = "category-string__label"),
-                            html.Span(category_string, className = "category-string"),
-                            ],
-                            style={"marginTop": -10, "marginBottom": -10}
-                        ),
-                        html.P(
-                            children=[
-                            html.Span("Schools with insufficient n-size or no data:",className = "school-string__label"),
-                            html.Span(school_string, className = "school-string"),
-                            ],
-
-                        ),
-                    ],
-                    className = "container__close twelve columns"
-                )
+    # year_over_year charts do not have category or school strings
+    if category_string == "" and school_string == "":
+        layout = [
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(fig, style={"marginBottom": "-20px"})
+                        ],
+                        className = "pretty-container--close eleven columns",
+                    ),
                 ],
                 className="row"
-            )
-    ]
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(table)
+                        ],
+                        className = "container__close eleven columns",
+                    ),
+                ],
+                className="row"
+            )            
+        ]    
+    else:
+        layout = [
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(fig, style={"marginBottom": "-20px"})
+                        ],
+                        className = "pretty-container--close twelve columns",
+                    ),
+                ],
+                className="row"
+            ),            
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(table),
+                            html.P(
+                                children=[
+                                html.Span("Selected school has insufficient n-size or no data for:", className = "category-string__label"),
+                                html.Span(category_string, className = "category-string"),
+                                ],
+                                style={"marginTop": -10, "marginBottom": -10}
+                            ),
+                            html.P(
+                                children=[
+                                html.Span("Schools with insufficient n-size or no data:",className = "school-string__label"),
+                                html.Span(school_string, className = "school-string"),
+                                ],
+
+                            ),
+                        ],
+                        className = "container__close twelve columns"
+                    )
+                    ],
+                    className="row"
+                )
+        ]
+
     return layout
 
 def create_barchart_layout(fig: list, table: list) -> list:
@@ -383,8 +411,8 @@ def create_year_over_year_layout (school, data, label, msg):
 
     else:
 
-        # print(data)
         data = data.drop("School ID",axis=1)
+
         # drop rows (years) where the school has no data (2nd column will always be selected school)
         # NOTE: tried to use name, but there are too many differences in DOE data
         data = data[data.iloc[:, 1].notna()]

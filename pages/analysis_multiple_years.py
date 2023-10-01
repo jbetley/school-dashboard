@@ -79,6 +79,7 @@ def radio_hs_category_selector(school: str, gradespan_value: str, hs_category_st
             {"label": "Graduation Rate", "value": "Graduation Rate"},
             {"label": "SAT", "value": "SAT"}
         ]
+
         hs_category_container = {'display': 'block'}
 
         if hs_category_state:
@@ -99,6 +100,7 @@ def radio_hs_category_selector(school: str, gradespan_value: str, hs_category_st
     State("multi-year-subject-radio","value"),
 )
 def radio_subject_selector(school: str, gradespan_value: str, hs_category_value: str, subject_state: str):
+   
     # Both ILEARN and SAT have subject categories, although the name for english is different: ELA/EBRW;
     # Graduation Rate does not have subject categories
     subject_value = ""
@@ -299,9 +301,6 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
 
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
-
-    # There is some time cost for running the dropdown selection function (typically
-    # ~0.8 - 1.2s), so we want to exit out as early as possible if we know it isn't necessary
         
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
     # SQL query depends on school type
@@ -327,7 +326,7 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
     else:
 
         # NOTE: Before we do the distance check, we reduce the size of the df removing
-        # schools where there is no, or only a one grade overlap between the comparison schools.
+        # schools where there is no, or only one grade overlap between the comparison schools.
         # the variable "overlap" is one less than the the number of grades that we want as a
         # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
 
@@ -558,7 +557,6 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             hs_analysis_multi_empty_container = {"display": "none"}
             dropdown_container = {"display": "block"}
 
-# TODO: Add identify_missing categories? Would need to be School (Category-Year)
             ## Create Year Over Year HS (SAT and Graduation Rate) Chart
             year_over_year_hs = create_year_over_year_layout(school, year_over_year_hs_data, label, msg)
 
@@ -584,7 +582,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
 
             label = "Year over Year Comparison - " + category
             msg = ""
-# TODO: Add identify_missing categories?
+
             year_over_year_k8_data = get_year_over_year_data(school, comparison_school_list, category, year, "k8")
 
         else:
