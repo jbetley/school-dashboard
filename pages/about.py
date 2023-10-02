@@ -44,7 +44,7 @@ def update_about_page(year: str, school: str):
     previous_year_string = str(previous_year_numeric)
 
     year_title = previous_year_string + "-" + selected_year_string[-2:]
-    enroll_title = ["Enrollment " + "(" + year_title + ")"]
+    enroll_title = "Enrollment " + "(" + year_title + ")"
     ethnicity_title = "Enrollment by Ethnicity " + "(" + year_title + ")"
     subgroup_title = "Enrollment by Subgroup " + "(" + year_title + ")"
     
@@ -56,7 +56,7 @@ def update_about_page(year: str, school: str):
 
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
-    no_data_to_display = no_data_page("School Enrollment & Demographics")
+    no_data_to_display = no_data_page("No Data to Display","School Enrollment & Demographics")
 
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
@@ -67,7 +67,7 @@ def update_about_page(year: str, school: str):
     if (len(demographic_data.index) == 0 or demographic_data.empty) and \
         (len(financial_data.columns) <= 1 or financial_data.empty):
         update_table = []
-        enroll_title = []
+        enroll_title = ""
         enroll_table = []
         adm_fig = px.line()
         ethnicity_title = ""
@@ -103,7 +103,7 @@ def update_about_page(year: str, school: str):
             demographic_data = demographic_data[~demographic_data["Year"].isin(excluded_years)]
 
         if len(demographic_data.index) == 0:
-            enroll_table = no_data_table(enroll_title)
+            enroll_table = no_data_table("No Data to Display",enroll_title, "six")
             subgroup_fig = no_data_fig_label("Enrollment by Subgroup", 400)
             ethnicity_fig = no_data_fig_label("Enrollment by Ethnicity", 400)
 

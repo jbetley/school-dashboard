@@ -206,7 +206,7 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
 
-    no_display_data = no_data_page("Academic Proficiency")
+    no_display_data = no_data_page("No Data to Display","Academic Proficiency")
 
     # HS and AHS do not have proficiency data
 
@@ -464,10 +464,10 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
 
                     attendance_rate = get_attendance_data(school_demographic_data, selected_year_string)
 
-                    if len(attendance_rate.index) > 0:
+                    if len(attendance_rate.index) > 0 and len(attendance_rate.columns) > 1:
                         attendance_table = create_single_header_table(attendance_rate,"Attendance Data")
                     else:
-                        attendance_table = no_data_table(["Attendance Data"])
+                        attendance_table = no_data_table("No Data to Display","Attendance Data","six")
 
                     attendance_table = set_table_layout(attendance_table, attendance_table, attendance_rate.columns)
 
@@ -902,74 +902,74 @@ def layout():
                                         ],
                                         id="proficiency-math-subgroup-container",
                                     ),
-                                        html.Div(id="attendance-table", children=[]),
-                                    ],
-                                    id="k8-table-container",
-                                ),
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [                                        
-                                                html.Label("Graduation Rate", className="label__header", style = {"marginTop": "20px"}),
-                                            ],
-                                            className="bare-container--flex--center twelve columns",                                    
-                                        ),
-                                        html.Div(id="k12-grad-overview-table"),
-                                        html.Div(id="k12-grad-ethnicity-table"),
-                                        html.Div(id="k12-grad-subgroup-table"),
-                                    ],
-                                    id="k12-grad-table-container",
-                                ),
-                                html.Div(
-                                    [                                
-                                        html.Div(
-                                            [
-                                                html.Label("SAT", className="label__header", style = {'marginTop': "20px"}),
+                                    html.Div(id="attendance-table", children=[]),
+                                ],
+                                id="k8-table-container",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [                                        
+                                            html.Label("Graduation Rate", className="label__header", style = {"marginTop": "20px"}),
                                         ],
-                                            className="bare-container--flex--center twelve columns",                                    
-                                        ),                                        
-                                        html.Div(id="k12-sat-cut-scores-table", children=[]),
-                                        html.Div(id="k12-sat-overview-table"),
-                                        html.Div(id="k12-sat-ethnicity-table"),
-                                        html.Div(id="k12-sat-subgroup-table"),
+                                        className="bare-container--flex--center twelve columns",                                    
+                                    ),
+                                    html.Div(id="k12-grad-overview-table"),
+                                    html.Div(id="k12-grad-ethnicity-table"),
+                                    html.Div(id="k12-grad-subgroup-table"),
+                                ],
+                                id="k12-grad-table-container",
+                            ),
+                            html.Div(
+                                [                                
+                                    html.Div(
+                                        [
+                                            html.Label("SAT", className="label__header", style = {'marginTop': "20px"}),
                                     ],
-                                    id="k12-sat-table-container",
-                                ),
-                            ],
-                            id = "academic-proficiency-main-container",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Label("Notes:", className="key-label__header"),
-                                        html.P(""),
-                                            html.P(id="academic-proficiency-notes-string",
-                                                style={
-                                                        "textAlign": "Left",
-                                                        "color": "#6783a9",
-                                                        "fontSize": 12,
-                                                        "marginLeft": "10px",
-                                                        "marginRight": "10px",
-                                                        "marginTop": "10px",
-                                                }
-                                            ),
-                                    ],
-                                    className = "pretty-container__key ten columns"
-                                ),
-                            ],
-                            className = "bare-container--flex--center twelve columns"
-                        ),                    
-                    ],
-                ),
-            ],
-        ),
-        html.Div(
-            [
-                html.Div(id="academic-proficiency-no-data"),
-            ],
-            id = "academic-proficiency-empty-container",
-        ),
-    ],
-    id="main-container",
+                                        className="bare-container--flex--center twelve columns",                                    
+                                    ),                                        
+                                    html.Div(id="k12-sat-cut-scores-table", children=[]),
+                                    html.Div(id="k12-sat-overview-table"),
+                                    html.Div(id="k12-sat-ethnicity-table"),
+                                    html.Div(id="k12-sat-subgroup-table"),
+                                ],
+                                id="k12-sat-table-container",
+                            ),
+                        ],
+                        id = "academic-proficiency-main-container",
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Label("Notes:", className="key-label__header"),
+                                    html.P(""),
+                                        html.P(id="academic-proficiency-notes-string",
+                                            style={
+                                                    "textAlign": "Left",
+                                                    "color": "#6783a9",
+                                                    "fontSize": 12,
+                                                    "marginLeft": "10px",
+                                                    "marginRight": "10px",
+                                                    "marginTop": "10px",
+                                            }
+                                        ),
+                                ],
+                                className = "pretty-container__key ten columns"
+                            ),
+                        ],
+                        className = "bare-container--flex--center twelve columns"
+                    ),                    
+                ],
+            ),
+        ],
+    ),
+    html.Div(
+        [
+            html.Div(id="academic-proficiency-no-data"),
+        ],
+        id = "academic-proficiency-empty-container",
+    ),
+],
+id="main-container",
 )

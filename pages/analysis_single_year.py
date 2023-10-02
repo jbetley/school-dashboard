@@ -623,6 +623,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                         # Get school value for specific category
                         if category in current_school_data.columns:
 
+
                             # need to reset_index because we are using the length of the index to
                             # add the Corp Data
                             fig14c_k8_school_data = current_school_data[info_categories + [category]].copy()
@@ -645,7 +646,6 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                             fig14c_chart = make_bar_chart(fig14c_all_data, category, school_name, "Comparison: Current Year ELA Proficiency")
 
                             fig14c_table_data["School Name"] = create_school_label(fig14c_table_data)
-
                             fig14c_table_data = fig14c_table_data[["School Name", category]]
                             fig14c_table_data = fig14c_table_data.reset_index(drop=True)
 

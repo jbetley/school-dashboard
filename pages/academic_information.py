@@ -67,9 +67,9 @@ def update_academic_information_page(school: str, year: str):
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
     subnav_container = {"display": "none"}
-    academic_information_notes_container = {"display": "none"}    
+    academic_information_notes_container = {"display": "none"}
 
-    no_display_data = no_data_page("Academic Information")
+    no_display_data = no_data_page("","Academic Information")
 
     if selected_school_type == "K8" or selected_school_type == "K12":
         empty_container = {"display": "none"}

@@ -1,9 +1,9 @@
 ########################################
 # ICSB Dashboard - DataTable Functions #
 ########################################
-# author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# author:   jbetley (https://github.com/jbetley)
+# version:  1.11
+# date:     10/03/23
 
 import pandas as pd
 from typing import Tuple
@@ -16,7 +16,7 @@ import dash_mantine_components as dmc
 
 from .load_data import metric_strings
 
-# Global table styles
+# default table styles
 table_style = {
     "fontSize": "12px",
     "border": "none",
@@ -193,80 +193,111 @@ def create_proficiency_key() -> list:
 
     return key_table
 
-def no_data_table(label: list = ["Academic Data"], text: list = ["No Data to Display"]) -> list:
+def empty_table(text: str) -> dash_table.DataTable:
     """
-    Creates empty table with provided label and content string
+    empty dash_table.Datatable with give text as only data.
 
     Args:
-        label (str): table label
-        text (str): table content
+        text (list): table content
+
+    Returns:
+        dash datatable (dash_table.DataTable): a dash DataTable
+    """
+
+    # need to convert displayed text to a list for the datatable
+    if text == "":
+        text = ["No Data to Display."]
+
+    empty_table =  dash_table.DataTable(
+            columns = [
+                {"id": "emptytable", "name": text},
+            ],
+            style_header={
+                "fontSize": "14px",
+                "border": "none",
+                "textAlign": "center",
+                "color": "#6783a9",
+                "backgroundColor": "#ffffff",                            
+                "fontFamily": "Inter, sans-serif",
+                "height": "30vh",
+            }
+        )
+
+    return empty_table
+
+def no_data_table(text: str, label: str = "Academic Data", width: str = "six") -> list:
+    """
+    Uses empty_table function and returns empty table with given label and content.
+
+    Args:
+        label (list): table label
+        text (list): table content
 
     Returns:
         table_layout (list): a dash html.Label object and html.Div object enclosing a dash DataTable
     """
 
     table_layout = [
-                html.Label(label, className="label__header"),
-                html.Div(
-                    dash_table.DataTable(
-                        columns = [
-                            {"id": "emptytable", "name": text},
-                        ],
-                        style_header={
-                            "fontSize": "14px",
-                            "border": "none",
-                            "textAlign": "center",
-                            "color": "#6783a9",
-                            "fontFamily": "Inter, sans-serif",
-                            "height": "30vh",
-                        },
-                    ),
-                ),
+        # html.Div(
+        #         [        
+                    # html.Div(
+                    #     [
+                            html.Div(
+                                [        
+                                    html.Label(label, className="label__header"),
+                                    html.Div(empty_table(text),  className = "empty-table"),
+                                ],
+                                className = "pretty-container " + width + " columns"
+                            ),
+                    #     ],
+                    #     className = "bare-container--flex--center twelve columns",
+                    # ),
+            #     ],
+            #     className = "empty-table",
+            # )                    
+                    # dash_table.DataTable(
+                    #     columns = [
+                    #         {"id": "emptytable", "name": text},
+                    #     ],
+                    #     style_header={
+                    #         "fontSize": "14px",
+                    #         "border": "none",
+                    #         "textAlign": "center",
+                    #         "color": "#6783a9",
+                    #         "backgroundColor": "#ffffff",                            
+                    #         "fontFamily": "Inter, sans-serif",
+                    #         "height": "30vh",
+                    #     },
+                    # ),
+                # ),
             ]
 
     return table_layout
 
-def no_data_page(label: str = "Academic Data", text: str = "No Data to Display") -> list:
+def no_data_page(text: str, label: str = "Academic Data") -> list:
     """
-    Creates a layout with a single empty table to be used as a replacement for an entire
-    page without data for any tables/figs, with provided label
+    Uses empty_table function and returns empty table with given label and content. This
+    table has a fixed column size (eight cols) and is meant to use when there is no data
+    at all to be displayed on a page.
 
     Args:
-        label (String): string label
+        label (str): string label
+        text (list)
 
     Returns:
         table_layout (list): dash html.Div objects enclosing a dash html.Label
         object and a dash DataTable, with css classes
     """
 
-    empty_dict = [{"": ""}]
     table_layout = [
-        html.Div(
+       html.Div(
             [        
                 html.Div(
                     [
                         html.Div(
                             [
                                 html.Label(label, className="label__header"),
-                                html.Div(
-                                    dash_table.DataTable(
-                                        data=empty_dict,
-                                        columns = [
-                                            {"id": "emptytable", "name": text},
-                                        ],
-                                        style_header={
-                                            "fontSize": "14px",
-                                            "border": "none",
-                                            "textAlign": "center",
-                                            "color": "#6783a9",
-                                            "fontFamily": "Montserrat, sans-serif",
-                                            "height": "30vh",
-                                        },
-                                        style_data={
-                                            "display": "none",
-                                        },
-                                    ),
-                                ),
+                                html.Div(empty_table(text)),
                             ],
                             className = "pretty-container eight columns"
                         ),
@@ -277,6 +308,46 @@ def no_data_page(label: str = "Academic Data", text: str = "No Data to Display")
             className = "empty-table",
         )
     ]
+
+    # empty_dict = [{"": ""}]
+    # table_layout = [
+    #     html.Div(
+    #         [        
+    #             html.Div(
+    #                 [
+    #                     html.Div(
+    #                         [
+    #                             html.Label(label, className="label__header"),
+    #                             html.Div(
+    #                                 dash_table.DataTable(
+    #                                     data=empty_dict,
+    #                                     columns = [
+    #                                         {"id": "emptytable", "name": text},
+    #                                     ],
+    #                                     style_header={
+    #                                         "fontSize": "14px",
+    #                                         "border": "none",
+    #                                         "textAlign": "center",
+    #                                         "color": "#6783a9",
+    #                                         "backgroundColor": "#ffffff",
+    #                                         "fontFamily": "Inter, sans-serif",
+    #                                         "height": "30vh",
+    #                                     },
+    #                                     style_data={
+    #                                         "display": "none",
+    #                                     },
+    #                                 ),
+    #                             ),
+    #                         ],
+    #                         className = "pretty-container eight columns"
+    #                     ),
+    #                 ],
+    #                 className = "bare-container--flex--center twelve columns",
+    #             ),
+    #         ],
+    #         className = "empty-table",
+    #     )
+    # ]
 
     return table_layout
 
@@ -341,21 +412,23 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className="label__header"),
-                    html.Div(
-                        dash_table.DataTable(
-                            columns = [
-                                {"id": "emptytable", "name": "No Data to Display"},
-                            ],
-                            style_header={
-                                "fontSize": "14px",
-                                "border": "none",
-                                "textAlign": "center",
-                                "color": "#6783a9",
-                                "fontFamily": "Montserrat, sans-serif",
-                            },
-                        )
-                    )
+                    html.Div(no_data_table("",label)),
+                    # html.Label(label, className="label__header"),
+                    # html.Div(
+                    #     dash_table.DataTable(
+                    #         columns = [
+                    #             {"id": "emptytable", "name": "No Data to Display"},
+                    #         ],
+                    #         style_header={
+                    #             "fontSize": "16px",
+                    #             "border": "none",
+                    #             "textAlign": "center",
+                    #             "color": "#6783a9",
+                    #             "backgroundColor": "#ffffff",
+                    #             "fontFamily": "Inter, sans-serif",
+                    #         },
+                    #     )
+                    # )
                 ],
                 className = "pretty-container ten columns"
             )
@@ -1066,11 +1139,12 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
                                 {"id": "emptytable", "name": "No Data to Display"},
                             ],
                             style_header={
-                                "fontSize": "14px",
+                                "fontSize": "16px",
                                 "border": "none",
                                 "textAlign": "center",
+                                "backgroundColor": "#ffffff",
                                 "color": "#6783a9",
-                                "fontFamily": "Montserrat, sans-serif",
+                                "fontFamily": "Inter, sans-serif",
                                 "height": "30vh",
                             },
                             style_data={
@@ -1079,11 +1153,12 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
                         ),
                     ),
                 ],
-                className = "pretty-container four columns"
+                className = "pretty-container six columns"
             )
         ]
 
     return table_layout
+
 
 def create_multi_header_table(data: pd.DataFrame) -> list:
     """
@@ -1744,7 +1819,7 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
     """
-    # TODO: Next two lines should be redundant for HS data, Check for k8 data
+
     # drop all columns where the row at school_name_idx has a NaN value
     # school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
     # data = data.loc[:, ~data.iloc[school_name_idx].isna()]
@@ -1759,7 +1834,11 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
     # NOTE: this does not apply to year_over_year analysis tables, which have the school
     # name in the column header
 
-# TODO: Weirdness with Phalen 103 name?
+    # NOTE: Keep getting name index errors from the below line, almost always because
+    # the school name in school_index does not match the school name in whatever
+    # dataset we are parsing. Not much we can do about this if the original data
+    # has a misspelling. 
+
     # print('SO MUCH INDEX ERROR')
     # print(school_name)
     # print("X" + school_name + "X")

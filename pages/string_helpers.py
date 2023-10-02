@@ -140,7 +140,10 @@ def create_school_label(data: pd.DataFrame) -> pd.Series:
         "-" + data["High Grade"].fillna("").astype(str) + ")"
 
     label = label.str.replace("\(-\)", "",regex=True)
-    label = label.str.replace(".0","",regex=True)
+
+    # regex is false because we want to replace literal ".0" and not
+    # anychar + "0"
+    label = label.str.replace(".0","",regex=False)
 
     return label
 

@@ -2,8 +2,35 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley
-# version:  1.10
-# date:     09/10/23
+# version:  1.11
+# date:     10/03/23
+
+# This is the main application file for the Indiana Charter School Board school
+# dashboard. This dashboard consists of ~10 tabs of charts and tables created
+# using the plotly dash data visualization libraries. It includes financial,
+# operational, and academic data for schools serving all sorts of grade configurations
+# in the K-12 and adult space. Currently, all data is stored in a single 30mb sqlite
+# database with ~12 tables. One of the future goals of the app is to explore alternative
+# ways to combine and store data, although the primary speed hit in the app is in the
+# charting library and not in database access. All of the data is public and most of
+# the academic data is available (as of 10/2023) on the website of the Indiana Department
+# of Education: https://www.in.gov/doe/it/data-center-and-reports/. Financial data is reported
+# by each school (on excel workbooks) and pulled into the db using python. Academic
+# data comes from dozens of separate csv files produced over many years and presented
+# primarily for human readibility, which means that they are messy, inconsistent, and
+# often incomplete. All this is to say that a large part of this apps exists to filter,
+# clean, validate, and process this data to satisfy a number of configurations. Even
+# the exceptions to the exceptions have exceptions.
+
+# I have chosen to structure the app this way rather than spending the considerable effort
+# to clean and organize the data on the back-end, because it is inevitable that someone
+# else will have to maintain this code at some point, and I have no idea how
+# sophisticated their software engineering skills will be. The hope is that I will
+# eventually have the code structured in such a way that whomever follows can simply drop an
+# 'updated' IDOE academic file into a folder, click a script, have it added to the DB, and 
+# have the program read it with no issue. That part is a work in progress. Another option
+# would be to get access to IDOE's API for this data. This is also a work in progress. Changing
+# to IDOE's API (using ED-FI standard), would be a gamechanger.
 
 # NOTE: Because of the way data is store and presented by IDOE, there are
 # cases in which data points need to be manually calculated that the school
@@ -64,7 +91,7 @@ login_manager = LoginManager()
 login_manager.init_app(server)
 login_manager.login_view = "/login"
 
-# each table in the database needs a class to be created for it
+# each table in the user database needs a class to be created for it
 # using the db.Model, all db columns must be identified by name
 # and data type. UserMixin provides a get_id method that returns
 # the id attribute or raises an exception.
@@ -76,6 +103,10 @@ class User(UserMixin, db.Model):    # type: ignore
     groupid = db.Column(db.Integer, unique=False)
     fullname = db.Column(db.Integer, unique=True)
 
+    # these properties allow us to access additional fields in the user
+    # database - in this case, they are used to populate the user dropdown
+    # with associated groups of schools (by group id). fullname is not
+    # currently used.
     @property
     def group_id(self):
         return self.groupid
@@ -178,7 +209,8 @@ app = dash.Dash(
     ],
 )
         
-# Dropdown shows single school if school login is used
+# Dropdown shows single school if school login is used, shows the
+# associated group of schools if a 'network' login is used, and
 # shows all schools if admin login is used.
 # NOTE: "application-state" is a dummy input
 @callback(
@@ -186,12 +218,14 @@ app = dash.Dash(
     [Input("application-state", "children")]
 )
 def set_dropdown_options(app_state):
+
     # Get the current user id using the current_user proxy,
     # use the ._get_current_object() method to return the
-    # underlying object (User)
+    # underlying object (User). get the group_id property
+    # to determine which schools to include for a network
+    # login
     # NOTE: user 0 is admin; users 1-6 are network logins; users 7- are individual schools
     # Groups: CHA (-1); Excel (-2); GEI (-3); PLA (-4); Paramount (-5); Purdue (-6)
-
     authorized_user = current_user._get_current_object()
     group_id = current_user.group_id
 
@@ -225,10 +259,8 @@ def set_dropdown_options(app_state):
 def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
             
-# year options are the range of:
-#   max = current_academic_year
-#   min = the earliest year for which the school has adm (is open)
-#   limit = typically a limit of 5 years (currently and
+# year options are the range of: max = current_academic_year; min = the earliest year
+#   for which the school has adm (is open); limit = typically a limit of 5 years (currently and
 #   temporarily 4 years so that 2018 academic data is not shown)
 # NOTE: Input current-page and Output hidden are used to track the currently
 # selected url (Tab)
@@ -403,6 +435,8 @@ def layout():
                                                      className="tab",
                                                      active="exact"
                                                 ),
+                                                # hardcoding this instead of using a loop so that we
+                                                # can manually add this break
                                                 html.Br(),                                                
                                                 html.Div(style={"marginTop": "17px"}),
                                                 dbc.NavLink(

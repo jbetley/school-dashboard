@@ -2,7 +2,7 @@
 # ICSB Dashboard - Database Queries (SQLite) #
 ##############################################
 # author:   jbetley
-# version:  1.10
+# version:  1.11
 # date:     10/03/23
 
 import pandas as pd
@@ -12,6 +12,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import text
 
 # global variables
+# TODO: Not best practice, nor best format
 max_display_years = 5
 
 subject = ["Math", "ELA"]

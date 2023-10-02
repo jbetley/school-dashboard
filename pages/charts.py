@@ -80,8 +80,9 @@ def no_data_fig_blank() -> dict:
         annotations = [
             {
                 'text': 'No Data to Display . . .',
-                'y': 0.6,
-                'x': 0.25,
+                # 'y': 0.5,
+                # 'x': 0.25,
+                'align': "center",
                 'xref': 'paper',
                 'yref': 'paper',
                 'showarrow': False,
@@ -127,15 +128,16 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400, tabl
         annotations = [
             {
                 'text': 'No Data to Display . . .',
-                'y': 0.5,
-                'x': 0.25,
+                # 'y': 0.5,
+                # 'x': 0.25,
+                'align': "center",
                 'xref': 'paper',
                 'yref': 'paper',
                 'showarrow': False,
                 'font': {
                     'size': 16,
                     'color': '#6783a9',
-                    'family': 'Inter, sans-serif'
+                    'family': 'Inter, sans-serif',
                 }
             }
         ],
