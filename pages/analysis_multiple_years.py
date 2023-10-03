@@ -1,7 +1,7 @@
 #######################################################
 # ICSB Dashboard - Academic Analysis - Year over Year #
 #######################################################
-# author:   jbetley 
+# author:   jbetley (https://github.com/jbetley) 
 # version:  1.11
 # date:     10/03/23
 
@@ -493,8 +493,8 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
     k8_analysis_multi_empty_container = {"display": "block"}
     dropdown_container = {"display": "none"}
 
-    k8_analysis_multi_no_data = no_data_page("Comparison Data - K-8 Academic Data")
-    hs_analysis_multi_no_data = no_data_page("Comparison Data - High School Academic Data")
+    k8_analysis_multi_no_data = no_data_page("No Data to Display.", "Comparison Data - K-8 Academic Data")
+    hs_analysis_multi_no_data = no_data_page("No Data to Display.", "Comparison Data - High School Academic Data")
 
     analysis__multi_notes_label = ""    
     analysis__multi_notes_string = ""

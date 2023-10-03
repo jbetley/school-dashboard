@@ -1,7 +1,7 @@
 ###################################################
 # ICSB Dashboard - Academic Information - Growth  #
 ###################################################
-# author:   jbetley
+# author:   jbetley (https://github.com/jbetley)
 # version:  1.11
 # date:     10/03/23
 
@@ -18,7 +18,7 @@ from pages.charts import make_growth_chart
 from pages.layouts import create_growth_layout, create_radio_layout
 from pages.subnav import subnav_academic_information
 
-dash.register_page(__name__,  top_nav=False, order=8)
+dash.register_page(__name__,  top_nav=False, name = "Academic Growth", path = "/academic_data_growth", order=8)
 
 # Category
 @callback(
@@ -110,8 +110,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
 
     academic_growth_notes_string = ""
 
-    # no_display_data = no_data_page("Academic Proficiency")
-    no_growth_data = no_data_page("Academic Growth")
+    no_growth_data = no_data_page("No Data to Display.", "Academic Growth")
 
     # NOTE: There is a special exception for Christel House South - prior to 2021,
     # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to
@@ -284,7 +283,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
             more students than previous year calculations which only included students who were enrolled in the \
             school for 162 Days. The 162 Day value is included in the tooltip of each table and chart for comparison purposes."
 
-        location = "/info/growth"
+        location = "/academic_data_growth"
 
     return (location,
         growth_grades_ela, growth_grades_math, growth_ethnicity_ela, growth_ethnicity_math,

@@ -206,7 +206,7 @@ def empty_table(text: str) -> dash_table.DataTable:
 
     # need to convert displayed text to a list for the datatable
     if text == "":
-        text = ["No Data to Display."]
+        text = "No Data to Display."
 
     empty_table =  dash_table.DataTable(
             columns = [
@@ -225,7 +225,7 @@ def empty_table(text: str) -> dash_table.DataTable:
 
     return empty_table
 
-def no_data_table(text: str, label: str = "Academic Data", width: str = "six") -> list:
+def no_data_table(text: str, label: str = "Academic Data", width: str = "four") -> list:
     """
     Uses empty_table function and returns empty table with given label and content.
 
@@ -238,39 +238,14 @@ def no_data_table(text: str, label: str = "Academic Data", width: str = "six") -
     """
 
     table_layout = [
-        # html.Div(
-        #         [        
-                    # html.Div(
-                    #     [
-                            html.Div(
-                                [        
-                                    html.Label(label, className="label__header"),
-                                    html.Div(empty_table(text),  className = "empty-table"),
-                                ],
-                                className = "pretty-container " + width + " columns"
-                            ),
-                    #     ],
-                    #     className = "bare-container--flex--center twelve columns",
-                    # ),
-            #     ],
-            #     className = "empty-table",
-            # )                    
-                    # dash_table.DataTable(
-                    #     columns = [
-                    #         {"id": "emptytable", "name": text},
-                    #     ],
-                    #     style_header={
-                    #         "fontSize": "14px",
-                    #         "border": "none",
-                    #         "textAlign": "center",
-                    #         "color": "#6783a9",
-                    #         "backgroundColor": "#ffffff",                            
-                    #         "fontFamily": "Inter, sans-serif",
-                    #         "height": "30vh",
-                    #     },
-                    # ),
-                # ),
-            ]
+            html.Div(
+                [        
+                    html.Label(label, className="label__header"),
+                    html.Div(empty_table(text),  className = "empty-table"),
+                ],
+                className = "pretty-container " + width + " columns"
+            ),
+        ]
 
     return table_layout
 
@@ -290,65 +265,20 @@ def no_data_page(text: str, label: str = "Academic Data") -> list:
     """
 
     table_layout = [
-       html.Div(
-            [        
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Label(label, className="label__header"),
-                                html.Div(empty_table(text)),
-                            ],
-                            className = "pretty-container eight columns"
-                        ),
-                    ],
-                    className = "bare-container--flex--center twelve columns",
-                ),
-            ],
-            className = "empty-table",
-        )
-    ]
-
-    # empty_dict = [{"": ""}]
-    # table_layout = [
-    #     html.Div(
-    #         [        
-    #             html.Div(
-    #                 [
-    #                     html.Div(
-    #                         [
-    #                             html.Label(label, className="label__header"),
-    #                             html.Div(
-    #                                 dash_table.DataTable(
-    #                                     data=empty_dict,
-    #                                     columns = [
-    #                                         {"id": "emptytable", "name": text},
-    #                                     ],
-    #                                     style_header={
-    #                                         "fontSize": "14px",
-    #                                         "border": "none",
-    #                                         "textAlign": "center",
-    #                                         "color": "#6783a9",
-    #                                         "backgroundColor": "#ffffff",
-    #                                         "fontFamily": "Inter, sans-serif",
-    #                                         "height": "30vh",
-    #                                     },
-    #                                     style_data={
-    #                                         "display": "none",
-    #                                     },
-    #                                 ),
-    #                             ),
-    #                         ],
-    #                         className = "pretty-container eight columns"
-    #                     ),
-    #                 ],
-    #                 className = "bare-container--flex--center twelve columns",
-    #             ),
-    #         ],
-    #         className = "empty-table",
-    #     )
-    # ]
-
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Label(label, className="label__header"),
+                            html.Div(empty_table(text),  className = "empty-table"),
+                        ],
+                        className = "pretty-container eight columns"
+                    ),
+                ],
+                className = "bare-container--flex--center twelve columns",
+            ),
+        ]
+    
     return table_layout
 
 # def hidden_table() -> list:
@@ -413,22 +343,6 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
             html.Div(
                 [
                     html.Div(no_data_table("",label)),
-                    # html.Label(label, className="label__header"),
-                    # html.Div(
-                    #     dash_table.DataTable(
-                    #         columns = [
-                    #             {"id": "emptytable", "name": "No Data to Display"},
-                    #         ],
-                    #         style_header={
-                    #             "fontSize": "16px",
-                    #             "border": "none",
-                    #             "textAlign": "center",
-                    #             "color": "#6783a9",
-                    #             "backgroundColor": "#ffffff",
-                    #             "fontFamily": "Inter, sans-serif",
-                    #         },
-                    #     )
-                    # )
                 ],
                 className = "pretty-container ten columns"
             )
@@ -1127,35 +1041,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
 
     else:
 
-        empty_dict = [{"": ""}]
-        table_layout = [
-            html.Div(
-                [
-                    html.Label(label, className="hollow-label__header"),
-                    html.Div(
-                        dash_table.DataTable(
-                            data=empty_dict,
-                            columns = [
-                                {"id": "emptytable", "name": "No Data to Display"},
-                            ],
-                            style_header={
-                                "fontSize": "16px",
-                                "border": "none",
-                                "textAlign": "center",
-                                "backgroundColor": "#ffffff",
-                                "color": "#6783a9",
-                                "fontFamily": "Inter, sans-serif",
-                                "height": "30vh",
-                            },
-                            style_data={
-                                "display": "none",
-                            },
-                        ),
-                    ),
-                ],
-                className = "pretty-container six columns"
-            )
-        ]
+        table_layout = no_data_table("",label)
 
     return table_layout
 
@@ -1291,28 +1177,12 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
     else:
 
-        empty_dict = [{"": ""}]
+        # empty_dict = [{"": ""}]
         table_layout = [
             html.Div(
                 [
                     html.Div(
-                        dash_table.DataTable(
-                            data=empty_dict,
-                            columns = [
-                                {"id": "emptytable", "name": "No Data to Display"},
-                            ],
-                            style_header={
-                                "fontSize": "14px",
-                                "border": "none",
-                                "textAlign": "center",
-                                "color": "#6783a9",
-                                "fontFamily": "Montserrat, sans-serif",
-                                "height": "30vh",
-                            },
-                            style_data={
-                                "display": "none",
-                            },
-                        ),
+                        empty_table("No Data to Display.")
                     ),                   
                 ],
                 className = "pretty-container four columns"
@@ -1337,29 +1207,39 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
     table_size = len(data.columns)
 
+    # this is annoying, but some labels are passed as lists so they can include html
+    # elements (html.U() & html.Br()) - so we need to remove these elements and convert
+    # to a string for empty tables.
+    if len(label) == 1:
+        string_label = label[0]
+    else:
+        clean_label = " ".join(str(l) for l in label)
+        string_label = clean_label.replace("Br(None) ", '').replace("U('", '').replace("') ", '') 
+
     if len(data.index) == 0 or table_size == 1:
-        table = [
-            html.Div(
-                [
-                    html.Label(label, className="label__header"),
-                    html.Div(
-                        dash_table.DataTable(
-                            columns = [
-                                {"id": "emptytable", "name": "No Data to Display"},
-                            ],
-                            style_header={
-                                "fontSize": "14px",
-                                "border": "none",
-                                "textAlign": "center",
-                                "color": "#6783a9",
-                                "fontFamily": "Inter, sans-serif",
-                            },
-                        )
-                    )
-                ],
-                className = "pretty-container ten columns"
-            )
-        ]
+        table = no_data_table("No Data to Display.", string_label, "ten")
+        # [
+        #     html.Div(
+        #         [
+        #             html.Label(label, className="label__header"),
+        #             html.Div(
+        #                 dash_table.DataTable(
+        #                     columns = [
+        #                         {"id": "emptytable", "name": "No Data to Display"},
+        #                     ],
+        #                     style_header={
+        #                         "fontSize": "14px",
+        #                         "border": "none",
+        #                         "textAlign": "center",
+        #                         "color": "#6783a9",
+        #                         "fontFamily": "Inter, sans-serif",
+        #                     },
+        #                 )
+        #             )
+        #         ],
+        #         className = "pretty-container ten columns"
+        #     )
+        # ]
 
     else:
 
@@ -1394,7 +1274,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
         # different column headers for AHS
 
-        if data['Category'].str.contains('1.1.|1.2.a.').any() == True:
+        if data['Category'].str.contains('1.1|1.2.a').any() == True:
             data.columns = data.columns.str.replace("School", "Value", regex=True)
             school_headers = [y for y in data.columns.tolist() if "Value" in y]
         else:
@@ -1701,12 +1581,11 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # we use dash-mantine-components: a dmc.Table inside of a dmc.HoverCard
 
         # Metric definitions are stored in a dictionary keyed to the metric number in load_data.py.
-        metric_id = re.findall(r"[\d\.]+[a-z]{1}|[\d\.]+", label[0]) # [\d+\.]+[a-z]
+        metric_id = re.findall(r"[\d\.]+[a-z]{1}|[\d\.]+", label[0])
 
         def create_tooltip(id: list) -> Tuple[list,list]:
 
-            # TODO: Fix 1.7.a and 1.7.b (HS) - move to separate tables
-            # TODO: Fix separation of AHS 1.2.a and 1.2.b
+            # TODO: AHS - split out 1.1, 1.3, 1.2.a and 1.2.b
             # NOTE: There is a known bug in HoverCard that can cause the browser to hang if the pop
             # up opens in a space where there is no room for it (e.g., if it is set to position "top"
             # and it is triggered by something at the top of the browser window. One workaround is to
@@ -1720,7 +1599,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 body = []
             else:
                 # These metrics share ratings with their counterparts (1.1.b,1.4.f,& 1.7.d)
-                if id[0] == "1.1.a" or id[0] == "1.4.e" or id[0] == "1.7.c":
+                # 1.1.c and 1.7.a have been merged
+                if id[0] == "1.1.a" or id[0] == "1.1.c" or id[0] == "1.4.e" or id[0] == "1.7.a" or id[0] == "1.7.c":
                     header_string = id[0] + " & " + id[1]
                 else:
                     header_string = id[0]

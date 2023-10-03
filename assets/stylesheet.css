@@ -1,7 +1,7 @@
 /*  ICSB Dashboard - Stylesheet
-    author:   jbetley
-    version:  1.10
-    date:     08/31/23
+    author:   jbetley (https://github.com/jbetley)
+    version:  1.11
+    date:     10/03/23
 
     source: https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css
 */
@@ -637,6 +637,25 @@ hr {
 
 /** Plotly Dash Overrides **/
 
+/* Overrides certain styles within the hoverlayer (for x hover mode) */
+.hoverlayer > .hovertext > path {
+  stroke-width: 0px !important;
+  stroke: none !important;
+}
+
+.hoverlayer > .hovertext > text.nums {
+  font-weight: 500;
+  fill:#ffffff !important;
+}
+
+.hoverlayer > .axistext > path {
+  fill: steelblue !important;
+}
+
+.hoverlayer > .axistext > text {
+  font-weight: 600;
+}
+
 /* Overides base color of all dropdown menu options */
 .VirtualizedSelectOption {
   background-color: white;
@@ -849,68 +868,13 @@ button:not(:disabled) {
   opacity: 0.65;
 }
 
-/** ADAPT THIS TO FIT EXISTING ELEMENTS TO EXIST IN FLEX-LAND **/
-/* TODO: Think this is about positioning for small/mobie screen sizes*/
-#individual_graph,
-#aggregate_graph {
-  width: calc(100% - 30px);
-  position: absolute;
-}
-
-#count_graph {
-  position: absolute;
-  height: calc(100% - 30px);
-  width: calc(100% - 30px);
-}
-
-#header {
+/* #header {
   align-items: center;
-}
-
-#rightCol {
+} */
+/* #rightCol {
   display: flex;
   flex-direction: column;
-}
-
-#countGraphContainer {
-  flex: 5;
-  position: relative;
-}
-
-#wells {
-  flex: 1;
-}
-
-#gas {
-  margin-right: 0;
-  padding-right: 0;
-  flex: 1;
-}
-
-#aggregate_data {
-  align-items: center;
-}
-
-#oil {
-  margin-right: 0;
-  padding-right: 0;
-  margin-left: 0;
-  padding-left: 0;
-  flex:1;
-}
-
-#water {
-  margin-left: 0;
-  padding-left: 0;
-  flex: 1;
-}
-
-#tripleContainer {
-  display: flex;
-  flex: 3;
-}
-
-/*****************/
+} */
 
 /** Nav and SubNav Links **/
 /* TODO: Not working consistently across pages - doesn't stay active when selected */

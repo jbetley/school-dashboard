@@ -1,7 +1,7 @@
 #########################
 # ICSB School Dashboard #
 #########################
-# author:    jbetley
+# author:    jbetley (https://github.com/jbetley) 
 # version:  1.11
 # date:     10/03/23
 
@@ -484,6 +484,9 @@ def layout():
         )
     ],
 )
+
+# for page in dash.page_registry.values():
+#     print(page)
 
 # testing layout as a function - not sure its faster
 app.layout = layout 

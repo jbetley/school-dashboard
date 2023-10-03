@@ -1,7 +1,7 @@
 #######################################################
 # ICSB Dashboard - Academic Information - Proficiency #
 #######################################################
-# author:   jbetley
+# author:   jbetley (https://github.com/jbetley)
 # version:  1.11
 # date:     10/03/23
 
@@ -25,7 +25,7 @@ from pages.calculations import round_percentages, conditional_fillna
 
 from pages.subnav import subnav_academic_information
 
-dash.register_page(__name__, top_nav=False,  order=7)
+dash.register_page(__name__, top_nav=False, name = "Academic Proficiency", path = "/academic_data_proficiency",  order=7)
 
 # Proficiency School Type (applies only to K12 schools)
 @callback(      
@@ -206,7 +206,7 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
 
-    no_display_data = no_data_page("No Data to Display","Academic Proficiency")
+    no_display_data = no_data_page("No Data to Display.","Academic Proficiency")
 
     # HS and AHS do not have proficiency data
 
@@ -221,7 +221,7 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
         # K12 schools having both proficiency and HS data and HS/AHS only having HS data
         if selected_school_type == "K12" and radio_type == "hs":
 
-            location = "/info/proficiency"
+            location = "/academic_data_proficiency"
 
             # load HS academic data
             selected_raw_hs_school_data = get_high_school_academic_data(school)
@@ -325,9 +325,8 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
 
         elif (selected_school_type == "K8" or selected_school_type == "K12" or \
             (selected_school_id == 5874 and selected_year_numeric >= 2021)) and radio_type == "k8":
-            # TODO: Check CHS/CHWM timeline - what year did the change happen
 
-            location = "/info/proficiency"
+            location = "/academic_data_proficiency"
 
             selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
@@ -467,7 +466,7 @@ def update_academic_proficiency_page(school: str, year: str, radio_type: str, ra
                     if len(attendance_rate.index) > 0 and len(attendance_rate.columns) > 1:
                         attendance_table = create_single_header_table(attendance_rate,"Attendance Data")
                     else:
-                        attendance_table = no_data_table("No Data to Display","Attendance Data","six")
+                        attendance_table = no_data_table("No Data to Display.","Attendance Data","six")
 
                     attendance_table = set_table_layout(attendance_table, attendance_table, attendance_rate.columns)
 

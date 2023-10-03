@@ -1,9 +1,9 @@
 #########################################
 # ICSB Dashboard - Clean & Process Data #
 #########################################
-# author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# author:   jbetley (https://github.com/jbetley)
+# version:  1.11
+# date:     10/03/23
 
 # TODO: Explore serverside disk caching for data loading
 #https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835

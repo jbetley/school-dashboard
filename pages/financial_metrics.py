@@ -1,7 +1,7 @@
 ######################################
 # ICSB Dashboard - Financial Metrics #
 ######################################
-# author:   jbetley
+# author:   jbetley (https://github.com/jbetley)
 # version:  1.11
 # date:     10/03/23
 
@@ -76,7 +76,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
-    no_data_to_display = no_data_page("Financial Metrics")
+    no_data_to_display = no_data_page("No Data to Display.", "Financial Metrics")
 
     selected_year_string = year
     selected_year_numeric = int(selected_year_string)
@@ -115,7 +115,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
         # Networks do not have financial indicators
         if len(financial_indicators.columns) <= 1 or financial_indicators.empty:
-            financial_indicators_table = no_data_page("Financial Indicators")
+            financial_indicators_table = no_data_page("No Data to Display.", "Financial Indicators")
 
         else:
 

@@ -1,7 +1,7 @@
 ##############################################
 # ICSB Dashboard - Database Queries (SQLite) #
 ##############################################
-# author:   jbetley
+# author:   jbetley (https://github.com/jbetley)
 # version:  1.11
 # date:     10/03/23
 
@@ -92,10 +92,11 @@ metric_strings = {
                 "", 
                 "More than one percent (1%) below the school corporation average."],
 
-    "1.1.c": ["More than ninety percent (90%) of the students eligible to return to the school re-enrolled.",
-              "Between eighty and ninety percent (80-90%) of the students eligible to return to the school re-enrolled.",
-              "Between seventy and eighty percent (70-80%) of the students eligible to return to the school re-enrolled.",
-              "Less than seventy percent (70%) of the students eligible to return to the school re-enrolled."],
+    # combined 1.1.c and 1.1.d
+    "1.1.c": ["More than ninety percent (90%) of the students eligible to return to the school re-enrolled the next year (85% re-enrolled year over year).",
+              "Between eighty and ninety percent (80-90%) of the students eligible to return to the school re-enrolled the next year (75-85% re-enrolled year over year).",
+              "Between seventy and eighty percent (70-80%) of the students eligible to return to the school re-enrolled the next year (70-75% re-enrolled year over year).",
+              "Less than seventy percent (70%) of the students eligible to return to the school re-enrolled the next year (70% re-enrolled year over year)."],
 
     "1.1.d": ["More than eighty-five percent (85%) of the students eligible to return to the school re-enrolled over time.",
               "Between seventy-five and eighty-five percent (75-85%) of the students eligible to return to the school re-enrolled over time.",
@@ -163,10 +164,11 @@ metric_strings = {
                 "Less than a two percent (2%) increase from the previous year for the subgroup.",
                 "Decrease from the previous school year for the subgroup."],   
 
-    "1.7.a": ["Equal to or greater than the state average.",
-                "Within five percent (5%) of the state average.",
-                "Between six and fifteen percent (6-15%) below the state average.",
-                "More than fifteen percent (15%) below the state average."],   
+    # combined 1.7.a and 1.7.b
+    "1.7.a": ["Equal to or greater than the state average (than traditional public school(s)).",
+                "Within five percent (5%) of the state average (of traditional public school(s)).",
+                "Between six and fifteen percent (6-15%) below the state average (6-10% below traditional public school(s)).",
+                "More than fifteen percent (15%) below the state average (10% below traditional public school(s))."],   
 
     "1.7.b": ["Equal to or greater than traditional public school(s).",
                 "Within five percent (5%) of traditional public school(s).",

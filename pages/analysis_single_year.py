@@ -1,7 +1,7 @@
 ####################################################
 # ICSB Dashboard - Academic Analysis - Single Year #
 ####################################################
-# author:   jbetley 
+# author:   jbetley (https://github.com/jbetley) 
 # version:  1.11
 # date:     10/03/23
 
@@ -322,8 +322,8 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
     sat_subgroup_math = []
     sat_subgroup_container = {"display": "none"}
 
-    k8_analysis_no_data = no_data_page("Comparison Data - K-8 Academic Data")
-    hs_analysis_no_data = no_data_page("Comparison Data - High School Academic Data")
+    k8_analysis_no_data = no_data_page("No Data to Display.", "Comparison Data - K-8 Academic Data")
+    hs_analysis_no_data = no_data_page("No Data to Display.", "Comparison Data - High School Academic Data")
 
     academic_analysis_notes_label = ""    
     academic_analysis_notes_string = ""
@@ -534,7 +534,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                     raw_comparison_data['Test Year'] = pd.to_numeric(raw_comparison_data[tested_year], errors="coerce")
 
                     if raw_comparison_data['Test Year'].isnull().all():
-                        no_data_to_display = no_data_page("Academic Analysis","No Available Data with a sufficient n-size.")
+                        k8_analysis_no_data = no_data_page("No Available Data.", "Comparison Data - K-8 Academic Data")
                     
                     elif tested_year in raw_comparison_data.columns:
 
@@ -653,7 +653,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                         else:
                             # NOTE: This should never ever happen. So yeah.
                             fig14c_chart = no_data_fig_label("Comparison: Current Year ELA Proficiency",200)
-                            fig14c_table = no_data_table(["ELA Proficiency"])
+                            fig14c_table = no_data_table("No Data to Display.", "ELA Proficiency")
 
                         fig14c = create_barchart_layout(fig14c_chart,fig14c_table)
 
@@ -688,7 +688,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                         
                         else:
                             fig14d_chart = no_data_fig_label("Comparison: Current Year Math Proficiency",200)
-                            fig14d_table = no_data_table(["Math Proficiency"])
+                            fig14d_table = no_data_table("No Data to Display.", "Math Proficiency")
 
                         fig14d = create_barchart_layout(fig14d_chart,fig14d_table)
 
@@ -725,7 +725,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
 
                         else:
                             fig_iread_chart = no_data_fig_label("Comparison: Current Year IREAD Proficiency",200)
-                            fig_iread_table = no_data_table(["IREAD Proficiency"])
+                            fig_iread_table = no_data_table("No Data to Display.", "IREAD Proficiency")
 
                         fig_iread = create_barchart_layout(fig_iread_chart,fig_iread_table)
 

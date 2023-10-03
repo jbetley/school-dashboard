@@ -1,7 +1,7 @@
 ##################################
 # ICSB Dashboard - Subnavigation #
 ##################################
-# author:   jbetley
+# author:   jbetley (https://github.com/jbetley)
 # version:  1.11
 # date:     10/03/23
 
@@ -38,7 +38,23 @@ def subnav_academic_information():
                     active='partial'
                 )
                 for page in dash.page_registry.values()
-                if page["path"].startswith("/info")
+                if page["path"].startswith("/academic_data")
             ],
         ),
     )
+
+# def subnav_academic_information():
+#     return html.Div(
+#         dbc.Nav(
+#             [
+#                 dbc.NavLink(
+#                     page['name'],
+#                     href=page['path'],
+#                     className = 'tab',
+#                     active='partial'
+#                 )
+#                 for page in dash.page_registry.values()
+#                 if page["path"].startswith("/info")
+#             ],
+#         ),
+#     )

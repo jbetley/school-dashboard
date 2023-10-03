@@ -1,19 +1,18 @@
 #######################################
 # ICSB Dashboard - Charting Functions #
 #######################################
-# author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# author:   jbetley (https://github.com/jbetley)
+# version:  1.11
+# date:     10/03/23
 
+from dash import html, dcc
 import plotly.express as px
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from dash import html, dcc
 from .calculations import check_for_insufficient_n_size, check_for_no_data
 from .string_helpers import customwrap
-import time
 
 # Colors
 # https://codepen.io/ctf0/pen/BwLezW
@@ -67,7 +66,6 @@ def no_data_fig_blank() -> dict:
     fig = go.Figure()
     
     fig.update_layout(
-        # margin=dict(l=10, r=10, t=20, b=0),
         height = 400,
         xaxis =  {
             'visible': False,
@@ -79,9 +77,7 @@ def no_data_fig_blank() -> dict:
         },
         annotations = [
             {
-                'text': 'No Data to Display . . .',
-                # 'y': 0.5,
-                # 'x': 0.25,
+                'text': 'No Data to Display.',
                 'align': "center",
                 'xref': 'paper',
                 'yref': 'paper',
@@ -100,9 +96,10 @@ def no_data_fig_blank() -> dict:
 
     return fig
 
-def no_data_fig_label(label: str = 'No Data to Display', height: int = 400, table_type: str = "ugly") -> list:
+def no_data_fig_label(label: str = 'No Data to Display.', height: int = 400, table_type: str = "ugly") -> list:
     """
-    Creates a blank fig with with a label and default height
+    Creates a blank fig with with a label and default height. ugly has no container, pretty wraps table
+    in a pretty_container.
 
     Args:
         label (str, optional): figure label. Defaults to 'No Data to Display'.
@@ -115,7 +112,6 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400, tabl
     fig = go.Figure()
     
     fig.update_layout(
-        # margin=dict(l=10, r=10, t=20, b=0),
         height = height,
         xaxis =  {
             'visible': False,
@@ -127,9 +123,7 @@ def no_data_fig_label(label: str = 'No Data to Display', height: int = 400, tabl
         },
         annotations = [
             {
-                'text': 'No Data to Display . . .',
-                # 'y': 0.5,
-                # 'x': 0.25,
+                'text': 'No Data to Display.',
                 'align': "center",
                 'xref': 'paper',
                 'yref': 'paper',
@@ -191,8 +185,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     Returns:
         list: a plotly dash html layout in the form of a list containing a string and a stacked bar chart figure (px.bar)
     """
-
-    t12 = time.process_time()
 
     data = values.copy()
     stacked_color = ['#df8f2d', '#ebbb81', '#96b8db', '#74a2d7']
@@ -283,7 +275,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
         )
     ]
 
-    print(f'Time to process stacked bar chart: ' + str(time.process_time() - t12))    
     return fig_layout
 
 def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
@@ -300,8 +291,6 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
         and another string(s) if certain conditions are met.
     """
 
-    t9 = time.process_time()
-    
     data = values.copy()
 
     school_cols = [i for i in data.columns if i not in ['Year']]
@@ -311,9 +300,6 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
         data, no_data_string = check_for_no_data(data)
 
         nsize_string = check_for_insufficient_n_size(data)
-
-        # print(no_data_string)
-        # print(nsize_string)
 
         for school in school_cols:
             data[school]=pd.to_numeric(data[school], errors='coerce')
@@ -362,7 +348,6 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
             fig.update_layout(                      # type: ignore
                 hoverlabel = dict(
                     namelength = -1,
-                    # align = "left",
                 ), 
                 margin=dict(l=40, r=40, t=10, b=0),
                 title_x=0.5,
@@ -393,7 +378,7 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
                     xanchor="right",
                     x=-.05
                 ),
-                hovermode='x', # unified',
+                hovermode='x',
                 height=400,
                 legend_title='',
             )
@@ -542,11 +527,9 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
                         ]
                     )
             ]
-
-    print(f'Processing Multi-line chart: ' + str(time.process_time() - t9))
-    
+   
     return fig_layout
-###
+
 def make_line_chart(values: pd.DataFrame) -> list:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
@@ -561,8 +544,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
         and another string(s) if certain conditions are met.
     """
 
-    t9 = time.process_time()
-    
     data = values.copy()
 
     data.columns = data.columns.str.split('|').str[0]
@@ -723,11 +704,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 range_vals = [0,1]  # type: list[float]
             else:
                 range_vals = [0,data_max + .05]
-
-            # elif data_max < .5:
-            #     range_vals = [0,.5] 
-            # else:
-            #     range_vals = [0,data_max + .1]
 
             fig.update_yaxes(       # type: ignore
                 title='',
@@ -895,8 +871,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
                         ]
                     )
             ]
-
-    print(f'Processing line chart: ' + str(time.process_time() - t9))
     
     return fig_layout
 
@@ -919,7 +893,7 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
 
     color = ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
     
-    fig = make_subplots() #specs=[[{"secondary_y": False}]]
+    fig = make_subplots()
 
     if 'Growth' in label:
         ytick ='.0%'
@@ -942,17 +916,18 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
                 line={'dash': 'solid'},
                 customdata = [f'{i:.2%}' for i in data_162[col]] if 'Growth' in label else [f'{i:.1f}' for i in data_162[col]],
                 text = [f'{i}' for i in data_me.columns],
+                
                 # NOTE: the legendgroup variable separates each dataframe into a separate
                 # legend group, which is great because it allows you to turn on and off each
                 # group. However, it looks bad because it does not currently allow you to display
-                # the legends horizontally. Matter of preference
+                # the legends horizontally. It is a matter of preference
                 # legendgroup = '1',    
                 # legendgrouptitle_text="Majority Enrolled"
             ),
             secondary_y=False,
         )
 
-        # NOTE: This adds scatter traces for the 162-Day data
+        # NOTE: Uncomment to add scatter traces for 162-Day data (it gets cluttered fast)
         # fig.add_trace(
         #     go.Scatter(
         #         x=data_162.index,
@@ -1022,6 +997,7 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
             ]
         )
     )
+
     # NOTE: annotation is used as a master legend to identify 162-day vs 162-ME scatter lines
     # diamond - &#9670;	&#x25C6;
     # square - &#9632;	&#x25A0;
@@ -1125,7 +1101,6 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
                 font_family='Inter, sans-serif',
                 align = "left"
             ),
-            # hoverlabel_align = 'left'
         )
 
         fig.update_traces(

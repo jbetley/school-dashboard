@@ -1,9 +1,9 @@
 ##########################################
 # ICSB Dashboard - Calculation Functions #
 ##########################################
-# author:   jbetley
-# version:  1.10
-# date:     09/10/23
+# author:   jbetley (https://github.com/jbetley)
+# version:  1.11
+# date:     10/03/23
 
 # NOTE: having a lot of mypy typing issues. Not sure how to resolve.
 

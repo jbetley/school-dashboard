@@ -1,7 +1,7 @@
 ##########################################
 # ICSB Dashboard - Financial Information #
 ##########################################
-# author:   jbetley
+# author:   jbetley (https://github.com/jbetley)
 # version:  1.11
 # date:     10/03/23
 

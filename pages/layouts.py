@@ -1,7 +1,7 @@
 #####################################
 # ICSB Dashboard - Layout Functions #
 #####################################
-# author:   jbetley
+# author:   jbetley (https://github.com/jbetley)
 # version:  1.11
 # date:     10/03/23
 
@@ -313,37 +313,37 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
 
         html.Div(
             [
-        html.Label(label, className="label__header"),
-        html.Div(
-            [
+                html.Label(label, className="label__header"),
                 html.Div(
                     [
-                        html.Div(table, style={"marginTop": "20px"}),
-                        html.P(""),
-                        html.P("Hover over each data point to see N-Size.",
-                        style={
-                            "color": "#6783a9",
-                            "fontSize": 10,
-                            "textAlign": "left",
-                            "marginLeft": "10px",
-                            "marginRight": "10px",
-                            "marginTop": "20px",
-                            "paddingTop": "5px",
-                            "borderTop": ".5px solid #c9d3e0",
-                            },
+                        html.Div(
+                            [
+                                html.Div(table, style={"marginTop": "20px"}),
+                                html.P(""),
+                                html.P("Hover over each data point to see N-Size.",
+                                style={
+                                    "color": "#6783a9",
+                                    "fontSize": 10,
+                                    "textAlign": "left",
+                                    "marginLeft": "10px",
+                                    "marginRight": "10px",
+                                    "marginTop": "20px",
+                                    "paddingTop": "5px",
+                                    "borderTop": ".5px solid #c9d3e0",
+                                    },
+                                ),
+                            ],
+                            className="pretty-container six columns",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(fig),
+                            ],
+                            className="pretty-container six columns",
                         ),
                     ],
-                    className="pretty-container six columns",
+                    className="bare-container--flex--center twelve columns",
                 ),
-                html.Div(
-                    [
-                        html.Div(fig),
-                    ],
-                    className="pretty-container six columns",
-                ),
-            ],
-            className="bare-container--flex--center twelve columns",
-        ),
             ],
             className="bare-container--relative twelve columns",
         ),
@@ -406,7 +406,7 @@ def create_year_over_year_layout (school, data, label, msg):
         msg = "No Data for Selected School."
 
     # if school was dropped because it has no data return empty table
-    if data['School ID'][0] != np.int64(school): #np.int64(school) not in data['School ID']:df.iloc[:, 3]
+    if data['School ID'][0] != np.int64(school):
         layout = no_data_page(label, msg)
 
     else:

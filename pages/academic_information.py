@@ -1,7 +1,7 @@
 #######################################################
 # ICSB Dashboard - Academic Information - High School #
 #######################################################
-# author:   jbetley 
+# author:   jbetley (https://github.com/jbetley) 
 # version:  1.11
 # date:     10/03/23
 
@@ -69,14 +69,14 @@ def update_academic_information_page(school: str, year: str):
     subnav_container = {"display": "none"}
     academic_information_notes_container = {"display": "none"}
 
-    no_display_data = no_data_page("","Academic Information")
+    no_display_data = no_data_page("No Data to Display.","Academic Information")
 
     if selected_school_type == "K8" or selected_school_type == "K12":
         empty_container = {"display": "none"}
         main_container = {"display": "block"}
         subnav_container = {"display": "block"}
 
-        location = "/info/proficiency"
+        location = "/academic_data_proficiency"
 
         # NOTE: There is a special exception for Christel House South - prior to 2021,
         # CHS was a K12. From 2021 onwards, CHS is a K8, with the high school moving to

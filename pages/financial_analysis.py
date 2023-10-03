@@ -1,7 +1,7 @@
 #######################################
 # ICSB Dashboard - Financial Analysis #
 #######################################
-# author:   jbetley
+# author:   jbetley (https://github.com/jbetley)
 # version:  1.11
 # date:     10/03/23
 
@@ -86,7 +86,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
-    no_data_to_display = no_data_page("Financial Analysis")
+    no_data_to_display = no_data_page("No Data to Display.", "Financial Analysis")
 
     selected_year_string = year
     selected_year_numeric = int(selected_year_string)
@@ -587,7 +587,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     ),
                 ]
             else:
-                financial_ratios_table  = no_data_table(["Financial Ratios"])
+                financial_ratios_table  = no_data_table("No Data to Display.", "Financial Ratios")
 
     return (
         revenue_expenses_fig, assets_liabilities_fig, financial_position_table,financial_activities_table,

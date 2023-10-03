@@ -1,8 +1,8 @@
 ##############################################
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
-# version:  1.10
-# date:     09/10/23
+# version:  1.11 (https://github.com/jbetley)
+# date:     10/03/23
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -36,7 +36,7 @@ def update_organizational_compliance(school, year):
     
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 
-        org_compliance_table = no_data_table("Organizational and Operational Accountability")    
+        org_compliance_table = no_data_table("No Data to Display.", "Organizational and Operational Accountability")    
 
     else:
 

@@ -1,10 +1,11 @@
 #######################################
 # ICSB Dashboard - About/Demographics #
 #######################################
-# author:   jbetley 
+# author:   jbetley (https://github.com/jbetley)
 # version:  1.11
 # date:     10/03/23
 
+# TODO: CHWM Breaks this page ("index 0 out of bounds")
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
@@ -454,7 +455,6 @@ def update_about_page(year: str, school: str):
             # strip any (Q#) suffix
             adm_values.columns = adm_values.columns.str[:4]
 
-            print(adm_values)
             # turn single row dataframe into two lists (column headers and data)
             adm_data=adm_values.iloc[0].tolist()
             years=adm_values.columns.tolist()
