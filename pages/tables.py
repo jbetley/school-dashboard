@@ -232,21 +232,28 @@ def no_data_table(text: str, label: str = "Academic Data", width: str = "four") 
     Args:
         label (list): table label
         text (list): table content
+        width (str): text number of columns (one - twelve) or "none" - if none,
+                    no container is used
 
     Returns:
         table_layout (list): a dash html.Label object and html.Div object enclosing a dash DataTable
     """
 
-    table_layout = [
-            html.Div(
-                [        
-                    html.Label(label, className="label__header"),
-                    html.Div(empty_table(text),  className = "empty-table"),
-                ],
-                className = "pretty-container " + width + " columns"
-            ),
-        ]
-
+    if width == "none":
+        table_layout = [
+                        html.Label(label, className="label__header"),
+                        html.Div(empty_table(text),  className = "empty-table"),
+            ]
+    else:
+        table_layout = [
+                html.Div(
+                    [        
+                        html.Label(label, className="label__header"),
+                        html.Div(empty_table(text),  className = "empty-table"),
+                    ],
+                    className = "pretty-container " + width + " columns"
+                ),
+            ]
     return table_layout
 
 def no_data_page(text: str, label: str = "Academic Data") -> list:
@@ -1835,15 +1842,15 @@ def create_financial_analysis_table(data: pd.DataFrame, categories: list) -> lis
     tmp_category = category_data["Category"]
     category_data = category_data.drop("Category", axis=1)
 
-    # only calculate "% Change" if the number of columns with all zeros is
-    # equal to 0 (e.g., all columns have nonzero values) force % formatting
-
     # special case for revenue per student table
+
     if "ADM Average" in categories:
         # divide category by ADM and then drop ADM row
         category_data = category_data.div(category_data.iloc[len(category_data)-1])
         category_data = category_data.iloc[:-1]
-    
+
+    # only calculate "% Change" if the number of columns with all zeros is
+    # equal to 0 (e.g., all columns have nonzero values) force % formatting    
     # Find % change for all tables
     if category_data.sum().eq(0).sum() == 0:
 

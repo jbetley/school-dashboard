@@ -52,7 +52,7 @@ def update_academic_information_page(school: str, year: str):
     selected_school_type = selected_school["School Type"].values[0]
     selected_school_id = int(selected_school["School ID"].values[0])
 
-    # default styles (all values empty - only empty_container displayed)\
+    # default styles (all values empty - only empty_container displayed)
     hs_grad_overview_table = []
     hs_grad_ethnicity_table = []
     hs_grad_subgroup_table = []

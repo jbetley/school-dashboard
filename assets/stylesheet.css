@@ -1164,6 +1164,13 @@ label > .label-body {
   border-top: .5px solid rgb(201,211,224);
 }
 
+.banner {
+  color: #6783a9;
+  font-size: 14px;
+  font-weight: 400;
+  border-top: .5px solid rgb(201,211,224);
+  border-bottom: .5px solid rgb(201,211,224);
+}
 /** Logout Button **/
 .logout-button {
   text-transform: uppercase;

@@ -43,7 +43,7 @@ def radio_category_selector(current_page: str, radio_category_options: list, rad
 
     current_page = current_page.rsplit("/", 1)[-1]
 
-    if current_page == "growth":
+    if current_page == "academic_data_growth":
 
         if radio_category_value:
             category_value = radio_category_value

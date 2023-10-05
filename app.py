@@ -60,7 +60,7 @@ from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 
 import dash
-from dash import dcc, html, Input, Output, callback
+from dash import dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 
 from pages.load_data import get_school_index, get_academic_dropdown_years, get_financial_info_dropdown_years, \
@@ -271,8 +271,12 @@ def set_dropdown_value(charter_options):
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("current-page", "href"),
+    # State("academic-proficiency-type-radio", "value"),
 )
-def set_year_dropdown_options(school_id: str, year: str, current_page: str):
+
+# TODO: Can i use this input in a different file? Figure out how to get proficiency/growth category type here
+
+def set_year_dropdown_options(school_id: str, year: str, current_page: str): #, academic_type: str):
 
     max_dropdown_years = 5
 
@@ -280,6 +284,8 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
     selected_school = get_school_index(school_id)    
     school_type = selected_school["School Type"].values[0]
+
+    # print(academic_type)
 
     # source of available years depends on selected tab (guest schools do not have
     # financial data)
@@ -310,6 +316,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
     #   3) the latest year for which the school has data (if the selected year is later
     #       than the first year of available data); or
     #   4) the selected year.
+    print(year)
     if year is None:
         year_value = str(first_available_year)
     
@@ -321,6 +328,17 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str):
 
     else:
         year_value = str(year)
+
+    # special case to account for the fact that K-8 cannot see 2020 in academic pages while
+    # HS/AHS can - so if you are sitting at 2020 with an HS/AHS and you select a K8 school
+    # you get an actual year (in this case 2019), but could be anything
+
+# TODO: Add special exception for school_type == k12 and tab == highscvhool
+# TODO so if K12 and category == highschool and year == 2020 keep it the same
+    if ("academic" in current_page or selected_school["Guest"].values[0] == "Y") and \
+        (school_type == "K8" or (school_type == "K12" and "academic_type" == "K8")) and \
+         year == 2020:
+        year_value == 2019
 
     if not dropdown_years:
         raise Exception("There is simply no way that you can be seeing this error message.") # except i saw it once

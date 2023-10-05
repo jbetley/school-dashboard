@@ -171,11 +171,9 @@ def update_academic_metrics(school: str, year: str):
                 table_container_14ef = set_table_layout(table_14ef, table_14ef, metric_14ef_data.columns)
 
                 # iread_data
-                iread_data = combined_delta[combined_delta["Category"] == "IREAD"]
+                iread_data = combined_delta[combined_delta["Category"] == "IREAD"].copy()
 
                 if len(iread_data.columns) > 1:
-
-                    iread_data = combined_delta[combined_delta["Category"] == "IREAD"]
 
                     iread_data.loc[iread_data["Category"] == "IREAD", "Category"] = "IREAD Proficient %"
 
@@ -432,6 +430,7 @@ def layout():
                                     [
                                         html.Label("Key", className = "label__header"),        
                                         html.Div(create_proficiency_key()),
+                                        html.P("Hover over table title for metric rating calculations.", className = "banner"),
                                     ],
                                     className = "pretty-container six columns"
                                 ),

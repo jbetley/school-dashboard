@@ -147,10 +147,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     else:
 
-        # If Guest School - load dummy data
-        if selected_school["Guest"].values[0] == "Y":
-            financial_data = get_financial_data("9999")
-
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
@@ -367,15 +363,14 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             assets_liabilities_fig["data"][0]["hovertemplate"]="Net Asset Position<br>$ %{y:,.2f}<extra></extra>"
 
             ## Two Year Finance Tables (Financial Position and Financial Activities)
-
-            # display years is a list of [CY, PY]
+            # display years are two years consisting of Selected Year and Previous Year
             default_headers = ["Category"] + display_years
 
-            # there may be columns with no or partial data at beginning or ending of dataframe,
-            # this deletes any column where more than 80% of the columns values are == 0
-            # (otherwise empty columns may have some data, eg., ADM)
-            # NOTE: This could probably be more precise (compare with that other wierd >31 test).
-            financial_data = financial_data.loc[:, (financial_data==0).mean() < .7]
+            # drop any columns where either ADM Average or State Grants is == 0
+            idx1 = financial_data.index[financial_data['Category'] == "ADM Average"].values[0]
+            idx2 = financial_data.index[financial_data['Category'] == "State Grants"].values[0]
+
+            financial_data = financial_data.loc[:,~((financial_data.loc[idx1]==0) | (financial_data.loc[idx2]==0))]
 
             # if all of the years to display (+ Category) exist in (are a subset of) the dataframe,
             # filter the dataframe by the display header
@@ -411,6 +406,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
             # Table 4: Financial Ratios
             # cannot use create_analysis_table() function here because of need for special operations
+            # In addition, these values come from a separate data set, so may be empty even if other
+            # data is available
             school_corp = int(selected_school["Corporation ID"].values[0])
             financial_ratios_data = get_financial_ratios(school_corp)
             ratio_years = financial_ratios_data["Year"].astype(str).tolist()
@@ -419,7 +416,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             # "network-finance" is being displayed; if there are no rows in financial_ratios_data
             # (empty df); or where there are no years of data in the dataframe that match the years
             # being displayed (the isdisjoint condition is True if the two lists share at least one
-            # element
+            # element)
            
             if radio_value != "network-finance" and (len(financial_ratios_data.index) != 0) and \
                 not set(ratio_years).isdisjoint(default_headers):
@@ -587,7 +584,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     ),
                 ]
             else:
-                financial_ratios_table  = no_data_table("No Data to Display.", "Financial Ratios")
+                financial_ratios_table  = no_data_table("No Data to Display.", "Financial Ratios", "none")
 
     return (
         revenue_expenses_fig, assets_liabilities_fig, financial_position_table,financial_activities_table,

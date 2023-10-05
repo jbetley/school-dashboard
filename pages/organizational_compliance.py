@@ -31,8 +31,6 @@ def update_organizational_compliance(school, year):
         school = "9999"    
 
     financial_data = get_financial_data(school)
-
-    print(financial_data)
     
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 

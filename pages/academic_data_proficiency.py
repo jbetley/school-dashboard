@@ -45,7 +45,7 @@ def radio_type_selector(current_page: str, school: str, radio_type_value: str, r
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
-    if school_type == "K12" and current_page == "proficiency":
+    if school_type == "K12" and current_page == "academic_data_proficiency":
         radio_input_container = {'display': 'block'}
 
         type_options = [

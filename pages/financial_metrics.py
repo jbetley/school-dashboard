@@ -13,7 +13,7 @@ import pandas as pd
 
 from .load_data import max_display_years, get_school_index, get_financial_data
 from .calculate_metrics import calculate_financial_metrics
-from .tables import no_data_page, create_proficiency_key
+from .tables import no_data_page, no_data_table, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
 
 dash.register_page(__name__, top_nav=True, path="/financial_metrics", order=2)
@@ -62,6 +62,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
 @callback(
     Output("financial-metrics-table", "children"),
     Output("financial-indicators-table", "children"),
+    Output("financial-indicators-container", "style"),    
     Output("financial-metrics-definitions-table", "children"),
     Output("financial-metrics-main-container", "style"),
     Output("financial-metrics-empty-container", "style"),
@@ -74,6 +75,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
     if not school:
          raise PreventUpdate
 
+    financial_indicators_container = {"display": "block"}
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
     no_data_to_display = no_data_page("No Data to Display.", "Financial Metrics")
@@ -110,217 +112,14 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         else:
             table_title = "Financial Accountability Metrics (" + financial_data["School Name"][0] + ")"
 
-        # Financial Indicators
-        financial_indicators = financial_data[financial_data["Category"].str.startswith("2.1.")].copy()
-
-        # Networks do not have financial indicators
-        if len(financial_indicators.columns) <= 1 or financial_indicators.empty:
-            financial_indicators_table = no_data_page("No Data to Display.", "Financial Indicators")
-
-        else:
-
-            financial_indicators[["Standard","Description"]] = financial_indicators["Category"].str.split("|", expand=True).copy()
-
-            # reorder and clean up dataframe
-            financial_indicators = financial_indicators.drop(["School ID","School Name","Category"], axis=1)
-            financial_indicators = financial_indicators.dropna(axis=1, how="all")
-            
-            standard = financial_indicators["Standard"]
-            description = financial_indicators["Description"]
-            financial_indicators = financial_indicators.drop(columns=["Standard","Description"])
-            financial_indicators.insert(loc=0, column="Description", value = description)
-            financial_indicators.insert(loc=0, column="Standard", value = standard)
-
-            financial_indicators = convert_to_svg_circle(financial_indicators)
-
-            headers = financial_indicators.columns.tolist()
-            year_headers = [x for x in headers if "Description" not in x and "Standard" not in x]
-
-        financial_indicators_table = [
-            html.Div(
-                [             
-                    html.Div(
-                        [
-                            html.Label("Other Financial Accountability Indicators", className="label__header"),
-                            html.Div(
-                                dash_table.DataTable(
-                                    financial_indicators.to_dict("records"),
-                                    columns=[
-                                        {"name": col,"id": headers[idx], "presentation": "markdown"}
-                                        if col in year_headers
-                                        else {"name": col, "id": headers[idx]}
-                                        for (idx, col) in enumerate(headers)
-                                    ],                                                   
-                                    style_data={
-                                        "fontSize": "12px",
-                                        "fontFamily": "Inter, sans-serif",
-                                        "border": "none"
-                                    },
-                                    style_data_conditional=
-                                    [
-                                        {
-                                            "if": {
-                                                "row_index": "odd"
-                                            },
-                                            "backgroundColor": "#eeeeee",
-                                        }
-                                    ] + [
-                                        {
-                                            "if": {
-                                                "state": "selected"
-                                            },
-                                            "backgroundColor": "rgba(112,128,144, .3)",
-                                            "border": "thin solid silver"
-                                        }
-                                    ] + [
-                                        {
-                                            "if": {
-                                                "column_id": year
-                                            },
-                                            "textAlign": "center",
-                                            "fontWeight": "500",
-                                            "width": "8%",
-                                        } for year in year_headers
-                                    ],
-                                    style_header={
-                                        "height": "20px",
-                                        "backgroundColor": "#ffffff",
-                                        "border": "none",
-                                        "borderBottom": ".5px solid #6783a9",
-                                        "fontSize": "12px",
-                                        "fontFamily": "Inter, sans-serif",
-                                        "color": "#6783a9",
-                                        "textAlign": "center",
-                                        "fontWeight": "bold"
-                                    },
-                                    style_cell={
-                                        "whiteSpace": "normal",
-                                        "height": "auto",
-                                        "textAlign": "center",
-                                        "color": "#6783a9",
-                                    },
-                                    style_cell_conditional=[
-                                        {
-                                            "if": {
-                                                "column_id": "Standard"
-                                            },
-                                            "textAlign": "center",
-                                            "fontWeight": "500",
-                                            "width": "7%",
-                                        },
-                                        {
-                                            "if": {
-                                                "column_id": "Description"
-                                            },
-                                            "width": "45%",
-                                            "textAlign": "Left",
-                                            "fontWeight": "500",
-                                            "paddingLeft": "20px",
-                                        },
-                                    ],
-                                    markdown_options={"html": True},                                                
-                                ),
-                            ),
-                        ],
-                        className = "pretty-container eight columns",
-                    ),
-                ],
-                className = "bare-container--flex--center twelve columns",
-            )
-        ]
-
-        # Financial Metric Definitions
-        # NOTE: At some point would like to style this better. Markdown? or DMC Table (see Academic Metrics tooltips)
-        financial_metrics_definitions_data = [
-        ["Current Ratio = Current Assets ÷ Current Liabilities","Current Ratio is greater than 1.1; or is between 1.0 and 1.1 and the one-year trend is not negative."],
-        ["Days Cash on Hand = Unrestricted Cash ÷ ((Operating Expenses - Depreciation Expense) ÷ 365)","School has greater than 45 unrestricted days cash; or between 30 - 45 unrestricted days cash and the one-year trend is not negative."],
-        ["Annual Enrollment Change = (Current Year ADM - Previous Year ADM) ÷ Previous Year ADM","Annual Enrollment Change increases or shows a current year decrease of less than 10%."],
-        ["Primary Reserve Ratio = Unrestricted Net Assets ÷ Operating Expenses","Primary Reserve Ratio is greater than .25."],
-        ["Change in Net Assets Margin = (Operating Revenues - Operating Expenses) ÷ Operating Revenues ; Aggregated 3-Year Margin = (3 Year Operating Revenues - 3 Year Operating Expense) ÷ 3 Year Operating Revenues","Aggregated Three-Year Margin is positive and the most recent year Change in Net Assets Margin is positive; or Aggregated Three-Year Margin is greater than -1.5%, the trend is positive for the last two years, and Change in Net Assets Margin for the most recent year is positive. For schools in their first and second year of operation, the cumulative Change in Net Assets Margin must be positive."],
-        ["Debt to Asset Ratio = Total Liabilities ÷ Total Assets","Debt to Asset Ratio is less than 0.9."],
-        ["One Year Cash Flow = Recent Year Total Cash - Previous Year Total Cash; Multi-Year Cash Flow = Recent Year Total Cash - Two Years Previous Total Cash","Multi-Year Cash Flow is positive and One Year Cash Flow is positive in two out of three years, including the most recent year. For schools in the first two years of operation, both years must have a positive Cash Flow (for purposes of calculating Cash Flow, the school\"s Year 0 balance is assumed to be zero)."],
-        ["Debt Service Coverage Ratio = (Change in Net Assets + Depreciation/Amortization Expense + Interest Expense + Rent/Lease Expense) ÷ (Principal Payments + Interest Expense + Rent/Lease Expense)","Debt Service Coverage Ratio is greater than or equal to 1.0."]
-        ]
-
-        financial_metrics_definitions_keys = ["Calculation","Requirement to Meet Standard"]
-        financial_metrics_definitions_dict = [dict(zip(financial_metrics_definitions_keys, l)) for l in financial_metrics_definitions_data ]
-
-        financial_metrics_definitions_table = [
-        html.Div(
-            [             
-                html.Div(
-                    [
-                    html.Label("Accountability Metrics Definitions & Requirements", className="label__header"),
-                    html.Div(
-                        dash_table.DataTable(
-                            data = financial_metrics_definitions_dict,
-                            columns = [{"name": i, "id": i} for i in financial_metrics_definitions_keys],
-                            style_data={
-                                "fontSize": "12px",
-                                "border": "none",
-                                "fontFamily": "Inter, sans-serif",
-                            },
-                            style_data_conditional=[
-                                {
-                                    "if": {
-                                        "row_index": "odd"
-                                    },
-                                    "backgroundColor": "#eeeeee",
-                                },
-                                {
-                                    "if": {
-                                        "row_index": 0,
-                                        "column_id": "Calculation"
-                                    },
-                                    "borderTop": ".75px solid rgb(103,131,169)"
-                                },
-                                {
-                                    "if": {
-                                        "state": "selected"
-                                    },
-                                    "backgroundColor": "rgba(112,128,144, .3)",
-                                    "border": "thin solid silver"
-                                }                                        
-                            ],
-                            style_header={
-                                "backgroundColor": "#ffffff",
-                                "fontSize": "12px",
-                                "fontFamily": "Inter, sans-serif",
-                                "color": "#6783a9",
-                                "textAlign": "center",
-                                "fontWeight": "bold",
-                                "text-decoration": "none",
-                                "borderBottom": ".75px solid rgb(103,131,169)"                    
-                            },
-                            style_cell={
-                                "whiteSpace": "normal",
-                                "height": "auto",
-                                "textAlign": "left",
-                                "color": "#6783a9",
-                            },
-                            style_cell_conditional=[
-                                {
-                                    "if": {
-                                        "column_id": "Calculation"
-                                    },
-                                    "width": "50%",
-                                    "fontWeight": "bold"
-                                },
-                            ],
-                            style_as_list_view=True
-                                ),
-                            ),
-                        ],
-                        className = "pretty-container eight columns",
-                    ),
-                ],
-                className = "bare-container--flex--center twelve columns",
-            )
-        ]
-
-    # if df is empty
+    # Financial Metrics
     if (len(financial_data.columns) <= 1 or financial_data.empty):
 
+        financial_metrics_table = no_data_table("No Data to Display.", "Financial Metrics")
+        financial_indicators_table = no_data_table("No Data to Display.", "Financial Indicators")
+        
+        # if no data, show no data page
+        financial_indicators_container = {"display": "none"}
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
 
@@ -337,7 +136,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
 
         if selected_year_numeric < most_recent_finance_year:
             financial_data.drop(financial_data.columns[1:(years_to_exclude+1)], axis=1, inplace=True)
-        
+
         # create empty table if, after dropping excluded years, df has no financial
         # data, or file exists and has one year of data, but does not have a value for
         # State Grants (because the school is in Pre-Opening)
@@ -346,14 +145,21 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
         # maybe think twice (or three times) before doing this)
         if (len(financial_data.columns) <= 1) | ((len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == "0")):
 
+            financial_metrics_table = no_data_table("No Data to Display.", "Financial Metrics")
+            financial_indicators_table = no_data_table("No Data to Display.", "Financial Indicators")
+
+            financial_indicators_container = {"display": "none"}            
             main_container = {"display": "none"}
-            empty_container = {"display": "block"}        
+            empty_container = {"display": "block"}     
         
         else:
 
             # sort Year cols in ascending order (ignore Category)
             financial_data = financial_data.set_index('Category').sort_index(ascending=True, axis=1).reset_index()
 
+            # pull out financial indicators
+            financial_indicators = financial_data[financial_data["Category"].str.startswith("2.1.")].copy()
+    
             # in order for metrics to be calculated properly, we need
             # to temporarily store and remove the (Q#) part of string
             financial_quarter = ""
@@ -390,6 +196,7 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                 financial_metrics_table = []
                 financial_indicators_table = []
                 financial_metrics_definitions_table = []
+                financial_indicators_container = {"display": "none"}                
                 main_container = {"display": "none"}
                 empty_container = {"display": "block"}
 
@@ -576,9 +383,218 @@ def update_financial_metrics(school:str, year:str, radio_value:str):
                     )
                 ]
 
+            # Financial Indicators     
+            # Networks do not have financial indicators
+            if len(financial_indicators.columns) <= 1 or financial_indicators.empty or \
+                    radio_value == "network-finance":
+
+                financial_indicators_table = []
+                financial_indicators_container = {"display": "none"}
+
+            else:
+
+                # keep up to max years of data
+                financial_indicators = financial_indicators.set_index(["Category"])
+
+                indicator_display_years = max_display_years
+                
+                if len(financial_indicators.columns) < max_display_years:
+                    indicator_display_years = len(financial_indicators.columns)
+
+                financial_indicators = financial_indicators.iloc[:,-indicator_display_years:]
+                financial_indicators = financial_indicators.reset_index()
+
+                # split category and cleanup
+                financial_indicators[["Standard","Description"]] = financial_indicators["Category"].str.split("|", expand=True).copy()
+                financial_indicators = financial_indicators.drop(["Category"], axis=1)
+                
+                standard = financial_indicators["Standard"]
+                description = financial_indicators["Description"]
+                financial_indicators = financial_indicators.drop(columns=["Standard","Description"])
+                financial_indicators.insert(loc=0, column="Description", value = description)
+                financial_indicators.insert(loc=0, column="Standard", value = standard)
+
+                financial_indicators = convert_to_svg_circle(financial_indicators)
+
+                headers = financial_indicators.columns.tolist()
+                year_headers = [x for x in headers if "Description" not in x and "Standard" not in x]
+
+                financial_indicators_table = [
+
+                    html.Div (
+                         [
+                            html.Div (
+                                [
+                                    html.Label("Other Financial Accountability Indicators", className="label__header"),
+                                    html.Div(
+                                        dash_table.DataTable(
+                                            financial_indicators.to_dict("records"),
+                                            columns=[
+                                                {"name": col,"id": headers[idx], "presentation": "markdown"}
+                                                if col in year_headers
+                                                else {"name": col, "id": headers[idx]}
+                                                for (idx, col) in enumerate(headers)
+                                            ],                                                   
+                                            style_data={
+                                                "fontSize": "12px",
+                                                "fontFamily": "Inter, sans-serif",
+                                                "border": "none"
+                                            },
+                                            style_data_conditional=
+                                            [
+                                                {
+                                                    "if": {
+                                                        "row_index": "odd"
+                                                    },
+                                                    "backgroundColor": "#eeeeee",
+                                                }
+                                            ] + [
+                                                {
+                                                    "if": {
+                                                        "state": "selected"
+                                                    },
+                                                    "backgroundColor": "rgba(112,128,144, .3)",
+                                                    "border": "thin solid silver"
+                                                }
+                                            ] + [
+                                                {
+                                                    "if": {
+                                                        "column_id": year
+                                                    },
+                                                    "textAlign": "center",
+                                                    "fontWeight": "500",
+                                                    "width": "8%",
+                                                } for year in year_headers
+                                            ],
+                                            style_header={
+                                                "height": "20px",
+                                                "backgroundColor": "#ffffff",
+                                                "border": "none",
+                                                "borderBottom": ".5px solid #6783a9",
+                                                "fontSize": "12px",
+                                                "fontFamily": "Inter, sans-serif",
+                                                "color": "#6783a9",
+                                                "textAlign": "center",
+                                                "fontWeight": "bold"
+                                            },
+                                            style_cell={
+                                                "whiteSpace": "normal",
+                                                "height": "auto",
+                                                "textAlign": "center",
+                                                "color": "#6783a9",
+                                            },
+                                            style_cell_conditional=[
+                                                {
+                                                    "if": {
+                                                        "column_id": "Standard"
+                                                    },
+                                                    "textAlign": "center",
+                                                    "fontWeight": "500",
+                                                    "width": "7%",
+                                                },
+                                                {
+                                                    "if": {
+                                                        "column_id": "Description"
+                                                    },
+                                                    "width": "45%",
+                                                    "textAlign": "Left",
+                                                    "fontWeight": "500",
+                                                    "paddingLeft": "20px",
+                                                },
+                                            ],
+                                            markdown_options={"html": True},                                                
+                                        ),
+                                    )
+                                ],
+                                className = "pretty-container eight columns",
+                            ),
+                        ],
+                        className = "bare-container--flex--center twelve columns",
+                    )
+                ]
+
+        # Financial Metric Definitions - Currently this is always displayed
+        # NOTE: At some point would like to style this better. Markdown? or DMC Table (see Academic Metrics tooltips)
+        financial_metrics_definitions_data = [
+        ["Current Ratio = Current Assets ÷ Current Liabilities","Current Ratio is greater than 1.1; or is between 1.0 and 1.1 and the one-year trend is not negative."],
+        ["Days Cash on Hand = Unrestricted Cash ÷ ((Operating Expenses - Depreciation Expense) ÷ 365)","School has greater than 45 unrestricted days cash; or between 30 - 45 unrestricted days cash and the one-year trend is not negative."],
+        ["Annual Enrollment Change = (Current Year ADM - Previous Year ADM) ÷ Previous Year ADM","Annual Enrollment Change increases or shows a current year decrease of less than 10%."],
+        ["Primary Reserve Ratio = Unrestricted Net Assets ÷ Operating Expenses","Primary Reserve Ratio is greater than .25."],
+        ["Change in Net Assets Margin = (Operating Revenues - Operating Expenses) ÷ Operating Revenues ; Aggregated 3-Year Margin = (3 Year Operating Revenues - 3 Year Operating Expense) ÷ 3 Year Operating Revenues","Aggregated Three-Year Margin is positive and the most recent year Change in Net Assets Margin is positive; or Aggregated Three-Year Margin is greater than -1.5%, the trend is positive for the last two years, and Change in Net Assets Margin for the most recent year is positive. For schools in their first and second year of operation, the cumulative Change in Net Assets Margin must be positive."],
+        ["Debt to Asset Ratio = Total Liabilities ÷ Total Assets","Debt to Asset Ratio is less than 0.9."],
+        ["One Year Cash Flow = Recent Year Total Cash - Previous Year Total Cash; Multi-Year Cash Flow = Recent Year Total Cash - Two Years Previous Total Cash","Multi-Year Cash Flow is positive and One Year Cash Flow is positive in two out of three years, including the most recent year. For schools in the first two years of operation, both years must have a positive Cash Flow (for purposes of calculating Cash Flow, the school\"s Year 0 balance is assumed to be zero)."],
+        ["Debt Service Coverage Ratio = (Change in Net Assets + Depreciation/Amortization Expense + Interest Expense + Rent/Lease Expense) ÷ (Principal Payments + Interest Expense + Rent/Lease Expense)","Debt Service Coverage Ratio is greater than or equal to 1.0."]
+        ]
+
+        financial_metrics_definitions_keys = ["Calculation","Requirement to Meet Standard"]
+        financial_metrics_definitions_dict = [dict(zip(financial_metrics_definitions_keys, l)) for l in financial_metrics_definitions_data ]
+
+        financial_metrics_definitions_table = [
+            html.Label("Accountability Metrics Definitions & Requirements", className="label__header"),
+            html.Div(
+                dash_table.DataTable(
+                    data = financial_metrics_definitions_dict,
+                    columns = [{"name": i, "id": i} for i in financial_metrics_definitions_keys],
+                    style_data={
+                        "fontSize": "12px",
+                        "border": "none",
+                        "fontFamily": "Inter, sans-serif",
+                    },
+                    style_data_conditional=[
+                        {
+                            "if": {
+                                "row_index": "odd"
+                            },
+                            "backgroundColor": "#eeeeee",
+                        },
+                        {
+                            "if": {
+                                "row_index": 0,
+                                "column_id": "Calculation"
+                            },
+                            "borderTop": ".75px solid rgb(103,131,169)"
+                        },
+                        {
+                            "if": {
+                                "state": "selected"
+                            },
+                            "backgroundColor": "rgba(112,128,144, .3)",
+                            "border": "thin solid silver"
+                        }                                        
+                    ],
+                    style_header={
+                        "backgroundColor": "#ffffff",
+                        "fontSize": "12px",
+                        "fontFamily": "Inter, sans-serif",
+                        "color": "#6783a9",
+                        "textAlign": "center",
+                        "fontWeight": "bold",
+                        "text-decoration": "none",
+                        "borderBottom": ".75px solid rgb(103,131,169)"                    
+                    },
+                    style_cell={
+                        "whiteSpace": "normal",
+                        "height": "auto",
+                        "textAlign": "left",
+                        "color": "#6783a9",
+                    },
+                    style_cell_conditional=[
+                        {
+                            "if": {
+                                "column_id": "Calculation"
+                            },
+                            "width": "50%",
+                            "fontWeight": "bold"
+                        },
+                    ],
+                    style_as_list_view=True
+                        ),
+                    )
+        ]
+
     return (
-        financial_metrics_table, financial_indicators_table, financial_metrics_definitions_table,
-        main_container, empty_container, no_data_to_display
+        financial_metrics_table, financial_indicators_table, financial_indicators_container,
+        financial_metrics_definitions_table, main_container, empty_container, no_data_to_display
     )
 
 def layout():
@@ -629,8 +645,23 @@ def layout():
                 html.Div(
                     [                      
                         html.Div(id="financial-metrics-table", children=[]),
-                        html.Div(id="financial-indicators-table", children=[]),
-                        html.Div(id="financial-metrics-definitions-table", children=[]),
+                        html.Div(
+                            [                        
+                                html.Div(id="financial-indicators-table", children=[]),
+                            ],
+                            id = "financial-indicators-container",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [                       
+                                         html.Div(id="financial-metrics-definitions-table", children=[]),
+                                    ],
+                                    className = "pretty-container eight columns",
+                                ),
+                            ],
+                            className = "bare-container--flex--center twelve columns",
+                        )                    
                     ],
                     id = "financial-metrics-main-container",
                 ),
