@@ -73,11 +73,11 @@ def update_about_page(year: str, school: str):
     update_table_label = ""
     update_table_dict = {
         "Date": ["07.12.23", "08.16.23", "08.18.23", "08.18.23", "08.24.23", "09.27.23", "10.03.23"],
-        "Update": ["Added 2023 ILEARN data for all K-8 schools and school corporations.",
-            "Added 2023 IREAD Data for all K-8 schools and school corporations.",
-            "Added 2023 SAT Scores  for all high schools and school corporations.",
-            "Added 2023 Demographic Data  for all schools and school corporations.",
-            "Added 2019-22 Growth Data  for all ICSB schools.",
+        "Update": ["Added 2023 ILEARN data for K-8 schools and school corporations.",
+            "Added 2023 IREAD Data for K-8 schools and school corporations.",
+            "Added 2023 SAT Scores for high schools and school corporations.",
+            "Added 2023 Demographic Data for schools and school corporations.",
+            "Added 2019-22 Growth Data for ICSB schools.",
             "Added Year over Year academic analysis.",
             "Beta site released."
             ],                

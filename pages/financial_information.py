@@ -72,7 +72,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
-    no_data_to_display = no_data_page("Audited Financial Information")
+    no_data_to_display = no_data_page("No Data to Display", "Audited Financial Information")
 
     selected_year_string = year
     selected_year_numeric = int(selected_year_string)
@@ -94,15 +94,19 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
     else:
         
         # school financial data
+        # NOTE: If the selected school is a guest school, load dummy data (Schooly McSchoolface).
+        if selected_school["Guest"].values[0] == "Y":        
+            school ="9999"
+                    
         financial_data = get_financial_data(school)
 
         # don't display the school name in table title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
 
             if selected_school["Guest"].values[0] == "Y":
-                table_title = "Financial Information (Unavailable)"
+                table_title = "Financial Information (SAMPLE DATA)"
             else:
-                table_title = "Audited Financial Information"                
+                table_title = "Audited Financial Information"
         else:
             table_title = "Audited Financial Information (" + financial_data["School Name"][0] + ")"
 

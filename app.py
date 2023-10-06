@@ -237,9 +237,12 @@ def set_dropdown_options(app_state):
 
     else:
         # check for network login (any group_id != 0)
-        if group_id != 0:
-            charters = available_charters[available_charters["GroupID"] == str(abs(group_id))]
+        # if group_id != 0:
 
+        if group_id < 0:
+            
+            charters = available_charters[available_charters["GroupID"] == str(abs(group_id))]
+            print(charters)
         else:
             # select only the authorized school using the id field of the authorized_user
             # object. need to subtract 7 to account for Admin and Network Logins (loc 0-6)

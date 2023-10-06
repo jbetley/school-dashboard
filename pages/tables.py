@@ -225,7 +225,7 @@ def empty_table(text: str) -> dash_table.DataTable:
 
     return empty_table
 
-def no_data_table(text: str, label: str = "Academic Data", width: str = "four") -> list:
+def no_data_table(text: str, label: str = "No Data to Display", width: str = "four") -> list:
     """
     Uses empty_table function and returns empty table with given label and content.
 
@@ -256,7 +256,7 @@ def no_data_table(text: str, label: str = "Academic Data", width: str = "four") 
             ]
     return table_layout
 
-def no_data_page(text: str, label: str = "Academic Data") -> list:
+def no_data_page(text: str, label: str = "No Data to Display") -> list:
     """
     Uses empty_table function and returns empty table with given label and content. This
     table has a fixed column size (eight cols) and is meant to use when there is no data

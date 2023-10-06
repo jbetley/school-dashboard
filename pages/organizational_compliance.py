@@ -38,6 +38,11 @@ def update_organizational_compliance(school, year):
 
     else:
 
+        if selected_school["Guest"].values[0] == "Y":
+            table_title = "Organizational and Operational Accountability (SAMPLE DATA)"
+        else:
+            table_title = "Organizational and Operational Accountability"
+
         financial_data = financial_data.drop(["School ID","School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
@@ -88,80 +93,91 @@ def update_organizational_compliance(school, year):
             # Only want Year headers to be treated as markdown (ensures that svg circles are
             # formatted correctly in each cell). See ".cell-markdown > p" in stylesheet.css)
             org_compliance_table = [
-                        dash_table.DataTable(
-                            organizational_indicators.to_dict("records"),
-                                columns=[
-                                    {"name": i, "id": i, "presentation": "markdown"}
-                                    if i in year_headers
-                                    else {"name": i, "id": i,
-                                }
-                                for i in headers
-                            ],
-                            style_data={
-                                "fontSize": "12px",
-                                "border": "none",
-                                "fontFamily": "Inter, sans-serif",
-                            },
-                            style_data_conditional=
+                html.Div(
+                    [
+                        html.Div(
                             [
-                                {
-                                    "if": {
-                                        "row_index": "odd"
+                                html.Label(table_title, className = "label__header"),                 
+                                dash_table.DataTable(
+                                    organizational_indicators.to_dict("records"),
+                                        columns=[
+                                            {"name": i, "id": i, "presentation": "markdown"}
+                                            if i in year_headers
+                                            else {"name": i, "id": i,
+                                        }
+                                        for i in headers
+                                    ],
+                                    style_data={
+                                        "fontSize": "12px",
+                                        "border": "none",
+                                        "fontFamily": "Inter, sans-serif",
                                     },
-                                    "backgroundColor": "#eeeeee",
-                                }
-                            ] + [
-                                {
-                                    "if": {
-                                        "state": "selected"
+                                    style_data_conditional=
+                                    [
+                                        {
+                                            "if": {
+                                                "row_index": "odd"
+                                            },
+                                            "backgroundColor": "#eeeeee",
+                                        }
+                                    ] + [
+                                        {
+                                            "if": {
+                                                "state": "selected"
+                                            },
+                                            "backgroundColor": "rgba(112,128,144, .3)",
+                                            "border": "thin solid silver"
+                                        }      
+                                    ] + [
+                                        {
+                                            "if": {
+                                                "column_id": year
+                                            },
+                                            "textAlign": "center",
+                                            "fontWeight": "500",
+                                            "width": "5%",
+                                        } for year in year_headers
+                                    ],
+                                    style_header={
+                                        "height": "20px",
+                                        "backgroundColor": "#ffffff",
+                                        "border": "none",
+                                        "borderBottom": ".5px solid #6783a9",
+                                        "fontSize": "12px",
+                                        "fontFamily": "Montserrat, sans-serif",
+                                        "color": "#6783a9",
+                                        "textAlign": "center",
+                                        "fontWeight": "bold"
                                     },
-                                    "backgroundColor": "rgba(112,128,144, .3)",
-                                    "border": "thin solid silver"
-                                }      
-                            ] + [
-                                {
-                                    "if": {
-                                        "column_id": year
+                                    style_cell={
+                                        "whiteSpace": "normal",
+                                        "height": "auto",
+                                        "textAlign": "center",
+                                        "color": "#6783a9",
+                                        "minWidth": "25px", "width": "25px", "maxWidth": "25px",
                                     },
-                                    "textAlign": "center",
-                                    "fontWeight": "500",
-                                    "width": "5%",
-                                } for year in year_headers
+                                    style_cell_conditional=[
+                                        {
+                                            "if": {"column_id": "Standard"},
+                                                "textAlign": "Center",
+                                                "fontWeight": "500",
+                                                "width": "7%"
+                                        },
+                                        {   
+                                            "if": {"column_id": "Description"},
+                                                "width": "50%",
+                                                "textAlign": "Left",
+                                                "fontWeight": "500",
+                                        },
+                                    ],
+                                    markdown_options={"html": True},
+                                )
                             ],
-                            style_header={
-                                "height": "20px",
-                                "backgroundColor": "#ffffff",
-                                "border": "none",
-                                "borderBottom": ".5px solid #6783a9",
-                                "fontSize": "12px",
-                                "fontFamily": "Montserrat, sans-serif",
-                                "color": "#6783a9",
-                                "textAlign": "center",
-                                "fontWeight": "bold"
-                            },
-                            style_cell={
-                                "whiteSpace": "normal",
-                                "height": "auto",
-                                "textAlign": "center",
-                                "color": "#6783a9",
-                                "minWidth": "25px", "width": "25px", "maxWidth": "25px",
-                            },
-                            style_cell_conditional=[
-                                {
-                                    "if": {"column_id": "Standard"},
-                                        "textAlign": "Center",
-                                        "fontWeight": "500",
-                                        "width": "7%"
-                                },
-                                {   
-                                    "if": {"column_id": "Description"},
-                                        "width": "50%",
-                                        "textAlign": "Left",
-                                        "fontWeight": "500",
-                                },
-                            ],
-                            markdown_options={"html": True},
-                        )
+                            className = "pretty-container ten columns",
+                        ),
+                    ],
+                    className = "bare-container--flex--center twelve columns"
+                ),
             ]
     
     org_compliance_definitions_data = [
@@ -277,7 +293,8 @@ def update_organizational_compliance(school, year):
                 },
             ],
         )
-    ]
+
+    ]   
 
     return org_compliance_table, org_compliance_definitions_table
 
@@ -301,24 +318,7 @@ layout = html.Div(
                         className = "row",
                     ),
                     html.Div(""), #className="hide_line"),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Label("Organizational and Operational Accountability", className = "label__header"),
-                                            html.Div(id="org-compliance-table")
-
-                                        ],
-                                        className = "pretty-container ten columns",
-                                    ),
-                                ],
-                                className = "bare-container--flex--center twelve columns"
-                            ),
-                        ],
-                        className = "row",
-                    ),
+                    html.Div(id="org-compliance-table"),
                     html.Div(
                         [
                             html.Div(

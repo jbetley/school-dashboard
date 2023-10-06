@@ -653,7 +653,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                         else:
                             # NOTE: This should never ever happen. So yeah.
                             fig14c_chart = no_data_fig_label("Comparison: Current Year ELA Proficiency",200)
-                            fig14c_table = no_data_table("No Data to Display.", "ELA Proficiency")
+                            fig14c_table = no_data_table("No Data to Display.", "ELA Proficiency", "none")
 
                         fig14c = create_barchart_layout(fig14c_chart,fig14c_table)
 
@@ -688,7 +688,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                         
                         else:
                             fig14d_chart = no_data_fig_label("Comparison: Current Year Math Proficiency",200)
-                            fig14d_table = no_data_table("No Data to Display.", "Math Proficiency")
+                            fig14d_table = no_data_table("No Data to Display.", "Math Proficiency", "none")
 
                         fig14d = create_barchart_layout(fig14d_chart,fig14d_table)
 
@@ -725,7 +725,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
 
                         else:
                             fig_iread_chart = no_data_fig_label("Comparison: Current Year IREAD Proficiency",200)
-                            fig_iread_table = no_data_table("No Data to Display.", "IREAD Proficiency")
+                            fig_iread_table = no_data_table("No Data to Display.", "IREAD Proficiency", "none")
 
                         fig_iread = create_barchart_layout(fig_iread_chart,fig_iread_table)
 
