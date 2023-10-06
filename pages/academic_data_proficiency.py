@@ -25,13 +25,13 @@ from pages.calculations import round_percentages, conditional_fillna
 
 from pages.subnav import subnav_academic_information
 
-dash.register_page(__name__, top_nav=False, name = "Academic Proficiency", path = "/academic_data_proficiency",  order=7)
+dash.register_page(__name__, top_nav=False, name = "Academic Proficiency", path = "/academic_data_proficiency", order=7)
 
 # Proficiency School Type (applies only to K12 schools)
 @callback(      
     Output("academic-proficiency-type-radio", "options"),
     Output("academic-proficiency-type-radio","value"),
-    Output('academic-proficiency-type-radio-container', 'style'),
+    Output("academic-proficiency-type-radio-container", "style"),
     Output("hidden-proficiency", "children"),
     Input("current-proficiency-page", "href"),
     Input("charter-dropdown", "value"),
@@ -64,9 +64,16 @@ def radio_type_selector(current_page: str, school: str, radio_type_value: str, r
 
         radio_input_container = {'display': 'none'}
         type_options = []
-        type_value = ""
+        
+        # set type value for AHS/HS even though options are empty
+        if school_type == "AHS" or school_type == "HS":
+            type_value = "hs"
+        else:
+            type_value = ""
 
-    return type_options, type_value, radio_input_container, current_page
+    store_value = type_value
+
+    return type_options, type_value, radio_input_container, current_page # store_value, 
 
 # Proficiency Category
 @callback(

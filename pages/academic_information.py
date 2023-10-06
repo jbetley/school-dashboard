@@ -17,7 +17,17 @@ from pages.tables import no_data_page, create_multi_header_table_with_container,
 from pages.layouts import set_table_layout
 from pages.subnav import subnav_academic_information
 
-dash.register_page(__name__, path = "/academic_information",  top_nav=False,  order=6)
+# TODO: This page exists solely because it is the only way I can figure out to have a superset
+# TODO: of "Academic Information" that either shows HS data or K8 data with Proficiency &
+# TODO: Growth subsets. If we get rid of this page and rename Proficiency as "Academic Info",
+# TODO: Then we get a Tab and a Subtab with same name
+
+# TODO: Maybe that is okay if I just hide the subnav group if school_type is HS or AHS and show it if
+# TODO: type is K8 or K12 and academic_type is HS
+# TODO: And maybe I just rename it to "Academic Data" See:
+# https://community.plotly.com/t/dash-pages-multi-page-app-with-subtabs-using-dbc-navlinks/72312/15
+# 
+dash.register_page(__name__, path = "/academic_information",  top_nav=False, order=6)
 
 @callback(
     Output('subnav-content', 'href'),
@@ -43,9 +53,9 @@ def update_academic_information_page(school: str, year: str):
     if not school:
         raise PreventUpdate
 
-    # show 2019 instead of 2020 as 2020 has no academic data
-    string_year = year
-    selected_year_string = "2019" if string_year == "2020" else string_year
+    # string_year = year
+    
+    selected_year_string = year #"2019" if string_year == "2020" else string_year
     selected_year_numeric = int(selected_year_string)
 
     selected_school = get_school_index(school)

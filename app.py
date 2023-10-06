@@ -271,12 +271,22 @@ def set_dropdown_value(charter_options):
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("current-page", "href"),
-    # State("academic-proficiency-type-radio", "value"),
+    Input("academic-type-store", "data")
 )
 
-# TODO: Can i use this input in a different file? Figure out how to get proficiency/growth category type here
+# TODO: Problem: K12 schools are the bane of my existence. Need to be able to tell which
+# TODO: set of available years of data to use based on which "academic_type" is selected.
+# TODO: Available years is set in app.py and "academic_type" is set in academic_proficiency.py,
+# TODO: analysis_single_year.py, and analysis_multi_year.py (not academic_info.py or academic_growth.py)
+# TODO: Attempting to use dcc.store to share "academic_type" with app.py from info, proficiency, and
+# TODO: analysis pages to: 1) make sure HS/AHS to 2) K12 (type HS) shows HS data; 2) make
+# TODO: sure HS/AHS at year 2020 shows K12 year 2020 HS data; 3) make sure that K12 shows K8
+# TODO: years for academic_type: k8 and HS years for academic_type hs.
 
-def set_year_dropdown_options(school_id: str, year: str, current_page: str): #, academic_type: str):
+# TODO: currently cannot get dcc.store to work with pages because of academic_prof, academic_info interaction
+# TODO: when adding it get nonexistent Output for proficiency-pages on the academic_information page
+
+def set_year_dropdown_options(school_id: str, year: str, current_page: str, academic_type_store: str):
 
     max_dropdown_years = 5
 
@@ -285,11 +295,10 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str): #, 
     selected_school = get_school_index(school_id)    
     school_type = selected_school["School Type"].values[0]
 
-    # print(academic_type)
-
-    # source of available years depends on selected tab (guest schools do not have
-    # financial data)
-    if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
+    # source of available years depends on selected tab (also, guest
+    # schools do not have financial data)
+    if "academic" in current_page or "analysis_single" in current_page or \
+        "analysis_multiple" in current_page or selected_school["Guest"].values[0] == "Y":
         years = get_academic_dropdown_years(school_id,school_type)
 
     elif "financial_analysis" in current_page:
@@ -316,7 +325,19 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str): #, 
     #   3) the latest year for which the school has data (if the selected year is later
     #       than the first year of available data); or
     #   4) the selected year.
-    print(year)
+
+    # first we account for special case due to fact that K8 has no 2020 academic data while
+    # HS/AHS does or can - so if user is viewing HS/AHS at year 2020 and then selects
+    # a K8 school, we end up with an actual year rather than blank. We do it before the other
+    # checks because the K8 school could also not have 2019
+    # NOTE: Ideally we would track whether the school is a K12 with academic_type = "HS" and
+    # return 2020 - but not sure how to get that variable from academic pages without using
+    # dcc.store, which seems like overkill
+    if ("academic" in current_page or selected_school["Guest"].values[0] == "Y") and \
+        (school_type == "K8" or school_type == "K12") and \
+         year == "2020":
+        year = "2019"
+
     if year is None:
         year_value = str(first_available_year)
     
@@ -329,17 +350,6 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str): #, 
     else:
         year_value = str(year)
 
-    # special case to account for the fact that K-8 cannot see 2020 in academic pages while
-    # HS/AHS can - so if you are sitting at 2020 with an HS/AHS and you select a K8 school
-    # you get an actual year (in this case 2019), but could be anything
-
-# TODO: Add special exception for school_type == k12 and tab == highscvhool
-# TODO so if K12 and category == highschool and year == 2020 keep it the same
-    if ("academic" in current_page or selected_school["Guest"].values[0] == "Y") and \
-        (school_type == "K8" or (school_type == "K12" and "academic_type" == "K8")) and \
-         year == 2020:
-        year_value == 2019
-
     if not dropdown_years:
         raise Exception("There is simply no way that you can be seeing this error message.") # except i saw it once
     
@@ -350,10 +360,16 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str): #, 
 
     return year_options, year_value, current_page
 
+# TODO: TEST DCC.STORE WITHOUT THE layout FUNCTION?
+# See: https://community.plotly.com/t/multi-tab-dash-app-dcc-store-component-in-different-tabs-and-exchanging-data-between-tabs/45068
 # app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. variable
 def layout():
     return html.Div(
         [
+        # store is only used to store 'academic-type' value from academic_data_proficiency, analysis_single_year, and
+        # analysis_multi_year pages. it is used in the year dropdown callback
+        dcc.Store(id="academic-type-store", data = {}),
+        
         # the next two components are used by the year dropdown callback to determine the current url
         dcc.Location(id="current-page", refresh=False),
         html.Div(id="hidden", style={"display": "none"}),
