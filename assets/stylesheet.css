@@ -986,7 +986,6 @@ a.nav-link:hover {
   margin-bottom: 7px;
 }
 
-
 #multi-year-subject-radio-container {
   padding-right: 10px;
 }
@@ -1006,7 +1005,6 @@ a.nav-link:hover {
 }
 
 .nav-container {
-  /* padding: 0px 0px 15px 0px; */
   justify-content: center;
   text-align: center;
   align-items: center;

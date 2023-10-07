@@ -35,26 +35,10 @@ def subnav_academic_information():
                     page['name'],
                     href=page['path'],
                     className = 'tab',
-                    active='partial'
+                    active='exact'
                 )
                 for page in dash.page_registry.values()
-                if page["path"].startswith("/academic_data")
+                if page["path"].startswith("/academic_information")
             ],
         ),
     )
-
-# def subnav_academic_information():
-#     return html.Div(
-#         dbc.Nav(
-#             [
-#                 dbc.NavLink(
-#                     page['name'],
-#                     href=page['path'],
-#                     className = 'tab',
-#                     active='partial'
-#                 )
-#                 for page in dash.page_registry.values()
-#                 if page["path"].startswith("/info")
-#             ],
-#         ),
-#     )

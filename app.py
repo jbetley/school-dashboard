@@ -242,7 +242,7 @@ def set_dropdown_options(app_state):
         if group_id < 0:
             
             charters = available_charters[available_charters["GroupID"] == str(abs(group_id))]
-            print(charters)
+
         else:
             # select only the authorized school using the id field of the authorized_user
             # object. need to subtract 7 to account for Admin and Network Logins (loc 0-6)
@@ -273,8 +273,9 @@ def set_dropdown_value(charter_options):
     Output("hidden", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("current-page", "href"),
-    Input("academic-type-store", "data")
+    Input("url", "href"),
+    Input("academic-type-store", "data"),
+
 )
 
 # TODO: Problem: K12 schools are the bane of my existence. Need to be able to tell which
@@ -298,11 +299,25 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     selected_school = get_school_index(school_id)    
     school_type = selected_school["School Type"].values[0]
 
-    # source of available years depends on selected tab (also, guest
-    # schools do not have financial data)
+    # source of available years depends on selected top_nav tab and, in the case of a K12
+    # school, the sub_nav tab "academic_type_radio." In addition, guest schools do not have
+    # financial data (although they may be K12 schools). Finally, K8 schools do not have 
+    # data for 2020 - so that year should never appear in the dropdown. HS, AHS, and K12
+    # schools with the "HS" academic_type_radio button selected could have 2020 data - school_type
+    # generally takes care of this for K8, HS, and AHS schools, but not for K12 schools, so we need
+    # to force it to use the "HS" data under the right circumstances.
+
     if "academic" in current_page or "analysis_single" in current_page or \
         "analysis_multiple" in current_page or selected_school["Guest"].values[0] == "Y":
-        years = get_academic_dropdown_years(school_id,school_type)
+
+        if ("academic_information" in current_page or "analysis_single" in current_page or \
+        "analysis_multiple" in current_page) and academic_type_store == "hs":
+            
+            years = get_academic_dropdown_years(school_id,"HS")
+        
+        else:
+
+            years = get_academic_dropdown_years(school_id,school_type)
 
     elif "financial_analysis" in current_page:
         years = get_financial_analysis_dropdown_years(school_id)
@@ -332,13 +347,11 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     # first we account for special case due to fact that K8 has no 2020 academic data while
     # HS/AHS does or can - so if user is viewing HS/AHS at year 2020 and then selects
     # a K8 school, we end up with an actual year rather than blank. We do it before the other
-    # checks because the K8 school could also not have 2019
-    # NOTE: Ideally we would track whether the school is a K12 with academic_type = "HS" and
-    # return 2020 - but not sure how to get that variable from academic pages without using
-    # dcc.store, which seems like overkill
+    # checks because the K8 school could also not have 2019. Note that academic_type_store is
+    # used here to distinguish a K12 school with "HS" subnav tab selected
     if ("academic" in current_page or selected_school["Guest"].values[0] == "Y") and \
-        (school_type == "K8" or school_type == "K12") and \
-         year == "2020":
+        ((school_type == "K8") or (school_type == "K12" and academic_type_store == "k8")) and \
+            year == "2020":
         year = "2019"
 
     if year is None:
@@ -363,21 +376,19 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
 
     return year_options, year_value, current_page
 
-# TODO: TEST DCC.STORE WITHOUT THE layout FUNCTION?
-# See: https://community.plotly.com/t/multi-tab-dash-app-dcc-store-component-in-different-tabs-and-exchanging-data-between-tabs/45068
-# app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. variable
-def layout():
-    return html.Div(
-        [
-        # store is only used to store 'academic-type' value from academic_data_proficiency, analysis_single_year, and
-        # analysis_multi_year pages. it is used in the year dropdown callback
-        dcc.Store(id="academic-type-store", data = {}),
-        
+app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. variable
+# def layout():
+#     return html.Div(
+        [        
         # the next two components are used by the year dropdown callback to determine the current url
-        dcc.Location(id="current-page", refresh=False),
+        # dcc.Location(id="current-page", refresh=False),
+        dcc.Location(id="url", refresh="callback-nav"),
         html.Div(id="hidden", style={"display": "none"}),
         html.Div(
             [
+                # store is only used to store 'academic-type' value from academic_data_proficiency, analysis_single_year, and
+                # analysis_multi_year pages. it is used in the year dropdown callback
+                dcc.Store(id="academic-type-store", data = {}, storage_type = "session"),
                 html.Div(
                     [
                         
@@ -515,7 +526,7 @@ def layout():
                         html.Hr(),
                     ],
                     className="no-print",
-                ),                
+                ),
                 dash.page_container,
             ],
         )
@@ -526,7 +537,7 @@ def layout():
 #     print(page)
 
 # testing layout as a function - not sure its faster
-app.layout = layout 
+# app.layout = layout 
 
 if __name__ == "__main__":
     app.run_server(debug=True)
