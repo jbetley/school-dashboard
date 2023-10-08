@@ -11,6 +11,7 @@ from dash.exceptions import PreventUpdate
 import numpy as np
 import pandas as pd
 import re
+import dash_bootstrap_components as dbc
 
 # import local functions
 from pages.load_data import ethnicity, subgroup, subject, grades_all, grades_ordinal, get_k8_school_academic_data, \
@@ -27,19 +28,19 @@ from pages.subnav import subnav_academic_information
 
 dash.register_page(__name__, top_nav=True, name = "Academic Information", path = "/academic_information", order=7)
 
-
 # School Type - relevant for K12 schools
 @callback(      
     Output("academic-information-type-radio", "options"),
     Output("academic-information-type-radio","value"),
     Output("academic-information-type-radio-container", "style"),
     Output("information-subnav-container", "style"),
-    # Output("academic-type-store", "data"),
+    Output("academic-type-store", "data"),
     Input("charter-dropdown", "value"),
-    Input("academic-information-type-radio", "value")
-    # State("academic-information-type-radio", "value"),
+    Input("academic-information-type-radio", "value"),
+    supress_callback_exceptions = True,
+    prevent_initial_call=True
 )
-def radio_type_selector(school: str, radio_type_value: str): # radio_type_state: str,
+def radio_type_selector(school: str, radio_type: str):
 
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
@@ -56,8 +57,8 @@ def radio_type_selector(school: str, radio_type_value: str): # radio_type_state:
 
         # could check values against dictionary, but its far simpler to use a static list
         # if any(d['label'] == 'k8' or d['label'] == 'hs' for d in a):
-        if radio_type_value in ["k8","hs"]:
-            type_value = radio_type_value
+        if radio_type in ["k8","hs"]:
+            type_value = radio_type
         else:
             type_value = "k8"
 
@@ -73,35 +74,40 @@ def radio_type_selector(school: str, radio_type_value: str): # radio_type_state:
             subnav_container = {"display": "none"}
 
         else:
-            type_value = "k8"          
+            type_value = "k8"
 
-    # store_value = type_value
+    store_value = type_value
 
-    return type_options, type_value, type_container, subnav_container #, store_value
+    print('Store Value in Academic:')
+    print(store_value)
+
+    return type_options, type_value, type_container, subnav_container, store_value
 
 # TODO: This isn't working either as a standalone callback or as part of the type value callback above
 # See:
+# https://community.plotly.com/t/a-nonexistent-object-was-used-in-an-output-of-a-dash-callback/60897/18
+# https://community.plotly.com/t/dash-pages-nonexistent-object-was-used-in-an-input/74406/4
+
 # https://community.plotly.com/t/implementing-dcc-store-on-multi-page-app/57054/20
 # https://community.plotly.com/t/error-when-trying-to-store-data-in-multipage-app/72093/7
 # https://community.plotly.com/t/a-nonexistent-object-was-used-in-an-input-of-a-dash-callback-bug-with-dcc-store/66038
 
-
 # Track the type-radio
-@callback(      
-    Output("academic-type-store", "data"),
-    Input("charter-dropdown", "value"),
-    Input("academic-information-type-radio", "value"),
-    suppress_callback_exceptions=True
-)
-def track_type(school: str, radio_type: str):
-    if radio_type:
-        store_value = radio_type
-    else:
-        store_value = "None"
+# @callback(      
+#     Output("academic-type-store", "data"),
+#     Input("charter-dropdown", "value"),
+#     State("academic-information-type-radio", "value"),
+#     suppress_callback_exceptions=True
+# )
+# def track_type(school: str, radio_type_state: str):
+#     if radio_type_state:
+#         store_value = radio_type_state
+#     else:
+#         store_value = "None"
     
-    print(store_value)
+#     print(store_value)
     
-    return store_value
+#     return store_value
 
 # Proficiency Category
 @callback(
@@ -113,7 +119,7 @@ def track_type(school: str, radio_type: str):
     State("academic-information-category-radio", "options"),
     State("academic-information-category-radio", "value")  
 )
-def radio_category_selector(school: str, radio_type: str, radio_category_options: list, radio_category_value: str):
+def radio_category_selector(school: str, radio_type_value: str, radio_category_options: list, radio_category_value: str):
 
     options_default = [
         {"label": "All Data", "value": "all"},
@@ -124,7 +130,7 @@ def radio_category_selector(school: str, radio_type: str, radio_category_options
     
     value_default = "all"
 
-    if radio_type == "hs":
+    if radio_type_value == "hs":
         category_value = ""
         category_options = []
         category_container = {"display": "none"}
@@ -181,8 +187,8 @@ def radio_category_selector(school: str, radio_type: str, radio_category_options
     Output("academic-information-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="academic-information-type-radio", component_property="value"),
-    Input(component_id="academic-information-category-radio", component_property="value"),
+    Input("academic-information-type-radio", "value"),
+    Input("academic-information-category-radio", "value"),
 )
 def update_academic_information_page(school: str, year: str, radio_type: str, radio_category: str):
     if not school:
@@ -761,8 +767,9 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
         k12_sat_table_container, main_container, empty_container, no_display_data, academic_information_notes_string
     )
 
-def layout():
-    return html.Div(
+layout = html.Div(
+# def layout():
+#     return html.Div(
         [
             html.Div(
                 [            
@@ -781,8 +788,36 @@ def layout():
                         [
                             html.Div(
                                 [
-                                    html.Div(create_radio_layout("academic-information", "type"),className="tabs"),
-
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                html.Div(
+                                                    [
+                                                        html.Div(
+                                                            [
+                                                                dbc.RadioItems(
+                                                                    id="academic-information-type-radio",
+                                                                    className="btn-group",
+                                                                    inputClassName="btn-check",
+                                                                    labelClassName="btn btn-outline-primary",
+                                                                    labelCheckedClassName="active",
+                                                                    value=[],
+                                                                    persistence=False,
+                                                                    ),
+                                                                ],
+                                                                className="radio-group-academic",
+                                                            )
+                                                        ],
+                                                        className = "bare-container--flex--center twelve columns",
+                                                    ),
+                                                ],
+                                                className = "row",
+                                            ),
+                                        ],
+                                        id = "academic-information-type-radio-container",
+                                    )                                    
+                                    # html.Div(create_radio_layout("academic-information", "type"),className="tabs"),
                                 ],
                                 className = "bare-container--flex--center twelve columns",
                             ),

@@ -38,7 +38,7 @@ def subnav_academic_information():
                     active='exact'
                 )
                 for page in dash.page_registry.values()
-                if page["path"].startswith("/academic_information")
+                if page["path"].startswith("/academic_info")
             ],
         ),
     )

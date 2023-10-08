@@ -420,7 +420,6 @@ def create_year_over_year_layout (school, data, label, msg):
         table_data = data.copy()
         table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
 
-        # print(data)
         fig = make_multi_line_chart(data, label)
         table = create_comparison_table(table_data, school_name,"")
         category_string = ""

@@ -88,7 +88,7 @@ def radio_category_selector(school: str, radio_category_options: list, radio_cat
     Output("academic-growth-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="academic-growth-category-radio", component_property="value"),  
+    Input("academic-growth-category-radio", "value"),  
 )
 def update_academic_info_growth_page(school: str, year: str, radio_category: str):
     if not school:
@@ -288,8 +288,9 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         no_growth_data, academic_growth_notes_string
     )
 
-def layout():
-    return html.Div(
+layout = html.Div (
+# def layout():
+#     return html.Div(
             [
             html.Div(
                 [            

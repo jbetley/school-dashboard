@@ -32,7 +32,7 @@ dash.register_page(__name__, path="/", order=0, top_nav=True)
     Output("about-empty-container", "style"),   
     Output("about-no-data", "children"),
     Input("year-dropdown", "value"),
-    Input("charter-dropdown", "value"),
+    Input("charter-dropdown", "value")
 )
 def update_about_page(year: str, school: str):
     if not school:

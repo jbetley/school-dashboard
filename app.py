@@ -199,7 +199,7 @@ app = dash.Dash(
     use_pages=True,
     external_stylesheets=external_stylesheets,
     suppress_callback_exceptions=True,
-    prevent_initial_callbacks="initial_duplicate",
+    # prevent_initial_callbacks="initial_duplicate",
     # compress=False, # testing
     meta_tags=[
         {
@@ -263,10 +263,9 @@ def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
             
 # year options are the range of: max = current_academic_year; min = the earliest year
-#   for which the school has adm (is open); limit = typically a limit of 5 years (currently and
-#   temporarily 4 years so that 2018 academic data is not shown)
-# NOTE: Input current-page and Output hidden are used to track the currently
-# selected url (Tab)
+# for which the school has adm (is open); limit = typically a limit of 5 years (currently and
+# temporarily 4 years so that 2018 academic data is not shown)
+# "url" and "hidden" are used to track the currently selected url
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
@@ -275,7 +274,8 @@ def set_dropdown_value(charter_options):
     Input("year-dropdown", "value"),
     Input("url", "href"),
     Input("academic-type-store", "data"),
-
+    # supress_callback_exceptions = True,
+    # prevent_initial_call=True
 )
 
 # TODO: Problem: K12 schools are the bane of my existence. Need to be able to tell which
@@ -306,7 +306,9 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     # schools with the "HS" academic_type_radio button selected could have 2020 data - school_type
     # generally takes care of this for K8, HS, and AHS schools, but not for K12 schools, so we need
     # to force it to use the "HS" data under the right circumstances.
-
+    print('Year Dropdown:')
+    print(academic_type_store)
+    
     if "academic" in current_page or "analysis_single" in current_page or \
         "analysis_multiple" in current_page or selected_school["Guest"].values[0] == "Y":
 
@@ -379,16 +381,16 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
 app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. variable
 # def layout():
 #     return html.Div(
-        [        
-        # the next two components are used by the year dropdown callback to determine the current url
-        # dcc.Location(id="current-page", refresh=False),
+        [
+        # store is only used to store 'academic-type' value from academic_data_proficiency, analysis_single_year, and
+        # analysis_multi_year pages. it is used in the year dropdown callback
+        dcc.Store(id="academic-type-store", data = {}, storage_type = "session"),            
+        # Used by year dropdown callback to determine the current url and for redirect on 
+        # academic_information_growth_py
         dcc.Location(id="url", refresh="callback-nav"),
         html.Div(id="hidden", style={"display": "none"}),
         html.Div(
             [
-                # store is only used to store 'academic-type' value from academic_data_proficiency, analysis_single_year, and
-                # analysis_multi_year pages. it is used in the year dropdown callback
-                dcc.Store(id="academic-type-store", data = {}, storage_type = "session"),
                 html.Div(
                     [
                         
@@ -536,6 +538,10 @@ app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. v
 # for page in dash.page_registry.values():
 #     print(page)
 
+for page in dash.page_registry.values():
+    if page["path"].startswith("/academic_info"):
+        print(page)
+    
 # testing layout as a function - not sure its faster
 # app.layout = layout 
 
