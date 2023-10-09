@@ -1141,6 +1141,9 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     if 'Low Grade' in data:
         data = data.drop(['Low Grade', 'High Grade'], axis = 1)
 
+    if 'School ID' in data:
+        data = data.drop(['School ID'], axis = 1)
+
     # TODO: Test to see if this is necessary here
     # Only want to display categories where the selected school has data - this
     # drops all columns where the row at school_name_idx has a NaN value    

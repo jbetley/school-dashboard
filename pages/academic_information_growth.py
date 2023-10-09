@@ -31,7 +31,7 @@ def redirect_hs(school: str, current_page: str):
     school_type = selected_school["School Type"].values[0]
 
     current_page = current_page.rsplit("/", 1)[-1]
-    print(current_page)
+
     if current_page == "academic_information_growth" and (school_type == "HS" or school_type == "AHS"):
         return f"/academic_information"
     else:

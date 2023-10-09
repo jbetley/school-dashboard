@@ -85,7 +85,8 @@ def create_chart_label(data: pd.DataFrame) -> str:
         elif data.columns.str.contains("Proficient").any() == True:
 
             # pull subject from the first "subject" column using regex
-            subject_columns = [c for c in data_columns if c not in ['School Name', 'Low Grade', 'High Grade']]
+
+            subject_columns = [c for c in data_columns if c not in ['School Name', "School ID", 'Low Grade', 'High Grade']]
             label_subject = re.search(r"(?<=\|)(.*?)(?=\s)",subject_columns[0]).group() # type: ignore
 
             if len([col for col in data_columns if any(substring for substring in ethnicity if substring in col)]) > 0:
@@ -161,7 +162,7 @@ def combine_school_name_and_grade_levels(data: pd.DataFrame) -> pd.DataFrame:
     school_names = create_school_label(data)
 
     if 'Low Grade' in data:
-        data = data.drop(["Low Grade", "High Grade"], axis = 1)
+        data = data.drop(["Low Grade", "High Grade"], axis = 1)  
 
     # shift the "School Name" column to the first position and replace
     # the values in "School Name" column with the school_names series

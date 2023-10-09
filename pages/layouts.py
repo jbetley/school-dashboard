@@ -14,7 +14,10 @@ from .string_helpers import create_chart_label,combine_school_name_and_grade_lev
 from .charts import make_group_bar_chart, make_multi_line_chart
 from .tables import create_comparison_table, no_data_page
 
-def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: list, school_name: str) -> list:
+def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: list, school: str) -> list:
+
+    selected_school = get_school_index(school)    
+    school_name = selected_school["School Name"].values[0]
 
     tested_categories = []
 
@@ -42,13 +45,15 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
 
     analysis_cols = [col for col in data.columns if search_string in col and any(substring for substring in categories if substring in col)]
 
-    analysis_cols = info_categories + analysis_cols
+    info_categories_plus = info_categories + ["School ID"]
+    analysis_cols = info_categories_plus + analysis_cols
+
     analysis_data = data[analysis_cols]
+    
+    analysis_data = analysis_data.filter(regex="|".join([data_type,"School Name","School ID", "Low Grade","High Grade"]))
 
-    analysis_data = analysis_data.filter(regex="|".join([data_type,"School Name","Low Grade","High Grade"]))
-
-    # data will always have at least three cols (School Name, Low Grade, High Grade)
-    if len(analysis_data.columns) > 3:
+    # data will always have at least three cols (School Name, School ID, Low Grade, High Grade)
+    if len(analysis_data.columns) > 4:
 
          # NOTE: For transparency purposes, we want to identify all categories that are missing from
         # the possible dataset, including those that aren't going to be displayed (because the school
@@ -63,15 +68,18 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
         # Once the missing category and missing school strings are built, we drop any columns
         # where the school has no data by finding the index of the row containing the school
         # name and dropping all columns where the row at school_name_idx has a NaN value
-
-        school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
-        analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
-
+        # TODO: Test, pretty sure we already do this in analysis_single_year (line 397)
+        # school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
+        # school_name_idx = data.index[data["School ID"] ==  np.int64(school)].tolist()[0]
+        # analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
+        
+        print(analysis_data)
+        
         if len(analysis_data.columns) > 1:
             analysis_label = create_chart_label(analysis_data)
             analysis_chart = make_group_bar_chart(analysis_data, school_name, analysis_label)
             analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
-            analysis_table = create_comparison_table(analysis_table_data, school_name,"")
+            analysis_table = create_comparison_table(analysis_table_data, school,"")
 
             final_analysis_group = create_group_barchart_layout(analysis_chart,analysis_table, category_string, school_string)
 

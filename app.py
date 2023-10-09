@@ -61,6 +61,7 @@ from dotenv import load_dotenv
 
 import dash
 from dash import dcc, html, Input, Output, State, callback
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
 from pages.load_data import get_school_index, get_academic_dropdown_years, get_financial_info_dropdown_years, \
@@ -289,7 +290,7 @@ def set_dropdown_value(charter_options):
 # TODO: 'academic-information-type-radio;)
 
 def set_year_dropdown_options(school_id: str, year: str, current_page: str, academic_type_store: str):
-
+    
     max_dropdown_years = 5
 
     current_page = current_page.rsplit("/", 1)[-1]

@@ -41,7 +41,7 @@ dash.register_page(__name__, top_nav=True, name = "Academic Information", path =
     prevent_initial_call=True
 )
 def radio_type_selector(school: str, radio_type: str):
-
+    
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
     

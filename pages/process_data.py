@@ -489,7 +489,7 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
     
     else:
 
-        school_info = raw_data[["School Name"]].copy()
+        school_info = raw_data[["School Name", "School ID"]].copy()
         school_type = raw_data['School Type'].values[0]
 
         # school data: coerce, but keep strings ("***" and "^")

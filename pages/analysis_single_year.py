@@ -328,6 +328,9 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
     academic_analysis_notes_label = ""    
     academic_analysis_notes_string = ""
 
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)  
+    
     if school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
 
         k8_analysis_empty_container = {"display": "none"}
@@ -406,17 +409,17 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
 
                 # Graduation Comparison Sets
                 grad_overview_categories = ["Total", "Non Waiver"]
-                grad_overview = create_hs_analysis_layout("Graduation Rate", hs_analysis_data, grad_overview_categories, hs_school_name)
-                grad_ethnicity = create_hs_analysis_layout("Graduation Rate", hs_analysis_data, ethnicity, hs_school_name)
-                grad_subgroup = create_hs_analysis_layout("Graduation Rate", hs_analysis_data, subgroup, hs_school_name)
+                grad_overview = create_hs_analysis_layout("Graduation Rate", hs_analysis_data, grad_overview_categories, school) #hs_school_name)
+                grad_ethnicity = create_hs_analysis_layout("Graduation Rate", hs_analysis_data, ethnicity, school)
+                grad_subgroup = create_hs_analysis_layout("Graduation Rate", hs_analysis_data, subgroup, school)
 
                 # SAT Comparison Sets
                 overview = ["School Total|Math", "School Total|EBRW", "School Total|Both"]
-                sat_overview = create_hs_analysis_layout("School Total", hs_analysis_data, overview, hs_school_name)        
-                sat_ethnicity_ebrw = create_hs_analysis_layout("EBRW", hs_analysis_data, ethnicity, hs_school_name)
-                sat_ethnicity_math = create_hs_analysis_layout("Math", hs_analysis_data, ethnicity, hs_school_name)
-                sat_subgroup_ebrw = create_hs_analysis_layout("EBRW", hs_analysis_data, subgroup, hs_school_name)
-                sat_subgroup_math = create_hs_analysis_layout("Math", hs_analysis_data, subgroup, hs_school_name)
+                sat_overview = create_hs_analysis_layout("School Total", hs_analysis_data, overview, school)        
+                sat_ethnicity_ebrw = create_hs_analysis_layout("EBRW", hs_analysis_data, ethnicity, school)
+                sat_ethnicity_math = create_hs_analysis_layout("Math", hs_analysis_data, ethnicity, school)
+                sat_subgroup_ebrw = create_hs_analysis_layout("EBRW", hs_analysis_data, subgroup, school)
+                sat_subgroup_math = create_hs_analysis_layout("Math", hs_analysis_data, subgroup, school)
 
                 # Display Logic
 
@@ -509,8 +512,6 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                 clean_school_data = process_k8_academic_data(selected_raw_k8_school_data)
 
                 if not clean_school_data.empty:
-
-                    # year_over_year_hs = []
 
                     raw_corp_data = get_k8_corporation_academic_data(school)
 
@@ -611,9 +612,11 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                         # reset indicies
                         comparison_schools = comparison_schools.reset_index(drop=True)
 
+# TODO: HERE - Need to figure out way to get School ID into df
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
-
+                        print('Single year')
+                        print(current_school_data)
                         # Get school value for specific category
                         if category in current_school_data.columns:
 

@@ -778,6 +778,7 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
+    # track school name and school id separately
     school_index = school_data[['School Name', 'School ID']]
 
     school_name = school_data["School Name"][0] 
@@ -827,6 +828,7 @@ def get_year_over_year_data(*args):
 
         comp_index = comp_data[['School Name', 'School ID']]
 
+        # combine school and comp indexs into a list of School Names and School IDs
         school_id_list = pd.concat([school_index, comp_index], ignore_index = True)
         school_id_list = school_id_list.drop_duplicates(subset=['School ID'])
         school_id_list = school_id_list.reset_index(drop=True)

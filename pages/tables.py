@@ -1717,16 +1717,20 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
     # to get the school ID column because the data is currently pulled from the Metric
     # comparison function.
     # TODO: change single year data function to clean function with School ID
+    # TODO: DONE for Multiyear table and single year HS/AHS
+    # TODO: DO for Single Year K8
 
     # NOTE: Originally did this by attempting to match the school_name (from school_index)
     # with the school_name in the datafile. The problem is that names are sometimes 
     # mispelled and schools sometimes change their names on purpose. School IDs never
     # change, so we use this to ID the school now
+    # print('DATA COMING INTO TABLE')
+    # print(data)
 
     if "School ID" in data:
-        school_name_idx = data.index[data["School ID"] ==  np.int64(school_id)].tolist()[0]
 
-        # drop School ID once we have the index
+        # locate school index by School ID and then drop School ID column
+        school_name_idx = data.index[data["School ID"] ==  np.int64(school_id)].tolist()[0]
         data = data.drop("School ID",axis=1)
 
     else:
@@ -1734,6 +1738,9 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
         # TODO: school_id = "school_name"; for multi-year data school_id = school_id
         school_name_idx = data.index[data["School Name"].str.contains(school_id)].tolist()[0]
     
+    # print('THE INDEX')
+    # print(school_name_idx)
+
     # hide the header "School Name"
     data = data.rename(columns = {"School Name" : ""})
 
