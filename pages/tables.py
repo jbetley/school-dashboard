@@ -14,7 +14,7 @@ from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 import dash_mantine_components as dmc
 
-from .load_data import metric_strings
+from .load_data import metric_strings, get_school_index
 
 # default table styles
 table_style = {
@@ -1692,7 +1692,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
     return table
 
-def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) -> list:
+def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> list:
     """
     Takes a dataframe that is a column of schools and one or more columns
     of data, school name, and table label. Uses the school name to find
@@ -1707,33 +1707,33 @@ def create_comparison_table(data: pd.DataFrame, school_name: str, label: str) ->
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
-    # drop all columns where the row at school_name_idx has a NaN value
-    # school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
-    # data = data.loc[:, ~data.iloc[school_name_idx].isna()]
-
     # sort dataframe by the first column and reset index
     data = data.sort_values(data.columns[1], ascending=False, na_position="last")
     
     data = data.reset_index(drop=True)
     data.columns = data.columns.astype(str)
 
-    # need to find the index again because the sort has jumbled things up
-    # NOTE: this does not apply to year_over_year analysis tables, which have the school
-    # name in the column header
+    # NOTE: year_over_year analysis tables do not have School ID column, nor is it easy
+    # to get the school ID column because the data is currently pulled from the Metric
+    # comparison function.
+    # TODO: change single year data function to clean function with School ID
 
-    # NOTE: Keep getting name index errors from the below line, almost always because
-    # the school name in school_index does not match the school name in whatever
-    # dataset we are parsing. Not much we can do about this if the original data
-    # has a misspelling. 
+    # NOTE: Originally did this by attempting to match the school_name (from school_index)
+    # with the school_name in the datafile. The problem is that names are sometimes 
+    # mispelled and schools sometimes change their names on purpose. School IDs never
+    # change, so we use this to ID the school now
 
-    # print('SO MUCH INDEX ERROR')
-    # print(school_name)
-    # print("X" + school_name + "X")
-    # print(data)
-    # print(data.index[data["School Name"].str.contains(school_name)])
+    if "School ID" in data:
+        school_name_idx = data.index[data["School ID"] ==  np.int64(school_id)].tolist()[0]
 
-    school_name_idx = data.index[data["School Name"].str.contains(school_name)].tolist()[0]
+        # drop School ID once we have the index
+        data = data.drop("School ID",axis=1)
 
+    else:
+        # TODO: This puts us right back in the mispelled name soup - for single year data
+        # TODO: school_id = "school_name"; for multi-year data school_id = school_id
+        school_name_idx = data.index[data["School Name"].str.contains(school_id)].tolist()[0]
+    
     # hide the header "School Name"
     data = data.rename(columns = {"School Name" : ""})
 

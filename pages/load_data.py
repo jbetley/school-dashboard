@@ -778,6 +778,8 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
+    school_index = school_data[['School Name', 'School ID']]
+
     school_name = school_data["School Name"][0] 
     school_data[school_name] = pd.to_numeric(school_data[passed], errors='coerce') / pd.to_numeric(school_data[tested], errors='coerce')
     school_data = school_data.drop(['School Name', passed, tested], axis = 1)
@@ -801,7 +803,7 @@ def get_year_over_year_data(*args):
                     SELECT GEOCorp
                         FROM school_index
                         WHERE SchoolID = :school_id)
-            '''.format( corp_query_str , corp_table)
+            '''.format(corp_query_str , corp_table)
 
         q2 = text(query_string2)
         
@@ -815,13 +817,20 @@ def get_year_over_year_data(*args):
         query_string3 = '''
                 SELECT {}
                     FROM {}
-                    WHERE SchoolID IN ({})'''.format( school_query_str, school_table, school_str )
+                    WHERE SchoolID IN ({})'''.format(school_query_str, school_table, school_str)
 
         q3 = text(query_string3)
         
         comp_data = run_query(q3, params)
         
         comp_data[result] = pd.to_numeric(comp_data[passed], errors='coerce') / pd.to_numeric(comp_data[tested], errors='coerce')
+
+        comp_index = comp_data[['School Name', 'School ID']]
+
+        school_id_list = pd.concat([school_index, comp_index], ignore_index = True)
+        school_id_list = school_id_list.drop_duplicates(subset=['School ID'])
+        school_id_list = school_id_list.reset_index(drop=True)
+
         comp_data = comp_data.pivot(index='Year', columns='School Name', values=result)
         comp_data = comp_data.reset_index()
         comp_data = comp_data.sort_values("Year")
@@ -832,4 +841,4 @@ def get_year_over_year_data(*args):
         excluded_years = get_excluded_years(params['year'])
         result = result[~result["Year"].isin(excluded_years)]
 
-    return result
+    return result, school_id_list

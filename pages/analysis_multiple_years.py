@@ -583,7 +583,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             label = "Year over Year Comparison - " + category
             msg = ""
 
-            year_over_year_k8_data = get_year_over_year_data(school, comparison_school_list, category, year, "k8")
+            year_over_year_k8_data, school_id_list = get_year_over_year_data(school, comparison_school_list, category, year, "k8")
 
         else:
 
@@ -607,7 +607,9 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, subje
             k8_analysis_multi_empty_container = {"display": "none"}
             dropdown_container = {"display": "block"}
 
-            year_over_year_grade = create_year_over_year_layout(school, year_over_year_k8_data, label, subcategory_radio)
+            # school_id_list is a dataframe with school names and school ids, it is used in
+            # the comparison_table function to identify the index of the school by Id
+            year_over_year_grade = create_year_over_year_layout(school, year_over_year_k8_data, school_id_list, label, subcategory_radio)
 
     analysis__multi_notes = [
             html.Div(

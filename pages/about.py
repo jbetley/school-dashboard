@@ -493,7 +493,9 @@ def update_about_page(year: str, school: str):
         subgroup_fig, main_container, empty_container, no_data_to_display
     )
 
-layout = html.Div(
+# layout = html.Div(
+def layout():
+    return html.Div(
         [
             dcc.Loading(
                 id="loading",

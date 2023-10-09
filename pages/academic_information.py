@@ -767,9 +767,10 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
         k12_sat_table_container, main_container, empty_container, no_display_data, academic_information_notes_string
     )
 
-layout = html.Div(
-# def layout():
-#     return html.Div(
+# layout = html.Div(
+# this needs to be a function in order for it to be called correctly by subnav_academic_information()    
+def layout():
+    return html.Div(
         [
             html.Div(
                 [            
@@ -784,46 +785,57 @@ layout = html.Div(
                         ],
                         className="row",
                     ),
+                    # html.Div(
+                    #     [
+                    #         html.Div(
+                    #             [
+                    #                 html.Div(
+                    #                     [
+                    #                         html.Div(
+                    #                             [
+                    #                             html.Div(
+                    #                                 [
+                    #                                     html.Div(
+                    #                                         [
+                    #                                             dbc.RadioItems(
+                    #                                                 id="academic-information-type-radio",
+                    #                                                 className="btn-group",
+                    #                                                 inputClassName="btn-check",
+                    #                                                 labelClassName="btn btn-outline-primary",
+                    #                                                 labelCheckedClassName="active",
+                    #                                                 value=[],
+                    #                                                 persistence=False,
+                    #                                                 ),
+                    #                                             ],
+                    #                                             className="radio-group-academic",
+                    #                                         )
+                    #                                     ],
+                    #                                     className = "bare-container--flex--center twelve columns",
+                    #                                 ),
+                    #                             ],
+                    #                             className = "row",
+                    #                         ),
+                    #                     ],
+                    #                     id = "academic-information-type-radio-container",
+                    #                 )
+                    #             ],
+                    #             className = "bare-container--flex--center twelve columns",
+                    #         ),
+                    #     ],
+                    #     className = "row",
+                    # ),
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                [
-                                                html.Div(
-                                                    [
-                                                        html.Div(
-                                                            [
-                                                                dbc.RadioItems(
-                                                                    id="academic-information-type-radio",
-                                                                    className="btn-group",
-                                                                    inputClassName="btn-check",
-                                                                    labelClassName="btn btn-outline-primary",
-                                                                    labelCheckedClassName="active",
-                                                                    value=[],
-                                                                    persistence=False,
-                                                                    ),
-                                                                ],
-                                                                className="radio-group-academic",
-                                                            )
-                                                        ],
-                                                        className = "bare-container--flex--center twelve columns",
-                                                    ),
-                                                ],
-                                                className = "row",
-                                            ),
-                                        ],
-                                        id = "academic-information-type-radio-container",
-                                    )                                    
-                                    # html.Div(create_radio_layout("academic-information", "type"),className="tabs"),
+                                    html.Div(create_radio_layout("academic-information", "type"),className="tabs"),
+
                                 ],
                                 className = "bare-container--flex--center twelve columns",
                             ),
                         ],
                         className = "row",
-                    ),            
+                    ),                    
                     html.Div(
                         [
                             html.Div(

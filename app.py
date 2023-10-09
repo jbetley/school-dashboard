@@ -223,8 +223,7 @@ def set_dropdown_options(app_state):
     # use the ._get_current_object() method to return the
     # underlying object (User). get the group_id property
     # to determine which schools to include for a network
-    # login
-    # NOTE: user 0 is admin; users 1-6 are network logins; users 7- are individual schools
+    # login. NOTE: user 0 is admin; users 1-6 are network logins; users 7- are individual schools
     # Groups: CHA (-1); Excel (-2); GEI (-3); PLA (-4); Paramount (-5); Purdue (-6)
     authorized_user = current_user._get_current_object()
     group_id = current_user.group_id
@@ -236,8 +235,7 @@ def set_dropdown_options(app_state):
         charters = available_charters
 
     else:
-        # check for network login (any group_id != 0)
-        # if group_id != 0:
+        # check for network login
 
         if group_id < 0:
             
@@ -287,8 +285,8 @@ def set_dropdown_value(charter_options):
 # TODO: sure HS/AHS at year 2020 shows K12 year 2020 HS data; 3) make sure that K12 shows K8
 # TODO: years for academic_type: k8 and HS years for academic_type hs.
 
-# TODO: currently cannot get dcc.store to work with pages because of academic_prof, academic_info interaction
-# TODO: when adding it get nonexistent Output for proficiency-pages on the academic_information page
+# TODO: currently cannot get dcc.store to work without an error ("nonexistent Output or Input for
+# TODO: 'academic-information-type-radio;)
 
 def set_year_dropdown_options(school_id: str, year: str, current_page: str, academic_type_store: str):
 
@@ -305,10 +303,15 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     # data for 2020 - so that year should never appear in the dropdown. HS, AHS, and K12
     # schools with the "HS" academic_type_radio button selected could have 2020 data - school_type
     # generally takes care of this for K8, HS, and AHS schools, but not for K12 schools, so we need
-    # to force it to use the "HS" data under the right circumstances.
+    # to force it to use the "HS" data under the right circumstances. We also want to make sure that
+    # we reset the academic type if we have a K8 school where type was "hs"
+    
+    if school_type == "K8" and academic_type_store == "hs":
+        academic_type_store = "k8"
+
     print('Year Dropdown:')
     print(academic_type_store)
-    
+
     if "academic" in current_page or "analysis_single" in current_page or \
         "analysis_multiple" in current_page or selected_school["Guest"].values[0] == "Y":
 
@@ -327,6 +330,8 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     else:
         years = get_financial_info_dropdown_years(school_id)
 
+    print('Debugging year list index issue:')
+    print(years)
 # Currently both financial_analysis_dropdown and financial_info_dropdown are the same - they both
 # reads financial_data and returns a list of Year column names for each year for which ADM Average
 # is greater than "0"     
@@ -378,13 +383,15 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
 
     return year_options, year_value, current_page
 
-app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. variable
-# def layout():
-#     return html.Div(
+# app.layout = html.Div(
+# NOTE: Test to see effect of layout as function vs. variable
+def layout():
+    return html.Div(
         [
         # store is only used to store 'academic-type' value from academic_data_proficiency, analysis_single_year, and
         # analysis_multi_year pages. it is used in the year dropdown callback
         dcc.Store(id="academic-type-store", data = {}, storage_type = "session"),            
+        
         # Used by year dropdown callback to determine the current url and for redirect on 
         # academic_information_growth_py
         dcc.Location(id="url", refresh="callback-nav"),
@@ -396,7 +403,7 @@ app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. v
                         
                         html.Div(
                             [
-                                html.A("logout", href="../logout", className="logout-button no-print"),
+                                html.A("logout", href="../logout", className="logout-button"), # no-print
                                    
                             ],
                             className="bare-container--flex--center one columns",
@@ -535,15 +542,12 @@ app.layout = html.Div(    # NOTE: Test to see effect of layout as function vs. v
     ],
 )
 
-# for page in dash.page_registry.values():
-#     print(page)
-
 for page in dash.page_registry.values():
     if page["path"].startswith("/academic_info"):
-        print(page)
+        print(page["name"])
     
 # testing layout as a function - not sure its faster
-# app.layout = layout 
+app.layout = layout 
 
 if __name__ == "__main__":
     app.run_server(debug=True)

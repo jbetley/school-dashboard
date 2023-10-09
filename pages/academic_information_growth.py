@@ -24,14 +24,14 @@ dash.register_page(__name__,  name = "Academic Growth", path = "/academic_inform
 @callback(
     Output("url", "href"),
     Input("charter-dropdown", "value"),
-    Input("url", "href"),    
-    prevent_initial_call=True
+    Input("url", "href")
 )
 def redirect_hs(school: str, current_page: str):
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
     current_page = current_page.rsplit("/", 1)[-1]
+    print(current_page)
     if current_page == "academic_information_growth" and (school_type == "HS" or school_type == "AHS"):
         return f"/academic_information"
     else:
@@ -54,9 +54,6 @@ def radio_category_selector(school: str, radio_category_options: list, radio_cat
         {"label": "By Ethnicity", "value": "ethnicity"},
         {"label": "By Subgroup", "value": "subgroup"}
     ]
-
-    # selected_school = get_school_index(school)
-    # school_type = selected_school["School Type"].values[0]
 
     value_default = "all"
 
@@ -94,14 +91,11 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     if not school:
         raise PreventUpdate
 
-    # show 2019 instead of 2020 as 2020 has no academic data
+    # show 2019 instead of 2020 as 2020 has no academic growth data
     string_year = year
     selected_year_string = "2019" if string_year == "2020" else string_year
-    selected_year_numeric = int(selected_year_string)
 
     selected_school = get_school_index(school)
-    selected_school_type = selected_school["School Type"].values[0]
-    selected_school_id = int(selected_school["School ID"].values[0])
 
     # Radio buttons don't play nice
     if not radio_category:
@@ -288,9 +282,9 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         no_growth_data, academic_growth_notes_string
     )
 
-layout = html.Div (
-# def layout():
-#     return html.Div(
+# this needs to be a function in order for it to be called correctly by subnav_academic_information()
+def layout():
+    return html.Div(
             [
             html.Div(
                 [            

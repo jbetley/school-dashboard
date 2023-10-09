@@ -333,9 +333,9 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
     return financial_information_table, main_container, empty_container, no_data_to_display
 
-layout = html.Div(
-# def layout():
-#     return html.Div(
+# layout = html.Div(
+def layout():
+    return html.Div(
             [
                 html.Div(
                     [

@@ -298,7 +298,9 @@ def update_organizational_compliance(school, year):
 
     return org_compliance_table, org_compliance_definitions_table
 
-layout = html.Div(
+# layout = html.Div(
+def layout():
+    return html.Div(        
                 [
                     html.Div(
                         [

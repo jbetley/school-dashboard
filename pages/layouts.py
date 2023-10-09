@@ -394,10 +394,7 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
 
     return radio_button_group
 
-def create_year_over_year_layout (school, data, label, msg):
-
-    selected_school = get_school_index(school)
-    school_name = selected_school["School Name"].values[0]
+def create_year_over_year_layout (school, data, school_id_list, label, msg):
 
     # drop columns where all values are nan
     data = data.dropna(axis=1, how="all")
@@ -418,10 +415,16 @@ def create_year_over_year_layout (school, data, label, msg):
         data = data[data.iloc[:, 1].notna()]
 
         table_data = data.copy()
+
+        # transpose and merge table data and school_id_list
+        # the data is pivoted so we need to unpivot it before we add School ID back
+        # school id is used to identify the school in the comparison_table function
         table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
+        table_data = pd.merge(table_data, school_id_list, on=["School Name"], how='left')
 
         fig = make_multi_line_chart(data, label)
-        table = create_comparison_table(table_data, school_name,"")
+
+        table = create_comparison_table(table_data, school, "")
         category_string = ""
         school_string = ""
         layout = create_group_barchart_layout(fig, table, category_string, school_string)

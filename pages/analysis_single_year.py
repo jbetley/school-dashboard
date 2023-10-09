@@ -380,10 +380,6 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
             combined_hs_data = pd.concat([raw_hs_school_data, raw_hs_corp_data, raw_hs_comparison_data], ignore_index = True)
             
             # calculate values
-            # pd.set_option('display.max_columns', None)
-            # pd.set_option('display.max_rows', None)  
-
-            # print(raw_hs_school_data)
             processed_hs_data = process_high_school_academic_analysis_data(combined_hs_data)
 
             hs_analysis_data = processed_hs_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index()
@@ -615,17 +611,15 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                         # reset indicies
                         comparison_schools = comparison_schools.reset_index(drop=True)
 
-                        pd.set_option('display.max_columns', None)
-                        pd.set_option('display.max_rows', None)  
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
-# TODO: PLA 103 Weirdness here
+
                         # Get school value for specific category
                         if category in current_school_data.columns:
 
-
                             # need to reset_index because we are using the length of the index to
                             # add the Corp Data
+
                             fig14c_k8_school_data = current_school_data[info_categories + [category]].copy()
                             fig14c_k8_school_data = fig14c_k8_school_data.reset_index(drop=True)
 
