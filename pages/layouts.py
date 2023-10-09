@@ -72,15 +72,13 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
         # school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
         # school_name_idx = data.index[data["School ID"] ==  np.int64(school)].tolist()[0]
         # analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
-        
-        print(analysis_data)
-        
+
         if len(analysis_data.columns) > 1:
             analysis_label = create_chart_label(analysis_data)
             analysis_chart = make_group_bar_chart(analysis_data, school_name, analysis_label)
             analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
-            analysis_table = create_comparison_table(analysis_table_data, school,"")
 
+            analysis_table = create_comparison_table(analysis_table_data, school,"")
             final_analysis_group = create_group_barchart_layout(analysis_chart,analysis_table, category_string, school_string)
 
         else:

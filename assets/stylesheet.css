@@ -636,23 +636,23 @@ hr {
 }
 
 /** Plotly Dash Overrides **/
-
-/* Overrides certain styles within the hoverlayer (for x hover mode) */
-.hoverlayer > .hovertext > path {
+/* Overrides certain styles within the hoverlayer (for x hover mode) 
+   Control the page using the id of the single-analysis page div*/
+#year-over-year-grade .hoverlayer > .hovertext > path {
   stroke-width: 0px !important;
   stroke: none !important;
 }
 
-.hoverlayer > .hovertext > text.nums {
+#year-over-year-grade .hoverlayer > .hovertext > text.nums {
   font-weight: 500;
   fill:#ffffff !important;
 }
 
-.hoverlayer > .axistext > path {
+#year-over-year-grade .hoverlayer > .axistext > path {
   fill: steelblue !important;
 }
 
-.hoverlayer > .axistext > text {
+#year-over-year-grade .hoverlayer > .axistext > text {
   font-weight: 600;
 }
 

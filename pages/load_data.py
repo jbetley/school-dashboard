@@ -614,6 +614,22 @@ def get_k8_school_academic_data(*args):
 
     return results
 
+def get_selected_k8_school_academic_data(*args):
+    keys = ['schools','year']
+    params = dict(zip(keys, args))
+
+    school_str = ', '.join( [ str(int(v)) for v in params['schools'] ] )
+            
+    q = text('''SELECT *
+                FROM academic_data_k8
+                WHERE Year = :year AND SchoolID IN ({})'''.format(school_str)
+            )
+    
+    results = run_query(q, params)
+    # results = results.sort_values(by = 'Year',ascending = False)
+
+    return results
+
 def get_k8_corporation_academic_data(*args):
     keys = ['id']
     params = dict(zip(keys, args))

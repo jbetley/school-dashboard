@@ -13,9 +13,9 @@ import pandas as pd
 # import local functions
 from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
     get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data, get_excluded_years
+    get_hs_corporation_academic_data, get_excluded_years, get_selected_k8_school_academic_data
 from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
-    merge_schools
+    merge_schools, process_selected_k8_academic_data
 from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency
 from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
 from .tables import create_comparison_table, no_data_page, no_data_table
@@ -497,7 +497,15 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                 the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
                 Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
         
-            # get academic data
+            # get single year academic data
+            list_of_schools = comparison_school_list + [school]
+            selected_k8_school_data = get_selected_k8_school_academic_data(list_of_schools, year)
+
+            selected_clean_data = process_selected_k8_academic_data(selected_k8_school_data, school)
+
+            # print('CLEAN')
+            # print(selected_clean_data)
+
             selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
             excluded_years = get_excluded_years(year)
@@ -514,6 +522,19 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                 if not clean_school_data.empty:
 
                     raw_corp_data = get_k8_corporation_academic_data(school)
+
+                    ## TODO
+                    selected_corp_data = raw_corp_data.loc[raw_corp_data["Year"] == numeric_year]
+                    
+                    # clean up corp data so it can be merged
+                    # selected_corp_data.columns = selected_corp_data.columns.str.replace({"Corporation Name": "School_Name", "Corporation ID": "School ID"}, regex=False)
+                    selected_corp_data = selected_corp_data.rename(columns = {"Corporation Name": "School Name", "Corporation ID": "School ID"})
+                    selected_corp_data = selected_corp_data[selected_corp_data.columns[~selected_corp_data.columns.str.contains(r"Above|Approaching|At|Tested|Proficient|Pass|Test|ELA and Math|Male|Female")]]
+
+                     # add suffix to certain Categories
+                    selected_corp_data = selected_corp_data.rename(columns={c: c + " Proficient %" for c in selected_corp_data.columns if c not in ["Year", "School Name", "School ID"]})
+                    # print(selected_corp_data)
+                    # TODO: HERE -Need to align columns and merge with selected_clean_data
 
                     corp_name = raw_corp_data["Corporation Name"].values[0]
 
@@ -551,6 +572,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                         ## Comparison data ##
                         current_school_data = display_academic_data.loc[display_academic_data["Year"] == string_year].copy()
                         
+
                         # this time we want to force '***' to NaN
                         for col in current_school_data.columns:
                             current_school_data[col]=pd.to_numeric(current_school_data[col], errors="coerce")
@@ -615,8 +637,7 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
 # TODO: HERE - Need to figure out way to get School ID into df
                         #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                         category = "School Total|ELA Proficient %"
-                        print('Single year')
-                        print(current_school_data)
+
                         # Get school value for specific category
                         if category in current_school_data.columns:
 
@@ -635,7 +656,8 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
 
                             # Combine data, fix dtypes, and send to chart function
                             fig14c_all_data = pd.concat([fig14c_k8_school_data,fig14c_comp_data])
-
+                            print('OLD')
+                            print(fig14c_all_data)
                             fig14c_table_data = fig14c_all_data.copy()
 
                             fig14c_all_data[category] = pd.to_numeric(fig14c_all_data[category])
