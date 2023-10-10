@@ -156,24 +156,33 @@ def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataF
         pd.DataFrame: the corp_data dataframe after Total Proficiency is recalculated
     """
 
-    school_grades = school_data.loc[school_data["Category"].str.contains(r"Grade.[345678]", regex=True), "Category"].to_list()
-    school_grades = [i.split("|")[0] for i in school_grades]
-    school_grades = list(set(school_grades))
+    revised_data = corp_data.copy()
+
+    # TODO: Eventually going to need to normalize this data - right now school_data is coming in transposed
+    # TODO: from some functions (process corp data?) and not transposed in others (process selected data)
+    if "Category" in school_data:
+        school_grades = school_data.loc[school_data["Category"].str.contains(r"Grade.[345678]", regex=True), "Category"].to_list()
+        school_grades = [i.split("|")[0] for i in school_grades]
+        school_grades = list(set(school_grades))
+    else: # for nontransposed df
+        all_cols = school_data.columns.to_list()
+        school_grades = [g.split("|")[0] for g in all_cols if g.startswith("Grade")]
+        school_grades = list(set(school_grades))
 
     math_prof = [e + "|Math Total Proficient" for e in school_grades]
     math_test = [e + "|Math Total Tested" for e in school_grades]
     ela_prof = [e + "|ELA Total Proficient" for e in school_grades]
     ela_test = [e + "|ELA Total Tested" for e in school_grades]
 
-    adj_corp_math_prof = corp_data[corp_data.columns.intersection(math_prof)]
-    adj_corp_math_test = corp_data[corp_data.columns.intersection(math_test)]
-    adj_corp_ela_prof = corp_data[corp_data.columns.intersection(ela_prof)]
-    adj_corp_ela_tst = corp_data[corp_data.columns.intersection(ela_test)]
+    adj_corp_math_prof = revised_data[revised_data.columns.intersection(math_prof)]
+    adj_corp_math_test = revised_data[revised_data.columns.intersection(math_test)]
+    adj_corp_ela_prof = revised_data[revised_data.columns.intersection(ela_prof)]
+    adj_corp_ela_tst = revised_data[revised_data.columns.intersection(ela_test)]
 
-    corp_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
-    corp_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
+    revised_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
+    revised_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
 
-    return corp_data
+    return revised_data
 
 def calculate_percentage(numerator: str, denominator: str) -> np.ndarray: #[float|None|str]:
     """

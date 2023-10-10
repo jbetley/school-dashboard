@@ -498,12 +498,13 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
                 Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
         
             # get single year academic data
+# TODO:
             list_of_schools = comparison_school_list + [school]
             selected_k8_school_data = get_selected_k8_school_academic_data(list_of_schools, year)
 
             selected_clean_data = process_selected_k8_academic_data(selected_k8_school_data, school)
-
-            # print('CLEAN')
+# TODO: Here
+            print('CLEAN')
             # print(selected_clean_data)
 
             selected_raw_k8_school_data = get_k8_school_academic_data(school)
@@ -523,19 +524,21 @@ def update_academic_analysis(school: str, year: str, gradespan_value: str, compa
 
                     raw_corp_data = get_k8_corporation_academic_data(school)
 
-                    ## TODO
+                    ## TODO CORP DATA
                     selected_corp_data = raw_corp_data.loc[raw_corp_data["Year"] == numeric_year]
                     
-                    # clean up corp data so it can be merged
-                    # selected_corp_data.columns = selected_corp_data.columns.str.replace({"Corporation Name": "School_Name", "Corporation ID": "School ID"}, regex=False)
+                    # align Name and ID
                     selected_corp_data = selected_corp_data.rename(columns = {"Corporation Name": "School Name", "Corporation ID": "School ID"})
+                    
+                    # recalculate school totals to align with gradespan of selected school
+                    selected_corp_data = recalculate_total_proficiency(selected_corp_data, selected_clean_data)
+
+                    # clean up
                     selected_corp_data = selected_corp_data[selected_corp_data.columns[~selected_corp_data.columns.str.contains(r"Above|Approaching|At|Tested|Proficient|Pass|Test|ELA and Math|Male|Female")]]
-
-                     # add suffix to certain Categories
                     selected_corp_data = selected_corp_data.rename(columns={c: c + " Proficient %" for c in selected_corp_data.columns if c not in ["Year", "School Name", "School ID"]})
-                    # print(selected_corp_data)
-                    # TODO: HERE -Need to align columns and merge with selected_clean_data
-
+                    
+                    # TODO: HERE - Need to align columns (drop cols that arent the same) and merge with selected_clean_data
+                    
                     corp_name = raw_corp_data["Corporation Name"].values[0]
 
                     clean_corp_data = process_k8_corp_academic_data(raw_corp_data, clean_school_data)
