@@ -45,11 +45,11 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
 
     analysis_cols = [col for col in data.columns if search_string in col and any(substring for substring in categories if substring in col)]
 
-    info_categories_plus = info_categories + ["School ID"]
-    analysis_cols = info_categories_plus + analysis_cols
+    added_cols = ["School Name", "Low Grade", "High Grade", "School ID"]
+    analysis_cols =  + added_cols + analysis_cols
 
     analysis_data = data[analysis_cols]
-    
+  
     analysis_data = analysis_data.filter(regex="|".join([data_type,"School Name","School ID", "Low Grade","High Grade"]))
 
     # data will always have at least three cols (School Name, School ID, Low Grade, High Grade)
@@ -74,6 +74,7 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
         # analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
 
         if len(analysis_data.columns) > 1:
+
             analysis_label = create_chart_label(analysis_data)
             analysis_chart = make_group_bar_chart(analysis_data, school_name, analysis_label)
             analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
