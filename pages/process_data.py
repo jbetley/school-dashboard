@@ -110,6 +110,8 @@ def process_selected_k8_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
             comparison_data = combined_data.loc[combined_data['School ID'] != np.int64(school)]
             school_data = combined_data.loc[combined_data['School ID'] == np.int64(school)]
 
+            # print("Comparison Going In")
+            # print(comparison_data)
             comparison_data = recalculate_total_proficiency(comparison_data, school_data)
             
             final_data = pd.concat([school_data, comparison_data])
@@ -148,6 +150,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     data = data[data.columns[~data.columns.str.contains(r"ELA and Math")]]
     
     # NOTE: update is twice as fast as fillna?? (.015s vs .045s)
+    # TODO: is this even doing anything unless its reset to the variable??
     data.update(data.apply(pd.to_numeric, errors="coerce"))
 
     # Drop all columns for a Category if the value of "Total Tested" for that Category is "0"
@@ -243,6 +246,8 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
 
     return final_data
 
+# TODO: Only used at Academic Metric - Other corp_data processing is on Single_Analysis page
+# TODO: this cross references recalculate_total_proficiency() as well
 def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
     """
     Process a dataframe with ILEARN/IREAD data at corporation level (aggregated)

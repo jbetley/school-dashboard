@@ -140,7 +140,7 @@ def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
+def recalculate_total_proficiency(data: pd.DataFrame, school_data: pd.DataFrame) -> pd.DataFrame:
     """
     In order for an apples to apples comparison between aggregated school corporation academic
     data and the academic data of the selected school, we need to recalculate Total School
@@ -156,15 +156,22 @@ def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataF
         pd.DataFrame: the corp_data dataframe after Total Proficiency is recalculated
     """
 
-    revised_data = corp_data.copy()
+    revised_data = data.copy()
 
+# TODO: REvise corp data processing for Academic metrics - which will bring recalculate total metrics
+# TODO: into alignment both with respect to removing the Category check below, but also no longer woudl
+# TODO: require the revised data AND the school data to be submitted
+    # print('DATA TO REVISE_COMING IN')
+    # print(revised_data)
     # TODO: Eventually going to need to normalize this data - right now school_data is coming in transposed
     # TODO: from some functions (process corp data?) and not transposed in others (process selected data)
     if "Category" in school_data:
+        print('Category')
         school_grades = school_data.loc[school_data["Category"].str.contains(r"Grade.[345678]", regex=True), "Category"].to_list()
         school_grades = [i.split("|")[0] for i in school_grades]
-        school_grades = list(set(school_grades))
+
     else: # for nontransposed df
+        print('No Category (GOOD)')
         all_cols = school_data.columns.to_list()
         school_grades = [g.split("|")[0] for g in all_cols if g.startswith("Grade")]
         school_grades = list(set(school_grades))
@@ -177,10 +184,23 @@ def recalculate_total_proficiency(corp_data: pd.DataFrame, school_data: pd.DataF
     adj_corp_math_prof = revised_data[revised_data.columns.intersection(math_prof)]
     adj_corp_math_test = revised_data[revised_data.columns.intersection(math_test)]
     adj_corp_ela_prof = revised_data[revised_data.columns.intersection(ela_prof)]
-    adj_corp_ela_tst = revised_data[revised_data.columns.intersection(ela_test)]
+    adj_corp_ela_test = revised_data[revised_data.columns.intersection(ela_test)]
 
+    # TODO: Have None/None - need to ignore
+    # TODO: Have ***/*** - need to ignore
+    # TODO: Have 13/*** - need to treat *** as 0
+    # adj_corp_math_prof.update(adj_corp_math_prof.apply(pd.to_numeric, errors="coerce"))
+    # adj_corp_math_test.update(adj_corp_math_test.apply(pd.to_numeric, errors="coerce"))
+    # adj_corp_ela_prof.update(adj_corp_ela_prof.apply(pd.to_numeric, errors="coerce"))
+    
+    # adj_corp_ela_test.update(adj_corp_ela_test.apply(pd.to_numeric, errors="coerce"))
+
+    print(adj_corp_ela_prof)
+    print(adj_corp_ela_test)
+    # adj_corp_ela_test = adj_corp_ela_test.update(adj_corp_ela_test.apply(pd.to_numeric, errors="coerce"))
+    # print(adj_corp_ela_test)    
     revised_data["School Total|Math Proficient %"] = adj_corp_math_prof.sum(axis=1) / adj_corp_math_test.sum(axis=1)
-    revised_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_tst.sum(axis=1)
+    revised_data["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(axis=1) / adj_corp_ela_test.sum(axis=1)
 
     return revised_data
 
