@@ -67,6 +67,9 @@ import dash_bootstrap_components as dbc
 from pages.load_data import get_school_index, get_academic_dropdown_years, get_financial_info_dropdown_years, \
     get_school_dropdown_list, get_financial_analysis_dropdown_years
 
+from pages.layouts import create_radio_layout
+from pages.subnav import subnav_academic_information
+
 # Used to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
 FONT_FAMILY = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans&display=swap"
@@ -209,10 +212,11 @@ app = dash.Dash(
         }
     ],
 )
+
+## App Navigation ##
         
-# Dropdown shows single school if school login is used, shows the
-# associated group of schools if a 'network' login is used, and
-# shows all schools if admin login is used.
+# Dropdown shows single school if school login is used, shows the associated group
+# of schools if a 'network' login is used, and shows all schools if admin login is used.
 # NOTE: "application-state" is a dummy input
 @callback(
     Output("charter-dropdown", "options"),
@@ -273,8 +277,6 @@ def set_dropdown_value(charter_options):
     Input("year-dropdown", "value"),
     Input("url", "href"),
     Input("academic-type-store", "data"),
-    # supress_callback_exceptions = True,
-    # prevent_initial_call=True
 )
 
 # TODO: Problem: K12 schools are the bane of my existence. Need to be able to tell which
@@ -310,9 +312,6 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     if school_type == "K8" and academic_type_store == "hs":
         academic_type_store = "k8"
 
-    print('Year Dropdown:')
-    print(academic_type_store)
-
     if "academic" in current_page or "analysis_single" in current_page or \
         "analysis_multiple" in current_page or selected_school["Guest"].values[0] == "Y":
 
@@ -332,8 +331,8 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
         years = get_financial_info_dropdown_years(school_id)
 
 #TODO: The HS part of K12 Doesnt appear to be working
-    print('Debugging year list index issue:')
-    print(years)
+    # print('Debugging year list index issue:')
+    # print(years)
 # Currently both financial_analysis_dropdown and financial_info_dropdown are the same - they both
 # reads financial_data and returns a list of Year column names for each year for which ADM Average
 # is greater than "0"     
@@ -384,6 +383,272 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     ]
 
     return year_options, year_value, current_page
+
+# Academic Information - Subnavigation #
+@callback(      
+    Output("academic-information-type-radio", "options"),
+    Output("academic-information-type-radio","value"),
+    Output("academic-information-type-radio-container", "style"),
+    Output("academic-information-category-radio", "options"),
+    Output("academic-information-category-radio","value"),
+    Output("academic-information-category-radio-container","style"),
+    Output("academic-information-subnav-container", "style"),
+    Input("url", "href"),
+    Input("charter-dropdown", "value"),
+    Input("academic-information-type-radio", "value"),
+    State("academic-information-category-radio", "options"),
+    State("academic-information-category-radio", "value"),
+)
+def radio_type_selector(current_page: str, school: str, radio_type_value: str, radio_category_options: list, radio_category_value: str):
+    
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
+
+    current_page = current_page.rsplit("/", 1)[-1]
+
+    type_options_default = [
+        {"label": "K8", "value": "k8"},
+        {"label": "High School", "value": "hs"}        
+    ]
+    
+    category_options_default = [
+        {"label": "All Data", "value": "all"},
+        {"label": "By Grade", "value": "grade"},
+        {"label": "By Ethnicity", "value": "ethnicity"},
+        {"label": "By Subgroup", "value": "subgroup"}
+    ]
+    
+    if "academic_info" in current_page:
+        if school_type == "HS" or school_type == "AHS":
+            
+            subnav_container = {"display": "none"}
+
+            type_options = []
+            type_value = "hs"
+            type_container = {"display": "none"}
+            
+            category_options = []
+            category_value = ""            
+            category_container = {"display": "none"}
+
+        elif school_type == "K8":
+
+            subnav_container = {"display": "block"}
+            
+            type_options = []
+            type_value = "k8"            
+            type_container = {"display": "none"}
+
+            if radio_category_value: 
+                category_value = radio_category_value
+            else:
+                category_value = "all"
+
+            if radio_category_options:
+                category_options = radio_category_options
+            else:
+                category_options = category_options_default
+                
+            category_container = {"display": "block"}
+
+# TODO: Combine this and the below code
+        elif school_type == "K12" and (radio_type_value == "k8" or
+            radio_type_value == ""):
+
+            subnav_container = {"display": "block"}
+
+            if current_page == "academic_information_growth":
+                type_options = []
+                type_value = "k8"
+                type_container = {"display": "none"}
+
+            else:
+                type_options = type_options_default
+
+                if radio_type_value in ["k8","hs"]:
+                    type_value = radio_type_value
+                else:
+                    type_value = "k8"    
+                type_container = {"display": "block"}
+
+            if radio_category_value: 
+                category_value = radio_category_value
+            else:
+                category_value = "all"
+
+            if radio_category_options:
+                category_options = radio_category_options
+            else:
+                category_options = category_options_default
+
+            category_container = {"display": "block"}
+
+        elif school_type == "K12" and radio_type_value == "hs":
+
+            subnav_container = {"display": "none"}
+
+            type_options = type_options_default
+
+            if radio_type_value in ["k8","hs"]:
+                type_value = radio_type_value
+            else:
+                type_value = "k8"
+
+            type_container = {"display": "block"}
+            
+            category_options = []
+            category_value = ""            
+            category_container = {"display": "none"}
+
+    else:
+
+        subnav_container = {"display": "none"}
+        type_container = {"display": "none"}
+        category_container = {"display": "none"}
+
+        type_options = []
+        type_value = ""
+
+        category_options = []
+        category_value = ""
+
+    
+
+    # else:
+
+    #     type_container = {'display': 'none'}
+     
+    #     type_options = []
+        
+    #     # set type values anyway even if not displayed and
+    #     # hide subnav container for AHS/HS
+    #     if school_type == "AHS" or school_type == "HS":
+    #         subnav_container = {"display": "none"}
+    #         type_value = "hs"
+    #     else:
+    #         subnav_container = {"display": "block"}            
+    #         type_value = "k8"
+
+    # # Category Options
+    # # this includes academic_information, and academic_information_growth
+    # if "academic_information" in current_page and ((school_type == "K8") or \
+    #     (school_type == "K12" and radio_type_value == "k8")):
+    #     subnav_container = {"display": "block"}        
+    #     category_container = {"display": "block"}
+
+    #     options_default = [
+    #         {"label": "All Data", "value": "all"},
+    #         {"label": "By Grade", "value": "grade"},
+    #         {"label": "By Ethnicity", "value": "ethnicity"},
+    #         {"label": "By Subgroup", "value": "subgroup"}
+    #     ]
+
+    #     if radio_category_value: 
+    #         category_value = radio_category_value
+    #     else:
+    #         category_value = "all"
+
+    #     if radio_category_options:
+    #         category_options = radio_category_options
+    #     else:
+    #         category_options = options_default
+
+    # elif "academic_information" in current_page and school_type == "HS" or school_type == "AHS" or \
+    #     (school_type == "K12" and radio_type_value == "hs"):
+    #     subnav_container = {"display": "none"}          
+    #     category_container = {"display": "none"}
+    #     category_value = ""
+    #     category_options = []
+
+    # else:
+    #     subnav_container = {"display": "none"}          
+    #     category_container = {"display": "none"}
+    #     category_value = ""
+    #     category_options = []
+
+    # print(type_container)
+    # print(category_container)
+    # print (subnav_container)
+    return type_options, type_value, type_container, category_options, category_value, category_container, subnav_container
+
+# # Academic Information and Growth Categories #
+# @callback(
+#     Output("academic-information-category-radio", "options"),
+#     Output("academic-information-category-radio","value"),
+#     Output("academic-information-category-radio-container","style"),
+#     Output("academic-information-subnav-container", "style"),    
+#     Input("url", "href"),    
+#     Input("charter-dropdown", "value"),
+#     Input("academic-information-type-radio", "value"),
+#     State("academic-information-category-radio", "options"),
+#     State("academic-information-category-radio", "value"),
+   
+# )
+# def radio_category_selector(current_page: str, school: str, radio_type_value: str, radio_category_options: list, radio_category_value: str):
+
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
+
+#     current_page = current_page.rsplit("/", 1)[-1]
+
+#     # this includes academic_information, and academic_information_growth
+#     if "academic_information" in current_page and ((school_type == "K8") or \
+#         (school_type == "K12" and radio_type_value == "k8")):
+#         subnav_container = {"display": "block"}        
+#         category_container = {"display": "block"}
+
+#         options_default = [
+#             {"label": "All Data", "value": "all"},
+#             {"label": "By Grade", "value": "grade"},
+#             {"label": "By Ethnicity", "value": "ethnicity"},
+#             {"label": "By Subgroup", "value": "subgroup"}
+#         ]
+
+#         if radio_category_value: 
+#             category_value = radio_category_value
+#         else:
+#             category_value = "all"
+
+#         if radio_category_options:
+#             category_options = radio_category_options
+#         else:
+#             category_options = options_default
+
+#     elif "academic_information" in current_page and school_type == "HS" or school_type == "AHS" or \
+#         (school_type == "K12" and radio_type_value == "hs"):
+#         subnav_container = {"display": "none"}          
+#         category_container = {"display": "none"}
+#         category_value = ""
+#         category_options = []
+
+#     else:
+#         subnav_container = {"display": "none"}          
+#         category_container = {"display": "none"}
+#         category_value = ""
+#         category_options = []
+    
+#     return category_options, category_value, category_container, subnav_container
+
+# Academic Growth - Redirect ?? #
+# redirect url if school type is "HS" or "AHS"
+@callback(
+    Output("url", "href"),
+    Input("charter-dropdown", "value"),
+    Input("url", "href")
+)
+def redirect_hs(school: str, current_page: str):
+    selected_school = get_school_index(school)
+    school_type = selected_school["School Type"].values[0]
+
+    current_page = current_page.rsplit("/", 1)[-1]
+
+    if current_page == "academic_information_growth" and (school_type == "HS" or school_type == "AHS"):
+        return f"/academic_information"
+    else:
+        return dash.no_update
+
+
+
 
 # app.layout = html.Div(
 # NOTE: Test to see effect of layout as function vs. variable
@@ -538,15 +803,74 @@ def layout():
                     ],
                     className="no-print",
                 ),
+                html.Div(
+                    [            
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(subnav_academic_information(), id="subnav-academic", className="tabs"),
+                                    ],
+                                    className="bare-container--flex--center twelve columns",
+                                ),
+                            ],
+                            className="row",
+                        ),
+                    ],
+                    id="academic-information-subnav-container",
+                ),                        
+                # html.Div(
+                #     [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(create_radio_layout("academic-information", "type"),className="tabs"),
+
+                                    ],
+                                    className = "bare-container--flex--center twelve columns",
+                                ),
+                            ],
+                            className = "row",
+                        ),
+                #     ],
+                #     id="academic-information-type-radio-container",
+                # ),
+                # html.Div(
+                #     [                        
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(create_radio_layout("academic-information", "category"),className="tabs"),
+
+                                    ],
+                                    className = "bare-container--flex--center twelve columns",
+                                ),
+                            ],
+                            className = "row",
+                        ),
+                #     ],
+                #     id="academic-information-category-radio-container",
+                # ),                           
+                # html.Hr(className = "line_bottom"),
+
+
+
+
+
+
+
+## PAGE CONTENT ##                
                 dash.page_container,
             ],
         )
     ],
 )
 
-for page in dash.page_registry.values():
-    if page["path"].startswith("/academic_info"):
-        print(page["name"])
+# for page in dash.page_registry.values():
+#     if page["path"].startswith("/academic_info"):
+#         print(page["name"])
     
 # testing layout as a function - not sure its faster
 app.layout = layout 

@@ -28,127 +28,127 @@ from pages.subnav import subnav_academic_information
 
 dash.register_page(__name__, top_nav=True, name = "Academic Information", path = "/academic_information", order=7)
 
-# School Type - relevant for K12 schools
-@callback(      
-    Output("academic-information-type-radio", "options"),
-    Output("academic-information-type-radio","value"),
-    Output("academic-information-type-radio-container", "style"),
-    Output("information-subnav-container", "style"),
-    Output("academic-type-store", "data"),
-    Input("charter-dropdown", "value"),
-    Input("academic-information-type-radio", "value"),
-    supress_callback_exceptions = True,
-    prevent_initial_call=True
-)
-def radio_type_selector(school: str, radio_type: str):
-    
-    selected_school = get_school_index(school)
-    school_type = selected_school["School Type"].values[0]
-    
-    subnav_container = {"display": "block"}
-    
-    if school_type == "K12":
-        type_container = {'display': 'block'}
-
-        type_options = [
-            {"label": "K-8", "value": "k8"},
-            {"label": "High School", "value": "hs"}        
-        ]
-
-        # could check values against dictionary, but its far simpler to use a static list
-        # if any(d['label'] == 'k8' or d['label'] == 'hs' for d in a):
-        if radio_type in ["k8","hs"]:
-            type_value = radio_type
-        else:
-            type_value = "k8"
-
-    else:
-
-        type_container = {'display': 'none'}
-        type_options = []
-        
-        # set type value for AHS/HS even though options are empty
-        # also hide subnav container (as AHS/HS do not have growth data)
-        if school_type == "AHS" or school_type == "HS":
-            type_value = "hs"
-            subnav_container = {"display": "none"}
-
-        else:
-            type_value = "k8"
-
-    store_value = type_value
-
-    print('Store Value in Academic:')
-    print(store_value)
-
-    return type_options, type_value, type_container, subnav_container, store_value
-
-# TODO: This isn't working either as a standalone callback or as part of the type value callback above
-# See:
-# https://community.plotly.com/t/a-nonexistent-object-was-used-in-an-output-of-a-dash-callback/60897/18
-# https://community.plotly.com/t/dash-pages-nonexistent-object-was-used-in-an-input/74406/4
-
-# https://community.plotly.com/t/implementing-dcc-store-on-multi-page-app/57054/20
-# https://community.plotly.com/t/error-when-trying-to-store-data-in-multipage-app/72093/7
-# https://community.plotly.com/t/a-nonexistent-object-was-used-in-an-input-of-a-dash-callback-bug-with-dcc-store/66038
-
-# Track the type-radio
+# # School Type - relevant for K12 schools
 # @callback(      
+#     Output("academic-information-type-radio", "options"),
+#     Output("academic-information-type-radio","value"),
+#     Output("academic-information-type-radio-container", "style"),
+#     Output("information-subnav-container", "style"),
 #     Output("academic-type-store", "data"),
 #     Input("charter-dropdown", "value"),
-#     State("academic-information-type-radio", "value"),
-#     suppress_callback_exceptions=True
+#     Input("academic-information-type-radio", "value"),
+#     supress_callback_exceptions = True,
+#     prevent_initial_call=True
 # )
-# def track_type(school: str, radio_type_state: str):
-#     if radio_type_state:
-#         store_value = radio_type_state
+# def radio_type_selector(school: str, radio_type: str):
+    
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
+    
+#     subnav_container = {"display": "block"}
+    
+#     if school_type == "K12":
+#         type_container = {'display': 'block'}
+
+#         type_options = [
+#             {"label": "K-8", "value": "k8"},
+#             {"label": "High School", "value": "hs"}        
+#         ]
+
+#         # could check values against dictionary, but its far simpler to use a static list
+#         # if any(d['label'] == 'k8' or d['label'] == 'hs' for d in a):
+#         if radio_type in ["k8","hs"]:
+#             type_value = radio_type
+#         else:
+#             type_value = "k8"
+
 #     else:
-#         store_value = "None"
-    
+
+#         type_container = {'display': 'none'}
+#         type_options = []
+        
+#         # set type value for AHS/HS even though options are empty
+#         # also hide subnav container (as AHS/HS do not have growth data)
+#         if school_type == "AHS" or school_type == "HS":
+#             type_value = "hs"
+#             subnav_container = {"display": "none"}
+
+#         else:
+#             type_value = "k8"
+
+#     store_value = type_value
+
+#     print('Store Value in Academic:')
 #     print(store_value)
+
+#     return type_options, type_value, type_container, subnav_container, store_value
+
+# # TODO: This isn't working either as a standalone callback or as part of the type value callback above
+# # See:
+# # https://community.plotly.com/t/a-nonexistent-object-was-used-in-an-output-of-a-dash-callback/60897/18
+# # https://community.plotly.com/t/dash-pages-nonexistent-object-was-used-in-an-input/74406/4
+
+# # https://community.plotly.com/t/implementing-dcc-store-on-multi-page-app/57054/20
+# # https://community.plotly.com/t/error-when-trying-to-store-data-in-multipage-app/72093/7
+# # https://community.plotly.com/t/a-nonexistent-object-was-used-in-an-input-of-a-dash-callback-bug-with-dcc-store/66038
+
+# # Track the type-radio
+# # @callback(      
+# #     Output("academic-type-store", "data"),
+# #     Input("charter-dropdown", "value"),
+# #     State("academic-information-type-radio", "value"),
+# #     suppress_callback_exceptions=True
+# # )
+# # def track_type(school: str, radio_type_state: str):
+# #     if radio_type_state:
+# #         store_value = radio_type_state
+# #     else:
+# #         store_value = "None"
     
-#     return store_value
-
-# Proficiency Category
-@callback(
-    Output("academic-information-category-radio", "options"),
-    Output("academic-information-category-radio","value"),
-    Output("academic-information-category-radio-container","style"),
-    Input("charter-dropdown", "value"),
-    Input("academic-information-type-radio", "value"),
-    State("academic-information-category-radio", "options"),
-    State("academic-information-category-radio", "value")  
-)
-def radio_category_selector(school: str, radio_type_value: str, radio_category_options: list, radio_category_value: str):
-
-    options_default = [
-        {"label": "All Data", "value": "all"},
-        {"label": "By Grade", "value": "grade"},
-        {"label": "By Ethnicity", "value": "ethnicity"},
-        {"label": "By Subgroup", "value": "subgroup"}
-    ]
+# #     print(store_value)
     
-    value_default = "all"
+# #     return store_value
 
-    if radio_type_value == "hs":
-        category_value = ""
-        category_options = []
-        category_container = {"display": "none"}
+# # Proficiency Category
+# @callback(
+#     Output("academic-information-category-radio", "options"),
+#     Output("academic-information-category-radio","value"),
+#     Output("academic-information-category-radio-container","style"),
+#     Input("charter-dropdown", "value"),
+#     Input("academic-information-type-radio", "value"),
+#     State("academic-information-category-radio", "options"),
+#     State("academic-information-category-radio", "value")  
+# )
+# def radio_category_selector(school: str, radio_type_value: str, radio_category_options: list, radio_category_value: str):
+
+#     options_default = [
+#         {"label": "All Data", "value": "all"},
+#         {"label": "By Grade", "value": "grade"},
+#         {"label": "By Ethnicity", "value": "ethnicity"},
+#         {"label": "By Subgroup", "value": "subgroup"}
+#     ]
     
-    else:                
-        if radio_category_value: 
-            category_value = radio_category_value
-        else:
-            category_value = value_default
+#     value_default = "all"
 
-        if radio_category_options:
-            category_options = radio_category_options
-        else:
-            category_options = options_default
+#     if radio_type_value == "hs":
+#         category_value = ""
+#         category_options = []
+#         category_container = {"display": "none"}
+    
+#     else:                
+#         if radio_category_value: 
+#             category_value = radio_category_value
+#         else:
+#             category_value = value_default
 
-        category_container = {"display": "block"}
+#         if radio_category_options:
+#             category_options = radio_category_options
+#         else:
+#             category_options = options_default
 
-    return category_options, category_value, category_container
+#         category_container = {"display": "block"}
+
+#     return category_options, category_value, category_container
 
 # Main
 @callback(
@@ -772,86 +772,47 @@ def update_academic_information_page(school: str, year: str, radio_type: str, ra
 def layout():
     return html.Div(
         [
-            html.Div(
-                [            
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(subnav_academic_information(), id="subnav-academic", className="tabs"),
-                                ],
-                                className="bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className="row",
-                    ),
-                    # html.Div(
-                    #     [
-                    #         html.Div(
-                    #             [
-                    #                 html.Div(
-                    #                     [
-                    #                         html.Div(
-                    #                             [
-                    #                             html.Div(
-                    #                                 [
-                    #                                     html.Div(
-                    #                                         [
-                    #                                             dbc.RadioItems(
-                    #                                                 id="academic-information-type-radio",
-                    #                                                 className="btn-group",
-                    #                                                 inputClassName="btn-check",
-                    #                                                 labelClassName="btn btn-outline-primary",
-                    #                                                 labelCheckedClassName="active",
-                    #                                                 value=[],
-                    #                                                 persistence=False,
-                    #                                                 ),
-                    #                                             ],
-                    #                                             className="radio-group-academic",
-                    #                                         )
-                    #                                     ],
-                    #                                     className = "bare-container--flex--center twelve columns",
-                    #                                 ),
-                    #                             ],
-                    #                             className = "row",
-                    #                         ),
-                    #                     ],
-                    #                     id = "academic-information-type-radio-container",
-                    #                 )
-                    #             ],
-                    #             className = "bare-container--flex--center twelve columns",
-                    #         ),
-                    #     ],
-                    #     className = "row",
-                    # ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(create_radio_layout("academic-information", "type"),className="tabs"),
+            # html.Div(
+            #     [            
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         html.Div(subnav_academic_information(), id="subnav-academic", className="tabs"),
+            #                     ],
+            #                     className="bare-container--flex--center twelve columns",
+            #                 ),
+            #             ],
+            #             className="row",
+            #         ),
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         html.Div(create_radio_layout("academic-information", "type"),className="tabs"),
 
-                                ],
-                                className = "bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className = "row",
-                    ),                    
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(create_radio_layout("academic-information", "category"),className="tabs"),
+            #                     ],
+            #                     className = "bare-container--flex--center twelve columns",
+            #                 ),
+            #             ],
+            #             className = "row",
+            #         ),                    
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         html.Div(create_radio_layout("academic-information", "category"),className="tabs"),
 
-                                ],
-                                className = "bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className = "row",
-                    ),
-                    html.Hr(className = "line_bottom"),
-                ],
-                id="information-subnav-container",
-            ),
+            #                     ],
+            #                     className = "bare-container--flex--center twelve columns",
+            #                 ),
+            #             ],
+            #             className = "row",
+            #         ),
+            #         html.Hr(className = "line_bottom"),
+            #     ],
+            #     id="information-subnav-container",
+            # ),
             html.Div(
                 [
                 dcc.Loading(

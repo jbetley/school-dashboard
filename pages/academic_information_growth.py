@@ -20,56 +20,56 @@ from pages.subnav import subnav_academic_information
 
 dash.register_page(__name__,  name = "Academic Growth", path = "/academic_information_growth", order=8)
 
-# redirect url if school type is "HS" or "AHS"
-@callback(
-    Output("url", "href"),
-    Input("charter-dropdown", "value"),
-    Input("url", "href")
-)
-def redirect_hs(school: str, current_page: str):
-    selected_school = get_school_index(school)
-    school_type = selected_school["School Type"].values[0]
+# # redirect url if school type is "HS" or "AHS"
+# @callback(
+#     Output("url", "href"),
+#     Input("charter-dropdown", "value"),
+#     Input("url", "href")
+# )
+# def redirect_hs(school: str, current_page: str):
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
 
-    current_page = current_page.rsplit("/", 1)[-1]
+#     current_page = current_page.rsplit("/", 1)[-1]
 
-    if current_page == "academic_information_growth" and (school_type == "HS" or school_type == "AHS"):
-        return f"/academic_information"
-    else:
-        return dash.no_update
+#     if current_page == "academic_information_growth" and (school_type == "HS" or school_type == "AHS"):
+#         return f"/academic_information"
+#     else:
+#         return dash.no_update
 
-# Category
-@callback(
-    Output("academic-growth-category-radio", "options"),
-    Output("academic-growth-category-radio","value"),
-    Output("academic-growth-category-radio-container","style"),
-    Input("charter-dropdown", "value"),    
-    State("academic-growth-category-radio", "options"),
-    State("academic-growth-category-radio", "value")  
-)
-def radio_category_selector(school: str, radio_category_options: list, radio_category_value: str):
+# # Category
+# @callback(
+#     Output("academic-growth-category-radio", "options"),
+#     Output("academic-growth-category-radio","value"),
+#     Output("academic-growth-category-radio-container","style"),
+#     Input("charter-dropdown", "value"),    
+#     State("academic-growth-category-radio", "options"),
+#     State("academic-growth-category-radio", "value")  
+# )
+# def radio_category_selector(school: str, radio_category_options: list, radio_category_value: str):
 
-    options_default = [
-        {"label": "All Data", "value": "all"},
-        {"label": "By Grade", "value": "grade"},
-        {"label": "By Ethnicity", "value": "ethnicity"},
-        {"label": "By Subgroup", "value": "subgroup"}
-    ]
+#     options_default = [
+#         {"label": "All Data", "value": "all"},
+#         {"label": "By Grade", "value": "grade"},
+#         {"label": "By Ethnicity", "value": "ethnicity"},
+#         {"label": "By Subgroup", "value": "subgroup"}
+#     ]
 
-    value_default = "all"
+#     value_default = "all"
 
-    if radio_category_value:
-        category_value = radio_category_value
-    else:
-        category_value = value_default
+#     if radio_category_value:
+#         category_value = radio_category_value
+#     else:
+#         category_value = value_default
 
-    if radio_category_options:
-        category_options = radio_category_options
-    else:
-        category_options = options_default
+#     if radio_category_options:
+#         category_options = radio_category_options
+#     else:
+#         category_options = options_default
 
-    category_container = {"display": "block"}
+#     category_container = {"display": "block"}
 
-    return category_options, category_value, category_container
+#     return category_options, category_value, category_container
 
 # Main
 @callback(
@@ -85,7 +85,7 @@ def radio_category_selector(school: str, radio_category_options: list, radio_cat
     Output("academic-growth-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("academic-growth-category-radio", "value"),  
+    Input("academic-information-category-radio", "value"),  
 )
 def update_academic_info_growth_page(school: str, year: str, radio_category: str):
     if not school:
@@ -286,35 +286,35 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
 def layout():
     return html.Div(
             [
-            html.Div(
-                [            
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(subnav_academic_information(), id="subnav-academic", className="tabs"),
-                                ],
-                                className="bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className="row",
-                    ),
-                ],
-                id="growth-subnav-container",
-            ),
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(create_radio_layout("academic-growth", "category"),className="tabs"),
+            # html.Div(
+            #     [            
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         html.Div(subnav_academic_information(), id="subnav-academic", className="tabs"),
+            #                     ],
+            #                     className="bare-container--flex--center twelve columns",
+            #                 ),
+            #             ],
+            #             className="row",
+            #         ),
+            #     ],
+            #     id="growth-subnav-container",
+            # ),
+            # html.Div(
+            #     [
+            #         html.Div(
+            #             [
+            #                 html.Div(create_radio_layout("academic-growth", "category"),className="tabs"),
 
-                        ],
-                        className = "bare-container--flex--center twelve columns",
-                    ),
-                ],
-                className = "row",
-            ),
-            html.Hr(className = "line_bottom"),            
+            #             ],
+            #             className = "bare-container--flex--center twelve columns",
+            #         ),
+            #     ],
+            #     className = "row",
+            # ),
+            # html.Hr(className = "line_bottom"),            
             html.Div(
                 [
                 dcc.Loading(
