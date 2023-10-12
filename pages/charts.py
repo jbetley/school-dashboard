@@ -13,6 +13,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from .calculations import check_for_insufficient_n_size, check_for_no_data
 from .string_helpers import customwrap
+from .load_data import get_school_index
 
 # Colors
 # https://codepen.io/ctf0/pen/BwLezW
@@ -1123,7 +1124,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
 
     return fig_layout
 
-def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> list:
+def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> list:
     """
     Creates a layout containing a label and a grouped bar chart (px.bar)
 
@@ -1138,17 +1139,21 @@ def make_group_bar_chart(values: pd.DataFrame, school_name: str, label: str) -> 
     """
     data = values.copy()
 
+    selected_school = get_school_index(str(school_id))
+    school_name = selected_school["School Name"].values[0]
+
     if 'Low Grade' in data:
         data = data.drop(['Low Grade', 'High Grade'], axis = 1)
 
-    if 'School ID' in data:
-        data = data.drop(['School ID'], axis = 1)
+    # if 'School ID' in data:
+    #     data = data.drop(['School ID'], axis = 1)
 
-    # TODO: Test to see if this is necessary here
-    # Only want to display categories where the selected school has data - this
-    # drops all columns where the row at school_name_idx has a NaN value    
-    school_name_idx = data.index[data['School Name'].str.contains(school_name)].tolist()[0]
-    data = data.loc[:, ~data.iloc[school_name_idx].isna()]
+    # TODO: Do Not think this is necessary here
+    # locate school index by School ID and then drop School ID column
+    # school_name_idx = data.index[data["School ID"] ==  np.int64(school_id)].tolist()[0]
+    # data = data.loc[:, ~data.iloc[school_name_idx].isna()]    
+    
+    data = data.drop("School ID",axis=1)
 
     # reset index
     data.reset_index(drop=True,inplace=True)

@@ -1713,17 +1713,14 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
     data = data.reset_index(drop=True)
     data.columns = data.columns.astype(str)
 
-# TODO: test to determine whether any data is coming in without School ID
-    if "School ID" in data:
+    # TODO: test to determine whether any data is coming in without School ID
+    # locate school index by School ID and then drop School ID column
+    school_name_idx = data.index[data["School ID"] ==  np.int64(school_id)].tolist()[0]
+    data = data.drop("School ID",axis=1)
 
-        print('HERE IN SCHOOL ID')
-        # locate school index by School ID and then drop School ID column
-        school_name_idx = data.index[data["School ID"] ==  np.int64(school_id)].tolist()[0]
-        data = data.drop("School ID",axis=1)
-
-    else:
-        print('HERE IN SCHOOL NAME')
-        school_name_idx = data.index[data["School Name"].str.contains(school_id)].tolist()[0]
+    # else:
+    #     print('HERE IN SCHOOL NAME')
+    #     school_name_idx = data.index[data["School Name"].str.contains(school_id)].tolist()[0]
 
     # hide the header "School Name"
     data = data.rename(columns = {"School Name" : ""})

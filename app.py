@@ -331,6 +331,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     else:
         years = get_financial_info_dropdown_years(school_id)
 
+#TODO: The HS part of K12 Doesnt appear to be working
     print('Debugging year list index issue:')
     print(years)
 # Currently both financial_analysis_dropdown and financial_info_dropdown are the same - they both

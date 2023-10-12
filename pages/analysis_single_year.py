@@ -277,7 +277,7 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
         raise PreventUpdate
 
     # show 2019 instead of 2020 as 2020 has no academic data
-    string_year = "2019" if year == "2020" else year
+    string_year = year #"2019" if year == "2020" else year
     numeric_year = int(string_year)
 
     selected_school = get_school_index(school_id)
@@ -399,7 +399,7 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
             hs_analysis_data = hs_analysis_data.loc[:, ~hs_analysis_data.iloc[school_name_idx].isna()]
 
             # check to see if there is data after processing
-            if len(hs_analysis_data.columns) <= 4:
+            if len(hs_analysis_data.columns) <= 5:
                 dropdown_container = {"display": "none"}            
                 hs_analysis_empty_container = {"display": "block"}
             
@@ -423,7 +423,7 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
                 sat_subgroup_math = create_hs_analysis_layout("Math", hs_analysis_data, subgroup, school_id)
 
                 # Display Logic
-
+             
                 if not grad_overview and not grad_ethnicity and not grad_subgroup:
                     grad_overview = no_data_fig_label("Comparison: Graduation Rates", 200, "pretty")
                     grad_overview_container = {"display": "block"}
@@ -504,7 +504,16 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
 
             selected_clean_data = process_selected_k8_academic_data(selected_k8_school_data, school_id)
 
-            if ((school_type == "K8" or school_type == "K12") and len(selected_clean_data.index) > 0):
+            # NOTE: We don't want to get rid of "***" yet, but we also don't want to pass through a
+            # dataframe that that is all "***" - so we convert create a copy, coerce all of the academic
+            # columns to numeric and check to see if the entire dataframe for NaN
+            check_for_unchartable_data = selected_clean_data.copy()
+            check_for_unchartable_data.drop(["School Name", "School ID", "Low Grade", "High Grade", "Year"], axis=1, inplace=True)
+            for col in check_for_unchartable_data.columns:
+                check_for_unchartable_data[col] = pd.to_numeric(check_for_unchartable_data[col], errors="coerce")
+
+            if ((school_type == "K8" or school_type == "K12") and len(selected_clean_data.index) > 0) and \
+                check_for_unchartable_data.isnull().all().all() == False:
 
                 k8_analysis_main_container = {"display": "block"}
                 k8_analysis_empty_container = {"display": "none"}
@@ -517,8 +526,12 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
                 selected_corp_data = selected_corp_data.rename(columns = {"Corporation Name": "School Name", "Corporation ID": "School ID"})
                 
                 # recalculate school totals to align with gradespan of selected school
-                selected_corp_data = recalculate_total_proficiency(selected_corp_data, selected_clean_data)
+                revised_school_totals = recalculate_total_proficiency(selected_corp_data, selected_clean_data)
 
+                # replace current school total with revised data                
+                selected_corp_data["School Total|Math"] = selected_corp_data["School ID"].map(revised_school_totals.set_index("School ID")["School Total|Math Proficient %"]).fillna(selected_corp_data["School Total|Math"])
+                selected_corp_data["School Total|ELA"] = selected_corp_data["School ID"].map(revised_school_totals.set_index("School ID")["School Total|ELA Proficient %"]).fillna(selected_corp_data["School Total|ELA"])
+                
                 if "IREAD Pass N" in selected_corp_data.columns:
                     selected_corp_data["IREAD"] = pd.to_numeric(selected_corp_data["IREAD Pass N"], errors="coerce") \
                         / pd.to_numeric(selected_corp_data["IREAD Test N"], errors="coerce")
@@ -566,7 +579,7 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
 
                     fig14c_all_data[category] = pd.to_numeric(fig14c_all_data[category])
 
-                    fig14c_chart = make_bar_chart(fig14c_all_data, category, school_name, "Comparison: Current Year ELA Proficiency")
+                    fig14c_chart = make_bar_chart(fig14c_all_data, category, school_id, "Comparison: Current Year ELA Proficiency")
 
                     fig14c_table_data["School Name"] = create_school_label(fig14c_table_data)
                     fig14c_table_data = fig14c_table_data[["School Name", "School ID", category]]
@@ -591,7 +604,7 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
 
                     fig14d_all_data[category] = pd.to_numeric(fig14d_all_data[category])
 
-                    fig14d_chart = make_bar_chart(fig14d_all_data,category, school_name, "Comparison: Current Year Math Proficiency")
+                    fig14d_chart = make_bar_chart(fig14d_all_data,category, school_id, "Comparison: Current Year Math Proficiency")
 
                     fig14d_table_data["School Name"] = create_school_label(fig14d_table_data)
                     
@@ -617,7 +630,7 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
 
                     fig_iread_all_data[category] = pd.to_numeric(fig_iread_all_data[category])
 
-                    fig_iread_chart = make_bar_chart(fig_iread_all_data,category, school_name, "Comparison: Current Year IREAD Proficiency")
+                    fig_iread_chart = make_bar_chart(fig_iread_all_data,category, school_id, "Comparison: Current Year IREAD Proficiency")
 
                     fig_iread_table_data["School Name"] = create_school_label(fig_iread_table_data)
 
@@ -642,14 +655,13 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
 
                 fig16a1_final_data = combined_selected_data.loc[:, (combined_selected_data.columns.isin(categories_16a1))]
 
-                if len(fig16a1_final_data.columns) > 2:                            
+                if len(fig16a1_final_data.columns) > 4:
 
                     fig16a1_final_data, fig16a1_category_string, fig16a1_school_string = identify_missing_categories(fig16a1_final_data, categories_16a1)
 
                     fig16a1_label = create_chart_label(fig16a1_final_data)
-                    fig16a1_chart = make_group_bar_chart(fig16a1_final_data, school_name, fig16a1_label)
+                    fig16a1_chart = make_group_bar_chart(fig16a1_final_data, school_id, fig16a1_label)
                     fig16a1_table_data = combine_school_name_and_grade_levels(fig16a1_final_data)
-
                     fig16a1_table = create_comparison_table(fig16a1_table_data, school_id,"")
 
                     fig16a1 = create_group_barchart_layout(fig16a1_chart,fig16a1_table,fig16a1_category_string,fig16a1_school_string)
@@ -670,12 +682,12 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
                 
                 fig16b1_final_data = combined_selected_data.loc[:, (combined_selected_data.columns.isin(categories_16b1))]
                 
-                if len(fig16b1_final_data.columns) > 2:
+                if len(fig16b1_final_data.columns) > 4:
 
                     fig16b1_final_data, fig16b1_category_string, fig16b1_school_string = identify_missing_categories(fig16b1_final_data, categories_16b1)                            
                     
                     fig16b1_label = create_chart_label(fig16b1_final_data)
-                    fig16b1_chart = make_group_bar_chart(fig16b1_final_data, school_name, fig16b1_label)
+                    fig16b1_chart = make_group_bar_chart(fig16b1_final_data, school_id, fig16b1_label)
                     fig16b1_table_data = combine_school_name_and_grade_levels(fig16b1_final_data)
                     fig16b1_table = create_comparison_table(fig16b1_table_data, school_id,"")
 
@@ -697,14 +709,14 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
                 categories_16a2 =  added_categories + headers_16a2
 
                 fig16a2_final_data = combined_selected_data.loc[:, (combined_selected_data.columns.isin(categories_16a2))]
-                
-                if len(fig16a2_final_data.columns) > 2:
+             
+                if len(fig16a2_final_data.columns) > 4:
         
                     # fig16a2_final_data = merge_schools(fig16a2_k8_school_data, current_corp_data, comparison_schools, headers_16a2, corp_name)
                     fig16a2_final_data, fig16a2_category_string, fig16a2_school_string = identify_missing_categories(fig16a2_final_data, categories_16a2)                            
 
                     fig16a2_label = create_chart_label(fig16a2_final_data)
-                    fig16a2_chart = make_group_bar_chart(fig16a2_final_data, school_name, fig16a2_label)
+                    fig16a2_chart = make_group_bar_chart(fig16a2_final_data, school_id, fig16a2_label)
                     fig16a2_table_data = combine_school_name_and_grade_levels(fig16a2_final_data)
                
                     fig16a2_table = create_comparison_table(fig16a2_table_data, school_id,"")
@@ -726,12 +738,12 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
 
                 fig16b2_final_data = combined_selected_data.loc[:, (combined_selected_data.columns.isin(categories_16b2))]
 
-                if len(fig16b2_final_data.columns) > 2:
+                if len(fig16b2_final_data.columns) > 4:
 
                     fig16b2_final_data, fig16b2_category_string, fig16b2_school_string = identify_missing_categories(fig16b2_final_data, categories_16b2)
 
                     fig16b2_label = create_chart_label(fig16b2_final_data)
-                    fig16b2_chart = make_group_bar_chart(fig16b2_final_data, school_name, fig16b2_label)
+                    fig16b2_chart = make_group_bar_chart(fig16b2_final_data, school_id, fig16b2_label)
                     fig16b2_table_data = combine_school_name_and_grade_levels(fig16b2_final_data)
                     fig16b2_table = create_comparison_table(fig16b2_table_data, school_id, "")
 

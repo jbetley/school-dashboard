@@ -14,9 +14,9 @@ from .string_helpers import create_chart_label,combine_school_name_and_grade_lev
 from .charts import make_group_bar_chart, make_multi_line_chart
 from .tables import create_comparison_table, no_data_page
 
-def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: list, school: str) -> list:
+def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: list, school_id: str) -> list:
 
-    selected_school = get_school_index(school)    
+    selected_school = get_school_index(school_id)    
     school_name = selected_school["School Name"].values[0]
 
     tested_categories = []
@@ -46,7 +46,8 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
     analysis_cols = [col for col in data.columns if search_string in col and any(substring for substring in categories if substring in col)]
 
     added_cols = ["School Name", "Low Grade", "High Grade", "School ID"]
-    analysis_cols =  + added_cols + analysis_cols
+
+    analysis_cols = added_cols + analysis_cols
 
     analysis_data = data[analysis_cols]
   
@@ -76,10 +77,10 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
         if len(analysis_data.columns) > 1:
 
             analysis_label = create_chart_label(analysis_data)
-            analysis_chart = make_group_bar_chart(analysis_data, school_name, analysis_label)
+            analysis_chart = make_group_bar_chart(analysis_data, school_id, analysis_label)
             analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
 
-            analysis_table = create_comparison_table(analysis_table_data, school,"")
+            analysis_table = create_comparison_table(analysis_table_data, school_id,"")
             final_analysis_group = create_group_barchart_layout(analysis_chart,analysis_table, category_string, school_string)
 
         else:

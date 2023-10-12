@@ -74,19 +74,19 @@ def process_selected_k8_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
     # filter
     data = data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year|ELA and Math",axis=1)
     data = data[data.columns[~data.columns.str.contains(r"Female|Male")]]
-    # data = data[data.columns[~data.columns.str.contains(r"ELA and Math")]]
 
+    # TODO: We do not coerce to_numeric here
     # NOTE: update is twice as fast as fillna?? (.015s vs .045s)
-    data.update(data.apply(pd.to_numeric, errors="coerce"))
+    # data.update(data.apply(pd.to_numeric, errors="coerce"))
 
     # Drop all columns for a Category if the value of "Total Tested" for that Category is "0"
     # for the school is "0" e.g., where no data could be (and is) alternately represented by
     # NULL, None, or "0"
     data = data.loc[:, ~data.iloc[school_idx].isna()]
 
-    if len(data.index) <= 1:
+    if len(data.index) < 1:
         
-        calculated_data = pd.DataFrame()
+        final_data = pd.DataFrame()
 
     else:
    
@@ -107,13 +107,15 @@ def process_selected_k8_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
             # school. E.g., school is k-5, comparison school is k-8, we recalculate comparison school
             # totals usings grade k-5.
 
-            comparison_data = combined_data.loc[combined_data['School ID'] != np.int64(school)]
-            school_data = combined_data.loc[combined_data['School ID'] == np.int64(school)]
+            comparison_data = combined_data.loc[combined_data['School ID'] != np.int64(school)].copy()
+            school_data = combined_data.loc[combined_data['School ID'] == np.int64(school)].copy()
 
-            # print("Comparison Going In")
-            # print(comparison_data)
-            comparison_data = recalculate_total_proficiency(comparison_data, school_data)
+            revised_school_totals = recalculate_total_proficiency(comparison_data, school_data)
             
+            # replace current school total with revised data
+            comparison_data["School Total|Math Proficient %"] = comparison_data["School ID"].map(revised_school_totals.set_index("School ID")["School Total|Math Proficient %"]).fillna(comparison_data["School Total|Math Proficient %"])
+            comparison_data["School Total|ELA Proficient %"] = comparison_data["School ID"].map(revised_school_totals.set_index("School ID")["School Total|ELA Proficient %"]).fillna(comparison_data["School Total|ELA Proficient %"])
+                        
             final_data = pd.concat([school_data, comparison_data])
 
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
@@ -123,11 +125,6 @@ def process_selected_k8_academic_data(data: pd.DataFrame, school: str) -> pd.Dat
 
         # transpose dataframes and clean headers    
         final_data.columns = final_data.columns.astype(str)
-
-        # data_proficiency = (data_proficiency.set_index("Year").T.rename_axis("Category").rename_axis(None, axis=1).reset_index())
-        # data_proficiency = data_proficiency[data_proficiency["Category"].str.contains("School Name") == False]
-        # data_proficiency = data_proficiency.reset_index(drop=True)
-        # data_proficiency = data_proficiency.rename(columns={c: str(c)+"School" for c in data_proficiency.columns if c not in ["Category"]})
 
     return final_data
 
@@ -150,7 +147,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     data = data[data.columns[~data.columns.str.contains(r"ELA and Math")]]
     
     # NOTE: update is twice as fast as fillna?? (.015s vs .045s)
-    # TODO: is this even doing anything unless its reset to the variable??
+    # TODO: THIS DOESNT DO ANYTHING
     data.update(data.apply(pd.to_numeric, errors="coerce"))
 
     # Drop all columns for a Category if the value of "Total Tested" for that Category is "0"
@@ -262,10 +259,11 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
         corp_data = pd.DataFrame()
     
     else:
-        corp_info = corp_data[["Corporation Name"]].copy()
+
+        corp_info = corp_data[["Corporation Name","Corporation ID"]].copy()
 
         # Filter and clean the dataframe
-        corp_data = corp_data.filter(regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
+        corp_data = corp_data.filter(regex=r"Corporation ID|Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",axis=1)
 
         # Drop "ELA and Math"
         corp_data = corp_data[corp_data.columns[~corp_data.columns.str.contains(r"ELA and Math")]].copy()
@@ -300,9 +298,20 @@ def process_k8_corp_academic_data(corp_data: pd.DataFrame, school_data: pd.DataF
             # NaN - we want it to display "***", so we just fillna
             corp_data["IREAD Proficient %"] = corp_data["IREAD Proficient %"].fillna("***")
 
+        # align Name and ID
+        corp_data = corp_data.rename(columns = {"Corporation Name": "School Name", "Corporation ID": "School ID"})
+                
         # recalculate total proficiency numbers using only school grades
-        corp_data = recalculate_total_proficiency(corp_data, school_data)        
-        
+        # before we can do this, we need to flip the school df so school categories are column headers    
+        school_grade_data = school_data.copy()
+        school_grade_data = (school_grade_data.set_index("Category").T.rename_axis("Year").rename_axis(None, axis=1).reset_index())
+
+        revised_corp_totals = recalculate_total_proficiency(corp_data, school_grade_data)
+
+        # replace current school total with revised data
+        corp_data["School Total|ELA Proficient %"] = revised_corp_totals["School Total|ELA Proficient %"].values        
+        corp_data["School Total|Math Proficient %"] = revised_corp_totals["School Total|Math Proficient %"].values
+       
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         corp_data = corp_data.filter(regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$", axis=1)
 
