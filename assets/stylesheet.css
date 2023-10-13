@@ -981,11 +981,15 @@ a.nav-link:hover {
   margin-bottom: 7px;
 }
 
-#subnav-academic {
+#subnav-academic-analysis, #subnav-academic-info {
   margin-top: 10px;
   margin-bottom: 7px;
 }
 
+#analysis-single-type-radio-container, #info-type-radio-container
+{
+  margin-bottom: 7px;
+}
 #multi-year-subject-radio-container {
   padding-right: 10px;
 }

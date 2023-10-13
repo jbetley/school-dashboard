@@ -68,7 +68,7 @@ from pages.load_data import get_school_index, get_academic_dropdown_years, get_f
     get_school_dropdown_list, get_financial_analysis_dropdown_years
 
 from pages.layouts import create_radio_layout
-from pages.subnav import subnav_academic_information
+from pages.subnav import subnav_academic_information, subnav_academic_analysis
 
 # Used to generate metric rating svg circles
 FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
@@ -383,8 +383,8 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     ]
 
     return year_options, year_value, current_page
-
-# Academic Information - Subnavigation #
+    
+# Subnavigation #
 @callback(      
     Output("academic-information-type-radio", "options"),
     Output("academic-information-type-radio","value"),
@@ -393,13 +393,30 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, acad
     Output("academic-information-category-radio","value"),
     Output("academic-information-category-radio-container","style"),
     Output("academic-information-subnav-container", "style"),
+    Output("academic-information-navigation-container", "style"),
+
+    Output("analysis-type-radio", "options"),
+    Output("analysis-type-radio","value"),
+    Output('analysis-type-radio-container', 'style'),
+
+    Output("analysis-multi-hs-category-radio", "options"),
+    Output("analysis-multi-hs-category-radio","value"),
+    Output("analysis-multi-hs-category-radio-container", "style"),
+   
+    Output("analysis-subnav-container", "style"),
+    Output("analysis-navigation-container", "style"),
+
     Input("url", "href"),
     Input("charter-dropdown", "value"),
+
     Input("academic-information-type-radio", "value"),
+    Input("analysis-single-type-radio", "value"),       
     State("academic-information-category-radio", "options"),
     State("academic-information-category-radio", "value"),
+    State("analysis-multi-hs-category-radio", "value") 
 )
-def radio_type_selector(current_page: str, school: str, radio_type_value: str, radio_category_options: list, radio_category_value: str):
+def radio_type_selector(current_page: str, school: str, info_type_value: str, analysis_type_value: str,
+             info_category_options_state: list, info_category_value_state: str, analysis_hs_category_state: str):
     
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
@@ -417,218 +434,189 @@ def radio_type_selector(current_page: str, school: str, radio_type_value: str, r
         {"label": "By Ethnicity", "value": "ethnicity"},
         {"label": "By Subgroup", "value": "subgroup"}
     ]
-    
+
     if "academic_info" in current_page:
+    
+        analysis_nav_container = {"display": "none"}
+        analysis_subnav_container = {"display": "none"}
+
+        analysis_type_value = "k8"
+        analysis_type_options = []
+        analysis_type_container = {'display': 'none'}
+
+        info_nav_container = {"display": "block"}
+        
         if school_type == "HS" or school_type == "AHS":
             
-            subnav_container = {"display": "none"}
+            info_subnav_container = {"display": "none"}
 
-            type_options = []
-            type_value = "hs"
-            type_container = {"display": "none"}
+            info_type_options = []   # type: list
+            info_type_value = "hs"
+            info_type_container = {"display": "none"}
             
-            category_options = []
-            category_value = ""            
-            category_container = {"display": "none"}
+            info_category_options = []
+            info_category_value = ""            
+            info_category_container = {"display": "none"}
 
         elif school_type == "K8":
 
-            subnav_container = {"display": "block"}
+            info_subnav_container = {"display": "block"}
             
-            type_options = []
-            type_value = "k8"            
-            type_container = {"display": "none"}
+            info_type_options = []
+            info_type_value = "k8"            
+            info_type_container = {"display": "none"}
 
-            if radio_category_value: 
-                category_value = radio_category_value
+            if info_category_value_state: 
+                info_category_value = info_category_value_state
             else:
-                category_value = "all"
+                info_category_value = "all"
 
-            if radio_category_options:
-                category_options = radio_category_options
+            if info_category_options_state:
+                info_category_options = info_category_options_state
             else:
-                category_options = category_options_default
+                info_category_options = category_options_default
                 
-            category_container = {"display": "block"}
+            info_category_container = {"display": "block"}
 
-# TODO: Combine this and the below code
-        elif school_type == "K12" and (radio_type_value == "k8" or
-            radio_type_value == ""):
+        elif school_type == "K12" and (info_type_value == "k8" or
+            not info_type_value):
 
-            subnav_container = {"display": "block"}
+            info_subnav_container = {"display": "block"}
 
             if current_page == "academic_information_growth":
-                type_options = []
-                type_value = "k8"
-                type_container = {"display": "none"}
+                info_type_options = []
+                info_type_value = "k8"
+                info_type_container = {"display": "none"}
 
             else:
-                type_options = type_options_default
+                info_type_options = type_options_default
 
-                if radio_type_value in ["k8","hs"]:
-                    type_value = radio_type_value
+                if info_type_value in ["k8","hs"]:
+                    info_type_value = info_type_value
                 else:
-                    type_value = "k8"    
-                type_container = {"display": "block"}
+                    info_type_value = "k8"    
+                info_type_container = {"display": "block"}
 
-            if radio_category_value: 
-                category_value = radio_category_value
+            if info_category_value_state: 
+                info_category_value = info_category_value_state
             else:
-                category_value = "all"
+                info_category_value = "all"
 
-            if radio_category_options:
-                category_options = radio_category_options
+            if info_category_options_state:
+                info_category_options = info_category_options_state
             else:
-                category_options = category_options_default
+                info_category_options = category_options_default
 
-            category_container = {"display": "block"}
+            info_category_container = {"display": "block"}
 
-        elif school_type == "K12" and radio_type_value == "hs":
+        elif school_type == "K12" and info_type_value == "hs":
 
-            subnav_container = {"display": "none"}
+            info_subnav_container = {"display": "none"}
 
-            type_options = type_options_default
+            info_type_options = type_options_default
 
-            if radio_type_value in ["k8","hs"]:
-                type_value = radio_type_value
+            if info_type_value in ["k8","hs"]:
+                info_type_value = info_type_value
             else:
-                type_value = "k8"
+                info_type_value = "k8"
 
-            type_container = {"display": "block"}
+            info_type_container = {"display": "block"}
             
-            category_options = []
-            category_value = ""            
-            category_container = {"display": "none"}
+            info_category_options = []
+            info_category_value = ""            
+            info_category_container = {"display": "none"}
+
+    elif "analysis" in current_page:
+
+        info_nav_container = {"display": "none"}
+        info_subnav_container = {"display": "none"}
+        info_type_container = {"display": "none"}
+        info_category_container = {"display": "none"}
+
+        info_type_options = []
+        info_type_value = ""
+
+        info_category_options = []
+        info_category_value = ""
+
+        analysis_nav_container = {"display": "block"}
+        analysis_subnav_container = {"display": "block"}
+
+#TODO: This is for both analysis pages, treat it like a separate element to hide or not
+        if school_type == "K12":
+
+            analysis_type_options = type_options_default
+
+            if analysis_type_value in ["k8","hs"]:
+                analysis_type_value = analysis_type_value
+            else:
+                analysis_type_value = "k8"
+
+            analysis_type_container = {"display": "block"}
+        
+        else:
+            
+            analysis_type_value = "k8"
+            analysis_type_options = []
+            analysis_type_container = {'display': 'none'}
+
+        # TODO: Add Multi-Stuff Here
+        if "multi" in current_page:
+            
+            if school_type == "HS" or school_type == "AHS" or \
+                (school_type == "K12" and analysis_type_value):
+                
+                analysis_multi_hs_category_options = [
+                    {"label": "Graduation Rate", "value": "Graduation Rate"},
+                    {"label": "SAT", "value": "SAT"}
+                ]
+
+                analysis_multi_hs_category_container = {'display': 'block'}
+
+                if analysis_hs_category_state:
+                    analysis_multi_hs_category_value = analysis_hs_category_state
+                else:
+                    analysis_multi_hs_category_value = "Graduation Rate"
+
+            # analysis_multi_hs_category_options = []
+            # analysis_multi_hs_category_value = ""
+            # analysis_multi_hs_category_container  = {"display": "none"}
 
     else:
+        # analysis both
+        analysis_type_value = "k8"
+        analysis_type_options = []
+        analysis_type_container = {'display': 'none'}
 
-        subnav_container = {"display": "none"}
-        type_container = {"display": "none"}
-        category_container = {"display": "none"}
+        # analysis multi
+        analysis_nav_container = {"display": "none"}
+        analysis_subnav_container = {"display": "none"}
 
-        type_options = []
-        type_value = ""
+        analysis_multi_hs_category_options = []
+        analysis_multi_hs_category_value = ""
+        analysis_multi_hs_category_container  = {"display": "none"}
 
-        category_options = []
-        category_value = ""
+        # academic info
+        info_nav_container = {"display": "none"}
+        info_subnav_container = {"display": "none"}
+        info_type_container = {"display": "none"}
+        info_category_container = {"display": "none"}
 
-    
+        info_type_options = []
+        info_type_value = ""
 
-    # else:
+        info_category_options = []
+        info_category_value = ""
 
-    #     type_container = {'display': 'none'}
-     
-    #     type_options = []
-        
-    #     # set type values anyway even if not displayed and
-    #     # hide subnav container for AHS/HS
-    #     if school_type == "AHS" or school_type == "HS":
-    #         subnav_container = {"display": "none"}
-    #         type_value = "hs"
-    #     else:
-    #         subnav_container = {"display": "block"}            
-    #         type_value = "k8"
+    return (
+        info_type_options, info_type_value, info_type_container, info_category_options, info_category_value,
+        info_category_container, info_subnav_container, info_nav_container, analysis_type_options,
+        analysis_type_value, analysis_type_container,
+        analysis_multi_hs_category_options, analysis_multi_hs_category_value, analysis_multi_hs_category_container,
+        analysis_nav_container, analysis_subnav_container
+    )
 
-    # # Category Options
-    # # this includes academic_information, and academic_information_growth
-    # if "academic_information" in current_page and ((school_type == "K8") or \
-    #     (school_type == "K12" and radio_type_value == "k8")):
-    #     subnav_container = {"display": "block"}        
-    #     category_container = {"display": "block"}
-
-    #     options_default = [
-    #         {"label": "All Data", "value": "all"},
-    #         {"label": "By Grade", "value": "grade"},
-    #         {"label": "By Ethnicity", "value": "ethnicity"},
-    #         {"label": "By Subgroup", "value": "subgroup"}
-    #     ]
-
-    #     if radio_category_value: 
-    #         category_value = radio_category_value
-    #     else:
-    #         category_value = "all"
-
-    #     if radio_category_options:
-    #         category_options = radio_category_options
-    #     else:
-    #         category_options = options_default
-
-    # elif "academic_information" in current_page and school_type == "HS" or school_type == "AHS" or \
-    #     (school_type == "K12" and radio_type_value == "hs"):
-    #     subnav_container = {"display": "none"}          
-    #     category_container = {"display": "none"}
-    #     category_value = ""
-    #     category_options = []
-
-    # else:
-    #     subnav_container = {"display": "none"}          
-    #     category_container = {"display": "none"}
-    #     category_value = ""
-    #     category_options = []
-
-    # print(type_container)
-    # print(category_container)
-    # print (subnav_container)
-    return type_options, type_value, type_container, category_options, category_value, category_container, subnav_container
-
-# # Academic Information and Growth Categories #
-# @callback(
-#     Output("academic-information-category-radio", "options"),
-#     Output("academic-information-category-radio","value"),
-#     Output("academic-information-category-radio-container","style"),
-#     Output("academic-information-subnav-container", "style"),    
-#     Input("url", "href"),    
-#     Input("charter-dropdown", "value"),
-#     Input("academic-information-type-radio", "value"),
-#     State("academic-information-category-radio", "options"),
-#     State("academic-information-category-radio", "value"),
-   
-# )
-# def radio_category_selector(current_page: str, school: str, radio_type_value: str, radio_category_options: list, radio_category_value: str):
-
-#     selected_school = get_school_index(school)
-#     school_type = selected_school["School Type"].values[0]
-
-#     current_page = current_page.rsplit("/", 1)[-1]
-
-#     # this includes academic_information, and academic_information_growth
-#     if "academic_information" in current_page and ((school_type == "K8") or \
-#         (school_type == "K12" and radio_type_value == "k8")):
-#         subnav_container = {"display": "block"}        
-#         category_container = {"display": "block"}
-
-#         options_default = [
-#             {"label": "All Data", "value": "all"},
-#             {"label": "By Grade", "value": "grade"},
-#             {"label": "By Ethnicity", "value": "ethnicity"},
-#             {"label": "By Subgroup", "value": "subgroup"}
-#         ]
-
-#         if radio_category_value: 
-#             category_value = radio_category_value
-#         else:
-#             category_value = "all"
-
-#         if radio_category_options:
-#             category_options = radio_category_options
-#         else:
-#             category_options = options_default
-
-#     elif "academic_information" in current_page and school_type == "HS" or school_type == "AHS" or \
-#         (school_type == "K12" and radio_type_value == "hs"):
-#         subnav_container = {"display": "none"}          
-#         category_container = {"display": "none"}
-#         category_value = ""
-#         category_options = []
-
-#     else:
-#         subnav_container = {"display": "none"}          
-#         category_container = {"display": "none"}
-#         category_value = ""
-#         category_options = []
-    
-#     return category_options, category_value, category_container, subnav_container
-
+# todo: NEED THIS?
 # Academic Growth - Redirect ?? #
 # redirect url if school type is "HS" or "AHS"
 @callback(
@@ -646,9 +634,6 @@ def redirect_hs(school: str, current_page: str):
         return f"/academic_information"
     else:
         return dash.no_update
-
-
-
 
 # app.layout = html.Div(
 # NOTE: Test to see effect of layout as function vs. variable
@@ -804,23 +789,23 @@ def layout():
                     className="no-print",
                 ),
                 html.Div(
-                    [            
+                    [                    
                         html.Div(
-                            [
+                            [            
                                 html.Div(
                                     [
-                                        html.Div(subnav_academic_information(), id="subnav-academic", className="tabs"),
+                                        html.Div(
+                                            [
+                                                html.Div(subnav_academic_information(), id="subnav-academic-info", className="tabs"),
+                                            ],
+                                            className="bare-container--flex--center twelve columns",
+                                        ),
                                     ],
-                                    className="bare-container--flex--center twelve columns",
+                                    className="row",
                                 ),
                             ],
-                            className="row",
+                            id="academic-information-subnav-container",
                         ),
-                    ],
-                    id="academic-information-subnav-container",
-                ),                        
-                # html.Div(
-                #     [
                         html.Div(
                             [
                                 html.Div(
@@ -832,12 +817,7 @@ def layout():
                                 ),
                             ],
                             className = "row",
-                        ),
-                #     ],
-                #     id="academic-information-type-radio-container",
-                # ),
-                # html.Div(
-                #     [                        
+                        ),                     
                         html.Div(
                             [
                                 html.Div(
@@ -850,9 +830,57 @@ def layout():
                             ],
                             className = "row",
                         ),
-                #     ],
-                #     id="academic-information-category-radio-container",
-                # ),                           
+                    ],
+                    id="academic-information-navigation-container",
+                ),
+                html.Div(
+                    [                
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            [
+                                                html.Div(subnav_academic_analysis(), id="subnav-academic-analysis", className="tabs"),
+                                            ],
+                                            className="bare-container--flex--center twelve columns",
+                                        ),
+                                    ],
+                                    className="row",
+                                ),  
+                            ],
+                            id="analysis-subnav-container",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(create_radio_layout("analysis", "type"),className="tabs"),
+
+                                    ],
+                                    className = "bare-container--flex--center twelve columns",
+                                ),
+                            ],
+                            className = "row",
+                        ),                                   
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(create_radio_layout("analysis-multi", "hs-category"),className="tabs"),
+
+                                    ],
+                                    className = "bare-container--flex--center twelve columns",
+                                ),
+                            ],
+                            className = "row",
+                        ),
+
+                    ],
+                    id="analysis-navigation-container",
+                ), 
+
+
                 # html.Hr(className = "line_bottom"),
 
 

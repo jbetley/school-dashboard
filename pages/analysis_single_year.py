@@ -23,40 +23,10 @@ from .tables import create_comparison_table, no_data_page, no_data_table
 from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout, create_radio_layout
 from .string_helpers import create_school_label, combine_school_name_and_grade_levels, create_chart_label, \
      identify_missing_categories
-from .subnav import subnav_academic_analysis
 
 from .calculate_metrics import calculate_k8_comparison_metrics
 
 dash.register_page(__name__, name = "Selected Year", path = "/analysis_single_year", top_nav=True, order=10)
-
-# Gradespan selection (K12 Only)
-@callback(      
-    Output("single-year-gradespan-radio", "options"),
-    Output("single-year-gradespan-radio","value"),
-    Output('single-year-gradespan-radio-container', 'style'),
-    Input("charter-dropdown", "value"),
-    State("single-year-gradespan-radio", "value"),
-)
-def radio_gradespan_selector(school_id: str, gradespan_state: str):
-
-    gradespan_value = "k8"
-    gradespan_options = []
-    gradespan_container = {'display': 'none'}
-
-    selected_school = get_school_index(school_id)
-    school_type = selected_school["School Type"].values[0]
-
-    if school_type == "K12":
-        gradespan_options = [
-            {"label": "K-8", "value": "k8"},
-            {"label": "High School", "value": "hs"},
-        ]
-        gradespan_container = {'display': 'block'}
-
-    if gradespan_state:
-        gradespan_value = gradespan_state
-
-    return gradespan_options, gradespan_value, gradespan_container
     
 # Set dropdown options for comparison schools
 @callback(
@@ -66,9 +36,9 @@ def radio_gradespan_selector(school_id: str, gradespan_state: str):
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("single-year-comparison-dropdown", "value"),
-    Input("single-year-gradespan-radio", "value"),
+    Input("analysis-single-type-radio", "value"),
 )
-def set_dropdown_options(school_id: str, year: str, comparison_schools: list, gradespan_value = str):
+def set_dropdown_options(school_id: str, year: str, comparison_schools: list, analysis_single_type_value = str):
 
     string_year = "2019" if year == "2020" else year
     numeric_year = int(string_year)
@@ -90,7 +60,7 @@ def set_dropdown_options(school_id: str, year: str, comparison_schools: list, gr
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
     # SQL query depends on school type
     if school_type == "K12":
-        if gradespan_value == "hs":
+        if analysis_single_type_value == "hs":
             school_type = "HS"
         else:
             school_type = "K8"
@@ -269,10 +239,10 @@ def set_dropdown_options(school_id: str, year: str, comparison_schools: list, gr
     Output("hs-analysis-single-no-data", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("single-year-gradespan-radio", "value"), 
+    Input("analysis-single-type-radio", "value"), 
     [Input("single-year-comparison-dropdown", "value")],
 )
-def update_academic_analysis(school_id: str, year: str, gradespan_value: str, comparison_school_list: list):
+def update_academic_analysis(school_id: str, year: str, analysis_single_type_value: str, comparison_school_list: list):
     if not school_id:
         raise PreventUpdate
 
@@ -286,8 +256,8 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
     school_name = school_name.strip()
 
     # Radio buttons don't play nice
-    if not gradespan_value:
-        gradespan_value = "k8"
+    if not analysis_single_type_value:
+        analysis_single_type_value = "k8"
 
     # default values (only empty container displayed)
     hs_analysis_main_container = {"display": "none"}
@@ -332,7 +302,7 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
     pd.set_option('display.max_columns', None)
     pd.set_option('display.max_rows', None)  
     
-    if school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
+    if school_type == "HS" or school_type == "AHS" or (school_type == "K12" and analysis_single_type_value == "hs"):
 
         k8_analysis_empty_container = {"display": "none"}
 
@@ -487,7 +457,7 @@ def update_academic_analysis(school_id: str, year: str, gradespan_value: str, co
     if school_type == "K8" or school_type == "K12":
                     
         # If school is K12 and highschool tab is selected, skip k8 data
-        if school_type == "K12" and gradespan_value == "hs":
+        if school_type == "K12" and analysis_single_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
         
         else:
@@ -794,30 +764,6 @@ def layout():
                 [
                     html.Div(
                         [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(subnav_academic_analysis(), id="subnav-academic", className="tabs"),
-                                        ],
-                                        className="bare-container--flex--center twelve columns",
-                                    ),
-                                ],
-                                className="row",
-                            ),                             
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(create_radio_layout("single-year", "gradespan"),className="tabs"),
-
-                                        ],
-                                        className = "bare-container--flex--center twelve columns",
-                                    ),
-                                ],
-                                className = "row",
-                            ),
-                            html.Hr(className = "line_bottom"),                            
                             html.Div(
                                 [
                                     html.Div(
