@@ -301,6 +301,40 @@ def get_financial_info_dropdown_years(school_id):
 
     return years
 
+
+def get_financial_analysis_dropdown_years(school_id):
+    params = dict(id=school_id)
+    q = text('''
+        SELECT * 
+        FROM financial_data 
+        WHERE SchoolID = :id
+    ''')
+    
+    results = run_query(q, params)
+
+    # Processes financial df and returns a list of Year column names for
+    # each year for which ADM Average is greater than '0'
+    if len(results.columns) > 3:
+
+        adm_index = results.index[results['Category'] == 'ADM Average'].values[0]
+
+        # adding '$' to the end of the regex skips (Q#) years
+        results = results.filter(regex='^\d{4}$') 
+
+        for col in results.columns:
+            results[col] = pd.to_numeric(results[col], errors='coerce')
+
+        mask = results.iloc[adm_index] > 0
+
+        results = results.loc[:, mask]
+
+        years = results.columns.to_list()
+
+    else:
+        years = []
+
+    return years
+
 def get_adm(corp_id):
     # Use this when there is no financial data - financial data will almost 
     # always be more accurate, but some schools (Guests) don't have financial
@@ -348,40 +382,6 @@ def get_adm(corp_id):
         final[last_col_name] = last_col[last_col_name]
     
     return final
-
-def get_financial_analysis_dropdown_years(school_id):
-    params = dict(id=school_id)
-    q = text('''
-        SELECT * 
-        FROM financial_data 
-        WHERE SchoolID = :id
-    ''')
-    
-    results = run_query(q, params)
-
-    # Processes financial df and returns a list of Year column names for
-    # each year for which ADM Average is greater than '0'
-    if len(results.columns) > 3:
-
-        adm_index = results.index[results['Category'] == 'ADM Average'].values[0]
-
-        # adding '$' to the end of the regex skips (Q#) years
-        results = results.filter(regex='^\d{4}$') 
-
-        for col in results.columns:
-            results[col] = pd.to_numeric(results[col], errors='coerce')
-
-        mask = results.iloc[adm_index] > 0
-
-        results = results.loc[:, mask]
-
-        # trim excess info (Q#) if present
-        years = results.columns.to_list()
-
-    else:
-        years = []
-
-    return years
 
 def get_school_dropdown_list():
     q = text('''

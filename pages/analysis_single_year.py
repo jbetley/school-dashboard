@@ -2,29 +2,26 @@
 # ICSB Dashboard - Academic Analysis - Single Year #
 ####################################################
 # author:   jbetley (https://github.com/jbetley) 
-# version:  1.11
-# date:     10/03/23
+# version:  1.13
+# date:     10/13/23
 
 import dash
-from dash import ctx, dcc, html, Input, State, Output, callback
+from dash import ctx, dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
 
 # import local functions
-from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_k8_school_academic_data, get_school_index, \
-    get_school_coordinates, get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
-    get_hs_corporation_academic_data, get_excluded_years, get_selected_k8_school_academic_data
-from .process_data import process_k8_academic_data, process_k8_corp_academic_data, process_high_school_academic_analysis_data, \
-    merge_schools, process_selected_k8_academic_data
-from .calculations import find_nearest, calculate_proficiency, recalculate_total_proficiency
+from .load_data import ethnicity, subgroup, ethnicity, info_categories, get_school_index, get_school_coordinates, \
+    get_comparable_schools, get_k8_corporation_academic_data, get_high_school_academic_data, \
+    get_hs_corporation_academic_data, get_selected_k8_school_academic_data
+from .process_data import process_high_school_academic_analysis_data, process_selected_k8_academic_data
+from .calculations import find_nearest, recalculate_total_proficiency
 from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
 from .tables import create_comparison_table, no_data_page, no_data_table
-from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout, create_radio_layout
+from .layouts import create_group_barchart_layout, create_barchart_layout, create_hs_analysis_layout
 from .string_helpers import create_school_label, combine_school_name_and_grade_levels, create_chart_label, \
      identify_missing_categories
-
-from .calculate_metrics import calculate_k8_comparison_metrics
 
 dash.register_page(__name__, name = "Selected Year", path = "/analysis_single_year", top_nav=True, order=10)
     
@@ -36,11 +33,14 @@ dash.register_page(__name__, name = "Selected Year", path = "/analysis_single_ye
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("single-year-comparison-dropdown", "value"),
-    Input("analysis-single-type-radio", "value"),
+    Input("analysis-type-radio", "value"),
 )
-def set_dropdown_options(school_id: str, year: str, comparison_schools: list, analysis_single_type_value = str):
+def set_dropdown_options(school_id: str, year: str, comparison_schools: list, analysis_type_value = str):
 
-    string_year = "2019" if year == "2020" else year
+    # TODO: TEST REMOVING THIS LINE HERE
+    # string_year = "2019" if year == "2020" else year
+    
+    string_year = year
     numeric_year = int(string_year)
 
     # clear the list of comparison_schools when a new school is
@@ -60,7 +60,7 @@ def set_dropdown_options(school_id: str, year: str, comparison_schools: list, an
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
     # SQL query depends on school type
     if school_type == "K12":
-        if analysis_single_type_value == "hs":
+        if analysis_type_value == "hs":
             school_type = "HS"
         else:
             school_type = "K8"
@@ -239,15 +239,14 @@ def set_dropdown_options(school_id: str, year: str, comparison_schools: list, an
     Output("hs-analysis-single-no-data", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("analysis-single-type-radio", "value"), 
+    Input("analysis-type-radio", "value"), 
     [Input("single-year-comparison-dropdown", "value")],
 )
-def update_academic_analysis(school_id: str, year: str, analysis_single_type_value: str, comparison_school_list: list):
+def update_academic_analysis(school_id: str, year: str, analysis_type_value: str, comparison_school_list: list):
     if not school_id:
         raise PreventUpdate
 
-    # show 2019 instead of 2020 as 2020 has no academic data
-    string_year = year #"2019" if year == "2020" else year
+    string_year = year
     numeric_year = int(string_year)
 
     selected_school = get_school_index(school_id)
@@ -256,8 +255,8 @@ def update_academic_analysis(school_id: str, year: str, analysis_single_type_val
     school_name = school_name.strip()
 
     # Radio buttons don't play nice
-    if not analysis_single_type_value:
-        analysis_single_type_value = "k8"
+    if not analysis_type_value:
+        analysis_type_value = "k8"
 
     # default values (only empty container displayed)
     hs_analysis_main_container = {"display": "none"}
@@ -298,11 +297,8 @@ def update_academic_analysis(school_id: str, year: str, analysis_single_type_val
 
     academic_analysis_notes_label = ""    
     academic_analysis_notes_string = ""
-
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)  
     
-    if school_type == "HS" or school_type == "AHS" or (school_type == "K12" and analysis_single_type_value == "hs"):
+    if school_type == "HS" or school_type == "AHS" or (school_type == "K12" and analysis_type_value == "hs"):
 
         k8_analysis_empty_container = {"display": "none"}
 
@@ -457,7 +453,7 @@ def update_academic_analysis(school_id: str, year: str, analysis_single_type_val
     if school_type == "K8" or school_type == "K12":
                     
         # If school is K12 and highschool tab is selected, skip k8 data
-        if school_type == "K12" and analysis_single_type_value == "hs":
+        if school_type == "K12" and analysis_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
         
         else:
@@ -788,7 +784,7 @@ def layout():
                                                 className="bare-container eight columns"
                                             ),
                                         ],
-                                        className="row"
+                                        className="comparison-dropdown-row"
                                     ),
                                 ],
                                 id="single-year-dropdown-container",

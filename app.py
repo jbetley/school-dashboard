@@ -2,8 +2,8 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley (https://github.com/jbetley) 
-# version:  1.11
-# date:     10/03/23
+# version:  1.13
+# date:     10/13/23
 
 # This is the main application file for the Indiana Charter School Board school
 # dashboard. This dashboard consists of ~10 tabs of charts and tables created
@@ -61,11 +61,11 @@ from dotenv import load_dotenv
 
 import dash
 from dash import dcc, html, Input, Output, State, callback
-from dash.exceptions import PreventUpdate
+# from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
 from pages.load_data import get_school_index, get_academic_dropdown_years, get_financial_info_dropdown_years, \
-    get_school_dropdown_list, get_financial_analysis_dropdown_years
+    get_school_dropdown_list, get_financial_analysis_dropdown_years, get_gradespan, get_ethnicity, get_subgroup
 
 from pages.layouts import create_radio_layout
 from pages.subnav import subnav_academic_information, subnav_academic_analysis
@@ -213,14 +213,14 @@ app = dash.Dash(
     ],
 )
 
-## App Navigation ##
-        
-# Dropdown shows single school if school login is used, shows the associated group
-# of schools if a 'network' login is used, and shows all schools if admin login is used.
-# NOTE: "application-state" is a dummy input
+
+# Top Level Navigation #        
+
+# Selected School Dropdown - shows a single school if a ';'school' login is used, an associated
+# group of schools if a 'network' login is used, and all schools if 'admin' login is used.
 @callback(
     Output("charter-dropdown", "options"),
-    [Input("application-state", "children")]
+    [Input("application-state", "children")]    # dummy input
 )
 def set_dropdown_options(app_state):
 
@@ -241,7 +241,6 @@ def set_dropdown_options(app_state):
 
     else:
         # check for network login
-
         if group_id < 0:
             
             charters = available_charters[available_charters["GroupID"] == str(abs(group_id))]
@@ -257,7 +256,8 @@ def set_dropdown_options(app_state):
 
     return dropdown_options
 
-# Set default charter dropdown option to the first school in the list (alphanumeric)
+# Selected School Dropdown - sets the default value to the first school in
+# respective list of schools
 @callback(
     Output("charter-dropdown", "value"),
     Input("charter-dropdown", "options")
@@ -265,9 +265,17 @@ def set_dropdown_options(app_state):
 def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
             
-# year options are the range of: max = current_academic_year; min = the earliest year
-# for which the school has adm (is open); limit = typically a limit of 5 years (currently and
-# temporarily 4 years so that 2018 academic data is not shown)
+# Selected Year Dropdown -
+# options max: 5 years
+# values: depend on which page is being accessed and, in some circumstances, the type of
+# school (or selected type of school). for academic_information, academic_metrics, and
+# academic_analysis pages, 'academic_dropdown_years' are the 5 most recently available
+# years of academic data in either academic_data_k8 or academic_data_hs database table.
+# for the financial_analysis page, we use a list of the 'year' column names for each
+# year for which ADM Average is greater than '0' in the financial_data database table.
+# All other pages use 'financial_info_dropdown_years' which is the same as 
+# 'financial_analysis_dropdown_years' except the quarterly data string (Q#) is removed.
+
 # "url" and "hidden" are used to track the currently selected url
 @callback(
     Output("year-dropdown", "options"),
@@ -278,19 +286,6 @@ def set_dropdown_value(charter_options):
     Input("url", "href"),
     Input("analysis-type-radio", "value")
 )
-
-# TODO: Problem: K12 schools are the bane of my existence. Need to be able to tell which
-# TODO: set of available years of data to use based on which "academic_type" is selected.
-# TODO: Available years is set in app.py and "academic_type" is set in academic_proficiency.py,
-# TODO: analysis_single_year.py, and analysis_multi_year.py (not academic_info.py or academic_growth.py)
-# TODO: Attempting to use dcc.store to share "academic_type" with app.py from info, proficiency, and
-# TODO: analysis pages to: 1) make sure HS/AHS to 2) K12 (type HS) shows HS data; 2) make
-# TODO: sure HS/AHS at year 2020 shows K12 year 2020 HS data; 3) make sure that K12 shows K8
-# TODO: years for academic_type: k8 and HS years for academic_type hs.
-
-# TODO: currently cannot get dcc.store to work without an error ("nonexistent Output or Input for
-# TODO: 'academic-information-type-radio;)
-
 def set_year_dropdown_options(school_id: str, year: str, current_page: str, analysis_type_value: str):
     
     max_dropdown_years = 5
@@ -300,18 +295,13 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
     selected_school = get_school_index(school_id)    
     school_type = selected_school["School Type"].values[0]
 
-    # source of available years depends on selected top_nav tab and, in the case of a K12
-    # school, the sub_nav tab "academic_type_radio." In addition, guest schools do not have
-    # financial data (although they may be K12 schools). Finally, K8 schools do not have 
-    # data for 2020 - so that year should never appear in the dropdown. HS, AHS, and K12
-    # schools with the "HS" academic_type_radio button selected could have 2020 data - school_type
-    # generally takes care of this for K8, HS, and AHS schools, but not for K12 schools, so we need
-    # to force it to use the "HS" data under the right circumstances. We also want to make sure that
-    # we reset the academic type if we have a K8 school where type was "hs"
-    
+    # for K12 schools, we need to use "HS" data when analysis_type is "hs."" We also
+    # want to make sure that we reset the type if the user switches to a k8 school
+    # from a AHS/HS/K12 where the analysis_type was "hs"
     if school_type == "K8" and analysis_type_value == "hs":
         analysis_type_value = "k8"
 
+    # Guest schools do not have financial data
     if "academic" in current_page or "analysis_single" in current_page or \
         "analysis_multiple" in current_page or selected_school["Guest"].values[0] == "Y":
 
@@ -319,7 +309,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
         "analysis_multiple" in current_page) and analysis_type_value == "hs":
             
             years = get_academic_dropdown_years(school_id,"HS")
-        
+
         else:
 
             years = get_academic_dropdown_years(school_id,school_type)
@@ -329,13 +319,6 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
 
     else:
         years = get_financial_info_dropdown_years(school_id)
-
-#TODO: The HS part of K12 Doesnt appear to be working
-    # print('Debugging year list index issue:')
-    # print(years)
-# Currently both financial_analysis_dropdown and financial_info_dropdown are the same - they both
-# reads financial_data and returns a list of Year column names for each year for which ADM Average
-# is greater than "0"     
 
     # set year_value and year_options
     number_of_years_to_display = len(years) if len(years) <= max_dropdown_years else max_dropdown_years
@@ -352,16 +335,6 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
     #       than the first year of available data); or
     #   4) the selected year.
 
-    # first we account for special case due to fact that K8 has no 2020 academic data while
-    # HS/AHS does or can - so if user is viewing HS/AHS at year 2020 and then selects
-    # a K8 school, we end up with an actual year rather than blank. We do it before the other
-    # checks because the K8 school could also not have 2019. Note that academic_type_store is
-    # used here to distinguish a K12 school with "HS" subnav tab selected
-    if ("academic" in current_page or selected_school["Guest"].values[0] == "Y") and \
-        ((school_type == "K8") or (school_type == "K12" and analysis_type_value == "k8")) and \
-            year == "2020":
-        year = "2019"
-
     if year is None:
         year_value = str(first_available_year)
     
@@ -374,6 +347,16 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
     else:
         year_value = str(year)
 
+    # K8 schools do not have data for 2020 - so that year should never appear in the dropdown.
+    # HS, AHS, and K12 schools with the "HS" academic_type_radio button selected could have 2020 data-
+    # school_type generally takes care of this for K8, HS, and AHS schools, but not K12
+    if ("academic" in current_page or "analysis_single" in current_page or \
+        "analysis_multiple" in current_page or selected_school["Guest"].values[0] == "Y") and \
+        ((school_type == "K8") or (school_type == "K12" and analysis_type_value == "k8")) and \
+            year == "2020":
+
+        year_value = "2019"
+
     if not dropdown_years:
         raise Exception("There is simply no way that you can be seeing this error message.") # except i saw it once
     
@@ -385,6 +368,10 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
     return year_options, year_value, current_page
     
 # Subnavigation #
+# TODO: FIX CRASH ON TRYING TO ACCESS 2020 SAT DATA
+# TODO: SEE 21c/2020/SAT/EBRW/Ethnicity/Black
+# UnboundLocalError: cannot access local variable 'analysis_multi_subcategory_options' where it is not associated with a value
+
 # NOTE: There are no doubt better ways to structure this; however, given how complicated
 # it is, I have erred on the side of repetition for the sake of clarity
 @callback(      
@@ -396,41 +383,39 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
     Output("academic-information-category-radio-container","style"),
     Output("academic-information-subnav-container", "style"),
     Output("academic-information-navigation-container", "style"),
-
     Output("analysis-type-radio", "options"),
     Output("analysis-type-radio","value"),
     Output('analysis-type-radio-container', 'style'),
-
     Output("analysis-multi-hs-group-radio", "options"),
     Output("analysis-multi-hs-group-radio","value"),
     Output("analysis-multi-hs-group-radio-container", "style"),
-
     Output("analysis-multi-subject-radio", "options"),
     Output("analysis-multi-subject-radio","value"),
     Output("analysis-multi-subject-radio-container", "style"),
-
     Output("analysis-multi-category-radio", "options"),
     Output("analysis-multi-category-radio","value"),
     Output("analysis-multi-category-radio-container", "style"),
-
+    Output("analysis-multi-subcategory-radio", "options"),
+    Output("analysis-multi-subcategory-radio","value"),
+    Output("analysis-multi-subcategory-radio-container","style"),    
     Output("analysis-subnav-container", "style"),
     Output("analysis-navigation-container", "style"),
-
     Input("url", "href"),
     Input("charter-dropdown", "value"),
     Input("academic-information-type-radio", "value"),
     Input("analysis-type-radio", "value"),
-    Input("analysis-multi-hs-group-radio", "value"),    
+    Input("analysis-multi-hs-group-radio", "value"),
+    Input("analysis-multi-category-radio","value"),
     State("academic-information-category-radio", "options"),
     State("academic-information-category-radio", "value"),
     State("analysis-multi-subject-radio","value"),
-    State("analysis-multi-category-radio","value"),
+    State("analysis-multi-subcategory-radio","value"),
 )
-def radio_type_selector(current_page: str, school: str, info_type_value: str, analysis_type_value: str,
-             analysis_hs_group_state: str, info_category_options_state: list, info_category_value_state: str, 
-             analysis_multi_subject_state: str, analysis_multi_category_state: str):
+def radio_type_selector(current_page: str, school_id: str, info_type_value: str, analysis_type_value: str,
+             analysis_hs_group_state: str, analysis_multi_category_value: str, info_category_options_state: list,
+             info_category_value_state: str, analysis_multi_subject_state: str, analysis_multi_subcategory_state: str):
     
-    selected_school = get_school_index(school)
+    selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
     current_page = current_page.rsplit("/", 1)[-1]
@@ -440,39 +425,42 @@ def radio_type_selector(current_page: str, school: str, info_type_value: str, an
         {"label": "High School", "value": "hs"}        
     ]
     
-    category_options_default = [
-        {"label": "All Data", "value": "all"},
-        {"label": "By Grade", "value": "grade"},
-        {"label": "By Ethnicity", "value": "ethnicity"},
-        {"label": "By Subgroup", "value": "subgroup"}
-    ]
-
     if "academic_info" in current_page:
     
-        # analysis both
+        # hide academic analysis navigation
         analysis_type_value = "k8"
         analysis_type_options = []
         analysis_type_container = {'display': 'none'}
-
-        # analysis multi
-        analysis_nav_container = {"display": "none"}
-        analysis_subnav_container = {"display": "none"}
 
         analysis_multi_hs_group_options = []
         analysis_multi_hs_group_value = ""
         analysis_multi_hs_group_container  = {"display": "none"}
 
+        analysis_multi_subject_options = []     #type: list
         analysis_multi_subject_value = ""
-        analysis_multi_subject_options = []    # type:list
         analysis_multi_subject_container = {'display': 'none'}
-
-        analysis_multi_category_value = ""
+    
         analysis_multi_category_options = [] 
+        analysis_multi_category_value = ""
         analysis_multi_category_container = {'display': 'none'}
 
-        # begin info
+        analysis_multi_subcategory_options = []     #type: list
+        analysis_multi_subcategory_value = ""
+        analysis_multi_subcategory_container = {'display': 'none'}
+
+        analysis_nav_container = {"display": "none"}
+        analysis_subnav_container = {"display": "none"}
+
+        # academic_information and academic_information_growth pages
         info_nav_container = {"display": "block"}
         
+        category_options_default = [
+            {"label": "All Data", "value": "all"},
+            {"label": "By Grade", "value": "grade"},
+            {"label": "By Ethnicity", "value": "ethnicity"},
+            {"label": "By Subgroup", "value": "subgroup"}
+        ]
+
         if school_type == "HS" or school_type == "AHS":
             
             info_subnav_container = {"display": "none"}
@@ -556,6 +544,7 @@ def radio_type_selector(current_page: str, school: str, info_type_value: str, an
     # analysis pages (analysis_single_year and analysis_multiple_years)
     elif "analysis" in current_page:
 
+        # hide academic information navigation
         info_nav_container = {"display": "none"}
         info_subnav_container = {"display": "none"}
         info_type_container = {"display": "none"}
@@ -612,17 +601,19 @@ def radio_type_selector(current_page: str, school: str, info_type_value: str, an
                 analysis_multi_hs_group_value = ""
                 analysis_multi_hs_group_container  = {"display": "none"}
 
-            print(school_type)
-            print(analysis_multi_hs_group_value)
-            print(analysis_type_value)
             # analysis-multi-subject
             if (school_type == "HS" or school_type == "AHS" or (school_type == "K12" and analysis_type_value == "hs")):
                 
                 if analysis_multi_hs_group_value == "Graduation Rate" or analysis_multi_hs_group_value == "":
 
+                    # hide subject and subcategory
                     analysis_multi_subject_value = ""
                     analysis_multi_subject_options = []
                     analysis_multi_subject_container = {'display': 'none'}
+
+                    analysis_multi_subcategory_options = []
+                    analysis_multi_subcategory_value = ""
+                    analysis_multi_subcategory_container = {'display': 'none'}
 
                     analysis_multi_category_options = [
                             {"label": "Total", "value": "Total"},
@@ -631,12 +622,12 @@ def radio_type_selector(current_page: str, school: str, info_type_value: str, an
                         ]
                     analysis_multi_category_container = {'display': 'block'}
 
-                    if analysis_multi_category_state in ["Total", "Subgroup", "Race/Ethnicity"]:
-                        analysis_multi_category_value = analysis_multi_category_state
+                    if analysis_multi_category_value in ["Total", "Subgroup", "Race/Ethnicity"]:
+                        analysis_multi_category_value = analysis_multi_category_value
                     else:
                         analysis_multi_category_value = "Total"
 
-                else: #if analysis_multi_hs_group_value == "SAT":
+                elif analysis_multi_hs_group_value == "SAT":
                     
                     analysis_multi_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
@@ -656,8 +647,8 @@ def radio_type_selector(current_page: str, school: str, info_type_value: str, an
                     ]
                     analysis_multi_category_container = {'display': 'block'}
 
-                    if analysis_multi_category_state in ["School Total", "Subgroup", "Race/Ethnicity"]:
-                        analysis_multi_category_value = analysis_multi_category_state
+                    if analysis_multi_category_value in ["School Total", "Subgroup", "Race/Ethnicity"]:
+                        analysis_multi_category_value = analysis_multi_category_value
                     else:
                         analysis_multi_category_value = "School Total"
 
@@ -683,21 +674,79 @@ def radio_type_selector(current_page: str, school: str, info_type_value: str, an
                     ]
                     analysis_multi_category_container = {'display': 'block'}
 
-                    if analysis_multi_category_state in ["Grade", "Subgroup", "Race/Ethnicity"]:
-                        analysis_multi_category_value = analysis_multi_category_state
+                    if analysis_multi_category_value in ["Grade", "Subgroup", "Race/Ethnicity"]:
+                        analysis_multi_category_value = analysis_multi_category_value
                     else:
                         analysis_multi_category_value = "Grade"
 
-                # elif school_type == "HS" or school_type == "AHS" or \
-                #     (school_type == "K12" and analysis_type_value == "hs"):
+            # subcategory
+            if analysis_multi_category_value == "Grade":
+                grades = get_gradespan(school_id)
 
-                print(analysis_multi_subject_container)
-                print(analysis_multi_subject_value)                
-                print(analysis_multi_category_container)
-                print(analysis_multi_category_value)    
+                if grades:
+                    analysis_multi_subcategory_options = [{"label": g, "value": "Grade " + g} for g in grades]
+                    analysis_multi_subcategory_options.append({"label": "Total", "value": "School Total"})
 
-# TODO: ADD SUBCATEGORY                              
+                    if analysis_multi_subcategory_state in grades:
+                        analysis_multi_subcategory_value = analysis_multi_subcategory_state
+                    else:
+                        analysis_multi_subcategory_value = "School Total"
+
+                    analysis_multi_subcategory_container = {'display': 'block'}
+
+                else:
+                    analysis_multi_subcategory_value = "No Data"
+            
+            elif analysis_multi_category_value == "Race/Ethnicity":
+                ethnicity = get_ethnicity(school_id, analysis_type_value, analysis_multi_hs_group_value)
+                analysis_multi_subcategory_options = [{"label": e, "value": e} for e in ethnicity]
+                ethnicity.sort()
+
+                if ethnicity:
+                    if analysis_multi_subcategory_state in ethnicity:
+                        analysis_multi_subcategory_value = analysis_multi_subcategory_state
+                    else:
+                        analysis_multi_subcategory_value = ethnicity[0]
+                    
+                    analysis_multi_subcategory_container = {'display': 'block'}
+                else:
+                    analysis_multi_subcategory_value = "No Race/Ethnicity Data"
+
+            elif analysis_multi_category_value == "Subgroup":
+
+                subgroup = get_subgroup(school_id, analysis_type_value, analysis_multi_hs_group_value)
+                subgroup.sort()
+
+                if subgroup:
+                    analysis_multi_subcategory_options = [{"label": s, "value": s} for s in subgroup]           
+
+                    if analysis_multi_subcategory_state in subgroup:
+                        analysis_multi_subcategory_value = analysis_multi_subcategory_state
+                    
+                    else:
+                        analysis_multi_subcategory_value = subgroup[0]
+
+                    analysis_multi_subcategory_container = {'display': 'block'}
+                else:
+                    analysis_multi_subcategory_value = "No Subgroup Data"
  
+        else: # analysis_single_year page
+            analysis_multi_subcategory_options = []
+            analysis_multi_subcategory_value = ""
+            analysis_multi_subcategory_container = {'display': 'none'}
+            
+            analysis_multi_hs_group_options = []
+            analysis_multi_hs_group_value = ""
+            analysis_multi_hs_group_container  = {"display": "none"}
+
+            analysis_multi_subject_options = []
+            analysis_multi_subject_value = ""
+            analysis_multi_subject_container = {'display': 'none'}
+        
+            analysis_multi_category_options = [] 
+            analysis_multi_category_value = ""
+            analysis_multi_category_container = {'display': 'none'}                
+
     # TODO: Add financial tabs??
     else:
         # analysis both
@@ -713,13 +762,17 @@ def radio_type_selector(current_page: str, school: str, info_type_value: str, an
         analysis_multi_hs_group_value = ""
         analysis_multi_hs_group_container  = {"display": "none"}
 
-        analysis_multi_subject_value = ""
         analysis_multi_subject_options = []
+        analysis_multi_subject_value = ""
         analysis_multi_subject_container = {'display': 'none'}
     
-        analysis_multi_category_value = ""
         analysis_multi_category_options = [] 
+        analysis_multi_category_value = ""
         analysis_multi_category_container = {'display': 'none'}
+
+        analysis_multi_subcategory_options = []
+        analysis_multi_subcategory_value = ""
+        analysis_multi_subcategory_container = {'display': 'none'}
 
         # academic info
         info_nav_container = {"display": "none"}
@@ -741,7 +794,7 @@ def radio_type_selector(current_page: str, school: str, info_type_value: str, an
         analysis_multi_hs_group_options, analysis_multi_hs_group_value, analysis_multi_hs_group_container,
         analysis_multi_subject_options, analysis_multi_subject_value, analysis_multi_subject_container,
         analysis_multi_category_options, analysis_multi_category_value, analysis_multi_category_container,
-        
+        analysis_multi_subcategory_options, analysis_multi_subcategory_value, analysis_multi_subcategory_container,
         analysis_nav_container, analysis_subnav_container
     )
 
@@ -1016,33 +1069,28 @@ def layout():
                             ],
                             className = "row",
                         ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(create_radio_layout("analysis-multi", "subcategory"),className="tabs"),
 
-
-
-
+                                    ],
+                                    className = "bare-container--flex--center twelve columns",
+                                ),
+                            ],
+                            className = "row",
+                        ),
                     ],
                     id="analysis-navigation-container",
                 ), 
-
-
                 # html.Hr(className = "line_bottom"),
-
-
-
-
-
-
-
-## PAGE CONTENT ##                
+                # dash page content             
                 dash.page_container,
             ],
         )
     ],
 )
-
-# for page in dash.page_registry.values():
-#     if page["path"].startswith("/academic_info"):
-#         print(page["name"])
     
 # testing layout as a function - not sure its faster
 app.layout = layout 

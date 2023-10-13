@@ -238,6 +238,11 @@ hr {
   display: flex;
 }
 
+.comparison-dropdown-row {
+  display: flex;
+  margin-top: 7px;  
+}
+
 .pretty-container {
   border-radius: 5px;
   background-color: #ffffff;
@@ -986,10 +991,10 @@ a.nav-link:hover {
   margin-bottom: 7px;
 }
 
-#analysis-type-radio-container, #info-type-radio-container
+/* #analysis-type-radio-container, #info-type-radio-container
 {
-  /* margin-bottom: 7px; */
-}
+  margin-bottom: 7px;
+} */
 #analysis-multi-subject-radio-container {
   padding-right: 10px;
 }
