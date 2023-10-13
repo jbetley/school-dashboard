@@ -20,192 +20,192 @@ from .subnav import subnav_academic_analysis
 
 dash.register_page(__name__, name = "Year over Year", path = "/analysis_multiple_year", top_nav=False, order=11)
 
-# Gradespan selection (K12 Only)
-@callback(      
-    Output("multi-year-gradespan-radio", "options"),
-    Output("multi-year-gradespan-radio", "value"),
-    Output('multi-year-gradespan-radio-container', 'style'),
-    Input("charter-dropdown", "value"),
-    State("multi-year-gradespan-radio", "value"),
-)
-def radio_gradespan_selector(school: str, gradespan_state: str):
+# # Gradespan selection (K12 Only)
+# @callback(      
+#     Output("multi-year-gradespan-radio", "options"),
+#     Output("multi-year-gradespan-radio", "value"),
+#     Output('multi-year-gradespan-radio-container', 'style'),
+#     Input("charter-dropdown", "value"),
+#     State("multi-year-gradespan-radio", "value"),
+# )
+# def radio_gradespan_selector(school: str, gradespan_state: str):
 
-    gradespan_options = []
-    gradespan_container = {'display': 'none'}
+#     gradespan_options = []
+#     gradespan_container = {'display': 'none'}
 
-    selected_school = get_school_index(school)
-    school_type = selected_school["School Type"].values[0]
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
 
-    if school_type == "K12":
-        gradespan_options = [
-            {"label": "K-8", "value": "k8"},
-            {"label": "High School", "value": "hs"},
-        ]
-        gradespan_container = {'display': 'block'}
+#     if school_type == "K12":
+#         gradespan_options = [
+#             {"label": "K-8", "value": "k8"},
+#             {"label": "High School", "value": "hs"},
+#         ]
+#         gradespan_container = {'display': 'block'}
 
-        if gradespan_state:
-            gradespan_value = gradespan_state
-        else:
-            gradespan_value = "k8"
+#         if gradespan_state:
+#             gradespan_value = gradespan_state
+#         else:
+#             gradespan_value = "k8"
     
-    elif school_type == "AHS" or school_type == "HS":
-        gradespan_value = "hs"
+#     elif school_type == "AHS" or school_type == "HS":
+#         gradespan_value = "hs"
 
-    else:
-        gradespan_value = "k8"
+#     else:
+#         gradespan_value = "k8"
 
-    return gradespan_options, gradespan_value, gradespan_container
+#     return gradespan_options, gradespan_value, gradespan_container
 
-# HS Grad Rate or SAT Selector
-@callback(      
-    Output("multi-year-hs-category-radio", "options"),
-    Output("multi-year-hs-category-radio","value"),
-    Output("multi-year-hs-category-radio-container", "style"),
-    Input("charter-dropdown", "value"),
-    Input("multi-year-gradespan-radio","value"),    
-    State("multi-year-hs-category-radio", "value"),
-)
-def radio_hs_category_selector(school: str, gradespan_value: str, hs_category_state: str):
+# # HS Grad Rate or SAT Selector
+# @callback(      
+#     Output("multi-year-hs-category-radio", "options"),
+#     Output("multi-year-hs-category-radio","value"),
+#     Output("multi-year-hs-category-radio-container", "style"),
+#     Input("charter-dropdown", "value"),
+#     Input("multi-year-gradespan-radio","value"),    
+#     State("multi-year-hs-category-radio", "value"),
+# )
+# def radio_hs_category_selector(school: str, gradespan_value: str, hs_category_state: str):
 
-    hs_category_value = ""
-    hs_category_options = []
-    hs_category_container = {'display': 'none'}
+#     hs_category_value = ""
+#     hs_category_options = []
+#     hs_category_container = {'display': 'none'}
 
-    selected_school = get_school_index(school)
-    school_type = selected_school["School Type"].values[0]
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
 
-    if school_type == "HS" or school_type == "AHS" or (gradespan_value == "hs" and school_type == "K12"):
-        hs_category_options = [
-            {"label": "Graduation Rate", "value": "Graduation Rate"},
-            {"label": "SAT", "value": "SAT"}
-        ]
+#     if school_type == "HS" or school_type == "AHS" or (gradespan_value == "hs" and school_type == "K12"):
+#         hs_category_options = [
+#             {"label": "Graduation Rate", "value": "Graduation Rate"},
+#             {"label": "SAT", "value": "SAT"}
+#         ]
 
-        hs_category_container = {'display': 'block'}
+#         hs_category_container = {'display': 'block'}
 
-        if hs_category_state:
-            hs_category_value = hs_category_state
-        else:
-            hs_category_value = "Graduation Rate"
+#         if hs_category_state:
+#             hs_category_value = hs_category_state
+#         else:
+#             hs_category_value = "Graduation Rate"
 
-    return hs_category_options, hs_category_value, hs_category_container
+#     return hs_category_options, hs_category_value, hs_category_container
 
-# Subject selector
-@callback(
-    Output("multi-year-subject-radio", "options"),
-    Output("multi-year-subject-radio","value"),
-    Output("multi-year-subject-radio-container","style"),  
-    Input("charter-dropdown", "value"),
-    Input("multi-year-gradespan-radio","value"),
-    Input("multi-year-hs-category-radio","value"),
-    State("multi-year-subject-radio","value"),
-)
-def radio_subject_selector(school: str, gradespan_value: str, hs_category_value: str, subject_state: str):
+# # Subject selector
+# @callback(
+#     Output("multi-year-subject-radio", "options"),
+#     Output("multi-year-subject-radio","value"),
+#     Output("multi-year-subject-radio-container","style"),  
+#     Input("charter-dropdown", "value"),
+#     Input("analysis-type-radio","value"),
+#     Input("analysis-multi-hs-group-radio","value"),
+#     State("multi-year-subject-radio","value"),
+# )
+# def radio_subject_selector(school: str, gradespan_value: str, hs_category_value: str, subject_state: str):
    
-    # Both ILEARN and SAT have subject categories, although the name for english is different: ELA/EBRW;
-    # Graduation Rate does not have subject categories
-    subject_value = ""
-    subject_options = []    # type:list
-    subject_container = {'display': 'none'}
+#     # Both ILEARN and SAT have subject categories, although the name for english is different: ELA/EBRW;
+#     # Graduation Rate does not have subject categories
+#     subject_value = ""
+#     subject_options = []    # type:list
+#     subject_container = {'display': 'none'}
 
-    selected_school = get_school_index(school)
-    school_type = selected_school["School Type"].values[0]
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
 
-    if hs_category_value == "Graduation Rate" and (school_type == "HS" or school_type == "AHS" or school_type == "K12"):
-        return subject_options, subject_value, subject_container
+#     if hs_category_value == "Graduation Rate" and (school_type == "HS" or school_type == "AHS" or school_type == "K12"):
+#         return subject_options, subject_value, subject_container
     
-    else:
+#     else:
 
-        if school_type == "K8" or (school_type == "K12" and gradespan_value == "k8"):
+#         if school_type == "K8" or (school_type == "K12" and gradespan_value == "k8"):
 
-            subject_options = [
-                {"label": "ELA", "value": "ELA"},
-                {"label": "Math", "value": "Math"},
-            ]
-            subject_container = {'display': 'block'}
+#             subject_options = [
+#                 {"label": "ELA", "value": "ELA"},
+#                 {"label": "Math", "value": "Math"},
+#             ]
+#             subject_container = {'display': 'block'}
         
-            if subject_state and subject_state in ["ELA", "Math"]:
-                subject_value = subject_state
-            else:
-                subject_value = "ELA"
+#             if subject_state and subject_state in ["ELA", "Math"]:
+#                 subject_value = subject_state
+#             else:
+#                 subject_value = "ELA"
 
-        elif school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
+#         elif school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
 
-            subject_options = [
-                {"label": "EBRW", "value": "EBRW"},
-                {"label": "Math", "value": "Math"},
-            ]   
-            subject_container = {'display': 'block'}
+#             subject_options = [
+#                 {"label": "EBRW", "value": "EBRW"},
+#                 {"label": "Math", "value": "Math"},
+#             ]   
+#             subject_container = {'display': 'block'}
 
-            if subject_state and subject_state in ["EBRW", "Math"]:
-                subject_value = subject_state
-            else:
-                subject_value = "EBRW"
+#             if subject_state in ["EBRW", "Math"]:
+#                 subject_value = subject_state
+#             else:
+#                 subject_value = "EBRW"
 
-    return subject_options, subject_value, subject_container
+#     return subject_options, subject_value, subject_container
 
-# Main Category selector
-@callback(
-    Output("multi-year-category-radio", "options"),
-    Output("multi-year-category-radio","value"),
-    Output("multi-year-category-radio-container","style"),    
-    Input("charter-dropdown", "value"),
-    Input("multi-year-gradespan-radio","value"),
-    Input("multi-year-hs-category-radio","value"),    
-    State("multi-year-category-radio","value"),
-)
-def top_level_selector(school: str, gradespan_value: str, hs_category_value: str, category_state: str):
+# # Main Category selector
+# @callback(
+#     Output("multi-year-category-radio", "options"),
+#     Output("multi-year-category-radio","value"),
+#     Output("multi-year-category-radio-container","style"),    
+#     Input("charter-dropdown", "value"),
+#     Input("analysis-type-radio","value"),
+#     Input("analysis-multi-hs-group-radio","value"),
+#     State("multi-year-category-radio","value"),
+# )
+# def top_level_selector(school: str, gradespan_value: str, hs_category_value: str, category_state: str):
 
-    category_value = ""
-    category_options = [] 
-    category_container = {'display': 'none'}
+#     category_value = ""
+#     category_options = [] 
+#     category_container = {'display': 'none'}
     
-    selected_school = get_school_index(school)
-    school_type = selected_school["School Type"].values[0]
+#     selected_school = get_school_index(school)
+#     school_type = selected_school["School Type"].values[0]
 
-    if school_type == "K8" or (school_type == "K12" and gradespan_value == "k8"):
+#     if school_type == "K8" or (school_type == "K12" and gradespan_value == "k8"):
 
-        category_options = [
-            {"label": "Grade", "value": "Grade"},
-            {"label": "Subgroup", "value": "Subgroup"},
-            {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
-        ]
-        category_container = {'display': 'block'}
+#         category_options = [
+#             {"label": "Grade", "value": "Grade"},
+#             {"label": "Subgroup", "value": "Subgroup"},
+#             {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
+#         ]
+#         category_container = {'display': 'block'}
 
-        if category_state and category_state in ["Grade", "Subgroup", "Race/Ethnicity"]:
-            category_value = category_state
-        else:
-            category_value = "Grade"
+#         if category_state in ["Grade", "Subgroup", "Race/Ethnicity"]:
+#             category_value = category_state
+#         else:
+#             category_value = "Grade"
 
-    elif school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
+#     elif school_type == "HS" or school_type == "AHS" or (school_type == "K12" and gradespan_value == "hs"):
 
-        if hs_category_value == "Graduation Rate" or hs_category_value == "":
+#         if hs_category_value == "Graduation Rate" or hs_category_value == "":
 
-            category_options = [
-                {"label": "Total", "value": "Total"},
-                {"label": "Subgroup", "value": "Subgroup"},
-                {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
-            ]
-            category_container = {'display': 'block'}
+#             category_options = [
+#                 {"label": "Total", "value": "Total"},
+#                 {"label": "Subgroup", "value": "Subgroup"},
+#                 {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
+#             ]
+#             category_container = {'display': 'block'}
 
-            if category_state and category_state in ["Total", "Subgroup", "Race/Ethnicity"]:
-                category_value = category_state
-            else:
-                category_value = "Total"
+#             if category_state and category_state in ["Total", "Subgroup", "Race/Ethnicity"]:
+#                 category_value = category_state
+#             else:
+#                 category_value = "Total"
 
-        else:
-            category_options = [
-                {"label": "School Total", "value": "School Total"},
-                {"label": "Subgroup", "value": "Subgroup"},
-                {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
-            ]
-            category_container = {'display': 'block'}
+#         else:
+#             category_options = [
+#                 {"label": "School Total", "value": "School Total"},
+#                 {"label": "Subgroup", "value": "Subgroup"},
+#                 {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
+#             ]
+#             category_container = {'display': 'block'}
 
-            if category_state and category_state in ["School Total", "Subgroup", "Race/Ethnicity"]:
-                category_value = category_state
-            else:
-                category_value = "School Total"
+#             if category_state in ["School Total", "Subgroup", "Race/Ethnicity"]:
+#                 category_value = category_state
+#             else:
+#                 category_value = "School Total"
 
-    return category_options, category_value, category_container
+#     return category_options, category_value, category_container
 
 # Subcategory selector
 @callback(
@@ -213,10 +213,10 @@ def top_level_selector(school: str, gradespan_value: str, hs_category_value: str
     Output("multi-year-subcategory-radio","value"),
     Output("multi-year-subcategory-radio-container","style"),    
     Input("charter-dropdown", "value"),
-    Input("multi-year-category-radio","value"),
+    Input("analysis-multi-category-radio","value"),
     State("multi-year-subcategory-radio","value"),
-    State("multi-year-gradespan-radio", "value"),
-    State("multi-year-hs-category-radio","value")
+    State("analysis-type-radio", "value"),
+    State("analysis-multi-hs-group-radio","value")
 )
 def radio_subcategory_selector(school: str, category_value: str, subcategory_state: str, 
                                gradespan_state: str, hs_category_state: str):
@@ -249,7 +249,7 @@ def radio_subcategory_selector(school: str, category_value: str, subcategory_sta
         ethnicity.sort()
 
         if ethnicity:
-            if subcategory_state and subcategory_state in ethnicity:
+            if subcategory_state in ethnicity:
                 subcategory_value = subcategory_state
             else:
                 subcategory_value = ethnicity[0]
@@ -266,7 +266,7 @@ def radio_subcategory_selector(school: str, category_value: str, subcategory_sta
         if subgroup:
             subcategory_options = [{"label": s, "value": s} for s in subgroup]           
 
-            if subcategory_state and subcategory_state in subgroup:
+            if subcategory_state in subgroup:
                 subcategory_value = subcategory_state
             
             else:
@@ -286,7 +286,7 @@ def radio_subcategory_selector(school: str, category_value: str, subcategory_sta
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("multi-year-comparison-dropdown", "value"),
-    Input("multi-year-gradespan-radio", "value"),    
+    Input("analysis-type-radio", "value"),    
 )
 def set_dropdown_options(school: str, year: str, comparison_schools: list, gradespan_value = str):
 
@@ -463,10 +463,10 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, grade
     Output("hs-analysis-multi-no-data", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("multi-year-gradespan-radio", "value"),
-    Input("multi-year-subject-radio", "value"),
+    Input("analysis-type-radio", "value"),
+    Input("analysis-multi-subject-radio", "value"),
     Input("multi-year-subcategory-radio", "value"),
-    Input("multi-year-hs-category-radio", "value"),    
+    Input("analysis-multi-hs-group-radio", "value"),    
     [Input("multi-year-comparison-dropdown", "value")],
 )
 def update_academic_analysis(school: str, year: str, gradespan_value: str, subject_radio: str, subcategory_radio: str, 
@@ -646,53 +646,53 @@ def layout():
                 [
                     html.Div(
                         [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(subnav_academic_analysis(), id="subnav-academic", className="tabs"),
-                                        ],
-                                        className="bare-container--flex--center twelve columns",
-                                    ),
-                                ],
-                                className="row",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(create_radio_layout("multi-year", "gradespan"),className="tabs"),
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
+                            #                 html.Div(subnav_academic_analysis(), id="subnav-academic", className="tabs"),
+                            #             ],
+                            #             className="bare-container--flex--center twelve columns",
+                            #         ),
+                            #     ],
+                            #     className="row",
+                            # ),
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
+                            #                 html.Div(create_radio_layout("multi-year", "gradespan"),className="tabs"),
 
-                                        ],
-                                        className = "bare-container--flex--center twelve columns",
-                                    ),
-                                ],
-                                className = "row",
-                            ),                             
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(create_radio_layout("multi-year", "hs-category"),className="tabs"),
+                            #             ],
+                            #             className = "bare-container--flex--center twelve columns",
+                            #         ),
+                            #     ],
+                            #     className = "row",
+                            # ),                             
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
+                            #                 html.Div(create_radio_layout("multi-year", "hs-category"),className="tabs"),
 
-                                        ],
-                                        className = "bare-container--flex--center twelve columns",
-                                    ),
-                                ],
-                                className = "row",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(create_radio_layout("multi-year", "subject", "six"),className="tabs"),
-                                            html.Div(create_radio_layout("multi-year", "category", "six"),className="tabs"),
-                                        ],
-                                        className = "bare-container--flex--center_subnav twelve columns",
-                                    ),
-                                ],
-                                className = "row",
-                            ),
+                            #             ],
+                            #             className = "bare-container--flex--center twelve columns",
+                            #         ),
+                            #     ],
+                            #     className = "row",
+                            # ),
+                            # html.Div(
+                            #     [
+                            #         html.Div(
+                            #             [
+                            #                 html.Div(create_radio_layout("multi-year", "subject", "six"),className="tabs"),
+                            #                 html.Div(create_radio_layout("multi-year", "category", "six"),className="tabs"),
+                            #             ],
+                            #             className = "bare-container--flex--center_subnav twelve columns",
+                            #         ),
+                            #     ],
+                            #     className = "row",
+                            # ),
                             html.Div(
                                 [
                                     html.Div(

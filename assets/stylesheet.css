@@ -986,15 +986,16 @@ a.nav-link:hover {
   margin-bottom: 7px;
 }
 
-#analysis-single-type-radio-container, #info-type-radio-container
+#analysis-type-radio-container, #info-type-radio-container
 {
-  margin-bottom: 7px;
+  /* margin-bottom: 7px; */
 }
-#multi-year-subject-radio-container {
+#analysis-multi-subject-radio-container {
   padding-right: 10px;
 }
 
-#multi-year-subject-radio-container::after {
+/* TODO: Work with these lines */
+#analysis-multi-subject-radio-container::after {
   content: "";
   background: steelblue;
   position: absolute;
@@ -1004,7 +1005,7 @@ a.nav-link:hover {
   width: 1px;
 }
 
-#multi-year-category-radio-container {
+#analysis-multi-category-radio-container {
   padding-left: 10px;
 }
 
