@@ -136,15 +136,26 @@ def create_school_label(data: pd.DataFrame) -> pd.Series:
     Returns:
         label (pd.Series): a series of labels one for each school 
     """
+    # Original Version:
+    # label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
+    #     "-" + data["High Grade"].fillna("").astype(str) + ")"
+    # label = label.str.replace("\(-\)", "",regex=True)
+    # label = label.str.replace(".0","",regex=False)
 
-    label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
-        "-" + data["High Grade"].fillna("").astype(str) + ")"
+    label = data[["School Name","Low Grade","High Grade"]].copy()
 
-    label = label.str.replace("\(-\)", "",regex=True)
+    # conditionally replace School Name using .loc
+    label.loc[label["Low Grade"] == 13, 'School Name'] = label["School Name"] + " (AHS)"
+    label.loc[label["Low Grade"] != 13, 'School Name'] = label["School Name"] + " (" + \
+        label["Low Grade"].fillna("").astype(str) + "-" + label["High Grade"].fillna("").astype(str) + ")"    
+    
+    label = label.drop(["Low Grade", "High Grade"], axis = 1)
+
+    label = label.replace("\(-\)", "",regex=True)
 
     # regex is false because we want to replace literal ".0" and not
     # anychar + "0"
-    label = label.str.replace(".0","",regex=False)
+    label = label.replace(".0","",regex=False)
 
     return label
 

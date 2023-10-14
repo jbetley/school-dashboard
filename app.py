@@ -1,7 +1,7 @@
 #########################
 # ICSB School Dashboard #
 #########################
-# author:    jbetley (https://github.com/jbetley) 
+# author:    jbetley (https://github.com/jbetley)
 # version:  1.13
 # date:     10/13/23
 
@@ -27,7 +27,7 @@
 # else will have to maintain this code at some point, and I have no idea how
 # sophisticated their software engineering skills will be. The hope is that I will
 # eventually have the code structured in such a way that whomever follows can simply drop an
-# 'updated' IDOE academic file into a folder, click a script, have it added to the DB, and 
+# 'updated' IDOE academic file into a folder, click a script, have it added to the DB, and
 # have the program read it with no issue. That part is a work in progress. Another option
 # would be to get access to IDOE's API for this data. This is also a work in progress. Changing
 # to IDOE's API (using ED-FI standard), would be a gamechanger.
@@ -60,13 +60,24 @@ from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 
 import dash
-from dash import dcc, html, Input, Output, State, callback
+from dash import ctx, dcc, html, Input, Output, State, callback
+
 # from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+import pandas as pd
 
-from pages.load_data import get_school_index, get_academic_dropdown_years, get_financial_info_dropdown_years, \
-    get_school_dropdown_list, get_financial_analysis_dropdown_years, get_gradespan, get_ethnicity, get_subgroup
-
+from pages.load_data import (
+    get_school_index,
+    get_academic_dropdown_years,
+    get_financial_info_dropdown_years,
+    get_school_dropdown_list,
+    get_financial_analysis_dropdown_years,
+    get_gradespan,
+    get_ethnicity,
+    get_subgroup,
+    get_school_coordinates,
+)
+from pages.calculations import find_nearest
 from pages.layouts import create_radio_layout
 from pages.subnav import subnav_academic_information, subnav_academic_analysis
 
@@ -95,11 +106,12 @@ login_manager = LoginManager()
 login_manager.init_app(server)
 login_manager.login_view = "/login"
 
+
 # each table in the user database needs a class to be created for it
 # using the db.Model, all db columns must be identified by name
 # and data type. UserMixin provides a get_id method that returns
 # the id attribute or raises an exception.
-class User(UserMixin, db.Model):    # type: ignore
+class User(UserMixin, db.Model):  # type: ignore
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.Text, unique=True)
@@ -118,12 +130,14 @@ class User(UserMixin, db.Model):    # type: ignore
     @property
     def full_name(self):
         return self.fullname
-    
+
+
 # load_user is used by login_user, passes the user_id
 # and gets the User object that matches that id
 @login_manager.user_loader
 def load_user(id):
     return db.session.get(User, int(id))
+
 
 # The default is to block all requests unless user is on login page or is authenticated
 @server.before_request
@@ -145,17 +159,17 @@ def check_login():
                 return
         return jsonify({"status": "401", "statusText": "unauthorized access"})
 
-@server.route("/login", methods=["GET", "POST"])
-def login(message = ""):
-    if request.method == "GET":
 
+@server.route("/login", methods=["GET", "POST"])
+def login(message=""):
+    if request.method == "GET":
         # if user is authenticated - redirect to dash app
         if current_user.is_authenticated:
             return redirect("/")
 
         # otherwise show the login page
         return render_template("login.html", message=message)
-        
+
     if request.method == "POST":
         if request.form:
             user = request.form["username"]
@@ -169,7 +183,6 @@ def login(message = ""):
                 # check a hash of the provided password against the hashed password stored in the
                 # User object
                 if bcrypt.check_password_hash(user_data.password, password):
-
                     # if True, login the user using the User object
                     login_user(user_data)
 
@@ -177,18 +190,19 @@ def login(message = ""):
                         if session["url"]:
                             url = session["url"]
                             session["url"] = None
-                            return redirect(url)    # redirect to target url
-                    return redirect("/")            # redirect to home
-                return render_template('login.html', message=message)
+                            return redirect(url)  # redirect to target url
+                    return redirect("/")  # redirect to home
+                return render_template("login.html", message=message)
             else:
-                return render_template('login.html', message=message)
+                return render_template("login.html", message=message)
     else:
         if current_user:
             if current_user.is_authenticated:
-                return redirect('/')
-    
-    return render_template('login.html', message=message)
+                return redirect("/")
+
+    return render_template("login.html", message=message)
     # return redirect(url_for("login", error=1))
+
 
 @server.route("/logout", methods=["GET"])
 def logout():
@@ -196,6 +210,7 @@ def logout():
         if current_user.is_authenticated:
             logout_user()
     return render_template("login.html", message="You have been logged out.")
+
 
 app = dash.Dash(
     __name__,
@@ -213,17 +228,16 @@ app = dash.Dash(
     ],
 )
 
+# Top Level Navigation #
 
-# Top Level Navigation #        
 
 # Selected School Dropdown - shows a single school if a ';'school' login is used, an associated
 # group of schools if a 'network' login is used, and all schools if 'admin' login is used.
 @callback(
     Output("charter-dropdown", "options"),
-    [Input("application-state", "children")]    # dummy input
+    [Input("application-state", "children")],  # dummy input
 )
 def set_dropdown_options(app_state):
-
     # Get the current user id using the current_user proxy,
     # use the ._get_current_object() method to return the
     # underlying object (User). get the group_id property
@@ -242,29 +256,31 @@ def set_dropdown_options(app_state):
     else:
         # check for network login
         if group_id < 0:
-            
-            charters = available_charters[available_charters["GroupID"] == str(abs(group_id))]
+            charters = available_charters[
+                available_charters["GroupID"] == str(abs(group_id))
+            ]
 
         else:
             # select only the authorized school using the id field of the authorized_user
             # object. need to subtract 7 to account for Admin and Network Logins (loc 0-6)
-            charters = available_charters.iloc[[(authorized_user.id-7)]]
+            charters = available_charters.iloc[[(authorized_user.id - 7)]]
 
     dropdown_dict = dict(zip(charters["SchoolName"], charters["SchoolID"]))
     dropdown_list = dict(sorted(dropdown_dict.items()))
-    dropdown_options = [{"label": name, "value": id} for name, id in dropdown_list.items()]
+    dropdown_options = [
+        {"label": name, "value": id} for name, id in dropdown_list.items()
+    ]
 
     return dropdown_options
 
+
 # Selected School Dropdown - sets the default value to the first school in
 # respective list of schools
-@callback(
-    Output("charter-dropdown", "value"),
-    Input("charter-dropdown", "options")
-)
+@callback(Output("charter-dropdown", "value"), Input("charter-dropdown", "options"))
 def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
-            
+
+
 # Selected Year Dropdown -
 # options max: 5 years
 # values: depend on which page is being accessed and, in some circumstances, the type of
@@ -273,8 +289,9 @@ def set_dropdown_value(charter_options):
 # years of academic data in either academic_data_k8 or academic_data_hs database table.
 # for the financial_analysis page, we use a list of the 'year' column names for each
 # year for which ADM Average is greater than '0' in the financial_data database table.
-# All other pages use 'financial_info_dropdown_years' which is the same as 
+# All other pages use 'financial_info_dropdown_years' which is the same as
 # 'financial_analysis_dropdown_years' except the quarterly data string (Q#) is removed.
+
 
 # "url" and "hidden" are used to track the currently selected url
 @callback(
@@ -284,15 +301,16 @@ def set_dropdown_value(charter_options):
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("url", "href"),
-    Input("analysis-type-radio", "value")
+    Input("analysis-type-radio", "value"),
 )
-def set_year_dropdown_options(school_id: str, year: str, current_page: str, analysis_type_value: str):
-    
+def set_year_dropdown_options(
+    school_id: str, year: str, current_page: str, analysis_type_value: str
+):
     max_dropdown_years = 5
 
     current_page = current_page.rsplit("/", 1)[-1]
 
-    selected_school = get_school_index(school_id)    
+    selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
     # for K12 schools, we need to use "HS" data when analysis_type is "hs."" We also
@@ -302,17 +320,21 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
         analysis_type_value = "k8"
 
     # Guest schools do not have financial data
-    if "academic" in current_page or "analysis_single" in current_page or \
-        "analysis_multiple" in current_page or selected_school["Guest"].values[0] == "Y":
-
-        if ("academic_information" in current_page or "analysis_single" in current_page or \
-        "analysis_multiple" in current_page) and analysis_type_value == "hs":
-            
-            years = get_academic_dropdown_years(school_id,"HS")
+    if (
+        "academic" in current_page
+        or "analysis_single" in current_page
+        or "analysis_multiple" in current_page
+        or selected_school["Guest"].values[0] == "Y"
+    ):
+        if (
+            "academic_information" in current_page
+            or "analysis_single" in current_page
+            or "analysis_multiple" in current_page
+        ) and analysis_type_value == "hs":
+            years = get_academic_dropdown_years(school_id, "HS")
 
         else:
-
-            years = get_academic_dropdown_years(school_id,school_type)
+            years = get_academic_dropdown_years(school_id, school_type)
 
     elif "financial_analysis" in current_page:
         years = get_financial_analysis_dropdown_years(school_id)
@@ -321,7 +343,9 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
         years = get_financial_info_dropdown_years(school_id)
 
     # set year_value and year_options
-    number_of_years_to_display = len(years) if len(years) <= max_dropdown_years else max_dropdown_years
+    number_of_years_to_display = (
+        len(years) if len(years) <= max_dropdown_years else max_dropdown_years
+    )
     dropdown_years = years[0:number_of_years_to_display]
     first_available_year = dropdown_years[0]
     earliest_available_year = dropdown_years[-1]
@@ -337,7 +361,7 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
 
     if year is None:
         year_value = str(first_available_year)
-    
+
     elif int(year) < int(earliest_available_year):
         year_value = str(earliest_available_year)
 
@@ -350,54 +374,58 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
     # K8 schools do not have data for 2020 - so that year should never appear in the dropdown.
     # HS, AHS, and K12 schools with the "HS" academic_type_radio button selected could have 2020 data-
     # school_type generally takes care of this for K8, HS, and AHS schools, but not K12
-    if ("academic" in current_page or "analysis_single" in current_page or \
-        "analysis_multiple" in current_page or selected_school["Guest"].values[0] == "Y") and \
-        ((school_type == "K8") or (school_type == "K12" and analysis_type_value == "k8")) and \
-            year == "2020":
-
+    if (
+        (
+            "academic" in current_page
+            or "analysis_single" in current_page
+            or "analysis_multiple" in current_page
+            or selected_school["Guest"].values[0] == "Y"
+        )
+        and (
+            (school_type == "K8")
+            or (school_type == "K12" and analysis_type_value == "k8")
+        )
+        and year == "2020"
+    ):
         year_value = "2019"
 
     if not dropdown_years:
-        raise Exception("There is simply no way that you can be seeing this error message.") # except i saw it once
-    
-    year_options=[
-        {"label": str(y), "value": str(y)}
-        for y in dropdown_years
-    ]
+        raise Exception(
+            "There is simply no way that you can be seeing this error message."
+        )  # except i saw it once
+
+    year_options = [{"label": str(y), "value": str(y)} for y in dropdown_years]
 
     return year_options, year_value, current_page
-    
-# Subnavigation #
-# TODO: FIX CRASH ON TRYING TO ACCESS 2020 SAT DATA
-# TODO: SEE 21c/2020/SAT/EBRW/Ethnicity/Black
-# UnboundLocalError: cannot access local variable 'analysis_multi_subcategory_options' where it is not associated with a value
 
+
+# Subnavigation #
 # NOTE: There are no doubt better ways to structure this; however, given how complicated
-# it is, I have erred on the side of repetition for the sake of clarity
-@callback(      
+# it is, I have used a single callback for the sake of clarity
+@callback(
     Output("academic-information-type-radio", "options"),
-    Output("academic-information-type-radio","value"),
+    Output("academic-information-type-radio", "value"),
     Output("academic-information-type-radio-container", "style"),
     Output("academic-information-category-radio", "options"),
-    Output("academic-information-category-radio","value"),
-    Output("academic-information-category-radio-container","style"),
+    Output("academic-information-category-radio", "value"),
+    Output("academic-information-category-radio-container", "style"),
     Output("academic-information-subnav-container", "style"),
     Output("academic-information-navigation-container", "style"),
     Output("analysis-type-radio", "options"),
-    Output("analysis-type-radio","value"),
-    Output('analysis-type-radio-container', 'style'),
+    Output("analysis-type-radio", "value"),
+    Output("analysis-type-radio-container", "style"),
     Output("analysis-multi-hs-group-radio", "options"),
-    Output("analysis-multi-hs-group-radio","value"),
+    Output("analysis-multi-hs-group-radio", "value"),
     Output("analysis-multi-hs-group-radio-container", "style"),
     Output("analysis-multi-subject-radio", "options"),
-    Output("analysis-multi-subject-radio","value"),
+    Output("analysis-multi-subject-radio", "value"),
     Output("analysis-multi-subject-radio-container", "style"),
     Output("analysis-multi-category-radio", "options"),
-    Output("analysis-multi-category-radio","value"),
+    Output("analysis-multi-category-radio", "value"),
     Output("analysis-multi-category-radio-container", "style"),
     Output("analysis-multi-subcategory-radio", "options"),
-    Output("analysis-multi-subcategory-radio","value"),
-    Output("analysis-multi-subcategory-radio-container","style"),    
+    Output("analysis-multi-subcategory-radio", "value"),
+    Output("analysis-multi-subcategory-radio-container", "style"),
     Output("analysis-subnav-container", "style"),
     Output("analysis-navigation-container", "style"),
     Input("url", "href"),
@@ -405,16 +433,24 @@ def set_year_dropdown_options(school_id: str, year: str, current_page: str, anal
     Input("academic-information-type-radio", "value"),
     Input("analysis-type-radio", "value"),
     Input("analysis-multi-hs-group-radio", "value"),
-    Input("analysis-multi-category-radio","value"),
+    Input("analysis-multi-category-radio", "value"),
+    Input("analysis-multi-subcategory-radio", "value"),
     State("academic-information-category-radio", "options"),
     State("academic-information-category-radio", "value"),
-    State("analysis-multi-subject-radio","value"),
-    State("analysis-multi-subcategory-radio","value"),
+    State("analysis-multi-subject-radio", "value"),
 )
-def radio_type_selector(current_page: str, school_id: str, info_type_value: str, analysis_type_value: str,
-             analysis_hs_group_state: str, analysis_multi_category_value: str, info_category_options_state: list,
-             info_category_value_state: str, analysis_multi_subject_state: str, analysis_multi_subcategory_state: str):
-    
+def navigation(
+    current_page: str,
+    school_id: str,
+    info_type_value: str,
+    analysis_type_value: str,
+    analysis_hs_group_state: str,
+    analysis_multi_category_value: str,
+    analysis_multi_subcategory_value: str,
+    info_category_options_state: list,
+    info_category_value_state: str,
+    analysis_multi_subject_state: str,
+):
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
@@ -422,66 +458,66 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
 
     type_options_default = [
         {"label": "K8", "value": "k8"},
-        {"label": "High School", "value": "hs"}        
+        {"label": "High School", "value": "hs"},
     ]
-    
+
+    # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
-    
         # hide academic analysis navigation
         analysis_type_value = "k8"
         analysis_type_options = []
-        analysis_type_container = {'display': 'none'}
+        analysis_type_container = {"display": "none"}
 
         analysis_multi_hs_group_options = []
         analysis_multi_hs_group_value = ""
-        analysis_multi_hs_group_container  = {"display": "none"}
+        analysis_multi_hs_group_container = {"display": "none"}
 
-        analysis_multi_subject_options = []     #type: list
+        analysis_multi_subject_options = []  # type: list
         analysis_multi_subject_value = ""
-        analysis_multi_subject_container = {'display': 'none'}
-    
-        analysis_multi_category_options = [] 
-        analysis_multi_category_value = ""
-        analysis_multi_category_container = {'display': 'none'}
+        analysis_multi_subject_container = {"display": "none"}
 
-        analysis_multi_subcategory_options = []     #type: list
+        analysis_multi_category_options = []
+        analysis_multi_category_value = ""
+        analysis_multi_category_container = {"display": "none"}
+
+        analysis_multi_subcategory_options = []  # type: list
         analysis_multi_subcategory_value = ""
-        analysis_multi_subcategory_container = {'display': 'none'}
+        analysis_multi_subcategory_container = {"display": "none"}
 
         analysis_nav_container = {"display": "none"}
         analysis_subnav_container = {"display": "none"}
 
-        # academic_information and academic_information_growth pages
+        # begin academic_info navigation
         info_nav_container = {"display": "block"}
-        
+
         category_options_default = [
             {"label": "All Data", "value": "all"},
             {"label": "By Grade", "value": "grade"},
             {"label": "By Ethnicity", "value": "ethnicity"},
-            {"label": "By Subgroup", "value": "subgroup"}
+            {"label": "By Subgroup", "value": "subgroup"},
         ]
 
+        # no subnavigation is displayed for HS/AHS
         if school_type == "HS" or school_type == "AHS":
-            
             info_subnav_container = {"display": "none"}
 
-            info_type_options = []   # type: list
+            info_type_options = []  # type: list
             info_type_value = "hs"
             info_type_container = {"display": "none"}
-            
+
             info_category_options = []
-            info_category_value = ""            
+            info_category_value = ""
             info_category_container = {"display": "none"}
 
+        # categories of K8 schools
         elif school_type == "K8":
-
             info_subnav_container = {"display": "block"}
-            
+
             info_type_options = []
-            info_type_value = "k8"            
+            info_type_value = "k8"
             info_type_container = {"display": "none"}
 
-            if info_category_value_state: 
+            if info_category_value_state:
                 info_category_value = info_category_value_state
             else:
                 info_category_value = "all"
@@ -490,12 +526,12 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
                 info_category_options = info_category_options_state
             else:
                 info_category_options = category_options_default
-                
+
             info_category_container = {"display": "block"}
 
-        elif school_type == "K12" and (info_type_value == "k8" or
-            not info_type_value):
-
+        # categories for K12 schools who have selected a type of 'k8'
+        # note that academic_information_growth.py does not have a type radio button
+        elif school_type == "K12" and (info_type_value == "k8" or not info_type_value):
             info_subnav_container = {"display": "block"}
 
             if current_page == "academic_information_growth":
@@ -506,13 +542,13 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
             else:
                 info_type_options = type_options_default
 
-                if info_type_value in ["k8","hs"]:
+                if info_type_value in ["k8", "hs"]:
                     info_type_value = info_type_value
                 else:
-                    info_type_value = "k8"    
+                    info_type_value = "k8"
                 info_type_container = {"display": "block"}
 
-            if info_category_value_state: 
+            if info_category_value_state:
                 info_category_value = info_category_value_state
             else:
                 info_category_value = "all"
@@ -524,27 +560,26 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
 
             info_category_container = {"display": "block"}
 
+        # no subnavigation for K12 school that has selected a type of "hs"
         elif school_type == "K12" and info_type_value == "hs":
-
             info_subnav_container = {"display": "none"}
 
             info_type_options = type_options_default
 
-            if info_type_value in ["k8","hs"]:
+            if info_type_value in ["k8", "hs"]:
                 info_type_value = info_type_value
             else:
                 info_type_value = "k8"
 
             info_type_container = {"display": "block"}
-            
+
             info_category_options = []
-            info_category_value = ""            
+            info_category_value = ""
             info_category_container = {"display": "none"}
 
-    # analysis pages (analysis_single_year and analysis_multiple_years)
+    # analysis_single_year.py and analysis_multiple_years.py
     elif "analysis" in current_page:
-
-        # hide academic information navigation
+        # hide academic information subnavigation
         info_nav_container = {"display": "none"}
         info_subnav_container = {"display": "none"}
         info_type_container = {"display": "none"}
@@ -556,40 +591,41 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
         info_category_options = []
         info_category_value = ""
 
+        # begin analysis sub_navigation
         analysis_nav_container = {"display": "block"}
         analysis_subnav_container = {"display": "block"}
 
-        # analysis-type: used for both pages
+        # analysis-type: used for both pages - is the only subnavigation
+        # for analysis_single_year.py
         if school_type == "K12":
-
             analysis_type_options = type_options_default
 
-            if analysis_type_value in ["k8","hs"]:
+            if analysis_type_value in ["k8", "hs"]:
                 analysis_type_value = analysis_type_value
             else:
                 analysis_type_value = "k8"
 
             analysis_type_container = {"display": "block"}
-        
+
         else:
-            
             analysis_type_value = "k8"
             analysis_type_options = []
-            analysis_type_container = {'display': 'none'}
+            analysis_type_container = {"display": "none"}
 
-        # year over year analysis page (analysis_multiple_years)
+        # analysis_multiple_years.py
         if "multi" in current_page:
-
-            # analysis-multi-hs-group
-            if school_type == "HS" or school_type == "AHS" or \
-                (school_type == "K12" and analysis_type_value == "hs"):
-                
+            # group button for HS/AHS/K12 (hs type)
+            if (
+                school_type == "HS"
+                or school_type == "AHS"
+                or (school_type == "K12" and analysis_type_value == "hs")
+            ):
                 analysis_multi_hs_group_options = [
                     {"label": "Graduation Rate", "value": "Graduation Rate"},
-                    {"label": "SAT", "value": "SAT"}
+                    {"label": "SAT", "value": "SAT"},
                 ]
 
-                analysis_multi_hs_group_container = {'display': 'block'}
+                analysis_multi_hs_group_container = {"display": "block"}
 
                 if analysis_hs_group_state:
                     analysis_multi_hs_group_value = analysis_hs_group_state
@@ -599,41 +635,52 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
             else:
                 analysis_multi_hs_group_options = []
                 analysis_multi_hs_group_value = ""
-                analysis_multi_hs_group_container  = {"display": "none"}
+                analysis_multi_hs_group_container = {"display": "none"}
 
-            # analysis-multi-subject
-            if (school_type == "HS" or school_type == "AHS" or (school_type == "K12" and analysis_type_value == "hs")):
-                
-                if analysis_multi_hs_group_value == "Graduation Rate" or analysis_multi_hs_group_value == "":
-
+            # category button for HS/AHS/K12 (hs type)
+            if (
+                school_type == "HS"
+                or school_type == "AHS"
+                or (school_type == "K12" and analysis_type_value == "hs")
+            ):
+                # graduation rate categories
+                if (
+                    analysis_multi_hs_group_value == "Graduation Rate"
+                    or analysis_multi_hs_group_value == ""
+                ):
                     # hide subject and subcategory
                     analysis_multi_subject_value = ""
                     analysis_multi_subject_options = []
-                    analysis_multi_subject_container = {'display': 'none'}
+                    analysis_multi_subject_container = {"display": "none"}
 
                     analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = ""
-                    analysis_multi_subcategory_container = {'display': 'none'}
+                    analysis_multi_subcategory_container = {"display": "none"}
 
                     analysis_multi_category_options = [
-                            {"label": "Total", "value": "Total"},
-                            {"label": "Subgroup", "value": "Subgroup"},
-                            {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
-                        ]
-                    analysis_multi_category_container = {'display': 'block'}
+                        {"label": "Total", "value": "Total"},
+                        {"label": "Subgroup", "value": "Subgroup"},
+                        {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
+                    ]
+                    analysis_multi_category_container = {"display": "block"}
 
-                    if analysis_multi_category_value in ["Total", "Subgroup", "Race/Ethnicity"]:
+                    if analysis_multi_category_value in [
+                        "Total",
+                        "Subgroup",
+                        "Race/Ethnicity",
+                    ]:
                         analysis_multi_category_value = analysis_multi_category_value
                     else:
                         analysis_multi_category_value = "Total"
 
+                # SAT subject and categories (SAT is only group that has subject values
+                # other than ELA & Math)
                 elif analysis_multi_hs_group_value == "SAT":
-                    
                     analysis_multi_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
                         {"label": "Math", "value": "Math"},
-                    ]   
-                    analysis_multi_subject_container = {'display': 'block'}
+                    ]
+                    analysis_multi_subject_container = {"display": "block"}
 
                     if analysis_multi_subject_state in ["EBRW", "Math"]:
                         analysis_multi_subject_value = analysis_multi_subject_state
@@ -645,23 +692,28 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
                         {"label": "Subgroup", "value": "Subgroup"},
                         {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                     ]
-                    analysis_multi_category_container = {'display': 'block'}
+                    analysis_multi_category_container = {"display": "block"}
 
-                    if analysis_multi_category_value in ["School Total", "Subgroup", "Race/Ethnicity"]:
+                    if analysis_multi_category_value in [
+                        "School Total",
+                        "Subgroup",
+                        "Race/Ethnicity",
+                    ]:
                         analysis_multi_category_value = analysis_multi_category_value
                     else:
                         analysis_multi_category_value = "School Total"
 
             else:
-
-                if school_type == "K8" or (school_type == "K12" and analysis_type_value == "k8"):
-
+                # subject and categories for K8 and K12 (k8 type)
+                if school_type == "K8" or (
+                    school_type == "K12" and analysis_type_value == "k8"
+                ):
                     analysis_multi_subject_options = [
                         {"label": "ELA", "value": "ELA"},
                         {"label": "Math", "value": "Math"},
                     ]
-                    analysis_multi_subject_container = {'display': 'block'}
-                
+                    analysis_multi_subject_container = {"display": "block"}
+
                     if analysis_multi_subject_state in ["ELA", "Math"]:
                         analysis_multi_subject_value = analysis_multi_subject_state
                     else:
@@ -672,87 +724,125 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
                         {"label": "Subgroup", "value": "Subgroup"},
                         {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                     ]
-                    analysis_multi_category_container = {'display': 'block'}
+                    analysis_multi_category_container = {"display": "block"}
 
-                    if analysis_multi_category_value in ["Grade", "Subgroup", "Race/Ethnicity"]:
+                    if analysis_multi_category_value in [
+                        "Grade",
+                        "Subgroup",
+                        "Race/Ethnicity",
+                    ]:
                         analysis_multi_category_value = analysis_multi_category_value
                     else:
                         analysis_multi_category_value = "Grade"
 
-            # subcategory
+            # subcategories for all schools
             if analysis_multi_category_value == "Grade":
                 grades = get_gradespan(school_id)
 
                 if grades:
-                    analysis_multi_subcategory_options = [{"label": g, "value": "Grade " + g} for g in grades]
-                    analysis_multi_subcategory_options.append({"label": "Total", "value": "School Total"})
+                    analysis_multi_subcategory_options = [
+                        {"label": g, "value": "Grade " + g} for g in grades
+                    ]
+                    analysis_multi_subcategory_options.append(
+                        {"label": "Total", "value": "School Total"}
+                    )
 
-                    if analysis_multi_subcategory_state in grades:
-                        analysis_multi_subcategory_value = analysis_multi_subcategory_state
+                    grade_strings = ["Grade " + g for g in grades]
+
+                    if analysis_multi_subcategory_value in grade_strings:
+                        analysis_multi_subcategory_value = (
+                            analysis_multi_subcategory_value
+                        )
                     else:
                         analysis_multi_subcategory_value = "School Total"
 
-                    analysis_multi_subcategory_container = {'display': 'block'}
+                    analysis_multi_subcategory_container = {"display": "block"}
 
                 else:
                     analysis_multi_subcategory_value = "No Data"
-            
+
             elif analysis_multi_category_value == "Race/Ethnicity":
-                ethnicity = get_ethnicity(school_id, analysis_type_value, analysis_multi_hs_group_value)
-                analysis_multi_subcategory_options = [{"label": e, "value": e} for e in ethnicity]
+                ethnicity = get_ethnicity(
+                    school_id, analysis_type_value, analysis_multi_hs_group_value
+                )
+                analysis_multi_subcategory_options = [
+                    {"label": e, "value": e} for e in ethnicity
+                ]
                 ethnicity.sort()
 
                 if ethnicity:
-                    if analysis_multi_subcategory_state in ethnicity:
-                        analysis_multi_subcategory_value = analysis_multi_subcategory_state
+                    if analysis_multi_subcategory_value in ethnicity:
+                        analysis_multi_subcategory_value = (
+                            analysis_multi_subcategory_value
+                        )
                     else:
                         analysis_multi_subcategory_value = ethnicity[0]
-                    
-                    analysis_multi_subcategory_container = {'display': 'block'}
+
+                    analysis_multi_subcategory_container = {"display": "block"}
                 else:
                     analysis_multi_subcategory_value = "No Race/Ethnicity Data"
 
             elif analysis_multi_category_value == "Subgroup":
-
-                subgroup = get_subgroup(school_id, analysis_type_value, analysis_multi_hs_group_value)
+                subgroup = get_subgroup(
+                    school_id, analysis_type_value, analysis_multi_hs_group_value
+                )
                 subgroup.sort()
 
                 if subgroup:
-                    analysis_multi_subcategory_options = [{"label": s, "value": s} for s in subgroup]           
+                    analysis_multi_subcategory_options = [
+                        {"label": s, "value": s} for s in subgroup
+                    ]
 
-                    if analysis_multi_subcategory_state in subgroup:
-                        analysis_multi_subcategory_value = analysis_multi_subcategory_state
-                    
+                    if analysis_multi_subcategory_value in subgroup:
+                        analysis_multi_subcategory_value = (
+                            analysis_multi_subcategory_value
+                        )
+
                     else:
                         analysis_multi_subcategory_value = subgroup[0]
 
-                    analysis_multi_subcategory_container = {'display': 'block'}
+                    analysis_multi_subcategory_container = {"display": "block"}
                 else:
                     analysis_multi_subcategory_value = "No Subgroup Data"
- 
-        else: # analysis_single_year page
+
+            # for SAT ('School Total') and Grad Rate ('Total) set single value,
+            # with no options
+            else:
+                if analysis_multi_hs_group_value == "SAT":
+                    analysis_multi_subcategory_value = "School Total"
+
+                else:  # graduation Rate
+                    analysis_multi_subcategory_value = "Total"
+
+                analysis_multi_subcategory_options = []
+                analysis_multi_subcategory_container = {"display": "none"}
+
+        else:  # analysis_single_year page has no radio buttons other than 'type'
             analysis_multi_subcategory_options = []
             analysis_multi_subcategory_value = ""
-            analysis_multi_subcategory_container = {'display': 'none'}
-            
+            analysis_multi_subcategory_container = {"display": "none"}
+
             analysis_multi_hs_group_options = []
             analysis_multi_hs_group_value = ""
-            analysis_multi_hs_group_container  = {"display": "none"}
+            analysis_multi_hs_group_container = {"display": "none"}
 
             analysis_multi_subject_options = []
             analysis_multi_subject_value = ""
-            analysis_multi_subject_container = {'display': 'none'}
-        
-            analysis_multi_category_options = [] 
-            analysis_multi_category_value = ""
-            analysis_multi_category_container = {'display': 'none'}                
+            analysis_multi_subject_container = {"display": "none"}
 
-    # TODO: Add financial tabs??
+            analysis_multi_category_options = []
+            analysis_multi_category_value = ""
+            analysis_multi_category_container = {"display": "none"}
+
+    # all other pages have no sub_navigation (other than Financal Tabs
+    # [School][Network] subnavigation - those are currently part of the individual
+    # pages)
+    # TODO: Move Financial Tab [School][Network] subnavigation here
     else:
         # analysis both
         analysis_type_value = "k8"
         analysis_type_options = []
-        analysis_type_container = {'display': 'none'}
+        analysis_type_container = {"display": "none"}
 
         # analysis multi
         analysis_nav_container = {"display": "none"}
@@ -760,19 +850,19 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
 
         analysis_multi_hs_group_options = []
         analysis_multi_hs_group_value = ""
-        analysis_multi_hs_group_container  = {"display": "none"}
+        analysis_multi_hs_group_container = {"display": "none"}
 
         analysis_multi_subject_options = []
         analysis_multi_subject_value = ""
-        analysis_multi_subject_container = {'display': 'none'}
-    
-        analysis_multi_category_options = [] 
+        analysis_multi_subject_container = {"display": "none"}
+
+        analysis_multi_category_options = []
         analysis_multi_category_value = ""
-        analysis_multi_category_container = {'display': 'none'}
+        analysis_multi_category_container = {"display": "none"}
 
         analysis_multi_subcategory_options = []
         analysis_multi_subcategory_value = ""
-        analysis_multi_subcategory_container = {'display': 'none'}
+        analysis_multi_subcategory_container = {"display": "none"}
 
         # academic info
         info_nav_container = {"display": "none"}
@@ -787,24 +877,281 @@ def radio_type_selector(current_page: str, school_id: str, info_type_value: str,
         info_category_value = ""
 
     return (
-        info_type_options, info_type_value, info_type_container,
-        info_category_options, info_category_value, info_category_container,
-        info_subnav_container, info_nav_container,
-        analysis_type_options, analysis_type_value, analysis_type_container,
-        analysis_multi_hs_group_options, analysis_multi_hs_group_value, analysis_multi_hs_group_container,
-        analysis_multi_subject_options, analysis_multi_subject_value, analysis_multi_subject_container,
-        analysis_multi_category_options, analysis_multi_category_value, analysis_multi_category_container,
-        analysis_multi_subcategory_options, analysis_multi_subcategory_value, analysis_multi_subcategory_container,
-        analysis_nav_container, analysis_subnav_container
+        info_type_options,
+        info_type_value,
+        info_type_container,
+        info_category_options,
+        info_category_value,
+        info_category_container,
+        info_subnav_container,
+        info_nav_container,
+        analysis_type_options,
+        analysis_type_value,
+        analysis_type_container,
+        analysis_multi_hs_group_options,
+        analysis_multi_hs_group_value,
+        analysis_multi_hs_group_container,
+        analysis_multi_subject_options,
+        analysis_multi_subject_value,
+        analysis_multi_subject_container,
+        analysis_multi_category_options,
+        analysis_multi_category_value,
+        analysis_multi_category_container,
+        analysis_multi_subcategory_options,
+        analysis_multi_subcategory_value,
+        analysis_multi_subcategory_container,
+        analysis_nav_container,
+        analysis_subnav_container,
     )
 
-# todo: NEED THIS?
-# Academic Growth - Redirect ?? #
-# redirect url if school type is "HS" or "AHS"
+
+# allow_duplicate issue:
+# https://github.com/plotly/dash/issues/2486
+# https://community.plotly.com/t/allow-duplicate-true-how-to-determine-initial-duplicate/76612
+# https://community.plotly.com/t/duplicate-callback-outputs-dont-work-even-with-allow-duplicate-true/78357/14
+# https://community.plotly.com/t/multiple-callbacks-with-each-the-same-input-and-output-but-different-states/77186/3
+
+
+# TODO: May have to go back to duplicating this in each page
+# dropdown options for comparison schools on analysis pages
 @callback(
-    Output("url", "href"),
+    Output("analysis-comparison-dropdown", "options"),
+    Output("analysis-comparison-dropdown", "value"),
+    Output("analysis-comparison-dropdown-container", "style", allow_duplicate=True),
+    Output("analysis-comparison-dropdown-input-warning", "children"),
+    Input("url", "href"),
     Input("charter-dropdown", "value"),
-    Input("url", "href")
+    Input("year-dropdown", "value"),
+    Input("analysis-comparison-dropdown", "value"),
+    Input("analysis-type-radio", "value"),
+    Input("dummyinputtopreventduplicatecallbackerror", "children"),
+    prevent_initial_call=True,
+)
+def comparison_dropdown_options(
+    current_page: str,
+    school_id: str,
+    year: str,
+    comparison_schools_value: list,
+    analysis_type_value: str,
+    dummy_input: str,
+):
+    if "analysis_single" in current_page or "analysis_multiple" in current_page:
+        comparison_schools_container = {"display": "block"}
+        string_year = year
+        numeric_year = int(string_year)
+
+        # clear the list of comparison_schools when a new school is
+        # selected, otherwise comparison_schools will carry over
+        input_trigger = ctx.triggered_id
+        if input_trigger == "charter-dropdown":
+            comparison_schools_value = []
+
+        selected_school = get_school_index(school_id)
+        school_type = selected_school["School Type"].values[0]
+
+        # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
+        # SQL query depends on school type
+        if school_type == "K12":
+            if analysis_type_value == "hs":
+                school_type = "HS"
+            else:
+                school_type = "K8"
+
+        schools_by_distance = get_school_coordinates(numeric_year, school_type)
+
+        # Drop any school not testing at least 20 students. "SchoolTotal|ELATotalTested" is a proxy
+        # for school size here (probably only impacts ~20 schools)
+        # the second condition ensures that the school is retained if it exists
+        if school_type == "K8":
+            schools_by_distance = schools_by_distance[
+                (schools_by_distance["School Total|ELA Total Tested"] >= 20)
+                | (schools_by_distance["School ID"] == int(school_id))
+            ]
+
+        # If school doesn't exist
+        if int(school_id) not in schools_by_distance["School ID"].values:
+            return [], [], []
+
+        else:
+            # NOTE: Before we do the distance check, we reduce the size of the df removing
+            # schools where there is no, or only one grade overlap between the comparison schools.
+            # the variable "overlap" is one less than the the number of grades that we want as a
+            # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
+
+            # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
+            if school_type != "AHS":
+                overlap = 1
+                schools_by_distance = schools_by_distance.replace(
+                    {"Low Grade": {"PK": 0, "KG": 1}}
+                )
+                schools_by_distance["Low Grade"] = schools_by_distance[
+                    "Low Grade"
+                ].astype(int)
+                schools_by_distance["High Grade"] = schools_by_distance[
+                    "High Grade"
+                ].astype(int)
+                school_grade_span = (
+                    schools_by_distance.loc[
+                        schools_by_distance["School ID"] == int(school_id)
+                    ][["Low Grade", "High Grade"]]
+                    .values[0]
+                    .tolist()
+                )
+                school_low = school_grade_span[0]
+                school_high = school_grade_span[1]
+
+                # In order to fit within the distance parameters, the tested school must:
+                #   a)  have a low grade that is less than or equal to the selected school and
+                #       a high grade minus the selected school's low grade that is greater than or
+                #       eqaul to the overlap; or
+                #   b) have a low grade that is greater than or equal to the selected school and
+                #       a high grade minus the tested school's low grade that is greater than or
+                #       equal to the overlap.
+                # Examples -> assume a selected school with a gradespan of 5-8:
+                #   i) a school with grades 3-7 -   [match]: low grade is less than selected school's
+                #       low grade and high grade (7) minus selected school low grade (5) is greater (2)
+                #       than the overlap (1).
+                #   i) a school with grades 2-5 -   [No match]: low grade is less than selected school's
+                #       low grade but high grade (5) minus selected school low grade (5) is not greater (0)
+                #       than the overlap (1). In this case while there is an overlap, it is below our
+                #       threshold (1 grade).
+                #   c) a school with grades 6-12-   [match]: low grade is higher than selected school's
+                #       low grade and high grade (12) minus the tested school low grade (5) is greater
+                #       (7) than the overlap (1).
+                #   d) a school with grades 3-4     [No match]: low grade is lower than selected school's
+                #       low grade, but high grade (4) minus the selected school's low grade (5) is not greater
+                #       (-1) than the overlap (1).
+
+                schools_by_distance = schools_by_distance.loc[
+                    (
+                        (schools_by_distance["Low Grade"] <= school_low)
+                        & (schools_by_distance["High Grade"] - school_low >= overlap)
+                    )
+                    | (
+                        (schools_by_distance["Low Grade"] >= school_low)
+                        & (school_high - schools_by_distance["Low Grade"] >= overlap)
+                    ),
+                    :,
+                ]
+
+                schools_by_distance = schools_by_distance.reset_index(drop=True)
+
+            all_schools = schools_by_distance.copy()
+
+            school_idx = schools_by_distance[
+                schools_by_distance["School ID"] == int(school_id)
+            ].index
+
+            # NOTE: This should never ever happen because we've already determined that the school exists in
+            # the check above. However, it did happen once, somehow, so we leave this in here just in case.
+            if school_idx.size == 0:
+                return [], [], []
+
+            # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
+            index_array, dist_array = find_nearest(school_idx, schools_by_distance)
+
+            index_list = index_array[0].tolist()
+            distance_list = dist_array[0].tolist()
+
+            # Match School ID with indexes
+            closest_schools = pd.DataFrame()
+            closest_schools["School ID"] = schools_by_distance[
+                schools_by_distance.index.isin(index_list)
+            ]["School ID"]
+
+            # Merge the index and distances lists into a dataframe
+            distances = pd.DataFrame({"index": index_list, "y": distance_list})
+            distances = distances.set_index(list(distances)[0])
+
+            # Merge School ID with Distances index
+            combined = closest_schools.join(distances)
+
+            # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
+            comparison_set = pd.merge(
+                combined, all_schools, on="School ID", how="inner"
+            )
+            comparison_set = comparison_set.rename(columns={"y": "Distance"})
+
+            # drop selected school (so it cannot be selected in the dropdown)
+            comparison_set = comparison_set.drop(
+                comparison_set[comparison_set["School ID"] == int(school_id)].index
+            )
+
+            # limit maximum dropdown to the [n] closest schools
+            num_schools_expanded = 20
+
+            comparison_set = comparison_set.sort_values(by=["Distance"], ascending=True)
+
+            comparison_dropdown = comparison_set.head(num_schools_expanded)
+
+            comparison_dict = dict(
+                zip(
+                    comparison_dropdown["School Name"], comparison_dropdown["School ID"]
+                )
+            )
+
+            # final list will be displayed in order of increasing distance from selected school
+            comparison_list = dict(comparison_dict.items())
+
+            # Set default display selections to all schools in the list
+            default_options = [
+                {"label": name, "value": id} for name, id in comparison_list.items()
+            ]
+            comparison_schools_options = default_options
+
+            # value for number of default display selections and maximum
+            # display selections (because of zero indexing, max should be
+            # 1 less than actual desired number)
+            default_num_to_display = 3
+            max_num_to_display = 7
+
+            # used to display message if the number of selections exceeds the max
+            input_warning = None
+
+            # if list is None or empty ([]), use the default options (NOTE: The callback takes
+            # comparison schools as an input, so this will only be empty on first run)
+            if not comparison_schools_value:
+                comparison_schools_value = [
+                    d["value"]
+                    for d in comparison_schools_options[:default_num_to_display]
+                ]
+
+            else:
+                if len(comparison_schools_value) > max_num_to_display:
+                    input_warning = html.P(
+                        id="multi-year-input-warning",
+                        children="Limit reached (Maximum of "
+                        + str(max_num_to_display + 1)
+                        + " schools).",
+                    )
+                    comparison_schools_options = [
+                        {
+                            "label": option["label"],
+                            "value": option["value"],
+                            "disabled": True,
+                        }
+                        for option in default_options
+                    ]
+
+    else:
+        comparison_schools_options = []
+        comparison_schools_value = []
+        input_warning = ""
+        comparison_schools_container = {"display": "none"}
+
+    return (
+        comparison_schools_options,
+        comparison_schools_value,
+        comparison_schools_container,
+        input_warning,
+    )
+
+
+# redirects the url from academic_information_growth.py to
+# academic_information.py if the user is at academic_information_growth
+# url and selects a HS, AHS, & K12(hs type)
+@callback(
+    Output("url", "href"), Input("charter-dropdown", "value"), Input("url", "href")
 )
 def redirect_hs(school: str, current_page: str):
     selected_school = get_school_index(school)
@@ -812,288 +1159,374 @@ def redirect_hs(school: str, current_page: str):
 
     current_page = current_page.rsplit("/", 1)[-1]
 
-    if current_page == "academic_information_growth" and (school_type == "HS" or school_type == "AHS"):
+    if current_page == "academic_information_growth" and (
+        school_type == "HS" or school_type == "AHS"
+    ):
         return f"/academic_information"
     else:
         return dash.no_update
+
 
 # app.layout = html.Div(
 # NOTE: Test to see effect of layout as function vs. variable
 def layout():
     return html.Div(
         [
-        # store is only used to store 'academic-type' value from academic_data_proficiency, analysis_single_year, and
-        # analysis_multi_year pages. it is used in the year dropdown callback
-        # dcc.Store(id="academic-type-store", data = {}, storage_type = "session"),
-        
-        # Used by year dropdown callback to determine the current url and for redirect on 
-        # academic_information_growth_py
-        dcc.Location(id="url", refresh="callback-nav"),
-        html.Div(id="hidden", style={"display": "none"}),
-        html.Div(
-            [
-                html.Div(
-                    [
-                        
-                        html.Div(
-                            [
-                                html.A("logout", href="../logout", className="logout-button"), # no-print
-                                   
-                            ],
-                            className="bare-container--flex--center one columns",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Label("Select School:"),
-                                    ],
-                                    className="dash-label",
-                                    id="charter-dropdown-label",
-                                ),
-                                dcc.Dropdown(
-                                    id="charter-dropdown",
-                                    multi=False,
-                                    clearable=False,
-                                    className="charter-dropdown-control",
-                                ),
-                                # Dummy input for dropdown
-                                html.Div(id="application-state", style={"display": "none"}),
-                            ],
-                            className="bare-container--slim four columns no-print",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Label("Select Year:"),
-                                    ],
-                                    className="dash-label",
-                                    id="year-dropdown-label",
-                                ),
-                                dcc.Dropdown(
-                                    id="year-dropdown",
-                                    multi=False,
-                                    clearable=False,
-                                    className="year-dropdown-control",
-                                ),
-                            ],
-                            className="bare-container--slim two columns no-print",
-                        ),
-                    ],
-                    className="row--fixed--top",
-                ),
-            ],
-            className="bare-container--flex twelve columns",
-        ),
-        html.Div(
-            [
-                html.Div(
-                    [                
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        dbc.Nav(
-                                            [
-                                                dbc.NavLink(
-                                                    "About",
-                                                     href="/",
-                                                     className="tab",
-                                                     active="exact"
+            # store is only used to store 'academic-type' value from academic_data_proficiency, analysis_single_year, and
+            # analysis_multi_year pages. it is used in the year dropdown callback
+            # dcc.Store(id="academic-type-store", data = {}, storage_type = "session"),
+            # Used by year dropdown callback to determine the current url and for redirect on
+            # academic_information_growth_py
+            html.Div(
+                id="dummyinputtopreventduplicatecallbackerror",
+                style={"display": "none"},
+            ),
+            dcc.Location(id="url", refresh="callback-nav"),
+            html.Div(id="hidden", style={"display": "none"}),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.A(
+                                        "logout",
+                                        href="../logout",
+                                        className="logout-button",
+                                    ),
+                                ],
+                                className="bare-container--flex--center one columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Label("Select School:"),
+                                        ],
+                                        className="dash-label",
+                                        id="charter-dropdown-label",
+                                    ),
+                                    dcc.Dropdown(
+                                        id="charter-dropdown",
+                                        multi=False,
+                                        clearable=False,
+                                        className="charter-dropdown-control",
+                                    ),
+                                    # Dummy input for dropdown
+                                    html.Div(
+                                        id="application-state",
+                                        style={"display": "none"},
+                                    ),
+                                ],
+                                className="bare-container--slim four columns no-print",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Label("Select Year:"),
+                                        ],
+                                        className="dash-label",
+                                        id="year-dropdown-label",
+                                    ),
+                                    dcc.Dropdown(
+                                        id="year-dropdown",
+                                        multi=False,
+                                        clearable=False,
+                                        className="year-dropdown-control",
+                                    ),
+                                ],
+                                className="bare-container--slim two columns no-print",
+                            ),
+                        ],
+                        className="row--fixed--top",
+                    ),
+                ],
+                className="bare-container--flex twelve columns",
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            dbc.Nav(
+                                                [
+                                                    dbc.NavLink(
+                                                        "About",
+                                                        href="/",
+                                                        className="tab",
+                                                        active="exact",
+                                                    ),
+                                                    dbc.NavLink(
+                                                        "Financial Information",
+                                                        href="/financial_information",
+                                                        className="tab",
+                                                        active="exact",
+                                                    ),
+                                                    dbc.NavLink(
+                                                        "Financial Metrics",
+                                                        href="/financial_metrics",
+                                                        className="tab",
+                                                        active="exact",
+                                                    ),
+                                                    dbc.NavLink(
+                                                        "Financial Analysis",
+                                                        href="/financial_analysis",
+                                                        className="tab",
+                                                        active="exact",
+                                                    ),
+                                                    dbc.NavLink(
+                                                        "Organizational Compliance",
+                                                        href="/organizational_compliance",
+                                                        className="tab",
+                                                        active="exact",
+                                                    ),
+                                                    # hardcoding this instead of using a loop so that we
+                                                    # can manually add this break
+                                                    html.Br(),
+                                                    html.Div(
+                                                        style={"marginTop": "17px"}
+                                                    ),
+                                                    dbc.NavLink(
+                                                        "Academic Information",
+                                                        href="/academic_information",
+                                                        className="tab",
+                                                        active="exact",
+                                                    ),
+                                                    dbc.NavLink(
+                                                        "Academic Metrics",
+                                                        href="/academic_metrics",
+                                                        className="tab",
+                                                        active="exact",
+                                                    ),
+                                                    dbc.NavLink(
+                                                        "Academic Analysis",
+                                                        href="/analysis_single_year",
+                                                        className="tab",
+                                                        active="exact",
+                                                    ),
+                                                    #     dbc.NavLink(
+                                                    #         page["name"],
+                                                    #         href=page["path"],
+                                                    #         className="tab",
+                                                    #         active="exact",
+                                                    #     )
+                                                    #     for page in dash.page_registry.values()
+                                                    #     if page.get("top_nav")
+                                                    #     if page["module"] != "pages.not_found_404"
+                                                ],
+                                                className="tabs",
+                                            ),
+                                        ],
+                                        className="nav-container twelve columns",
+                                    ),
+                                ],
+                                className="row",
+                            ),
+                            html.Hr(),
+                        ],
+                        className="no-print",
+                    ),
+                    # Subnavigation #
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        subnav_academic_information(),
+                                                        id="subnav-academic-info",
+                                                        className="tabs",
+                                                    ),
+                                                ],
+                                                className="bare-container--flex--center twelve columns",
+                                            ),
+                                        ],
+                                        className="row",
+                                    ),
+                                ],
+                                id="academic-information-subnav-container",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                create_radio_layout(
+                                                    "academic-information", "type"
                                                 ),
-                                                dbc.NavLink(
-                                                    "Financial Information",
-                                                     href="/financial_information",
-                                                     className="tab",
-                                                     active="exact"
+                                                className="tabs",
+                                            ),
+                                        ],
+                                        className="bare-container--flex--center twelve columns",
+                                    ),
+                                ],
+                                className="row",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                create_radio_layout(
+                                                    "academic-information", "category"
                                                 ),
-                                                dbc.NavLink(
-                                                    "Financial Metrics",
-                                                     href="/financial_metrics",
-                                                     className="tab",
-                                                     active="exact"
+                                                className="tabs",
+                                            ),
+                                        ],
+                                        className="bare-container--flex--center twelve columns",
+                                    ),
+                                ],
+                                className="row",
+                            ),
+                        ],
+                        id="academic-information-navigation-container",
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        subnav_academic_analysis(),
+                                                        id="subnav-academic-analysis",
+                                                        className="tabs",
+                                                    ),
+                                                ],
+                                                className="bare-container--flex--center twelve columns",
+                                            ),
+                                        ],
+                                        className="row",
+                                    ),
+                                ],
+                                id="analysis-subnav-container",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                create_radio_layout("analysis", "type"),
+                                                className="tabs",
+                                            ),
+                                        ],
+                                        className="bare-container--flex--center twelve columns",
+                                    ),
+                                ],
+                                className="row",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                create_radio_layout(
+                                                    "analysis-multi", "hs-group"
                                                 ),
-                                                dbc.NavLink(
-                                                    "Financial Analysis",
-                                                     href="/financial_analysis",
-                                                     className="tab",
-                                                     active="exact"
+                                                className="tabs",
+                                            ),
+                                        ],
+                                        className="bare-container--flex--center twelve columns",
+                                    ),
+                                ],
+                                className="row",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                create_radio_layout(
+                                                    "analysis-multi", "subject", "six"
                                                 ),
-                                                dbc.NavLink(
-                                                    "Organizational Compliance",
-                                                     href="/organizational_compliance",
-                                                     className="tab",
-                                                     active="exact"
+                                                className="tabs",
+                                            ),
+                                            html.Div(
+                                                create_radio_layout(
+                                                    "analysis-multi", "category", "six"
                                                 ),
-                                                # hardcoding this instead of using a loop so that we
-                                                # can manually add this break
-                                                html.Br(),                                                
-                                                html.Div(style={"marginTop": "17px"}),
-                                                dbc.NavLink(
-                                                    "Academic Information",
-                                                     href="/academic_information",
-                                                     className="tab",
-                                                     active="exact"
-                                                ),                                                
-                                                dbc.NavLink(
-                                                    "Academic Metrics",
-                                                     href="/academic_metrics",
-                                                     className="tab",
-                                                     active="exact"
+                                                className="tabs",
+                                            ),
+                                        ],
+                                        className="bare-container--flex--center_subnav twelve columns",
+                                    ),
+                                ],
+                                className="row",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                create_radio_layout(
+                                                    "analysis-multi", "subcategory"
                                                 ),
-                                                dbc.NavLink(
-                                                    "Academic Analysis",
-                                                     href="/analysis_single_year",
-                                                     className="tab",
-                                                     active="exact"
-                                                ),
-                                            #     dbc.NavLink(
-                                            #         page["name"],
-                                            #         href=page["path"],
-                                            #         className="tab",
-                                            #         active="exact",
-                                            #     )
-                                            #     for page in dash.page_registry.values()
-                                            #     if page.get("top_nav")
-                                            #     if page["module"] != "pages.not_found_404"
-                                            ],
-                                            className="tabs",
-                                        ),
-                                    ],
-                                    className="nav-container twelve columns", 
-                                ),
-                            ],
-                            className="row",
-                        ),
-                        html.Hr(),
-                    ],
-                    className="no-print",
-                ),
-                html.Div(
-                    [                    
-                        html.Div(
-                            [            
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [
-                                                html.Div(subnav_academic_information(), id="subnav-academic-info", className="tabs"),
-                                            ],
-                                            className="bare-container--flex--center twelve columns",
-                                        ),
-                                    ],
-                                    className="row",
-                                ),
-                            ],
-                            id="academic-information-subnav-container",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(create_radio_layout("academic-information", "type"),className="tabs"),
+                                                className="tabs",
+                                            ),
+                                        ],
+                                        className="bare-container--flex--center twelve columns",
+                                    ),
+                                ],
+                                className="row",
+                            ),
+                        ],
+                        id="analysis-navigation-container",
+                    ),
+                    # Comparison Dropdown #
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                "Add or Remove Schools: ",
+                                                className="analysis-comparison-dropdown-label",
+                                            ),
+                                        ],
+                                        className="bare-container two columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Dropdown(
+                                                id="analysis-comparison-dropdown",
+                                                style={"fontSize": "1.1rem"},
+                                                multi=True,
+                                                clearable=False,
+                                                className="analysis-comparison-dropdown-control",
+                                            ),
+                                            html.Div(
+                                                id="analysis-comparison-dropdown-input-warning"
+                                            ),
+                                        ],
+                                        className="bare-container eight columns",
+                                    ),
+                                ],
+                                className="analysis-comparison-dropdown-row",
+                            ),
+                        ],
+                        id="analysis-comparison-dropdown-container",
+                        style={"display": "none"},
+                    ),
+                    # dash page content
+                    dash.page_container,
+                ],
+            ),
+        ],
+    )
 
-                                    ],
-                                    className = "bare-container--flex--center twelve columns",
-                                ),
-                            ],
-                            className = "row",
-                        ),                     
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(create_radio_layout("academic-information", "category"),className="tabs"),
 
-                                    ],
-                                    className = "bare-container--flex--center twelve columns",
-                                ),
-                            ],
-                            className = "row",
-                        ),
-                    ],
-                    id="academic-information-navigation-container",
-                ),
-                html.Div(
-                    [                
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            [
-                                                html.Div(subnav_academic_analysis(), id="subnav-academic-analysis", className="tabs"),
-                                            ],
-                                            className="bare-container--flex--center twelve columns",
-                                        ),
-                                    ],
-                                    className="row",
-                                ),  
-                            ],
-                            id="analysis-subnav-container",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(create_radio_layout("analysis", "type"),className="tabs"),
-
-                                    ],
-                                    className = "bare-container--flex--center twelve columns",
-                                ),
-                            ],
-                            className = "row",
-                        ),                                   
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(create_radio_layout("analysis-multi", "hs-group"),className="tabs"),
-
-                                    ],
-                                    className = "bare-container--flex--center twelve columns",
-                                ),
-                            ],
-                            className = "row",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(create_radio_layout("analysis-multi", "subject", "six"),className="tabs"),
-                                        html.Div(create_radio_layout("analysis-multi", "category", "six"),className="tabs"),
-                                    ],
-                                    className = "bare-container--flex--center_subnav twelve columns",
-                                ),
-                            ],
-                            className = "row",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(create_radio_layout("analysis-multi", "subcategory"),className="tabs"),
-
-                                    ],
-                                    className = "bare-container--flex--center twelve columns",
-                                ),
-                            ],
-                            className = "row",
-                        ),
-                    ],
-                    id="analysis-navigation-container",
-                ), 
-                # html.Hr(className = "line_bottom"),
-                # dash page content             
-                dash.page_container,
-            ],
-        )
-    ],
-)
-    
 # testing layout as a function - not sure its faster
-app.layout = layout 
+app.layout = layout
 
 if __name__ == "__main__":
     app.run_server(debug=True)

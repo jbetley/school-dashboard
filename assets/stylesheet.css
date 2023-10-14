@@ -238,7 +238,7 @@ hr {
   display: flex;
 }
 
-.comparison-dropdown-row {
+.analysis-comparison-dropdown-row {
   display: flex;
   margin-top: 7px;  
 }
@@ -461,12 +461,12 @@ hr {
   width: 25%;
 }
 
-.comparison-dropdown-control {
+.analysis-comparison-dropdown-control {
   margin: 0;
   float: left;
 }
 
-.comparison-dropdown-label {
+.analysis-comparison-dropdown-label {
   padding-left: 5px;
   font-size: 1.1rem;
 }
