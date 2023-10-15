@@ -2,8 +2,8 @@
 # ICSB Dashboard - Charting Functions #
 #######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.11
-# date:     10/03/23
+# version:  1.13
+# date:     10/13/23
 
 from dash import html, dcc
 import plotly.express as px
@@ -19,9 +19,22 @@ from .load_data import get_school_index
 # https://codepen.io/ctf0/pen/BwLezW
 
 # Steelblue
-#color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
+# color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
-color= ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
+color = [
+    "#74a2d7",
+    "#df8f2d",
+    "#96b8db",
+    "#ebbb81",
+    "#bc986a",
+    "#a8b462",
+    "#f0c33b",
+    "#74a2d7",
+    "#f0c33b",
+    "#83941f",
+    "#7b6888",
+]
+
 
 def loading_fig() -> dict:
     """
@@ -32,30 +45,27 @@ def loading_fig() -> dict:
     """
 
     fig = {
-        'layout': {
-            'xaxis': {
-                'visible': False
-            },
-            'yaxis': {
-                'visible': False
-            },
-            'annotations': [
+        "layout": {
+            "xaxis": {"visible": False},
+            "yaxis": {"visible": False},
+            "annotations": [
                 {
-                    'text': 'Loading . . .',
-                    'xref': 'paper',
-                    'yref': 'paper',
-                    'showarrow': False,
-                    'font': {
-                        'size': 16,
-                        'color': '#6783a9',
-                        'family': 'Inter, sans-serif'
-                    }
+                    "text": "Loading . . .",
+                    "xref": "paper",
+                    "yref": "paper",
+                    "showarrow": False,
+                    "font": {
+                        "size": 16,
+                        "color": "#6783a9",
+                        "family": "Inter, sans-serif",
+                    },
                 }
-            ]
+            ],
         }
     }
 
     return fig
+
 
 def no_data_fig_blank() -> dict:
     """
@@ -65,39 +75,32 @@ def no_data_fig_blank() -> dict:
         fig (dict): plotly figure dict
     """
     fig = go.Figure()
-    
+
     fig.update_layout(
-        height = 400,
-        xaxis =  {
-            'visible': False,
-            'fixedrange': True
-        },
-        yaxis =  {
-            'visible': False,
-            'fixedrange': True
-        },
-        annotations = [
+        height=400,
+        xaxis={"visible": False, "fixedrange": True},
+        yaxis={"visible": False, "fixedrange": True},
+        annotations=[
             {
-                'text': 'No Data to Display.',
-                'align': "center",
-                'xref': 'paper',
-                'yref': 'paper',
-                'showarrow': False,
-                'font': {
-                    'size': 16,
-                    'color': '#6783a9',
-                    'family': 'Inter, sans-serif'
-                }
+                "text": "No Data to Display.",
+                "align": "center",
+                "xref": "paper",
+                "yref": "paper",
+                "showarrow": False,
+                "font": {"size": 16, "color": "#6783a9", "family": "Inter, sans-serif"},
             }
         ],
-        dragmode = False,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
+        dragmode=False,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     return fig
 
-def no_data_fig_label(label: str = 'No Data to Display.', height: int = 400, table_type: str = "ugly") -> list:
+
+def no_data_fig_label(
+    label: str = "No Data to Display.", height: int = 400, table_type: str = "ugly"
+) -> list:
     """
     Creates a blank fig with with a label and default height. ugly has no container, pretty wraps table
     in a pretty_container.
@@ -105,74 +108,70 @@ def no_data_fig_label(label: str = 'No Data to Display.', height: int = 400, tab
     Args:
         label (str, optional): figure label. Defaults to 'No Data to Display'.
         height (int, optional): figure height. Defaults to 400.
+        type (str, optional): either "ugly" or "pretty"
 
     Returns:
         fig_layout (list): a dash html.Div with an html.Label object and dcc.Graph plotly figure dict
     """
 
     fig = go.Figure()
-    
+
     fig.update_layout(
-        height = height,
-        xaxis =  {
-            'visible': False,
-            'fixedrange': True
-        },
-        yaxis =  {
-            'visible': False,
-            'fixedrange': True
-        },
-        annotations = [
+        height=height,
+        xaxis={"visible": False, "fixedrange": True},
+        yaxis={"visible": False, "fixedrange": True},
+        annotations=[
             {
-                'text': 'No Data to Display.',
-                'align': "center",
-                'xref': 'paper',
-                'yref': 'paper',
-                'showarrow': False,
-                'font': {
-                    'size': 16,
-                    'color': '#6783a9',
-                    'family': 'Inter, sans-serif',
-                }
+                "text": "No Data to Display.",
+                "align": "center",
+                "xref": "paper",
+                "yref": "paper",
+                "showarrow": False,
+                "font": {
+                    "size": 16,
+                    "color": "#6783a9",
+                    "family": "Inter, sans-serif",
+                },
             }
         ],
-        dragmode = False,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
+        dragmode=False,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
     )
 
     if table_type == "pretty":
         fig_layout = [
             html.Div(
-                [                  
+                [
                     html.Div(
-                        [            
+                        [
                             html.Div(
                                 [
-                                    html.Label(label, className = 'label__header'),
-                                    dcc.Graph(figure = fig),
+                                    html.Label(label, className="label__header"),
+                                    dcc.Graph(figure=fig),
                                 ],
-                                className = "pretty-container ten columns",
+                                className="pretty-container ten columns",
                             )
                         ],
-                        className = "bare-container--flex--center twelve columns",
-                    ) 
+                        className="bare-container--flex--center twelve columns",
+                    )
                 ],
-                className = "row",
-            )                        
+                className="row",
+            )
         ]
-        
+
     else:
         fig_layout = [
             html.Div(
                 [
-                    html.Label(label, className = 'label__header'),
-                    dcc.Graph(figure = fig),
+                    html.Label(label, className="label__header"),
+                    dcc.Graph(figure=fig),
                 ]
             )
         ]
 
     return fig_layout
+
 
 def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     """
@@ -188,37 +187,39 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     """
 
     data = values.copy()
-    stacked_color = ['#df8f2d', '#ebbb81', '#96b8db', '#74a2d7']
-    
+    stacked_color = ["#df8f2d", "#ebbb81", "#96b8db", "#74a2d7"]
+
     # In order to get the total_tested value into hovertemplate
     # without displaying it on the chart, we need to pull the
     # Total Tested values out of the dataframe and into a new
     # column.
-    total_tested = data[data['Proficiency'].str.contains('Total Tested')]
+    total_tested = data[data["Proficiency"].str.contains("Total Tested")]
 
     # Merge the total tested values with the existing dataframe
     # This adds 'percentage_x' and 'percentage_y' columns.
     # 'percentage_y' is equal to the Total Tested Values
-    data = pd.merge(data, total_tested[['Category','Percentage']], on=['Category'], how='left')
+    data = pd.merge(
+        data, total_tested[["Category", "Percentage"]], on=["Category"], how="left"
+    )
 
     # rename the columns (percentage_x to Percentage & percentage_y to Total Tested)
-    data.columns = ['Category','Percentage','Proficiency','Total Tested']
+    data.columns = ["Category", "Percentage", "Proficiency", "Total Tested"]
 
     # drop the Total Tested Rows
-    data = data[data['Proficiency'].str.contains('Total Tested') == False]
+    data = data[data["Proficiency"].str.contains("Total Tested") == False]
 
     # Remove subject substring ('ELA' or 'Math') from Proficiency column
-    data['Proficiency'] = data['Proficiency'].str.split().str[1:].str.join(' ')
+    data["Proficiency"] = data["Proficiency"].str.split().str[1:].str.join(" ")
 
     fig = px.bar(
         data,
-        x = data['Percentage'],
-        y = data['Category'].map(customwrap),
-        color=data['Proficiency'],
-        barmode='stack',
-        text=[f'{i}%' for i in data['Percentage']],
-        orientation='h',
-        color_discrete_sequence = stacked_color,
+        x=data["Percentage"],
+        y=data["Category"].map(customwrap),
+        color=data["Proficiency"],
+        barmode="stack",
+        text=[f"{i}%" for i in data["Percentage"]],
+        orientation="h",
+        color_discrete_sequence=stacked_color,
         height=300,
     )
 
@@ -229,16 +230,16 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
 
     fig.update_layout(
         margin=dict(l=10, r=10, t=20, b=0),
-        font_family='Inter, sans-serif',
-        font_color='steelblue',
-        font_size = 9,
-        bargroupgap = 0,
-        showlegend = False,
-        plot_bgcolor='white',
-        hovermode='y unified',
-        yaxis=dict(autorange='reversed'),
-        uniformtext_minsize = 9,
-        uniformtext_mode='hide'
+        font_family="Inter, sans-serif",
+        font_color="steelblue",
+        font_size=9,
+        bargroupgap=0,
+        showlegend=False,
+        plot_bgcolor="white",
+        hovermode="y unified",
+        yaxis=dict(autorange="reversed"),
+        uniformtext_minsize=9,
+        uniformtext_mode="hide",
     )
 
     # TODO: remove hover 'title' and, if possible, replace with: 'Total Tested: {z}'
@@ -246,37 +247,38 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     # fig.update_layout(hovermode='x unified')
 
     fig.update_traces(
-        textfont_size = 9,
-        insidetextanchor = 'middle',
-        textposition='inside',
+        textfont_size=9,
+        insidetextanchor="middle",
+        textposition="inside",
         marker_line=dict(width=0),
-        hovertemplate='%{text}',
-        hoverinfo='none',
+        hovertemplate="%{text}",
+        hoverinfo="none",
     )
 
-    fig.update_xaxes(title='', showticklabels=False)
+    fig.update_xaxes(title="", showticklabels=False)
 
     # ticksuffix increases the space between the end of the tick label and the chart
-    fig.update_yaxes(title='',ticksuffix = '  ')
+    fig.update_yaxes(title="", ticksuffix="  ")
 
     fig_layout = [
         html.Div(
             [
-                html.Label(label, className = 'hollow-label__header'),
+                html.Label(label, className="hollow-label__header"),
                 dcc.Graph(
-                    figure = fig,
+                    figure=fig,
                     config={
-                        'displayModeBar': False,
-                        'showAxisDragHandles': False,
-                        'showAxisRangeEntryBoxes': False,
-                        'scrollZoom': False
-                    }
-                )
+                        "displayModeBar": False,
+                        "showAxisDragHandles": False,
+                        "showAxisRangeEntryBoxes": False,
+                        "scrollZoom": False,
+                    },
+                ),
             ]
         )
     ]
 
     return fig_layout
+
 
 def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
     """
@@ -294,124 +296,114 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
 
     data = values.copy()
 
-    school_cols = [i for i in data.columns if i not in ['Year']]
+    school_cols = [i for i in data.columns if i not in ["Year"]]
 
     if (len(school_cols)) > 0 and len(data.index) > 0:
-
         data, no_data_string = check_for_no_data(data)
 
         nsize_string = check_for_insufficient_n_size(data)
 
         for school in school_cols:
-            data[school]=pd.to_numeric(data[school], errors='coerce')
+            data[school] = pd.to_numeric(data[school], errors="coerce")
 
-        data.sort_values('Year', inplace=True)
+        data.sort_values("Year", inplace=True)
 
         # One last check, if there is only one year of data being displayed, we need to drop
         # all columns with only NaN- otherwise the traces will be displayed on the chart
         # even though they are listed as having no data to display - afterwards we need
         # to reset the cols variable to make sure it matches the changed df
         if len(data.index) == 1:
-            data = data.dropna(axis=1, how='all')
-            school_cols = [i for i in data.columns if i not in ['Year']]
+            data = data.dropna(axis=1, how="all")
+            school_cols = [i for i in data.columns if i not in ["Year"]]
 
         data = data.reset_index(drop=True)
 
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
         if data.empty:
-
             fig = no_data_fig_blank()
             fig_layout = [
                 html.Div(
                     [
                         html.Div(
                             [
-                            html.Label(label, className = 'label__header'),
-                            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                                html.Label(label, className="label__header"),
+                                dcc.Graph(figure=fig, config={"displayModeBar": False}),
                             ],
                         ),
                     ]
                 )
             ]
-        
-        else:
 
+        else:
             fig = px.line(
                 data,
-                x='Year',
+                x="Year",
                 y=school_cols,
                 markers=True,
                 color_discrete_sequence=color,
             )
 
-            fig.update_traces(hovertemplate=None)   # type: ignore
-            fig.update_layout(                      # type: ignore
-                hoverlabel = dict(
-                    namelength = -1,
-                ), 
+            fig.update_traces(hovertemplate=None)  # type: ignore
+            fig.update_layout(  # type: ignore
+                hoverlabel=dict(
+                    namelength=-1,
+                ),
                 margin=dict(l=40, r=40, t=10, b=0),
                 title_x=0.5,
-                font = dict(
-                    family = 'Inter, sans-serif',
-                    color = 'steelblue',
-                    size = 12
-                    ),
-                plot_bgcolor='white',
-                xaxis = dict(
-                    title='',
-                    type='date',
-                    tickvals = data['Year'],
-                    tickformat='%Y',
+                font=dict(family="Inter, sans-serif", color="steelblue", size=12),
+                plot_bgcolor="white",
+                xaxis=dict(
+                    title="",
+                    type="date",
+                    tickvals=data["Year"],
+                    tickformat="%Y",
                     mirror=True,
                     showline=True,
-                    linecolor='#b0c4de',
-                    linewidth=.5,
-                    gridwidth=.5,
+                    linecolor="#b0c4de",
+                    linewidth=0.5,
+                    gridwidth=0.5,
                     showgrid=True,
-                    gridcolor='#b0c4de',
+                    gridcolor="#b0c4de",
                     zeroline=False,
-                    ),   
-                legend=dict(
-                    orientation='v',
-                    yanchor="bottom",
-                    y= .5,
-                    xanchor="right",
-                    x=-.05
                 ),
-                hovermode='x',
+                legend=dict(
+                    orientation="v", yanchor="bottom", y=0.5, xanchor="right", x=-0.05
+                ),
+                hovermode="x",
                 height=400,
-                legend_title='',
+                legend_title="",
             )
 
-            data['Year'] = data['Year'].astype(str)
+            data["Year"] = data["Year"].astype(str)
             data_max = data.max(numeric_only=True).max()
-            range_vals = [0,data_max + .05]
+            range_vals = [0, data_max + 0.05]
 
-            fig.update_yaxes(       # type: ignore
-                title='',
+            fig.update_yaxes(  # type: ignore
+                title="",
                 mirror=True,
                 showline=True,
-                linecolor='#b0c4de',
-                linewidth=.5,
-                gridwidth=.5,
+                linecolor="#b0c4de",
+                linewidth=0.5,
+                gridwidth=0.5,
                 showgrid=True,
-                gridcolor='#b0c4de',
+                gridcolor="#b0c4de",
                 zeroline=False,
-                range=range_vals, 
-                dtick=.2,
-                tickformat=',.0%',
+                range=range_vals,
+                dtick=0.2,
+                tickformat=",.0%",
             )
 
             if nsize_string and no_data_string:
-
                 fig_layout = [
                     html.Div(
                         [
                             html.Div(
                                 [
-                                html.Label(label, className = 'label__header'),                                    
-                                dcc.Graph(figure = fig, config={'displayModeBar': False})
+                                    html.Label(label, className="label__header"),
+                                    dcc.Graph(
+                                        figure=fig, config={"displayModeBar": False}
+                                    ),
                                 ],
                             ),
                             html.Div(
@@ -420,66 +412,48 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
                                         [
                                             html.P(
                                                 children=[
-                                                html.Span('Years with insufficient or no data:', className = 'msg-string__label'),
-                                                html.Span(no_data_string, className = 'nodata-string'),
+                                                    html.Span(
+                                                        "Years with insufficient or no data:",
+                                                        className="msg-string__label",
+                                                    ),
+                                                    html.Span(
+                                                        no_data_string,
+                                                        className="nodata-string",
+                                                    ),
                                                 ],
                                             ),
                                             html.P(
                                                 children=[
-                                                html.Span('Insufficient n-size:', className = 'msg-string__label'),
-                                                html.Span(nsize_string, className = 'nsize-string'),
+                                                    html.Span(
+                                                        "Insufficient n-size:",
+                                                        className="msg-string__label",
+                                                    ),
+                                                    html.Span(
+                                                        nsize_string,
+                                                        className="nsize-string",
+                                                    ),
                                                 ],
                                             ),
                                         ],
-                                        className = 'container--close--noborder twelve columns'
+                                        className="container--close--noborder twelve columns",
                                     )
                                 ],
-                                className='row'
+                                className="row",
                             ),
                         ]
                     )
                 ]
 
             elif nsize_string and not no_data_string:
-
                 fig_layout = [
                     html.Div(
                         [
                             html.Div(
                                 [
-                                html.Label(label, className = 'label__header'),                                       
-                                dcc.Graph(figure = fig, config={'displayModeBar': False})
-                                ],
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [                              
-                                            html.P(
-                                                children=[
-                                                html.Span('Insufficient n-size:', className = 'msg-string__label'),
-                                                html.Span(nsize_string, className = 'nsize-string'),
-                                                ],
-                                            ),
-                                        ],
-                                        className = 'container--close--noborder twelve columns'
-                                    )
-                                ],
-                                className='row'
-                            ),
-                        ]
-                    )
-                ]
-
-            elif no_data_string and not nsize_string:
-                
-                fig_layout = [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                html.Label(label, className = 'label__header'),                                       
-                                dcc.Graph(figure = fig, config={'displayModeBar': False})
+                                    html.Label(label, className="label__header"),
+                                    dcc.Graph(
+                                        figure=fig, config={"displayModeBar": False}
+                                    ),
                                 ],
                             ),
                             html.Div(
@@ -488,48 +462,91 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
                                         [
                                             html.P(
                                                 children=[
-                                                html.Span('Years with insufficient or no data:', className = 'msg-string__label'),
-                                                html.Span(no_data_string, className = 'nodata-string'),
+                                                    html.Span(
+                                                        "Insufficient n-size:",
+                                                        className="msg-string__label",
+                                                    ),
+                                                    html.Span(
+                                                        nsize_string,
+                                                        className="nsize-string",
+                                                    ),
                                                 ],
                                             ),
                                         ],
-                                        className = 'container--close--noborder twelve columns'
+                                        className="container--close--noborder twelve columns",
                                     )
-                                    ],
-                                    className='row'
-                                ),
+                                ],
+                                className="row",
+                            ),
                         ]
                     )
                 ]
 
-            else:  
-
+            elif no_data_string and not nsize_string:
                 fig_layout = [
                     html.Div(
                         [
-                        html.Label(label, className = 'label__header'),                               
-                        dcc.Graph(figure = fig, config={'displayModeBar': False})
+                            html.Div(
+                                [
+                                    html.Label(label, className="label__header"),
+                                    dcc.Graph(
+                                        figure=fig, config={"displayModeBar": False}
+                                    ),
+                                ],
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.P(
+                                                children=[
+                                                    html.Span(
+                                                        "Years with insufficient or no data:",
+                                                        className="msg-string__label",
+                                                    ),
+                                                    html.Span(
+                                                        no_data_string,
+                                                        className="nodata-string",
+                                                    ),
+                                                ],
+                                            ),
+                                        ],
+                                        className="container--close--noborder twelve columns",
+                                    )
+                                ],
+                                className="row",
+                            ),
+                        ]
+                    )
+                ]
+
+            else:
+                fig_layout = [
+                    html.Div(
+                        [
+                            html.Label(label, className="label__header"),
+                            dcc.Graph(figure=fig, config={"displayModeBar": False}),
                         ],
                     )
                 ]
     else:
-
         fig = no_data_fig_blank()
-        
+
         fig_layout = [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                            html.Label(label, className = 'label__header'),                                   
-                            dcc.Graph(figure = fig, config={'displayModeBar': False})
-                            ],
-                        ),
-                        ]
-                    )
-            ]
-   
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Label(label, className="label__header"),
+                            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+                        ],
+                    ),
+                ]
+            )
+        ]
+
     return fig_layout
+
 
 def make_line_chart(values: pd.DataFrame) -> list:
     """
@@ -547,15 +564,14 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
     data = values.copy()
 
-    data.columns = data.columns.str.split('|').str[0]
+    data.columns = data.columns.str.split("|").str[0]
 
     if "IREAD Proficiency (Grade 3)" in data.columns:
         data = data.rename(columns={"IREAD Proficiency (Grade 3)": "IREAD"})
 
-    cols=[i for i in data.columns if i not in ['School Name','Year']]
+    cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
     if (len(cols)) > 0:
-
         # NOTE: Currently insufficient n-size and no data information is displayed below
         # the fig in the layout. Would prefer to somehow add this to the actual
         # trace (x-unified) hover, but it doesn't currently seem to be possible.
@@ -565,75 +581,38 @@ def make_line_chart(values: pd.DataFrame) -> list:
         # nsize_string = check_for_insufficient_n_size(data)
 
         for col in cols:
-            data[col]=pd.to_numeric(data[col], errors='coerce')
+            data[col] = pd.to_numeric(data[col], errors="coerce")
 
-        data.sort_values('Year', inplace=True)
+        data.sort_values("Year", inplace=True)
 
         # One last check, if there is only one year of data being displayed, we need to drop
         # all columns with only NaN- otherwise the traces will be displayed on the chart
         # even though they are listed as having no data to display - afterwards we need
         # to reset the cols variable to make sure it matches the changed df
         if len(data.index) == 1:
-            data = data.dropna(axis=1, how='all')
-            cols=[i for i in data.columns if i not in ['School Name','Year']]
+            data = data.dropna(axis=1, how="all")
+            cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
         data = data.reset_index(drop=True)
-        
+
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
         if data.empty:
-
             fig = no_data_fig_blank()
             fig_layout = [
                 html.Div(
                     [
                         html.Div(
-                            [
-                            dcc.Graph(figure = fig, config={'displayModeBar': False})
-                            ],
+                            [dcc.Graph(figure=fig, config={"displayModeBar": False})],
                         ),
                     ]
                 )
             ]
-        
+
         else:
-
-            # TODO: Fix irregular axis lines (why is this so hard??)
-            # NOTE: Plotly displays two years of data with the year axis near the edges, which is ugly
-            # have tried numerous things to fix it, but none of them are satisfactory
-            
-            # attempt #1
-            # when we only have 2 years of data, we add two additiona blank years on either side
-            # of the range. Doesn't look that great
-            # data_years = data['Year'].astype(int).tolist()
-            # add_years = [data_years[len(data_years)-1]+1,data_years[0]-1]
-            # if len(data_years) == 2:
-            #     for y in add_years:
-            #         data = pd.concat(
-            #             [
-            #                 data,
-            #                 pd.DataFrame(
-            #                     np.nan,
-            #                     columns=data.columns,
-            #                     index=range(1),
-            #                 ),
-            #             ],
-            #             ignore_index=True,
-            #         )
-            #         data.at[data.index[-1], 'Year'] = y
-
-
-            # attempts #2-7
-            # fig.update_xaxes(constrain='domain')
-            # fig.update_xaxes(autorange='reversed')
-            # fig.update_xaxes(range=[2021, 2022])
-            # fig.update_xaxes(constraintoward='center')
-            # fig.update_xaxes(anchor='free')
-            # fig.update_yaxes(position=.5)
-
             fig = px.line(
                 data,
-                x='Year',
+                x="Year",
                 y=cols,
                 markers=True,
                 color_discrete_sequence=color,
@@ -650,51 +629,39 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 y_value = -0.4
 
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
-            fig.update_traces(hovertemplate=None)   # type: ignore
-            fig.update_layout(                      # type: ignore
-                hoverlabel = dict(
-                    namelength = -1,
-                    # align = "left",
+            fig.update_traces(hovertemplate=None)  # type: ignore
+            fig.update_layout(  # type: ignore
+                hoverlabel=dict(
+                    namelength=-1,
                 ),
                 margin=dict(l=40, r=40, t=40, b=0),
                 title_x=0.5,
-                font = dict(
-                    family = 'Inter, sans-serif',
-                    color = 'steelblue',
-                    size = 12
-                    ),
-                plot_bgcolor='white',
-                xaxis = dict(
-                    title='',
-                    type='date',
-                    # tickmode = 'array',
-                    # tickmode = 'linear',
-                    tickvals = data['Year'],
-                    tickformat='%Y',
-                    # tick0 = data['Year'][0] - 1,
-                    # dtick ='M6',
-                    # categoryorder = 'array',
-                    # categoryarray = data['Year'],
+                font=dict(family="Inter, sans-serif", color="steelblue", size=12),
+                plot_bgcolor="white",
+                xaxis=dict(
+                    title="",
+                    # next four values gives evenly spaced axis ticks from left edge to right edge.
+                    autorange=False,
+                    range=[0, len(data["Year"]) - 1],
+                    tick0=0,
+                    dtick=1,
+                    tickvals=data["Year"],
+                    tickformat="%Y",
                     mirror=True,
                     showline=True,
-                    linecolor='#b0c4de',
-                    linewidth=.5,
-                    gridwidth=.5,
+                    linecolor="#b0c4de",
+                    linewidth=0.5,
+                    gridwidth=0.5,
                     showgrid=True,
-                    gridcolor='#b0c4de',
+                    gridcolor="#b0c4de",
                     zeroline=False,
-                    # range = add_years
-                    ),   
-                legend=dict(
-                    orientation='h',
-                    yanchor="bottom",
-                    y= y_value,
-                    xanchor="left",
-                    x=0.01
                 ),
-                hovermode='x', # unified',
+                legend=dict(
+                    orientation="h", yanchor="bottom", y=y_value, xanchor="left", x=0.01
+                ),
+                hovermode="x",  # unified',
                 height=400,
-                legend_title='',
+                legend_title="",
             )
 
             # NOTE: Set the range based on the highest single value in the dataframe. IREAD is set to 100%.
@@ -702,130 +669,34 @@ def make_line_chart(values: pd.DataFrame) -> list:
             data_max = data.max(numeric_only=True).max()
 
             if "IREAD Proficiency (Grade 3 only)" in data.columns:
-                range_vals = [0,1]  # type: list[float]
+                range_vals = [0, 1]  # type: list[float]
             else:
-                range_vals = [0,data_max + .05]
+                range_vals = [0, data_max + 0.05]
 
-            fig.update_yaxes(       # type: ignore
-                title='',
+            fig.update_yaxes(  # type: ignore
+                title="",
                 mirror=True,
                 showline=True,
-                linecolor='#b0c4de',
-                linewidth=.5,
-                gridwidth=.5,
+                linecolor="#b0c4de",
+                linewidth=0.5,
+                gridwidth=0.5,
                 showgrid=True,
-                gridcolor='#b0c4de',
+                gridcolor="#b0c4de",
                 zeroline=False,
-                range=range_vals, 
-                dtick=.2,
-                tickformat=',.0%',
+                range=range_vals,
+                dtick=0.2,
+                tickformat=",.0%",
             )
 
-# NOTE: Testing without nsize-string (takes up too much screen real estate)
-            # if nsize_string and no_data_string:
-
-            #     fig_layout = [
-            #         html.Div(
-            #             [
-            #                 html.Div(
-            #                     [
-            #                     dcc.Graph(figure = fig, config={'displayModeBar': False})
-            #                     ],
-            #                 ),
-            #                 html.Div(
-            #                     [
-            #                         html.Div(
-            #                             [
-            #                                 html.P(
-            #                                     children=[
-            #                                     html.Span('Years with insufficient or no data:', className = 'msg-string__label'),
-            #                                     html.Span(no_data_string, className = 'nodata-string'),
-            #                                     ],
-            #                                 ),
-            #                                 html.P(
-            #                                     children=[
-            #                                     html.Span('Insufficient n-size:', className = 'msg-string__label'),
-            #                                     html.Span(nsize_string, className = 'nsize-string'),
-            #                                     ],
-            #                                 ),
-            #                             ],
-            #                             className = 'container--close--noborder twelve columns'
-            #                         )
-            #                     ],
-            #                     className='row'
-            #                 ),
-            #             ]
-            #         )
-            #     ]
-
-            # elif nsize_string and not no_data_string:
-
-            #     fig_layout = [
-            #         html.Div(
-            #             [
-            #                 html.Div(
-            #                     [
-            #                     dcc.Graph(figure = fig, config={'displayModeBar': False})
-            #                     ],
-            #                 ),
-            #                 html.Div(
-            #                     [
-            #                         html.Div(
-            #                             [                              
-            #                                 html.P(
-            #                                     children=[
-            #                                     html.Span('Insufficient n-size:', className = 'msg-string__label'),
-            #                                     html.Span(nsize_string, className = 'nsize-string'),
-            #                                     ],
-            #                                 ),
-            #                             ],
-            #                             className = 'container--close--noborder twelve columns'
-            #                         )
-            #                     ],
-            #                     className='row'
-            #                 ),
-            #             ]
-            #         )
-            #     ]
-
-            # elif no_data_string and not nsize_string:
-                
-            #     fig_layout = [
-            #         html.Div(
-            #             [
-            #                 html.Div(
-            #                     [
-            #                     dcc.Graph(figure = fig, config={'displayModeBar': False})
-            #                     ],
-            #                 ),
-            #                 html.Div(
-            #                     [
-            #                         html.Div(
-            #                             [
-            #                                 html.P(
-            #                                     children=[
-            #                                     html.Span('Years with insufficient or no data:', className = 'msg-string__label'),
-            #                                     html.Span(no_data_string, className = 'nodata-string'),
-            #                                     ],
-            #                                 ),
-            #                             ],
-            #                             className = 'container--close--noborder twelve columns'
-            #                         )
-            #                         ],
-            #                         className='row'
-            #                     ),
-            #             ]
-            #         )
-            #     ]
-
             if no_data_string:
-                
                 fig_layout = [
                     html.Div(
                         [
                             html.Div(
                                 [
-                                dcc.Graph(figure = fig, config={'displayModeBar': False})
+                                    dcc.Graph(
+                                        figure=fig, config={"displayModeBar": False}
+                                    )
                                 ],
                             ),
                             html.Div(
@@ -834,48 +705,51 @@ def make_line_chart(values: pd.DataFrame) -> list:
                                         [
                                             html.P(
                                                 children=[
-                                                html.Span('Years with insufficient or no data:', className = 'msg-string__label'),
-                                                html.Span(no_data_string, className = 'nodata-string'),
+                                                    html.Span(
+                                                        "Years with insufficient or no data:",
+                                                        className="msg-string__label",
+                                                    ),
+                                                    html.Span(
+                                                        no_data_string,
+                                                        className="nodata-string",
+                                                    ),
                                                 ],
                                             ),
                                         ],
-                                        className = 'container--close--noborder twelve columns'
+                                        className="container--close--noborder twelve columns",
                                     )
-                                    ],
-                                    className='row'
-                                ),
+                                ],
+                                className="row",
+                            ),
                         ]
                     )
                 ]
 
-            else:  
-
+            else:
                 fig_layout = [
                     html.Div(
-                        [
-                        dcc.Graph(figure = fig, config={'displayModeBar': False})
-                        ],
+                        [dcc.Graph(figure=fig, config={"displayModeBar": False})],
                     )
                 ]
     else:
-
         fig = no_data_fig_blank()
-        
+
         fig_layout = [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                            dcc.Graph(figure = fig, config={'displayModeBar': False})
-                            ],
-                        ),
-                        ]
-                    )
-            ]
-    
+            html.Div(
+                [
+                    html.Div(
+                        [dcc.Graph(figure=fig, config={"displayModeBar": False})],
+                    ),
+                ]
+            )
+        ]
+
     return fig_layout
 
-def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str) -> list:
+
+def make_growth_chart(
+    data_me: pd.DataFrame, data_162: pd.DataFrame, label: str
+) -> list:
     """
     Creates a dash html.Div layout with a label, and a multi-line (scatter) plot (px.line) representing
     two discrete dataframes in solid and dotted lines
@@ -892,18 +766,30 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
     data_me.columns = data_me.columns.map(lambda x: x.split("|")[0])
     data_162.columns = data_162.columns.map(lambda x: x.split("|")[0])
 
-    color = ['#74a2d7', '#df8f2d','#96b8db','#ebbb81','#bc986a','#a8b462','#f0c33b','#74a2d7','#f0c33b','#83941f','#7b6888']
-    
+    color = [
+        "#74a2d7",
+        "#df8f2d",
+        "#96b8db",
+        "#ebbb81",
+        "#bc986a",
+        "#a8b462",
+        "#f0c33b",
+        "#74a2d7",
+        "#f0c33b",
+        "#83941f",
+        "#7b6888",
+    ]
+
     fig = make_subplots()
 
-    if 'Growth' in label:
-        ytick ='.0%'
-        ytitle='Adequate Growth %'
-        hover = '.2%'
-    elif 'SGP' in label:
-        ytick ='.1f'
-        ytitle='Median SGP'
-        hover = '.1f'
+    if "Growth" in label:
+        ytick = ".0%"
+        ytitle = "Adequate Growth %"
+        hover = ".2%"
+    elif "SGP" in label:
+        ytick = ".1f"
+        ytitle = "Median SGP"
+        hover = ".1f"
 
     for i, col in enumerate(data_me.columns):
         fig.add_trace(
@@ -911,18 +797,21 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
                 x=data_me.index,
                 y=data_me[col],
                 name=col,
-                meta=[col], # wtf is this?? [https://community.plotly.com/t/hovertemplate-does-not-show-name-property/36139]
-                mode='markers+lines',
-                marker=dict(color=color[i], symbol = 'square'),
-                line={'dash': 'solid'},
-                customdata = [f'{i:.2%}' for i in data_162[col]] if 'Growth' in label else [f'{i:.1f}' for i in data_162[col]],
-                text = [f'{i}' for i in data_me.columns],
-                
+                meta=[
+                    col
+                ],  # wtf is this?? [https://community.plotly.com/t/hovertemplate-does-not-show-name-property/36139]
+                mode="markers+lines",
+                marker=dict(color=color[i], symbol="square"),
+                line={"dash": "solid"},
+                customdata=[f"{i:.2%}" for i in data_162[col]]
+                if "Growth" in label
+                else [f"{i:.1f}" for i in data_162[col]],
+                text=[f"{i}" for i in data_me.columns],
                 # NOTE: the legendgroup variable separates each dataframe into a separate
                 # legend group, which is great because it allows you to turn on and off each
                 # group. However, it looks bad because it does not currently allow you to display
                 # the legends horizontally. It is a matter of preference
-                # legendgroup = '1',    
+                # legendgroup = '1',
                 # legendgrouptitle_text="Majority Enrolled"
             ),
             secondary_y=False,
@@ -933,7 +822,7 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
         #     go.Scatter(
         #         x=data_162.index,
         #         y=data_162[col],
-        #         mode='markers+lines',                                
+        #         mode='markers+lines',
         #         line={'dash': 'dash'},
         #         marker=dict(color=color[i], symbol = 'diamond'),
         #         name=col,
@@ -943,57 +832,58 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
         #     secondary_y=False,
         # )
 
+    # TODO: Rework this to use a regular px.line so that we can adjust the ticks
+    # TODO: the same way we do in make_line_chart
+    xaxis_data = pd.DataFrame()
+    xaxis_data["Year"] = data_me.index.astype(str)
+
     # Add figure title
     fig.update_layout(
         margin=dict(l=40, r=40, t=40, b=0),
         title_x=0.5,
-        font = dict(
-            family = 'Inter, sans-serif',
-            color = 'steelblue',
-            size = 10
-            ),
-        plot_bgcolor='white',
-        xaxis = dict(
-            title='',
-            type='date',
-            tickvals = data_me.index,
-            tickformat='%Y',
+        font=dict(family="Inter, sans-serif", color="steelblue", size=10),
+        plot_bgcolor="white",
+        xaxis=dict(
+            title="",
+            type="date",
+            # autorange=False,
+            # range=[0, len(xaxis_data['Year'])-1],
+            # tick0=0,
+            # dtick=1,
+            # tickvals=xaxis_data['Year'],
+            tickvals=data_me.index,
+            tickformat="%Y",
+            mirror=True,  #
             showline=True,
-            linecolor='#b0c4de',
-            linewidth=.5,
-            gridwidth=.5,
+            linecolor="#b0c4de",
+            linewidth=0.5,
+            gridwidth=0.5,
             showgrid=True,
-            gridcolor='#b0c4de',
+            gridcolor="#b0c4de",
             zeroline=False,
-            # range = add_years
-            ),
-        yaxis = dict(
-            title='',
+        ),
+        yaxis=dict(
+            title="",
             tickformat=ytick,
             showline=True,
-            linecolor='#b0c4de',
-            linewidth=.5,
-            gridwidth=.5,
+            linecolor="#b0c4de",
+            linewidth=0.5,
+            gridwidth=0.5,
             showgrid=True,
-            gridcolor='#b0c4de',
+            gridcolor="#b0c4de",
             zeroline=False,
-            hoverformat=hover, 
-            # range = add_years
-            ),
-        legend=dict(
-            orientation='h'
+            hoverformat=hover,
         ),
-        hovermode='x unified',
+        legend=dict(orientation="h"),
+        hovermode="x unified",
         height=300,
-        # width=400,
-        # legend_title='',
-    )                    
+    )
     fig.update_traces(
-        hovertemplate='<br>'.join(
+        hovertemplate="<br>".join(
             [
-                s.replace(' ', '&nbsp;')
+                s.replace(" ", "&nbsp;")
                 for s in [
-                    '%{meta} (Majority Enrolled): <b>%{y}</b> (162 Days: %{customdata})<br><extra></extra>',
+                    "%{meta} (Majority Enrolled): <b>%{y}</b> (162 Days: %{customdata})<br><extra></extra>",
                 ]
             ]
         )
@@ -1018,16 +908,17 @@ def make_growth_chart(data_me: pd.DataFrame, data_162: pd.DataFrame, label: str)
     fig.update_yaxes(title_text=ytitle, secondary_y=False)
 
     fig_layout = [
-                html.Div(
-                    [
-                    dcc.Graph(figure = fig, config={'displayModeBar': False})
-                    ],      
-                )
+        html.Div(
+            [dcc.Graph(figure=fig, config={"displayModeBar": False})],
+        )
     ]
 
     return fig_layout
 
-def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label: str) -> list:
+
+def make_bar_chart(
+    values: pd.DataFrame, category: str, school_name: str, label: str
+) -> list:
     """
     Creates a dash html.Div layout with a label and a simple bar chart (px.bar)
 
@@ -1052,7 +943,7 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
     # the dataframe should always have at least 4 columns ('School Name',
     # 'Low Grade', 'High Grade' & one data column)
     if (len(data.columns)) > 3:
-        schools = data['School Name'].tolist()
+        schools = data["School Name"].tolist()
 
         # assign colors for each comparison school
         trace_color = {schools[i]: color[i] for i in range(len(schools))}
@@ -1060,69 +951,74 @@ def make_bar_chart(values: pd.DataFrame, category: str, school_name: str, label:
         # use specific color for selected school
         for key, value in trace_color.items():
             if key == school_name:
-                trace_color[key] = '#0a66c2'
+                trace_color[key] = "#0a66c2"
 
         # Uncomment this and below to display distance from selected school
         # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
 
         fig = px.bar(
             data,
-            x='School Name',
+            x="School Name",
             y=category,
             color_discrete_map=trace_color,
-            color='School Name',
-            custom_data  = ['Low Grade','High Grade'], #,'Distance']
-            text_auto=True
+            color="School Name",
+            custom_data=["Low Grade", "High Grade"],  # ,'Distance']
+            text_auto=True,
         )
 
-        fig.update_yaxes(range=[0, 1], dtick=0.2, tickformat=',.0%',title='',showgrid=True, gridcolor='#b0c4de')
-        fig.update_xaxes(type='category', showticklabels=False, title='',showline=True,linewidth=1,linecolor='#b0c4de')
+        fig.update_yaxes(
+            range=[0, 1],
+            dtick=0.2,
+            tickformat=",.0%",
+            title="",
+            showgrid=True,
+            gridcolor="#b0c4de",
+        )
+        fig.update_xaxes(
+            type="category",
+            showticklabels=False,
+            title="",
+            showline=True,
+            linewidth=1,
+            linecolor="#b0c4de",
+        )
 
         fig.update_layout(
             title_x=0.5,
             margin=dict(l=40, r=40, t=40, b=60),
-            font = dict(
-                family='Inter, sans-serif',
-                color='steelblue',
-                size = 11
-                ),
-            legend=dict(
-                orientation='h',
-                title='',
-                xanchor= 'center',
-                x=0.45
-            ),
+            font=dict(family="Inter, sans-serif", color="steelblue", size=11),
+            legend=dict(orientation="h", title="", xanchor="center", x=0.45),
             height=350,
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
             hoverlabel=dict(
-                bgcolor='white',
-                font_color='steelblue',
+                bgcolor="white",
+                font_color="steelblue",
                 font_size=11,
-                font_family='Inter, sans-serif',
-                align = "left"
+                font_family="Inter, sans-serif",
+                align="left",
             ),
         )
 
         fig.update_traces(
-            textposition='outside',
-            hovertemplate = '<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br><b>Proficiency: </b>%{y}<br><extra></extra>'
+            textposition="outside",
+            hovertemplate="<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br><b>Proficiency: </b>%{y}<br><extra></extra>",
         )
 
     else:
-
         fig = no_data_fig_blank()
 
     fig_layout = [
         html.Div(
             [
-            html.Label(label, className = 'label__header'),
-            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                html.Label(label, className="label__header"),
+                dcc.Graph(figure=fig, config={"displayModeBar": False}),
             ]
         )
     ]
 
     return fig_layout
+
 
 def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> list:
     """
@@ -1142,49 +1038,46 @@ def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> li
     selected_school = get_school_index(str(school_id))
     school_name = selected_school["School Name"].values[0]
 
-    if 'Low Grade' in data:
-        data = data.drop(['Low Grade', 'High Grade'], axis = 1)
+    if "Low Grade" in data:
+        data = data.drop(["Low Grade", "High Grade"], axis=1)
 
-    # if 'School ID' in data:
-    #     data = data.drop(['School ID'], axis = 1)
-
-    # TODO: Do Not think this is necessary here
-    # locate school index by School ID and then drop School ID column
-    # school_name_idx = data.index[data["School ID"] ==  np.int64(school_id)].tolist()[0]
-    # data = data.loc[:, ~data.iloc[school_name_idx].isna()]    
-    
-    data = data.drop("School ID",axis=1)
+    data = data.drop("School ID", axis=1)
 
     # reset index
-    data.reset_index(drop=True,inplace=True)
+    data.reset_index(drop=True, inplace=True)
 
     # remove trailing string
     # "School Total" is for SAT and includes all three subjects - so we dont want to split
     if data.columns.str.contains("School Total").any() == True:
-        
         # keep everything between | and "Benchmark %"
-        data.columns = data.columns.str.replace("Benchmark %","")
-        data.columns = data.columns.str.replace("School Total\|","", regex = True)
-    
+        data.columns = data.columns.str.replace("Benchmark %", "")
+        data.columns = data.columns.str.replace("School Total\|", "", regex=True)
+
     else:
-        data.columns = data.columns.str.split('|').str[0]
+        data.columns = data.columns.str.split("|").str[0]
 
     # replace any '***' values (insufficient n-size) with NaN
-    data = data.replace('***', np.nan)
+    data = data.replace("***", np.nan)
 
     # force non-string columns to numeric
-    cols = [i for i in data.columns if i not in ['School Name','Year']]
+    cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
     for col in cols:
-        data[col]=pd.to_numeric(data[col], errors='coerce')
+        data[col] = pd.to_numeric(data[col], errors="coerce")
 
     categories = data.columns.tolist()
-    categories.remove('School Name')
-    schools = data['School Name'].tolist()
+    categories.remove("School Name")
+    schools = data["School Name"].tolist()
 
     # melt dataframe from 'wide' format to 'long' format (plotly express
     # can handle either, but long format makes hovertemplate easier - trust me)
-    data_set = pd.melt(data, id_vars='School Name',value_vars = categories, var_name='Categories', ignore_index=False)
+    data_set = pd.melt(
+        data,
+        id_vars="School Name",
+        value_vars=categories,
+        var_name="Categories",
+        ignore_index=False,
+    )
 
     data_set.reset_index(drop=True, inplace=True)
 
@@ -1192,77 +1085,68 @@ def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> li
     # NOTE: This can be 99.9% done by setting 'text_auto=True'
     # in 'fig' without setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
     # that is displayed for ''. So this code converts the series to a string in the proper format
-    # and replaces nan with ''    
-    text_values = data_set['value'].map('{:.0%}'.format)
-    text_values = text_values.str.replace('nan%','')
-    
+    # and replaces nan with ''
+    text_values = data_set["value"].map("{:.0%}".format)
+    text_values = text_values.str.replace("nan%", "")
+
     # assign colors for each comparison
     trace_color = {schools[i]: color[i] for i in range(len(schools))}
 
     # replace color for selected school
     for key, value in trace_color.items():
         if key == school_name:
-            trace_color[key] = '#0a66c2'
+            trace_color[key] = "#0a66c2"
 
     fig = px.bar(
-        data_frame = data_set,
-        x = 'Categories',
-        y = 'value',
-        color = 'School Name',
-        color_discrete_map = trace_color,
-        orientation = 'v',
-        barmode = 'group',
-        custom_data = ['School Name'],
-        text = text_values,
+        data_frame=data_set,
+        x="Categories",
+        y="value",
+        color="School Name",
+        color_discrete_map=trace_color,
+        orientation="v",
+        barmode="group",
+        custom_data=["School Name"],
+        text=text_values,
     )
 
     fig.update_yaxes(
         range=[0, 1],
         dtick=0.2,
-        tickformat=',.0%',
-        title='',
+        tickformat=",.0%",
+        title="",
         showgrid=True,
-        gridcolor='#b0c4de'
+        gridcolor="#b0c4de",
     )
 
-    fig.update_xaxes(
-        title='',
-        showline=True,
-        linewidth=.5,
-        linecolor='#b0c4de'
-    )
+    fig.update_xaxes(title="", showline=True, linewidth=0.5, linecolor="#b0c4de")
 
     fig.update_layout(
         title_x=0.5,
         margin=dict(l=40, r=40, t=40, b=10),
-        font = dict(
-            family='Inter, sans-serif',
-            color='steelblue',
-            size = 11
-        ),
-        bargap=.15,
-        bargroupgap=.1,
+        font=dict(family="Inter, sans-serif", color="steelblue", size=11),
+        bargap=0.15,
+        bargroupgap=0.1,
         height=400,
-        legend_title='',
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
+        legend_title="",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         hoverlabel=dict(
-            bgcolor='white',
-            font_color='steelblue',
-            font_size = 11,
-            font_family='Inter, sans-serif',
-            align = "left"
+            bgcolor="white",
+            font_color="steelblue",
+            font_size=11,
+            font_family="Inter, sans-serif",
+            align="left",
         ),
         # hoverlabel_align = 'left'
-    )        
+    )
 
     fig.update_traces(
-        hovertemplate='<br>'.join(
+        hovertemplate="<br>".join(
             [
-                s.replace(' ', '&nbsp;')
+                s.replace(" ", "&nbsp;")
                 for s in [
-                    '<b>%{customdata[0]}</b>',
-                    '<b>Proficiency: </b>%{y}<br><extra></extra>',
+                    "<b>%{customdata[0]}</b>",
+                    "<b>Proficiency: </b>%{y}<br><extra></extra>",
                 ]
             ]
         )
@@ -1275,34 +1159,32 @@ def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> li
     # to the individual bars in the group. See, e.g.:
     # https://stackoverflow.com/questions/70658955/how-do-i-display-bar-plot-for-values-that-are-zero-in-plotly
     # https://stackoverflow.com/questions/73905861/fully-display-the-amount-in-horizontal-bar-chart
-    
-    #  This uses a loop (ick) to directly manipulate each fig data object.
-    
-    for i in range(0,len(data_set['School Name'].unique())):
 
+    #  This uses a loop (ick) to directly manipulate each fig data object.
+
+    for i in range(0, len(data_set["School Name"].unique())):
         marker_array = []
         position_array = []
 
-        for j in range(0,len(fig['data'][i]['y'])):
-
+        for j in range(0, len(fig["data"][i]["y"])):
             # # track location of school in index (to add border)
             # if fig['data'][i]['name'] == school_name:
             #     loc = i
 
-            if fig['data'][i]['y'][j] < .05:
-                position_array.append('outside')
+            if fig["data"][i]["y"][j] < 0.05:
+                position_array.append("outside")
             else:
-                position_array.append('inside')
+                position_array.append("inside")
 
-            if fig['data'][i]['y'][j] == 0:
-                marker_array.append('#999999')
+            if fig["data"][i]["y"][j] == 0:
+                marker_array.append("#999999")
             else:
-                marker_array.append(fig['data'][i]['marker']['color'])
+                marker_array.append(fig["data"][i]["marker"]["color"])
 
-        fig['data'][i]['marker']['line']['color'] = marker_array
-        fig['data'][i]['marker']['line']['width'] = 2
+        fig["data"][i]["marker"]["line"]["color"] = marker_array
+        fig["data"][i]["marker"]["line"]["width"] = 2
 
-        fig['data'][i]['textposition'] = position_array
+        fig["data"][i]["textposition"] = position_array
 
     # NOTE: Uncomment to add border around selected school
     # having hard time making this look decent.
@@ -1317,10 +1199,10 @@ def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> li
     fig_layout = [
         html.Div(
             [
-            html.Label(label, className = 'label__header'),
-            dcc.Graph(figure = fig, config={'displayModeBar': False})
+                html.Label(label, className="label__header"),
+                dcc.Graph(figure=fig, config={"displayModeBar": False}),
             ]
         )
     ]
-    
+
     return fig_layout

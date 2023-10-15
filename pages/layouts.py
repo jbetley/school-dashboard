@@ -2,21 +2,27 @@
 # ICSB Dashboard - Layout Functions #
 #####################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.11
-# date:     10/03/23
+# version:  1.13
+# date:     10/13/23
 
 import pandas as pd
 import numpy as np
 from dash import html
 import dash_bootstrap_components as dbc
-from .load_data import info_categories, get_school_index
-from .string_helpers import create_chart_label,combine_school_name_and_grade_levels, identify_missing_categories
+from .load_data import get_school_index
+from .string_helpers import (
+    create_chart_label,
+    combine_school_name_and_grade_levels,
+    identify_missing_categories,
+)
 from .charts import make_group_bar_chart, make_multi_line_chart
 from .tables import create_comparison_table, no_data_page
 
-def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: list, school_id: str) -> list:
 
-    selected_school = get_school_index(school_id)    
+def create_hs_analysis_layout(
+    data_type: str, data: pd.DataFrame, categories: list, school_id: str
+) -> list:
+    selected_school = get_school_index(school_id)
     school_name = selected_school["School Name"].values[0]
 
     tested_categories = []
@@ -39,24 +45,32 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
         for c in categories:
             tested_categories.append(c + "|" + search_string)
     else:
-        final_analysis_group = []   # type:list
+        final_analysis_group = []  # type:list
 
         return final_analysis_group
 
-    analysis_cols = [col for col in data.columns if search_string in col and any(substring for substring in categories if substring in col)]
+    analysis_cols = [
+        col
+        for col in data.columns
+        if search_string in col
+        and any(substring for substring in categories if substring in col)
+    ]
 
     added_cols = ["School Name", "Low Grade", "High Grade", "School ID"]
 
     analysis_cols = added_cols + analysis_cols
 
     analysis_data = data[analysis_cols]
-  
-    analysis_data = analysis_data.filter(regex="|".join([data_type,"School Name","School ID", "Low Grade","High Grade"]))
+
+    analysis_data = analysis_data.filter(
+        regex="|".join(
+            [data_type, "School Name", "School ID", "Low Grade", "High Grade"]
+        )
+    )
 
     # data will always have at least three cols (School Name, School ID, Low Grade, High Grade)
     if len(analysis_data.columns) > 4:
-
-         # NOTE: For transparency purposes, we want to identify all categories that are missing from
+        # NOTE: For transparency purposes, we want to identify all categories that are missing from
         # the possible dataset, including those that aren't going to be displayed (because the school
         # is missing them). Because there are many cases where there wont be any data at all (eg, data
         # hasn't yet been released, or there is no data for a particular category). So we need to check whether
@@ -64,24 +78,30 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
         # we collect any missing information, we need to drop any columns where the school has no data and
         # then check again to see if the dataframe has any info.
 
-        analysis_data, category_string, school_string = identify_missing_categories(analysis_data, tested_categories)
+        analysis_data, category_string, school_string = identify_missing_categories(
+            analysis_data, tested_categories
+        )
 
         # Once the missing category and missing school strings are built, we drop any columns
         # where the school has no data by finding the index of the row containing the school
         # name and dropping all columns where the row at school_name_idx has a NaN value
+
         # TODO: Test, pretty sure we already do this in analysis_single_year (line 397)
         # school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
         # school_name_idx = data.index[data["School ID"] ==  np.int64(school)].tolist()[0]
         # analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
 
         if len(analysis_data.columns) > 1:
-
             analysis_label = create_chart_label(analysis_data)
-            analysis_chart = make_group_bar_chart(analysis_data, school_id, analysis_label)
+            analysis_chart = make_group_bar_chart(
+                analysis_data, school_id, analysis_label
+            )
             analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
 
-            analysis_table = create_comparison_table(analysis_table_data, school_id,"")
-            final_analysis_group = create_group_barchart_layout(analysis_chart,analysis_table, category_string, school_string)
+            analysis_table = create_comparison_table(analysis_table_data, school_id, "")
+            final_analysis_group = create_group_barchart_layout(
+                analysis_chart, analysis_table, category_string, school_string
+            )
 
         else:
             final_analysis_group = []
@@ -90,6 +110,7 @@ def create_hs_analysis_layout(data_type: str, data: pd.DataFrame, categories: li
         final_analysis_group = []
 
     return final_analysis_group
+
 
 def create_growth_layout(table: list, fig: list, label: str) -> list:
     """
@@ -138,6 +159,7 @@ def create_growth_layout(table: list, fig: list, label: str) -> list:
 
     return table_layout
 
+
 def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
     """
     Determines table layout depending on the size (# of cols) of the tables,
@@ -155,41 +177,42 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
     # if same table is passed twice, we force single table layout
     if table1 == table2:
         table_layout = [
-                html.Div(
-                    table1,
-                    className = "bare-container--flex--center twelve columns",
-                )
+            html.Div(
+                table1,
+                className="bare-container--flex--center twelve columns",
+            )
         ]
 
     else:
-
         if len(cols) >= 4:
             table_layout = [
-                    html.Div(
-                        table1,
-                        className = "bare-container--flex--center twelve columns",
-                    ),
-                    html.Div(
-                        table2,
-                        className = "bare-container--flex--center twelve columns",
-                    ),
+                html.Div(
+                    table1,
+                    className="bare-container--flex--center twelve columns",
+                ),
+                html.Div(
+                    table2,
+                    className="bare-container--flex--center twelve columns",
+                ),
             ]
 
         else:
-
             table_layout = [
-                    html.Div(
-                        [
-                            table1[0],
-                            table2[0],
-                        ],
-                        className = "bare-container--flex--center twelve columns",
-                    ),
+                html.Div(
+                    [
+                        table1[0],
+                        table2[0],
+                    ],
+                    className="bare-container--flex--center twelve columns",
+                ),
             ]
 
     return table_layout
 
-def create_group_barchart_layout(fig: list, table: list,category_string: str, school_string: str) -> list:
+
+def create_group_barchart_layout(
+    fig: list, table: list, category_string: str, school_string: str
+) -> list:
     """
     Takes two lists, a simple html.Div layout containing a dash.DataTable and
     a simple html.Div layout with a plotly px.bar object. Also two strings generated
@@ -211,39 +234,33 @@ def create_group_barchart_layout(fig: list, table: list,category_string: str, sc
             html.Div(
                 [
                     html.Div(
-                        [
-                            html.Div(fig, style={"marginBottom": "-20px"})
-                        ],
-                        className = "pretty-container--close eleven columns",
+                        [html.Div(fig, style={"marginBottom": "-20px"})],
+                        className="pretty-container--close eleven columns",
                     ),
                 ],
-                className="row"
+                className="row",
             ),
             html.Div(
                 [
                     html.Div(
-                        [
-                            html.Div(table)
-                        ],
-                        className = "container__close eleven columns",
+                        [html.Div(table)],
+                        className="container__close eleven columns",
                     ),
                 ],
-                className="row"
-            )            
-        ]    
+                className="row",
+            ),
+        ]
     else:
         layout = [
             html.Div(
                 [
                     html.Div(
-                        [
-                            html.Div(fig, style={"marginBottom": "-20px"})
-                        ],
-                        className = "pretty-container--close twelve columns",
+                        [html.Div(fig, style={"marginBottom": "-20px"})],
+                        className="pretty-container--close twelve columns",
                     ),
                 ],
-                className="row"
-            ),            
+                className="row",
+            ),
             html.Div(
                 [
                     html.Div(
@@ -251,27 +268,35 @@ def create_group_barchart_layout(fig: list, table: list,category_string: str, sc
                             html.Div(table),
                             html.P(
                                 children=[
-                                html.Span("Selected school has insufficient n-size or no data for:", className = "category-string__label"),
-                                html.Span(category_string, className = "category-string"),
+                                    html.Span(
+                                        "Selected school has insufficient n-size or no data for:",
+                                        className="category-string__label",
+                                    ),
+                                    html.Span(
+                                        category_string, className="category-string"
+                                    ),
                                 ],
-                                style={"marginTop": -10, "marginBottom": -10}
+                                style={"marginTop": -10, "marginBottom": -10},
                             ),
                             html.P(
                                 children=[
-                                html.Span("Schools with insufficient n-size or no data:",className = "school-string__label"),
-                                html.Span(school_string, className = "school-string"),
+                                    html.Span(
+                                        "Schools with insufficient n-size or no data:",
+                                        className="school-string__label",
+                                    ),
+                                    html.Span(school_string, className="school-string"),
                                 ],
-
                             ),
                         ],
-                        className = "container__close twelve columns"
+                        className="container__close twelve columns",
                     )
-                    ],
-                    className="row"
-                )
+                ],
+                className="row",
+            ),
         ]
 
     return layout
+
 
 def create_barchart_layout(fig: list, table: list) -> list:
     """
@@ -285,26 +310,20 @@ def create_barchart_layout(fig: list, table: list) -> list:
         layout (list): a dash html.Div layout with fig and DataTable
     """
     layout = [
+        html.Div(
+            [
                 html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(fig)
-                        ],
-                        className = 'pretty-container nine columns',
-                    ),
-                    html.Div(
-                        [
-                            html.Div(table)
-                        ],
-                        className = 'pretty-container three columns'
-                    ),
-                ],
-                className='row'
-            )
+                    [html.Div(fig)],
+                    className="pretty-container nine columns",
+                ),
+                html.Div([html.Div(table)], className="pretty-container three columns"),
+            ],
+            className="row",
+        )
     ]
 
     return layout
+
 
 def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     """
@@ -317,8 +336,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     Returns:
         layout (list): a dash html.Div layout with fig
     """
-    layout =  [
-
+    layout = [
         html.Div(
             [
                 html.Label(label, className="label__header"),
@@ -328,16 +346,17 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
                             [
                                 html.Div(table, style={"marginTop": "20px"}),
                                 html.P(""),
-                                html.P("Hover over each data point to see N-Size.",
-                                style={
-                                    "color": "#6783a9",
-                                    "fontSize": 10,
-                                    "textAlign": "left",
-                                    "marginLeft": "10px",
-                                    "marginRight": "10px",
-                                    "marginTop": "20px",
-                                    "paddingTop": "5px",
-                                    "borderTop": ".5px solid #c9d3e0",
+                                html.P(
+                                    "Hover over each data point to see N-Size.",
+                                    style={
+                                        "color": "#6783a9",
+                                        "fontSize": 10,
+                                        "textAlign": "left",
+                                        "marginLeft": "10px",
+                                        "marginRight": "10px",
+                                        "marginTop": "20px",
+                                        "paddingTop": "5px",
+                                        "borderTop": ".5px solid #c9d3e0",
                                     },
                                 ),
                             ],
@@ -359,6 +378,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
 
     return layout
 
+
 def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelve"):
     group = page + "-" + group_catagory + "-radio"
     container = group + "-container"
@@ -370,9 +390,9 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
         layout = "bare-container--flex--center_subnav_float"
 
     radio_button_group = html.Div(
-            [
-                html.Div(
-                    [
+        [
+            html.Div(
+                [
                     html.Div(
                         [
                             html.Div(
@@ -385,25 +405,25 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
                                         labelCheckedClassName="active",
                                         value=[],
                                         persistence=False,
-                                        # persistence_type="memory",
-                                        ),
-                                    ],
-                                    className="radio-group-academic",
-                                )
-                            ],
-                            className = layout,
-                        ),
-                    ],
-                    className = "row",
-                ),
-            ],
-            id = container,
-        )
+                                    ),
+                                ],
+                                className="radio-group-academic",
+                            )
+                        ],
+                        className=layout,
+                    ),
+                ],
+                className="row",
+            ),
+        ],
+        id=container,
+    )
 
     return radio_button_group
 
-def create_year_over_year_layout (school, data, school_id_list, label, msg):
 
+def create_year_over_year_layout(school, data, school_id_list, label, msg):
+    
     # drop columns where all values are nan
     data = data.dropna(axis=1, how="all")
 
@@ -411,12 +431,11 @@ def create_year_over_year_layout (school, data, school_id_list, label, msg):
         msg = "No Data for Selected School."
 
     # if school was dropped because it has no data return empty table
-    if data['School ID'][0] != np.int64(school):
+    if data["School ID"][0] != np.int64(school):
         layout = no_data_page(label, msg)
 
     else:
-
-        data = data.drop("School ID",axis=1)
+        data = data.drop("School ID", axis=1)
 
         # drop rows (years) where the school has no data (2nd column will always be selected school)
         # NOTE: tried to use name, but there are too many differences in DOE data
@@ -427,14 +446,23 @@ def create_year_over_year_layout (school, data, school_id_list, label, msg):
         # transpose and merge table data and school_id_list
         # the data is pivoted so we need to unpivot it before we add School ID back
         # school id is used to identify the school in the comparison_table function
-        table_data = table_data.set_index("Year").T.rename_axis("School Name").rename_axis(None, axis=1).reset_index()
-        table_data = pd.merge(table_data, school_id_list, on=["School Name"], how='left')
+        table_data = (
+            table_data.set_index("Year")
+            .T.rename_axis("School Name")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+        table_data = pd.merge(
+            table_data, school_id_list, on=["School Name"], how="left"
+        )
 
         fig = make_multi_line_chart(data, label)
 
         table = create_comparison_table(table_data, school, "")
         category_string = ""
         school_string = ""
-        layout = create_group_barchart_layout(fig, table, category_string, school_string)
+        layout = create_group_barchart_layout(
+            fig, table, category_string, school_string
+        )
 
     return layout
