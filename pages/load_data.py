@@ -840,6 +840,10 @@ def get_comparable_schools(*args):
     return run_query(q, params)
 
 
+pd.set_option("display.max_columns", None)
+pd.set_option("display.max_rows", None)
+
+
 def get_year_over_year_data(*args):
     keys = ["school_id", "comp_list", "category", "year", "flag"]
 
@@ -871,15 +875,21 @@ def get_year_over_year_data(*args):
     tested_query = tested.replace(" ", "")
 
     school_query_str = (
-        "Year, SchoolID, SchoolName, "
+        "Year, SchoolID, SchoolName, LowGrade, HighGrade, "
         + '"'
         + passed_query
         + '", "'
         + tested_query
         + '"'
     )
+
     corp_query_str = (
-        "Year, CorporationName, " + '"' + passed_query + '", "' + tested_query + '"'
+        "Year, CorporationName, LowGrade, HighGrade, "
+        + '"'
+        + passed_query
+        + '", "'
+        + tested_query
+        + '"'
     )
 
     # School Data
@@ -895,16 +905,22 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
+    # TODO: HERTE - Choking on type error at some point after here
+
+    print(school_data)
     # track school name and school id separately
-    school_index = school_data[["School Name", "School ID"]]
+    school_index = school_data[["School Name", "School ID", "Low Grade", "High Grade"]]
 
     school_name = school_data["School Name"][0]
+
     school_data[school_name] = pd.to_numeric(
         school_data[passed], errors="coerce"
     ) / pd.to_numeric(school_data[tested], errors="coerce")
     school_data = school_data.drop(["School Name", passed, tested], axis=1)
     school_data = school_data.sort_values("Year").reset_index(drop=True)
 
+    print("HERE")
+    print(school_data)
     # drop rows (years) where the school has no data
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]

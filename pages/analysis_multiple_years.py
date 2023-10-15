@@ -391,7 +391,7 @@ def update_academic_analysis(
         if year_over_year_k8_data.empty:
             analysis_multi_dropdown_container = {"display": "none"}
             k8_analysis_multi_empty_container = {"display": "block"}
-            year_over_year_grade = []  # TODO???
+            year_over_year_grade = []
 
         else:
             k8_analysis_multi_main_container = {"display": "block"}

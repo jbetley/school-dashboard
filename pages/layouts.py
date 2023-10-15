@@ -14,6 +14,7 @@ from .string_helpers import (
     create_chart_label,
     combine_school_name_and_grade_levels,
     identify_missing_categories,
+    create_school_label,
 )
 from .charts import make_group_bar_chart, make_multi_line_chart
 from .tables import create_comparison_table, no_data_page
@@ -422,8 +423,7 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
     return radio_button_group
 
 
-def create_year_over_year_layout(school, data, school_id_list, label, msg):
-    
+def create_year_over_year_layout(school_id, data, school_id_list, label, msg):
     # drop columns where all values are nan
     data = data.dropna(axis=1, how="all")
 
@@ -431,7 +431,8 @@ def create_year_over_year_layout(school, data, school_id_list, label, msg):
         msg = "No Data for Selected School."
 
     # if school was dropped because it has no data return empty table
-    if data["School ID"][0] != np.int64(school):
+
+    if data["School ID"][0] != np.int64(school_id):
         layout = no_data_page(label, msg)
 
     else:
@@ -456,9 +457,18 @@ def create_year_over_year_layout(school, data, school_id_list, label, msg):
             table_data, school_id_list, on=["School Name"], how="left"
         )
 
+        # NOTE: As usualy, getting information back into the DF after the fact is much
+        # more difficult than at the beginning. Specifically, we need to get Low/High
+        # grade back into df in order to create school label
+
+        selected_school = get_school_index(school_id)
+        school_type = selected_school["School Type"].values[0]
+
+        print(school_id_list)
+
         fig = make_multi_line_chart(data, label)
 
-        table = create_comparison_table(table_data, school, "")
+        table = create_comparison_table(table_data, school_id, "")
         category_string = ""
         school_string = ""
         layout = create_group_barchart_layout(
