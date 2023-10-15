@@ -74,10 +74,8 @@ from pages.load_data import (
     get_financial_analysis_dropdown_years,
     get_gradespan,
     get_ethnicity,
-    get_subgroup,
-    get_school_coordinates,
+    get_subgroup
 )
-from pages.calculations import find_nearest
 from pages.layouts import create_radio_layout
 from pages.subnav import subnav_academic_information, subnav_academic_analysis
 
@@ -218,7 +216,6 @@ app = dash.Dash(
     use_pages=True,
     external_stylesheets=external_stylesheets,
     suppress_callback_exceptions=True,
-    # prevent_initial_callbacks="initial_duplicate",
     # compress=False, # testing
     meta_tags=[
         {
@@ -901,251 +898,8 @@ def navigation(
         analysis_multi_subcategory_value,
         analysis_multi_subcategory_container,
         analysis_nav_container,
-        analysis_subnav_container,
+        analysis_subnav_container
     )
-
-
-# allow_duplicate issue:
-# https://github.com/plotly/dash/issues/2486
-# https://community.plotly.com/t/allow-duplicate-true-how-to-determine-initial-duplicate/76612
-# https://community.plotly.com/t/duplicate-callback-outputs-dont-work-even-with-allow-duplicate-true/78357/14
-# https://community.plotly.com/t/multiple-callbacks-with-each-the-same-input-and-output-but-different-states/77186/3
-
-
-# TODO: May have to go back to duplicating this in each page
-# dropdown options for comparison schools on analysis pages
-@callback(
-    Output("analysis-comparison-dropdown", "options"),
-    Output("analysis-comparison-dropdown", "value"),
-    Output("analysis-comparison-dropdown-container", "style", allow_duplicate=True),
-    Output("analysis-comparison-dropdown-input-warning", "children"),
-    Input("url", "href"),
-    Input("charter-dropdown", "value"),
-    Input("year-dropdown", "value"),
-    Input("analysis-comparison-dropdown", "value"),
-    Input("analysis-type-radio", "value"),
-    Input("dummyinputtopreventduplicatecallbackerror", "children"),
-    prevent_initial_call=True,
-)
-def comparison_dropdown_options(
-    current_page: str,
-    school_id: str,
-    year: str,
-    comparison_schools_value: list,
-    analysis_type_value: str,
-    dummy_input: str,
-):
-    if "analysis_single" in current_page or "analysis_multiple" in current_page:
-        comparison_schools_container = {"display": "block"}
-        string_year = year
-        numeric_year = int(string_year)
-
-        # clear the list of comparison_schools when a new school is
-        # selected, otherwise comparison_schools will carry over
-        input_trigger = ctx.triggered_id
-        if input_trigger == "charter-dropdown":
-            comparison_schools_value = []
-
-        selected_school = get_school_index(school_id)
-        school_type = selected_school["School Type"].values[0]
-
-        # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
-        # SQL query depends on school type
-        if school_type == "K12":
-            if analysis_type_value == "hs":
-                school_type = "HS"
-            else:
-                school_type = "K8"
-
-        schools_by_distance = get_school_coordinates(numeric_year, school_type)
-
-        # Drop any school not testing at least 20 students. "SchoolTotal|ELATotalTested" is a proxy
-        # for school size here (probably only impacts ~20 schools)
-        # the second condition ensures that the school is retained if it exists
-        if school_type == "K8":
-            schools_by_distance = schools_by_distance[
-                (schools_by_distance["School Total|ELA Total Tested"] >= 20)
-                | (schools_by_distance["School ID"] == int(school_id))
-            ]
-
-        # If school doesn't exist
-        if int(school_id) not in schools_by_distance["School ID"].values:
-            return [], [], []
-
-        else:
-            # NOTE: Before we do the distance check, we reduce the size of the df removing
-            # schools where there is no, or only one grade overlap between the comparison schools.
-            # the variable "overlap" is one less than the the number of grades that we want as a
-            # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
-
-            # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
-            if school_type != "AHS":
-                overlap = 1
-                schools_by_distance = schools_by_distance.replace(
-                    {"Low Grade": {"PK": 0, "KG": 1}}
-                )
-                schools_by_distance["Low Grade"] = schools_by_distance[
-                    "Low Grade"
-                ].astype(int)
-                schools_by_distance["High Grade"] = schools_by_distance[
-                    "High Grade"
-                ].astype(int)
-                school_grade_span = (
-                    schools_by_distance.loc[
-                        schools_by_distance["School ID"] == int(school_id)
-                    ][["Low Grade", "High Grade"]]
-                    .values[0]
-                    .tolist()
-                )
-                school_low = school_grade_span[0]
-                school_high = school_grade_span[1]
-
-                # In order to fit within the distance parameters, the tested school must:
-                #   a)  have a low grade that is less than or equal to the selected school and
-                #       a high grade minus the selected school's low grade that is greater than or
-                #       eqaul to the overlap; or
-                #   b) have a low grade that is greater than or equal to the selected school and
-                #       a high grade minus the tested school's low grade that is greater than or
-                #       equal to the overlap.
-                # Examples -> assume a selected school with a gradespan of 5-8:
-                #   i) a school with grades 3-7 -   [match]: low grade is less than selected school's
-                #       low grade and high grade (7) minus selected school low grade (5) is greater (2)
-                #       than the overlap (1).
-                #   i) a school with grades 2-5 -   [No match]: low grade is less than selected school's
-                #       low grade but high grade (5) minus selected school low grade (5) is not greater (0)
-                #       than the overlap (1). In this case while there is an overlap, it is below our
-                #       threshold (1 grade).
-                #   c) a school with grades 6-12-   [match]: low grade is higher than selected school's
-                #       low grade and high grade (12) minus the tested school low grade (5) is greater
-                #       (7) than the overlap (1).
-                #   d) a school with grades 3-4     [No match]: low grade is lower than selected school's
-                #       low grade, but high grade (4) minus the selected school's low grade (5) is not greater
-                #       (-1) than the overlap (1).
-
-                schools_by_distance = schools_by_distance.loc[
-                    (
-                        (schools_by_distance["Low Grade"] <= school_low)
-                        & (schools_by_distance["High Grade"] - school_low >= overlap)
-                    )
-                    | (
-                        (schools_by_distance["Low Grade"] >= school_low)
-                        & (school_high - schools_by_distance["Low Grade"] >= overlap)
-                    ),
-                    :,
-                ]
-
-                schools_by_distance = schools_by_distance.reset_index(drop=True)
-
-            all_schools = schools_by_distance.copy()
-
-            school_idx = schools_by_distance[
-                schools_by_distance["School ID"] == int(school_id)
-            ].index
-
-            # NOTE: This should never ever happen because we've already determined that the school exists in
-            # the check above. However, it did happen once, somehow, so we leave this in here just in case.
-            if school_idx.size == 0:
-                return [], [], []
-
-            # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
-            index_array, dist_array = find_nearest(school_idx, schools_by_distance)
-
-            index_list = index_array[0].tolist()
-            distance_list = dist_array[0].tolist()
-
-            # Match School ID with indexes
-            closest_schools = pd.DataFrame()
-            closest_schools["School ID"] = schools_by_distance[
-                schools_by_distance.index.isin(index_list)
-            ]["School ID"]
-
-            # Merge the index and distances lists into a dataframe
-            distances = pd.DataFrame({"index": index_list, "y": distance_list})
-            distances = distances.set_index(list(distances)[0])
-
-            # Merge School ID with Distances index
-            combined = closest_schools.join(distances)
-
-            # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
-            comparison_set = pd.merge(
-                combined, all_schools, on="School ID", how="inner"
-            )
-            comparison_set = comparison_set.rename(columns={"y": "Distance"})
-
-            # drop selected school (so it cannot be selected in the dropdown)
-            comparison_set = comparison_set.drop(
-                comparison_set[comparison_set["School ID"] == int(school_id)].index
-            )
-
-            # limit maximum dropdown to the [n] closest schools
-            num_schools_expanded = 20
-
-            comparison_set = comparison_set.sort_values(by=["Distance"], ascending=True)
-
-            comparison_dropdown = comparison_set.head(num_schools_expanded)
-
-            comparison_dict = dict(
-                zip(
-                    comparison_dropdown["School Name"], comparison_dropdown["School ID"]
-                )
-            )
-
-            # final list will be displayed in order of increasing distance from selected school
-            comparison_list = dict(comparison_dict.items())
-
-            # Set default display selections to all schools in the list
-            default_options = [
-                {"label": name, "value": id} for name, id in comparison_list.items()
-            ]
-            comparison_schools_options = default_options
-
-            # value for number of default display selections and maximum
-            # display selections (because of zero indexing, max should be
-            # 1 less than actual desired number)
-            default_num_to_display = 3
-            max_num_to_display = 7
-
-            # used to display message if the number of selections exceeds the max
-            input_warning = None
-
-            # if list is None or empty ([]), use the default options (NOTE: The callback takes
-            # comparison schools as an input, so this will only be empty on first run)
-            if not comparison_schools_value:
-                comparison_schools_value = [
-                    d["value"]
-                    for d in comparison_schools_options[:default_num_to_display]
-                ]
-
-            else:
-                if len(comparison_schools_value) > max_num_to_display:
-                    input_warning = html.P(
-                        id="multi-year-input-warning",
-                        children="Limit reached (Maximum of "
-                        + str(max_num_to_display + 1)
-                        + " schools).",
-                    )
-                    comparison_schools_options = [
-                        {
-                            "label": option["label"],
-                            "value": option["value"],
-                            "disabled": True,
-                        }
-                        for option in default_options
-                    ]
-
-    else:
-        comparison_schools_options = []
-        comparison_schools_value = []
-        input_warning = ""
-        comparison_schools_container = {"display": "none"}
-
-    return (
-        comparison_schools_options,
-        comparison_schools_value,
-        comparison_schools_container,
-        input_warning,
-    )
-
 
 # redirects the url from academic_information_growth.py to
 # academic_information.py if the user is at academic_information_growth
@@ -1177,10 +931,6 @@ def layout():
             # dcc.Store(id="academic-type-store", data = {}, storage_type = "session"),
             # Used by year dropdown callback to determine the current url and for redirect on
             # academic_information_growth_py
-            html.Div(
-                id="dummyinputtopreventduplicatecallbackerror",
-                style={"display": "none"},
-            ),
             dcc.Location(id="url", refresh="callback-nav"),
             html.Div(id="hidden", style={"display": "none"}),
             html.Div(
@@ -1480,42 +1230,6 @@ def layout():
                             ),
                         ],
                         id="analysis-navigation-container",
-                    ),
-                    # Comparison Dropdown #
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                "Add or Remove Schools: ",
-                                                className="analysis-comparison-dropdown-label",
-                                            ),
-                                        ],
-                                        className="bare-container two columns",
-                                    ),
-                                    html.Div(
-                                        [
-                                            dcc.Dropdown(
-                                                id="analysis-comparison-dropdown",
-                                                style={"fontSize": "1.1rem"},
-                                                multi=True,
-                                                clearable=False,
-                                                className="analysis-comparison-dropdown-control",
-                                            ),
-                                            html.Div(
-                                                id="analysis-comparison-dropdown-input-warning"
-                                            ),
-                                        ],
-                                        className="bare-container eight columns",
-                                    ),
-                                ],
-                                className="analysis-comparison-dropdown-row",
-                            ),
-                        ],
-                        id="analysis-comparison-dropdown-container",
-                        style={"display": "none"},
                     ),
                     # dash page content
                     dash.page_container,

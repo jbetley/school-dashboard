@@ -14,12 +14,12 @@ font-style: normal;
 font-weight: 400; */
 /* src: url('../assets/fonts/jost-v13-latin-regular.eot'); IE9 Compat Modes */
 /* src: local(''), */
-      /* url('../assets/fonts/jost-v13-latin-regular.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
-      /* url('../assets/fonts/jost-v13-latin-regular.woff2') format('woff2'), Super Modern Browsers */
-      /* url('../assets/fonts/jost-v13-latin-regular.woff') format('woff'), Modern Browsers */
-      /* url('../assets/fonts/jost-v13-latin-regular.ttf') format('truetype'), Safari, Android, iOS */
-      /* url('../assets/fonts/jost-v13-latin-regular.svg#Jost') format('svg'); Legacy iOS */
- /* } */
+/* url('../assets/fonts/jost-v13-latin-regular.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
+/* url('../assets/fonts/jost-v13-latin-regular.woff2') format('woff2'), Super Modern Browsers */
+/* url('../assets/fonts/jost-v13-latin-regular.woff') format('woff'), Modern Browsers */
+/* url('../assets/fonts/jost-v13-latin-regular.ttf') format('truetype'), Safari, Android, iOS */
+/* url('../assets/fonts/jost-v13-latin-regular.svg#Jost') format('svg'); Legacy iOS */
+/* } */
 
 /*Inter*/
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -57,6 +57,7 @@ font-weight: 400; */
   padding: 0 20px;
   box-sizing: border-box;
 }
+
 .column,
 .columns {
   width: 100%;
@@ -76,61 +77,146 @@ font-weight: 400; */
 /* For devices larger than 550px (default) */
 @media (min-width: 550px) {
   .container {
-	width: 80%;
-	}
+    width: 80%;
+  }
+
   .column,
   .columns {
     margin-left: 0.5%;
-	}
-  .one.column,
-  .one.columns                    { width: 8%;             }
-  .two.columns                    { width: 16.25%;         }
-  .three.columns                  { width: 22%;            }
-  .four.columns                   { width: 33%;            }
-  .five.columns                   { width: 39.3333333333%; }
-  .six.columns                    { width: 49.75%;          }
-  .seven.columns                  { width: 56.6666666667%; }
-  .eight.columns                  { width: 66.5%;          }
-  .nine.columns                   { width: 74.0%;          }
-  .ten.columns                    { width: 82.6666666667%; }
-  .eleven.columns                 { width: 91.5%; }
-  .twelve.columns                 { width: 100%; margin-left: 0; }
+  }
 
-  .one-third.column               { width: 30.6666666667%; }
-  .two-thirds.column              { width: 65.3333333333%; }
-  .one-half.column                { width: 48%; }
+  .one.column,
+  .one.columns {
+    width: 8%;
+  }
+
+  .two.columns {
+    width: 16.25%;
+  }
+
+  .three.columns {
+    width: 22%;
+  }
+
+  .four.columns {
+    width: 33%;
+  }
+
+  .five.columns {
+    width: 39.3333333333%;
+  }
+
+  .six.columns {
+    width: 49.75%;
+  }
+
+  .seven.columns {
+    width: 56.6666666667%;
+  }
+
+  .eight.columns {
+    width: 66.5%;
+  }
+
+  .nine.columns {
+    width: 74.0%;
+  }
+
+  .ten.columns {
+    width: 82.6666666667%;
+  }
+
+  .eleven.columns {
+    width: 91.5%;
+  }
+
+  .twelve.columns {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .one-third.column {
+    width: 30.6666666667%;
+  }
+
+  .two-thirds.column {
+    width: 65.3333333333%;
+  }
+
+  .one-half.column {
+    width: 48%;
+  }
 
   /* Offsets */
   .offset-by-one.column,
-  .offset-by-one.columns          { margin-left: 8.66666666667%; }
+  .offset-by-one.columns {
+    margin-left: 8.66666666667%;
+  }
+
   .offset-by-two.column,
-  .offset-by-two.columns          { margin-left: 17.3333333333%; }
+  .offset-by-two.columns {
+    margin-left: 17.3333333333%;
+  }
+
   .offset-by-three.column,
-  .offset-by-three.columns        { margin-left: 26%;            }
+  .offset-by-three.columns {
+    margin-left: 26%;
+  }
+
   .offset-by-four.column,
-  .offset-by-four.columns         { margin-left: 34.6666666667%; }
+  .offset-by-four.columns {
+    margin-left: 34.6666666667%;
+  }
+
   .offset-by-five.column,
-  .offset-by-five.columns         { margin-left: 43.3333333333%; }
+  .offset-by-five.columns {
+    margin-left: 43.3333333333%;
+  }
+
   .offset-by-six.column,
-  .offset-by-six.columns          { margin-left: 52%;            }
+  .offset-by-six.columns {
+    margin-left: 52%;
+  }
+
   .offset-by-seven.column,
-  .offset-by-seven.columns        { margin-left: 60.6666666667%; }
+  .offset-by-seven.columns {
+    margin-left: 60.6666666667%;
+  }
+
   .offset-by-eight.column,
-  .offset-by-eight.columns        { margin-left: 69.3333333333%; }
+  .offset-by-eight.columns {
+    margin-left: 69.3333333333%;
+  }
+
   .offset-by-nine.column,
-  .offset-by-nine.columns         { margin-left: 78.0%;          }
+  .offset-by-nine.columns {
+    margin-left: 78.0%;
+  }
+
   .offset-by-ten.column,
-  .offset-by-ten.columns          { margin-left: 86.6666666667%; }
+  .offset-by-ten.columns {
+    margin-left: 86.6666666667%;
+  }
+
   .offset-by-eleven.column,
-  .offset-by-eleven.columns       { margin-left: 95.3333333333%; }
+  .offset-by-eleven.columns {
+    margin-left: 95.3333333333%;
+  }
 
   .offset-by-one-third.column,
-  .offset-by-one-third.columns    { margin-left: 34.6666666667%; }
+  .offset-by-one-third.columns {
+    margin-left: 34.6666666667%;
+  }
+
   .offset-by-two-thirds.column,
-  .offset-by-two-thirds.columns   { margin-left: 69.3333333333%; }
+  .offset-by-two-thirds.columns {
+    margin-left: 69.3333333333%;
+  }
 
   .offset-by-one-half.column,
-  .offset-by-one-half.columns     { margin-left: 52%; }
+  .offset-by-one-half.columns {
+    margin-left: 52%;
+  }
 
 }
 
@@ -142,9 +228,11 @@ font-weight: 400; */
   .no-print {
     display: none;
   }
+
   .pagebreak {
     page-break-before: always;
   }
+
   .pagebreak-after {
     page-break-after: always;
   }
@@ -155,7 +243,7 @@ font-weight: 400; */
   }
 
   div.user-select-none.svg-container {
-  width: 50% !important;
+    width: 50% !important;
   }
 
   /* tables */
@@ -165,7 +253,7 @@ font-weight: 400; */
 
   /* comment out for charts */
   tr {
-  line-height: 2.25 !important;
+    line-height: 2.25 !important;
   }
 
   .pretty-container {
@@ -183,16 +271,64 @@ html {
 
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   margin-top: 0;
   margin-bottom: 0;
-  font-weight: 300; }
-h1 { font-size: 4.5rem; line-height: 1.2;  letter-spacing: -.1rem; margin-bottom: 2rem; }
-h2 { font-size: 3.6rem; line-height: 1.25; letter-spacing: -.1rem; margin-bottom: 0px; margin-top: 1rem;}
-h3 { font-size: 3.0rem; line-height: 1.3;  letter-spacing: -.1rem; margin-bottom: 1.5rem; margin-top: 1.5rem;}
-h4 { font-size: 2.6rem; line-height: 1.35; letter-spacing: -.08rem; margin-bottom: 1.5rem; margin-top: -10px; margin-left: 1rem}
-h5 { font-size: 2.2rem; line-height: 1.5;  letter-spacing: -.05rem; margin-bottom: 0.6rem; margin-top: -0.6rem;}
-h6 { font-size: 2.0rem; line-height: 1.6;  letter-spacing: 0; margin-bottom: 0.75rem; margin-top: 0.75rem;}
+  font-weight: 300;
+}
+
+h1 {
+  font-size: 4.5rem;
+  line-height: 1.2;
+  letter-spacing: -.1rem;
+  margin-bottom: 2rem;
+}
+
+h2 {
+  font-size: 3.6rem;
+  line-height: 1.25;
+  letter-spacing: -.1rem;
+  margin-bottom: 0px;
+  margin-top: 1rem;
+}
+
+h3 {
+  font-size: 3.0rem;
+  line-height: 1.3;
+  letter-spacing: -.1rem;
+  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+h4 {
+  font-size: 2.6rem;
+  line-height: 1.35;
+  letter-spacing: -.08rem;
+  margin-bottom: 1.5rem;
+  margin-top: -10px;
+  margin-left: 1rem
+}
+
+h5 {
+  font-size: 2.2rem;
+  line-height: 1.5;
+  letter-spacing: -.05rem;
+  margin-bottom: 0.6rem;
+  margin-top: -0.6rem;
+}
+
+h6 {
+  font-size: 2.0rem;
+  line-height: 1.6;
+  letter-spacing: 0;
+  margin-bottom: 0.75rem;
+  margin-top: 0.75rem;
+}
 
 pre,
 dl,
@@ -227,20 +363,20 @@ hr {
   margin-right: auto;
   border-bottom: solid steelblue;
   border-width: thin;
-  }
+}
 
- .line_bottom {
-    margin-top: 5px;
-    }
+.line_bottom {
+  margin-top: 5px;
+}
 
 /** Containers **/
 .row {
   display: flex;
 }
 
-.analysis-comparison-dropdown-row {
+.comparison-dropdown-row {
   display: flex;
-  margin-top: 7px;  
+  margin-top: 7px;
 }
 
 .pretty-container {
@@ -319,7 +455,7 @@ hr {
   min-width: 50%;
   position: relative;
   box-shadow: 2px 2px 2px lightgrey;
-  }
+}
 
 .pretty-container__key {
   border-radius: 5px;
@@ -461,12 +597,12 @@ hr {
   width: 25%;
 }
 
-.analysis-comparison-dropdown-control {
+.comparison-dropdown-control {
   margin: 0;
   float: left;
 }
 
-.analysis-comparison-dropdown-label {
+.comparison-dropdown-label {
   padding-left: 5px;
   font-size: 1.1rem;
 }
@@ -531,15 +667,19 @@ hr {
 /** Font Awesome Override **/
 
 /* fixes issue with Font Awesome Icon pseudo :before tag */
-.cell-markdown > p:has(i.fa.fa-circle.center-icon) {
+.cell-markdown>p:has(i.fa.fa-circle.center-icon) {
   display: flex;
   height: 100%;
   justify-content: center;
   align-items: center;
 }
+
 /* TODO: Centers n-size text - need it because I cant otherwise figure out how to center markdown */
 /* TODO: Try to remove markdown from n-size so I can use table styling to center */
-.cell-markdown > p /*:has(i.fa.fa-circle.center-icon) */ {
+.cell-markdown>p
+
+/*:has(i.fa.fa-circle.center-icon) */
+  {
   display: flex;
   height: 100%;
   justify-content: center;
@@ -568,8 +708,7 @@ hr {
 }
 
 /* Overrides dmc.Table styling */
-[class*="mantine"] > table
-{
+[class*="mantine"]>table {
   width: 100% !important;
   border-spacing: 0;
   border-collapse: separate;
@@ -577,8 +716,7 @@ hr {
   border: 1px solid #6783a9;
 }
 
-[class*="mantine"] thead tr th
-{
+[class*="mantine"] thead tr th {
   line-height: .5;
   font-size: 11px;
   font-weight: 700;
@@ -597,8 +735,7 @@ hr {
   border-bottom: none;
 } */
 
-[class*="mantine"] tbody tr td
-{
+[class*="mantine"] tbody tr td {
   line-height: 1.25;
   font-size: 10px;
   font-weight: 500;
@@ -606,58 +743,56 @@ hr {
   text-align: left;
 }
 
-[class*="mantine"] tbody tr:first-of-type td:first-child
-{
-  color:#0D9FE1;
+[class*="mantine"] tbody tr:first-of-type td:first-child {
+  color: #0D9FE1;
   font-weight: 700;
   border-right: 1px solid #b2bdd4;
 }
 
-[class*="mantine"] tbody tr:nth-of-type(2) td:first-child
-{
-  color:#87bc45;
+[class*="mantine"] tbody tr:nth-of-type(2) td:first-child {
+  color: #87bc45;
   font-weight: 800;
-  border-right: 1px solid rgba(192,193,199, 2);
+  border-right: 1px solid rgba(192, 193, 199, 2);
 }
-[class*="mantine"] tbody tr:nth-of-type(3) td:first-child
-{
-  color:#F5A30F;
+
+[class*="mantine"] tbody tr:nth-of-type(3) td:first-child {
+  color: #F5A30F;
   font-weight: 800;
-  border-right: 1px solid rgba(192,193,199, 2);
+  border-right: 1px solid rgba(192, 193, 199, 2);
 }
-[class*="mantine"] tbody tr:nth-of-type(4) td:first-child
-{
-  color:#ea5545;
+
+[class*="mantine"] tbody tr:nth-of-type(4) td:first-child {
+  color: #ea5545;
   font-weight: 800;
-  border-right: 1px solid rgba(192,193,199, 2);
+  border-right: 1px solid rgba(192, 193, 199, 2);
 }
 
 /* The im-very-special id is a td id for situations where there are only 3 metrics and
   we want to make sure that the 3rd metric is colored red and not orange */
 #im-very-special {
-  color:#ea5545;
+  color: #ea5545;
   font-weight: 800;
-  border-right: 1px solid rgba(192,193,199, 2);
+  border-right: 1px solid rgba(192, 193, 199, 2);
 }
 
 /** Plotly Dash Overrides **/
 /* Overrides certain styles within the hoverlayer (for x hover mode) 
    Control the page using the id of the single-analysis page div*/
-#year-over-year-grade .hoverlayer > .hovertext > path {
+#year-over-year-grade .hoverlayer>.hovertext>path {
   stroke-width: 0px !important;
   stroke: none !important;
 }
 
-#year-over-year-grade .hoverlayer > .hovertext > text.nums {
+#year-over-year-grade .hoverlayer>.hovertext>text.nums {
   font-weight: 500;
-  fill:#ffffff !important;
+  fill: #ffffff !important;
 }
 
-#year-over-year-grade .hoverlayer > .axistext > path {
+#year-over-year-grade .hoverlayer>.axistext>path {
   fill: steelblue !important;
 }
 
-#year-over-year-grade .hoverlayer > .axistext > text {
+#year-over-year-grade .hoverlayer>.axistext>text {
   font-weight: 600;
 }
 
@@ -691,9 +826,9 @@ hr {
 }
 
 /* increase datatable header height */
-.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner tr:first-of-type{
-    min-height: 30px;
-    height: 30px;
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner tr:first-of-type {
+  min-height: 30px;
+  height: 30px;
 }
 
 /*  This little bit of sorcery overrides the display of any pretty_container
@@ -702,12 +837,11 @@ hr {
     element. Any other components in a div without one of these three things that
     we WANT to display must be added to the chained selector
 */
-.pretty_container:not(:has(
-  div.dash-table-container td,
-  div.js-plotly-plot,
-  div.dash-dropdown,
-  p#academic-information-notes-string,
-  p#financial-analysis-notes-string)) {
+.pretty_container:not(:has(div.dash-table-container td,
+    div.js-plotly-plot,
+    div.dash-dropdown,
+    p#academic-information-notes-string,
+    p#financial-analysis-notes-string)) {
   display: none;
 }
 
@@ -724,30 +858,37 @@ hr {
 button {
   border-radius: 0;
 }
+
 button:focus:not(:focus-visible) {
   outline: 0;
 }
+
 button,
 select {
   text-transform: none;
 }
+
 [role="button"] {
   cursor: pointer;
 }
+
 button {
   -webkit-appearance: button;
   appearance: button;
 }
+
 [type="button"]:not(:disabled),
 [type="reset"]:not(:disabled),
 [type="submit"]:not(:disabled),
 button:not(:disabled) {
   cursor: pointer;
 }
+
 .input-group .btn {
   position: relative;
   z-index: 2;
 }
+
 .input-group .btn:focus {
   z-index: 5;
 }
@@ -762,9 +903,9 @@ button:not(:disabled) {
   font-weight: 500;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(192,193,199, .5);
+  border: 1px solid rgba(192, 193, 199, .5);
   border-radius: .5rem;
-  padding:6px;
+  padding: 6px;
   /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
@@ -773,7 +914,7 @@ button:not(:disabled) {
 
 @media (prefers-reduced-motion: reduce) {
   .btn {
-      transition: none;
+    transition: none;
   }
 }
 
@@ -787,9 +928,9 @@ button:not(:disabled) {
   font-weight: 600;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(70,130,180, .5);
+  border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
-  padding:6px;
+  padding: 6px;
   /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
@@ -806,14 +947,15 @@ button:not(:disabled) {
   font-weight: 600;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(70,130,180, .5);
+  border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
-  padding:6px;
+  padding: 6px;
   /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
   box-sizing: border-box;
 }
+
 .btn-outline-primary {
   --bs-btn-color: #6783a9;
   --bs-btn-border-color: #6783a9;
@@ -831,8 +973,7 @@ button:not(:disabled) {
   --bs-gradient: none;
 }
 
-.btn-group
- {
+.btn-group {
   position: relative;
   display: inline-flex;
   vertical-align: middle;
@@ -866,8 +1007,9 @@ button:not(:disabled) {
   clip: rect(0, 0, 0, 0);
   pointer-events: none;
 }
-.btn-check:disabled + .btn,
-.btn-check[disabled] + .btn {
+
+.btn-check:disabled+.btn,
+.btn-check[disabled]+.btn {
   pointer-events: none;
   filter: none;
   opacity: 0.65;
@@ -904,9 +1046,9 @@ a.nav-link:hover {
   font-weight: 600;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(70,130,180, .5);
+  border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
-  padding:6px;
+  padding: 6px;
   /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
@@ -923,9 +1065,9 @@ a.nav-link:hover {
   font-weight: 600;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(70,130,180, .5);
+  border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
-  padding:6px;
+  padding: 6px;
   /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
@@ -942,9 +1084,9 @@ a.nav-link:hover {
   font-weight: 500;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(192,193,199, .5);
+  border: 1px solid rgba(192, 193, 199, .5);
   border-radius: .5rem;
-  padding:6px;
+  padding: 6px;
   /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
@@ -958,7 +1100,7 @@ a.nav-link:hover {
   float: left;
   position: relative;
   /* line-height: 1.3; */
-  }
+}
 
 .sub-tabs {
   z-index: 99;
@@ -976,17 +1118,18 @@ a.nav-link:hover {
   margin-top: 3px;
   width: fit-content;
   white-space: nowrap;
-  float:left;
+  float: left;
   /* width: 100%; */
   /* display: block; */
 }
 
-.radio-group-academic-subheader  {
+.radio-group-academic-subheader {
   margin-top: 10px;
   margin-bottom: 7px;
 }
 
-#subnav-academic-analysis, #subnav-academic-info {
+#subnav-academic-analysis,
+#subnav-academic-info {
   margin-top: 10px;
   margin-bottom: 7px;
 }
@@ -1032,11 +1175,11 @@ legend {
   margin-bottom: 0px;
 }
 
-label > #text {
-	padding-bottom: 12px;
+label>#text {
+  padding-bottom: 12px;
 }
 
-label > .label-body {
+label>.label-body {
   display: inline-block;
   margin-left: .5rem;
   font-weight: normal;
@@ -1049,7 +1192,7 @@ label > .label-body {
   font-family: 'Inter', sans-serif;
   color: #ffffff;
   text-align: center;
-  margin:auto;
+  margin: auto;
   font-weight: 700;
   padding-bottom: 5px;
   padding-top: 5px;
@@ -1131,7 +1274,7 @@ label > .label-body {
   bottom: 25%;
   left: 2%;
   width: 35%;
-  border-top: .5px solid rgb(201,211,224);
+  border-top: .5px solid rgb(201, 211, 224);
 }
 
 .nsize-string {
@@ -1169,16 +1312,17 @@ label > .label-body {
   bottom: 90%;
   left: 3%;
   width: 35%;
-  border-top: .5px solid rgb(201,211,224);
+  border-top: .5px solid rgb(201, 211, 224);
 }
 
 .banner {
   color: #6783a9;
   font-size: 14px;
   font-weight: 400;
-  border-top: .5px solid rgb(201,211,224);
-  border-bottom: .5px solid rgb(201,211,224);
+  border-top: .5px solid rgb(201, 211, 224);
+  border-bottom: .5px solid rgb(201, 211, 224);
 }
+
 /** Logout Button **/
 .logout-button {
   text-transform: uppercase;
@@ -1188,7 +1332,7 @@ label > .label-body {
   font-size: 12px;
   margin-top: 10px;
   font-weight: 300;
-  border: 1px solid rgba(192,193,199, .5);
+  border: 1px solid rgba(192, 193, 199, .5);
   border-radius: .5rem;
   padding-top: 8px;
   height: 26px;
@@ -1203,7 +1347,7 @@ a.logout-button:hover {
   background-color: #c0c1c7;
   font-size: 12px;
   font-weight: 400;
-  border: 1px solid rgba(70,130,180, .5);
+  border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
   padding-top: 8px;
   height: 26px;
@@ -1252,28 +1396,35 @@ there.
 
 /* Larger than tablet (also point when grid becomes active) */
 @media (min-width: 550px) {
-.one.column,
-.one.columns {
+
+  .one.column,
+  .one.columns {
     width: 8%;
-}
-.two.columns {
+  }
+
+  .two.columns {
     width: 16.25%;
-}
-.three.columns {
+  }
+
+  .three.columns {
     width: 22%;
-}
-.four.columns {
+  }
+
+  .four.columns {
     width: calc(100% / 3);
-}
-.five.columns {
+  }
+
+  .five.columns {
     width: calc(100% * 5 / 12);
-}
-.six.columns {
+  }
+
+  .six.columns {
     width: 49.75%;
-}
-.seven.columns {
+  }
+
+  .seven.columns {
     width: calc(100% * 7 / 12);
-}
+  }
 
 }
 
