@@ -1722,7 +1722,7 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
-    # sort dataframe by the first column and reset index
+    # sort dataframe by the column with the most recent year of datafirst column with data and reset index
     data = data.sort_values(data.columns[1], ascending=False, na_position="last")
 
     data = data.reset_index(drop=True)

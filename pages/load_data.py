@@ -905,22 +905,18 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
-    # TODO: HERTE - Choking on type error at some point after here
-
-    print(school_data)
-    # track school name and school id separately
-    school_index = school_data[["School Name", "School ID", "Low Grade", "High Grade"]]
+    # track school name, school id, and gradespan separately
+    school_info = school_data[["School Name", "School ID", "Low Grade", "High Grade"]]
 
     school_name = school_data["School Name"][0]
 
     school_data[school_name] = pd.to_numeric(
         school_data[passed], errors="coerce"
     ) / pd.to_numeric(school_data[tested], errors="coerce")
-    school_data = school_data.drop(["School Name", passed, tested], axis=1)
+
+    school_data = school_data.drop(["School Name", "Low Grade", "High Grade", passed, tested], axis=1)
     school_data = school_data.sort_values("Year").reset_index(drop=True)
 
-    print("HERE")
-    print(school_data)
     # drop rows (years) where the school has no data
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]
@@ -948,7 +944,7 @@ def get_year_over_year_data(*args):
         corp_data[corp_data["Corporation Name"][0]] = pd.to_numeric(
             corp_data[passed], errors="coerce"
         ) / pd.to_numeric(corp_data[tested], errors="coerce")
-        corp_data = corp_data.drop(["Corporation Name", passed, tested], axis=1)
+        corp_data = corp_data.drop(["Corporation Name", "Low Grade", "High Grade", passed, tested], axis=1)
         corp_data = corp_data.sort_values("Year").reset_index(drop=True)
 
         # Comparison School Data
@@ -961,29 +957,31 @@ def get_year_over_year_data(*args):
 
         q3 = text(query_string3)
 
-        comp_data = run_query(q3, params)
+        comparable_schools_data = run_query(q3, params)
 
-        comp_data[result] = pd.to_numeric(
-            comp_data[passed], errors="coerce"
-        ) / pd.to_numeric(comp_data[tested], errors="coerce")
+        comparable_schools_data[result] = pd.to_numeric(
+            comparable_schools_data[passed], errors="coerce"
+        ) / pd.to_numeric(comparable_schools_data[tested], errors="coerce")
 
-        comp_index = comp_data[["School Name", "School ID"]]
+        # Store information about each school in separate df
+        comparable_schools_info = comparable_schools_data[["School Name", "School ID", "Low Grade", "High Grade"]]
 
         # combine school and comp indexs into a list of School Names and School IDs
-        school_id_list = pd.concat([school_index, comp_index], ignore_index=True)
-        school_id_list = school_id_list.drop_duplicates(subset=["School ID"])
-        school_id_list = school_id_list.reset_index(drop=True)
+        all_school_info = pd.concat([school_info, comparable_schools_info], ignore_index=True)
 
-        comp_data = comp_data.pivot(index="Year", columns="School Name", values=result)
-        comp_data = comp_data.reset_index()
-        comp_data = comp_data.sort_values("Year")
+        all_school_info = all_school_info.drop_duplicates(subset=["School ID"])
+        all_school_info = all_school_info.reset_index(drop=True)
+
+        comparable_schools_data = comparable_schools_data.pivot(index="Year", columns="School Name", values=result)
+        comparable_schools_data = comparable_schools_data.reset_index()
+        comparable_schools_data = comparable_schools_data.sort_values("Year")
 
         result = pd.merge(
-            pd.merge(school_data, corp_data, on="Year"), comp_data, on="Year"
+            pd.merge(school_data, corp_data, on="Year"), comparable_schools_data, on="Year"
         )
 
         # account for changes in the year
         excluded_years = get_excluded_years(params["year"])
         result = result[~result["Year"].isin(excluded_years)]
 
-    return result, school_id_list
+    return result, all_school_info

@@ -24,18 +24,20 @@ dash.register_page(
     order=11,
 )
 
+
 # Set dropdown options for comparison schools
 @callback(
     Output("analysis-multi-comparison-dropdown", "options"),
-    Output("analysis-multi-input-warning","children"),
+    Output("analysis-multi-input-warning", "children"),
     Output("analysis-multi-comparison-dropdown", "value"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("analysis-multi-comparison-dropdown", "value"),
     Input("analysis-type-radio", "value"),
 )
-def set_dropdown_options(school: str, year: str, comparison_schools: list, analysis_type_value = str):
-
+def set_dropdown_options(
+    school: str, year: str, comparison_schools: list, analysis_type_value=str
+):
     string_year = year
     numeric_year = int(string_year)
 
@@ -62,15 +64,16 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, analy
     # for school size here (probably only impacts ~20 schools)
     # the second condition ensures that the school is retained if it exists
     if school_type == "K8":
-        schools_by_distance = schools_by_distance[(schools_by_distance["School Total|ELA Total Tested"] >= 20) |
-            (schools_by_distance["School ID"] == int(school))]
+        schools_by_distance = schools_by_distance[
+            (schools_by_distance["School Total|ELA Total Tested"] >= 20)
+            | (schools_by_distance["School ID"] == int(school))
+        ]
 
     # If school doesn't exist
     if int(school) not in schools_by_distance["School ID"].values:
-        return [],[],[]
+        return [], [], []
 
     else:
-
         # NOTE: Before we do the distance check, we reduce the size of the df removing
         # schools where there is no, or only one grade overlap between the comparison schools.
         # the variable "overlap" is one less than the the number of grades that we want as a
@@ -78,12 +81,23 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, analy
 
         # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
         if school_type != "AHS":
-
             overlap = 1
-            schools_by_distance = schools_by_distance.replace({"Low Grade" : { "PK" : 0, "KG" : 1}})
-            schools_by_distance["Low Grade"] = schools_by_distance["Low Grade"].astype(int)
-            schools_by_distance["High Grade"] = schools_by_distance["High Grade"].astype(int)
-            school_grade_span = schools_by_distance.loc[schools_by_distance["School ID"] == int(school)][["Low Grade","High Grade"]].values[0].tolist()
+            schools_by_distance = schools_by_distance.replace(
+                {"Low Grade": {"PK": 0, "KG": 1}}
+            )
+            schools_by_distance["Low Grade"] = schools_by_distance["Low Grade"].astype(
+                int
+            )
+            schools_by_distance["High Grade"] = schools_by_distance[
+                "High Grade"
+            ].astype(int)
+            school_grade_span = (
+                schools_by_distance.loc[
+                    schools_by_distance["School ID"] == int(school)
+                ][["Low Grade", "High Grade"]]
+                .values[0]
+                .tolist()
+            )
             school_low = school_grade_span[0]
             school_high = school_grade_span[1]
 
@@ -109,38 +123,45 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, analy
             #       low grade, but high grade (4) minus the selected school's low grade (5) is not greater
             #       (-1) than the overlap (1).
 
-            schools_by_distance = schools_by_distance.loc[(
-                    (schools_by_distance["Low Grade"] <= school_low) & \
-                    (schools_by_distance["High Grade"] - school_low >= overlap)
-                ) | \
+            schools_by_distance = schools_by_distance.loc[
                 (
-                    (schools_by_distance["Low Grade"] >= school_low) & \
-                    (school_high - schools_by_distance["Low Grade"]  >= overlap)
-                ), :]
+                    (schools_by_distance["Low Grade"] <= school_low)
+                    & (schools_by_distance["High Grade"] - school_low >= overlap)
+                )
+                | (
+                    (schools_by_distance["Low Grade"] >= school_low)
+                    & (school_high - schools_by_distance["Low Grade"] >= overlap)
+                ),
+                :,
+            ]
 
-            schools_by_distance = schools_by_distance.reset_index(drop = True)
+            schools_by_distance = schools_by_distance.reset_index(drop=True)
 
         all_schools = schools_by_distance.copy()
 
-        school_idx = schools_by_distance[schools_by_distance["School ID"] == int(school)].index
+        school_idx = schools_by_distance[
+            schools_by_distance["School ID"] == int(school)
+        ].index
 
         # NOTE: This should never ever happen because we've already determined that the school exists in
         # the check above. However, it did happen once, somehow, so we leave this in here just in case.
         if school_idx.size == 0:
-            return [],[],[]
+            return [], [], []
 
         # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
-        index_array, dist_array = find_nearest(school_idx,schools_by_distance)
+        index_array, dist_array = find_nearest(school_idx, schools_by_distance)
 
         index_list = index_array[0].tolist()
         distance_list = dist_array[0].tolist()
 
         # Match School ID with indexes
         closest_schools = pd.DataFrame()
-        closest_schools["School ID"] = schools_by_distance[schools_by_distance.index.isin(index_list)]["School ID"]
+        closest_schools["School ID"] = schools_by_distance[
+            schools_by_distance.index.isin(index_list)
+        ]["School ID"]
 
         # Merge the index and distances lists into a dataframe
-        distances = pd.DataFrame({"index":index_list, "y":distance_list})
+        distances = pd.DataFrame({"index": index_list, "y": distance_list})
         distances = distances.set_index(list(distances)[0])
 
         # Merge School ID with Distances index
@@ -148,10 +169,12 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, analy
 
         # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
         comparison_set = pd.merge(combined, all_schools, on="School ID", how="inner")
-        comparison_set = comparison_set.rename(columns = {"y": "Distance"})
+        comparison_set = comparison_set.rename(columns={"y": "Distance"})
 
         # drop selected school (so it cannot be selected in the dropdown)
-        comparison_set = comparison_set.drop(comparison_set[comparison_set["School ID"] == int(school)].index)
+        comparison_set = comparison_set.drop(
+            comparison_set[comparison_set["School ID"] == int(school)].index
+        )
 
         # limit maximum dropdown to the [n] closest schools
         num_schools_expanded = 20
@@ -160,13 +183,17 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, analy
 
         comparison_dropdown = comparison_set.head(num_schools_expanded)
 
-        comparison_dict = dict(zip(comparison_dropdown["School Name"], comparison_dropdown["School ID"]))
+        comparison_dict = dict(
+            zip(comparison_dropdown["School Name"], comparison_dropdown["School ID"])
+        )
 
         # final list will be displayed in order of increasing distance from selected school
         comparison_list = dict(comparison_dict.items())
 
         # Set default display selections to all schools in the list
-        default_options = [{"label":name,"value":id} for name, id in comparison_list.items()]
+        default_options = [
+            {"label": name, "value": id} for name, id in comparison_list.items()
+        ]
         options = default_options
 
         # value for number of default display selections and maximum
@@ -187,10 +214,16 @@ def set_dropdown_options(school: str, year: str, comparison_schools: list, analy
             if len(comparison_schools) > max_num_to_display:
                 input_warning = html.P(
                     id="multi-year-input-warning",
-                    children="Limit reached (Maximum of " + str(max_num_to_display+1) + " schools).",
+                    children="Limit reached (Maximum of "
+                    + str(max_num_to_display + 1)
+                    + " schools).",
                 )
                 options = [
-                    {"label": option["label"], "value": option["value"], "disabled": True}
+                    {
+                        "label": option["label"],
+                        "value": option["value"],
+                        "disabled": True,
+                    }
                     for option in default_options
                 ]
 
@@ -288,7 +321,7 @@ def update_academic_analysis(
                 label = "Year over Year Comparison (SAT At Benchmark) - " + category
                 msg = ""
 
-                year_over_year_hs_data, school_id_list = get_year_over_year_data(
+                year_over_year_hs_data, all_school_info = get_year_over_year_data(
                     school, comparison_school_list, category, string_year, "sat"
                 )
 
@@ -303,7 +336,7 @@ def update_academic_analysis(
                 label = "Year over Year Comparison (Graduation Rate) - " + category[:-1]
                 msg = ""
 
-                year_over_year_hs_data, school_id_list = get_year_over_year_data(
+                year_over_year_hs_data, all_school_info = get_year_over_year_data(
                     school, comparison_school_list, category, string_year, "grad"
                 )
 
@@ -334,7 +367,7 @@ def update_academic_analysis(
 
             ## Create Year Over Year HS (SAT and Graduation Rate) Chart
             year_over_year_hs = create_year_over_year_layout(
-                school, year_over_year_hs_data, school_id_list, label, msg
+                school, year_over_year_hs_data, all_school_info, label, msg
             )
 
     elif school_type == "K8" or (school_type == "K12" and analysis_type_value == "k8"):
@@ -361,7 +394,7 @@ def update_academic_analysis(
             label = "Year over Year Comparison - " + category
             msg = ""
 
-            year_over_year_k8_data, school_id_list = get_year_over_year_data(
+            year_over_year_k8_data, all_school_info = get_year_over_year_data(
                 school, comparison_school_list, category, string_year, "k8"
             )
 
@@ -398,12 +431,12 @@ def update_academic_analysis(
             k8_analysis_multi_empty_container = {"display": "none"}
             analysis_multi_dropdown_container = {"display": "block"}
 
-            # school_id_list is a dataframe with school names and school ids, it is used in
+            # all_school_info is a dataframe with school names and school ids, it is used in
             # the comparison_table function to identify the index of the school by Id
             year_over_year_grade = create_year_over_year_layout(
                 school,
                 year_over_year_k8_data,
-                school_id_list,
+                all_school_info,
                 label,
                 subcategory_radio_state,
             )
@@ -444,82 +477,84 @@ def update_academic_analysis(
         hs_analysis_multi_main_container,
         hs_analysis_multi_empty_container,
         hs_analysis_multi_no_data,
-        analysis__multi_notes
+        analysis__multi_notes,
     )
 
+
 layout = html.Div(
-# def layout():
-#     return html.Div(
-        [
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div("Add or Remove Schools: ", className="comparison-dropdown-label"),
-                                        ],
-                                        className="bare-container two columns"
-                                    ),
-                                    html.Div(
-                                        [
-                                            dcc.Dropdown(
-                                                id="analysis-multi-comparison-dropdown",
-                                                style={"fontSize": "1.1rem"},
-                                                multi = True,
-                                                clearable = False,
-                                                className="comparison-dropdown-control"
-                                            ),
-                                            html.Div(id="analysis-multi-input-warning"),
-                                        ],
-                                        className="bare-container eight columns"
-                                    ),
-                                ],
-                                className="comparison-dropdown-row"
-                            ),
-                        ],
-                        id="analysis-multi-dropdown-container",
-                        style= {"display": "none"},
-                    ),
-                    html.Div(
-                        [
-                            html.Div(id="year-over-year-grade", children=[]),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        id="multi-year-analysis-notes", children=[]
-                                    ),
-                                ],
-                                className="row",
-                            ),
-                        ],
-                        id="k8-analysis-multi-main-container",
-                        style={"display": "none"},
-                    ),
-                    html.Div(
-                        [
-                            html.Div(id="k8-analysis-multi-no-data"),
-                        ],
-                        id="k8-analysis-multi-empty-container",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(id="year-over-year-hs", children=[]),
-                        ],
-                        id="hs-analysis-multi-main-container",
-                        style={"display": "none"},
-                    ),
-                    html.Div(
-                        [
-                            html.Div(id="hs-analysis-multi-no-data"),
-                        ],
-                        id="hs-analysis-multi-empty-container",
-                    ),
-                ],
-                id="multi-academic-analysis-page",
-            )
-        ],
-        id="main-container",
-    )
+    # def layout():
+    #     return html.Div(
+    [
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            "Add or Remove Schools: ",
+                                            className="comparison-dropdown-label",
+                                        ),
+                                    ],
+                                    className="bare-container two columns",
+                                ),
+                                html.Div(
+                                    [
+                                        dcc.Dropdown(
+                                            id="analysis-multi-comparison-dropdown",
+                                            style={"fontSize": "1.1rem"},
+                                            multi=True,
+                                            clearable=False,
+                                            className="comparison-dropdown-control",
+                                        ),
+                                        html.Div(id="analysis-multi-input-warning"),
+                                    ],
+                                    className="bare-container eight columns",
+                                ),
+                            ],
+                            className="comparison-dropdown-row",
+                        ),
+                    ],
+                    id="analysis-multi-dropdown-container",
+                    style={"display": "none"},
+                ),
+                html.Div(
+                    [
+                        html.Div(id="year-over-year-grade", children=[]),
+                        html.Div(
+                            [
+                                html.Div(id="multi-year-analysis-notes", children=[]),
+                            ],
+                            className="row",
+                        ),
+                    ],
+                    id="k8-analysis-multi-main-container",
+                    style={"display": "none"},
+                ),
+                html.Div(
+                    [
+                        html.Div(id="k8-analysis-multi-no-data"),
+                    ],
+                    id="k8-analysis-multi-empty-container",
+                ),
+                html.Div(
+                    [
+                        html.Div(id="year-over-year-hs", children=[]),
+                    ],
+                    id="hs-analysis-multi-main-container",
+                    style={"display": "none"},
+                ),
+                html.Div(
+                    [
+                        html.Div(id="hs-analysis-multi-no-data"),
+                    ],
+                    id="hs-analysis-multi-empty-container",
+                ),
+            ],
+            id="multi-academic-analysis-page",
+        )
+    ],
+    id="main-container",
+)

@@ -119,7 +119,6 @@ def create_chart_label(data: pd.DataFrame) -> str:
                 label = ""
 
         elif data.columns.str.contains("Proficient").any() == True:
-
             # pull subject from the first "subject" column using regex
             subject_columns = [
                 c
@@ -237,13 +236,12 @@ def create_school_label(data: pd.DataFrame) -> pd.Series:
         + ")"
     )
 
-    label = label.drop(["Low Grade", "High Grade"], axis=1)
-
     label = label.replace("\(-\)", "", regex=True)
 
-    # regex is false because we want to replace literal ".0" and not
-    # anychar + "0"
-    label = label.replace(".0", "", regex=False)
+    # escape "." because want to replace literal ".0" and not anychar + "0"
+    label = label.replace("\.0", "", regex=True)
+
+    label = label.drop(["Low Grade", "High Grade"], axis=1)
 
     return label
 

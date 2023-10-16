@@ -712,9 +712,9 @@ def update_academic_analysis(
                     :, selected_corp_data.columns.isin(selected_clean_data.columns)
                 ].copy()
 
-                # add last two missing cols
-                selected_corp_data["Low Grade"] = "KG"
-                selected_corp_data["High Grade"] = "12"
+                # add two missing cols
+                selected_corp_data["Low Grade"] =  np.nan
+                selected_corp_data["High Grade"] =  np.nan
 
                 combined_selected_data = pd.concat(
                     [selected_clean_data, selected_corp_data]

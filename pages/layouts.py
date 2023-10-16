@@ -434,7 +434,6 @@ def create_year_over_year_layout(school_id, data, school_id_list, label, msg):
 
     if data["School ID"][0] != np.int64(school_id):
         layout = no_data_page(label, msg)
-
     else:
         data = data.drop("School ID", axis=1)
 
@@ -456,17 +455,12 @@ def create_year_over_year_layout(school_id, data, school_id_list, label, msg):
         table_data = pd.merge(
             table_data, school_id_list, on=["School Name"], how="left"
         )
-
-        # NOTE: As usualy, getting information back into the DF after the fact is much
-        # more difficult than at the beginning. Specifically, we need to get Low/High
-        # grade back into df in order to create school label
-
-        selected_school = get_school_index(school_id)
-        school_type = selected_school["School Type"].values[0]
-
-        print(school_id_list)
-
+   
         fig = make_multi_line_chart(data, label)
+
+        # Use Low/High grade columns to modify School Name and then drop.
+        table_data["School Name"] = create_school_label(table_data)
+        table_data = table_data.drop(["Low Grade", "High Grade"], axis=1)
 
         table = create_comparison_table(table_data, school_id, "")
         category_string = ""
