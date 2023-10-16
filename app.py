@@ -672,7 +672,9 @@ def navigation(
 
                 # SAT subject and categories (SAT is only group that has subject values
                 # other than ELA & Math)
+                
                 elif analysis_multi_hs_group_value == "SAT":
+
                     analysis_multi_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
                         {"label": "Math", "value": "Math"},
@@ -756,7 +758,9 @@ def navigation(
                     analysis_multi_subcategory_container = {"display": "block"}
 
                 else:
+                    analysis_multi_subcategory_options = []                    
                     analysis_multi_subcategory_value = "No Data"
+                    analysis_multi_subcategory_container = {"display": "block"}
 
             elif analysis_multi_category_value == "Race/Ethnicity":
                 ethnicity = get_ethnicity(
@@ -776,10 +780,14 @@ def navigation(
                         analysis_multi_subcategory_value = ethnicity[0]
 
                     analysis_multi_subcategory_container = {"display": "block"}
+
                 else:
+                    analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = "No Race/Ethnicity Data"
+                    analysis_multi_subcategory_container = {"display": "block"}
 
             elif analysis_multi_category_value == "Subgroup":
+
                 subgroup = get_subgroup(
                     school_id, analysis_type_value, analysis_multi_hs_group_value
                 )
@@ -799,8 +807,12 @@ def navigation(
                         analysis_multi_subcategory_value = subgroup[0]
 
                     analysis_multi_subcategory_container = {"display": "block"}
+                    
                 else:
+
+                    analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = "No Subgroup Data"
+                    analysis_multi_subcategory_container = {"display": "block"}
 
             # for SAT ('School Total') and Grad Rate ('Total) set single value,
             # with no options
