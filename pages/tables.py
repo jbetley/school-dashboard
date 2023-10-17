@@ -1162,7 +1162,6 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
         ]
 
     else:
-        # empty_dict = [{"": ""}]
         table_layout = [
             html.Div(
                 [
@@ -1204,29 +1203,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
     if len(data.index) == 0 or table_size == 1:
         table = no_data_table("No Data to Display.", string_label, "ten")
-        # [
-        #     html.Div(
-        #         [
-        #             html.Label(label, className="label__header"),
-        #             html.Div(
-        #                 dash_table.DataTable(
-        #                     columns = [
-        #                         {"id": "emptytable", "name": "No Data to Display"},
-        #                     ],
-        #                     style_header={
-        #                         "fontSize": "14px",
-        #                         "border": "none",
-        #                         "textAlign": "center",
-        #                         "color": "#6783a9",
-        #                         "fontFamily": "Inter, sans-serif",
-        #                     },
-        #                 )
-        #             )
-        #         ],
-        #         className = "pretty-container ten columns"
-        #     )
-        # ]
-
+ 
     else:
         # determines the col_width class and width of the category column based
         # on the size (# of cols) of the dataframe
@@ -1252,7 +1229,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             col_width = "twelve"
             category_width = 15
 
-        # TODO: Modify headers prior to sending to table function
+        # TODO: Move this to data processing step
         data.columns = data.columns.str.replace("N-Size", "(N)", regex=True)
         data.columns = data.columns.str.replace("Rate", "Rating", regex=True)
         data.columns = data.columns.str.replace("Diff", "Difference", regex=True)
@@ -1588,7 +1565,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         metric_id = re.findall(r"[\d\.]+[a-z]{1}|[\d\.]+", label[0])
 
         def create_tooltip(id: list) -> Tuple[list, list]:
-            # TODO: AHS - split out 1.1, 1.3, 1.2.a and 1.2.b
+            # TODO: AHS - split out 1.1, 1.3 (AHS), 1.2.a (AHS) and 1.2.b (AHS)
             # NOTE: There is a known bug in HoverCard that can cause the browser to hang if the pop
             # up opens in a space where there is no room for it (e.g., if it is set to position "top"
             # and it is triggered by something at the top of the browser window. One workaround is to
@@ -1728,19 +1705,15 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
     data = data.reset_index(drop=True)
     data.columns = data.columns.astype(str)
 
-    # TODO: test to determine whether any data is coming in without School ID
     # locate school index by School ID and then drop School ID column
     school_name_idx = data.index[data["School ID"] == np.int64(school_id)].tolist()[0]
     data = data.drop("School ID", axis=1)
-
-    # else:
-    #     print('HERE IN SCHOOL NAME')
-    #     school_name_idx = data.index[data["School Name"].str.contains(school_id)].tolist()[0]
 
     # hide the header "School Name"
     data = data.rename(columns={"School Name": ""})
 
     if data.columns.str.contains("School Total").any() == True:
+        
         # keep everything between | and "Benchmark %"
         data.columns = data.columns.str.replace("Benchmark %", "")
         data.columns = data.columns.str.replace("School Total\|", "", regex=True)

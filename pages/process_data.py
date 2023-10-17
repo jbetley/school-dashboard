@@ -32,10 +32,6 @@ from .calculations import (
     conditional_fillna,
 )
 
-# NOTE: No K8 academic data exists for 2020
-print("#### Loading Data. . . . . ####")
-
-
 def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
     """
     Process attendance rate data.
@@ -186,7 +182,8 @@ def process_selected_k8_academic_data(data: pd.DataFrame, school_id: str) -> pd.
 
     return final_data
 
-# TODO: Where is this used? Switch to the above function for processing k8 school/comparison school data
+# TODO: Switch to the above function for processing k8 school/comparison school data
+# NOTE: Currently used in academic_information and academic_metrics
 def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     """
     Process a dataframe with ILEARN/IREAD data
@@ -207,10 +204,6 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         axis=1,
     )
     data = data[data.columns[~data.columns.str.contains(r"ELA and Math")]]
-
-    # NOTE: update is twice as fast as fillna?? (.015s vs .045s)
-    # TODO: Test, but as written this does not do anything
-    # data.update(data.apply(pd.to_numeric, errors="coerce"))
 
     # Drop all columns for a Category if the value of "Total Tested" for that Category is "0"
     # This method works even if data is inconsistent, e.g., where no data could be (and is)
@@ -637,11 +630,10 @@ def process_high_school_academic_data(data: pd.DataFrame, school_id: str) -> pd.
         data = data.drop(list(data.filter(regex="ELA and Math")), axis=1)
 
         if data_geo_code == school_geo_code:
+
             # group corp dataframe by year and sum all rows for each category
             data = data.groupby(["Year"]).sum(numeric_only=True)
 
-            # reverse order of rows (Year) and reset index to bring Year back as column
-            # data = data.loc[::-1].reset_index()
             data = data.reset_index()
 
         # Calculate Grad Rate
@@ -731,8 +723,8 @@ def process_high_school_academic_data(data: pd.DataFrame, school_id: str) -> pd.
 
             data_tested = data_tested.drop("Category", axis=1)
 
-            # this cross-merge and substring match process takes about .3s - must be a faster way
-            # t20 = time.process_time()
+            # NOTE: the cross-merge and substring match process takes about .3s,
+            # is there a faster way?
 
             final_data = data.merge(data_tested, how="cross")
 
@@ -819,9 +811,6 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
             axis=1,
         ).copy()
 
-        # remove "Both" columns
-        # data = data.drop(list(data.filter(regex="ELA and Math")), axis=1)
-
         # Calculate Grad Rate
         if "Total|Cohort Count" in data.columns:
             data = calculate_graduation_rate(data)
@@ -894,7 +883,7 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
 
     return data
 
-#TODO: Wehre is this used?
+# NOTE: Used in Academic Metrics only
 def merge_high_school_data(
     all_school_data: pd.DataFrame, all_corp_data: pd.DataFrame
 ) -> pd.DataFrame:

@@ -11,6 +11,8 @@ import re
 from sqlalchemy import create_engine
 from sqlalchemy import text
 
+# NOTE: No K8 academic data exists for 2020
+
 # global variables - yes, global variable bad.
 
 max_display_years = 5
@@ -44,8 +46,9 @@ grades_all = ["Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", 
 
 grades_ordinal = ["3rd", "4th", "5th", "6th", "7th", "8th"]
 
+# K8 Not yet included: 1.3.a, 1.3.b (Mission Specific)
+
 # K8 Deprecated: 1.2.a, 1.2.b, 1.5.a, 1.5.b
-# K8 Not YET included: 1.3.a, 1.3.b (Mission Specific)
 # HS Depracted:  1.7.d, 1.7.e
 # AHS Deprecated: 1.2.a, 1.2b
 # AHS Not Calculated (K8 standards 1.4a & 1.4b)
@@ -180,10 +183,35 @@ metric_strings = {
     ],
 }
 
-# Get stuff from db
 engine = create_engine("sqlite:///data/db_all.db")
 
 print("Database Engine Created . . .")
+
+# Return Dataframe (read_sql is a convenience function wrapper around read_sql_query)
+# If no data matches query, returns an empty dataframe
+def run_query(q, *args):
+    conditions = None
+
+    with engine.connect() as conn:
+        if args:
+            conditions = args[0]
+
+        df = pd.read_sql_query(q, conn, params=conditions)
+
+        # sqlite column headers do not have spaces between words. But we need to display the column names,
+        # so we have to do a bunch of str.replace to account for all conditions. May be a better way, but
+        # this is pretty fast. Adding a space between any lowercase character and any  uppercase/number
+        # character takes care of most of it. The other replace functions catch edge cases.
+        df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
+        df.columns = df.columns.str.replace(
+            r"([WADTO])([CATPB&])", r"\1 \2", regex=True
+        )
+        df.columns = df.columns.str.replace(r"([A])([a])", r"\1 \2", regex=True)
+        df.columns = df.columns.str.replace(r"([1-9])([(])", r"\1 \2", regex=True)
+        df.columns = df.columns.str.replace("or ", " or ")
+        df.columns = df.columns.astype(str)
+
+        return df
 
 
 def get_current_year():
@@ -222,32 +250,18 @@ def get_excluded_years(year: str) -> list:
     return excluded_years
 
 
-# Return Dataframe (read_sql is a convenience function wrapper around read_sql_query)
-# If no data matches query, returns an empty dataframe
-def run_query(q, *args):
-    conditions = None
+def get_school_index(school_id):
+    params = dict(id=school_id)
 
-    with engine.connect() as conn:
-        if args:
-            conditions = args[0]
+    q = text(
+        """
+        SELECT *
+            FROM school_index
+            WHERE school_index.SchoolID = :id
+        """
+    )
 
-        df = pd.read_sql_query(q, conn, params=conditions)
-
-        # sqlite column headers do not have spaces between words. But we need to display the column names,
-        # so we have to do a bunch of str.replace to account for all conditions. May be a better way, but
-        # this is pretty fast. Adding a space between any lowercase character and any  uppercase/number
-        # character takes care of most of it. The other replace functions catch edge cases.
-        df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
-        df.columns = df.columns.str.replace(
-            r"([WADTO])([CATPB&])", r"\1 \2", regex=True
-        )
-        df.columns = df.columns.str.replace(r"([A])([a])", r"\1 \2", regex=True)
-        df.columns = df.columns.str.replace(r"([1-9])([(])", r"\1 \2", regex=True)
-        df.columns = df.columns.str.replace("or ", " or ")
-        df.columns = df.columns.astype(str)
-
-        return df
-
+    return run_query(q, params)
 
 def get_academic_dropdown_years(*args):
     keys = ["id", "type"]
@@ -278,8 +292,13 @@ def get_academic_dropdown_years(*args):
     return years
 
 
+# TODO: The next two functions are almost identical (difference is Q#s). Maybe consolidate?
 def get_financial_info_dropdown_years(school_id):
+    # Processes financial df and returns a list of Year column names for
+    # each year for which ADM Average is greater than '0'
+    
     params = dict(id=school_id)
+    
     q = text(
         """
         SELECT * 
@@ -290,14 +309,12 @@ def get_financial_info_dropdown_years(school_id):
 
     results = run_query(q, params)
 
-    # Processes financial df and returns a list of Year column names for
-    # each year for which ADM Average is greater than '0'
     if len(results.columns) > 3:
         adm_index = results.index[results["Category"] == "ADM Average"].values[0]
 
         results = results.filter(
             regex="^\d{4}"
-        )  # adding '$' to the end of the regex will skip (Q#) years
+        )
 
         for col in results.columns:
             results[col] = pd.to_numeric(results[col], errors="coerce")
@@ -316,6 +333,9 @@ def get_financial_info_dropdown_years(school_id):
 
 
 def get_financial_analysis_dropdown_years(school_id):
+    # Processes financial df and returns a list of Year column names for
+    # each year for which ADM Average is greater than '0'
+
     params = dict(id=school_id)
     q = text(
         """
@@ -327,8 +347,6 @@ def get_financial_analysis_dropdown_years(school_id):
 
     results = run_query(q, params)
 
-    # Processes financial df and returns a list of Year column names for
-    # each year for which ADM Average is greater than '0'
     if len(results.columns) > 3:
         adm_index = results.index[results["Category"] == "ADM Average"].values[0]
 
@@ -432,20 +450,6 @@ def get_graduation_data():
         WHERE SchoolType != "AHS"
         GROUP BY
             Year
-        """
-    )
-
-    return run_query(q, params)
-
-
-def get_school_index(school_id):
-    params = dict(id=school_id)
-
-    q = text(
-        """
-        SELECT *
-            FROM school_index
-            WHERE school_index.SchoolID = :id
         """
     )
 
@@ -684,6 +688,7 @@ def get_letter_grades(*args):
     return run_query(q, params)
 
 
+# TODO: Eventually consolidate and use only second function below.
 def get_k8_school_academic_data(*args):
     keys = ["id"]
     params = dict(zip(keys, args))
@@ -866,10 +871,6 @@ def get_comparable_schools(*args):
     q = text(query_string)
 
     return run_query(q, params)
-
-
-pd.set_option("display.max_columns", None)
-pd.set_option("display.max_rows", None)
 
 
 def get_year_over_year_data(*args):

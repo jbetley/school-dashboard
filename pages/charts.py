@@ -221,6 +221,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
         orientation="h",
         color_discrete_sequence=stacked_color,
         height=300,
+        # custom_data = ["Total Tested"],   # Use this to add info to each trace
     )
 
     # the uniformtext_minsize and uniformtext_mode settings hide bar chart
@@ -242,7 +243,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
         uniformtext_mode="hide",
     )
 
-    # TODO: remove hover 'title' and, if possible, replace with: 'Total Tested: {z}'
+    # TODO: remove hover 'title' (currently the subcategory) and, if possible, replace with: 'Total Tested: {z}'
     # https://stackoverflow.com/questions/59057881/how-to-customize-hover-template-on-with-what-information-to-show
     # fig.update_layout(hovermode='x unified')
 
@@ -251,7 +252,8 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
         insidetextanchor="middle",
         textposition="inside",
         marker_line=dict(width=0),
-        hovertemplate="%{text}",
+        hovertemplate="%{text}", 
+        # hovertemplate="%{text} (n-size: %{customdata[0]})",  # adds n-size (Total Tested) info to each trace.
         hoverinfo="none",
     )
 
@@ -572,9 +574,11 @@ def make_line_chart(values: pd.DataFrame) -> list:
     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
     if (len(cols)) > 0:
-        # NOTE: Currently insufficient n-size and no data information is displayed below
-        # the fig in the layout. Would prefer to somehow add this to the actual
-        # trace (x-unified) hover, but it doesn't currently seem to be possible.
+        
+        # NOTE: the "insufficient n-size" and "no data" information is usually displayed
+        # below the fig in the layout. However, given the size of the figs, it makes them
+        # way too cluttered. So it is currently removed. I would prefer to somehow add this
+        # to the trace (x-unified) hover, but it doesn't currently seem to be possible.
         # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
         data, no_data_string = check_for_no_data(data)
 
@@ -628,7 +632,9 @@ def make_line_chart(values: pd.DataFrame) -> list:
             else:
                 y_value = -0.4
 
+            # use this template if using x-unified
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
+            
             fig.update_traces(hovertemplate=None)  # type: ignore
             fig.update_layout(  # type: ignore
                 hoverlabel=dict(
@@ -833,7 +839,7 @@ def make_growth_chart(
         # )
 
     # TODO: Rework this to use a regular px.line so that we can adjust the ticks
-    # TODO: the same way we do in make_line_chart
+    # TODO: the same way we do in make_line_chart (that is edge to edge)
     xaxis_data = pd.DataFrame()
     xaxis_data["Year"] = data_me.index.astype(str)
 

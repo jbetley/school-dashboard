@@ -611,7 +611,6 @@ def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
 # TODO: Test this!
 
-
 def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a dataframe of float values and returns the same dataframe with one

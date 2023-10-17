@@ -62,8 +62,6 @@ dash.register_page(
 def set_dropdown_options(
     school_id: str, year: str, comparison_schools: list, analysis_type_value=str
 ):
-    # TODO: TEST REMOVING THIS LINE HERE
-    # string_year = "2019" if year == "2020" else year
 
     string_year = year
     numeric_year = int(string_year)
@@ -79,8 +77,6 @@ def set_dropdown_options(
 
     # There is some time cost for running the dropdown selection function (typically
     # ~0.8 - 1.2s), so we want to exit out as early as possible if we know it isn't necessary
-
-    # For AHS we use other AHS as a placeholder
 
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
     # SQL query depends on school type

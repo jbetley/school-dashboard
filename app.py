@@ -60,7 +60,7 @@ from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
 
 import dash
-from dash import ctx, dcc, html, Input, Output, State, callback
+from dash import dcc, html, Input, Output, State, callback
 
 # from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
@@ -463,6 +463,7 @@ def navigation(
 
     # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
+
         # hide academic analysis navigation
         analysis_type_value = "k8"
         analysis_type_options = []
@@ -579,6 +580,7 @@ def navigation(
 
     # analysis_single_year.py and analysis_multiple_years.py
     elif "analysis" in current_page:
+
         # hide academic information subnavigation
         info_nav_container = {"display": "none"}
         info_subnav_container = {"display": "none"}
@@ -614,6 +616,7 @@ def navigation(
 
         # analysis_multiple_years.py
         if "multi" in current_page:
+
             # group button for HS/AHS/K12 (hs type)
             if (
                 school_type == "HS"
@@ -737,7 +740,8 @@ def navigation(
                         analysis_multi_category_value = "Grade"
 
             # get years for subcategoires
-            # TODO: duplicative code. Switch with an input value for year_options.
+            # TODO: The following is a duplication of code from year-dropdown. Need
+            # to switch this with an Input value for dropdown-year, "options".
             if school_type == "K8" and analysis_type_value == "hs":
                 analysis_type_value = "k8"
 
@@ -969,9 +973,6 @@ def redirect_hs(school: str, current_page: str):
 def layout():
     return html.Div(
         [
-            # # used to store 'academic-data' value from analysis_multi_year pages to determine
-            # # which buttons to display
-            # dcc.Store(id="academic-data-store", data = {}, storage_type = "session"),
             dcc.Location(id="url", refresh="callback-nav"),
             html.Div(id="hidden", style={"display": "none"}),
             html.Div(

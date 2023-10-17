@@ -23,8 +23,6 @@ from .tables import create_comparison_table, no_data_page
 def create_hs_analysis_layout(
     data_type: str, data: pd.DataFrame, categories: list, school_id: str
 ) -> list:
-    selected_school = get_school_index(school_id)
-    school_name = selected_school["School Name"].values[0]
 
     tested_categories = []
 
@@ -86,11 +84,6 @@ def create_hs_analysis_layout(
         # Once the missing category and missing school strings are built, we drop any columns
         # where the school has no data by finding the index of the row containing the school
         # name and dropping all columns where the row at school_name_idx has a NaN value
-
-        # TODO: Test, pretty sure we already do this in analysis_single_year (line 397)
-        # school_name_idx = analysis_data.index[analysis_data["School Name"].str.contains(school_name)].tolist()[0]
-        # school_name_idx = data.index[data["School ID"] ==  np.int64(school)].tolist()[0]
-        # analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_name_idx].isna()]
 
         if len(analysis_data.columns) > 1:
             analysis_label = create_chart_label(analysis_data)
