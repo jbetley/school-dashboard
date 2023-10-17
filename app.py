@@ -74,7 +74,7 @@ from pages.load_data import (
     get_financial_analysis_dropdown_years,
     get_gradespan,
     get_ethnicity,
-    get_subgroup
+    get_subgroup,
 )
 from pages.layouts import create_radio_layout
 from pages.subnav import subnav_academic_information, subnav_academic_analysis
@@ -296,12 +296,12 @@ def set_dropdown_value(charter_options):
     Output("year-dropdown", "value"),
     Output("hidden", "children"),
     Input("charter-dropdown", "value"),
-    Input("year-dropdown", "value"),
     Input("url", "href"),
-    Input("analysis-type-radio", "value"),
+    State("analysis-type-radio", "value"),
+    State("year-dropdown", "value"),
 )
 def set_year_dropdown_options(
-    school_id: str, year: str, current_page: str, analysis_type_value: str
+    school_id: str, current_page: str, analysis_type_state: str, year_state: str
 ):
     max_dropdown_years = 5
 
@@ -313,8 +313,8 @@ def set_year_dropdown_options(
     # for K12 schools, we need to use "HS" data when analysis_type is "hs."" We also
     # want to make sure that we reset the type if the user switches to a k8 school
     # from a AHS/HS/K12 where the analysis_type was "hs"
-    if school_type == "K8" and analysis_type_value == "hs":
-        analysis_type_value = "k8"
+    if school_type == "K8" and analysis_type_state == "hs":
+        analysis_type_state = "k8"
 
     # Guest schools do not have financial data
     if (
@@ -327,7 +327,7 @@ def set_year_dropdown_options(
             "academic_information" in current_page
             or "analysis_single" in current_page
             or "analysis_multiple" in current_page
-        ) and analysis_type_value == "hs":
+        ) and analysis_type_state == "hs":
             years = get_academic_dropdown_years(school_id, "HS")
 
         else:
@@ -356,17 +356,17 @@ def set_year_dropdown_options(
     #       than the first year of available data); or
     #   4) the selected year.
 
-    if year is None:
+    if year_state is None:
         year_value = str(first_available_year)
 
-    elif int(year) < int(earliest_available_year):
+    elif int(year_state) < int(earliest_available_year):
         year_value = str(earliest_available_year)
 
-    elif int(year) > int(first_available_year):
+    elif int(year_state) > int(first_available_year):
         year_value = str(first_available_year)
 
     else:
-        year_value = str(year)
+        year_value = str(year_state)
 
     # K8 schools do not have data for 2020 - so that year should never appear in the dropdown.
     # HS, AHS, and K12 schools with the "HS" academic_type_radio button selected could have 2020 data-
@@ -380,9 +380,9 @@ def set_year_dropdown_options(
         )
         and (
             (school_type == "K8")
-            or (school_type == "K12" and analysis_type_value == "k8")
+            or (school_type == "K12" and analysis_type_state == "k8")
         )
-        and year == "2020"
+        and year_state == "2020"
     ):
         year_value = "2019"
 
@@ -396,9 +396,10 @@ def set_year_dropdown_options(
     return year_options, year_value, current_page
 
 
-# Subnavigation #
+# Subnavigation - Year Dropdown #
 # NOTE: There are no doubt better ways to structure this; however, given how complicated
-# it is, I have used a single callback for the sake of clarity
+# it is and how the values are interlinked, in order to avoid circular callbacks, we are
+# using a single callback
 @callback(
     Output("academic-information-type-radio", "options"),
     Output("academic-information-type-radio", "value"),
@@ -427,6 +428,7 @@ def set_year_dropdown_options(
     Output("analysis-navigation-container", "style"),
     Input("url", "href"),
     Input("charter-dropdown", "value"),
+    Input("year-dropdown", "value"),
     Input("academic-information-type-radio", "value"),
     Input("analysis-type-radio", "value"),
     Input("analysis-multi-hs-group-radio", "value"),
@@ -439,9 +441,10 @@ def set_year_dropdown_options(
 def navigation(
     current_page: str,
     school_id: str,
+    year_value: str,
     info_type_value: str,
     analysis_type_value: str,
-    analysis_hs_group_state: str,
+    analysis_hs_group_value: str,
     analysis_multi_category_value: str,
     analysis_multi_subcategory_value: str,
     info_category_options_state: list,
@@ -624,8 +627,8 @@ def navigation(
 
                 analysis_multi_hs_group_container = {"display": "block"}
 
-                if analysis_hs_group_state:
-                    analysis_multi_hs_group_value = analysis_hs_group_state
+                if analysis_hs_group_value:
+                    analysis_multi_hs_group_value = analysis_hs_group_value
                 else:
                     analysis_multi_hs_group_value = "Graduation Rate"
 
@@ -672,9 +675,8 @@ def navigation(
 
                 # SAT subject and categories (SAT is only group that has subject values
                 # other than ELA & Math)
-                
-                elif analysis_multi_hs_group_value == "SAT":
 
+                elif analysis_multi_hs_group_value == "SAT":
                     analysis_multi_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
                         {"label": "Math", "value": "Math"},
@@ -734,9 +736,31 @@ def navigation(
                     else:
                         analysis_multi_category_value = "Grade"
 
+            # get years for subcategoires
+            # TODO: duplicative code. Switch with an input value for year_options.
+            if school_type == "K8" and analysis_type_value == "hs":
+                analysis_type_value = "k8"
+
+            # Guest schools do not have financial data
+            if (
+                "academic" in current_page
+                or "analysis_single" in current_page
+                or "analysis_multiple" in current_page
+                or selected_school["Guest"].values[0] == "Y"
+            ):
+                if (
+                    "academic_information" in current_page
+                    or "analysis_single" in current_page
+                    or "analysis_multiple" in current_page
+                ) and analysis_type_value == "hs":
+                    years = get_academic_dropdown_years(school_id, "HS")
+
+                else:
+                    years = get_academic_dropdown_years(school_id, school_type)
+
             # subcategories for all schools
             if analysis_multi_category_value == "Grade":
-                grades = get_gradespan(school_id)
+                grades = get_gradespan(school_id, year_value, years)
 
                 if grades:
                     analysis_multi_subcategory_options = [
@@ -758,13 +782,17 @@ def navigation(
                     analysis_multi_subcategory_container = {"display": "block"}
 
                 else:
-                    analysis_multi_subcategory_options = []                    
+                    analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = "No Data"
                     analysis_multi_subcategory_container = {"display": "block"}
 
             elif analysis_multi_category_value == "Race/Ethnicity":
                 ethnicity = get_ethnicity(
-                    school_id, analysis_type_value, analysis_multi_hs_group_value
+                    school_id,
+                    analysis_type_value,
+                    analysis_multi_hs_group_value,
+                    year_value,
+                    years,
                 )
                 analysis_multi_subcategory_options = [
                     {"label": e, "value": e} for e in ethnicity
@@ -787,9 +815,12 @@ def navigation(
                     analysis_multi_subcategory_container = {"display": "block"}
 
             elif analysis_multi_category_value == "Subgroup":
-
                 subgroup = get_subgroup(
-                    school_id, analysis_type_value, analysis_multi_hs_group_value
+                    school_id,
+                    analysis_type_value,
+                    analysis_multi_hs_group_value,
+                    year_value,
+                    years,
                 )
                 subgroup.sort()
 
@@ -807,9 +838,8 @@ def navigation(
                         analysis_multi_subcategory_value = subgroup[0]
 
                     analysis_multi_subcategory_container = {"display": "block"}
-                    
-                else:
 
+                else:
                     analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = "No Subgroup Data"
                     analysis_multi_subcategory_container = {"display": "block"}
@@ -910,8 +940,9 @@ def navigation(
         analysis_multi_subcategory_value,
         analysis_multi_subcategory_container,
         analysis_nav_container,
-        analysis_subnav_container
+        analysis_subnav_container,
     )
+
 
 # redirects the url from academic_information_growth.py to
 # academic_information.py if the user is at academic_information_growth
@@ -938,11 +969,9 @@ def redirect_hs(school: str, current_page: str):
 def layout():
     return html.Div(
         [
-            # store is only used to store 'academic-type' value from academic_data_proficiency, analysis_single_year, and
-            # analysis_multi_year pages. it is used in the year dropdown callback
-            # dcc.Store(id="academic-type-store", data = {}, storage_type = "session"),
-            # Used by year dropdown callback to determine the current url and for redirect on
-            # academic_information_growth_py
+            # # used to store 'academic-data' value from analysis_multi_year pages to determine
+            # # which buttons to display
+            # dcc.Store(id="academic-data-store", data = {}, storage_type = "session"),
             dcc.Location(id="url", refresh="callback-nav"),
             html.Div(id="hidden", style={"display": "none"}),
             html.Div(

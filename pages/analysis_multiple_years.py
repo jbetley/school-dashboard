@@ -340,6 +340,9 @@ def update_academic_analysis(
                     school, comparison_school_list, category, string_year, "grad"
                 )
 
+            # print("YOY HS")
+            # print(year_over_year_hs_data)
+
         else:
             year_over_year_hs_data = pd.DataFrame()
 
@@ -397,6 +400,9 @@ def update_academic_analysis(
             year_over_year_k8_data, all_school_info = get_year_over_year_data(
                 school, comparison_school_list, category, string_year, "k8"
             )
+
+            # print("YOY K8")
+            # print(year_over_year_k8_data)
 
         else:
             year_over_year_k8_data = pd.DataFrame()
