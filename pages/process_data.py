@@ -32,6 +32,7 @@ from .calculations import (
     conditional_fillna,
 )
 
+
 def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
     """
     Process attendance rate data.
@@ -83,7 +84,9 @@ def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
     return attendance_rate
 
 
-def process_selected_k8_academic_data(data: pd.DataFrame, school_id: str) -> pd.DataFrame:
+def process_selected_k8_academic_data(
+    data: pd.DataFrame, school_id: str
+) -> pd.DataFrame:
     """
     Perform various operations on a dataframe with ILEARN/IREAD data for the selected
     school and a variable number of 'comparison' schools.
@@ -181,6 +184,7 @@ def process_selected_k8_academic_data(data: pd.DataFrame, school_id: str) -> pd.
         final_data.columns = final_data.columns.astype(str)
 
     return final_data
+
 
 # TODO: Switch to the above function for processing k8 school/comparison school data
 # NOTE: Currently used in academic_information and academic_metrics
@@ -553,7 +557,9 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def process_high_school_academic_data(data: pd.DataFrame, school_id: str) -> pd.DataFrame:
+def process_high_school_academic_data(
+    data: pd.DataFrame, school_id: str
+) -> pd.DataFrame:
     """
     Perform various operations on a dataframe with graduation rate and SAT data.
 
@@ -630,7 +636,6 @@ def process_high_school_academic_data(data: pd.DataFrame, school_id: str) -> pd.
         data = data.drop(list(data.filter(regex="ELA and Math")), axis=1)
 
         if data_geo_code == school_geo_code:
-
             # group corp dataframe by year and sum all rows for each category
             data = data.groupby(["Year"]).sum(numeric_only=True)
 
@@ -883,11 +888,11 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
 
     return data
 
+
 # NOTE: Used in Academic Metrics only
 def merge_high_school_data(
     all_school_data: pd.DataFrame, all_corp_data: pd.DataFrame
 ) -> pd.DataFrame:
-    
     """
     Perform various operations on two dataframes, selected school and local school corporaiton
     and ultimately merg them
@@ -895,10 +900,10 @@ def merge_high_school_data(
     Args:
     all_school_data (pd.DataFrame): school data
     all_corp_data (pd.DataFrame): corp data
-    
+
     Returns:
         final_hs_academic_data (pd.DataFrame): processed dataframe
-    """    
+    """
     all_school_data.columns = all_school_data.columns.astype(str)
     all_corp_data.columns = all_corp_data.columns.astype(str)
 
@@ -1027,6 +1032,24 @@ def process_growth_data(
     # of students with Adequate growth using the set of students enrolled for
     # "162 Days" (a subset of available data)
 
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+
+    print(data.columns)
+    # TODO: Testing
+    test1 = data[
+        (data["Test Year"] == 2022)
+        & (data["Subject"] == "Math")
+        & (data["Grade Level"] == "Grade 8")
+    ][["ILEARNGrowth Level", "ILEARNGrowth Percentile", "Day 162"]]
+
+    adequate = len(test1[test1["ILEARNGrowth Level"] == "Adequate Growth"])
+    not_adequate = len(test1[test1["ILEARNGrowth Level"] == "Not Adequate Growth"])
+    print(not_adequate)
+    print(adequate)
+
+    # TODO: Testing
+
     data_162 = data[data["Day 162"].str.contains("True|TRUE") == True]
 
     data = (
@@ -1034,6 +1057,7 @@ def process_growth_data(
         .value_counts(normalize=True)
         .reset_index(name="Majority Enrolled")
     )
+
     data_162 = (
         data_162.groupby(["Test Year", category, "Subject"])["ILEARNGrowth Level"]
         .value_counts(normalize=True)
@@ -1044,10 +1068,18 @@ def process_growth_data(
     data["162 Days"] = data_162["162 Days"]
     data["Difference"] = data["162 Days"] - data["Majority Enrolled"]
 
+    # print('162 Days')
+    # print(data_162["162 Days"])
+    # print('Maj Enroll')
+    # print(data["Majority Enrolled"])
+
     # step 4: get into proper format for display as multi-header DataTable
 
     # create final category
     data["Category"] = data[category] + "|" + data["Subject"]
+
+    # print('Category')
+    # print(data)
 
     # drop unused rows and columns
     data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]

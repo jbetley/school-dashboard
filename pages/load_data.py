@@ -187,6 +187,7 @@ engine = create_engine("sqlite:///data/db_all.db")
 
 print("Database Engine Created . . .")
 
+
 # Return Dataframe (read_sql is a convenience function wrapper around read_sql_query)
 # If no data matches query, returns an empty dataframe
 def run_query(q, *args):
@@ -263,6 +264,7 @@ def get_school_index(school_id):
 
     return run_query(q, params)
 
+
 def get_academic_dropdown_years(*args):
     keys = ["id", "type"]
     params = dict(zip(keys, args))
@@ -296,9 +298,9 @@ def get_academic_dropdown_years(*args):
 def get_financial_info_dropdown_years(school_id):
     # Processes financial df and returns a list of Year column names for
     # each year for which ADM Average is greater than '0'
-    
+
     params = dict(id=school_id)
-    
+
     q = text(
         """
         SELECT * 
@@ -312,9 +314,7 @@ def get_financial_info_dropdown_years(school_id):
     if len(results.columns) > 3:
         adm_index = results.index[results["Category"] == "ADM Average"].values[0]
 
-        results = results.filter(
-            regex="^\d{4}"
-        )
+        results = results.filter(regex="^\d{4}")
 
         for col in results.columns:
             results[col] = pd.to_numeric(results[col], errors="coerce")

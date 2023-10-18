@@ -579,7 +579,7 @@ def navigation(
             info_category_container = {"display": "none"}
 
     # analysis_single_year.py and analysis_multiple_years.py
-    elif "analysis" in current_page:
+    elif "academic_analysis" in current_page:
 
         # hide academic information subnavigation
         info_nav_container = {"display": "none"}

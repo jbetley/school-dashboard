@@ -100,6 +100,13 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         fig_data_grades_growth, table_data_grades_growth = process_growth_data(
             growth_data, "Grade Level"
         )
+
+        pd.set_option("display.max_columns", None)
+        pd.set_option("display.max_rows", None)
+        # print('FIg')
+        # print(fig_data_grades_growth)
+        # print('Table')
+        # print(table_data_grades_growth)
         fig_data_ethnicity_growth, table_data_ethnicity_growth = process_growth_data(
             growth_data, "Ethnicity"
         )
