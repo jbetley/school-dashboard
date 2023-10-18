@@ -45,7 +45,11 @@ from .string_helpers import (
 )
 
 dash.register_page(
-    __name__, name="Selected Year", path="/analysis_single_year", top_nav=True, order=10
+    __name__,
+    name="Selected Year",
+    path="/academic_analysis_single_year",
+    top_nav=True,
+    order=10,
 )
 
 
@@ -62,7 +66,6 @@ dash.register_page(
 def set_dropdown_options(
     school_id: str, year: str, comparison_schools: list, analysis_type_value=str
 ):
-
     string_year = year
     numeric_year = int(string_year)
 
@@ -257,7 +260,7 @@ def set_dropdown_options(
 
 
 @callback(
-    Output("analysis-single-comparison-dropdown", "style"),
+    Output("analysis-single-dropdown-container", "style"),
     Output("fig14c", "children"),
     Output("fig14d", "children"),
     Output("fig-iread", "children"),
@@ -384,6 +387,7 @@ def update_academic_analysis(
             hs_analysis_empty_container = {"display": "block"}
 
         else:
+
             hs_school_name = raw_hs_school_data["School Name"].values[0]
             hs_school_name = hs_school_name.strip()
 
@@ -446,6 +450,7 @@ def update_academic_analysis(
             school_name_idx = hs_analysis_data.index[
                 hs_analysis_data["School Name"].str.contains(hs_school_name)
             ].tolist()[0]
+            
             hs_analysis_data = hs_analysis_data.loc[
                 :, ~hs_analysis_data.iloc[school_name_idx].isna()
             ]
@@ -504,6 +509,9 @@ def update_academic_analysis(
                     )
                     grad_overview_container = {"display": "block"}
                 else:
+
+                    analysis_single_dropdown_container = {"display": "block"}
+                    
                     if grad_overview:
                         grad_overview_container = {"display": "block"}
                     else:
@@ -542,6 +550,9 @@ def update_academic_analysis(
                     )
                     sat_overview_container = {"display": "block"}
                 else:
+                    
+                    analysis_single_dropdown_container = {"display": "block"}
+                    
                     if sat_overview:
                         sat_overview_container = {"display": "block"}
                     else:
@@ -589,9 +600,6 @@ def update_academic_analysis(
                     else:
                         sat_subgroup_container = {"display": "none"}
 
-                    # show dropdown container
-                    analysis_single_dropdown_container = {"display": "block"}
-
     if school_type == "K8" or school_type == "K12":
         # If school is K12 and highschool tab is selected, skip k8 data
         if school_type == "K12" and analysis_type_value == "hs":
@@ -618,11 +626,13 @@ def update_academic_analysis(
             # dataframe that that is all "***" - so we convert create a copy, coerce all of the academic
             # columns to numeric and check to see if the entire dataframe for NaN
             check_for_unchartable_data = selected_clean_data.copy()
+            
             check_for_unchartable_data.drop(
                 ["School Name", "School ID", "Low Grade", "High Grade", "Year"],
                 axis=1,
                 inplace=True,
             )
+            
             for col in check_for_unchartable_data.columns:
                 check_for_unchartable_data[col] = pd.to_numeric(
                     check_for_unchartable_data[col], errors="coerce"
@@ -634,6 +644,7 @@ def update_academic_analysis(
             ) and check_for_unchartable_data.isnull().all().all() == False:
                 k8_analysis_main_container = {"display": "block"}
                 k8_analysis_empty_container = {"display": "none"}
+                analysis_single_dropdown_container = {"display": "block"}
 
                 raw_corp_data = get_k8_corporation_academic_data(school_id)
 
@@ -709,8 +720,8 @@ def update_academic_analysis(
                 ].copy()
 
                 # add two missing cols
-                selected_corp_data["Low Grade"] =  np.nan
-                selected_corp_data["High Grade"] =  np.nan
+                selected_corp_data["Low Grade"] = np.nan
+                selected_corp_data["High Grade"] = np.nan
 
                 combined_selected_data = pd.concat(
                     [selected_clean_data, selected_corp_data]
@@ -732,9 +743,11 @@ def update_academic_analysis(
                 school_idx = combined_selected_data.index[
                     combined_selected_data["School ID"] == np.int64(school_id)
                 ].tolist()[0]
+
                 combined_selected_data = combined_selected_data.loc[
                     :, ~combined_selected_data.iloc[school_idx].isna()
                 ]
+
                 combined_selected_data = combined_selected_data.reset_index(drop=True)
 
                 # We want to add the information categories back to each dataframe
@@ -1153,7 +1166,7 @@ def layout():
                                 className="comparison-dropdown-row",
                             ),
                         ],
-                        id="single-year-dropdown-container",
+                        id="analysis-single-dropdown-container",
                         style={"display": "none"},
                     ),
                     html.Div(

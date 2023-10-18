@@ -1032,26 +1032,10 @@ def process_growth_data(
     # of students with Adequate growth using the set of students enrolled for
     # "162 Days" (a subset of available data)
 
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
+    data_162 = data[data["Day 162"].str.contains("True|TRUE") == True]  #  == "True"]
 
-    print(data.columns)
-    # TODO: Testing
-    test1 = data[
-        (data["Test Year"] == 2022)
-        & (data["Subject"] == "Math")
-        & (data["Grade Level"] == "Grade 8")
-    ][["ILEARNGrowth Level", "ILEARNGrowth Percentile", "Day 162"]]
-
-    adequate = len(test1[test1["ILEARNGrowth Level"] == "Adequate Growth"])
-    not_adequate = len(test1[test1["ILEARNGrowth Level"] == "Not Adequate Growth"])
-    print(not_adequate)
-    print(adequate)
-
-    # TODO: Testing
-
-    data_162 = data[data["Day 162"].str.contains("True|TRUE") == True]
-
+    # grouby by relevant categories and count the values in the "ILEARNGrowth Level"
+    # column (normalize gives us the relative frequencies (%) of the values)
     data = (
         data.groupby(["Test Year", category, "Subject"])["ILEARNGrowth Level"]
         .value_counts(normalize=True)
@@ -1064,26 +1048,45 @@ def process_growth_data(
         .reset_index(name="162 Days")
     )
 
-    # step 3: add ME column to df and calculate difference
-    data["162 Days"] = data_162["162 Days"]
-    data["Difference"] = data["162 Days"] - data["Majority Enrolled"]
+    # If the frequency of "Not Adequate Growth" == 1.0: then all ME and Day 162 values for that
+    # category and subject were Not Adequate (e.g., 100% of the students in that category
+    # were Not Adequate), meaning that 0% of students had adequate growth. So wherever
+    # "Not Adequate Growth" == 1.0, we change "ILEARNGrowth Level" to "Adequate Growth"
+    # and Majority Enrolled (or Day 162) to 0 (otherwise these values would disappear when
+    # we get rid of the "ILEARNGrowth Level" column)
 
-    # print('162 Days')
-    # print(data_162["162 Days"])
-    # print('Maj Enroll')
-    # print(data["Majority Enrolled"])
+    mask = data["Majority Enrolled"] == 1.0
+    data.loc[mask, "ILEARNGrowth Level"] = "Adequate Growth"
+    data.loc[mask, "Majority Enrolled"] = 0
+
+    mask_162 = data_162["162 Days"] == 1.0
+    data_162.loc[mask_162, "ILEARNGrowth Level"] = "Adequate Growth"
+    data_162.loc[mask_162, "162 Days"] = 0
+
+    # drop all rows with "Not Adequate"
+    data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
+    data_162 = data_162[
+        data_162["ILEARNGrowth Level"].str.contains("Not Adequate") == False
+    ]
+
+    # step 3: Merge data_162["162 Days"] column into 'data'- cols will likely
+    # be of different length, so we need to key on Year, Subject, Category
+    data = data.merge(
+        data_162, how="left", on=["Test Year", category, "Subject"], suffixes=("", "_y")
+    )
+
+    data["Difference"] = data["162 Days"] - data["Majority Enrolled"]
 
     # step 4: get into proper format for display as multi-header DataTable
 
     # create final category
     data["Category"] = data[category] + "|" + data["Subject"]
 
-    # print('Category')
-    # print(data)
-
-    # drop unused rows and columns
-    data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-    data = data.drop([category, "Subject", "ILEARNGrowth Level"], axis=1)
+    # filter unneeded columns
+    final_data = data.filter(
+        regex=r"Test Year|Category|Majority Enrolled|162 Days|Difference",
+        axis=1,
+    )
 
     # NOTE: Occasionally, the data will have an "Unknown" Category. No idea why, but
     # we need to get rid of it - easiest way would be to just drop any Categories
@@ -1092,26 +1095,28 @@ def process_growth_data(
     # the respective list
 
     if category == "Grade Level":
-        data = data[data["Category"].str.contains("|".join(grades))]
+        final_data = final_data[final_data["Category"].str.contains("|".join(grades))]
 
     elif category == "Ethnicity":
-        data = data[data["Category"].str.contains("|".join(ethnicity))]
+        final_data = final_data[
+            final_data["Category"].str.contains("|".join(ethnicity))
+        ]
 
     elif (
         category == "Socioeconomic Status"
         or category == "English Learner Status"
         or category == "Special Education Status"
     ):
-        data = data[data["Category"].str.contains("|".join(subgroup))]
+        final_data = final_data[final_data["Category"].str.contains("|".join(subgroup))]
 
     # create fig data
-    fig_data = data.copy()
+    fig_data = final_data.copy()
     fig_data = fig_data.drop("Difference", axis=1)
     fig_data = fig_data.pivot(index=["Test Year"], columns="Category")
     fig_data.columns = fig_data.columns.map(lambda x: "_".join(map(str, x)))
 
     # create table data
-    table_data = data.copy()
+    table_data = final_data.copy()
 
     # Need specific column order. sort_index does not work
     cols = []

@@ -19,7 +19,7 @@ from .calculations import find_nearest
 dash.register_page(
     __name__,
     name="Year over Year",
-    path="/analysis_multiple_year",
+    path="/academic_analysis_multiple_year",
     top_nav=False,
     order=11,
 )
@@ -339,7 +339,7 @@ def update_academic_analysis(
                 year_over_year_hs_data, all_school_info = get_year_over_year_data(
                     school, comparison_school_list, category, string_year, "grad"
                 )
-
+                
             # print("YOY HS")
             # print(year_over_year_hs_data)
 
@@ -367,7 +367,7 @@ def update_academic_analysis(
             hs_analysis_multi_main_container = {"display": "block"}
             hs_analysis_multi_empty_container = {"display": "none"}
             analysis_multi_dropdown_container = {"display": "block"}
-
+            print(analysis_multi_dropdown_container)
             ## Create Year Over Year HS (SAT and Graduation Rate) Chart
             year_over_year_hs = create_year_over_year_layout(
                 school, year_over_year_hs_data, all_school_info, label, msg
@@ -524,7 +524,7 @@ layout = html.Div(
                         ),
                     ],
                     id="analysis-multi-dropdown-container",
-                    style={"display": "none"},
+                    # style={"display": "none"},
                 ),
                 html.Div(
                     [

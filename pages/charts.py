@@ -809,7 +809,7 @@ def make_growth_chart(
                 mode="markers+lines",
                 marker=dict(color=color[i], symbol="square"),
                 line={"dash": "solid"},
-                customdata=[f"{i:.2%}" for i in data_162[col]]
+                customdata=[f"{i:.2%}" if not np.isnan(i) else "None" for i in data_162[col]]
                 if "Growth" in label
                 else [f"{i:.1f}" for i in data_162[col]],
                 text=[f"{i}" for i in data_me.columns],
