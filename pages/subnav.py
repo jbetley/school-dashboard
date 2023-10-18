@@ -19,7 +19,7 @@ def subnav_academic_analysis():
                     page["name"], href=page["path"], className="tab", active="partial"
                 )
                 for page in dash.page_registry.values()
-                if page["path"].startswith("/analysis")
+                if page["path"].startswith("/academic_analysis")
             ],
             className="sub-tabs",
         )

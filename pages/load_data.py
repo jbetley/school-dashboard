@@ -887,10 +887,24 @@ def get_year_over_year_data(*args):
         tested = params["category"] + " Total Tested"
         passed = params["category"] + " At Benchmark"
         result = params["category"] + " % At Benchmark"
+
+        # if "School Total" - need to remove space
+        if params["category"] == "School Total|":
+            tested = tested.replace("| ", "|")
+            passed = passed.replace("| ", "|")
+            result = result.replace("| ", "|")
+
     elif params["flag"] == "grad":
         tested = params["category"] + "Cohort Count"
         passed = params["category"] + "Graduates"
         result = params["category"] + "Graduation Rate"
+
+        # if "Total" - need to remove space
+        if params["category"] == "Total|":
+            tested = tested.replace("| ", "|")
+            passed = passed.replace("| ", "|")
+            result = result.replace("| ", "|")
+
     else:  # k8 categories
         tested = params["category"] + " Total Tested"
         passed = params["category"] + " Total Proficient"
@@ -934,6 +948,7 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
+    print(school_data)
     # track school name, school id, and gradespan separately
     school_info = school_data[["School Name", "School ID", "Low Grade", "High Grade"]]
 

@@ -246,6 +246,7 @@ def set_dropdown_options(
     Input("analysis-type-radio", "value"),
     Input("analysis-multi-subject-radio", "value"),
     Input("analysis-multi-hs-group-radio", "value"),
+    # Input("analysis-multi-subcategory-radio", "value"),
     [Input("analysis-multi-comparison-dropdown", "value")],
     State("analysis-multi-subcategory-radio", "value"),
 )
@@ -255,8 +256,9 @@ def update_academic_analysis(
     analysis_type_value: str,
     subject_radio_value: str,
     hs_group_radio_value: str,
+    # subcategory_radio_value: str,
     comparison_school_list: list,
-    subcategory_radio_state: str,
+    subcategory_radio_value: str,    
 ):
     if not school:
         raise PreventUpdate
@@ -306,32 +308,63 @@ def update_academic_analysis(
             the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
             Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
 
+        # TODO: This is triggering TWICE, once with wrong value, WHY?? Getting sent without subject the first time,
+        # TODO: every time.
+
+        # TODO: CHECK FOR DOUBLE INPUT - BET THATS IT!
+        # e.g., from
+        #    Year  School ID         School Name  Low Grade  High Grade "Black|At Benchmark" "Black|Total Tested"
+        # 0  2020       1113  Steel City Academy          9          12    Black|AtBenchmark    Black|TotalTested
+        # to
+        #    Year  School ID         School Name  Low Grade  High Grade Black|EBRW At Benchmark Black|EBRW Total Tested
+        # 2  2022       1113  Steel City Academy          9          12            9                   38
+        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        print(hs_group_radio_value)
+        print(f"X{subcategory_radio_value}X")
+
         # get data for school (these labels are used to generate the message on the empty tables)
         if (
-            subcategory_radio_state != "No Subgroup Data"
-            and subcategory_radio_state != "No Race/Ethnicity Data"
-            and subcategory_radio_state != "No Data"
+            subcategory_radio_value != "No Subgroup Data"
+            and subcategory_radio_value != "No Race/Ethnicity Data"
+            and subcategory_radio_value != "No Data"
         ):
             if hs_group_radio_value == "SAT":
-                if subcategory_radio_state:
-                    category = subcategory_radio_state + "|" + subject_radio_value
+                if subcategory_radio_value:
+                    # If subcategory_state is "Total" and user flips to "SAT" we need to
+                    # change subcategory_state to "School Total"
+                    # TODO: Because it's State??
+                    if subcategory_radio_value == "Total":
+                        subcategory_radio_value = "School Total"
+
+                    category = subcategory_radio_value + "|" + subject_radio_value
+
                 else:
                     category = "School Total|EBRW"
 
                 label = "Year over Year Comparison (SAT At Benchmark) - " + category
                 msg = ""
 
+                print("SAT")
+                print(category)
+
                 year_over_year_hs_data, all_school_info = get_year_over_year_data(
                     school, comparison_school_list, category, string_year, "sat"
                 )
 
-            elif (
-                hs_group_radio_value == "Graduation Rate" or hs_group_radio_value == ""
-            ):
-                if subcategory_radio_state:
-                    category = subcategory_radio_state + "|"
+            elif hs_group_radio_value == "Graduation Rate" or not hs_group_radio_value:
+                if subcategory_radio_value:
+                    # If subcategory_state is "School Total" and user flips to
+                    # "Grad" we need to change subcategory_state to "Total"
+                    # TODO: Because it's State?? Change to Input?
+                    if subcategory_radio_value == "School Total":
+                        subcategory_radio_value = "Total"
+
+                    category = subcategory_radio_value + "|"
                 else:
                     category = "Total|"
+
+                print("Grad")
+                print(category)
 
                 label = "Year over Year Comparison (Graduation Rate) - " + category[:-1]
                 msg = ""
@@ -339,14 +372,15 @@ def update_academic_analysis(
                 year_over_year_hs_data, all_school_info = get_year_over_year_data(
                     school, comparison_school_list, category, string_year, "grad"
                 )
-                
-            # print("YOY HS")
-            # print(year_over_year_hs_data)
+
+        # TODO: Triggers not working somehwere vis a vis School Total and Total
+        # print("YOY HS")
+        # print(year_over_year_hs_data)
 
         else:
             year_over_year_hs_data = pd.DataFrame()
 
-            if subcategory_radio_state == "No Data" or subcategory_radio_state == "":
+            if subcategory_radio_value == "No Data" or subcategory_radio_value == "":
                 label = "Year over Year Comparison (" + hs_group_radio_value + ")"
                 msg = "No Data for Selected School."
             else:
@@ -354,9 +388,9 @@ def update_academic_analysis(
                     "Year over Year Comparison ("
                     + hs_group_radio_value
                     + ") - "
-                    + subcategory_radio_state[3:-5:]
+                    + subcategory_radio_value[3:-5:]
                 )
-                msg = subcategory_radio_state + " for Selected School."
+                msg = subcategory_radio_value + " for Selected School."
 
         if year_over_year_hs_data.empty:
             analysis_multi_dropdown_container = {"display": "none"}
@@ -367,7 +401,7 @@ def update_academic_analysis(
             hs_analysis_multi_main_container = {"display": "block"}
             hs_analysis_multi_empty_container = {"display": "none"}
             analysis_multi_dropdown_container = {"display": "block"}
-            print(analysis_multi_dropdown_container)
+
             ## Create Year Over Year HS (SAT and Graduation Rate) Chart
             year_over_year_hs = create_year_over_year_layout(
                 school, year_over_year_hs_data, all_school_info, label, msg
@@ -385,12 +419,12 @@ def update_academic_analysis(
 
         ## K8 Year Over Year Chart
         if (
-            subcategory_radio_state != "No Subgroup Data"
-            and subcategory_radio_state != "No Race/Ethnicity Data"
-            and subcategory_radio_state != "No Data"
+            subcategory_radio_value != "No Subgroup Data"
+            and subcategory_radio_value != "No Race/Ethnicity Data"
+            and subcategory_radio_value != "No Data"
         ):
-            if subcategory_radio_state:
-                category = subcategory_radio_state + "|" + subject_radio_value
+            if subcategory_radio_value:
+                category = subcategory_radio_value + "|" + subject_radio_value
             else:
                 category = "School Total|ELA"
 
@@ -407,10 +441,10 @@ def update_academic_analysis(
         else:
             year_over_year_k8_data = pd.DataFrame()
 
-            if subcategory_radio_state == "No Data" or subcategory_radio_state == "":
+            if subcategory_radio_value == "No Data" or subcategory_radio_value == "":
                 label = (
                     "Year over Year Comparison ("
-                    + subcategory_radio_state
+                    + subcategory_radio_value
                     + "|"
                     + subject_radio_value
                     + ")"
@@ -419,13 +453,13 @@ def update_academic_analysis(
             else:
                 label = (
                     "Year over Year Comparison ("
-                    + subcategory_radio_state
+                    + subcategory_radio_value
                     + "|"
                     + subject_radio_value
                     + ") - "
-                    + subcategory_radio_state[3:-5:]
+                    + subcategory_radio_value[3:-5:]
                 )
-                msg = subcategory_radio_state + " for Selected School."
+                msg = subcategory_radio_value + " for Selected School."
 
         if year_over_year_k8_data.empty:
             analysis_multi_dropdown_container = {"display": "none"}
@@ -444,7 +478,7 @@ def update_academic_analysis(
                 year_over_year_k8_data,
                 all_school_info,
                 label,
-                subcategory_radio_state,
+                subcategory_radio_value,
             )
 
     analysis__multi_notes = [

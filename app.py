@@ -431,7 +431,8 @@ def set_year_dropdown_options(
     Input("analysis-multi-hs-group-radio", "value"),
     Input("analysis-multi-category-radio", "value"),
     Input("analysis-multi-subcategory-radio", "value"),
-    State("analysis-type-radio", "value"),    
+    # TODO: Circular dependency is screwing things up
+    Input("analysis-type-radio", "value"),
     State("academic-information-category-radio", "options"),
     State("academic-information-category-radio", "value"),
     State("analysis-multi-subject-radio", "value"),
@@ -461,7 +462,6 @@ def navigation(
 
     # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
-
         # hide academic analysis navigation
         analysis_type_state = "k8"
         analysis_type_options = []
@@ -578,7 +578,6 @@ def navigation(
 
     # analysis_single_year.py and analysis_multiple_years.py
     elif "academic_analysis" in current_page:
-
         # hide academic information subnavigation
         info_nav_container = {"display": "none"}
         info_subnav_container = {"display": "none"}
@@ -596,11 +595,11 @@ def navigation(
         analysis_subnav_container = {"display": "block"}
 
         # set default if empty
-        if analysis_type_state == "":
+        if not analysis_type_state:
             if school_type == "HS" or school_type == "AHS":
                 analysis_type_state = "hs"
             else:
-                analysis_type_state = "k8" 
+                analysis_type_state = "k8"
 
         # analysis-type: used for both pages - is the only subnavigation
         # for analysis_single_year.py
@@ -620,8 +619,7 @@ def navigation(
             analysis_type_container = {"display": "none"}
 
         # analysis_multiple_years.py
-        if "multi" in current_page:
-
+        if "analysis_multiple" in current_page:
             # group button for HS/AHS/K12 (hs type)
             if (
                 school_type == "HS"
@@ -660,10 +658,6 @@ def navigation(
                     analysis_multi_subject_value = ""
                     analysis_multi_subject_options = []
                     analysis_multi_subject_container = {"display": "none"}
-
-                    analysis_multi_subcategory_options = []
-                    analysis_multi_subcategory_value = ""
-                    analysis_multi_subcategory_container = {"display": "none"}
 
                     analysis_multi_category_options = [
                         {"label": "Total", "value": "Total"},
@@ -837,7 +831,8 @@ def navigation(
                     analysis_multi_subcategory_options = [
                         {"label": s, "value": s} for s in subgroup
                     ]
-
+                    print(subgroup)
+                    print(analysis_multi_subcategory_value)
                     if analysis_multi_subcategory_value in subgroup:
                         analysis_multi_subcategory_value = (
                             analysis_multi_subcategory_value
@@ -948,8 +943,8 @@ def navigation(
         analysis_multi_subcategory_options,
         analysis_multi_subcategory_value,
         analysis_multi_subcategory_container,
-        analysis_nav_container,
         analysis_subnav_container,
+        analysis_nav_container,
     )
 
 
