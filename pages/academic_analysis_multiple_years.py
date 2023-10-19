@@ -212,13 +212,12 @@ def set_dropdown_options(
         # also take care of the initial load because an empty list will result in False
         current_comparison_schools = [d["value"] for d in options]
 
-        if not set(comparison_schools).isdisjoint(current_comparison_schools) == False:
+        if not comparison_schools or (
+            comparison_schools
+            and not set(comparison_schools).isdisjoint(current_comparison_schools)
+            == False
+        ):
             comparison_schools = [d["value"] for d in options[:default_num_to_display]]
-        # if list is None or empty ([]), use the default options (NOTE: The callback takes
-        # comparison schools as an input, so this will only be empty on first run)
-
-        # if not comparison_schools:
-        #     comparison_schools = [d["value"] for d in options[:default_num_to_display]]
 
         else:
             if len(comparison_schools) > max_num_to_display:
@@ -326,7 +325,6 @@ def update_academic_analysis_multiple_years(
         ):
             if hs_group_radio_value == "SAT":
                 if subcategory_radio_value:
-
                     # If subcategory_state is "Total" and user flips to "SAT" we need to
                     # change subcategory_state to "School Total"
                     if subcategory_radio_value == "Total":

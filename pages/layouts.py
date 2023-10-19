@@ -9,7 +9,6 @@ import pandas as pd
 import numpy as np
 from dash import html
 import dash_bootstrap_components as dbc
-from .load_data import get_school_index
 from .string_helpers import (
     create_chart_label,
     combine_school_name_and_grade_levels,
@@ -23,7 +22,6 @@ from .tables import create_comparison_table, no_data_page
 def create_hs_analysis_layout(
     data_type: str, data: pd.DataFrame, categories: list, school_id: str
 ) -> list:
-
     tested_categories = []
 
     if data_type == "School Total":
@@ -448,7 +446,7 @@ def create_year_over_year_layout(school_id, data, school_id_list, label, msg):
         table_data = pd.merge(
             table_data, school_id_list, on=["School Name"], how="left"
         )
-   
+
         fig = make_multi_line_chart(data, label)
 
         # Use Low/High grade columns to modify School Name and then drop.

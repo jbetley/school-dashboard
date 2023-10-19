@@ -64,7 +64,6 @@ from dash import dcc, html, Input, Output, State, callback
 
 # from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
-import pandas as pd
 
 from pages.load_data import (
     get_school_index,
@@ -393,16 +392,16 @@ def set_year_dropdown_options(
 
     return year_options, year_value, current_page
 
+
 # Need to put this into its own callback in order to avoid circular callbacks.
 @callback(
     Output("analysis-type-radio", "options"),
     Output("analysis-type-radio", "value"),
     Output("analysis-type-radio-container", "style"),
-    Input("charter-dropdown", "value"),    
-    Input("analysis-type-radio", "value")
+    Input("charter-dropdown", "value"),
+    Input("analysis-type-radio", "value"),
 )
 def get_school_type(school_id: str, analysis_type_value: str):
-
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
@@ -412,10 +411,10 @@ def get_school_type(school_id: str, analysis_type_value: str):
     ]
 
     if not analysis_type_value:
-            if school_type == "HS" or school_type == "AHS":
-                analysis_type_value = "hs"
-            else:
-                analysis_type_value = "k8"
+        if school_type == "HS" or school_type == "AHS":
+            analysis_type_value = "hs"
+        else:
+            analysis_type_value = "k8"
 
     # analysis-type: used for both pages - is the only subnavigation
     # for analysis_single_year.py
@@ -435,6 +434,7 @@ def get_school_type(school_id: str, analysis_type_value: str):
         analysis_type_container = {"display": "none"}
 
     return analysis_type_options, analysis_type_value, analysis_type_container
+
 
 # Subnavigation - Year Dropdown #
 # NOTE: There are no doubt better ways to structure this; however, given how complicated
@@ -656,8 +656,8 @@ def navigation(
 
         # else:
         #     analysis_type_state = "k8"
-            # analysis_type_options = []
-            # analysis_type_container = {"display": "none"}
+        # analysis_type_options = []
+        # analysis_type_container = {"display": "none"}
 
         # analysis_multiple_years.py
         if "analysis_multiple" in current_page:

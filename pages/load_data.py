@@ -965,7 +965,7 @@ def get_year_over_year_data(*args):
     # drop rows (years) where the school has no data
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]
-    
+
     if len(school_data.columns) == 0:
         result = school_data
 
