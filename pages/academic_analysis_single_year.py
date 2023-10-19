@@ -234,10 +234,20 @@ def set_dropdown_options(
         # used to display message if the number of selections exceeds the max
         input_warning = None
 
+        # create list of comparison schools based on current school id,
+        # test whether any of the school ids in the current_comparison_school list
+        # are present in comparison_schools(the input). If False, we want to replace
+        # comparison_schools with current_comparison_school list - note this will
+        # also take care of the initial load because an empty list will result in False
+        current_comparison_schools = [d["value"] for d in options]
+
+        if not set(comparison_schools).isdisjoint(current_comparison_schools) == False:
+            comparison_schools = [d["value"] for d in options[:default_num_to_display]]
         # if list is None or empty ([]), use the default options (NOTE: The callback takes
         # comparison schools as an input, so this will only be empty on first run)
-        if not comparison_schools:
-            comparison_schools = [d["value"] for d in options[:default_num_to_display]]
+
+        # if not comparison_schools:
+        #     comparison_schools = [d["value"] for d in options[:default_num_to_display]]
 
         else:
             if len(comparison_schools) > max_num_to_display:
@@ -298,7 +308,7 @@ def set_dropdown_options(
     Input("analysis-type-radio", "value"),
     [Input("analysis-single-comparison-dropdown", "value")],
 )
-def update_academic_analysis(
+def update_academic_analysis_single_year(
     school_id: str, year: str, analysis_type_value: str, comparison_school_list: list
 ):
     if not school_id:
@@ -387,7 +397,6 @@ def update_academic_analysis(
             hs_analysis_empty_container = {"display": "block"}
 
         else:
-
             hs_school_name = raw_hs_school_data["School Name"].values[0]
             hs_school_name = hs_school_name.strip()
 
@@ -450,7 +459,7 @@ def update_academic_analysis(
             school_name_idx = hs_analysis_data.index[
                 hs_analysis_data["School Name"].str.contains(hs_school_name)
             ].tolist()[0]
-            
+
             hs_analysis_data = hs_analysis_data.loc[
                 :, ~hs_analysis_data.iloc[school_name_idx].isna()
             ]
@@ -509,9 +518,8 @@ def update_academic_analysis(
                     )
                     grad_overview_container = {"display": "block"}
                 else:
-
                     analysis_single_dropdown_container = {"display": "block"}
-                    
+
                     if grad_overview:
                         grad_overview_container = {"display": "block"}
                     else:
@@ -550,9 +558,8 @@ def update_academic_analysis(
                     )
                     sat_overview_container = {"display": "block"}
                 else:
-                    
                     analysis_single_dropdown_container = {"display": "block"}
-                    
+
                     if sat_overview:
                         sat_overview_container = {"display": "block"}
                     else:
@@ -626,13 +633,13 @@ def update_academic_analysis(
             # dataframe that that is all "***" - so we convert create a copy, coerce all of the academic
             # columns to numeric and check to see if the entire dataframe for NaN
             check_for_unchartable_data = selected_clean_data.copy()
-            
+
             check_for_unchartable_data.drop(
                 ["School Name", "School ID", "Low Grade", "High Grade", "Year"],
                 axis=1,
                 inplace=True,
             )
-            
+
             for col in check_for_unchartable_data.columns:
                 check_for_unchartable_data[col] = pd.to_numeric(
                     check_for_unchartable_data[col], errors="coerce"

@@ -296,7 +296,7 @@ def set_dropdown_value(charter_options):
     Output("hidden", "children"),
     Input("charter-dropdown", "value"),
     Input("url", "href"),
-    Input("analysis-type-radio", "value"),  # needs to be Input here
+    Input("analysis-type-radio", "value"),
     State("year-dropdown", "value"),
 )
 def set_year_dropdown_options(
@@ -393,6 +393,48 @@ def set_year_dropdown_options(
 
     return year_options, year_value, current_page
 
+# Need to put this into its own callback in order to avoid circular callbacks.
+@callback(
+    Output("analysis-type-radio", "options"),
+    Output("analysis-type-radio", "value"),
+    Output("analysis-type-radio-container", "style"),
+    Input("charter-dropdown", "value"),    
+    Input("analysis-type-radio", "value")
+)
+def get_school_type(school_id: str, analysis_type_value: str):
+
+    selected_school = get_school_index(school_id)
+    school_type = selected_school["School Type"].values[0]
+
+    type_options_default = [
+        {"label": "K8", "value": "k8"},
+        {"label": "High School", "value": "hs"},
+    ]
+
+    if not analysis_type_value:
+            if school_type == "HS" or school_type == "AHS":
+                analysis_type_value = "hs"
+            else:
+                analysis_type_value = "k8"
+
+    # analysis-type: used for both pages - is the only subnavigation
+    # for analysis_single_year.py
+    if school_type == "K12":
+        analysis_type_options = type_options_default
+
+        if analysis_type_value in ["k8", "hs"]:
+            analysis_type_value = analysis_type_value
+        else:
+            analysis_type_value = "k8"
+
+        analysis_type_container = {"display": "block"}
+
+    else:
+        analysis_type_value = "k8"
+        analysis_type_options = []
+        analysis_type_container = {"display": "none"}
+
+    return analysis_type_options, analysis_type_value, analysis_type_container
 
 # Subnavigation - Year Dropdown #
 # NOTE: There are no doubt better ways to structure this; however, given how complicated
@@ -407,9 +449,9 @@ def set_year_dropdown_options(
     Output("academic-information-category-radio-container", "style"),
     Output("academic-information-subnav-container", "style"),
     Output("academic-information-navigation-container", "style"),
-    Output("analysis-type-radio", "options"),
-    Output("analysis-type-radio", "value"),
-    Output("analysis-type-radio-container", "style"),
+    # Output("analysis-type-radio", "options"),
+    # Output("analysis-type-radio", "value"),
+    # Output("analysis-type-radio-container", "style"),
     Output("analysis-multi-hs-group-radio", "options"),
     Output("analysis-multi-hs-group-radio", "value"),
     Output("analysis-multi-hs-group-radio-container", "style"),
@@ -431,7 +473,6 @@ def set_year_dropdown_options(
     Input("analysis-multi-hs-group-radio", "value"),
     Input("analysis-multi-category-radio", "value"),
     Input("analysis-multi-subcategory-radio", "value"),
-    # TODO: Circular dependency is screwing things up
     Input("analysis-type-radio", "value"),
     State("academic-information-category-radio", "options"),
     State("academic-information-category-radio", "value"),
@@ -464,8 +505,8 @@ def navigation(
     if "academic_info" in current_page:
         # hide academic analysis navigation
         analysis_type_state = "k8"
-        analysis_type_options = []
-        analysis_type_container = {"display": "none"}
+        # analysis_type_options = []
+        # analysis_type_container = {"display": "none"}
 
         analysis_multi_hs_group_options = []
         analysis_multi_hs_group_value = ""
@@ -594,29 +635,29 @@ def navigation(
         analysis_nav_container = {"display": "block"}
         analysis_subnav_container = {"display": "block"}
 
-        # set default if empty
-        if not analysis_type_state:
-            if school_type == "HS" or school_type == "AHS":
-                analysis_type_state = "hs"
-            else:
-                analysis_type_state = "k8"
+        # # set default if empty
+        # if not analysis_type_state:
+        #     if school_type == "HS" or school_type == "AHS":
+        #         analysis_type_state = "hs"
+        #     else:
+        #         analysis_type_state = "k8"
 
-        # analysis-type: used for both pages - is the only subnavigation
-        # for analysis_single_year.py
-        if school_type == "K12":
-            analysis_type_options = type_options_default
+        # # analysis-type: used for both pages - is the only subnavigation
+        # # for analysis_single_year.py
+        # if school_type == "K12":
+        #     # analysis_type_options = type_options_default
 
-            if analysis_type_state in ["k8", "hs"]:
-                analysis_type_state = analysis_type_state
-            else:
-                analysis_type_state = "k8"
+        #     if analysis_type_state in ["k8", "hs"]:
+        #         analysis_type_state = analysis_type_state
+        #     else:
+        #         analysis_type_state = "k8"
 
-            analysis_type_container = {"display": "block"}
+        #     # analysis_type_container = {"display": "block"}
 
-        else:
-            analysis_type_state = "k8"
-            analysis_type_options = []
-            analysis_type_container = {"display": "none"}
+        # else:
+        #     analysis_type_state = "k8"
+            # analysis_type_options = []
+            # analysis_type_container = {"display": "none"}
 
         # analysis_multiple_years.py
         if "analysis_multiple" in current_page:
@@ -740,7 +781,7 @@ def navigation(
 
             # get years for subcategoires
             # TODO: The following is a duplication of code from year-dropdown. Need
-            # to switch this with an Input value for dropdown-year, "options".
+            # TODO: to switch this with an Input value for dropdown-year, "options".
             if school_type == "K8" and analysis_type_state == "hs":
                 analysis_type_state = "k8"
 
@@ -884,8 +925,8 @@ def navigation(
     else:
         # analysis both
         analysis_type_state = "k8"
-        analysis_type_options = []
-        analysis_type_container = {"display": "none"}
+        # analysis_type_options = []
+        # analysis_type_container = {"display": "none"}
 
         # analysis multi
         analysis_nav_container = {"display": "none"}
@@ -928,9 +969,9 @@ def navigation(
         info_category_container,
         info_subnav_container,
         info_nav_container,
-        analysis_type_options,
-        analysis_type_state,
-        analysis_type_container,
+        # analysis_type_options,
+        # analysis_type_state,
+        # analysis_type_container,
         analysis_multi_hs_group_options,
         analysis_multi_hs_group_value,
         analysis_multi_hs_group_container,

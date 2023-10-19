@@ -948,7 +948,6 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
-    print(school_data)
     # track school name, school id, and gradespan separately
     school_info = school_data[["School Name", "School ID", "Low Grade", "High Grade"]]
 
@@ -966,7 +965,7 @@ def get_year_over_year_data(*args):
     # drop rows (years) where the school has no data
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]
-
+    
     if len(school_data.columns) == 0:
         result = school_data
 
@@ -1030,11 +1029,14 @@ def get_year_over_year_data(*args):
         comparable_schools_data = comparable_schools_data.reset_index()
         comparable_schools_data = comparable_schools_data.sort_values("Year")
 
-        result = pd.merge(
-            pd.merge(school_data, corp_data, on="Year"),
-            comparable_schools_data,
-            on="Year",
-        )
+        if len(comparable_schools_data.columns) == 0:
+            result = pd.merge(school_data, corp_data, on="Year")
+        else:
+            result = pd.merge(
+                pd.merge(school_data, corp_data, on="Year"),
+                comparable_schools_data,
+                on="Year",
+            )
 
         # account for changes in the year
         excluded_years = get_excluded_years(params["year"])

@@ -36,7 +36,7 @@ dash.register_page(
     Input("analysis-type-radio", "value"),
 )
 def set_dropdown_options(
-    school: str, year: str, comparison_schools: list, analysis_type_value=str
+    school: str, year: str, comparison_schools: list, analysis_type_value: str
 ):
     string_year = year
     numeric_year = int(string_year)
@@ -205,10 +205,20 @@ def set_dropdown_options(
         # used to display message if the number of selections exceeds the max
         input_warning = None
 
+        # create list of comparison schools based on current school id,
+        # test whether any of the school ids in the current_comparison_school list
+        # are present in comparison_schools(the input). If False, we want to replace
+        # comparison_schools with current_comparison_school list - note this will
+        # also take care of the initial load because an empty list will result in False
+        current_comparison_schools = [d["value"] for d in options]
+
+        if not set(comparison_schools).isdisjoint(current_comparison_schools) == False:
+            comparison_schools = [d["value"] for d in options[:default_num_to_display]]
         # if list is None or empty ([]), use the default options (NOTE: The callback takes
         # comparison schools as an input, so this will only be empty on first run)
-        if not comparison_schools:
-            comparison_schools = [d["value"] for d in options[:default_num_to_display]]
+
+        # if not comparison_schools:
+        #     comparison_schools = [d["value"] for d in options[:default_num_to_display]]
 
         else:
             if len(comparison_schools) > max_num_to_display:
@@ -250,7 +260,7 @@ def set_dropdown_options(
     [Input("analysis-multi-comparison-dropdown", "value")],
     State("analysis-multi-subcategory-radio", "value"),
 )
-def update_academic_analysis(
+def update_academic_analysis_multiple_years(
     school: str,
     year: str,
     analysis_type_value: str,
@@ -258,7 +268,7 @@ def update_academic_analysis(
     hs_group_radio_value: str,
     # subcategory_radio_value: str,
     comparison_school_list: list,
-    subcategory_radio_value: str,    
+    subcategory_radio_value: str,
 ):
     if not school:
         raise PreventUpdate
@@ -308,20 +318,6 @@ def update_academic_analysis(
             the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
             Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
 
-        # TODO: This is triggering TWICE, once with wrong value, WHY?? Getting sent without subject the first time,
-        # TODO: every time.
-
-        # TODO: CHECK FOR DOUBLE INPUT - BET THATS IT!
-        # e.g., from
-        #    Year  School ID         School Name  Low Grade  High Grade "Black|At Benchmark" "Black|Total Tested"
-        # 0  2020       1113  Steel City Academy          9          12    Black|AtBenchmark    Black|TotalTested
-        # to
-        #    Year  School ID         School Name  Low Grade  High Grade Black|EBRW At Benchmark Black|EBRW Total Tested
-        # 2  2022       1113  Steel City Academy          9          12            9                   38
-        print("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-        print(hs_group_radio_value)
-        print(f"X{subcategory_radio_value}X")
-
         # get data for school (these labels are used to generate the message on the empty tables)
         if (
             subcategory_radio_value != "No Subgroup Data"
@@ -330,9 +326,9 @@ def update_academic_analysis(
         ):
             if hs_group_radio_value == "SAT":
                 if subcategory_radio_value:
+
                     # If subcategory_state is "Total" and user flips to "SAT" we need to
                     # change subcategory_state to "School Total"
-                    # TODO: Because it's State??
                     if subcategory_radio_value == "Total":
                         subcategory_radio_value = "School Total"
 
@@ -344,9 +340,6 @@ def update_academic_analysis(
                 label = "Year over Year Comparison (SAT At Benchmark) - " + category
                 msg = ""
 
-                print("SAT")
-                print(category)
-
                 year_over_year_hs_data, all_school_info = get_year_over_year_data(
                     school, comparison_school_list, category, string_year, "sat"
                 )
@@ -355,7 +348,6 @@ def update_academic_analysis(
                 if subcategory_radio_value:
                     # If subcategory_state is "School Total" and user flips to
                     # "Grad" we need to change subcategory_state to "Total"
-                    # TODO: Because it's State?? Change to Input?
                     if subcategory_radio_value == "School Total":
                         subcategory_radio_value = "Total"
 
@@ -363,19 +355,12 @@ def update_academic_analysis(
                 else:
                     category = "Total|"
 
-                print("Grad")
-                print(category)
-
                 label = "Year over Year Comparison (Graduation Rate) - " + category[:-1]
                 msg = ""
 
                 year_over_year_hs_data, all_school_info = get_year_over_year_data(
                     school, comparison_school_list, category, string_year, "grad"
                 )
-
-        # TODO: Triggers not working somehwere vis a vis School Total and Total
-        # print("YOY HS")
-        # print(year_over_year_hs_data)
 
         else:
             year_over_year_hs_data = pd.DataFrame()
@@ -434,9 +419,6 @@ def update_academic_analysis(
             year_over_year_k8_data, all_school_info = get_year_over_year_data(
                 school, comparison_school_list, category, string_year, "k8"
             )
-
-            # print("YOY K8")
-            # print(year_over_year_k8_data)
 
         else:
             year_over_year_k8_data = pd.DataFrame()
