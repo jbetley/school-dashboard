@@ -33,6 +33,7 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
         for i in data.columns
         if "Diff" in i or "Tested" in i or "N-Size" in i or "(N)" in i
     ]
+
     data[fill_with_dash] = data[fill_with_dash].fillna(value="\u2014")  # em dash (—)
 
     fill_with_no_data = [
@@ -196,7 +197,7 @@ def recalculate_total_proficiency(
     #       None/None - ignore
     #       "***"/"***" - ignore
     #       number/*** - treat *** as 0 in proficiency calculations
-    #       
+    #
     revised_totals["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(
         axis=1
     ) / adj_corp_ela_test.sum(axis=1)
@@ -206,12 +207,12 @@ def recalculate_total_proficiency(
 
     return revised_totals
 
-# for typing purposes
-result: Any = [float|None|str]
 
-def calculate_percentage(
-    numerator: str, denominator: str
-) -> npt.NDArray[result]:
+# for typing purposes
+result: Any = [float | None | str]
+
+
+def calculate_percentage(numerator: str, denominator: str) -> npt.NDArray[result]:
     """
     Calculates a percentage given a numerator and a denominator, while accounting for two
     special cases: a string representing insufficent n-size ("***") and certain conditions
@@ -230,7 +231,7 @@ def calculate_percentage(
     result = np.where(
         (numerator == "***") | (denominator == "***"),
         "***",
-        np.where(       #type: ignore
+        np.where(  # type: ignore
             pd.to_numeric(numerator, errors="coerce").isna()
             & pd.to_numeric(denominator, errors="coerce").isna(),
             None,
@@ -262,7 +263,7 @@ def calculate_difference(value1: str, value2: str) -> npt.NDArray[result]:
     result = np.where(
         (value1 == "***") | (value2 == "***"),
         "***",
-        np.where(       #type: ignore
+        np.where(  # type: ignore
             pd.to_numeric(value1, errors="coerce").isna(),
             None,
             pd.to_numeric(value1, errors="coerce")
@@ -304,11 +305,11 @@ def calculate_year_over_year(
         np.where(
             (current_year == "***") | (previous_year == "***"),
             "***",
-            np.where(       #type: ignore
+            np.where(  # type: ignore
                 (pd.to_numeric(current_year, errors="coerce").isna())
                 & (pd.to_numeric(previous_year, errors="coerce").isna()),
                 None,
-                np.where(       #type: ignore
+                np.where(  # type: ignore
                     (~pd.to_numeric(current_year, errors="coerce").isna())
                     & (pd.to_numeric(previous_year, errors="coerce").isna()),
                     None,

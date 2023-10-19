@@ -1033,8 +1033,8 @@ def layout():
                             html.Div(
                                 [
                                     html.Div(
-                                        [
-                                            html.Label("Select School:"),
+                                        [                                 # cannot get htmlFor to work
+                                            html.Label("Select School:"), # htmlFor = "charter-dropdown"),
                                         ],
                                         className="dash-label",
                                         id="charter-dropdown-label",

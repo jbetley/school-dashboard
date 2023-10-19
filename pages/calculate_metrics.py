@@ -152,11 +152,6 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     category_header = data["Category"]
     data = data.drop("Category", axis=1)
 
-    # temporarily store first year of data - which is second column (index 1) after
-    # catagory - as first year is not used for year-over-year calculation
-    # first_year = pd.DataFrame()
-    # first_year[data.columns[1]] = data[data.columns[1]]
-
     # Two columns for each year - [School, N-Size]; years are ascending. We want calculate
     # the difference between the second to last column (the school column for the most recent Year) and
     # the fourth from last column (the school column for the most recent previous year) and continue doing
@@ -610,6 +605,7 @@ def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
 
 # TODO: Test this!
+
 
 def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     """

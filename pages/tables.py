@@ -1203,7 +1203,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
     if len(data.index) == 0 or table_size == 1:
         table = no_data_table("No Data to Display.", string_label, "ten")
- 
+
     else:
         # determines the col_width class and width of the category column based
         # on the size (# of cols) of the dataframe
@@ -1713,7 +1713,6 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
     data = data.rename(columns={"School Name": ""})
 
     if data.columns.str.contains("School Total").any() == True:
-        
         # keep everything between | and "Benchmark %"
         data.columns = data.columns.str.replace("Benchmark %", "")
         data.columns = data.columns.str.replace("School Total\|", "", regex=True)

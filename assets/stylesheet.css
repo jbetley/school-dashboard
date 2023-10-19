@@ -778,23 +778,142 @@ hr {
 /** Plotly Dash Overrides **/
 /* Overrides certain styles within the hoverlayer (for x hover mode) 
    Control the page using the id of the single-analysis page div*/
+
+/* Love me some CSS but there's otta be a better way to do this */
+/* 1st group */
 #year-over-year-grade .hoverlayer>.hovertext>path {
   stroke-width: 0px !important;
   stroke: none !important;
 }
+
+#proficiency-grades-ela .hoverlayer>.hovertext>path {
+  stroke-width: 0px !important;
+  stroke: none !important;
+}
+
+#proficiency-ethnicity-ela .hoverlayer>.hovertext>path {
+  stroke-width: 0px !important;
+  stroke: none !important;
+}
+
+#proficiency-subgroup-ela .hoverlayer>.hovertext>path {
+  stroke-width: 0px !important;
+  stroke: none !important;
+}
+
+#proficiency-grades-math .hoverlayer>.hovertext>path {
+  stroke-width: 0px !important;
+  stroke: none !important;
+}
+
+#proficiency-ethnicity-math .hoverlayer>.hovertext>path {
+  stroke-width: 0px !important;
+  stroke: none !important;
+}
+
+#proficiency-subgroup-math .hoverlayer>.hovertext>path {
+  stroke-width: 0px !important;
+  stroke: none !important;
+}
+
+/* 2nd group */
+
 
 #year-over-year-grade .hoverlayer>.hovertext>text.nums {
   font-weight: 500;
   fill: #ffffff !important;
 }
 
+#proficiency-grades-ela .hoverlayer>.hovertext>text.nums {
+  font-weight: 500;
+  fill: #ffffff !important;
+}
+
+#proficiency-ethnicity-ela .hoverlayer>.hovertext>text.nums {
+  font-weight: 500;
+  fill: #ffffff !important;
+}
+
+#proficiency-subgroup-ela .hoverlayer>.hovertext>text.nums {
+  font-weight: 500;
+  fill: #ffffff !important;
+}
+
+#proficiency-grades-math .hoverlayer>.hovertext>text.nums {
+  font-weight: 500;
+  fill: #ffffff !important;
+}
+
+#proficiency-ethnicity-math .hoverlayer>.hovertext>text.nums {
+  font-weight: 500;
+  fill: #ffffff !important;
+}
+
+#proficiency-subgroup-math .hoverlayer>.hovertext>text.nums {
+  font-weight: 500;
+  fill: #ffffff !important;
+}
+
+/* 3rd Group */
+
+
 #year-over-year-grade .hoverlayer>.axistext>path {
   fill: steelblue !important;
 }
 
+#proficiency-grades-ela .hoverlayer>.axistext>path {
+  fill: steelblue !important;
+}
+
+#proficiency-ethnicity-ela .hoverlayer>.axistext>path {
+  fill: steelblue !important;
+}
+
+#proficiency-subgroup-ela .hoverlayer>.axistext>path {
+  fill: steelblue !important;
+}
+
+#proficiency-grades-math .hoverlayer>.axistext>path {
+  fill: steelblue !important;
+}
+
+#proficiency-ethnicity-math .hoverlayer>.axistext>path {
+  fill: steelblue !important;
+}
+
+#proficiency-subgroup-math .hoverlayer>.axistext>path {
+  fill: steelblue !important;
+}
+
+/* 4th Group */
 #year-over-year-grade .hoverlayer>.axistext>text {
   font-weight: 600;
 }
+
+#proficiency-grades-ela .hoverlayer>.axistext>text {
+  font-weight: 600;
+}
+
+#proficiency-ethnicity-ela .hoverlayer>.axistext>text {
+  font-weight: 600;
+}
+
+#proficiency-subgroup-ela .hoverlayer>.axistext>text {
+  font-weight: 600;
+}
+
+#proficiency-grades-math .hoverlayer>.axistext>text {
+  font-weight: 600;
+}
+
+#proficiency-ethnicity-math .hoverlayer>.axistext>text {
+  font-weight: 600;
+}
+
+#proficiency-subgroup-math .hoverlayer>.axistext>text {
+  font-weight: 600;
+}
+
 
 /* Overides base color of all dropdown menu options */
 .VirtualizedSelectOption {
@@ -1151,6 +1270,10 @@ a.nav-link:hover {
   left: 100%;
   height: 80%;
   width: 1px;
+}
+
+#academic-information-category-radio-container {
+  margin-bottom: 7px;
 }
 
 #analysis-multi-category-radio-container {

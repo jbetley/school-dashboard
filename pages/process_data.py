@@ -261,6 +261,11 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
             }
         )
 
+        # Get rid of None types and replace 0's with NaN for tested values
+        # ensures eventual correct formatting to "-"
+        data_tested = data_tested.fillna(value=np.nan)
+        data_tested = data_tested.replace(0, np.nan)
+
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         data_proficiency = data_proficiency.filter(
             regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$",

@@ -968,7 +968,7 @@ def make_bar_chart(
             y=category,
             color_discrete_map=trace_color,
             color="School Name",
-            custom_data=["Low Grade", "High Grade"],  # ,'Distance']
+            # custom_data=["Low Grade", "High Grade"],  # ,'Distance']
             text_auto=True,
         )
 
@@ -1008,7 +1008,8 @@ def make_bar_chart(
 
         fig.update_traces(
             textposition="outside",
-            hovertemplate="<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br><b>Proficiency: </b>%{y}<br><extra></extra>",
+            hovertemplate="<b>%{x}</b><br><b>Proficiency: </b>%{y}<br><extra></extra>",
+            # hovertemplate="<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br><b>Proficiency: </b>%{y}<br><extra></extra>",
         )
 
     else:
