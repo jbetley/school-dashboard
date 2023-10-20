@@ -588,15 +588,23 @@ def make_line_chart(values: pd.DataFrame) -> list:
             data[col] = pd.to_numeric(data[col], errors="coerce")
 
         data.sort_values("Year", inplace=True)
-
+        
         # One last check, if there is only one year of data being displayed, we need to drop
         # all columns with only NaN- otherwise the traces will be displayed on the chart
         # even though they are listed as having no data to display - afterwards we need
         # to reset the cols variable to make sure it matches the changed df
-        if len(data.index) == 1:
-            data = data.dropna(axis=1, how="all")
-            cols = [i for i in data.columns if i not in ["School Name", "Year"]]
+        # if len(data.index) == 1:
+        #     data = data.dropna(axis=1, how="all")
+        #     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
+        print(data)
+        # TODO: Testing dropnall all
+        data =  data.dropna(axis=1, how='all')
+        cols = [i for i in data.columns if i not in ["School Name", "Year"]]
+        print(data)
+
+        
+        
         data = data.reset_index(drop=True)
 
         # If the initial df has data, but after dropping all no data rows is then
