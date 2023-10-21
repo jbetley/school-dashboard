@@ -294,6 +294,26 @@ def get_academic_dropdown_years(*args):
     return years
 
 
+def get_academic_growth_dropdown_years(*args):
+    keys = ["id"]
+    params = dict(zip(keys, args))
+
+    q = text(
+        """
+        SELECT DISTINCT	TestYear
+	        FROM growth_data
+	        WHERE MajorityEnrolledSchoolID = :id
+        """
+    )
+
+    result = run_query(q, params)
+
+    years = result["Test Year"].tolist()
+    years.sort(reverse=True)
+
+    return years
+
+
 # TODO: The next two functions are almost identical (difference is Q#s). Maybe consolidate?
 def get_financial_info_dropdown_years(school_id):
     # Processes financial df and returns a list of Year column names for

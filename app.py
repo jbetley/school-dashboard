@@ -68,6 +68,7 @@ import dash_bootstrap_components as dbc
 from pages.load_data import (
     get_school_index,
     get_academic_dropdown_years,
+    get_academic_growth_dropdown_years,
     get_financial_info_dropdown_years,
     get_school_dropdown_list,
     get_financial_analysis_dropdown_years,
@@ -317,8 +318,8 @@ def set_year_dropdown_options(
     # Guest schools do not have financial data
     if (
         "academic" in current_page
-        or "academic_analysis_single" in current_page
-        or "academic_analysis_multiple" in current_page
+        # or "academic_analysis_single" in current_page
+        # or "academic_analysis_multiple" in current_page
         or selected_school["Guest"].values[0] == "Y"
     ):
         if (
@@ -328,7 +329,10 @@ def set_year_dropdown_options(
         ) and analysis_type_value == "hs":
             years = get_academic_dropdown_years(school_id, "HS")
         else:
-            years = get_academic_dropdown_years(school_id, school_type)
+            if "academic_information_growth" in current_page:
+                years = get_academic_growth_dropdown_years(school_id)
+            else:
+                years = get_academic_dropdown_years(school_id, school_type)
 
     elif "financial_analysis" in current_page:
         years = get_financial_analysis_dropdown_years(school_id)
@@ -436,7 +440,7 @@ def get_school_type(school_id: str, analysis_type_value: str):
     return analysis_type_options, analysis_type_value, analysis_type_container
 
 
-# Subnavigation - Year Dropdown #
+# Subnavigation - Dropdown #
 # NOTE: There are no doubt better ways to structure this; however, given how complicated
 # it is and how the values are interlinked, in order to avoid circular callbacks, we are
 # using a single callback
@@ -449,9 +453,6 @@ def get_school_type(school_id: str, analysis_type_value: str):
     Output("academic-information-category-radio-container", "style"),
     Output("academic-information-subnav-container", "style"),
     Output("academic-information-navigation-container", "style"),
-    # Output("analysis-type-radio", "options"),
-    # Output("analysis-type-radio", "value"),
-    # Output("analysis-type-radio-container", "style"),
     Output("analysis-multi-hs-group-radio", "options"),
     Output("analysis-multi-hs-group-radio", "value"),
     Output("analysis-multi-hs-group-radio-container", "style"),
@@ -505,8 +506,6 @@ def navigation(
     if "academic_info" in current_page:
         # hide academic analysis navigation
         analysis_type_state = "k8"
-        # analysis_type_options = []
-        # analysis_type_container = {"display": "none"}
 
         analysis_multi_hs_group_options = []
         analysis_multi_hs_group_value = ""
@@ -635,30 +634,6 @@ def navigation(
         analysis_nav_container = {"display": "block"}
         analysis_subnav_container = {"display": "block"}
 
-        # # set default if empty
-        # if not analysis_type_state:
-        #     if school_type == "HS" or school_type == "AHS":
-        #         analysis_type_state = "hs"
-        #     else:
-        #         analysis_type_state = "k8"
-
-        # # analysis-type: used for both pages - is the only subnavigation
-        # # for analysis_single_year.py
-        # if school_type == "K12":
-        #     # analysis_type_options = type_options_default
-
-        #     if analysis_type_state in ["k8", "hs"]:
-        #         analysis_type_state = analysis_type_state
-        #     else:
-        #         analysis_type_state = "k8"
-
-        #     # analysis_type_container = {"display": "block"}
-
-        # else:
-        #     analysis_type_state = "k8"
-        # analysis_type_options = []
-        # analysis_type_container = {"display": "none"}
-
         # analysis_multiple_years.py
         if "analysis_multiple" in current_page:
             # group button for HS/AHS/K12 (hs type)
@@ -780,8 +755,6 @@ def navigation(
                         analysis_multi_category_value = "Grade"
 
             # get years for subcategoires
-            # TODO: The following is a duplication of code from year-dropdown. Need
-            # TODO: to switch this with an Input value for dropdown-year, "options".
             if school_type == "K8" and analysis_type_state == "hs":
                 analysis_type_state = "k8"
 
@@ -872,8 +845,7 @@ def navigation(
                     analysis_multi_subcategory_options = [
                         {"label": s, "value": s} for s in subgroup
                     ]
-                    print(subgroup)
-                    print(analysis_multi_subcategory_value)
+
                     if analysis_multi_subcategory_value in subgroup:
                         analysis_multi_subcategory_value = (
                             analysis_multi_subcategory_value
@@ -925,8 +897,6 @@ def navigation(
     else:
         # analysis both
         analysis_type_state = "k8"
-        # analysis_type_options = []
-        # analysis_type_container = {"display": "none"}
 
         # analysis multi
         analysis_nav_container = {"display": "none"}
@@ -969,9 +939,6 @@ def navigation(
         info_category_container,
         info_subnav_container,
         info_nav_container,
-        # analysis_type_options,
-        # analysis_type_state,
-        # analysis_type_container,
         analysis_multi_hs_group_options,
         analysis_multi_hs_group_value,
         analysis_multi_hs_group_container,
@@ -1033,8 +1000,10 @@ def layout():
                             html.Div(
                                 [
                                     html.Div(
-                                        [                                 # cannot get htmlFor to work
-                                            html.Label("Select School:"), # htmlFor = "charter-dropdown"),
+                                        [  # cannot get htmlFor to work
+                                            html.Label(
+                                                "Select School:"
+                                            ),  # htmlFor = "charter-dropdown"),
                                         ],
                                         className="dash-label",
                                         id="charter-dropdown-label",
@@ -1163,7 +1132,7 @@ def layout():
                         ],
                         className="no-print",
                     ),
-                    # Subnavigation #
+                    # Subnavigation layout #
                     html.Div(
                         [
                             html.Div(

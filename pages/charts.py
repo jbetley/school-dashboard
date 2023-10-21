@@ -252,7 +252,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
         insidetextanchor="middle",
         textposition="inside",
         marker_line=dict(width=0),
-        hovertemplate="%{text}", 
+        hovertemplate="%{text}",
         # hovertemplate="%{text} (n-size: %{customdata[0]})",  # adds n-size (Total Tested) info to each trace.
         hoverinfo="none",
     )
@@ -574,7 +574,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
     if (len(cols)) > 0:
-        
         # NOTE: the "insufficient n-size" and "no data" information is usually displayed
         # below the fig in the layout. However, given the size of the figs, it makes them
         # way too cluttered. So it is currently removed. I would prefer to somehow add this
@@ -588,7 +587,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
             data[col] = pd.to_numeric(data[col], errors="coerce")
 
         data.sort_values("Year", inplace=True)
-        
+
         # One last check, if there is only one year of data being displayed, we need to drop
         # all columns with only NaN- otherwise the traces will be displayed on the chart
         # even though they are listed as having no data to display - afterwards we need
@@ -597,14 +596,9 @@ def make_line_chart(values: pd.DataFrame) -> list:
         #     data = data.dropna(axis=1, how="all")
         #     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
-        print(data)
-        # TODO: Testing dropnall all
-        data =  data.dropna(axis=1, how='all')
+        data = data.dropna(axis=1, how="all")
         cols = [i for i in data.columns if i not in ["School Name", "Year"]]
-        print(data)
 
-        
-        
         data = data.reset_index(drop=True)
 
         # If the initial df has data, but after dropping all no data rows is then
@@ -642,7 +636,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             # use this template if using x-unified
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
-            
+
             fig.update_traces(hovertemplate=None)  # type: ignore
             fig.update_layout(  # type: ignore
                 hoverlabel=dict(
@@ -817,7 +811,9 @@ def make_growth_chart(
                 mode="markers+lines",
                 marker=dict(color=color[i], symbol="square"),
                 line={"dash": "solid"},
-                customdata=[f"{i:.2%}" if not np.isnan(i) else "None" for i in data_162[col]]
+                customdata=[
+                    f"{i:.2%}" if not np.isnan(i) else "None" for i in data_162[col]
+                ]
                 if "Growth" in label
                 else [f"{i:.1f}" for i in data_162[col]],
                 text=[f"{i}" for i in data_me.columns],

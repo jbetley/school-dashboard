@@ -166,8 +166,6 @@ def update_academic_information_page(
 
         excluded_years = get_excluded_years(selected_year_string)
 
-        print(year)
-        print(selected_raw_hs_school_data)
         # exclude years later than the selected year
         if excluded_years:
             selected_raw_hs_school_data = selected_raw_hs_school_data[

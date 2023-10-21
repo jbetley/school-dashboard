@@ -360,7 +360,6 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
     data_me.insert(0, "Category", data_me.pop("Category"))
 
-    print(data_me)
     table_size = len(data_me.columns)
 
     if len(data_me.index) == 0 or table_size == 1:
