@@ -340,6 +340,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     data_me = data.loc[
         :, data.columns.str.contains("Category|Majority Enrolled")
     ].copy()
+
     data_me = data_me.rename(
         columns={c: c[:4] for c in data_me.columns if c not in ["Category"]}
     )
@@ -353,8 +354,13 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
     # Reverse year order (ignoring Category) to align with charts (ascending order)
     data_me = data_me.iloc[:, ::-1]
+
+    # replace NaN with em dash (—)
+    data_me = data_me.fillna(value="\u2014")
+
     data_me.insert(0, "Category", data_me.pop("Category"))
 
+    print(data_me)
     table_size = len(data_me.columns)
 
     if len(data_me.index) == 0 or table_size == 1:

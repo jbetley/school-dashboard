@@ -145,6 +145,8 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
             "_"
         ).str[1]
 
+        print(table_data_grades_growth_ela)
+        
         label_grades_growth_ela = (
             "Percentage of Students with Adequate Growth - by Grade (ELA)"
         )
