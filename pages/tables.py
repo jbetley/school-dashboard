@@ -151,7 +151,7 @@ def create_proficiency_key() -> list:
                         "filter_query": "{Rate} = 'Exceeds Standard'",
                         "column_id": "icon",
                     },
-                    "color": "#0D9FE1",  ##b33dc6",
+                    "color": "#0D9FE1",
                 },
                 {
                     "if": {
@@ -165,7 +165,7 @@ def create_proficiency_key() -> list:
                         "filter_query": "{Rate3} = 'Approaches Standard'",
                         "column_id": "icon3",
                     },
-                    "color": "#F5A30F",  ##ede15b",
+                    "color": "#F5A30F",
                 },
                 {
                     "if": {
@@ -205,7 +205,7 @@ def empty_table(text: str) -> dash_table.DataTable:
         dash datatable (dash_table.DataTable): a dash DataTable
     """
 
-    # need to convert displayed text to a list for the datatable
+    # default table text
     if text == "":
         text = "No Data to Display."
 
@@ -822,8 +822,6 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
     table_size = len(data.columns)
 
     if table_size > 1:
-        # determines the col_width class and width of the category column based
-        # on the size (# of cols) of the dataframe
         if table_size <= 3:
             col_width = "four"
             category_width = 60
@@ -1210,8 +1208,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         table = no_data_table("No Data to Display.", string_label, "ten")
 
     else:
-        # determines the col_width class and width of the category column based
-        # on the size (# of cols) of the dataframe
+
         if table_size <= 3:
             col_width = "four"
             category_width = 40
@@ -1234,7 +1231,6 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             col_width = "twelve"
             category_width = 15
 
-        # TODO: Move this to data processing step
         data.columns = data.columns.str.replace("N-Size", "(N)", regex=True)
         data.columns = data.columns.str.replace("Rate", "Rating", regex=True)
         data.columns = data.columns.str.replace("Diff", "Difference", regex=True)
@@ -1364,7 +1360,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 first_year = name_cols[2][0] + name_cols[2][1]
                 name_cols[2][0] = name_cols[2][0] + " (Initial Year)"
 
-        # NOTE: This add a border to header_index:1 for each category
+        # NOTE: This adds a border to header_index:1 for each category
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
         # and uncomment style_as_list in table declaration
@@ -1575,8 +1571,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             # up opens in a space where there is no room for it (e.g., if it is set to position "top"
             # and it is triggered by something at the top of the browser window. One workaround is to
             # set the position of the Card to bottom, where it is less likely to have no space. This
-            # is not a fix however.
-            # See: https://github.com/snehilvj/dash-mantine-components/issues/180
+            # was fixed in the current alpha (0.13) but is not released yet
             # https://community.plotly.com/t/dash-mantine-datepicker/75251/2
 
             if not id:

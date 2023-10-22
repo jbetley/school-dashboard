@@ -34,7 +34,9 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
         if "Diff" in i or "Tested" in i or "N-Size" in i or "(N)" in i
     ]
 
-    data[fill_with_dash] = data[fill_with_dash].fillna(value="\u2014")  # em dash (—)
+    data[fill_with_dash] = data[fill_with_dash].fillna(
+        value="\u2014"
+    )  # \u2014 is an em dash (—)
 
     fill_with_no_data = [
         i
@@ -460,12 +462,14 @@ def round_percentages(percentages: list) -> list:
     # of the numbers should bet at or near (1). To be safe we test
     # to see if sum is less than 2. If it is, we multiply all of
     # the numbers in the list by 100 (e.g., 57, 90)
+
     if sum(percentages) < 2:
         percentages = [x * 100 for x in percentages]
 
     result = []
     sum_of_integer_parts = 0
 
+    # print(percentages)
     for index, percentage in enumerate(percentages):
         whole, fractional = str(float(percentage)).split(".")
         integer = int(whole)

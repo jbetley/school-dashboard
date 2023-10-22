@@ -629,16 +629,19 @@ def update_academic_information_page(
                         total_tested = category_subject + " " + "Total Tested"
 
                         # We do not want categories that do not appear in the dataframe, there are
-                        # three possible data configurations for each column:
+                        # four possible data configurations for each column:
                         # 1) Total Tested > 0 and the sum of proficiency_rating(s) is > 0: the school
                         #    has tested category and there is publicly available data [display]
                         # 2) Total Tested > 0 and the sum of proficiency_rating(s) are == "NaN": the
                         #    school has tested category but there is no publicly available data
                         #    (insufficient N-size) [do not display]
-                        # 3) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
+                        # 3) Total Tested > 0, but there is one or more NaN values in the group -
+                        #    so while there is some chartable data available, it would be impossible
+                        #    to produce a valid stacked bar
+                        # 4) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
                         #    have data for the tested category [do not display]
 
-                        # Neither (2) nor (3) should be displayed. However, we do want to
+                        # Neither (2), (3), or (4) should be displayed. However, we do want to
                         # track which Category/Subject combinations meet either condition
                         # (for figure annotation purposes). So we use a little trick. The
                         # sum of a series of "0" values is 0 (a numpy.int64). The sum of a
@@ -648,58 +651,78 @@ def update_academic_information_page(
                         # np.integer and np.floating) to distinguish between them.
 
                         if total_tested in all_proficiency_data.columns:
-                            if (
-                                all_proficiency_data[proficiency_columns].iloc[0].sum()
-                                == 0
-                            ):
-                                # if the value is a float, the measured values were NaN, which
-                                # means they were converted "***", and thus "insufficient data"
-                                if isinstance(
-                                    all_proficiency_data[proficiency_columns]
-                                    .iloc[0]
-                                    .sum(),
-                                    np.floating,
-                                ):
-                                    annotations.loc[len(annotations.index)] = [
-                                        proficiency_columns[0],
-                                        all_proficiency_data[total_tested].values[0],
-                                        "Insufficient",
-                                    ]
 
-                                # if the value is an integer, the measured values were 0, which
-                                # means "missing data"
-                                elif isinstance(
-                                    all_proficiency_data[proficiency_columns]
-                                    .iloc[0]
-                                    .sum(),
-                                    np.integer,
+                            # This is true if: 1) there are any NaN values in the set (one or
+                            # more '***) or 2) the sum of all values is equal to 0 (no data)
+                            # or 0.0 (NaN's converted from '***' meaning insufficient data)
+                            if (
+                                all_proficiency_data[proficiency_columns].isna().sum().sum() > 0
+                            ) or (
+                                all_proficiency_data[proficiency_columns].iloc[0].sum() == 0
                                 ):
-                                    # Only add to annotations if it is a non "Grade" category.
-                                    # this is to account for IDOE's shitty data practices- sometimes
-                                    # missing grades are blank (the correct way) and sometimes the
-                                    # columns are filled with 0. So if everything is 0 AND it is a Grade
-                                    # category, we assume it is just IDOE's fucked up data entry
-                                    if (
-                                        ~all_proficiency_data[proficiency_columns]
-                                        .columns.str.contains("Grade")
-                                        .any()
+
+                                    # if the value is zero AND a float, all values were NaN,
+                                    # meaning insufficient N-Size
+                                    if isinstance(
+                                        all_proficiency_data[proficiency_columns]
+                                        .iloc[0]
+                                        .sum(),
+                                        np.floating
                                     ):
+
                                         annotations.loc[len(annotations.index)] = [
                                             proficiency_columns[0],
-                                            all_proficiency_data[total_tested].values[
-                                                0
-                                            ],
-                                            "Missing",
+                                            all_proficiency_data[total_tested].values[0],
+                                            "Insufficient",
                                         ]
 
-                                # either way, drop all columns related to the category from the df
-                                all_proficiency_columns = proficiency_columns + [
-                                    total_tested
-                                ]
+                                    # if the value is zero and an integer, all values were 0,
+                                    # which means "missing data"
+                                    elif isinstance(
+                                        all_proficiency_data[proficiency_columns]
+                                        .iloc[0]
+                                        .sum(),
+                                        np.integer,
+                                    ):
+                                        # for this category, we only want to add to annotations if it is
+                                        # a non "Grade" category in order to account for IDOE's shitty data
+                                        # practices- sometimes missing grades are blank (the correct way)
+                                        # and sometimes the columns are filled with 0. So if everything is
+                                        # 0 AND it is a Grade category, we assume it is just IDOE's fucked
+                                        # up data entry
+                                        if (
+                                            ~all_proficiency_data[proficiency_columns]
+                                            .columns.str.contains("Grade")
+                                            .any()
+                                        ):
+                                            annotations.loc[len(annotations.index)] = [
+                                                proficiency_columns[0],
+                                                all_proficiency_data[total_tested].values[
+                                                    0
+                                                ],
+                                                "Missing"
+                                            ]
+                                    
+                                    # if the value is greater than zero - it means there was one or more
+                                    # nan values in the set which also indicates insufficient data
+                                    elif (all_proficiency_data[proficiency_columns]
+                                            .iloc[0]
+                                            .sum() > 0):                                
 
-                                all_proficiency_data = all_proficiency_data.drop(
-                                    all_proficiency_columns, axis=1
-                                )
+                                        annotations.loc[len(annotations.index)] = [
+                                            proficiency_columns[0],
+                                            all_proficiency_data[total_tested].values[0],
+                                            "Insufficient"
+                                            ]
+                                    
+                                    # either way, drop all columns related to the category from the df
+                                    all_proficiency_columns = proficiency_columns + [
+                                        total_tested
+                                    ]
+
+                                    all_proficiency_data = all_proficiency_data.drop(
+                                        all_proficiency_columns, axis=1
+                                    )
 
                             else:
                                 # calculate percentage
