@@ -22,17 +22,16 @@ from .load_data import get_school_index
 # color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
 
 color = [
-    "#74a2d7",
-    "#df8f2d",
-    "#96b8db",
-    "#ebbb81",
-    "#bc986a",
-    "#a8b462",
-    "#f0c33b",
-    "#74a2d7",
-    "#f0c33b",
-    "#83941f",
     "#7b6888",
+    "#df8f2d",
+    "#a8b462",
+    "#ebbb81",
+    "#74a2d7",
+    "#d4773f",
+    "#83941f",
+    "#f0c33b",
+    "#bc986a",    
+    "#96b8db"
 ]
 
 
@@ -774,19 +773,19 @@ def make_growth_chart(
     data_me.columns = data_me.columns.map(lambda x: x.split("|")[0])
     data_162.columns = data_162.columns.map(lambda x: x.split("|")[0])
 
-    color = [
-        "#74a2d7",
-        "#df8f2d",
-        "#96b8db",
-        "#ebbb81",
-        "#bc986a",
-        "#a8b462",
-        "#f0c33b",
-        "#74a2d7",
-        "#f0c33b",
-        "#83941f",
-        "#7b6888",
-    ]
+    # color = [
+    #     "#74a2d7",
+    #     "#df8f2d",
+    #     "#96b8db",
+    #     "#ebbb81",
+    #     "#bc986a",
+    #     "#a8b462",
+    #     "#f0c33b",
+    #     "#74a2d7",
+    #     "#f0c33b",
+    #     "#83941f",
+    #     "#7b6888",
+    # ]
 
     fig = make_subplots()
 
@@ -961,7 +960,7 @@ def make_bar_chart(
         # use specific color for selected school
         for key, value in trace_color.items():
             if key == school_name:
-                trace_color[key] = "#0a66c2"
+                trace_color[key] = "#7b6888" #"#0a66c2"
 
         # Uncomment this and below to display distance from selected school
         # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)

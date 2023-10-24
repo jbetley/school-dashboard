@@ -781,6 +781,12 @@ hr {
 
 /* Love me some CSS but there's otta be a better way to do this */
 /* 1st group */
+
+#year-over-year-hs .hoverlayer>.hovertext>path {
+  stroke-width: 0px !important;
+  stroke: none !important;
+}
+
 #year-over-year-grade .hoverlayer>.hovertext>path {
   stroke-width: 0px !important;
   stroke: none !important;
@@ -818,6 +824,10 @@ hr {
 
 /* 2nd group */
 
+#year-over-year-hs .hoverlayer>.hovertext>text.nums {
+  font-weight: 500;
+  fill: #ffffff !important;
+}
 
 #year-over-year-grade .hoverlayer>.hovertext>text.nums {
   font-weight: 500;
@@ -856,6 +866,9 @@ hr {
 
 /* 3rd Group */
 
+#year-over-year-hs .hoverlayer>.axistext>path {
+  fill: steelblue !important;
+}
 
 #year-over-year-grade .hoverlayer>.axistext>path {
   fill: steelblue !important;
@@ -886,6 +899,10 @@ hr {
 }
 
 /* 4th Group */
+#year-over-year-hs .hoverlayer>.axistext>text {
+  font-weight: 600;
+}
+
 #year-over-year-grade .hoverlayer>.axistext>text {
   font-weight: 600;
 }
