@@ -616,7 +616,7 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
 
 
 def find_nearest(
-    school_idx: pd.Index, data: pd.DataFrame
+    school_idx: pd.Index, values: pd.DataFrame
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Based on https://stackoverflow.com/q/43020919/190597
@@ -642,6 +642,9 @@ def find_nearest(
         index (np.ndarray) & distance (np.ndarray): an array of dataframe indexes
         and an array of distances (in miles)
     """
+
+    # use a copy so as to not modify the provided data
+    data = values.copy()
 
     # number of schools to return (add 1 to account for the fact that the selected school
     # is included in the return set) - number needs to be high enough to ensure there are
@@ -669,3 +672,127 @@ def find_nearest(
     distance, index = tree.query(data.iloc[school_idx][["x", "y", "z"]], k=num_hits)
 
     return index, distance
+
+
+def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.DataFrame:
+    """
+    Gets the Low and High grades (0-12) for a selected school and then removes all
+    schools from the supplied dataframe where there is no, or less than a specified
+    number of grades that overlap with the selected school.
+
+    Args:
+        school_id (string): numeric id of the selected school
+        schools (pd.DataFrame): a dataframe of all possible comparison schools
+
+    Returns:
+        schools (pd.DataFrame): a dataframe filtered by the above condition
+    """
+
+    # "overlap" should be one less than the the number of grades that we want as a
+    # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
+    overlap = 1
+
+    schools = schools.replace({"Low Grade": {"PK": 0, "KG": 1}})
+    schools["Low Grade"] = schools["Low Grade"].astype(int)
+    schools["High Grade"] = schools["High Grade"].astype(int)
+    school_grade_span = (
+        schools.loc[schools["School ID"] == int(school_id)][["Low Grade", "High Grade"]]
+        .values[0]
+        .tolist()
+    )
+    school_low = school_grade_span[0]
+    school_high = school_grade_span[1]
+
+    # In order to fit within the distance parameters, the tested school must:
+    #   a)  have a low grade that is less than or equal to the selected school and
+    #       a high grade minus the selected school's low grade that is greater than or
+    #       eqaul to the overlap; or
+    #   b) have a low grade that is greater than or equal to the selected school and
+    #       a high grade minus the tested school's low grade that is greater than or
+    #       equal to the overlap.
+    # Examples -> assume a selected school with a gradespan of 5-8:
+    #   i) a school with grades 3-7 -   [match]: low grade is less than selected school's
+    #       low grade and high grade (7) minus selected school low grade (5) is greater (2)
+    #       than the overlap (1).
+    #   i) a school with grades 2-5 -   [No match]: low grade is less than selected school's
+    #       low grade but high grade (5) minus selected school low grade (5) is not greater (0)
+    #       than the overlap (1). In this case while there is an overlap, it is below our
+    #       threshold (2 grades).
+    #   c) a school with grades 6-12-   [match]: low grade is higher than selected school's
+    #       low grade and high grade (12) minus the tested school low grade (5) is greater
+    #       (7) than the overlap (1).
+    #   d) a school with grades 3-4     [No match]: low grade is lower than selected school's
+    #       low grade, but high grade (4) minus the selected school's low grade (5) is not greater
+    #       (-1) than the overlap (1).
+
+    schools = schools.loc[
+        (
+            (schools["Low Grade"] <= school_low)
+            & (schools["High Grade"] - school_low >= overlap)
+        )
+        | (
+            (schools["Low Grade"] >= school_low)
+            & (school_high - schools["Low Grade"] >= overlap)
+        ),
+        :,
+    ]
+
+    schools = schools.reset_index(drop=True)
+
+    return schools
+
+
+def calculate_comparison_school_list(
+    school_id: str,
+    schools: pd.DataFrame,
+    max: int,
+) -> pd.DataFrame:
+    school_idx = schools[schools["School ID"] == int(school_id)].index
+
+    # NOTE: This should never ever happen because we've already determined
+    # that the school exists in the check above. However, it did happen once,
+    # somehow, so we leave this in here just in case.
+    if school_idx.size == 0:
+        return [], [], []
+
+    # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
+    index_array, dist_array = find_nearest(school_idx, schools)
+
+    index_list = index_array[0].tolist()
+    distance_list = dist_array[0].tolist()
+
+    # Match School ID with indexes
+    closest_schools = pd.DataFrame()
+    closest_schools["School ID"] = schools[schools.index.isin(index_list)]["School ID"]
+
+    # Merge the index and distances lists into a dataframe
+    distances = pd.DataFrame({"index": index_list, "y": distance_list})
+    distances = distances.set_index(list(distances)[0])
+
+    # Merge School ID with Distances by index
+    combined = closest_schools.join(distances)
+
+    # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
+    comparison_set = pd.merge(combined, schools, on="School ID", how="inner")
+    comparison_set = comparison_set.rename(columns={"y": "Distance"})
+
+    # drop selected school (so it cannot be selected in the dropdown)
+    comparison_set = comparison_set.drop(
+        comparison_set[comparison_set["School ID"] == int(school_id)].index
+    )
+
+    # limit maximum dropdown to the [n] closest schools
+    num_schools_expanded = max
+
+    comparison_set = comparison_set.sort_values(by=["Distance"], ascending=True)
+
+    comparison_dropdown = comparison_set.head(num_schools_expanded)
+
+    comparison_dict = dict(
+        zip(comparison_dropdown["School Name"], comparison_dropdown["School ID"])
+    )
+
+    # final list will be displayed in order of increasing distance from selected school
+    comparison_list = dict(comparison_dict.items())
+
+    return comparison_list

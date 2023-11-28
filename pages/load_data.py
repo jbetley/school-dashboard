@@ -946,7 +946,7 @@ def get_year_over_year_data(*args):
     tested_query = tested.replace(" ", "")
 
     school_query_str = (
-        "Year, SchoolID, SchoolName, LowGrade, HighGrade, "
+        "Year, SchoolID, SchoolName, LowGrade, HighGrade, SchoolType, "
         + '"'
         + passed_query
         + '", "'
@@ -975,6 +975,13 @@ def get_year_over_year_data(*args):
     q1 = text(query_string1)
 
     school_data = run_query(q1, params)
+
+    # get school type and then drop column (this just gets the string
+    # value with the highest frequency - avoids situations where a
+    # specific year may not have a value)
+    school_type = school_data["School Type"].value_counts().index.values[0]
+
+    school_data = school_data.drop(["School Type"], axis=1)
 
     # track school name, school id, and gradespan separately
     school_info = school_data[["School Name", "School ID", "Low Grade", "High Grade"]]
@@ -1060,11 +1067,15 @@ def get_year_over_year_data(*args):
         if len(comparable_schools_data.columns) == 0:
             result = pd.merge(school_data, corp_data, on="Year")
         else:
-            result = pd.merge(
-                pd.merge(school_data, corp_data, on="Year"),
-                comparable_schools_data,
-                on="Year",
-            )
+            # do not merge school corp data with adult high school set
+            if school_type == "AHS":
+                result = pd.merge(school_data, comparable_schools_data, on="Year")
+            else:
+                result = pd.merge(
+                    pd.merge(school_data, corp_data, on="Year"),
+                    comparable_schools_data,
+                    on="Year",
+                )
 
         # account for changes in the year
         excluded_years = get_excluded_years(params["year"])

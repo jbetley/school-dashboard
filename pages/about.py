@@ -245,7 +245,8 @@ def update_about_page(year: str, school: str):
                     ethnicity_data_t.iloc[:, i] / total_enrollment[i]
                 )
 
-            # Find rows where percentage is < .005 (1% after rounding) - and create string for annotation purposes
+            # Find rows where percentage is < .005 (1% after rounding) -
+            # and create string for annotation purposes
             no_show = ethnicity_data_t[
                 (
                     (ethnicity_data_t.iloc[:, 0] < 0.005)
