@@ -6,42 +6,9 @@
     source: https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css
 */
 
-/* Google Font */
-/* Jost-regular - latin */
-/* @font-face {
-font-family: 'Jost';
-font-style: normal;
-font-weight: 400; */
-/* src: url('../assets/fonts/jost-v13-latin-regular.eot'); IE9 Compat Modes */
-/* src: local(''), */
-/* url('../assets/fonts/jost-v13-latin-regular.eot?#iefix') format('embedded-opentype'), IE6-IE8 */
-/* url('../assets/fonts/jost-v13-latin-regular.woff2') format('woff2'), Super Modern Browsers */
-/* url('../assets/fonts/jost-v13-latin-regular.woff') format('woff'), Modern Browsers */
-/* url('../assets/fonts/jost-v13-latin-regular.ttf') format('truetype'), Safari, Android, iOS */
-/* url('../assets/fonts/jost-v13-latin-regular.svg#Jost') format('svg'); Legacy iOS */
-/* } */
-
-/*Inter*/
+/* Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
-
-/* <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans&display=swap" rel="stylesheet"> */
-
-/* roboto-regular - latin */
-/* @font-face {
-  font-family: 'Roboto';
-  font-style: normal;
-  font-weight: 400;
-  src: url('../fonts/roboto-v29-latin-regular.eot');
-  src: local(''),
-        url('../fonts/roboto-v29-latin-regular.eot?#iefix') format('embedded-opentype'),
-        url('../fonts/roboto-v29-latin-regular.woff2') format('woff2'),
-        url('../fonts/roboto-v29-latin-regular.woff') format('woff'),
-        url('../fonts/roboto-v29-latin-regular.ttf') format('truetype'),
-        url('../fonts/roboto-v29-latin-regular.svg#Roboto') format('svg');
-} */
 
 /** Grid  **/
 #main-container {
@@ -62,7 +29,6 @@ font-weight: 400; */
 .columns {
   width: 100%;
   float: left;
-  /* box-sizing: border-box; */
 }
 
 /* TODO: Adapt and Test media queries */
@@ -220,7 +186,7 @@ font-weight: 400; */
 
 }
 
-/* This is a fucking mess */
+/* TODO: This is a fucking mess */
 /** Hide on Print **/
 @media print {
 
@@ -267,67 +233,6 @@ font-weight: 400; */
 are based on 10px sizing. So basically 1.5rem = 15px */
 html {
   font-size: 62.5%;
-  /* letter-spacing: 1px; */
-
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin-top: 0;
-  margin-bottom: 0;
-  font-weight: 300;
-}
-
-h1 {
-  font-size: 4.5rem;
-  line-height: 1.2;
-  letter-spacing: -.1rem;
-  margin-bottom: 2rem;
-}
-
-h2 {
-  font-size: 3.6rem;
-  line-height: 1.25;
-  letter-spacing: -.1rem;
-  margin-bottom: 0px;
-  margin-top: 1rem;
-}
-
-h3 {
-  font-size: 3.0rem;
-  line-height: 1.3;
-  letter-spacing: -.1rem;
-  margin-bottom: 1.5rem;
-  margin-top: 1.5rem;
-}
-
-h4 {
-  font-size: 2.6rem;
-  line-height: 1.35;
-  letter-spacing: -.08rem;
-  margin-bottom: 1.5rem;
-  margin-top: -10px;
-  margin-left: 1rem
-}
-
-h5 {
-  font-size: 2.2rem;
-  line-height: 1.5;
-  letter-spacing: -.05rem;
-  margin-bottom: 0.6rem;
-  margin-top: -0.6rem;
-}
-
-h6 {
-  font-size: 2.0rem;
-  line-height: 1.6;
-  letter-spacing: 0;
-  margin-bottom: 0.75rem;
-  margin-top: 0.75rem;
 }
 
 pre,
@@ -357,7 +262,6 @@ body {
 /* a line */
 hr {
   margin-top: -5px;
-  /* margin-bottom: 17px; */
   width: 50%;
   margin-left: auto;
   margin-right: auto;
@@ -419,31 +323,6 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-/* .pretty-container--bare {
-  background-color: #ffffff;
-  margin: 10px;
-  padding: 15px;
-  position: relative;
-}
-
-.pretty-container--bare--line {
-  background-color: #ffffff;
-  margin: 10px;
-  padding: 15px;
-  position: relative;
-}
-
-.pretty-container--bare::after {
-  content:"";
-  background: lightgrey;
-  position: absolute;
-  top: 12%;
-  left: 0;
-  height: 80%;
-  width: 1px;
-  z-index: 999;
-} */
-
 /* same as pretty_container but adds min-width. Used for left side of 'About' page
   to ensure the width of the tables and figs are aligned. Gets screwy when the window
   is too small tho. */
@@ -478,14 +357,6 @@ hr {
   padding-top: 10px;
   padding-bottom: 10px;
 }
-
-/* .bare-container--fixed--flex {
-  margin: 0 0 0 0;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  display: fixed;
-  background-color: #d4c9b2;
-} */
 
 .bare-container--relative {
   margin: 0 0 0 0;
@@ -564,16 +435,6 @@ hr {
   display: block;
   margin-left: auto;
   margin-right: auto;
-} */
-
-/* .container__map {
-  border-radius: 5px;
-  background-color: #ffffff;
-  margin: 10px;
-  padding: 15px;
-  position: relative;
-  width: 100%;
-  box-shadow: 2px 2px 2px lightgrey;
 } */
 
 /** Other Navigation **/

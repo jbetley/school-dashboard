@@ -5,6 +5,14 @@
 # version:  1.13
 # date:     10/13/23
 
+# Current data:
+# ILEARN - 2023
+# IREAD - 2023
+# SAT - 2023
+# ADM - 2023
+# Demographics - 2023
+# Financial - 2022 (Audited) / 2023 (Q4)
+# Graduation Rate - 2022
 import pandas as pd
 import numpy as np
 import re
