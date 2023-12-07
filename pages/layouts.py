@@ -308,9 +308,12 @@ def create_barchart_layout(fig: list, table: list) -> list:
                     [html.Div(fig)],
                     className="pretty-container nine columns",
                 ),
-                html.Div([html.Div(table)], className="pretty-container three columns"),
+                html.Div(
+                    [html.Div(table)],
+                    className="pretty-container three columns",
+                ),
             ],
-            className="row",
+            className="row bar-chart-print",
         )
     ]
 

@@ -992,10 +992,10 @@ def layout():
                                     html.A(
                                         "logout",
                                         href="../logout",
-                                        className="logout-button",
+                                        className="logout-button no-print",
                                     ),
                                 ],
-                                className="bare-container--flex--center one columns",
+                                className="bare-container--flex--center one columns no-print",
                             ),
                             html.Div(
                                 [
@@ -1041,10 +1041,10 @@ def layout():
                                 className="bare-container--slim two columns no-print",
                             ),
                         ],
-                        className="row--fixed--top",
+                        className="row--fixed--top no-print",
                     ),
                 ],
-                className="bare-container--flex twelve columns",
+                className="bare-container--flex twelve columns no-print",
             ),
             html.Div(
                 [
@@ -1282,6 +1282,7 @@ def layout():
                             ),
                         ],
                         id="analysis-navigation-container",
+                        className="no-print"
                     ),
                     # dash page content
                     dash.page_container,

@@ -1208,7 +1208,6 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         table = no_data_table("No Data to Display.", string_label, "ten")
 
     else:
-
         if table_size <= 3:
             col_width = "four"
             category_width = 40
@@ -1684,7 +1683,9 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
     return table
 
 
-def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> list:
+def create_comparison_table(
+    data: pd.DataFrame, trace_colors: dict, school_id: str, label: str
+) -> list:
     """
     Takes a dataframe that is a column of schools and one or more columns
     of data, school name, and table label. Uses the school name to find
@@ -1699,6 +1700,18 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
+    # replace color with Font Awesome string and create df to merge
+    icon_colors = {
+        k: v.replace(
+            v,
+            '<span style="font-size: 1em;"><i class="fa fa-square" style="color: '
+            + v
+            + ';"></i></style>',
+        )
+        for k, v in trace_colors.items()
+    }
+    color_df = pd.DataFrame(list(icon_colors.items()), columns=["Name", "Icon"])
+
     # sort dataframe by the column with the most recent year of datafirst column with data and reset index
     data = data.sort_values(data.columns[1], ascending=False, na_position="last")
 
@@ -1708,6 +1721,19 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
     # locate school index by School ID and then drop School ID column
     school_name_idx = data.index[data["School ID"] == np.int64(school_id)].tolist()[0]
     data = data.drop("School ID", axis=1)
+
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+
+    # strip gradespan data and whitespace for merge key
+    data["Name"] = data["School Name"].str.replace(r"\([^)]+\)", "", regex=True)
+    data["Name"] = data["Name"].str.strip()
+
+    # merge colored icons into df and combine into School Name
+    data = pd.merge(data, color_df, on="Name")
+
+    data["School Name"] = data["Icon"] + " " + data["School Name"]
+    data = data.drop(["Name", "Icon"], axis=1)
 
     # hide the header "School Name"
     data = data.rename(columns={"School Name": ""})
@@ -1725,11 +1751,13 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
         # remove everything between | & % in column name
         data.columns = data.columns.str.replace(r"\|(.*?)\%", "", regex=True)
 
-    # sort on native DataTable is ugly - explore migration to AG Grid
+    # NOTE: sort on native DataTable is ugly - explore migration to AG Grid
     table = dash_table.DataTable(
         data.to_dict("records"),
         columns=[
-            {
+            {"name": i, "id": i, "presentation": "markdown"}
+            if len(i) < 1
+            else {
                 "name": i,
                 "id": i,
                 "type": "numeric",
@@ -1738,6 +1766,7 @@ def create_comparison_table(data: pd.DataFrame, school_id: str, label: str) -> l
             for i in data.columns
         ],
         # sort_action="native",
+        markdown_options={"html": True},
         merge_duplicate_headers=True,
         style_as_list_view=True,
         id="comparison-table",

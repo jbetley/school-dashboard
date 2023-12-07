@@ -469,7 +469,6 @@ def round_percentages(percentages: list) -> list:
     result = []
     sum_of_integer_parts = 0
 
-    # print(percentages)
     for index, percentage in enumerate(percentages):
         whole, fractional = str(float(percentage)).split(".")
         integer = int(whole)
@@ -649,7 +648,7 @@ def find_nearest(
     # number of schools to return (add 1 to account for the fact that the selected school
     # is included in the return set) - number needs to be high enough to ensure there are
     # enough left once non-comparable grades are filtered out.
-    num_hits = 26
+    num_hits = 41
 
     # the radius of earth in miles. For kilometers use 6372.8 km
     R = 3959.87433

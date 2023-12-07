@@ -187,12 +187,37 @@
 }
 
 /* TODO: This is a fucking mess */
-/** Hide on Print **/
+/** Print Styles **/
+/* Primarily used by Academic Analysis Single Year */
 @media print {
 
   /* all */
   .no-print {
-    display: none;
+    display: none !important;
+  }
+
+  .nine.columns {
+    margin: 2em auto 2em !important;
+    width: 90% !important;
+  }
+
+  .three.columns {
+    margin: 0em auto 2em;
+    width: 60% !important;
+  }
+
+  .bar-chart-print {
+    clear: both !important;
+    display: block !important;
+    width: 100% !important;
+    font-size: 10px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  /* hides the dash debug menu icon when printing in debug mode */
+  .dash-debug-menu,
+  .dash-debug-menu__outer {
+    display: none !important;
   }
 
   .pagebreak {

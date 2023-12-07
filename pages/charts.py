@@ -30,8 +30,8 @@ color = [
     "#d4773f",
     "#83941f",
     "#f0c33b",
-    "#bc986a",    
-    "#96b8db"
+    "#bc986a",
+    "#96b8db",
 ]
 
 
@@ -925,9 +925,12 @@ def make_growth_chart(
     return fig_layout
 
 
+from typing import Tuple
+
+
 def make_bar_chart(
     values: pd.DataFrame, category: str, school_name: str, label: str
-) -> list:
+) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label and a simple bar chart (px.bar)
 
@@ -960,7 +963,7 @@ def make_bar_chart(
         # use specific color for selected school
         for key, value in trace_color.items():
             if key == school_name:
-                trace_color[key] = "#7b6888" #"#0a66c2"
+                trace_color[key] = "#7b6888"  # "#0a66c2"
 
         # Uncomment this and below to display distance from selected school
         # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
@@ -996,7 +999,8 @@ def make_bar_chart(
             title_x=0.5,
             margin=dict(l=40, r=40, t=40, b=60),
             font=dict(family="Inter, sans-serif", color="steelblue", size=11),
-            legend=dict(orientation="h", title="", xanchor="center", x=0.45),
+            # legend=dict(orientation="h", title="", xanchor="center", x=0.45),
+            showlegend=False,
             height=350,
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
@@ -1027,7 +1031,7 @@ def make_bar_chart(
         )
     ]
 
-    return fig_layout
+    return trace_color, fig_layout
 
 
 def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> list:
