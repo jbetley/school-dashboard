@@ -820,7 +820,10 @@ def update_academic_analysis_single_year(
                     fig14c_table_data = fig14c_table_data.reset_index(drop=True)
 
                     fig14c_table = create_comparison_table(
-                        fig14c_table_data, fig14c_trace_color, school_id, "ELA Proficiency"
+                        fig14c_table_data,
+                        fig14c_trace_color,
+                        school_id
+                        # "ELA Proficiency",
                     )
                 else:
                     # NOTE: This should never ever happen. So yeah.
@@ -862,7 +865,10 @@ def update_academic_analysis_single_year(
                     fig14d_table_data = fig14d_table_data.reset_index(drop=True)
 
                     fig14d_table = create_comparison_table(
-                        fig14d_table_data, fig14d_trace_color, school_id, "Math Proficiency"
+                        fig14d_table_data,
+                        fig14d_trace_color,
+                        school_id
+                        # "Math Proficiency",
                     )
 
                 else:
@@ -906,7 +912,10 @@ def update_academic_analysis_single_year(
                     fig_iread_table_data = fig_iread_table_data.reset_index(drop=True)
 
                     fig_iread_table = create_comparison_table(
-                        fig_iread_table_data, fig_iread_trace_color, school_id, "IREAD Proficiency"
+                        fig_iread_table_data,
+                        fig_iread_trace_color,
+                        school_id
+                        # "IREAD Proficiency",
                     )
 
                 else:
@@ -939,15 +948,14 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16a1_final_data, categories_16a1)
 
                     fig16a1_label = create_chart_label(fig16a1_final_data)
-                    fig16a1_chart = make_group_bar_chart(
+                    fig16a1_trace_color, fig16a1_chart = make_group_bar_chart(
                         fig16a1_final_data, school_id, fig16a1_label
                     )
                     fig16a1_table_data = combine_school_name_and_grade_levels(
                         fig16a1_final_data
                     )
                     fig16a1_table = create_comparison_table(
-                        fig16a1_table_data, fig_iread_trace_color, school_id, ""
-                    )
+                        fig16a1_table_data, fig16a1_trace_color, school_id) #, "")
 
                     fig16a1 = create_group_barchart_layout(
                         fig16a1_chart,
@@ -984,15 +992,14 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16b1_final_data, categories_16b1)
 
                     fig16b1_label = create_chart_label(fig16b1_final_data)
-                    fig16b1_chart = make_group_bar_chart(
+                    fig16b1_trace_color, fig16b1_chart = make_group_bar_chart(
                         fig16b1_final_data, school_id, fig16b1_label
                     )
                     fig16b1_table_data = combine_school_name_and_grade_levels(
                         fig16b1_final_data
                     )
                     fig16b1_table = create_comparison_table(
-                        fig16b1_table_data, fig_iread_trace_color, school_id, ""
-                    )
+                        fig16b1_table_data, fig16b1_trace_color, school_id) #, "")
 
                     fig16b1 = create_group_barchart_layout(
                         fig16b1_chart,
@@ -1031,7 +1038,7 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16a2_final_data, categories_16a2)
 
                     fig16a2_label = create_chart_label(fig16a2_final_data)
-                    fig16a2_chart = make_group_bar_chart(
+                    fig16a2_trace_color, fig16a2_chart = make_group_bar_chart(
                         fig16a2_final_data, school_id, fig16a2_label
                     )
                     fig16a2_table_data = combine_school_name_and_grade_levels(
@@ -1039,8 +1046,7 @@ def update_academic_analysis_single_year(
                     )
 
                     fig16a2_table = create_comparison_table(
-                        fig16a2_table_data, fig_iread_trace_color, school_id, ""
-                    )
+                        fig16a2_table_data, fig16a2_trace_color, school_id) #, "")
 
                     fig16a2 = create_group_barchart_layout(
                         fig16a2_chart,
@@ -1076,15 +1082,14 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16b2_final_data, categories_16b2)
 
                     fig16b2_label = create_chart_label(fig16b2_final_data)
-                    fig16b2_chart = make_group_bar_chart(
+                    fig16b2_trace_color, fig16b2_chart = make_group_bar_chart(
                         fig16b2_final_data, school_id, fig16b2_label
                     )
                     fig16b2_table_data = combine_school_name_and_grade_levels(
                         fig16b2_final_data
                     )
                     fig16b2_table = create_comparison_table(
-                        fig16b2_table_data, fig_iread_trace_color, school_id, ""
-                    )
+                        fig16b2_table_data, fig16b2_trace_color, school_id) #, "")
 
                     fig16b2 = create_group_barchart_layout(
                         fig16b2_chart,
@@ -1205,16 +1210,22 @@ def layout():
                     ),
                     html.Div(
                         [
-                            html.Div(id="fig14c", children=[], style={"table-layout": "fixed"}),
-                            html.Div(id="fig14d", children=[], className ="pagebreak"),
-                            html.Div(id="fig-iread", children=[], className ="pagebreak"),
+                            html.Div(
+                                id="fig14c",
+                                children=[],
+                                style={"table-layout": "fixed"},
+                            ),
+                            html.Div(id="fig14d", children=[], className="pagebreak"),
+                            html.Div(
+                                id="fig-iread", children=[], className="pagebreak"
+                            ),
                             html.Div(
                                 [
                                     html.Div(id="fig16a1"),
                                 ],
                                 id="fig16a1-container",
                                 style={"display": "none"},
-                                className ="pagebreak"
+                                className="pagebreak",
                             ),
                             html.Div(
                                 [
@@ -1222,7 +1233,7 @@ def layout():
                                 ],
                                 id="fig16b1-container",
                                 style={"display": "none"},
-                                className ="pagebreak"
+                                className="pagebreak",
                             ),
                             html.Div(
                                 [
@@ -1230,7 +1241,7 @@ def layout():
                                 ],
                                 id="fig16a2-container",
                                 style={"display": "none"},
-                                className ="pagebreak"
+                                className="pagebreak",
                             ),
                             html.Div(
                                 [
@@ -1238,7 +1249,7 @@ def layout():
                                 ],
                                 id="fig16b2-container",
                                 style={"display": "none"},
-                                className ="pagebreak"
+                                className="pagebreak",
                             ),
                             html.Div(
                                 [

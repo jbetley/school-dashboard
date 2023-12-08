@@ -15,6 +15,8 @@ from .calculations import check_for_insufficient_n_size, check_for_no_data
 from .string_helpers import customwrap
 from .load_data import get_school_index
 
+from typing import Tuple
+
 # Colors
 # https://codepen.io/ctf0/pen/BwLezW
 
@@ -281,7 +283,8 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     return fig_layout
 
 
-def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
+def make_multi_line_chart(values: pd.DataFrame, label: str
+) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
     series of strings (if applicable) detailing missing data.
@@ -318,6 +321,9 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
             school_cols = [i for i in data.columns if i not in ["Year"]]
 
         data = data.reset_index(drop=True)
+
+        # assign colors for each comparison school
+        trace_color = {school_cols[i]: color[i] for i in range(len(school_cols))}
 
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
@@ -368,9 +374,10 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
                     gridcolor="#b0c4de",
                     zeroline=False,
                 ),
-                legend=dict(
-                    orientation="v", yanchor="bottom", y=0.5, xanchor="right", x=-0.05
-                ),
+                showlegend=False,
+                # legend=dict(
+                #     orientation="v", yanchor="bottom", y=0.5, xanchor="right", x=-0.05
+                # ),
                 hovermode="x",
                 height=400,
                 legend_title="",
@@ -546,7 +553,7 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> list:
             )
         ]
 
-    return fig_layout
+    return trace_color, fig_layout
 
 
 def make_line_chart(values: pd.DataFrame) -> list:
@@ -924,10 +931,6 @@ def make_growth_chart(
 
     return fig_layout
 
-
-from typing import Tuple
-
-
 def make_bar_chart(
     values: pd.DataFrame, category: str, school_name: str, label: str
 ) -> Tuple[dict, list]:
@@ -1034,7 +1037,9 @@ def make_bar_chart(
     return trace_color, fig_layout
 
 
-def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> list:
+def make_group_bar_chart(
+    values: pd.DataFrame, school_id: str, label: str
+) -> Tuple[dict, list]:
     """
     Creates a layout containing a label and a grouped bar chart (px.bar)
 
@@ -1142,6 +1147,7 @@ def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> li
         bargroupgap=0.1,
         height=400,
         legend_title="",
+        showlegend=False,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         hoverlabel=dict(
@@ -1219,4 +1225,4 @@ def make_group_bar_chart(values: pd.DataFrame, school_id: str, label: str) -> li
         )
     ]
 
-    return fig_layout
+    return trace_color, fig_layout

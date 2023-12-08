@@ -1684,8 +1684,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
 
 def create_comparison_table(
-    data: pd.DataFrame, trace_colors: dict, school_id: str, label: str
-) -> list:
+    data: pd.DataFrame, trace_colors: dict, school_id: str) -> list: # , label: str
     """
     Takes a dataframe that is a column of schools and one or more columns
     of data, school name, and table label. Uses the school name to find
@@ -1722,9 +1721,6 @@ def create_comparison_table(
     school_name_idx = data.index[data["School ID"] == np.int64(school_id)].tolist()[0]
     data = data.drop("School ID", axis=1)
 
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
-
     # strip gradespan data and whitespace for merge key
     data["Name"] = data["School Name"].str.replace(r"\([^)]+\)", "", regex=True)
     data["Name"] = data["Name"].str.strip()
@@ -1732,11 +1728,15 @@ def create_comparison_table(
     # merge colored icons into df and combine into School Name
     data = pd.merge(data, color_df, on="Name")
 
-    data["School Name"] = data["Icon"] + " " + data["School Name"]
-    data = data.drop(["Name", "Icon"], axis=1)
+    # data["School Name"] = data["Icon"] + " " + data["School Name"]
+    data = data.drop(["Name"], axis=1)  # , "Icon"
 
     # hide the header "School Name"
-    data = data.rename(columns={"School Name": ""})
+    # data = data.rename(columns={"School Name": ""})
+    # data = data.rename(columns={"Icon": ""})
+    # shift "Icon" column to front of df for display
+    icon_col = data.pop("Icon")
+    data.insert(0, "Icon", icon_col)
 
     if data.columns.str.contains("School Total").any() == True:
         # keep everything between | and "Benchmark %"
@@ -1756,7 +1756,7 @@ def create_comparison_table(
         data.to_dict("records"),
         columns=[
             {"name": i, "id": i, "presentation": "markdown"}
-            if len(i) < 1
+            if "Icon" in i
             else {
                 "name": i,
                 "id": i,
@@ -1791,15 +1791,23 @@ def create_comparison_table(
         style_header=table_header,
         style_header_conditional=[
             {
-                "if": {
-                    "header_index": 0,
-                },
+                "if": {"header_index": 0},
                 "text-decoration": "underline",
             },
         ],
         style_cell=table_cell,
         style_cell_conditional=[
-            {"if": {"column_id": ""}, "textAlign": "left", "paddingLeft": "30px"}
+            {
+                "if": {"column_id": "School Name"},
+                "textAlign": "left",
+                "width": "20%",
+            },
+            {
+                "if": {"column_id": "Icon"},
+                "textAlign": "right",
+                "width": "5%",
+                "paddingLeft": "20px",
+            },
         ],
         # This has the effect of hiding the header row
         css=[
@@ -1810,15 +1818,20 @@ def create_comparison_table(
         ],
     )
 
+    table_layout = [html.Div([html.Div(table)])]
+    
+    # NOTE: below code adds a label if one is passed (used for same row chart/
+    # table layout). If using this, need to re-add 'label' variable to fn.
+
     # bar-chart tables (Math, ELA, & IREAD) should have a label multi-bar chart tables
     # (by Subgroup, by Ethnicity) should not have a label this is for formatting reasons.
     # this assumes label is set to "" for multi-bar charts
-    if label:
-        table_layout = [
-            html.Div([html.Label(label, className="label__header"), html.Div(table)])
-        ]
-    else:
-        table_layout = [html.Div([html.Div(table)])]
+    # if label:
+    #     table_layout = [
+    #         html.Div([html.Label(label, className="label__header"), html.Div(table)])
+    #     ]
+    # else:
+    #     table_layout = [html.Div([html.Div(table)])]
 
     return table_layout
 

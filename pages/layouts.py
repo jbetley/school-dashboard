@@ -17,7 +17,7 @@ from .string_helpers import (
 )
 from .charts import make_group_bar_chart, make_multi_line_chart
 from .tables import create_comparison_table, no_data_page
-
+# from typing import Tuple
 
 def create_hs_analysis_layout(
     data_type: str, data: pd.DataFrame, categories: list, school_id: str
@@ -85,12 +85,14 @@ def create_hs_analysis_layout(
 
         if len(analysis_data.columns) > 1:
             analysis_label = create_chart_label(analysis_data)
-            analysis_chart = make_group_bar_chart(
+            analysis_trace_colors, analysis_chart = make_group_bar_chart(
                 analysis_data, school_id, analysis_label
             )
             analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
 
-            analysis_table = create_comparison_table(analysis_table_data, school_id, "")
+            analysis_table = create_comparison_table(
+                analysis_table_data, analysis_trace_colors, school_id
+            )  # , "")
             final_analysis_group = create_group_barchart_layout(
                 analysis_chart, analysis_table, category_string, school_string
             )
@@ -220,6 +222,10 @@ def create_group_barchart_layout(
         list: list layout html.Div object
     """
 
+    # the difference between this layout and the barchart layout below
+    # is the addition of the information strings
+    # TODO: Combine the two and just add a check for the strings
+
     # year_over_year charts do not have category or school strings
     if category_string == "" and school_string == "":
         layout = [
@@ -301,20 +307,44 @@ def create_barchart_layout(fig: list, table: list) -> list:
     Returns:
         layout (list): a dash html.Div layout with fig and DataTable
     """
+
+    # a two row layout (like group_barchart layout), uncomment
+    # this to use the side-by-side-layout
+    # layout = [
+    #     html.Div(
+    #         [
+    #             html.Div(
+    #                 [html.Div(fig)],
+    #                 className="pretty-container nine columns",
+    #             ),
+    #             html.Div(
+    #                 [html.Div(table)],
+    #                 className="pretty-container three columns",
+    #             ),
+    #         ],
+    #         className="row bar-chart-print",
+    #     )
+    # ]
+
     layout = [
         html.Div(
             [
                 html.Div(
-                    [html.Div(fig)],
-                    className="pretty-container nine columns",
-                ),
-                html.Div(
-                    [html.Div(table)],
-                    className="pretty-container three columns",
+                    [html.Div(fig, style={"marginBottom": "-20px"})],
+                    className="pretty-container--close eleven columns",
                 ),
             ],
             className="row bar-chart-print",
-        )
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [html.Div(table)],
+                    className="container__close eleven columns",
+                ),
+            ],
+            className="row bar-chart-print",
+        ),
     ]
 
     return layout
@@ -450,13 +480,13 @@ def create_year_over_year_layout(school_id, data, school_id_list, label, msg):
             table_data, school_id_list, on=["School Name"], how="left"
         )
 
-        fig = make_multi_line_chart(data, label)
+        fig_trace_colors, fig = make_multi_line_chart(data, label)
 
         # Use Low/High grade columns to modify School Name and then drop.
         table_data["School Name"] = create_school_label(table_data)
         table_data = table_data.drop(["Low Grade", "High Grade"], axis=1)
 
-        table = create_comparison_table(table_data, school_id, "")
+        table = create_comparison_table(table_data, fig_trace_colors, school_id)  # , "")
         category_string = ""
         school_string = ""
         layout = create_group_barchart_layout(
