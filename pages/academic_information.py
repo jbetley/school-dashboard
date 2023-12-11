@@ -19,6 +19,8 @@ from pages.load_data import (
     subject,
     grades_all,
     grades_ordinal,
+    get_iread_student_data,
+    get_wida_student_data,
     get_k8_school_academic_data,
     get_high_school_academic_data,
     get_demographic_data,
@@ -341,6 +343,129 @@ def update_academic_information_page(
         or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric >= 2021)
     ) and radio_type == "k8":
+
+# TODO: STUDENT LEVEL IREAD DATA
+        pd.set_option("display.max_columns", None)
+        pd.set_option("display.max_rows", None)
+        raw_student_iread_data = get_iread_student_data(school)
+        current_student_iread_data = raw_student_iread_data.loc[
+            raw_student_iread_data["Test Year"] == selected_year_numeric
+        ]
+
+        all_tested = len(current_student_iread_data["Status"])
+        all_pass = (current_student_iread_data["Status"] == "Pass").sum()
+        did_not_pass = (current_student_iread_data["Status"] == "Did Not Pass").sum()
+        all_percentage = all_pass / all_tested
+
+        # Note: All students are tested in spring
+        spring_pass = (
+            (current_student_iread_data["Status"] == "Pass")
+            & (current_student_iread_data["Test Period"] == "Spring")
+        ).sum()
+        spring_percentage = spring_pass / all_tested
+
+        # Note: Only Summer retesters are tested in the summer
+        summer_tested = (current_student_iread_data["Test Period"] == "Summer").sum()
+        summer_pass = (
+            (current_student_iread_data["Status"] == "Pass")
+            & (current_student_iread_data["Test Period"] == "Summer")
+        ).sum()
+        summer_percentage = summer_pass / summer_tested
+
+        print(
+            "A total of "
+            + str(all_tested)
+            + " students took IREAD in the Spring, with "
+            + str(spring_pass)
+            + " of them passing ("
+            + str(spring_percentage)
+            + "). "
+            + str(summer_tested)
+            + " students were re-tested in the Summer, with "
+            + str(summer_pass)
+            + " of them passing ("
+            + str(summer_percentage)
+            + "). The school's Total IREAD Proficiency for "
+            + selected_year_string
+            + " was: "
+            + str(all_percentage)
+            + " ("
+            + str(all_pass)
+            + " out of "
+            + str(all_tested)
+            + ")."
+        )
+
+        grade_2nd_count = (
+            current_student_iread_data["Tested Grade"] == "Grade 2"
+        ).sum()
+
+        if grade_2nd_count > 0:
+            grade_2nd_pass = (
+                (current_student_iread_data["Status"] == "Pass")
+                & (current_student_iread_data["Tested Grade"] == "Grade 2")
+            ).sum()
+            grade2_pass_percentage = grade_2nd_pass / grade_2nd_count
+        else:
+            grade2_pass_percentage = "none"
+
+        grade_3rd_count = (
+            current_student_iread_data["Tested Grade"] == "Grade 3"
+        ).sum()
+        grade_3rd_pass = (
+            (current_student_iread_data["Status"] == "Pass")
+            & (current_student_iread_data["Tested Grade"] == "Grade 3")
+        ).sum()
+        grade3_pass_percentage = grade_3rd_pass / grade_3rd_count
+
+        print(
+            "Of the tested students, "
+            + str(grade_2nd_count)
+            + " were 2nd graders and "
+            + str(grade_3rd_count)
+            + " were third graders. "
+            + str(grade2_pass_percentage)
+            + " of 2nd graders and "
+            + str(grade3_pass_percentage)
+            + " of 3rd graders passed."
+        )
+
+        exemptions = (
+            current_student_iread_data["Exemption Status"] == "Exemption"
+        ).sum()
+
+        advance_no_pass = (
+            (current_student_iread_data["Status"] == "Did Not Pass")
+            & (current_student_iread_data["Current Grade"] == "Grade 4")
+        ).sum()
+        retained = (
+            (current_student_iread_data["Status"] == "Did Not Pass")
+            & (current_student_iread_data["Tested Grade"] == "Grade 3")
+            & (current_student_iread_data["Current Grade"] == "Grade 3")
+        ).sum()
+
+        print(
+            "There were "
+            + str(exemptions)
+            + " exemptions granted. Of the "
+            + str(did_not_pass)
+            + " 3rd graders who did not pass IREAD in the Spring or Summer retest, "
+            + str(advance_no_pass)
+            + " of them advanced to 4th grade the following year and "
+            + str(retained)
+            + " were retained."
+        )
+
+        # TODO: ADD CROSS REFERENCE TO WIDA - CORRELATION BETWEEN WIDA LEVEL AND PASSAGE
+        all_wida = get_wida_student_data()
+        all_wida = all_wida[["STN","Composite Overall Proficiency Level"]]
+        
+        # tst_wida_merge = current_student_iread_data.merge(all_wida, on="STN", how="left")
+        tst_wida_merge = pd.merge(current_student_iread_data, all_wida, on="STN")
+        print("Result for students taking WIDA:")
+        print(tst_wida_merge)
+        # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA - LONGITUDINAL TRACKING 3-8 ELA
+
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
         excluded_years = get_excluded_years(selected_year_string)
@@ -651,78 +776,82 @@ def update_academic_information_page(
                         # np.integer and np.floating) to distinguish between them.
 
                         if total_tested in all_proficiency_data.columns:
-
                             # This is true if: 1) there are any NaN values in the set (one or
                             # more '***) or 2) the sum of all values is equal to 0 (no data)
                             # or 0.0 (NaN's converted from '***' meaning insufficient data)
                             if (
-                                all_proficiency_data[proficiency_columns].isna().sum().sum() > 0
+                                all_proficiency_data[proficiency_columns]
+                                .isna()
+                                .sum()
+                                .sum()
+                                > 0
                             ) or (
-                                all_proficiency_data[proficiency_columns].iloc[0].sum() == 0
+                                all_proficiency_data[proficiency_columns].iloc[0].sum()
+                                == 0
+                            ):
+                                # if the value is zero AND a float, all values were NaN,
+                                # meaning insufficient N-Size
+                                if isinstance(
+                                    all_proficiency_data[proficiency_columns]
+                                    .iloc[0]
+                                    .sum(),
+                                    np.floating,
                                 ):
-
-                                    # if the value is zero AND a float, all values were NaN,
-                                    # meaning insufficient N-Size
-                                    if isinstance(
-                                        all_proficiency_data[proficiency_columns]
-                                        .iloc[0]
-                                        .sum(),
-                                        np.floating
-                                    ):
-
-                                        annotations.loc[len(annotations.index)] = [
-                                            proficiency_columns[0],
-                                            all_proficiency_data[total_tested].values[0],
-                                            "Insufficient",
-                                        ]
-
-                                    # if the value is zero and an integer, all values were 0,
-                                    # which means "missing data"
-                                    elif isinstance(
-                                        all_proficiency_data[proficiency_columns]
-                                        .iloc[0]
-                                        .sum(),
-                                        np.integer,
-                                    ):
-                                        # for this category, we only want to add to annotations if it is
-                                        # a non "Grade" category in order to account for IDOE's shitty data
-                                        # practices- sometimes missing grades are blank (the correct way)
-                                        # and sometimes the columns are filled with 0. So if everything is
-                                        # 0 AND it is a Grade category, we assume it is just IDOE's fucked
-                                        # up data entry
-                                        if (
-                                            ~all_proficiency_data[proficiency_columns]
-                                            .columns.str.contains("Grade")
-                                            .any()
-                                        ):
-                                            annotations.loc[len(annotations.index)] = [
-                                                proficiency_columns[0],
-                                                all_proficiency_data[total_tested].values[
-                                                    0
-                                                ],
-                                                "Missing"
-                                            ]
-                                    
-                                    # if the value is greater than zero - it means there was one or more
-                                    # nan values in the set which also indicates insufficient data
-                                    elif (all_proficiency_data[proficiency_columns]
-                                            .iloc[0]
-                                            .sum() > 0):                                
-
-                                        annotations.loc[len(annotations.index)] = [
-                                            proficiency_columns[0],
-                                            all_proficiency_data[total_tested].values[0],
-                                            "Insufficient"
-                                            ]
-                                    
-                                    # either way, drop all columns related to the category from the df
-                                    all_proficiency_columns = proficiency_columns + [
-                                        total_tested
+                                    annotations.loc[len(annotations.index)] = [
+                                        proficiency_columns[0],
+                                        all_proficiency_data[total_tested].values[0],
+                                        "Insufficient",
                                     ]
 
-                                    all_proficiency_data = all_proficiency_data.drop(
-                                        all_proficiency_columns, axis=1
-                                    )
+                                # if the value is zero and an integer, all values were 0,
+                                # which means "missing data"
+                                elif isinstance(
+                                    all_proficiency_data[proficiency_columns]
+                                    .iloc[0]
+                                    .sum(),
+                                    np.integer,
+                                ):
+                                    # for this category, we only want to add to annotations if it is
+                                    # a non "Grade" category in order to account for IDOE's shitty data
+                                    # practices- sometimes missing grades are blank (the correct way)
+                                    # and sometimes the columns are filled with 0. So if everything is
+                                    # 0 AND it is a Grade category, we assume it is just IDOE's fucked
+                                    # up data entry
+                                    if (
+                                        ~all_proficiency_data[proficiency_columns]
+                                        .columns.str.contains("Grade")
+                                        .any()
+                                    ):
+                                        annotations.loc[len(annotations.index)] = [
+                                            proficiency_columns[0],
+                                            all_proficiency_data[total_tested].values[
+                                                0
+                                            ],
+                                            "Missing",
+                                        ]
+
+                                # if the value is greater than zero - it means there was one or more
+                                # nan values in the set which also indicates insufficient data
+                                elif (
+                                    all_proficiency_data[proficiency_columns]
+                                    .iloc[0]
+                                    .sum()
+                                    > 0
+                                ):
+                                    annotations.loc[len(annotations.index)] = [
+                                        proficiency_columns[0],
+                                        all_proficiency_data[total_tested].values[0],
+                                        "Insufficient",
+                                    ]
+
+                                # either way, drop all columns related to the category from the df
+                                all_proficiency_columns = proficiency_columns + [
+                                    total_tested
+                                ]
+
+                                all_proficiency_data = all_proficiency_data.drop(
+                                    all_proficiency_columns, axis=1
+                                )
 
                             else:
                                 # calculate percentage

@@ -18,7 +18,7 @@
 # by each school (on excel workbooks) and pulled into the db using python. Academic
 # data comes from dozens of separate csv files produced over many years and presented
 # primarily for human readibility, which means that they are messy, inconsistent, and
-# often incomplete. All this is to say that a large part of this apps exists to filter,
+# often incomplete. All this is to say that a large part of this app exists to filter,
 # clean, validate, and process this data to satisfy a number of configurations. Even
 # the exceptions to the exceptions have exceptions.
 
@@ -29,15 +29,14 @@
 # eventually have the code structured in such a way that whomever follows can simply drop an
 # 'updated' IDOE academic file into a folder, click a script, have it added to the DB, and
 # have the program read it with no issue. That part is a work in progress. Another option
-# would be to get access to IDOE's API for this data. This is also a work in progress. Changing
-# to IDOE's API (using ED-FI standard), would be a gamechanger.
+# would be to get access to IDOE's API for this data (using the ED-FI standard).
 
-# NOTE: Because of the way data is store and presented by IDOE, there are
+# NOTE: Because of the way data is store4d and presented by IDOE, there are
 # cases in which data points need to be manually calculated that the school
 # level for data that is stored at the corporation level. Specifically, this
 # is an issue for calculating demographic enrollment when there is a school
-# that crosses natural grade span splits, e.g., Split Grade K-5, 6-8 and 9-12
-# enrollment using proportionate split for:
+# that crosses natural grade span splits, e.g., we need to manually split Grade K-5,
+# 6-8 and 9-12 enrollment using proportionate split for:
 #   Christel House South (CHS/CHWMHS)
 #   Circle City Prep (Ele/Mid)
 
@@ -62,7 +61,6 @@ from dotenv import load_dotenv
 import dash
 from dash import dcc, html, Input, Output, State, callback
 
-# from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
 from pages.load_data import (
@@ -104,7 +102,6 @@ login_manager = LoginManager()
 login_manager.init_app(server)
 login_manager.login_view = "/login"
 
-
 # each table in the user database needs a class to be created for it
 # using the db.Model, all db columns must be identified by name
 # and data type. UserMixin provides a get_id method that returns
@@ -128,7 +125,6 @@ class User(UserMixin, db.Model):  # type: ignore
     @property
     def full_name(self):
         return self.fullname
-
 
 # load_user is used by login_user, passes the user_id
 # and gets the User object that matches that id
@@ -277,7 +273,7 @@ def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
 
 
-# Selected Year Dropdown -
+# Selected Year Dropdown
 # options max: 5 years
 # values: depend on which page is being accessed and, in some circumstances, the type of
 # school (or selected type of school). for academic_information, academic_metrics, and
@@ -309,7 +305,7 @@ def set_year_dropdown_options(
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
-    # for K12 schools, we need to use "HS" data when analysis_type is "hs."" We also
+    # for K12 schools, we need to use "HS" data when analysis_type is "hs". We also
     # want to make sure that we reset the type if the user switches to a k8 school
     # from a AHS/HS/K12 where the analysis_type was "hs"
     if school_type == "K8" and analysis_type_value == "hs":
@@ -318,8 +314,6 @@ def set_year_dropdown_options(
     # Guest schools do not have financial data
     if (
         "academic" in current_page
-        # or "academic_analysis_single" in current_page
-        # or "academic_analysis_multiple" in current_page
         or selected_school["Guest"].values[0] == "Y"
     ):
         if (
@@ -348,8 +342,8 @@ def set_year_dropdown_options(
     first_available_year = dropdown_years[0]
     earliest_available_year = dropdown_years[-1]
 
-    # "year" represents the State of the year-dropdown when a school is selected.
-    # Current year_value is set to:
+    # "year" represents the State of the year-dropdown when a school is
+    # selected. current_year is set to one of:
     #   1) current_academic year (when app is first opened);
     #   2) the earliest year for which the school has data (if the selected year is earlier
     #       than the first year of available data);
@@ -370,8 +364,8 @@ def set_year_dropdown_options(
         year_value = str(year_state)
 
     # K8 schools do not have data for 2020 - so that year should never appear in the dropdown.
-    # HS, AHS, and K12 schools with the "HS" academic_type_radio button selected could have 2020 data-
-    # school_type generally takes care of this for K8, HS, and AHS schools, but not K12
+    # HS, AHS, and K12 schools with the "HS" academic_type_radio button selected can have
+    # 2020 data- school_type generally takes care of this for K8, HS, and AHS schools, but not K12
     if (
         (
             "academic" in current_page
@@ -397,7 +391,7 @@ def set_year_dropdown_options(
     return year_options, year_value, current_page
 
 
-# Need to put this into its own callback in order to avoid circular callbacks.
+# this needs to be in a separate callback in order to avoid circular callback issue.
 @callback(
     Output("analysis-type-radio", "options"),
     Output("analysis-type-radio", "value"),
@@ -959,6 +953,7 @@ def navigation(
 # redirects the url from academic_information_growth.py to
 # academic_information.py if the user is at academic_information_growth
 # url and selects a HS, AHS, & K12(hs type)
+# NOTE: Couldn't figure out a better way to do this
 @callback(
     Output("url", "href"), Input("charter-dropdown", "value"), Input("url", "href")
 )
@@ -978,6 +973,7 @@ def redirect_hs(school: str, current_page: str):
 
 # app.layout = html.Div(
 # NOTE: Test to see effect of layout as function vs. variable
+#   No difference?
 def layout():
     return html.Div(
         [
@@ -1000,7 +996,7 @@ def layout():
                             html.Div(
                                 [
                                     html.Div(
-                                        [  # cannot get htmlFor to work
+                                        [  # cannot get htmlFor to work here
                                             html.Label(
                                                 "Select School:"
                                             ),  # htmlFor = "charter-dropdown"),
@@ -1282,7 +1278,7 @@ def layout():
                             ),
                         ],
                         id="analysis-navigation-container",
-                        className="no-print"
+                        className="no-print",
                     ),
                     # dash page content
                     dash.page_container,

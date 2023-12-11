@@ -716,6 +716,41 @@ def get_letter_grades(*args):
     return run_query(q, params)
 
 
+def get_wida_student_data(*args):
+    keys = ["id"]
+    params = dict(zip(keys, args))
+
+    q = text(
+        """
+        SELECT *
+            FROM WIDA_test
+        """
+    )
+
+    results = run_query(q, params)
+    results = results.sort_values(by="STN", ascending=False)
+
+    return results
+
+
+def get_iread_student_data(*args):
+    keys = ["id"]
+    params = dict(zip(keys, args))
+
+    q = text(
+        """
+        SELECT *
+            FROM iread_student
+	        WHERE SchoolID = :id
+        """
+    )
+
+    results = run_query(q, params)
+    results = results.sort_values(by="Test Year", ascending=False)
+
+    return results
+
+
 # TODO: Eventually consolidate and use only second function below.
 def get_k8_school_academic_data(*args):
     keys = ["id"]

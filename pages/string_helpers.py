@@ -46,7 +46,7 @@ def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     """
     result = val.copy()
 
-    # Use regex and beginning(^) and end-of-line ($) regex anchors to ensure exact matches only
+    # Use regex beginning(^) and end-of-line ($) regex anchors to ensure exact matches only
     # NOTE: Using font-awesome circle icon.
     result = result.replace(
         ["^DNMS$", "Does Not Meet Expectations"],
@@ -207,7 +207,7 @@ def create_chart_label(data: pd.DataFrame) -> str:
 
 def create_school_label(data: pd.DataFrame) -> pd.Series:
     """
-    Takes a dataframe of academic data and creates a label for each school merging school name
+    Takes a dataframe of academic data and creates a label for each school, merging school name
     and grade span. Used by the combine_school_name_and_grade_levels() function and by certain
     comparison tables.
 
@@ -277,8 +277,9 @@ def identify_missing_categories(
     raw_data: pd.DataFrame, tested_categories: list
 ) -> Tuple[pd.DataFrame, str, str]:
     """
-    Processes several dataframes for display in comparison tables while tracking both schools that are missing data for
-    a particulary category (category_string) and schools that are missing data for all categories (school_string).
+    Processes several dataframes for display in comparison tables while tracking both schools
+    that are missing data for a particulary category (category_string) and schools that are
+    missing data for all categories (school_string).
 
     Args:
         school_data (pd.DataFrame): academic data from the selected school
@@ -340,13 +341,14 @@ def identify_missing_categories(
             [check_data.iloc[idx[i]]["School Name"], check_data.columns[idy[i]]]
         )
 
-    # NOTE: in the following for loop, head represents the first element of each list (the School Name),
-    # while *tail represents the remaining items in the list (using iterable unpacking). The
-    # asterisk means that the tail variable captures “all remaining iterable values” that are not
-    # captured by the head variables. setdefault() is used to set "head" as the default value of the dict key.
-    # if the key is present, a value is returned (tail). if there is no value, it simply adds the key ([head])
-    # as the default value. Extend adds the list as a single value to the dict entry, so we end up with:
-    # {School Name: [School Name, Category1, Category2], ...}
+    # NOTE: in the following for loop, head represents the first element of each list (the
+    # School Name), while *tail represents the remaining items in the list (using
+    # iterable unpacking). The asterisk means that the tail variable captures “all
+    # remaining iterable values” that are not captured by the head variables. setdefault()
+    # is used to set "head" as the default value of the dict key. if the key is present, a
+    # value is returned (tail). if there is no value, it simply adds the key ([head])
+    # as the default value. Extend adds the list as a single value to the dict entry,
+    # so we end up with: {School Name: [School Name, Category1, Category2], ...}
     # we then create a list of the values of the dictionary
 
     missing_dict = {}  # type: dict
