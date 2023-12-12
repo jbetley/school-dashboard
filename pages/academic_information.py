@@ -21,6 +21,7 @@ from pages.load_data import (
     grades_ordinal,
     get_iread_student_data,
     get_wida_student_data,
+    get_ilearn_student_data,
     get_k8_school_academic_data,
     get_high_school_academic_data,
     get_demographic_data,
@@ -343,8 +344,7 @@ def update_academic_information_page(
         or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric >= 2021)
     ) and radio_type == "k8":
-
-# TODO: STUDENT LEVEL IREAD DATA
+        # TODO: STUDENT LEVEL IREAD DATA
         pd.set_option("display.max_columns", None)
         pd.set_option("display.max_rows", None)
         raw_student_iread_data = get_iread_student_data(school)
@@ -458,12 +458,76 @@ def update_academic_information_page(
 
         # TODO: ADD CROSS REFERENCE TO WIDA - CORRELATION BETWEEN WIDA LEVEL AND PASSAGE
         all_wida = get_wida_student_data()
-        all_wida = all_wida[["STN","Composite Overall Proficiency Level"]]
+        all_wida = all_wida[["STN", "Composite Overall Proficiency Level"]]
+        all_wida["STN"] = all_wida["STN"].astype(str)
+        current_student_iread_data["STN"] = current_student_iread_data["STN"].astype(
+            str
+        )
+
+        iread_merged = pd.merge(all_wida, current_student_iread_data, on="STN")
+
+        wida_num = len(iread_merged)
+
+        # https://stackoverflow.com/questions/66074831/python-get-value-counts-from-multiple-columns-and-average-from-another-column
+        # Get count of Status (Pass/No Pass) and average of WIDA for each by using .melt on the
+        # dataframe, grouping the melted df on Status, and aggregating for count and mean using a
+        # dictionary that specifies the columns and their corresponding aggregation functions
+
+        # filter and melt
+        wida_filter = iread_merged.filter(
+            regex=r"^Status$|Composite Overall Proficiency Level"
+        ).melt("Composite Overall Proficiency Level", value_name="Result")
+
+        # group and aggregate
+        wida_count = {
+            "Count": ("Result", "count"),
+            "Average": ("Composite Overall Proficiency Level", "mean"),
+        }
+        wida_el_average = wida_filter.groupby("Result", as_index=False).agg(
+            **wida_count
+        )
+
+        print(
+            "Of the students taking IREAD, "
+            + str(wida_num)
+            + " were EL students. The average WIDA Level for Passing and Non-Passing EL students who passed was: "
+        )
+        print(wida_el_average)
+        # TODO: END WIDA
+
+        # TODO: BEGIN STUDENT LEVEL ILEARN
+        # TODO: Does STN merge capture multiple years of data for students who progress?
+
+        # tst_wida
+        # STN, Composite Overall Proficiency Level, Test Year
+        # Current Grade, Tested Grade, Test Period, Status, Exemption Status
+        iread_filtered = iread_merged.filter(
+            regex=r"STN|Composite Overall Proficiency Level|Test Year|Current Grade|Tested Grade|Test Period|Status|Exemption Status"
+        )
+        iread_filtered = iread_filtered.rename(
+            columns={"Test Year": "IREAD Test Year", "Current Grade": "IREAD Current Grade","Tested Grade": "IREAD Tested Grade"}
+        )
+
+        # Ilearn
+        # Keep Tested Grade, Current Grade, STN, Math Scale Score, Math Pass Cut Score,
+        # Math Proficiency, ELA Scale Score, ELA Pass Cut Score, ELA Proficiency
+        ilearn_student_all = get_ilearn_student_data(school)
+        ilearn_filtered = ilearn_student_all.filter(
+            regex=r"STN|Current Grade|Tested Grade|Math|ELA"
+        )
+        ilearn_filtered = ilearn_filtered.rename(
+            columns={"Current Grade": "ILEARN Current Grade","Tested Grade": "ILEARN Tested Grade"}
+        )
+
+        # print(iread_filtered)
+        # print(ilearn_filtered)
+
+        ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
+
+        all_student_data = pd.merge(ilearn_filtered, iread_filtered, on="STN")
+
+        print(all_student_data)
         
-        # tst_wida_merge = current_student_iread_data.merge(all_wida, on="STN", how="left")
-        tst_wida_merge = pd.merge(current_student_iread_data, all_wida, on="STN")
-        print("Result for students taking WIDA:")
-        print(tst_wida_merge)
         # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA - LONGITUDINAL TRACKING 3-8 ELA
 
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
