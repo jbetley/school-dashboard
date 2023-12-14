@@ -102,6 +102,7 @@ login_manager = LoginManager()
 login_manager.init_app(server)
 login_manager.login_view = "/login"
 
+
 # each table in the user database needs a class to be created for it
 # using the db.Model, all db columns must be identified by name
 # and data type. UserMixin provides a get_id method that returns
@@ -125,6 +126,7 @@ class User(UserMixin, db.Model):  # type: ignore
     @property
     def full_name(self):
         return self.fullname
+
 
 # load_user is used by login_user, passes the user_id
 # and gets the User object that matches that id
@@ -305,6 +307,7 @@ def set_year_dropdown_options(
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
+    print(selected_school)
     # for K12 schools, we need to use "HS" data when analysis_type is "hs". We also
     # want to make sure that we reset the type if the user switches to a k8 school
     # from a AHS/HS/K12 where the analysis_type was "hs"
@@ -312,10 +315,7 @@ def set_year_dropdown_options(
         analysis_type_value = "k8"
 
     # Guest schools do not have financial data
-    if (
-        "academic" in current_page
-        or selected_school["Guest"].values[0] == "Y"
-    ):
+    if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
         if (
             "academic_information" in current_page
             or "academic_analysis_single" in current_page
@@ -334,6 +334,7 @@ def set_year_dropdown_options(
     else:
         years = get_financial_info_dropdown_years(school_id)
 
+    print(years)
     # set year_value and year_options
     number_of_years_to_display = (
         len(years) if len(years) <= max_dropdown_years else max_dropdown_years

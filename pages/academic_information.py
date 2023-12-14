@@ -19,6 +19,7 @@ from pages.load_data import (
     subject,
     grades_all,
     grades_ordinal,
+    current_academic_year,
     get_iread_student_data,
     get_wida_student_data,
     get_ilearn_student_data,
@@ -344,10 +345,16 @@ def update_academic_information_page(
         or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric >= 2021)
     ) and radio_type == "k8":
-        # TODO: STUDENT LEVEL IREAD DATA
+        
+        # TODO: STUDENT LEVEL IREAD DATA (ICSB SCHOOLS ONLY)
         pd.set_option("display.max_columns", None)
         pd.set_option("display.max_rows", None)
-        raw_student_iread_data = get_iread_student_data(school)
+        raw_student_iread_data = get_iread_student_data(school)        
+        raw_student_iread_data["STN"] = raw_student_iread_data["STN"].astype(
+            str
+        )
+
+        # Selected Year student iread_data
         current_student_iread_data = raw_student_iread_data.loc[
             raw_student_iread_data["Test Year"] == selected_year_numeric
         ]
@@ -456,17 +463,15 @@ def update_academic_information_page(
             + " were retained."
         )
 
-        # TODO: ADD CROSS REFERENCE TO WIDA - CORRELATION BETWEEN WIDA LEVEL AND PASSAGE
+        # TODO: Compare WIDA Level and IREAD Pass Rate
         all_wida = get_wida_student_data()
         all_wida = all_wida[["STN", "Composite Overall Proficiency Level"]]
         all_wida["STN"] = all_wida["STN"].astype(str)
-        current_student_iread_data["STN"] = current_student_iread_data["STN"].astype(
-            str
-        )
 
-        iread_merged = pd.merge(all_wida, current_student_iread_data, on="STN")
+        all_iread_merged = pd.merge(all_wida, raw_student_iread_data, on="STN")
+        current_iread_merged = pd.merge(all_wida, current_student_iread_data, on="STN")
 
-        wida_num = len(iread_merged)
+        wida_num = len(current_iread_merged)
 
         # https://stackoverflow.com/questions/66074831/python-get-value-counts-from-multiple-columns-and-average-from-another-column
         # Get count of Status (Pass/No Pass) and average of WIDA for each by using .melt on the
@@ -474,7 +479,7 @@ def update_academic_information_page(
         # dictionary that specifies the columns and their corresponding aggregation functions
 
         # filter and melt
-        wida_filter = iread_merged.filter(
+        wida_filter = current_iread_merged.filter(
             regex=r"^Status$|Composite Overall Proficiency Level"
         ).melt("Composite Overall Proficiency Level", value_name="Result")
 
@@ -493,43 +498,78 @@ def update_academic_information_page(
             + " were EL students. The average WIDA Level for Passing and Non-Passing EL students who passed was: "
         )
         print(wida_el_average)
-        # TODO: END WIDA
 
-        # TODO: BEGIN STUDENT LEVEL ILEARN
+        # TODO: Compare IREAD/WIDA with longitudinal ILEARN
         # TODO: Does STN merge capture multiple years of data for students who progress?
 
-        # tst_wida
-        # STN, Composite Overall Proficiency Level, Test Year
-        # Current Grade, Tested Grade, Test Period, Status, Exemption Status
-        iread_filtered = iread_merged.filter(
+        # IREAD & WIDA - All data for all years
+        iread_filtered = all_iread_merged.filter(
             regex=r"STN|Composite Overall Proficiency Level|Test Year|Current Grade|Tested Grade|Test Period|Status|Exemption Status"
         )
         iread_filtered = iread_filtered.rename(
-            columns={"Test Year": "IREAD Test Year", "Current Grade": "IREAD Current Grade","Tested Grade": "IREAD Tested Grade"}
+            columns={
+                "Test Year": "IREAD Test Year",
+                "Current Grade": "IREAD Current Grade",
+                "Tested Grade": "IREAD Tested Grade",
+            }
         )
 
-        # Ilearn
-        # Keep Tested Grade, Current Grade, STN, Math Scale Score, Math Pass Cut Score,
-        # Math Proficiency, ELA Scale Score, ELA Pass Cut Score, ELA Proficiency
+        # ILEARN - All data for all years
         ilearn_student_all = get_ilearn_student_data(school)
+
         ilearn_filtered = ilearn_student_all.filter(
             regex=r"STN|Current Grade|Tested Grade|Math|ELA"
         )
         ilearn_filtered = ilearn_filtered.rename(
-            columns={"Current Grade": "ILEARN Current Grade","Tested Grade": "ILEARN Tested Grade"}
+            columns={
+                "Current Grade": "ILEARN Current Grade",
+                "Tested Grade": "ILEARN Tested Grade",
+            }
         )
-
-        # print(iread_filtered)
-        # print(ilearn_filtered)
-
         ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
 
-        all_student_data = pd.merge(ilearn_filtered, iread_filtered, on="STN")
+        # IREAD data goes back to 2018, ILEARN goes back to 2019,
+        # because we typically only show 5 years of data, a current
+        # eighth grader would have taken IREAD in 2018.
+        # NOTE: If we want longitudinal data for earlier years, we
+        # need to add earlier IREAD. An eight grader in 2019 would
+        # have taken IREAD in 2014.
 
-        print(all_student_data)
+        # because IREAD goes back farther, use it as base and merge
+        # ILEARN data
+
+        # ilearn_stn_list = ilearn_filtered["STN"].tolist()
+        # tst_all_data = iread_filtered[iread_filtered["STN"].isin(ilearn_stn_list)]
+        # print(tst_all_data)
+
+    # TODO: TEst different merge types here to see what we want
+        school_all_student_data = pd.merge(iread_filtered, ilearn_filtered, on="STN")
+
+        # Calculate ILEARN Test Year
+        # Current Grade in file is the grade the student is rising into at the
+        # end of the data year. So if Current Grade is 7th, then the student was
+        # in 6th grade for the data year. To get year of a given ILEARN Test:
+        #       (Max Data Year + 1) - (ILEARN Current Grade - ILEARN Tested Grade)
+
+        # E.g., = (2023 + 1) - (8 - 3) = 2024 - 5 = 2019 -> a 2024 Grade 8 Student took
+        # IREAD in 2019. If the row of data shows ILEARN CG of 8 and TG of 3, the ILEARN
+        # Tested year is 2019.
+        school_all_student_data["ILEARN Test Year"] =  (current_academic_year + 1) - \
+            (school_all_student_data['ILEARN Current Grade'].str[-1].astype(int) - \
+             school_all_student_data['ILEARN Tested Grade'].str[-1].astype(int))
         
         # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA - LONGITUDINAL TRACKING 3-8 ELA
+        # Avg ELA/Math over time for IREAD Pass - 2018-19, 21, 22, 23
+            # group by IREAD Pass and ILEARN Year:
+            # a) count Exceeds, At, Approach, Below
+            # b) measure point diff between Cut and Scale and Average
+            # c) measure raw scale score avg
+        # Avg ELA over time for IREAD No Pass
 
+        print(school_all_student_data)
+
+        
+        # Begin Aggregated K8 School Data
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
         excluded_years = get_excluded_years(selected_year_string)
