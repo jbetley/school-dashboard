@@ -191,6 +191,7 @@ metric_strings = {
     ],
 }
 
+# TODO: Move this to app? import engine? use a function to pull the table?
 engine = create_engine("sqlite:///data/db_all.db")
 
 print("Database Engine Created . . .")
@@ -234,6 +235,24 @@ def get_current_year():
 
 
 current_academic_year = get_current_year()
+
+
+# Used to dynamically count the number of network logins (all of which have
+# negative group_id values) so we know how far to offset group_id in determining
+# the charter dropdown in app.py. Otherwise we would have to hardcode this
+# value. we add one to the total to account for the admin login
+def get_network_count():
+    db = engine.raw_connection()
+    cur = db.cursor()
+    cur.execute(""" SELECT COUNT(groupid) FROM users WHERE groupid < 0 """)
+    count = cur.fetchone()[0]
+    count = count + 1
+    db.close()
+
+    return count
+
+
+network_count = get_network_count()
 
 
 def get_excluded_years(year: str) -> list:

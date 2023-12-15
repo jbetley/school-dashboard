@@ -64,6 +64,7 @@ from dash import dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 
 from pages.load_data import (
+    network_count,
     get_school_index,
     get_academic_dropdown_years,
     get_academic_growth_dropdown_years,
@@ -87,10 +88,17 @@ server = Flask(__name__, static_folder="static")
 
 load_dotenv()
 
+# TODO: LOAD FULL DATABASE HERE - CURRENTLY DUPLICATED BECAUSE icsb-users still exists
+
+# engine = create_engine("sqlite:///data/db_all.db")
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 server.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
-    basedir, "icsb-users.db"
+    basedir, "data/db_all.db"
 )
+# server.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
+#     basedir, "icsb-users.db"
+# )
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 server.config.update(SECRET_KEY=os.getenv("SECRET_KEY"))
 
@@ -113,11 +121,11 @@ class User(UserMixin, db.Model):  # type: ignore
     username = db.Column(db.Text, unique=True)
     password = db.Column(db.Text, unique=True)
     groupid = db.Column(db.Integer, unique=False)
-    fullname = db.Column(db.Integer, unique=True)
+    displayname = db.Column(db.Text, unique=True)
 
     # these properties allow us to access additional fields in the user
     # database - in this case, they are used to populate the user dropdown
-    # with associated groups of schools (by group id). fullname is not
+    # with associated groups of schools (by group id). displayname is not
     # currently used.
     @property
     def group_id(self):
@@ -125,7 +133,7 @@ class User(UserMixin, db.Model):  # type: ignore
 
     @property
     def full_name(self):
-        return self.fullname
+        return self.displayname
 
 
 # load_user is used by login_user, passes the user_id
@@ -236,10 +244,15 @@ def set_dropdown_options(app_state):
     # use the ._get_current_object() method to return the
     # underlying object (User). get the group_id property
     # to determine which schools to include for a network
-    # login. NOTE: user 0 is admin; users 1-6 are network logins; users 7- are individual schools
-    # Groups: CHA (-1); Excel (-2); GEI (-3); PLA (-4); Paramount (-5); Purdue (-6)
+    # login.
+
+    # NOTE: user 0 is admin; users 1-7 are network logins; users 8- are individual schools
+    # Groups: CHA (-1); Excel (-2); GEI (-3); PLA (-4); Paramount (-5); Purdue (-6); EdOne (-7)
     authorized_user = current_user._get_current_object()
     group_id = current_user.group_id
+
+    # this gets the list of available charters from 'school_index' which is a separate
+    # table from users_db- this is because users_bd includes admin + network users
 
     available_charters = get_school_dropdown_list()
 
@@ -248,7 +261,7 @@ def set_dropdown_options(app_state):
         charters = available_charters
 
     else:
-        # check for network login
+        # check for network login - use abs value of network group_id
         if group_id < 0:
             charters = available_charters[
                 available_charters["GroupID"] == str(abs(group_id))
@@ -256,8 +269,17 @@ def set_dropdown_options(app_state):
 
         else:
             # select only the authorized school using the id field of the authorized_user
-            # object. need to subtract 7 to account for Admin and Network Logins (loc 0-6)
-            charters = available_charters.iloc[[(authorized_user.id - 7)]]
+            # object.
+
+            # network_count is a global variable that queries the users
+            # table and returns a count of network + admin logins. Need
+            # this value to know how far to offset the id to get the
+            # correct result (e.g., there are 51 schools, 8 of which are
+            # network or admin logins, so we need to subtract 8 from
+            # 51 to match the actual id)
+            charters = available_charters.iloc[
+                [(authorized_user.id - network_count)]
+            ]
 
     dropdown_dict = dict(zip(charters["SchoolName"], charters["SchoolID"]))
     dropdown_list = dict(sorted(dropdown_dict.items()))
@@ -307,7 +329,6 @@ def set_year_dropdown_options(
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
-    print(selected_school)
     # for K12 schools, we need to use "HS" data when analysis_type is "hs". We also
     # want to make sure that we reset the type if the user switches to a k8 school
     # from a AHS/HS/K12 where the analysis_type was "hs"
@@ -334,7 +355,6 @@ def set_year_dropdown_options(
     else:
         years = get_financial_info_dropdown_years(school_id)
 
-    print(years)
     # set year_value and year_options
     number_of_years_to_display = (
         len(years) if len(years) <= max_dropdown_years else max_dropdown_years
