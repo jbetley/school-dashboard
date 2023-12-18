@@ -88,19 +88,19 @@ server = Flask(__name__, static_folder="static")
 
 load_dotenv()
 
-# TODO: LOAD FULL DATABASE HERE - CURRENTLY DUPLICATED BECAUSE icsb-users still exists
-
+# TODO: Load DB here and use "users" table in login?
 # engine = create_engine("sqlite:///data/db_all.db")
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-server.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
-    basedir, "data/db_all.db"
-)
 # server.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
-#     basedir, "icsb-users.db"
+#     basedir, "data/db_all.db"
 # )
+server.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
+    basedir, "users.db"
+)
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 server.config.update(SECRET_KEY=os.getenv("SECRET_KEY"))
+#server.config['SECRET_KEY'] = "291a47103f3cd8fc26d05ffc7b31e33f73ca3d459d6259bd"
 
 bcrypt = Bcrypt()
 
@@ -277,9 +277,7 @@ def set_dropdown_options(app_state):
             # correct result (e.g., there are 51 schools, 8 of which are
             # network or admin logins, so we need to subtract 8 from
             # 51 to match the actual id)
-            charters = available_charters.iloc[
-                [(authorized_user.id - network_count)]
-            ]
+            charters = available_charters.iloc[[(authorized_user.id - network_count)]]
 
     dropdown_dict = dict(zip(charters["SchoolName"], charters["SchoolID"]))
     dropdown_list = dict(sorted(dropdown_dict.items()))

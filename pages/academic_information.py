@@ -345,15 +345,34 @@ def update_academic_information_page(
         or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric >= 2021)
     ) and radio_type == "k8":
-        
         # TODO: STUDENT LEVEL IREAD DATA (ICSB SCHOOLS ONLY)
         pd.set_option("display.max_columns", None)
         pd.set_option("display.max_rows", None)
-        raw_student_iread_data = get_iread_student_data(school)        
-        raw_student_iread_data["STN"] = raw_student_iread_data["STN"].astype(
-            str
-        )
+        raw_student_iread_data = get_iread_student_data(school)
+        raw_student_iread_data["STN"] = raw_student_iread_data["STN"].astype(str)
 
+        # Line Charts - same graph
+        # Spring Pass over time / Summer Pass over time / Total pass over time
+
+        # Group by Year and Period
+        iread_yoy = raw_student_iread_data.groupby(["Test Year", "Test Period"])[
+            "Status"].value_counts(normalize=True).reset_index(name='per')
+        
+        # keep only Pass percentages
+        iread_yoy = iread_yoy[iread_yoy['Status'].str.startswith('Pass')]
+        print(iread_yoy)
+        
+        # Get count (nsize) for total # of Students Tested per year and period
+        iread_tested = raw_student_iread_data.groupby(["Test Year", "Test Period"])[
+    "Status"].count().reset_index(name='n-size')
+
+        print(iread_tested)
+
+# TODO: Merge two dataframes on two column match
+
+        final_iread = pd.merge(iread_yoy, iread_tested, on=['Test Year', 'Test Period'])
+
+        print(final_iread)
         # Selected Year student iread_data
         current_student_iread_data = raw_student_iread_data.loc[
             raw_student_iread_data["Test Year"] == selected_year_numeric
@@ -379,29 +398,29 @@ def update_academic_information_page(
         ).sum()
         summer_percentage = summer_pass / summer_tested
 
-        print(
-            "A total of "
-            + str(all_tested)
-            + " students took IREAD in the Spring, with "
-            + str(spring_pass)
-            + " of them passing ("
-            + str(spring_percentage)
-            + "). "
-            + str(summer_tested)
-            + " students were re-tested in the Summer, with "
-            + str(summer_pass)
-            + " of them passing ("
-            + str(summer_percentage)
-            + "). The school's Total IREAD Proficiency for "
-            + selected_year_string
-            + " was: "
-            + str(all_percentage)
-            + " ("
-            + str(all_pass)
-            + " out of "
-            + str(all_tested)
-            + ")."
-        )
+        # print(
+        #     "A total of "
+        #     + str(all_tested)
+        #     + " students took IREAD in the Spring, with "
+        #     + str(spring_pass)
+        #     + " of them passing ("
+        #     + str(spring_percentage)
+        #     + "). "
+        #     + str(summer_tested)
+        #     + " students were re-tested in the Summer, with "
+        #     + str(summer_pass)
+        #     + " of them passing ("
+        #     + str(summer_percentage)
+        #     + "). The school's Total IREAD Proficiency for "
+        #     + selected_year_string
+        #     + " was: "
+        #     + str(all_percentage)
+        #     + " ("
+        #     + str(all_pass)
+        #     + " out of "
+        #     + str(all_tested)
+        #     + ")."
+        # )
 
         grade_2nd_count = (
             current_student_iread_data["Tested Grade"] == "Grade 2"
@@ -425,17 +444,17 @@ def update_academic_information_page(
         ).sum()
         grade3_pass_percentage = grade_3rd_pass / grade_3rd_count
 
-        print(
-            "Of the tested students, "
-            + str(grade_2nd_count)
-            + " were 2nd graders and "
-            + str(grade_3rd_count)
-            + " were third graders. "
-            + str(grade2_pass_percentage)
-            + " of 2nd graders and "
-            + str(grade3_pass_percentage)
-            + " of 3rd graders passed."
-        )
+        # print(
+        #     "Of the tested students, "
+        #     + str(grade_2nd_count)
+        #     + " were 2nd graders and "
+        #     + str(grade_3rd_count)
+        #     + " were third graders. "
+        #     + str(grade2_pass_percentage)
+        #     + " of 2nd graders and "
+        #     + str(grade3_pass_percentage)
+        #     + " of 3rd graders passed."
+        # )
 
         exemptions = (
             current_student_iread_data["Exemption Status"] == "Exemption"
@@ -451,17 +470,17 @@ def update_academic_information_page(
             & (current_student_iread_data["Current Grade"] == "Grade 3")
         ).sum()
 
-        print(
-            "There were "
-            + str(exemptions)
-            + " exemptions granted. Of the "
-            + str(did_not_pass)
-            + " 3rd graders who did not pass IREAD in the Spring or Summer retest, "
-            + str(advance_no_pass)
-            + " of them advanced to 4th grade the following year and "
-            + str(retained)
-            + " were retained."
-        )
+        # print(
+        #     "There were "
+        #     + str(exemptions)
+        #     + " exemptions granted. Of the "
+        #     + str(did_not_pass)
+        #     + " 3rd graders who did not pass IREAD in the Spring or Summer retest, "
+        #     + str(advance_no_pass)
+        #     + " of them advanced to 4th grade the following year and "
+        #     + str(retained)
+        #     + " were retained."
+        # )
 
         # TODO: Compare WIDA Level and IREAD Pass Rate
         all_wida = get_wida_student_data()
@@ -492,12 +511,12 @@ def update_academic_information_page(
             **wida_count
         )
 
-        print(
-            "Of the students taking IREAD, "
-            + str(wida_num)
-            + " were EL students. The average WIDA Level for Passing and Non-Passing EL students who passed was: "
-        )
-        print(wida_el_average)
+        # print(
+        #     "Of the students taking IREAD, "
+        #     + str(wida_num)
+        #     + " were EL students. The average WIDA Level for Passing and Non-Passing EL students who passed was: "
+        # )
+        # print(wida_el_average)
 
         # TODO: Compare IREAD/WIDA with longitudinal ILEARN
         # TODO: Does STN merge capture multiple years of data for students who progress?
@@ -542,7 +561,7 @@ def update_academic_information_page(
         # tst_all_data = iread_filtered[iread_filtered["STN"].isin(ilearn_stn_list)]
         # print(tst_all_data)
 
-    # TODO: TEst different merge types here to see what we want
+        # TODO: TEst different merge types here to see what we want
         school_all_student_data = pd.merge(iread_filtered, ilearn_filtered, on="STN")
 
         # Calculate ILEARN Test Year
@@ -554,21 +573,21 @@ def update_academic_information_page(
         # E.g., = (2023 + 1) - (8 - 3) = 2024 - 5 = 2019 -> a 2024 Grade 8 Student took
         # IREAD in 2019. If the row of data shows ILEARN CG of 8 and TG of 3, the ILEARN
         # Tested year is 2019.
-        school_all_student_data["ILEARN Test Year"] =  (current_academic_year + 1) - \
-            (school_all_student_data['ILEARN Current Grade'].str[-1].astype(int) - \
-             school_all_student_data['ILEARN Tested Grade'].str[-1].astype(int))
-        
+        school_all_student_data["ILEARN Test Year"] = (current_academic_year + 1) - (
+            school_all_student_data["ILEARN Current Grade"].str[-1].astype(int)
+            - school_all_student_data["ILEARN Tested Grade"].str[-1].astype(int)
+        )
+
         # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA - LONGITUDINAL TRACKING 3-8 ELA
         # Avg ELA/Math over time for IREAD Pass - 2018-19, 21, 22, 23
-            # group by IREAD Pass and ILEARN Year:
-            # a) count Exceeds, At, Approach, Below
-            # b) measure point diff between Cut and Scale and Average
-            # c) measure raw scale score avg
+        # group by IREAD Pass and ILEARN Year:
+        # a) count Exceeds, At, Approach, Below
+        # b) measure point diff between Cut and Scale and Average
+        # c) measure raw scale score avg
         # Avg ELA over time for IREAD No Pass
 
-        print(school_all_student_data)
+        # print(school_all_student_data)
 
-        
         # Begin Aggregated K8 School Data
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
 

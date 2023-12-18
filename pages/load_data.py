@@ -16,8 +16,7 @@
 import pandas as pd
 import numpy as np
 import re
-from sqlalchemy import create_engine
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 
 # NOTE: No K8 academic data exists for 2020
 
