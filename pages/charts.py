@@ -574,6 +574,8 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
     data.columns = data.columns.str.split("|").str[0]
 
+    # print(data)
+
     if "IREAD Proficiency (Grade 3)" in data.columns:
         data = data.rename(columns={"IREAD Proficiency (Grade 3)": "IREAD"})
 

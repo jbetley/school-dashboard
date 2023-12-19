@@ -345,249 +345,6 @@ def update_academic_information_page(
         or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric >= 2021)
     ) and radio_type == "k8":
-        # TODO: STUDENT LEVEL IREAD DATA (ICSB SCHOOLS ONLY)
-        pd.set_option("display.max_columns", None)
-        pd.set_option("display.max_rows", None)
-        raw_student_iread_data = get_iread_student_data(school)
-        raw_student_iread_data["STN"] = raw_student_iread_data["STN"].astype(str)
-
-        # Line Charts - same graph
-        # Spring Pass over time / Summer Pass over time / Total pass over time
-
-        # Group by Year and Period
-        iread_yoy = raw_student_iread_data.groupby(["Test Year", "Test Period"])[
-            "Status"].value_counts(normalize=True).reset_index(name='per')
-        
-        # keep only Pass percentages
-        iread_yoy = iread_yoy[iread_yoy['Status'].str.startswith('Pass')]
-        print(iread_yoy)
-        
-        # Get count (nsize) for total # of Students Tested per year and period
-        iread_tested = raw_student_iread_data.groupby(["Test Year", "Test Period"])[
-    "Status"].count().reset_index(name='n-size')
-
-        print(iread_tested)
-
-# TODO: Merge two dataframes on two column match
-
-        final_iread = pd.merge(iread_yoy, iread_tested, on=['Test Year', 'Test Period'])
-
-        print(final_iread)
-        # Selected Year student iread_data
-        current_student_iread_data = raw_student_iread_data.loc[
-            raw_student_iread_data["Test Year"] == selected_year_numeric
-        ]
-
-        all_tested = len(current_student_iread_data["Status"])
-        all_pass = (current_student_iread_data["Status"] == "Pass").sum()
-        did_not_pass = (current_student_iread_data["Status"] == "Did Not Pass").sum()
-        all_percentage = all_pass / all_tested
-
-        # Note: All students are tested in spring
-        spring_pass = (
-            (current_student_iread_data["Status"] == "Pass")
-            & (current_student_iread_data["Test Period"] == "Spring")
-        ).sum()
-        spring_percentage = spring_pass / all_tested
-
-        # Note: Only Summer retesters are tested in the summer
-        summer_tested = (current_student_iread_data["Test Period"] == "Summer").sum()
-        summer_pass = (
-            (current_student_iread_data["Status"] == "Pass")
-            & (current_student_iread_data["Test Period"] == "Summer")
-        ).sum()
-        summer_percentage = summer_pass / summer_tested
-
-        # print(
-        #     "A total of "
-        #     + str(all_tested)
-        #     + " students took IREAD in the Spring, with "
-        #     + str(spring_pass)
-        #     + " of them passing ("
-        #     + str(spring_percentage)
-        #     + "). "
-        #     + str(summer_tested)
-        #     + " students were re-tested in the Summer, with "
-        #     + str(summer_pass)
-        #     + " of them passing ("
-        #     + str(summer_percentage)
-        #     + "). The school's Total IREAD Proficiency for "
-        #     + selected_year_string
-        #     + " was: "
-        #     + str(all_percentage)
-        #     + " ("
-        #     + str(all_pass)
-        #     + " out of "
-        #     + str(all_tested)
-        #     + ")."
-        # )
-
-        grade_2nd_count = (
-            current_student_iread_data["Tested Grade"] == "Grade 2"
-        ).sum()
-
-        if grade_2nd_count > 0:
-            grade_2nd_pass = (
-                (current_student_iread_data["Status"] == "Pass")
-                & (current_student_iread_data["Tested Grade"] == "Grade 2")
-            ).sum()
-            grade2_pass_percentage = grade_2nd_pass / grade_2nd_count
-        else:
-            grade2_pass_percentage = "none"
-
-        grade_3rd_count = (
-            current_student_iread_data["Tested Grade"] == "Grade 3"
-        ).sum()
-        grade_3rd_pass = (
-            (current_student_iread_data["Status"] == "Pass")
-            & (current_student_iread_data["Tested Grade"] == "Grade 3")
-        ).sum()
-        grade3_pass_percentage = grade_3rd_pass / grade_3rd_count
-
-        # print(
-        #     "Of the tested students, "
-        #     + str(grade_2nd_count)
-        #     + " were 2nd graders and "
-        #     + str(grade_3rd_count)
-        #     + " were third graders. "
-        #     + str(grade2_pass_percentage)
-        #     + " of 2nd graders and "
-        #     + str(grade3_pass_percentage)
-        #     + " of 3rd graders passed."
-        # )
-
-        exemptions = (
-            current_student_iread_data["Exemption Status"] == "Exemption"
-        ).sum()
-
-        advance_no_pass = (
-            (current_student_iread_data["Status"] == "Did Not Pass")
-            & (current_student_iread_data["Current Grade"] == "Grade 4")
-        ).sum()
-        retained = (
-            (current_student_iread_data["Status"] == "Did Not Pass")
-            & (current_student_iread_data["Tested Grade"] == "Grade 3")
-            & (current_student_iread_data["Current Grade"] == "Grade 3")
-        ).sum()
-
-        # print(
-        #     "There were "
-        #     + str(exemptions)
-        #     + " exemptions granted. Of the "
-        #     + str(did_not_pass)
-        #     + " 3rd graders who did not pass IREAD in the Spring or Summer retest, "
-        #     + str(advance_no_pass)
-        #     + " of them advanced to 4th grade the following year and "
-        #     + str(retained)
-        #     + " were retained."
-        # )
-
-        # TODO: Compare WIDA Level and IREAD Pass Rate
-        all_wida = get_wida_student_data()
-        all_wida = all_wida[["STN", "Composite Overall Proficiency Level"]]
-        all_wida["STN"] = all_wida["STN"].astype(str)
-
-        all_iread_merged = pd.merge(all_wida, raw_student_iread_data, on="STN")
-        current_iread_merged = pd.merge(all_wida, current_student_iread_data, on="STN")
-
-        wida_num = len(current_iread_merged)
-
-        # https://stackoverflow.com/questions/66074831/python-get-value-counts-from-multiple-columns-and-average-from-another-column
-        # Get count of Status (Pass/No Pass) and average of WIDA for each by using .melt on the
-        # dataframe, grouping the melted df on Status, and aggregating for count and mean using a
-        # dictionary that specifies the columns and their corresponding aggregation functions
-
-        # filter and melt
-        wida_filter = current_iread_merged.filter(
-            regex=r"^Status$|Composite Overall Proficiency Level"
-        ).melt("Composite Overall Proficiency Level", value_name="Result")
-
-        # group and aggregate
-        wida_count = {
-            "Count": ("Result", "count"),
-            "Average": ("Composite Overall Proficiency Level", "mean"),
-        }
-        wida_el_average = wida_filter.groupby("Result", as_index=False).agg(
-            **wida_count
-        )
-
-        # print(
-        #     "Of the students taking IREAD, "
-        #     + str(wida_num)
-        #     + " were EL students. The average WIDA Level for Passing and Non-Passing EL students who passed was: "
-        # )
-        # print(wida_el_average)
-
-        # TODO: Compare IREAD/WIDA with longitudinal ILEARN
-        # TODO: Does STN merge capture multiple years of data for students who progress?
-
-        # IREAD & WIDA - All data for all years
-        iread_filtered = all_iread_merged.filter(
-            regex=r"STN|Composite Overall Proficiency Level|Test Year|Current Grade|Tested Grade|Test Period|Status|Exemption Status"
-        )
-        iread_filtered = iread_filtered.rename(
-            columns={
-                "Test Year": "IREAD Test Year",
-                "Current Grade": "IREAD Current Grade",
-                "Tested Grade": "IREAD Tested Grade",
-            }
-        )
-
-        # ILEARN - All data for all years
-        ilearn_student_all = get_ilearn_student_data(school)
-
-        ilearn_filtered = ilearn_student_all.filter(
-            regex=r"STN|Current Grade|Tested Grade|Math|ELA"
-        )
-        ilearn_filtered = ilearn_filtered.rename(
-            columns={
-                "Current Grade": "ILEARN Current Grade",
-                "Tested Grade": "ILEARN Tested Grade",
-            }
-        )
-        ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
-
-        # IREAD data goes back to 2018, ILEARN goes back to 2019,
-        # because we typically only show 5 years of data, a current
-        # eighth grader would have taken IREAD in 2018.
-        # NOTE: If we want longitudinal data for earlier years, we
-        # need to add earlier IREAD. An eight grader in 2019 would
-        # have taken IREAD in 2014.
-
-        # because IREAD goes back farther, use it as base and merge
-        # ILEARN data
-
-        # ilearn_stn_list = ilearn_filtered["STN"].tolist()
-        # tst_all_data = iread_filtered[iread_filtered["STN"].isin(ilearn_stn_list)]
-        # print(tst_all_data)
-
-        # TODO: TEst different merge types here to see what we want
-        school_all_student_data = pd.merge(iread_filtered, ilearn_filtered, on="STN")
-
-        # Calculate ILEARN Test Year
-        # Current Grade in file is the grade the student is rising into at the
-        # end of the data year. So if Current Grade is 7th, then the student was
-        # in 6th grade for the data year. To get year of a given ILEARN Test:
-        #       (Max Data Year + 1) - (ILEARN Current Grade - ILEARN Tested Grade)
-
-        # E.g., = (2023 + 1) - (8 - 3) = 2024 - 5 = 2019 -> a 2024 Grade 8 Student took
-        # IREAD in 2019. If the row of data shows ILEARN CG of 8 and TG of 3, the ILEARN
-        # Tested year is 2019.
-        school_all_student_data["ILEARN Test Year"] = (current_academic_year + 1) - (
-            school_all_student_data["ILEARN Current Grade"].str[-1].astype(int)
-            - school_all_student_data["ILEARN Tested Grade"].str[-1].astype(int)
-        )
-
-        # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA - LONGITUDINAL TRACKING 3-8 ELA
-        # Avg ELA/Math over time for IREAD Pass - 2018-19, 21, 22, 23
-        # group by IREAD Pass and ILEARN Year:
-        # a) count Exceeds, At, Approach, Below
-        # b) measure point diff between Cut and Scale and Average
-        # c) measure raw scale score avg
-        # Avg ELA over time for IREAD No Pass
-
-        # print(school_all_student_data)
-
         # Begin Aggregated K8 School Data
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
@@ -668,12 +425,319 @@ def update_academic_information_page(
                     | (all_k8_school_data["Category"] == "IREAD Proficiency (Grade 3)")
                 ]
 
+                pd.set_option("display.max_columns", None)
+                pd.set_option("display.max_rows", None)
+
+                ## IREAD
+
+                # TODO: Total IREAD N-Size does not match student level data!
+                # get annual N-Size values from all_school_data
+                raw_total_iread_tested = all_k8_school_data[
+                    all_k8_school_data["Category"] == "IREAD Proficiency (Grade 3)"
+                ]
+                raw_total_iread_tested = raw_total_iread_tested.filter(
+                    regex=r"N-Size", axis=1
+                ).reset_index(drop=True)
+                total_iread_tested = raw_total_iread_tested.T.rename_axis(
+                    "Year"
+                ).reset_index()
+                total_iread_tested = total_iread_tested.rename(columns={0: "N-Size"})
+                total_iread_tested["Year"] = total_iread_tested["Year"].str[:4]
+
+                print("Total IREAD Tested (Not Accurate?)")
+                print(total_iread_tested)
+                # get annual IREAD values from all_school_data
+                total_iread_data = year_over_year_data.filter(
+                    regex=r"IREAD|^Year$", axis=1
+                )
+                total_iread_data["Year"] = total_iread_data["Year"].astype(int)
+
+                # get annual raw student iread data
+                raw_student_iread_data = get_iread_student_data(school)
+                raw_student_iread_data["STN"] = raw_student_iread_data["STN"].astype(
+                    str
+                )
+
+                # Group by Year and Period
+                iread_yoy = (
+                    raw_student_iread_data.groupby(["Test Year", "Test Period"])[
+                        "Status"
+                    ]
+                    .value_counts(normalize=True)
+                    .reset_index(name="per")
+                )
+
+                # Filter to remove everything but "Pass"
+                iread_yoy = iread_yoy[iread_yoy["Status"].str.startswith("Pass")]
+
+                # Get count (nsize) for total # of Students Tested per year and period
+                student_iread_tested = (
+                    raw_student_iread_data.groupby(["Test Year", "Test Period"])[
+                        "Status"
+                    ]
+                    .count()
+                    .reset_index(name="n-size")
+                )
+                print("Student IREAD Tested")
+                print(student_iread_tested)
+                # final_iread = pd.merge(
+                #     iread_yoy, iread_tested, on=["Test Year", "Test Period"]
+                # )
+
+                iread_yoy = iread_yoy.drop(["Status"], axis=1)
+
+                # Use pivot to get table into proper format for charting
+                final_iread_yoy = (
+                    iread_yoy.pivot_table(
+                        index=["Test Year"], columns="Test Period", values="per"
+                    )
+                    .reset_index()
+                    .rename_axis(None, axis=1)
+                )
+                iread_fig_data = pd.merge(
+                    final_iread_yoy,
+                    total_iread_data,
+                    left_on=["Test Year"],
+                    right_on=["Year"],
+                )
+                # TODO: HERE ! Clean DF
+                print(iread_fig_data)
+
+                # final_iread_spring = final_iread[final_iread['Test Period'] == "Spring"]
+                # final_iread_summer = final_iread[final_iread['Test Period'] == "Summer"]
+                # print(final_iread_spring)
+                # print(final_iread_summer)
+
+                ## Selected Year student iread_data
+                current_student_iread_data = raw_student_iread_data.loc[
+                    raw_student_iread_data["Test Year"] == selected_year_numeric
+                ]
+
+                all_tested = len(current_student_iread_data["Status"])
+                all_pass = (current_student_iread_data["Status"] == "Pass").sum()
+                did_not_pass = (
+                    current_student_iread_data["Status"] == "Did Not Pass"
+                ).sum()
+                all_percentage = all_pass / all_tested
+
+                # Note: All students are tested in spring
+                spring_pass = (
+                    (current_student_iread_data["Status"] == "Pass")
+                    & (current_student_iread_data["Test Period"] == "Spring")
+                ).sum()
+                spring_percentage = spring_pass / all_tested
+
+                # Note: Only Summer retesters are tested in the summer
+                summer_tested = (
+                    current_student_iread_data["Test Period"] == "Summer"
+                ).sum()
+                summer_pass = (
+                    (current_student_iread_data["Status"] == "Pass")
+                    & (current_student_iread_data["Test Period"] == "Summer")
+                ).sum()
+                summer_percentage = summer_pass / summer_tested
+
+                # print(
+                #     "A total of "
+                #     + str(all_tested)
+                #     + " students took IREAD in the Spring, with "
+                #     + str(spring_pass)
+                #     + " of them passing ("
+                #     + str(spring_percentage)
+                #     + "). "
+                #     + str(summer_tested)
+                #     + " students were re-tested in the Summer, with "
+                #     + str(summer_pass)
+                #     + " of them passing ("
+                #     + str(summer_percentage)
+                #     + "). The school's Total IREAD Proficiency for "
+                #     + selected_year_string
+                #     + " was: "
+                #     + str(all_percentage)
+                #     + " ("
+                #     + str(all_pass)
+                #     + " out of "
+                #     + str(all_tested)
+                #     + ")."
+                # )
+
+                grade_2nd_count = (
+                    current_student_iread_data["Tested Grade"] == "Grade 2"
+                ).sum()
+
+                if grade_2nd_count > 0:
+                    grade_2nd_pass = (
+                        (current_student_iread_data["Status"] == "Pass")
+                        & (current_student_iread_data["Tested Grade"] == "Grade 2")
+                    ).sum()
+                    grade2_pass_percentage = grade_2nd_pass / grade_2nd_count
+                else:
+                    grade2_pass_percentage = "none"
+
+                grade_3rd_count = (
+                    current_student_iread_data["Tested Grade"] == "Grade 3"
+                ).sum()
+                grade_3rd_pass = (
+                    (current_student_iread_data["Status"] == "Pass")
+                    & (current_student_iread_data["Tested Grade"] == "Grade 3")
+                ).sum()
+                grade3_pass_percentage = grade_3rd_pass / grade_3rd_count
+
+                # print(
+                #     "Of the tested students, "
+                #     + str(grade_2nd_count)
+                #     + " were 2nd graders and "
+                #     + str(grade_3rd_count)
+                #     + " were third graders. "
+                #     + str(grade2_pass_percentage)
+                #     + " of 2nd graders and "
+                #     + str(grade3_pass_percentage)
+                #     + " of 3rd graders passed."
+                # )
+
+                exemptions = (
+                    current_student_iread_data["Exemption Status"] == "Exemption"
+                ).sum()
+
+                advance_no_pass = (
+                    (current_student_iread_data["Status"] == "Did Not Pass")
+                    & (current_student_iread_data["Current Grade"] == "Grade 4")
+                ).sum()
+                retained = (
+                    (current_student_iread_data["Status"] == "Did Not Pass")
+                    & (current_student_iread_data["Tested Grade"] == "Grade 3")
+                    & (current_student_iread_data["Current Grade"] == "Grade 3")
+                ).sum()
+
+                # print(
+                #     "There were "
+                #     + str(exemptions)
+                #     + " exemptions granted. Of the "
+                #     + str(did_not_pass)
+                #     + " 3rd graders who did not pass IREAD in the Spring or Summer retest, "
+                #     + str(advance_no_pass)
+                #     + " of them advanced to 4th grade the following year and "
+                #     + str(retained)
+                #     + " were retained."
+                # )
+
+                # TODO: Compare WIDA Level and IREAD Pass Rate
+                all_wida = get_wida_student_data()
+                all_wida = all_wida[["STN", "Composite Overall Proficiency Level"]]
+                all_wida["STN"] = all_wida["STN"].astype(str)
+
+                all_iread_merged = pd.merge(all_wida, raw_student_iread_data, on="STN")
+                current_iread_merged = pd.merge(
+                    all_wida, current_student_iread_data, on="STN"
+                )
+
+                wida_num = len(current_iread_merged)
+
+                # https://stackoverflow.com/questions/66074831/python-get-value-counts-from-multiple-columns-and-average-from-another-column
+                # Get count of Status (Pass/No Pass) and average of WIDA for each by using .melt on the
+                # dataframe, grouping the melted df on Status, and aggregating for count and mean using a
+                # dictionary that specifies the columns and their corresponding aggregation functions
+
+                # filter and melt
+                wida_filter = current_iread_merged.filter(
+                    regex=r"^Status$|Composite Overall Proficiency Level"
+                ).melt("Composite Overall Proficiency Level", value_name="Result")
+
+                # group and aggregate
+                wida_count = {
+                    "Count": ("Result", "count"),
+                    "Average": ("Composite Overall Proficiency Level", "mean"),
+                }
+                wida_el_average = wida_filter.groupby("Result", as_index=False).agg(
+                    **wida_count
+                )
+
+                # print(
+                #     "Of the students taking IREAD, "
+                #     + str(wida_num)
+                #     + " were EL students. The average WIDA Level for Passing and Non-Passing EL students who passed was: "
+                # )
+                # print(wida_el_average)
+
+                # TODO: Compare IREAD/WIDA with longitudinal ILEARN
+                # TODO: Does STN merge capture multiple years of data for students who progress?
+
+                # IREAD & WIDA - All data for all years
+                iread_filtered = all_iread_merged.filter(
+                    regex=r"STN|Composite Overall Proficiency Level|Test Year|Current Grade|Tested Grade|Test Period|Status|Exemption Status"
+                )
+                iread_filtered = iread_filtered.rename(
+                    columns={
+                        "Test Year": "IREAD Test Year",
+                        "Current Grade": "IREAD Current Grade",
+                        "Tested Grade": "IREAD Tested Grade",
+                    }
+                )
+
+                # ILEARN - All data for all years
+                ilearn_student_all = get_ilearn_student_data(school)
+
+                ilearn_filtered = ilearn_student_all.filter(
+                    regex=r"STN|Current Grade|Tested Grade|Math|ELA"
+                )
+                ilearn_filtered = ilearn_filtered.rename(
+                    columns={
+                        "Current Grade": "ILEARN Current Grade",
+                        "Tested Grade": "ILEARN Tested Grade",
+                    }
+                )
+                ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
+
+                # IREAD data goes back to 2018, ILEARN goes back to 2019,
+                # because we typically only show 5 years of data, a current
+                # eighth grader would have taken IREAD in 2018.
+                # NOTE: If we want longitudinal data for earlier years, we
+                # need to add earlier IREAD. An eight grader in 2019 would
+                # have taken IREAD in 2014.
+
+                # because IREAD goes back farther, use it as base and merge
+                # ILEARN data
+
+                # ilearn_stn_list = ilearn_filtered["STN"].tolist()
+                # tst_all_data = iread_filtered[iread_filtered["STN"].isin(ilearn_stn_list)]
+                # print(tst_all_data)
+
+                # TODO: TEst different merge types here to see what we want
+                school_all_student_data = pd.merge(
+                    iread_filtered, ilearn_filtered, on="STN"
+                )
+
+                # Calculate ILEARN Test Year
+                # Current Grade in file is the grade the student is rising into at the
+                # end of the data year. So if Current Grade is 7th, then the student was
+                # in 6th grade for the data year. To get year of a given ILEARN Test:
+                #       (Max Data Year + 1) - (ILEARN Current Grade - ILEARN Tested Grade)
+
+                # E.g., = (2023 + 1) - (8 - 3) = 2024 - 5 = 2019 -> a 2024 Grade 8 Student took
+                # IREAD in 2019. If the row of data shows ILEARN CG of 8 and TG of 3, the ILEARN
+                # Tested year is 2019.
+                school_all_student_data["ILEARN Test Year"] = (
+                    current_academic_year + 1
+                ) - (
+                    school_all_student_data["ILEARN Current Grade"].str[-1].astype(int)
+                    - school_all_student_data["ILEARN Tested Grade"].str[-1].astype(int)
+                )
+
+                # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA - LONGITUDINAL TRACKING 3-8 ELA
+                # Avg ELA/Math over time for IREAD Pass - 2018-19, 21, 22, 23
+                # group by IREAD Pass and ILEARN Year:
+                # a) count Exceeds, At, Approach, Below
+                # b) measure point diff between Cut and Scale and Average
+                # c) measure raw scale score avg
+                # Avg ELA over time for IREAD No Pass
+
                 ela_grade_table = create_multi_header_table(years_by_grade_ela)
 
                 # by Grade Year over Year Line Chart
                 ela_grade_fig_data = year_over_year_data.filter(
                     regex=r"^Grade \d\|ELA|IREAD|^School Name$|^Year$", axis=1
                 )
+
                 ela_grade_line_fig = make_line_chart(ela_grade_fig_data)
 
                 proficiency_grades_ela = create_line_fig_layout(
