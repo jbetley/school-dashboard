@@ -283,8 +283,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     return fig_layout
 
 
-def make_multi_line_chart(values: pd.DataFrame, label: str
-) -> Tuple[dict, list]:
+def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
     series of strings (if applicable) detailing missing data.
@@ -573,8 +572,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
     data = values.copy()
 
     data.columns = data.columns.str.split("|").str[0]
-
-    # print(data)
 
     if "IREAD Proficiency (Grade 3)" in data.columns:
         data = data.rename(columns={"IREAD Proficiency (Grade 3)": "IREAD"})
@@ -932,6 +929,7 @@ def make_growth_chart(
     ]
 
     return fig_layout
+
 
 def make_bar_chart(
     values: pd.DataFrame, category: str, school_name: str, label: str

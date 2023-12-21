@@ -757,52 +757,110 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
         ]
     )
 
-    table_layout = [
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Label(label, className="label__header"),
-                        html.Div(
-                            dash_table.DataTable(
-                                data.to_dict("records"),
-                                columns=[
-                                    {
-                                        "name": i,
-                                        "id": i,
-                                        "type": "numeric",
-                                        "format": FormatTemplate.percentage(2),
-                                    }
-                                    for i in data.columns
-                                ],
-                                style_data={
-                                    "fontSize": "12px",
-                                    "fontFamily": "Inter, sans-serif",
-                                    "border": "none",
-                                },
-                                style_header=table_header,
-                                style_cell={
-                                    "whiteSpace": "normal",
-                                    "height": "auto",
-                                    "textAlign": "center",
-                                    "color": "#6783a9",
-                                    "minWidth": "25px",
-                                    "width": "25px",
-                                    "maxWidth": "25px",
-                                },
-                                style_data_conditional=table_data_conditional,
-                                style_header_conditional=table_header_conditional,
-                                style_cell_conditional=table_cell_conditional,
-                                merge_duplicate_headers=True,
+    # TODO: Fix this to be less kludgy. Perhaps combine all of the table code?
+    # TODO: Or at least it needs to be more flexible wrt how numbers are formatted.
+    # For IREAD We need by row: %,#,%,#,%,#,%,#, #, #
+    # MAtch: N-Size, Tested, No Pass for Category [all #]
+    # format numbers (since we are converting values to strings, we cannot vectorize,
+    # need to iterate through each series)
+    # TODO: Try this from financial analysis table?
+    # for year in years:
+    #     category_data[year] = pd.Series(
+    #         ["{:,.2f}".format(val) for val in category_data[year]],
+    #         index=category_data.index,
+    #     )
+
+    if label == "":
+        table_layout = [
+            dash_table.DataTable(
+                data.to_dict("records"),
+                # style_table={"height": "300px"},
+                columns=[
+                    {
+                        "name": i,
+                        "id": i,
+                        "type": "numeric",
+                        "format": FormatTemplate.percentage(2),
+                    }
+                    for i in data.columns
+                ],
+                style_data={
+                    "fontSize": "12px",
+                    "fontFamily": "Inter, sans-serif",
+                    "border": "none",
+                },
+                style_data_conditional=table_data_conditional,
+                style_header=table_header,
+                style_cell={
+                    "whiteSpace": "normal",
+                    "height": "auto",
+                    "textAlign": "center",
+                    "color": "#6783a9",
+                    "minWidth": "25px",
+                    "width": "25px",
+                    "maxWidth": "25px",
+                },
+                style_header_conditional=table_header_conditional,
+                style_cell_conditional=table_cell_conditional,
+            ),
+        ]
+
+    else:
+        # table_layout = [
+        #     html.Div(
+        #         [
+        #             html.Div(empty_table("No Data to Display.")),
+        #         ],
+        #         className="pretty-container four columns",
+        #     )
+        # ]
+
+        table_layout = [
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Label(label, className="label__header"),
+                            html.Div(
+                                dash_table.DataTable(
+                                    data.to_dict("records"),
+                                    columns=[
+                                        {
+                                            "name": i,
+                                            "id": i,
+                                            "type": "numeric",
+                                            "format": FormatTemplate.percentage(2),
+                                        }
+                                        for i in data.columns
+                                    ],
+                                    style_data={
+                                        "fontSize": "12px",
+                                        "fontFamily": "Inter, sans-serif",
+                                        "border": "none",
+                                    },
+                                    style_header=table_header,
+                                    style_cell={
+                                        "whiteSpace": "normal",
+                                        "height": "auto",
+                                        "textAlign": "center",
+                                        "color": "#6783a9",
+                                        "minWidth": "25px",
+                                        "width": "25px",
+                                        "maxWidth": "25px",
+                                    },
+                                    style_data_conditional=table_data_conditional,
+                                    style_header_conditional=table_header_conditional,
+                                    style_cell_conditional=table_cell_conditional,
+                                    merge_duplicate_headers=True,
+                                ),
                             ),
-                        ),
-                    ],
-                    className=class_name,
-                )
-            ],
-            className="bare-container--flex--center twelve columns",
-        )
-    ]
+                        ],
+                        className=class_name,
+                    )
+                ],
+                className="bare-container--flex--center twelve columns",
+            )
+        ]
 
     return table_layout
 
@@ -1684,7 +1742,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
 
 def create_comparison_table(
-    data: pd.DataFrame, trace_colors: dict, school_id: str) -> list: # , label: str
+    data: pd.DataFrame, trace_colors: dict, school_id: str
+) -> list:  # , label: str
     """
     Takes a dataframe that is a column of schools and one or more columns
     of data, school name, and table label. Uses the school name to find
@@ -1819,7 +1878,7 @@ def create_comparison_table(
     )
 
     table_layout = [html.Div([html.Div(table)])]
-    
+
     # NOTE: below code adds a label if one is passed (used for same row chart/
     # table layout). If using this, need to re-add 'label' variable to fn.
 
