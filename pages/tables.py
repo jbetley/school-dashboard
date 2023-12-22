@@ -635,6 +635,8 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
     header table with borders around each cell. If more rows are added, need
     to adjust logic to remove horizontal borders between rows.
 
+    Note: If "IREAD" is passed as a label, a special layout is produced.
+
     Args:
         label (String): Table title
         data (pd.DataTable): dash dataTable
@@ -758,29 +760,34 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
     )
 
     # TODO: Fix this to be less kludgy. Perhaps combine all of the table code?
-    # TODO: Or at least it needs to be more flexible wrt how numbers are formatted.
-    # For IREAD We need by row: %,#,%,#,%,#,%,#, #, #
-    # MAtch: N-Size, Tested, No Pass for Category [all #]
-    # format numbers (since we are converting values to strings, we cannot vectorize,
-    # need to iterate through each series)
-    # TODO: Try this from financial analysis table?
-    # for year in years:
-    #     category_data[year] = pd.Series(
-    #         ["{:,.2f}".format(val) for val in category_data[year]],
-    #         index=category_data.index,
-    #     )
 
-    if label == "":
+    # Special layout for IREAD table on Academic Information page
+    if label == "IREAD":
+
+        # Skip Category column
+        for col in data.columns[1:]:
+            data[col] = pd.to_numeric(data[col], errors="coerce")
+
+        # NOTE: dataframes aren't built for row-wise operations, so if we need different
+        # formatting for different rows, we have to do something grotesque like the following
+
+        # start at 1 to again skip "Category" column
+        for x in range(1, len(data.columns)):
+            for i in range(0, len(data.index)):
+                if ((i == 0) | (i == 2) | (i == 4)):
+                    data.iat[i, x] = "{:.2%}".format(data.iat[i, x])
+                else:
+                    data.iat[i, x] = "{:,.0f}".format(data.iat[i, x])
+
+        data = data.replace("nan", "\u2014", regex=True)
+
         table_layout = [
             dash_table.DataTable(
                 data.to_dict("records"),
-                # style_table={"height": "300px"},
                 columns=[
                     {
                         "name": i,
                         "id": i,
-                        "type": "numeric",
-                        "format": FormatTemplate.percentage(2),
                     }
                     for i in data.columns
                 ],
