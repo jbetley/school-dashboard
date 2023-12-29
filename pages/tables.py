@@ -763,23 +763,22 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
 
     # Special layout for IREAD table on Academic Information page
     if label == "IREAD":
-
         # Skip Category column
         for col in data.columns[1:]:
             data[col] = pd.to_numeric(data[col], errors="coerce")
 
         # NOTE: dataframes aren't built for row-wise operations, so if we need different
         # formatting for different rows, we have to do something grotesque like the following
-
         # start at 1 to again skip "Category" column
         for x in range(1, len(data.columns)):
             for i in range(0, len(data.index)):
-                if ((i == 0) | (i == 2) | (i == 4)):
-                    data.iat[i, x] = "{:.2%}".format(data.iat[i, x])
+                if (i == 0) | (i == 2) | (i == 4) | (i == 6):
+                    if ~np.isnan(data.iat[i, x]):
+                        data.iat[i, x] = "{:.2%}".format(data.iat[i, x])
                 else:
                     data.iat[i, x] = "{:,.0f}".format(data.iat[i, x])
 
-        data = data.replace("nan", "\u2014", regex=True)
+        data = data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
         table_layout = [
             dash_table.DataTable(

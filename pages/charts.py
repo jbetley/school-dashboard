@@ -629,16 +629,42 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 color_discrete_sequence=color,
             )
 
-            # legend shenanigans - adjust location based on columns
-            if data.columns.str.contains("Grade").any():
-                y_value = -0.5
-            elif data.columns.str.contains("Black").any():
-                y_value = -0.4
-            elif data.columns.str.contains("Free").any():
-                y_value = -0.7
-            else:
-                y_value = -0.4
+            # NOTE: Set the range based on the highest single value in the dataframe. IREAD is set to 100%.
+            # At higher ranges, the values compress together and are hard to read (unfortunately).
+            data_max = data.drop("Year", axis=1).copy()
+            data_max = data_max.max(numeric_only=True).max()
 
+            # TODO: data_max is kludgy - pulling year for WIDA, want max not including year
+            # TODO: Fix tick_format
+            # TODO: Not drawing wida lines.
+            print(data_max)
+            if "IREAD Proficiency (Grade 3 only)" in data.columns:
+                range_vals = [0, 1]  # type: list[float]
+                tick_format = ",.0%"
+                y_value = -0.4
+                d_tick = 0.2
+
+            elif data_max > 1:
+                # print('HERE')
+                # print(data)
+                range_vals = [0, 5]
+                tick_format = ".1f"
+                y_value = -0.4
+                d_tick = 0.5
+            else:
+                # legend shenanigans - adjust location based on columns
+                if data.columns.str.contains("Grade").any():
+                    y_value = -0.5
+                elif data.columns.str.contains("Black").any():
+                    y_value = -0.4
+                elif data.columns.str.contains("Free").any():
+                    y_value = -0.7
+                else:
+                    y_value = -0.4
+
+                range_vals = [0, data_max + 0.05]
+                tick_format = ",.0%"
+                d_tick = 0.2
             # use this template if using x-unified
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
 
@@ -677,15 +703,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 legend_title="",
             )
 
-            # NOTE: Set the range based on the highest single value in the dataframe. IREAD is set to 100%.
-            # At higher ranges, the values compress together and are hard to read (unfortunately).
-            data_max = data.max(numeric_only=True).max()
-
-            if "IREAD Proficiency (Grade 3 only)" in data.columns:
-                range_vals = [0, 1]  # type: list[float]
-            else:
-                range_vals = [0, data_max + 0.05]
-
             fig.update_yaxes(  # type: ignore
                 title="",
                 mirror=True,
@@ -697,8 +714,8 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 gridcolor="#b0c4de",
                 zeroline=False,
                 range=range_vals,
-                dtick=0.2,
-                tickformat=",.0%",
+                dtick=d_tick,
+                tickformat=tick_format,  # ",.0%",
             )
 
             if no_data_string:

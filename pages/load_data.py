@@ -741,7 +741,7 @@ def get_wida_student_data(*args):
     q = text(
         """
         SELECT *
-            FROM WIDA_test
+            FROM WIDA
         """
     )
 
@@ -768,6 +768,22 @@ def get_iread_student_data(*args):
 
     return results
 
+
+def get_ilearn_stns(*args):
+    keys = ["id"]
+    params = dict(zip(keys, args))
+
+    q = text(
+        """
+        SELECT STN
+            FROM ilearn_student
+	        WHERE SchoolID = :id
+        """
+    )
+    
+    results = run_query(q, params)
+
+    return results
 
 def get_ilearn_student_data(*args):
     keys = ["id"]

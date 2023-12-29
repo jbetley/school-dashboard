@@ -21,6 +21,7 @@ from pages.load_data import (
     grades_all,
     grades_ordinal,
     current_academic_year,
+    get_ilearn_stns,
     get_iread_student_data,
     get_wida_student_data,
     get_ilearn_student_data,
@@ -59,6 +60,7 @@ dash.register_page(
 
 # Main
 @callback(
+    Output("wida-line-fig", "children"),
     Output("iread-breakdown", "children"),
     Output("iread-breakdown-container", "style"),
     Output("proficiency-grades-ela", "children"),
@@ -418,11 +420,9 @@ def update_academic_information_page(
                     }
                 )
 
+                ## IREAD\WIDA School and Student Level Data
 
-                ## IREAD School and Student Level Data
-
-                # TODO: Determinbe why school level IREAD N-Size does not match
-                # TODO: student level totals
+                # TODO: Determinbe why school level IREAD N-Size does not match student level totals
                 # IREAD total students tested
                 raw_total_iread_tested = all_k8_school_data[
                     all_k8_school_data["Category"] == "IREAD Proficiency (Grade 3)"
@@ -454,7 +454,6 @@ def update_academic_information_page(
                 # If school has no student level data (or is a Guest school), we replace
                 # student level chart and table with simplified school level chart and table
                 if len(raw_student_iread_data.index) < 1:
-
                     # Generate simple table and chart with school level IREAD data
                     total_iread_data = total_iread_data.rename(
                         columns={
@@ -482,16 +481,18 @@ def update_academic_information_page(
                     raw_student_iread_data = raw_student_iread_data.rename(
                         columns={"Test Year": "Year"}
                     )
-                    raw_student_iread_data["STN"] = raw_student_iread_data["STN"].astype(
-                        str
-                    )
-                    raw_student_iread_data["Year"] = raw_student_iread_data["Year"].astype(
-                        str
-                    )
+                    raw_student_iread_data["STN"] = raw_student_iread_data[
+                        "STN"
+                    ].astype(str)
+                    raw_student_iread_data["Year"] = raw_student_iread_data[
+                        "Year"
+                    ].astype(str)
 
                     # Group by Year and Period
                     iread_yoy = (
-                        raw_student_iread_data.groupby(["Year", "Test Period"])["Status"]
+                        raw_student_iread_data.groupby(["Year", "Test Period"])[
+                            "Status"
+                        ]
                         .value_counts(normalize=True)
                         .reset_index(name="Percent")
                     )
@@ -501,7 +502,9 @@ def update_academic_information_page(
 
                     # Get count (nsize) for total # of Students Tested per year and period
                     student_iread_tested = (
-                        raw_student_iread_data.groupby(["Year", "Test Period"])["Status"]
+                        raw_student_iread_data.groupby(["Year", "Test Period"])[
+                            "Status"
+                        ]
                         .count()
                         .reset_index(name="N-Size")
                     )
@@ -677,21 +680,103 @@ def update_academic_information_page(
                         iread_table, iread_fig, "IREAD"
                     )
 
-# TODO: Compare WIDA Level and IREAD Pass Rate
+                    # TODO: Compare WIDA Level and IREAD Pass Rate
+                    pd.set_option("display.max_columns", None)
+                    pd.set_option("display.max_rows", None)
 
                     ## WIDA
+
+                    # get a list of all STNs past and present from the ILEARN
+                    # dataset for the given school ID. NOTE: This is not ideal,
+                    # as it gives STNs only for the year tested which may or
+                    # may not manage the current list of STNs
+                    school_stns = get_ilearn_stns(school)
+                    school_stns["STN"] = school_stns["STN"].astype(str)
+
+                    # TODO: Test this, not sure adding iread_stns gives us anything
+                    # TODO: Different than just ILEARN STNS
+                    iread_stns = pd.DataFrame()
+                    iread_stns["STN"] = raw_student_iread_data["STN"]
+                    iread_stns["STN"] = iread_stns["STN"].astype(str)
+
+                    all_stns = pd.concat(
+                        [school_stns, iread_stns], axis=0, ignore_index=True
+                    )
+                    stn_list = list(set(all_stns["STN"].to_list()))
+
+                    all_wida = get_wida_student_data()
+                    all_wida["STN"] = all_wida["STN"].astype(str)
+
+                    school_wida = all_wida[all_wida["STN"].isin(stn_list)]
+
                     current_student_iread_data = raw_student_iread_data.loc[
                         raw_student_iread_data["Year"] == selected_year_numeric
                     ]
-                    all_wida = get_wida_student_data()
-                    all_wida = all_wida[["STN", "Composite Overall Proficiency Level"]]
+
+                    # # merge with IREAD STN to limit to specific school
+                    # all_iread_merged = pd.merge(
+                    #     all_wida, raw_student_iread_data, on="STN"
+                    # )
+                    # # print(all_iread_merged)
+
+                    # current_iread_merged = pd.merge(
+                    #     all_wida, current_student_iread_data, on="STN"
+                    # )
+
+                    wida_year = (
+                        school_wida.groupby(["Year", "Tested Grade"])[
+                            "Composite Overall Proficiency Level"
+                        ]
+                        .mean()
+                        .reset_index(name="Average")
+                    )
+                    wida_years = wida_year.loc[
+                        wida_year["Tested Grade"] != "Grade 12+/Adult"
+                    ]
+
+                    wida_fig_data = (
+                        wida_years.pivot_table(
+                            index=["Year"], columns="Tested Grade", values="Average"
+                        )
+                        .reset_index()
+                        .rename_axis(None, axis=1)
+                    )
+
+                    print(wida_fig_data)
+                    # TODO: Sort Grades
+                    tst = (
+                        wida_fig_data.set_index("Year")
+                        .sort_index(descending=True, axis=1)
+                        .reset_index()
+                    )
+                    print(tst)
+                    # Average WIDA Scores by Grade
+                    wida_line_fig = make_line_chart(wida_fig_data)
+
+                    # Available Data:
+                    # 'Comprehension Proficiency Level', 'Listening Proficiency Level', 'Literacy Proficiency Level',
+                    # 'Oral Proficiency Level', 'Reading Proficiency Level', 'Speaking Proficiency Level',
+                    # 'Writing Proficiency Level'
+                    # TODO: HERE
+                    all_wida = all_wida[
+                        [
+                            "Year",
+                            "STN",
+                            "Tested Grade",
+                            "Composite Overall Proficiency Level",
+                        ]
+                    ]
                     all_wida["STN"] = all_wida["STN"].astype(str)
 
-                    all_iread_merged = pd.merge(all_wida, raw_student_iread_data, on="STN")
+                    all_iread_merged = pd.merge(
+                        all_wida, raw_student_iread_data, on="STN"
+                    )
+                    # print(all_iread_merged)
+
                     current_iread_merged = pd.merge(
                         all_wida, current_student_iread_data, on="STN"
                     )
-
+                    # print(current_iread_merged)
                     wida_num = len(current_iread_merged)
 
                     # https://stackoverflow.com/questions/66074831/python-get-value-counts-from-multiple-columns-and-average-from-another-column
@@ -718,6 +803,7 @@ def update_academic_information_page(
                     #     + str(wida_num)
                     #     + " were EL students. The average WIDA Level for Passing and Non-Passing EL students who passed was: "
                     # )
+
                     # print(wida_el_average)
 
                     # TODO: Compare IREAD/WIDA with longitudinal ILEARN
@@ -777,9 +863,15 @@ def update_academic_information_page(
                     # E.g., = (2023 + 1) - (8 - 3) = 2024 - 5 = 2019 -> a 2024 Grade 8 Student took
                     # IREAD in 2019. If the row of data shows ILEARN CG of 8 and TG of 3, the ILEARN
                     # Tested year is 2019.
-                    school_all_student_data["ILEARN Year"] = (current_academic_year + 1) - (
-                        school_all_student_data["ILEARN Current Grade"].str[-1].astype(int)
-                        - school_all_student_data["ILEARN Tested Grade"].str[-1].astype(int)
+                    school_all_student_data["ILEARN Year"] = (
+                        current_academic_year + 1
+                    ) - (
+                        school_all_student_data["ILEARN Current Grade"]
+                        .str[-1]
+                        .astype(int)
+                        - school_all_student_data["ILEARN Tested Grade"]
+                        .str[-1]
+                        .astype(int)
                     )
 
                     # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA - LONGITUDINAL TRACKING 3-8 ELA
@@ -1331,6 +1423,7 @@ def update_academic_information_page(
             testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
 
     return (
+        wida_line_fig,
         iread_breakdown,
         iread_breakdown_container,
         proficiency_grades_ela,
@@ -1429,6 +1522,15 @@ def layout():
                                 [
                                     html.Div(
                                         [
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        id="wida-line-fig",
+                                                        children=[],
+                                                    ),
+                                                ],
+                                                # id="iread-breakdown-container",
+                                            ),
                                             html.Div(
                                                 [
                                                     html.Div(
