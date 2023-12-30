@@ -579,9 +579,10 @@ def make_line_chart(values: pd.DataFrame) -> list:
     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
     if (len(cols)) > 0:
+
         # NOTE: the "insufficient n-size" and "no data" information is usually displayed
         # below the fig in the layout. However, given the size of the figs, it makes them
-        # way too cluttered. So it is currently removed. I would prefer to somehow add this
+        # way too cluttered. So it is currently removed. Would prefer to somehow add this
         # to the trace (x-unified) hover, but it doesn't currently seem to be possible.
         # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
         data, no_data_string = check_for_no_data(data)
@@ -606,6 +607,16 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
         data = data.reset_index(drop=True)
 
+        # Used below to set tick ranges
+        data_max = data.drop("Year", axis=1).copy()
+        data_max = data_max.max(numeric_only=True).max()
+        
+        # If data_max is > 1 then it is WIDA data (all other data are decimals)
+        if data_max > 1:
+            # make sure Year is a str and replace all negative numbers with 0
+            data[data < 0] = 0
+            data["Year"] = data["Year"].astype(str)
+
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
         if data.empty:
@@ -629,28 +640,23 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 color_discrete_sequence=color,
             )
 
-            # NOTE: Set the range based on the highest single value in the dataframe. IREAD is set to 100%.
-            # At higher ranges, the values compress together and are hard to read (unfortunately).
-            data_max = data.drop("Year", axis=1).copy()
-            data_max = data_max.max(numeric_only=True).max()
+            print(type(data["Year"][0]))
 
-            # TODO: data_max is kludgy - pulling year for WIDA, want max not including year
-            # TODO: Fix tick_format
-            # TODO: Not drawing wida lines.
-            print(data_max)
+            # Set the range based on data_max (highest single value). IREAD is set to 100% regardless.
+            # At higher ranges, the values compress together and are hard to read.
             if "IREAD Proficiency (Grade 3 only)" in data.columns:
                 range_vals = [0, 1]  # type: list[float]
                 tick_format = ",.0%"
                 y_value = -0.4
                 d_tick = 0.2
 
+            # WIDA fig
             elif data_max > 1:
-                # print('HERE')
-                # print(data)
                 range_vals = [0, 5]
                 tick_format = ".1f"
-                y_value = -0.4
-                d_tick = 0.5
+                y_value = -0.2
+                d_tick = 1
+            
             else:
                 # legend shenanigans - adjust location based on columns
                 if data.columns.str.contains("Grade").any():
@@ -665,6 +671,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 range_vals = [0, data_max + 0.05]
                 tick_format = ",.0%"
                 d_tick = 0.2
+
             # use this template if using x-unified
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
 
@@ -685,7 +692,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                     tick0=0,
                     dtick=1,
                     tickvals=data["Year"],
-                    tickformat="%Y",
+                    tickformat=".4", #"%Y",
                     mirror=True,
                     showline=True,
                     linecolor="#b0c4de",
@@ -715,7 +722,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 zeroline=False,
                 range=range_vals,
                 dtick=d_tick,
-                tickformat=tick_format,  # ",.0%",
+                tickformat=tick_format
             )
 
             if no_data_string:

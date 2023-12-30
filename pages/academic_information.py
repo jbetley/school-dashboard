@@ -676,6 +676,8 @@ def update_academic_information_page(
                         iread_final_table_data, "IREAD"
                     )
 
+                    print(iread_final_table_data)
+
                     iread_breakdown = create_line_fig_layout(
                         iread_table, iread_fig, "IREAD"
                     )
@@ -685,6 +687,13 @@ def update_academic_information_page(
                     pd.set_option("display.max_rows", None)
 
                     ## WIDA
+                    # Available Data:
+                    # 'Comprehension Proficiency Level', 'Listening Proficiency Level', 'Literacy Proficiency Level',
+                    # 'Oral Proficiency Level', 'Reading Proficiency Level', 'Speaking Proficiency Level',
+                    # 'Writing Proficiency Level'
+
+                    all_wida = get_wida_student_data()
+                    all_wida["STN"] = all_wida["STN"].astype(str)
 
                     # get a list of all STNs past and present from the ILEARN
                     # dataset for the given school ID. NOTE: This is not ideal,
@@ -703,9 +712,6 @@ def update_academic_information_page(
                         [school_stns, iread_stns], axis=0, ignore_index=True
                     )
                     stn_list = list(set(all_stns["STN"].to_list()))
-
-                    all_wida = get_wida_student_data()
-                    all_wida["STN"] = all_wida["STN"].astype(str)
 
                     school_wida = all_wida[all_wida["STN"].isin(stn_list)]
 
@@ -742,21 +748,29 @@ def update_academic_information_page(
                         .rename_axis(None, axis=1)
                     )
 
-                    print(wida_fig_data)
-                    # TODO: Sort Grades
-                    tst = (
-                        wida_fig_data.set_index("Year")
-                        .sort_index(descending=True, axis=1)
-                        .reset_index()
+                    # Sort the Grade columns in ascending order
+                    tmp_col = wida_fig_data["Year"]
+                    wida_fig_data = wida_fig_data.drop(["Year"], axis=1)
+
+                    # reindex and sort columns using only the numerical part
+                    wida_fig_data = wida_fig_data.reindex(
+                        sorted(wida_fig_data.columns, key=lambda x: float(x[6:])),
+                        axis=1,
                     )
-                    print(tst)
+                    wida_fig_data.insert(loc=0, column="Year", value=tmp_col)
+
                     # Average WIDA Scores by Grade
                     wida_line_fig = make_line_chart(wida_fig_data)
 
-                    # Available Data:
-                    # 'Comprehension Proficiency Level', 'Listening Proficiency Level', 'Literacy Proficiency Level',
-                    # 'Oral Proficiency Level', 'Reading Proficiency Level', 'Speaking Proficiency Level',
-                    # 'Writing Proficiency Level'
+                    wida_table_data = (
+                        wida_fig_data.set_index("Year")
+                        .T.rename_axis("Category")
+                        .rename_axis(None, axis=1)
+                        .reset_index()
+                    )
+
+                    print(wida_table_data)
+                    
                     # TODO: HERE
                     all_wida = all_wida[
                         [
