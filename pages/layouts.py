@@ -361,73 +361,52 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     Returns:
         layout (list): a dash html.Div layout with fig
     """
+
     if label == "IREAD":
-        layout = [
-            html.Div(
-                [
-                    html.Label(label, className="label__header"),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(table, style={"marginTop": "20px"}),
-                                ],
-                                className="pretty-container six columns",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(fig),
-                                ],
-                                className="pretty-container six columns",
-                            ),
-                        ],
-                        className="bare-container--flex--center twelve columns",
-                    ),
-                ],
-                className="bare-container--relative twelve columns",
-            ),
-        ]
-        
+        endnote = "Percentages represent the percentage of students passing IREAD during the applicable period."
+    elif label == "WIDA":
+        endnote = "Values are the average Composite Overall Proficiency Level for all students with a reported WIDA score."
     else:
-        layout = [
-            html.Div(
-                [
-                    html.Label(label, className="label__header"),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(table, style={"marginTop": "20px"}),
-                                    html.P(""),
-                                    html.P(
-                                        "Hover over each data point to see N-Size.",
-                                        style={
-                                            "color": "#6783a9",
-                                            "fontSize": 10,
-                                            "textAlign": "left",
-                                            "marginLeft": "10px",
-                                            "marginRight": "10px",
-                                            "marginTop": "20px",
-                                            "paddingTop": "5px",
-                                            "borderTop": ".5px solid #c9d3e0",
-                                        },
-                                    ),
-                                ],
-                                className="pretty-container six columns",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(fig),
-                                ],
-                                className="pretty-container six columns",
-                            ),
-                        ],
-                        className="bare-container--flex--center twelve columns",
-                    ),
-                ],
-                className="bare-container--relative twelve columns",
-            ),
-        ]
+        endnote = "Hover over each data point to see N-Size."
+
+    layout = [
+        html.Div(
+            [
+                html.Label(label, className="label__header"),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(table, style={"marginTop": "20px"}),
+                                html.P(""),
+                                html.P(endnote,
+                                    style={
+                                        "color": "#6783a9",
+                                        "fontSize": 10,
+                                        "textAlign": "left",
+                                        "marginLeft": "10px",
+                                        "marginRight": "10px",
+                                        "marginTop": "20px",
+                                        "paddingTop": "5px",
+                                        "borderTop": ".5px solid #c9d3e0",
+                                    },
+                                ),
+                            ],
+                            className="pretty-container six columns",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(fig),
+                            ],
+                            className="pretty-container six columns",
+                        ),
+                    ],
+                    className="bare-container--flex--center twelve columns",
+                ),
+            ],
+            className="bare-container--relative twelve columns",
+        ),
+    ]
 
     return layout
 

@@ -20,9 +20,6 @@ from typing import Tuple
 # Colors
 # https://codepen.io/ctf0/pen/BwLezW
 
-# Steelblue
-# color=['#98abc5','#919ab6','#8a89a6','#837997','#7b6888','#73587a','#6b486b','#865361','#a05d56','#b86949','#d0743c','#e8801e','#ff8c00']
-
 color = [
     "#7b6888",
     "#df8f2d",
@@ -554,6 +551,341 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
 
     return trace_color, fig_layout
 
+# TODO: TESTING SINGLE FUNCT
+# def make_test_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]:
+#     """
+#     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
+#     series of strings (if applicable) detailing missing data.
+
+#     Args:
+#         values (pd.DataFrame): a dataframe with proficiency categories for each year
+#         label (str): title of the figure
+
+#     Returns:
+#         fig_layout (list): a plotly dash html layout in the form of a list containing a string, a px.line figure,
+#         and another string(s) if certain conditions are met.
+#     """
+
+#     data = values.copy()
+
+#     # TODO: ADD
+#     # if "|" in data.columns:
+#     #     data.columns = data.columns.str.split("|").str[0]
+
+#     if "IREAD Proficiency (Grade 3)" in data.columns:
+#         data = data.rename(columns={"IREAD Proficiency (Grade 3)": "IREAD"})
+
+#     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
+
+#     # TODO: REMOVE
+#     # school_cols = [i for i in data.columns if i not in ["Year"]]
+
+#     if (len(cols)) > 0 and len(data.index) > 0:
+#         data, no_data_string = check_for_no_data(data)
+
+#         # use only for Academic Analysis chart
+#         nsize_string = check_for_insufficient_n_size(data)
+
+#         for col in cols:
+#             data[col] = pd.to_numeric(data[col], errors="coerce")
+
+#         data.sort_values("Year", inplace=True)
+        
+#         data["Year"] = data["Year"].astype(str) # TODO: NECESSARY?
+        
+#         # One last check, if there is only one year of data being displayed, we need to drop
+#         # all columns with only NaN- otherwise the traces will be displayed on the chart
+#         # even though they are listed as having no data to display - afterwards we need
+#         # to reset the cols variable to make sure it matches the changed df
+#         # TODO: TEST THIS WITH SINGLE LINE CHART
+#         # if len(data.index) == 1:
+#         #     data = data.dropna(axis=1, how="all")
+#         #     school_cols = [i for i in data.columns if i not in ["Year"]]
+
+#         data = data.reset_index(drop=True)
+
+#         # Used to set tick ranges
+#         data_max = data.drop("Year", axis=1).copy()
+#         data_max = data_max.max(numeric_only=True).max()
+
+#         # If data_max is > 1 then it is WIDA data (all other data are decimals)
+#         if data_max > 1:
+#             # make sure Year is a str and replace all negative numbers with 0
+#             data[data < 0] = 0
+#             data["Year"] = data["Year"].astype(str)
+
+#         # assign colors for each comparison school
+#         trace_color = {cols[i]: color[i] for i in range(len(cols))}
+
+#         # If the initial df has data, but after dropping all no data rows is then
+#         # empty, we return an empty layout
+#         if data.empty:
+#             fig = no_data_fig_blank()
+#             fig_layout = [
+#                 html.Div(
+#                     [
+#                         html.Div(
+#                             [
+#                                 # html.Label(label, className="label__header"),     # TODO: Multi-line has label, single does not
+#                                 dcc.Graph(figure=fig, config={"displayModeBar": False}),
+#                             ],
+#                         ),
+#                     ]
+#                 )
+#             ]
+
+#         else:
+#             fig = px.line(
+#                 data,
+#                 x="Year",
+#                 y=cols,
+#                 markers=True,
+#                 color_discrete_sequence=color,
+#             )
+
+#             # Set the range based on data_max (highest single value). IREAD is set to 100% regardless.
+#             # At higher ranges, the values compress together and are hard to read.
+#             if "IREAD Proficiency (Grade 3 only)" in data.columns:
+#                 range_vals = [0, 1]  # type: list[float]
+#                 tick_format = ",.0%"
+#                 y_value = -0.4
+#                 d_tick = 0.2
+
+#             # WIDA is only data where the max will be > 1
+#             elif data_max > 1:
+#                 range_vals = [0, 5]
+#                 tick_format = ".1f"
+#                 y_value = -0.2
+#                 d_tick = 1
+
+#             else:
+#                 # legend shenanigans - adjust location based on columns
+#                 if data.columns.str.contains("Grade").any():
+#                     y_value = -0.5
+#                 elif data.columns.str.contains("Black").any():
+#                     y_value = -0.4
+#                 elif data.columns.str.contains("Free").any():
+#                     y_value = -0.7
+#                 else:
+#                     y_value = -0.4
+
+#                 range_vals = [0, data_max + 0.05]
+#                 tick_format = ",.0%"
+#                 d_tick = 0.2
+
+#             # use this template if using x-unified
+#             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
+
+#             fig.update_traces(hovertemplate=None)  # type: ignore
+#             fig.update_layout(  # type: ignore
+#                 hoverlabel=dict(
+#                     namelength=-1,
+#                 ),
+#                 margin=dict(l=40, r=40, t=10, b=0), # TODO: line chart has t=40
+#                 title_x=0.5,
+#                 font=dict(family="Inter, sans-serif", color="steelblue", size=12),
+#                 plot_bgcolor="white",
+#                 xaxis=dict(
+#                     title="",
+#                     # TODO: next 4 from line
+#                     # next four values gives evenly spaced axis ticks from left edge to right edge.
+#                     autorange=False,
+#                     range=[0, len(data["Year"]) - 1],
+#                     tick0=0,
+#                     dtick=1,
+
+#                     # TODO: not in multi-line
+#                     type="date",
+
+#                     tickvals=data["Year"],
+#                     tickformat=".4", #"%Y",
+#                     mirror=True,
+#                     showline=True,
+#                     linecolor="#b0c4de",
+#                     linewidth=0.5,
+#                     gridwidth=0.5,
+#                     showgrid=True,
+#                     gridcolor="#b0c4de",
+#                     zeroline=False,
+#                 ),
+#                 showlegend=False, # tODO: Multiline
+#                 # legend=dict(
+#                 #     orientation="h", yanchor="bottom", y=y_value, xanchor="left", x=0.01
+#                 # ), # TODO: LINE
+
+#                 hovermode="x", # unified',
+#                 height=400,
+#                 legend_title="",
+#             )
+
+#             fig.update_yaxes(  # type: ignore
+#                 title="",
+#                 mirror=True,
+#                 showline=True,
+#                 linecolor="#b0c4de",
+#                 linewidth=0.5,
+#                 gridwidth=0.5,
+#                 showgrid=True,
+#                 gridcolor="#b0c4de",
+#                 zeroline=False,
+#                 range=range_vals,
+#                 dtick=d_tick,
+#                 tickformat=tick_format
+#             )
+
+# # TODO: Need to fix this to account for label in line chart and no nsize in line chart
+#             if nsize_string and no_data_string:
+#                 fig_layout = [
+#                     html.Div(
+#                         [
+#                             html.Div(
+#                                 [
+#                                     html.Label(label, className="label__header"),
+#                                     dcc.Graph(
+#                                         figure=fig, config={"displayModeBar": False}
+#                                     ),
+#                                 ],
+#                             ),
+#                             html.Div(
+#                                 [
+#                                     html.Div(
+#                                         [
+#                                             html.P(
+#                                                 children=[
+#                                                     html.Span(
+#                                                         "Years with insufficient or no data:",
+#                                                         className="msg-string__label",
+#                                                     ),
+#                                                     html.Span(
+#                                                         no_data_string,
+#                                                         className="nodata-string",
+#                                                     ),
+#                                                 ],
+#                                             ),
+#                                             html.P(
+#                                                 children=[
+#                                                     html.Span(
+#                                                         "Insufficient n-size:",
+#                                                         className="msg-string__label",
+#                                                     ),
+#                                                     html.Span(
+#                                                         nsize_string,
+#                                                         className="nsize-string",
+#                                                     ),
+#                                                 ],
+#                                             ),
+#                                         ],
+#                                         className="container--close--noborder twelve columns",
+#                                     )
+#                                 ],
+#                                 className="row",
+#                             ),
+#                         ]
+#                     )
+#                 ]
+
+#             elif nsize_string and not no_data_string:
+#                 fig_layout = [
+#                     html.Div(
+#                         [
+#                             html.Div(
+#                                 [
+#                                     html.Label(label, className="label__header"),
+#                                     dcc.Graph(
+#                                         figure=fig, config={"displayModeBar": False}
+#                                     ),
+#                                 ],
+#                             ),
+#                             html.Div(
+#                                 [
+#                                     html.Div(
+#                                         [
+#                                             html.P(
+#                                                 children=[
+#                                                     html.Span(
+#                                                         "Insufficient n-size:",
+#                                                         className="msg-string__label",
+#                                                     ),
+#                                                     html.Span(
+#                                                         nsize_string,
+#                                                         className="nsize-string",
+#                                                     ),
+#                                                 ],
+#                                             ),
+#                                         ],
+#                                         className="container--close--noborder twelve columns",
+#                                     )
+#                                 ],
+#                                 className="row",
+#                             ),
+#                         ]
+#                     )
+#                 ]
+
+#             elif no_data_string and not nsize_string:
+#                 fig_layout = [
+#                     html.Div(
+#                         [
+#                             html.Div(
+#                                 [
+#                                     html.Label(label, className="label__header"),
+#                                     dcc.Graph(
+#                                         figure=fig, config={"displayModeBar": False}
+#                                     ),
+#                                 ],
+#                             ),
+#                             html.Div(
+#                                 [
+#                                     html.Div(
+#                                         [
+#                                             html.P(
+#                                                 children=[
+#                                                     html.Span(
+#                                                         "Years with insufficient or no data:",
+#                                                         className="msg-string__label",
+#                                                     ),
+#                                                     html.Span(
+#                                                         no_data_string,
+#                                                         className="nodata-string",
+#                                                     ),
+#                                                 ],
+#                                             ),
+#                                         ],
+#                                         className="container--close--noborder twelve columns",
+#                                     )
+#                                 ],
+#                                 className="row",
+#                             ),
+#                         ]
+#                     )
+#                 ]
+
+#             else:
+#                 fig_layout = [
+#                     html.Div(
+#                         [
+#                             html.Label(label, className="label__header"),
+#                             dcc.Graph(figure=fig, config={"displayModeBar": False}),
+#                         ],
+#                     )
+#                 ]
+#     else:
+#         fig = no_data_fig_blank()
+
+#         fig_layout = [
+#             html.Div(
+#                 [
+#                     html.Div(
+#                         [
+#                             html.Label(label, className="label__header"),
+#                             dcc.Graph(figure=fig, config={"displayModeBar": False}),
+#                         ],
+#                     ),
+#                 ]
+#             )
+#         ]
+
+#     return trace_color, fig_layout
 
 def make_line_chart(values: pd.DataFrame) -> list:
     """
@@ -579,7 +911,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
     if (len(cols)) > 0:
-
         # NOTE: the "insufficient n-size" and "no data" information is usually displayed
         # below the fig in the layout. However, given the size of the figs, it makes them
         # way too cluttered. So it is currently removed. Would prefer to somehow add this
@@ -610,7 +941,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
         # Used below to set tick ranges
         data_max = data.drop("Year", axis=1).copy()
         data_max = data_max.max(numeric_only=True).max()
-        
+
         # If data_max is > 1 then it is WIDA data (all other data are decimals)
         if data_max > 1:
             # make sure Year is a str and replace all negative numbers with 0
@@ -640,8 +971,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 color_discrete_sequence=color,
             )
 
-            print(type(data["Year"][0]))
-
             # Set the range based on data_max (highest single value). IREAD is set to 100% regardless.
             # At higher ranges, the values compress together and are hard to read.
             if "IREAD Proficiency (Grade 3 only)" in data.columns:
@@ -650,13 +979,13 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 y_value = -0.4
                 d_tick = 0.2
 
-            # WIDA fig
+            # WIDA is only data where the max will be > 1
             elif data_max > 1:
                 range_vals = [0, 5]
                 tick_format = ".1f"
                 y_value = -0.2
                 d_tick = 1
-            
+
             else:
                 # legend shenanigans - adjust location based on columns
                 if data.columns.str.contains("Grade").any():
@@ -692,7 +1021,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                     tick0=0,
                     dtick=1,
                     tickvals=data["Year"],
-                    tickformat=".4", #"%Y",
+                    tickformat=".4",  # "%Y",
                     mirror=True,
                     showline=True,
                     linecolor="#b0c4de",
@@ -722,7 +1051,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 zeroline=False,
                 range=range_vals,
                 dtick=d_tick,
-                tickformat=tick_format
+                tickformat=tick_format,
             )
 
             if no_data_string:
@@ -984,7 +1313,8 @@ def make_bar_chart(
     if (len(data.columns)) > 3:
         schools = data["School Name"].tolist()
 
-        # assign colors for each comparison school
+        # assign colors for each comparison school - this data is returned
+        # from the function
         trace_color = {schools[i]: color[i] for i in range(len(schools))}
 
         # use specific color for selected school

@@ -742,6 +742,7 @@ def get_wida_student_data(*args):
         """
         SELECT *
             FROM WIDA
+            WHERE YEAR >= 2019
         """
     )
 
@@ -780,10 +781,11 @@ def get_ilearn_stns(*args):
 	        WHERE SchoolID = :id
         """
     )
-    
+
     results = run_query(q, params)
 
     return results
+
 
 def get_ilearn_student_data(*args):
     keys = ["id"]

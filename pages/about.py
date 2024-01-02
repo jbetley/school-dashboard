@@ -93,6 +93,7 @@ def update_about_page(year: str, school: str):
             "08.24.23",
             "09.27.23",
             "10.03.23",
+            "01.01.24",
         ],
         "Update": [
             "Added 2023 ILEARN data for K-8 schools and school corporations.",
@@ -102,6 +103,7 @@ def update_about_page(year: str, school: str):
             "Added 2019-22 Growth Data for ICSB schools.",
             "Added Year over Year academic analysis.",
             "Beta site released.",
+            "Added 2019-23 WIDA data and additional IREAD details."
         ],
     }
 

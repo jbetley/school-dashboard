@@ -673,6 +673,8 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
 
     class_name = "pretty-container " + col_width + " columns"
 
+    data.columns = data.columns.astype(str)
+
     first_column = data.columns[0]
     other_columns = data.columns[1:]
 
@@ -759,26 +761,25 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
         ]
     )
 
-    # TODO: Fix this to be less kludgy. Perhaps combine all of the table code?
-
     # Special layout for IREAD table on Academic Information page
-    if label == "IREAD":
+    if label == "IREAD" or label == "WIDA":
         # Skip Category column
-        for col in data.columns[1:]:
-            data[col] = pd.to_numeric(data[col], errors="coerce")
+        # for col in data.columns[1:]:
+        #     data[col] = pd.to_numeric(data[col], errors="coerce")
 
-        # NOTE: dataframes aren't built for row-wise operations, so if we need different
-        # formatting for different rows, we have to do something grotesque like the following
-        # start at 1 to again skip "Category" column
-        for x in range(1, len(data.columns)):
-            for i in range(0, len(data.index)):
-                if (i == 0) | (i == 2) | (i == 4) | (i == 6):
-                    if ~np.isnan(data.iat[i, x]):
-                        data.iat[i, x] = "{:.2%}".format(data.iat[i, x])
-                else:
-                    data.iat[i, x] = "{:,.0f}".format(data.iat[i, x])
+        # # NOTE: dataframes aren't built for row-wise operations, so if we need different
+        # # formatting for different rows, we have to do something grotesque like the following
+        # # start at 1 to again skip "Category" column
+        # if label == "IREAD":
+        #     for x in range(1, len(data.columns)):
+        #         for i in range(0, len(data.index)):
+        #             if (i == 0) | (i == 2) | (i == 4) | (i == 6):
+        #                 if ~np.isnan(data.iat[i, x]):
+        #                     data.iat[i, x] = "{:.2%}".format(data.iat[i, x])
+        #             else:
+        #                 data.iat[i, x] = "{:,.0f}".format(data.iat[i, x])
 
-        data = data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
+        #     data = data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
         table_layout = [
             dash_table.DataTable(
@@ -811,16 +812,39 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
             ),
         ]
 
-    else:
-        # table_layout = [
-        #     html.Div(
-        #         [
-        #             html.Div(empty_table("No Data to Display.")),
-        #         ],
-        #         className="pretty-container four columns",
-        #     )
-        # ]
+        # elif label == "WIDA":
 
+        #     table_layout = [
+        #         dash_table.DataTable(
+        #             data.to_dict("records"),
+        #             columns=[
+        #                 {
+        #                     "name": i,
+        #                     "id": i,
+        #                 }
+        #                 for i in data.columns
+        #             ],
+        #             style_data={
+        #                 "fontSize": "12px",
+        #                 "fontFamily": "Inter, sans-serif",
+        #                 "border": "none",
+        #             },
+        #             style_data_conditional=table_data_conditional,
+        #             style_header=table_header,
+        #             style_cell={
+        #                 "whiteSpace": "normal",
+        #                 "height": "auto",
+        #                 "textAlign": "center",
+        #                 "color": "#6783a9",
+        #                 "minWidth": "25px",
+        #                 "width": "25px",
+        #                 "maxWidth": "25px",
+        #             },
+        #             style_header_conditional=table_header_conditional,
+        #             style_cell_conditional=table_cell_conditional,
+        #         ),
+        #     ]
+    else:
         table_layout = [
             html.Div(
                 [
