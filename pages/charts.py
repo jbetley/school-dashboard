@@ -584,37 +584,42 @@ def make_line_chart(values: pd.DataFrame) -> list:
         # way too cluttered. So it is currently removed. Would prefer to somehow add this
         # to the trace (x-unified) hover, but it doesn't currently seem to be possible.
         # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
-        data, no_data_string = check_for_no_data(data)
 
+        data, no_data_string = check_for_no_data(data)
         # nsize_string = check_for_insufficient_n_size(data)
 
-        for col in cols:
-            data[col] = pd.to_numeric(data[col], errors="coerce")
+        # first check, if dataframe has more than one column, but not data
+        # to display ("",NaN, or "***"), we catch it here
+        if not data.empty:
 
-        data.sort_values("Year", inplace=True)
+            for col in cols:
+                data[col] = pd.to_numeric(data[col], errors="coerce")
 
-        # One last check, if there is only one year of data being displayed, we need to drop
-        # all columns with only NaN- otherwise the traces will be displayed on the chart
-        # even though they are listed as having no data to display - afterwards we need
-        # to reset the cols variable to make sure it matches the changed df
-        # if len(data.index) == 1:
-        #     data = data.dropna(axis=1, how="all")
-        #     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
+            data.sort_values("Year", inplace=True)
 
-        data = data.dropna(axis=1, how="all")
-        cols = [i for i in data.columns if i not in ["School Name", "Year"]]
+            # One last check, if there is only one year of data being displayed, we need to drop
+            # all columns with only NaN- otherwise the traces will be displayed on the chart
+            # even though they are listed as having no data to display - afterwards we need
+            # to reset the cols variable to make sure it matches the changed df
+            # if len(data.index) == 1:
+            #     data = data.dropna(axis=1, how="all")
+            #     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
-        data = data.reset_index(drop=True)
+            data = data.dropna(axis=1, how="all")
+            cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
-        # Used below to set tick ranges
-        data_max = data.drop("Year", axis=1).copy()
-        data_max = data_max.max(numeric_only=True).max()
+            data = data.reset_index(drop=True)
 
-        # If data_max is > 1 then it is WIDA data (all other data are decimals)
-        if data_max > 1:
-            # make sure Year is a str and replace all negative numbers with 0
-            data[data < 0] = 0
-            data["Year"] = data["Year"].astype(str)
+            # Used below to set tick ranges
+
+            data_max = data.drop("Year", axis=1).copy()
+            data_max = data_max.max(numeric_only=True).max()
+
+            # If data_max is > 1 then it is WIDA data (all other data are decimals)
+            if data_max > 1:
+                # make sure Year is a str and replace all negative numbers with 0
+                data[data < 0] = 0
+                data["Year"] = data["Year"].astype(str)
 
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout

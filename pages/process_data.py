@@ -3,7 +3,7 @@
 #########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.13
-# date:     10/13/23
+# date:     02/01/24
 
 # TODO: Explore serverside disk caching for data loading
 # https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
@@ -21,6 +21,7 @@ from .load_data import (
     get_excluded_years,
     get_school_index,
     get_graduation_data,
+    get_attendance_rate_data
 )
 from .calculations import (
     calculate_percentage,
@@ -33,7 +34,7 @@ from .calculations import (
 )
 
 
-def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
+def get_attendance_data(school: str, school_type: str, year: str) -> pd.DataFrame:
     """
     Process attendance rate data.
 
@@ -46,21 +47,27 @@ def get_attendance_data(data: pd.DataFrame, year: str) -> pd.DataFrame:
     """
     excluded_years = get_excluded_years(year)
 
-    demographic_data = data[~data["Year"].isin(excluded_years)]
-    attendance_data = demographic_data[["Year", "Avg Attendance"]]
-
+    # valid_data = data[~data["Year"].isin(excluded_years)]
+    # print(valid_data)
+    # attendance_data = valid_data[["Year", "Attendance Rate","Students Chronically Absent","Total Student Count"]]
+# TODO: MERGE ATTENDANDCE RATE CALC TO LOAD DATA
+    attendance_data = get_attendance_rate_data(school, school_type, year)
     # drop years with no data
-    attendance_data = attendance_data[attendance_data["Avg Attendance"].notnull()]
+    attendance_data = attendance_data[attendance_data["Attendance Rate"].notnull()]
+
+    # replace empty strings with NaN
+    attendance_data = attendance_data.replace(r'^\s*$', np.nan, regex=True)
+
+    attendance_data["Chronic Absenteeism %"] = \
+        calculate_percentage(attendance_data["Students Chronically Absent"], attendance_data["Total Student Count"])
+
+    attendance_data = attendance_data.drop(["Students Chronically Absent","Total Student Count"], axis=1)
 
     attendance_rate = (
         attendance_data.set_index("Year")
         .T.rename_axis("Category")
         .rename_axis(None, axis=1)
         .reset_index()
-    )
-
-    attendance_rate["Category"] = attendance_rate["Category"].replace(
-        ["Avg Attendance"], "Attendance Rate"
     )
 
     attendance_rate = conditional_fillna(attendance_rate)

@@ -24,7 +24,7 @@ from .calculations import (
 )
 
 
-def calculate_attendance_metrics(school: str, year: str) -> pd.DataFrame:
+def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd.DataFrame:
     """
     Gets attendance data (df) for school and school corporation, calculates the
     year over year difference using calculate_year_over_year than adds a Rating
@@ -40,11 +40,32 @@ def calculate_attendance_metrics(school: str, year: str) -> pd.DataFrame:
     selected_school = get_school_index(school)
     corp_id = int(selected_school["GEO Corp"].values[0])
 
-    corp_demographics = get_demographic_data(corp_id)
+    # corp_demographics = get_demographic_data(corp_id)
+    # school_demographics = get_demographic_data(school)
 
-    school_demographics = get_demographic_data(school)
-    corp_attendance_rate = get_attendance_data(corp_demographics, year)
-    school_attendance_rate = get_attendance_data(school_demographics, year)
+# TODO: Change origin of attendance from demographic to academic
+# TODO: Drop Corp Attendance Rate(?) - not apples to apples
+        # # load K8 academic data
+        # selected_raw_k8_school_data = get_k8_school_academic_data(school)
+        # excluded_years = get_excluded_years(selected_year_string)
+
+        # if excluded_years:
+        #     selected_raw_k8_school_data = selected_raw_k8_school_data[
+        #         ~selected_raw_k8_school_data["Year"].isin(excluded_years)
+        #     ]
+
+        # # load HS academic data
+        # selected_raw_hs_school_data = get_high_school_academic_data(school)
+        # excluded_years = get_excluded_years(selected_year_string)
+
+        # # exclude years later than the selected year
+        # if excluded_years:
+        #     selected_raw_hs_school_data = selected_raw_hs_school_data[
+        #         ~selected_raw_hs_school_data["Year"].isin(excluded_years)
+        #     ]
+
+    school_attendance_rate = get_attendance_data(school, school_type, year)
+    corp_attendance_rate = get_attendance_data(school, school_type, year)
 
     corp_attendance_rate = (
         corp_attendance_rate.set_index(["Category"])

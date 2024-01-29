@@ -12,6 +12,8 @@ import numpy.typing as npt
 from typing import Tuple, Any
 import scipy.spatial as spatial
 
+# for typing purposes
+result: Any = [float | None | str]
 
 def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     """
@@ -46,6 +48,68 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     data[fill_with_no_data] = data[fill_with_no_data].fillna(value="No Data")
 
     return data
+
+
+def calculate_percentage(numerator: str, denominator: str) -> npt.NDArray[result]:
+    """
+    Calculates a percentage given a numerator and a denominator, while accounting for two
+    special cases: a string representing insufficent n-size ("***") and certain conditions
+    where a "0" value has a different result. The function does the following:
+        1) When either the numerator or the denominator is equal to "***", the function returns "****"
+        2) When either the numerator or the denominator is null/nan, the function returns "None"
+        3) When the numerator is null/nan, but the denominator is not, the function returns "0"
+        4) if none of the above are true, the function divides the numerator by the denominator.
+    Args:
+        numerator (str): numerator (is a str to account for special cases)
+        denominator (str): denominator (is a str to account for special cases)
+
+    Returns:
+        float|None|str: see conditions
+    """
+    result = np.where(
+        (numerator == "***") | (denominator == "***"),
+        "***",
+        np.where(  # type: ignore
+            pd.to_numeric(numerator, errors="coerce").isna()
+            & pd.to_numeric(denominator, errors="coerce").isna(),
+            None,
+            np.where(
+                pd.to_numeric(numerator, errors="coerce").isna(),
+                0,
+                pd.to_numeric(numerator, errors="coerce")
+                / pd.to_numeric(denominator, errors="coerce"),
+            ),
+        ),
+    )
+
+    return result
+
+
+def calculate_difference(value1: str, value2: str) -> npt.NDArray[result]:
+    """
+    Calculate the difference between two dataframes with specific mixed datatypes
+    and conditions.
+
+    Args:
+        value1 (str): first value (is a str to account for special cases)
+        value2 (str): second value (is a str to account for special cases)
+
+    Returns:
+        float|None|str: see conditions
+    """
+
+    result = np.where(
+        (value1 == "***") | (value2 == "***"),
+        "***",
+        np.where(  # type: ignore
+            pd.to_numeric(value1, errors="coerce").isna(),
+            None,
+            pd.to_numeric(value1, errors="coerce")
+            - pd.to_numeric(value2, errors="coerce"),
+        ),
+    )
+
+    return result
 
 
 def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
@@ -208,72 +272,6 @@ def recalculate_total_proficiency(
     ) / adj_corp_math_test.sum(axis=1)
 
     return revised_totals
-
-
-# for typing purposes
-result: Any = [float | None | str]
-
-
-def calculate_percentage(numerator: str, denominator: str) -> npt.NDArray[result]:
-    """
-    Calculates a percentage given a numerator and a denominator, while accounting for two
-    special cases: a string representing insufficent n-size ("***") and certain conditions
-    where a "0" value has a different result. The function does the following:
-        1) When either the numerator or the denominator is equal to "***", the function returns "****"
-        2) When either the numerator or the denominator is null/nan, the function returns "None"
-        3) When the numerator is null/nan, but the denominator is not, the function returns "0"
-        4) if none of the above are true, the function divides the numerator by the denominator.
-    Args:
-        numerator (str): numerator (is a str to account for special cases)
-        denominator (str): denominator (is a str to account for special cases)
-
-    Returns:
-        float|None|str: see conditions
-    """
-    result = np.where(
-        (numerator == "***") | (denominator == "***"),
-        "***",
-        np.where(  # type: ignore
-            pd.to_numeric(numerator, errors="coerce").isna()
-            & pd.to_numeric(denominator, errors="coerce").isna(),
-            None,
-            np.where(
-                pd.to_numeric(numerator, errors="coerce").isna(),
-                0,
-                pd.to_numeric(numerator, errors="coerce")
-                / pd.to_numeric(denominator, errors="coerce"),
-            ),
-        ),
-    )
-
-    return result
-
-
-def calculate_difference(value1: str, value2: str) -> npt.NDArray[result]:
-    """
-    Calculate the difference between two dataframes with specific mixed datatypes
-    and conditions.
-
-    Args:
-        value1 (str): first value (is a str to account for special cases)
-        value2 (str): second value (is a str to account for special cases)
-
-    Returns:
-        float|None|str: see conditions
-    """
-
-    result = np.where(
-        (value1 == "***") | (value2 == "***"),
-        "***",
-        np.where(  # type: ignore
-            pd.to_numeric(value1, errors="coerce").isna(),
-            None,
-            pd.to_numeric(value1, errors="coerce")
-            - pd.to_numeric(value2, errors="coerce"),
-        ),
-    )
-
-    return result
 
 
 def calculate_year_over_year(

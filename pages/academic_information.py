@@ -82,7 +82,8 @@ dash.register_page(
     Output("proficiency-subgroup-math", "children"),
     Output("math-subgroup-bar-fig", "children"),
     Output("proficiency-math-subgroup-container", "style"),
-    Output("attendance-table", "children"),
+    Output("attendance-table-k8", "children"),
+    Output("attendance-table-hs", "children"),
     Output("k8-table-container", "style"),
     Output("k12-grad-overview-table", "children"),
     Output("k12-grad-ethnicity-table", "children"),
@@ -157,7 +158,8 @@ def update_academic_information_page(
     proficiency_math_ethnicity_container = {"display": "none"}
     proficiency_math_subgroup_container = {"display": "none"}
 
-    attendance_table = []
+    attendance_table_k8 = []
+    attendance_table_hs = []
     k8_table_container = {"display": "none"}
 
     academic_information_notes_string = ""
@@ -346,6 +348,24 @@ def update_academic_information_page(
                         k12_sat_cut_scores, k12_sat_cut_scores_label
                     )
 
+                # Attendance Rate
+                attendance_rate = get_attendance_data(
+                    selected_raw_hs_school_data, selected_year_string
+                )
+
+                if len(attendance_rate.index) > 0 and len(attendance_rate.columns) > 1:
+                    attendance_table = create_single_header_table(
+                        attendance_rate, "Attendance Data"
+                    )
+                else:
+                    attendance_table = no_data_table(
+                        "No Data to Display.", "Attendance Data", "six"
+                    )
+
+                attendance_table_hs = set_table_layout(
+                    attendance_table, attendance_table, attendance_rate.columns
+                )
+
                 academic_information_notes_string = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
                     Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
                     Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
@@ -355,6 +375,7 @@ def update_academic_information_page(
         or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric >= 2021)
     ) and radio_type == "k8":
+        
         # Begin Aggregated K8 School Data
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
@@ -467,6 +488,7 @@ def update_academic_information_page(
                         == 0
                     ):
                         iread_breakdown = []
+
                     else:
                         # Generate simple table and chart with school level IREAD data
                         total_iread_data = total_iread_data.rename(
@@ -474,6 +496,7 @@ def update_academic_information_page(
                                 "IREAD Proficiency (Grade 3)": "School Total",
                             }
                         )
+
                         iread_fig = make_line_chart(total_iread_data)
 
                         total_iread_table_data = (
@@ -646,6 +669,7 @@ def update_academic_information_page(
                     # TODO: WIDA is unreliable (dont have scores for all students only
                     # TODO: current) and Ethnicity is not broken down by grade.
                     # TODO: Also add pass rate for EL students
+
                     # Merge iread table data together
                     iread_dfs_to_merge = [
                         iread_table_data,
@@ -765,9 +789,25 @@ def update_academic_information_page(
 
                     else:
 
+                        # TODO: Check validity of data, determine if it is possible to get
+                        # TODO: WIDA scores for all enrolled students, regardless of where
+                        # TODO: they took the WIDA. Why does CHS/CHW have 400-500 students
+                        # TODO: While 21C has 19, SteelCity has 5, and GVPLA has 0?
+                        # Get N-Size for each grade
+                        wida_nsize = school_wida["Tested Grade"].value_counts().reset_index().rename(columns={"Tested Grade": "N-Size", "index": "Tested Grade"})
+
                         # Prepare WIDA year over year data
                         wida_year = (
                             school_wida.groupby(["Year", "Tested Grade"])[
+                                "Composite Overall Proficiency Level"
+                            ]
+                            .mean()
+                            .reset_index(name="Average")
+                        )
+
+                        # get WIDA total averages by year
+                        wida_total_year = (
+                            school_wida.groupby(["Year"])[
                                 "Composite Overall Proficiency Level"
                             ]
                             .mean()
@@ -798,7 +838,14 @@ def update_academic_information_page(
                         )
                         wida_fig_data.insert(loc=0, column="Year", value=tmp_col)
 
-                        # Average WIDA Scores by Grade
+                        # Add school Average to by year calcs
+                        wida_fig_data = pd.merge(wida_fig_data, wida_total_year, on="Year")
+
+                        # Add N-Size data to table data
+                        # TODO: Need N-size per year/per grade - Add as tooltip
+                        # wida_table_data = pd.merge(wida_year, wida_nsize, on="Tested Grade")
+
+                        # Create line chart for WIDA Scores by Grade and Total
                         wida_fig = make_line_chart(wida_fig_data)
 
                         wida_table_data = (
@@ -907,8 +954,8 @@ def update_academic_information_page(
                     )
                     ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
 
-                    print(ilearn_filtered)
-                    print(raw_student_iread_data)
+                    # print(ilearn_filtered)
+                    # print(raw_student_iread_data)
                     # school_all_student_data = pd.merge(
                     #     iread_filtered, ilearn_filtered, on="STN"
                     # )
@@ -1111,11 +1158,9 @@ def update_academic_information_page(
                     math_ethnicity_table, math_ethnicity_line_fig, "Math By Ethnicity"
                 )
 
-                # Attendance rate
-                school_demographic_data = get_demographic_data(school)
-
+                # Attendance Rate
                 attendance_rate = get_attendance_data(
-                    school_demographic_data, selected_year_string
+                    selected_raw_k8_school_data, selected_year_string
                 )
 
                 if len(attendance_rate.index) > 0 and len(attendance_rate.columns) > 1:
@@ -1127,7 +1172,7 @@ def update_academic_information_page(
                         "No Data to Display.", "Attendance Data", "six"
                     )
 
-                attendance_table = set_table_layout(
+                attendance_table_hs = set_table_layout(
                     attendance_table, attendance_table, attendance_rate.columns
                 )
 
@@ -1435,6 +1480,7 @@ def update_academic_information_page(
                 else:
                     math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
+        # variables for display purposes
         if radio_category == "grade":
             wida_breakdown_container = {"display": "block"}
             iread_breakdown_container = {"display": "block"}
@@ -1524,7 +1570,8 @@ def update_academic_information_page(
         proficiency_subgroup_math,
         math_subgroup_bar_fig,
         proficiency_math_subgroup_container,
-        attendance_table,
+        attendance_table_k8,
+        attendance_table_hs,
         k8_table_container,
         k12_grad_overview_table,
         k12_grad_ethnicity_table,
@@ -1760,7 +1807,7 @@ def layout():
                                                 id="proficiency-math-subgroup-container",
                                             ),
                                             html.Div(
-                                                id="attendance-table", children=[]
+                                                id="attendance-table-k8", children=[]
                                             ),
                                         ],
                                         id="k8-table-container",
@@ -1804,6 +1851,9 @@ def layout():
                                             html.Div(id="k12-sat-subgroup-table"),
                                         ],
                                         id="k12-sat-table-container",
+                                    ),
+                                    html.Div(
+                                        id="attendance-table-hs", children=[]
                                     ),
                                 ],
                                 id="academic-information-main-container",

@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.13
-# date:     10/13/23
+# date:     01/28/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -27,6 +27,7 @@ from .tables import no_data_table, no_data_page, create_key_table
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
 
+# TODO: Add attendance and chronic absenteeism
 
 @callback(
     Output("update-table", "children"),
@@ -75,9 +76,12 @@ def update_about_page(year: str, school: str):
 
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
+     
+     # demographic data for the school is stored by Corporation ID
+    school_corp_id = str(selected_school["Corporation ID"].values[0])
 
     # Get data for enrollment table, and subgroup/ethnicity demographic figs (single year)
-    demographic_data = get_demographic_data(school)
+    demographic_data = get_demographic_data(school_corp_id)
     demographic_data = demographic_data.loc[
         demographic_data["Year"] == selected_year_numeric
     ]
@@ -86,24 +90,14 @@ def update_about_page(year: str, school: str):
     update_table_label = ""
     update_table_dict = {
         "Date": [
-            "07.12.23",
-            "08.16.23",
-            "08.18.23",
-            "08.18.23",
-            "08.24.23",
-            "09.27.23",
-            "10.03.23",
             "01.01.24",
+            "01.26.24",
+            "02.01.24"
         ],
         "Update": [
-            "Added 2023 ILEARN data for K-8 schools and school corporations.",
-            "Added 2023 IREAD Data for K-8 schools and school corporations.",
-            "Added 2023 SAT Scores for high schools and school corporations.",
-            "Added 2023 Demographic Data for schools and school corporations.",
-            "Added 2019-22 Growth Data for ICSB schools.",
-            "Added Year over Year academic analysis.",
-            "Beta site released.",
-            "Added 2019-23 WIDA data and additional IREAD details."
+            "Added 2019-23 WIDA data and additional IREAD details.",
+            "Added Chronic Absenteeism and historical Corp IREAD data.",
+            "Made database more efficient (speed still depending on connection)."
         ],
     }
 

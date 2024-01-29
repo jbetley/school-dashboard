@@ -552,7 +552,7 @@ def update_academic_metrics(school: str, year: str):
         "End of Year to Beginning of Year (1.1.c) and Year over Year (1.1.d) Student Re-Enrollment Rate."
     ]
 
-    attendance_data = calculate_attendance_metrics(school, selected_year_string)
+    attendance_data = calculate_attendance_metrics(school, selected_school_type, selected_year_string)
 
     if len(attendance_data.index) > 0:
         attendance_container = {"display": "block"}

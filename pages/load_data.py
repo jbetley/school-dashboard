@@ -805,6 +805,32 @@ def get_ilearn_student_data(*args):
 
     return results
 
+# TODO: For k12, run it twice with two type flags
+def get_attendance_rate_data(*args):
+    keys = ["id", "type"]
+    params = dict(zip(keys, args))
+
+    if params["type"] == "k8":
+        q = text(
+            """
+            SELECT Year, Attendance Rate, Students Chronically Absent, Total Student Count
+                FROM academic_data_k8
+                WHERE SchoolID = :id
+            """
+        )
+    elif params["type"] == "hs":
+        q = text(
+            """
+            SELECT Year, Attendance Rate, Students Chronically Absent, Total Student Count
+                FROM academic_data_hs
+                WHERE SchoolID = :id
+            """
+        )
+
+    results = run_query(q, params)
+    results = results.sort_values(by="Year", ascending=False)
+
+    return results
 
 # TODO: Eventually consolidate and use only second function below.
 def get_k8_school_academic_data(*args):
