@@ -191,7 +191,9 @@ metric_strings = {
 }
 
 # TODO: Move this to app? import engine? use a function to pull the table?
-engine = create_engine("sqlite:///data/db_all.db")
+engine = create_engine("sqlite:///data/db_updated.db")
+
+users = create_engine("sqlite:///users.db")
 
 print("Database Engine Created . . .")
 
@@ -222,7 +224,6 @@ def run_query(q, *args):
 
         return df
 
-
 def get_current_year():
     db = engine.raw_connection()
     cur = db.cursor()
@@ -241,7 +242,7 @@ current_academic_year = get_current_year()
 # the charter dropdown in app.py. Otherwise we would have to hardcode this
 # value. we add one to the total to account for the admin login
 def get_network_count():
-    db = engine.raw_connection()
+    db = users.raw_connection()
     cur = db.cursor()
     cur.execute(""" SELECT COUNT(groupid) FROM users WHERE groupid < 0 """)
     count = cur.fetchone()[0]
@@ -712,7 +713,7 @@ def get_demographic_data(*args):
         """
         SELECT *
             FROM demographic_data
-	        WHERE SchoolID = :id
+	        WHERE CorporationID = :id
         """
     )
 
