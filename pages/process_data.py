@@ -532,8 +532,8 @@ def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
 
     # Get N-Size for all categories with data
 
-    # Drop: all SAT related columns ("Approaching Benchmark", "At Benchmark", etc.)
-    # for a Category if the value of "Total Tested" for that Category is "0"
+    # Drop: all SAT and Grad Rate related columns ("Total Tested|Cohort Count)
+    # for a Category if the value of "Cohort Count" or "Total Tested" for that Category is "0"
     tested_cols = data.filter(regex="Total Tested|Cohort Count").columns.tolist()
     drop_columns = []
 

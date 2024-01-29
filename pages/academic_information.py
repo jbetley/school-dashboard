@@ -3,7 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.13
-# date:     10/13/23
+# date:     01/01/24
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -642,6 +642,10 @@ def update_academic_information_page(
                         .reset_index(name="No Pass (Retained)")
                     )
 
+                    # TODO: Add column for # of EL students taking IREAD. Not sure how to track
+                    # TODO: WIDA is unreliable (dont have scores for all students only
+                    # TODO: current) and Ethnicity is not broken down by grade.
+                    # TODO: Also add pass rate for EL students
                     # Merge iread table data together
                     iread_dfs_to_merge = [
                         iread_table_data,
@@ -760,9 +764,6 @@ def update_academic_information_page(
                         wida_breakdown = []
 
                     else:
-                        current_student_iread_data = raw_student_iread_data.loc[
-                            raw_student_iread_data["Year"] == selected_year_numeric
-                        ]
 
                         # Prepare WIDA year over year data
                         wida_year = (
@@ -839,20 +840,10 @@ def update_academic_information_page(
                         # there are almost no matches.
                         # TODO: ALSO NEED GRADE IN WHICH STUDENT TOOK WIDA SO CAN MATCH WIDA YEAR WITH IREAD YEAR
                         
-                        # all_wida = all_wida[
-                        #     [
-                        #         "Year",
-                        #         "STN",
-                        #         "Tested Grade",
-                        #         "Composite Overall Proficiency Level",
-                        #     ]
-                        # ]
-
-                        # all_wida["STN"] = all_wida["STN"].astype(str)
-
+                        # Don't want to use all_wida, want to use school_wida
                         # # In order to make a valid comparison, WIDA Tested Year for a student must be Grade K-3 
                         # # with respect to the IREAD Tested Year.
-                        # all_wida_filter = all_wida[all_wida["Tested Grade"].isin(["Kindergarten", "Grade 1", "Grade 2", "Grade 3"])]
+                        # school_wida_filter = school_wida[school_wida["Tested Grade"].isin(["Kindergarten", "Grade 1", "Grade 2", "Grade 3"])]
 
                         # wida_iread_merged = pd.merge(
                         #     all_wida_filter, raw_student_iread_data, on="STN"
@@ -873,7 +864,6 @@ def update_academic_information_page(
                         #     "Composite Overall Proficiency Level", value_name="Result"
                         # )
 
-                        # # print(wida_filter)
                         # # group and aggregate
                         # wida_count = {
                         #     "Count": ("Result", "count"),
@@ -904,34 +894,39 @@ def update_academic_information_page(
 
                 # ## ILEARN - All data for all years
                  # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA - LONGITUDINAL TRACKING 3-8 ELA
-                    # ilearn_student_all = get_ilearn_student_data(school)
+                    ilearn_student_all = get_ilearn_student_data(school)
 
-                    # ilearn_filtered = ilearn_student_all.filter(
-                    #     regex=r"STN|Current Grade|Tested Grade|Math|ELA"
+                    ilearn_filtered = ilearn_student_all.filter(
+                        regex=r"STN|Current Grade|Tested Grade|Math|ELA"
+                    )
+                    ilearn_filtered = ilearn_filtered.rename(
+                        columns={
+                            "Current Grade": "ILEARN Current Grade",
+                            "Tested Grade": "ILEARN Tested Grade",
+                        }
+                    )
+                    ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
+
+                    print(ilearn_filtered)
+                    print(raw_student_iread_data)
+                    # school_all_student_data = pd.merge(
+                    #     iread_filtered, ilearn_filtered, on="STN"
                     # )
-                    # ilearn_filtered = ilearn_filtered.rename(
-                    #     columns={
-                    #         "Current Grade": "ILEARN Current Grade",
-                    #         "Tested Grade": "ILEARN Tested Grade",
-                    #     }
-                    # )
-                    # ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
+                    # IREAD data goes back to 2018, ILEARN goes back to 2019,
+                    # because we typically only show 5 years of data, a current
+                    # eighth grader would have taken IREAD in 2018.
+                    # NOTE: If we want longitudinal data for earlier years, we
+                    # need to add earlier IREAD. An eight grader in 2019 would
+                    # have taken IREAD in 2014.
 
-                    # # IREAD data goes back to 2018, ILEARN goes back to 2019,
-                    # # because we typically only show 5 years of data, a current
-                    # # eighth grader would have taken IREAD in 2018.
-                    # # NOTE: If we want longitudinal data for earlier years, we
-                    # # need to add earlier IREAD. An eight grader in 2019 would
-                    # # have taken IREAD in 2014.
+                    # because IREAD goes back farther, use it as base and merge
+                    # ILEARN data
 
-                    # # because IREAD goes back farther, use it as base and merge
-                    # # ILEARN data
+                    # ilearn_stn_list = ilearn_filtered["STN"].tolist()
+                    # tst_all_data = raw_student_iread_data[raw_student_iread_data["STN"].isin(ilearn_stn_list)]
 
-                    # # ilearn_stn_list = ilearn_filtered["STN"].tolist()
-                    # # tst_all_data = iread_filtered[iread_filtered["STN"].isin(ilearn_stn_list)]
-                    # # print(tst_all_data)
 
-                    # # TODO: TEst different merge types here to see what we want
+                    # # TODO: Test different merge types here to see what we want
                     # school_all_student_data = pd.merge(
                     #     iread_filtered, ilearn_filtered, on="STN"
                     # )
@@ -964,7 +959,7 @@ def update_academic_information_page(
                     # # c) measure raw scale score avg
                     # # Avg ELA over time for IREAD No Pass
 
-                ## ILEARN - ELA
+            ## ILEARN - ELA
                 # by Grade Table
                 years_by_grade_ela = all_k8_school_data[
                     (
@@ -1136,7 +1131,7 @@ def update_academic_information_page(
                     attendance_table, attendance_table, attendance_rate.columns
                 )
 
-                ## Proficiency breakdown data for stacked bar charts
+            ## Proficiency breakdown data for stacked bar charts
                 # NOTE: IDOE's raw proficency data is annoyingly inconsistent. In some cases missing
                 # data is blank and in other cases it is represented by "0." So we need to be extra
                 # careful in interpreting what is missing from what is just inconsistenly recorded

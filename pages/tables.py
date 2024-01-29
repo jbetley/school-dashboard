@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.13
-# date:     10/13/23
+# date:     01/01/24
 
 import pandas as pd
 from typing import Tuple
@@ -196,7 +196,7 @@ def create_proficiency_key() -> list:
 
 def empty_table(text: str) -> dash_table.DataTable:
     """
-    empty dash_table.Datatable with give text as only data.
+    empty dash_table.Datatable with given text as only data.
 
     Args:
         text (list): table content
@@ -298,7 +298,7 @@ def no_data_page(text: str, label: str = "No Data to Display") -> list:
 #     """
 #     Creates an empty table with no cells. Will be automatically hidden
 #     ("display": "none") by css selector chaining for pretty-container.
-#     Not sure why I created this.
+#     Don't remember why I needed this.
 #     See stylesheet.css
 
 #     Args:
@@ -763,23 +763,6 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
 
     # Special layout for IREAD table on Academic Information page
     if label == "IREAD" or label == "WIDA":
-        # Skip Category column
-        # for col in data.columns[1:]:
-        #     data[col] = pd.to_numeric(data[col], errors="coerce")
-
-        # # NOTE: dataframes aren't built for row-wise operations, so if we need different
-        # # formatting for different rows, we have to do something grotesque like the following
-        # # start at 1 to again skip "Category" column
-        # if label == "IREAD":
-        #     for x in range(1, len(data.columns)):
-        #         for i in range(0, len(data.index)):
-        #             if (i == 0) | (i == 2) | (i == 4) | (i == 6):
-        #                 if ~np.isnan(data.iat[i, x]):
-        #                     data.iat[i, x] = "{:.2%}".format(data.iat[i, x])
-        #             else:
-        #                 data.iat[i, x] = "{:,.0f}".format(data.iat[i, x])
-
-        #     data = data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
         table_layout = [
             dash_table.DataTable(
@@ -812,38 +795,6 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
             ),
         ]
 
-        # elif label == "WIDA":
-
-        #     table_layout = [
-        #         dash_table.DataTable(
-        #             data.to_dict("records"),
-        #             columns=[
-        #                 {
-        #                     "name": i,
-        #                     "id": i,
-        #                 }
-        #                 for i in data.columns
-        #             ],
-        #             style_data={
-        #                 "fontSize": "12px",
-        #                 "fontFamily": "Inter, sans-serif",
-        #                 "border": "none",
-        #             },
-        #             style_data_conditional=table_data_conditional,
-        #             style_header=table_header,
-        #             style_cell={
-        #                 "whiteSpace": "normal",
-        #                 "height": "auto",
-        #                 "textAlign": "center",
-        #                 "color": "#6783a9",
-        #                 "minWidth": "25px",
-        #                 "width": "25px",
-        #                 "maxWidth": "25px",
-        #             },
-        #             style_header_conditional=table_header_conditional,
-        #             style_cell_conditional=table_cell_conditional,
-        #         ),
-        #     ]
     else:
         table_layout = [
             html.Div(
@@ -1509,13 +1460,13 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 for nsize in nsize_headers
             ]
             + [
-                # Use "headers[-1]" and "borderRight" for each subheader to have full border
-                # Use "headers[1]" and "borderLeft" to leave first and last columns open on
+                # Use "all_cols[-1]" and "borderRight" for each subheader to have full border
+                # Use "all_cols[1]" and "borderLeft" to leave first and last columns open on
                 # right and left
                 {
                     "if": {
                         "column_id": all_cols[-1],
-                        #    "column_id": headers[1],
+                        #    "column_id": all_cols[1],
                         "header_index": 1,
                     },
                     "borderRight": ".5px solid #b2bdd4",
@@ -1817,12 +1768,8 @@ def create_comparison_table(
     # merge colored icons into df and combine into School Name
     data = pd.merge(data, color_df, on="Name")
 
-    # data["School Name"] = data["Icon"] + " " + data["School Name"]
-    data = data.drop(["Name"], axis=1)  # , "Icon"
+    data = data.drop(["Name"], axis=1)
 
-    # hide the header "School Name"
-    # data = data.rename(columns={"School Name": ""})
-    # data = data.rename(columns={"Icon": ""})
     # shift "Icon" column to front of df for display
     icon_col = data.pop("Icon")
     data.insert(0, "Icon", icon_col)
@@ -1832,7 +1779,7 @@ def create_comparison_table(
         data.columns = data.columns.str.replace("Benchmark %", "")
         data.columns = data.columns.str.replace("School Total\|", "", regex=True)
 
-    # this should work for another 977 years (skip the year over year dfs)
+    # this should work for another 976 years (skip the year over year dfs)
     elif data.columns.str.startswith("2").any() == True:
         pass
 

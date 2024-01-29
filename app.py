@@ -31,7 +31,7 @@
 # have the program read it with no issue. That part is a work in progress. Another option
 # would be to get access to IDOE's API for this data (using the ED-FI standard).
 
-# NOTE: Because of the way data is store4d and presented by IDOE, there are
+# NOTE: Because of the way data is stored and presented by IDOE, there are
 # cases in which data points need to be manually calculated that the school
 # level for data that is stored at the corporation level. Specifically, this
 # is an issue for calculating demographic enrollment when there is a school
@@ -48,8 +48,6 @@
 
 # This version was updated by Dash community member @jinnyzor. For more info, see:
 # https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507
-# https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/38
-# https://community.plotly.com/t/dash-app-pages-with-flask-login-flow-using-flask/69507/55
 
 import os
 from flask import Flask, url_for, redirect, request, render_template, session, jsonify
@@ -89,6 +87,7 @@ server = Flask(__name__, static_folder="static")
 load_dotenv()
 
 # TODO: Load DB here and use "users" table in login?
+# Having difficulty figuring out how to use SQLAlchemy from the table in this case.
 # engine = create_engine("sqlite:///data/db_all.db")
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -233,7 +232,7 @@ app = dash.Dash(
 # Top Level Navigation #
 
 
-# Selected School Dropdown - shows a single school if a ';'school' login is used, an associated
+# Selected School Dropdown - shows a single school if a 'school' login is used, an associated
 # group of schools if a 'network' login is used, and all schools if 'admin' login is used.
 @callback(
     Output("charter-dropdown", "options"),
@@ -252,7 +251,7 @@ def set_dropdown_options(app_state):
     group_id = current_user.group_id
 
     # this gets the list of available charters from 'school_index' which is a separate
-    # table from users_db- this is because users_bd includes admin + network users
+    # table from users_db- this is because users_db includes admin + network users
 
     available_charters = get_school_dropdown_list()
 
