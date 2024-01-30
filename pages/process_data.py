@@ -21,7 +21,7 @@ from .load_data import (
     get_excluded_years,
     get_school_index,
     get_graduation_data,
-    get_attendance_rate_data
+    # get_attendance_data
 )
 from .calculations import (
     calculate_percentage,
@@ -34,61 +34,61 @@ from .calculations import (
 )
 
 
-def get_attendance_data(school: str, school_type: str, year: str) -> pd.DataFrame:
-    """
-    Process attendance rate data.
+# def get_attendance_data(school: str, school_type: str, year: str) -> pd.DataFrame:
+#     """
+#     Process attendance rate data.
 
-    Args:
-        data (pd.DataFrame): dataFrame
-        year (str): selected year in format (YYYY)
+#     Args:
+#         data (pd.DataFrame): dataFrame
+#         year (str): selected year in format (YYYY)
 
-    Returns:
-        pd.DataFrame: Process attendance rate data.
-    """
-    excluded_years = get_excluded_years(year)
+#     Returns:
+#         pd.DataFrame: Process attendance rate data.
+#     """
+#     excluded_years = get_excluded_years(year)
 
-    # valid_data = data[~data["Year"].isin(excluded_years)]
-    # print(valid_data)
-    # attendance_data = valid_data[["Year", "Attendance Rate","Students Chronically Absent","Total Student Count"]]
-# TODO: MERGE ATTENDANDCE RATE CALC TO LOAD DATA
-    attendance_data = get_attendance_rate_data(school, school_type, year)
-    # drop years with no data
-    attendance_data = attendance_data[attendance_data["Attendance Rate"].notnull()]
+#     # valid_data = data[~data["Year"].isin(excluded_years)]
+#     # print(valid_data)
+#     # attendance_data = valid_data[["Year", "Attendance Rate","Students Chronically Absent","Total Student Count"]]
+# # TODO: MERGE ATTENDANDCE RATE CALC TO LOAD DATA
+#     attendance_data = get_attendance_rate_data(school, school_type, year)
+#     # drop years with no data
+#     attendance_data = attendance_data[attendance_data["Attendance Rate"].notnull()]
 
-    # replace empty strings with NaN
-    attendance_data = attendance_data.replace(r'^\s*$', np.nan, regex=True)
+#     # replace empty strings with NaN
+#     attendance_data = attendance_data.replace(r'^\s*$', np.nan, regex=True)
 
-    attendance_data["Chronic Absenteeism %"] = \
-        calculate_percentage(attendance_data["Students Chronically Absent"], attendance_data["Total Student Count"])
+#     attendance_data["Chronic Absenteeism %"] = \
+#         calculate_percentage(attendance_data["Students Chronically Absent"], attendance_data["Total Student Count"])
 
-    attendance_data = attendance_data.drop(["Students Chronically Absent","Total Student Count"], axis=1)
+#     attendance_data = attendance_data.drop(["Students Chronically Absent","Total Student Count"], axis=1)
 
-    attendance_rate = (
-        attendance_data.set_index("Year")
-        .T.rename_axis("Category")
-        .rename_axis(None, axis=1)
-        .reset_index()
-    )
+#     attendance_rate = (
+#         attendance_data.set_index("Year")
+#         .T.rename_axis("Category")
+#         .rename_axis(None, axis=1)
+#         .reset_index()
+#     )
 
-    attendance_rate = conditional_fillna(attendance_rate)
+#     attendance_rate = conditional_fillna(attendance_rate)
 
-    # sort Year cols in ascending order (ignore Category)
-    attendance_rate = (
-        attendance_rate.set_index("Category")
-        .sort_index(ascending=True, axis=1)
-        .reset_index()
-    )
+#     # sort Year cols in ascending order (ignore Category)
+#     attendance_rate = (
+#         attendance_rate.set_index("Category")
+#         .sort_index(ascending=True, axis=1)
+#         .reset_index()
+#     )
 
-    attendance_rate.columns = attendance_rate.columns.astype(str)
+#     attendance_rate.columns = attendance_rate.columns.astype(str)
 
-    for col in attendance_rate.columns:
-        attendance_rate[col] = (
-            pd.to_numeric(attendance_rate[col], errors="coerce")
-            .fillna(attendance_rate[col])
-            .tolist()
-        )
+#     for col in attendance_rate.columns:
+#         attendance_rate[col] = (
+#             pd.to_numeric(attendance_rate[col], errors="coerce")
+#             .fillna(attendance_rate[col])
+#             .tolist()
+#         )
 
-    return attendance_rate
+#     return attendance_rate
 
 
 def process_selected_k8_academic_data(

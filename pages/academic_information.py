@@ -30,10 +30,10 @@ from pages.load_data import (
     get_demographic_data,
     get_school_index,
     get_excluded_years,
+    get_attendance_data
 )
 from pages.process_data import (
     process_k8_academic_data,
-    get_attendance_data,
     process_high_school_academic_data,
     filter_high_school_academic_data,
 )
@@ -349,11 +349,14 @@ def update_academic_information_page(
                     )
 
                 # Attendance Rate
+                    print('ACINFO SCHOOL TYPE')
+                    print(selected_school_type)
                 attendance_rate = get_attendance_data(
-                    selected_raw_hs_school_data, selected_year_string
+                    selected_school_id, selected_school_type, selected_year_string
                 )
 
                 if len(attendance_rate.index) > 0 and len(attendance_rate.columns) > 1:
+
                     attendance_table = create_single_header_table(
                         attendance_rate, "Attendance Data"
                     )
@@ -1159,11 +1162,17 @@ def update_academic_information_page(
                 )
 
                 # Attendance Rate
+                print('ACINFO SCHOOL TYPE')
+                print(selected_school_type)
+                print('ACINFO SCHOOL ID')
+                print(selected_school_id)
+
                 attendance_rate = get_attendance_data(
-                    selected_raw_k8_school_data, selected_year_string
+                    selected_school_id, selected_school_type, selected_year_string
                 )
 
                 if len(attendance_rate.index) > 0 and len(attendance_rate.columns) > 1:
+
                     attendance_table = create_single_header_table(
                         attendance_rate, "Attendance Data"
                     )

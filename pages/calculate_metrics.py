@@ -14,8 +14,9 @@ from .load_data import (
     get_demographic_data,
     get_letter_grades,
     get_excluded_years,
+    get_attendance_data
 )
-from .process_data import get_attendance_data
+# from .process_data import get_attendance_data
 from .calculations import (
     calculate_year_over_year,
     set_academic_rating,
@@ -64,8 +65,13 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
         #         ~selected_raw_hs_school_data["Year"].isin(excluded_years)
         #     ]
 
+    print('SCHOOL TYPE')
+    print(school_type)
+    corp_type = "corp_" + school_type
+    print(corp_type)
     school_attendance_rate = get_attendance_data(school, school_type, year)
-    corp_attendance_rate = get_attendance_data(school, school_type, year)
+
+    corp_attendance_rate = get_attendance_data(corp_id, corp_type, year)
 
     corp_attendance_rate = (
         corp_attendance_rate.set_index(["Category"])

@@ -18,6 +18,8 @@ import numpy as np
 import re
 from sqlalchemy import create_engine, text
 
+from .calculations import calculate_percentage, conditional_fillna
+
 # NOTE: No K8 academic data exists for 2020
 
 # global variables - yes, global variable bad.
@@ -806,31 +808,99 @@ def get_ilearn_student_data(*args):
     return results
 
 # TODO: For k12, run it twice with two type flags
-def get_attendance_rate_data(*args):
-    keys = ["id", "type"]
-    params = dict(zip(keys, args))
+def get_attendance_data(school_id, school_type, year):
+    params = dict(id=school_id)
 
-    if params["type"] == "k8":
-        q = text(
-            """
-            SELECT Year, Attendance Rate, Students Chronically Absent, Total Student Count
-                FROM academic_data_k8
-                WHERE SchoolID = :id
-            """
-        )
-    elif params["type"] == "hs":
-        q = text(
-            """
-            SELECT Year, Attendance Rate, Students Chronically Absent, Total Student Count
-                FROM academic_data_hs
-                WHERE SchoolID = :id
-            """
-        )
+    # keys = ["id", "type"]
+    # params = dict(zip(keys, args))
+
+    if school_type == "K8":
+        table = "academic_data_k8"
+        id_type = "SchoolID"
+    elif school_type == "HS":
+        table = "academic_data_hs"
+        id_type = "SchoolID"
+    elif school_type == "corp_K8":
+        table = "corporation_data_k8"
+        id_type = "CorporationID"
+    elif school_type == "corp_HS":
+        table = "corporation_data_hs"
+        id_type = "CorporationID"      
+    elif school_type == "K12":
+        return
+    
+    # TODO: Handle K12!
+    query_string  = """
+        SELECT Year, AttendanceRate, StudentsChronicallyAbsent, TotalStudentCount
+            FROM {}
+	        WHERE {} = :id
+        """.format(
+        table, id_type
+    )
+
+
+    q = text(query_string)
+    print(q)
+    #     q = text(
+    #         """
+    #         SELECT Year, Attendance Rate, Students Chronically Absent, Total Student Count
+    #             FROM academic_data_k8
+    #             WHERE SchoolID = :id
+    #         """
+    #     )
+    # elif params["type"] == "HS":
+    #     q = text(
+    #         """
+    #         SELECT Year, Attendance Rate, Students Chronically Absent, Total Student Count
+    #             FROM academic_data_hs
+    #             WHERE SchoolID = :id
+    #         """
+    #     )
 
     results = run_query(q, params)
     results = results.sort_values(by="Year", ascending=False)
 
-    return results
+    attendance_data = results[results["Attendance Rate"].notnull()]
+
+    # replace empty strings with NaN
+    attendance_data = attendance_data.replace(r'^\s*$', np.nan, regex=True)
+
+    attendance_data["Chronic Absenteeism %"] = \
+        calculate_percentage(attendance_data["Students Chronically Absent"], attendance_data["Total Student Count"])
+
+    attendance_data = attendance_data.drop(["Students Chronically Absent","Total Student Count"], axis=1)
+
+    excluded_years = get_excluded_years(year)
+    attendance_data = attendance_data[~attendance_data["Year"].isin(excluded_years)]
+    
+    attendance_rate = (
+        attendance_data.set_index("Year")
+        .T.rename_axis("Category")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    attendance_rate = conditional_fillna(attendance_rate)
+
+    # sort Year cols in ascending order (ignore Category)
+    attendance_rate = (
+        attendance_rate.set_index("Category")
+        .sort_index(ascending=True, axis=1)
+        .reset_index()
+    )
+
+    attendance_rate.columns = attendance_rate.columns.astype(str)
+
+    for col in attendance_rate.columns:
+        attendance_rate[col] = (
+            pd.to_numeric(attendance_rate[col], errors="coerce")
+            .fillna(attendance_rate[col])
+            .tolist()
+        )
+
+    print(attendance_rate)
+
+    return attendance_rate
 
 # TODO: Eventually consolidate and use only second function below.
 def get_k8_school_academic_data(*args):

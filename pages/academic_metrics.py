@@ -553,7 +553,7 @@ def update_academic_metrics(school: str, year: str):
     ]
 
     attendance_data = calculate_attendance_metrics(school, selected_school_type, selected_year_string)
-
+# TODO: Add the Chronic Absenteeism % as a Category - see below
     if len(attendance_data.index) > 0:
         attendance_container = {"display": "block"}
 
