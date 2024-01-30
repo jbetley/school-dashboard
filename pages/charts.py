@@ -1065,8 +1065,10 @@ def make_group_bar_chart(
     Returns:
         fig_layout (list): a plotly dash html layout in the form of a list containing a string and px.bar figure
     """
+    # TODO: ISSUE WITH HOW SAT DATA IS PROCESSED - WHERE IS Both (ELA and Math) DROPPED??
     data = values.copy()
-
+    print(label)
+    print(data)
     selected_school = get_school_index(str(school_id))
     school_name = selected_school["School Name"].values[0]
 
@@ -1080,10 +1082,10 @@ def make_group_bar_chart(
 
     # remove trailing string
     # "School Total" is for SAT and includes all three subjects - so we dont want to split
-    if data.columns.str.contains("School Total").any() == True:
+    if data.columns.str.contains("Total").any() == True:
         # keep everything between | and "Benchmark %"
         data.columns = data.columns.str.replace("Benchmark %", "")
-        data.columns = data.columns.str.replace("School Total\|", "", regex=True)
+        data.columns = data.columns.str.replace("Total\|", "", regex=True)
 
     else:
         data.columns = data.columns.str.split("|").str[0]
@@ -1094,9 +1096,16 @@ def make_group_bar_chart(
     # force non-string columns to numeric
     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None)  
+    print('BEFORE')
+    print(data)
+
     for col in cols:
         data[col] = pd.to_numeric(data[col], errors="coerce")
 
+    print('AFTA')
+    print(data)
     categories = data.columns.tolist()
     categories.remove("School Name")
     schools = data["School Name"].tolist()

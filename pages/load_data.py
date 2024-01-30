@@ -213,11 +213,11 @@ def run_query(q, *args):
 
         # sqlite column headers do not have spaces between words. But we need to display the column names,
         # so we have to do a bunch of str.replace to account for all conditions. May be a better way, but
-        # this is pretty fast. Adding a space between any lowercase character and any  uppercase/number
+        # this is pretty fast. Adding a space between any lowercase character and any uppercase/number
         # character takes care of most of it. The other replace functions catch edge cases.
         df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(
-            r"([WADTO])([CATPB&])", r"\1 \2", regex=True
+            r"([WADTO])([aCATPB&])", r"\1 \2", regex=True   # the 'a' is to split EBRWand
         )
         df.columns = df.columns.str.replace(r"([A])([a])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([1-9])([(])", r"\1 \2", regex=True)
@@ -730,7 +730,7 @@ def get_letter_grades(*args):
         """
         SELECT demographic_data.Year, demographic_data.StateGrade, demographic_data.FederalRating
             FROM demographic_data
-	        WHERE SchoolID = :id
+	        WHERE CorporationID = :id
         """
     )
 
@@ -807,29 +807,28 @@ def get_ilearn_student_data(*args):
 
     return results
 
-# TODO: For k12, run it twice with two type flags
 def get_attendance_data(school_id, school_type, year):
     params = dict(id=school_id)
 
-    # keys = ["id", "type"]
-    # params = dict(zip(keys, args))
-
+    # NOTE: AHS attendance data is stored in the hs table. K12 attendance
+    # data is the same in both k8 and hs tables (it isn't broken out)
     if school_type == "K8":
         table = "academic_data_k8"
         id_type = "SchoolID"
-    elif school_type == "HS":
+    elif school_type == "HS" or school_type == "AHS" or \
+        school_type == "K12":
         table = "academic_data_hs"
         id_type = "SchoolID"
     elif school_type == "corp_K8":
         table = "corporation_data_k8"
         id_type = "CorporationID"
-    elif school_type == "corp_HS":
+    elif school_type == "corp_HS" or school_type == "corp_AHS" or \
+        school_type == "corp_K12":
         table = "corporation_data_hs"
         id_type = "CorporationID"      
     elif school_type == "K12":
         return
     
-    # TODO: Handle K12!
     query_string  = """
         SELECT Year, AttendanceRate, StudentsChronicallyAbsent, TotalStudentCount
             FROM {}
@@ -838,25 +837,8 @@ def get_attendance_data(school_id, school_type, year):
         table, id_type
     )
 
-
     q = text(query_string)
-    print(q)
-    #     q = text(
-    #         """
-    #         SELECT Year, Attendance Rate, Students Chronically Absent, Total Student Count
-    #             FROM academic_data_k8
-    #             WHERE SchoolID = :id
-    #         """
-    #     )
-    # elif params["type"] == "HS":
-    #     q = text(
-    #         """
-    #         SELECT Year, Attendance Rate, Students Chronically Absent, Total Student Count
-    #             FROM academic_data_hs
-    #             WHERE SchoolID = :id
-    #         """
-    #     )
-
+  
     results = run_query(q, params)
     results = results.sort_values(by="Year", ascending=False)
 
@@ -897,8 +879,6 @@ def get_attendance_data(school_id, school_type, year):
             .fillna(attendance_rate[col])
             .tolist()
         )
-
-    print(attendance_rate)
 
     return attendance_rate
 
@@ -1036,7 +1016,7 @@ def get_school_coordinates(*args):
     else:
         q = text(
             """
-            SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade, "SchoolTotal|ELATotalTested"
+            SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade, "Total|ELATotalTested"
                 FROM academic_data_k8 
                 WHERE Year = :year
         """
@@ -1103,7 +1083,7 @@ def get_year_over_year_data(*args):
         result = params["category"] + " % At Benchmark"
 
         # if "School Total" - need to remove space
-        if params["category"] == "School Total|":
+        if params["category"] == "Total|":
             tested = tested.replace("| ", "|")
             passed = passed.replace("| ", "|")
             result = result.replace("| ", "|")

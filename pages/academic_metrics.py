@@ -3,7 +3,7 @@
 #####################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.13
-# date:     10/13/23
+# date:     02/01/24
 
 import dash
 from dash import html, Input, Output, callback
@@ -377,6 +377,45 @@ def update_academic_metrics(school: str, year: str):
             )
 
             if not raw_hs_school_data.empty:
+# TODO: DROP STATE GRADE
+# TODO: Add State AHS Calculation
+# weighted graduation calculation score (20%) and weighted ccr score (80%) - yr1
+# other years grad (40%) / ccr (60%)
+# grad:
+# (1) the graduation to enrollment percentage of the school year(90% - max 100);
+#   denominator- the school's within-year-average number of students
+#   numerator of which is - the number of students who graduated during the school year
+#       multiplied by four (4)
+# (2) the graduation rate (10%): 
+#   STEP ONE: Calculate the five (5) year graduation rate for the cohort
+#   immediately preceding the prior year cohort.
+#   STEP TWO: Subtract the four (4) year graduation rate for the cohort
+#   immediately preceding the prior year cohort from the number determined
+#   under STEP ONE.
+#   STEP THREE: Add the number determined under STEP TWO to the four (4) year
+#   graduation rate from the prior year cohort.
+
+# final grad calc score:
+
+# (1) the sum of the weighted percentages for graduation to enrollment and graduation rate;
+# multiplied by
+# (2) the graduation qualifying examination passing rate:
+#   equal either to 1 if the graduation qualifying examination passing rate is at
+#   least 90% or the actual percent passing if below 90%.
+
+# ccr
+# (1) the college and career achievement rate;
+#   the percentage of all graduates in the school year being
+#   assessed who accomplished any of the following:
+#       (1) Passed an AP exam with a score of 3, 4, or 5.
+#       (2) Passed an IB exam with a score of 4, 5, 6, or 7.
+#       (3) Earned three (3) college credits, defined as credits awarded by a regionally accredited postsecondary institution in a
+#       department approved liberal arts or career or technical education dual credit course verifiable by a transcript.
+#       (4) Obtained an industry certification.
+#       (5) Any other benchmarks approved by the board.
+# (2) the college and career readiness factor (100/.8); and
+# (3) one hundred (100).
+
                 # Adult High School Metrics
                 if selected_school_type == "AHS":
                     ahs_metrics_container = {"display": "block"}
@@ -544,7 +583,7 @@ def update_academic_metrics(school: str, year: str):
 
     # Attendance Data & Teacher Retention Rate (all schools have this data)
     metric_11ab_label = [
-        "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation."
+        "Student Attendance Rate (1.1.a), Chronic Absenteeism, and Teacher Retention Rate (1.1.b) compared with traditional school corporation."
     ]
 
     # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
@@ -553,7 +592,7 @@ def update_academic_metrics(school: str, year: str):
     ]
 
     attendance_data = calculate_attendance_metrics(school, selected_school_type, selected_year_string)
-# TODO: Add the Chronic Absenteeism % as a Category - see below
+
     if len(attendance_data.index) > 0:
         attendance_container = {"display": "block"}
 

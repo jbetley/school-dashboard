@@ -24,7 +24,7 @@ def create_hs_analysis_layout(
 ) -> list:
     tested_categories = []
 
-    if data_type == "School Total":
+    if data_type == "Total":
         search_string = data_type
 
         for c in categories:
@@ -365,7 +365,8 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     if label == "IREAD":
         endnote = "Percentages represent the percentage of students passing IREAD during the applicable period."
     elif label == "WIDA":
-        endnote = "Values are the average Composite Overall Proficiency Level for all students with a reported WIDA score."
+        endnote = "Values are the average Composite Overall Proficiency Level for all students with a reported WIDA \
+            score who are currently enrolled in the school."
     else:
         endnote = "Hover over each data point to see N-Size."
 

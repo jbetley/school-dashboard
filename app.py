@@ -3,7 +3,7 @@
 #########################
 # author:    jbetley (https://github.com/jbetley)
 # version:  1.13
-# date:     10/13/23
+# date:     02/01/24
 
 # This is the main application file for the Indiana Charter School Board school
 # dashboard. This dashboard consists of ~10 tabs of charts and tables created
@@ -231,7 +231,6 @@ app = dash.Dash(
 
 # Top Level Navigation #
 
-
 # Selected School Dropdown - shows a single school if a 'school' login is used, an associated
 # group of schools if a 'network' login is used, and all schools if 'admin' login is used.
 @callback(
@@ -332,7 +331,7 @@ def set_year_dropdown_options(
     if school_type == "K8" and analysis_type_value == "hs":
         analysis_type_value = "k8"
 
-    # Guest schools do not have financial data
+    # Guest schools do not have financial data or academic growth data
     if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
         if (
             "academic_information" in current_page
@@ -341,7 +340,8 @@ def set_year_dropdown_options(
         ) and analysis_type_value == "hs":
             years = get_academic_dropdown_years(school_id, "HS")
         else:
-            if "academic_information_growth" in current_page:
+            if "academic_information_growth" in current_page and \
+                    selected_school["Guest"].values[0] != "Y":
                 years = get_academic_growth_dropdown_years(school_id)
             else:
                 years = get_academic_dropdown_years(school_id, school_type)

@@ -635,7 +635,7 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
     header table with borders around each cell. If more rows are added, need
     to adjust logic to remove horizontal borders between rows.
 
-    Note: If "IREAD" is passed as a label, a special layout is produced.
+    Note: If "IREAD" or "WIDA" is passed as a label, a special layout is produced.
 
     Args:
         label (String): Table title
@@ -1774,10 +1774,10 @@ def create_comparison_table(
     icon_col = data.pop("Icon")
     data.insert(0, "Icon", icon_col)
 
-    if data.columns.str.contains("School Total").any() == True:
+    if data.columns.str.contains("Total").any() == True:
         # keep everything between | and "Benchmark %"
         data.columns = data.columns.str.replace("Benchmark %", "")
-        data.columns = data.columns.str.replace("School Total\|", "", regex=True)
+        data.columns = data.columns.str.replace("Total\|", "", regex=True)
 
     # this should work for another 976 years (skip the year over year dfs)
     elif data.columns.str.startswith("2").any() == True:

@@ -92,12 +92,14 @@ def update_about_page(year: str, school: str):
         "Date": [
             "01.01.24",
             "01.26.24",
+            "01.28.24",
             "02.01.24"
         ],
         "Update": [
-            "Added 2019-23 WIDA data and additional IREAD details.",
-            "Added Chronic Absenteeism and historical Corp IREAD data.",
-            "Made database more efficient (speed still depending on connection)."
+            "Added 2019-23 WIDA data and 2023 IREAD data.",
+            "Added historical Chronic Absenteeism and Corp IREAD data.",
+            "Added 2023 graduation rate data.",
+            "Removed State Grade as an Accountability Item."
         ],
     }
 

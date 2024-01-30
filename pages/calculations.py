@@ -264,10 +264,10 @@ def recalculate_total_proficiency(
     #       "***"/"***" - ignore
     #       number/*** - treat *** as 0 in proficiency calculations
     #
-    revised_totals["School Total|ELA Proficient %"] = adj_corp_ela_prof.sum(
+    revised_totals["Total|ELA Proficient %"] = adj_corp_ela_prof.sum(
         axis=1
     ) / adj_corp_ela_test.sum(axis=1)
-    revised_totals["School Total|Math Proficient %"] = adj_corp_math_prof.sum(
+    revised_totals["Total|Math Proficient %"] = adj_corp_math_prof.sum(
         axis=1
     ) / adj_corp_math_test.sum(axis=1)
 
@@ -529,9 +529,9 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
         data = data[~data["Year"].isin(no_data_years)]
 
         if len(no_data_years) > 1:
-            string = ", ".join(str(no_data_years)) + "."
+            string = ", ".join(no_data_years) + "."
         else:
-            string = str(no_data_years[0]) + "."
+            string = no_data_years[0] + "."
     else:
         string = ""
 
@@ -690,6 +690,8 @@ def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.Dat
     overlap = 1
 
     schools = schools.replace({"Low Grade": {"PK": 0, "KG": 1}})
+
+# TODO: Error CHecking if null values in these columns
     schools["Low Grade"] = schools["Low Grade"].astype(int)
     schools["High Grade"] = schools["High Grade"].astype(int)
     school_grade_span = (

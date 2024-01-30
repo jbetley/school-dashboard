@@ -21,7 +21,6 @@ from .load_data import (
     get_excluded_years,
     get_school_index,
     get_graduation_data,
-    # get_attendance_data
 )
 from .calculations import (
     calculate_percentage,
@@ -32,64 +31,6 @@ from .calculations import (
     calculate_sat_rate,
     conditional_fillna,
 )
-
-
-# def get_attendance_data(school: str, school_type: str, year: str) -> pd.DataFrame:
-#     """
-#     Process attendance rate data.
-
-#     Args:
-#         data (pd.DataFrame): dataFrame
-#         year (str): selected year in format (YYYY)
-
-#     Returns:
-#         pd.DataFrame: Process attendance rate data.
-#     """
-#     excluded_years = get_excluded_years(year)
-
-#     # valid_data = data[~data["Year"].isin(excluded_years)]
-#     # print(valid_data)
-#     # attendance_data = valid_data[["Year", "Attendance Rate","Students Chronically Absent","Total Student Count"]]
-# # TODO: MERGE ATTENDANDCE RATE CALC TO LOAD DATA
-#     attendance_data = get_attendance_rate_data(school, school_type, year)
-#     # drop years with no data
-#     attendance_data = attendance_data[attendance_data["Attendance Rate"].notnull()]
-
-#     # replace empty strings with NaN
-#     attendance_data = attendance_data.replace(r'^\s*$', np.nan, regex=True)
-
-#     attendance_data["Chronic Absenteeism %"] = \
-#         calculate_percentage(attendance_data["Students Chronically Absent"], attendance_data["Total Student Count"])
-
-#     attendance_data = attendance_data.drop(["Students Chronically Absent","Total Student Count"], axis=1)
-
-#     attendance_rate = (
-#         attendance_data.set_index("Year")
-#         .T.rename_axis("Category")
-#         .rename_axis(None, axis=1)
-#         .reset_index()
-#     )
-
-#     attendance_rate = conditional_fillna(attendance_rate)
-
-#     # sort Year cols in ascending order (ignore Category)
-#     attendance_rate = (
-#         attendance_rate.set_index("Category")
-#         .sort_index(ascending=True, axis=1)
-#         .reset_index()
-#     )
-
-#     attendance_rate.columns = attendance_rate.columns.astype(str)
-
-#     for col in attendance_rate.columns:
-#         attendance_rate[col] = (
-#             pd.to_numeric(attendance_rate[col], errors="coerce")
-#             .fillna(attendance_rate[col])
-#             .tolist()
-#         )
-
-#     return attendance_rate
-
 
 def process_selected_k8_academic_data(
     data: pd.DataFrame, school_id: str
@@ -158,23 +99,23 @@ def process_selected_k8_academic_data(
             )
 
             # replace current school total with revised data
-            comparison_data["School Total|Math Proficient %"] = (
+            comparison_data["Total|Math Proficient %"] = (
                 comparison_data["School ID"]
                 .map(
                     revised_school_totals.set_index("School ID")[
-                        "School Total|Math Proficient %"
+                        "Total|Math Proficient %"
                     ]
                 )
-                .fillna(comparison_data["School Total|Math Proficient %"])
+                .fillna(comparison_data["Total|Math Proficient %"])
             )
-            comparison_data["School Total|ELA Proficient %"] = (
+            comparison_data["Total|ELA Proficient %"] = (
                 comparison_data["School ID"]
                 .map(
                     revised_school_totals.set_index("School ID")[
-                        "School Total|ELA Proficient %"
+                        "Total|ELA Proficient %"
                     ]
                 )
-                .fillna(comparison_data["School Total|ELA Proficient %"])
+                .fillna(comparison_data["Total|ELA Proficient %"])
             )
 
             final_data = pd.concat([school_data, comparison_data])
@@ -461,11 +402,11 @@ def process_k8_corp_academic_data(
         )
 
         # replace current school total with revised data
-        corp_data["School Total|ELA Proficient %"] = revised_corp_totals[
-            "School Total|ELA Proficient %"
+        corp_data["Total|ELA Proficient %"] = revised_corp_totals[
+            "Total|ELA Proficient %"
         ].values
-        corp_data["School Total|Math Proficient %"] = revised_corp_totals[
-            "School Total|Math Proficient %"
+        corp_data["Total|Math Proficient %"] = revised_corp_totals[
+            "Total|Math Proficient %"
         ].values
 
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
@@ -658,7 +599,7 @@ def process_high_school_academic_data(
             data = calculate_graduation_rate(data)
 
         # Calculate SAT Rates #
-        if "School Total|EBRW Total Tested" in data.columns:
+        if "Total|EBRW Total Tested" in data.columns:
             data = calculate_sat_rate(data)
 
         # Calculate AHS Only Data #
@@ -847,7 +788,7 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
         # data = calculate_nonwaiver_graduation_rate(data)
 
         # Calculate SAT Rates #
-        if "School Total|EBRW Total Tested" in data.columns:
+        if "Total|EBRW Total Tested" in data.columns:
             data = calculate_sat_rate(data)
 
         # Calculate AHS Only Data #

@@ -192,7 +192,7 @@ def create_chart_label(data: pd.DataFrame) -> str:
                     [
                         col
                         for col in data_columns
-                        if "School Total" in col and "Benchmark" in col
+                        if "Total" in col and "Benchmark" in col
                     ]
                 )
                 > 0

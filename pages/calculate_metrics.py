@@ -65,10 +65,8 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
         #         ~selected_raw_hs_school_data["Year"].isin(excluded_years)
         #     ]
 
-    print('SCHOOL TYPE')
-    print(school_type)
     corp_type = "corp_" + school_type
-    print(corp_type)
+
     school_attendance_rate = get_attendance_data(school, school_type, year)
 
     corp_attendance_rate = get_attendance_data(corp_id, corp_type, year)
@@ -112,7 +110,7 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
         y += 3
         z += 3
 
-    attendance_metrics.insert(loc=0, column="Category", value="1.1.a. Attendance Rate")
+    attendance_metrics.insert(loc=0, column="Category",  value=["1.1.a. Attendance Rate", "Chronic Absenteeism %"])
 
     # drop corp rates
     attendance_metrics = attendance_metrics.loc[
@@ -121,7 +119,11 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
 
     attendance_limits = [0, -0.01]
 
-    # NOTE: Calculates and adds an accountability rating ("MS", "DNMS", "N/A", etc)
+    # NOTE: Currently, chronic absenteeism is not officially in the
+    # accountability system so it doesn't have a specific threshold- we are
+    # using the attendance threshold for both.
+
+    # Calculates and adds an accountability rating ("MS", "DNMS", "N/A", etc)
     # as a new column for each measured value using a reverse loop:
 
     #   1) the loop ("for i in range(attendance_data_metrics.shape[1], 1, -2)")
@@ -532,7 +534,13 @@ def calculate_adult_high_school_metrics(
             for i in range(ahs_data.shape[1], 1, -1)
         ]
 
-        school_letter_grades = get_letter_grades(school)
+        # NOTE: letter grades are currently stored in demographics table
+        # (eventually planning to get rid of grades entirely) using
+        # Corp (not School) ID. so we need to convert
+        selected_school = get_school_index(school)
+        selected_corp_id = selected_school["Corporation ID"].values[0]
+
+        school_letter_grades = get_letter_grades(selected_corp_id)
         school_letter_grades = (
             school_letter_grades.set_index("Year")
             .T.rename_axis("Category")

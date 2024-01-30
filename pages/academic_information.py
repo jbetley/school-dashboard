@@ -158,7 +158,7 @@ def update_academic_information_page(
     proficiency_math_ethnicity_container = {"display": "none"}
     proficiency_math_subgroup_container = {"display": "none"}
 
-    attendance_table_k8 = []
+    attendance_table_k8 = []      # type: list
     attendance_table_hs = []
     k8_table_container = {"display": "none"}
 
@@ -349,8 +349,7 @@ def update_academic_information_page(
                     )
 
                 # Attendance Rate
-                    print('ACINFO SCHOOL TYPE')
-                    print(selected_school_type)
+                    
                 attendance_rate = get_attendance_data(
                     selected_school_id, selected_school_type, selected_year_string
                 )
@@ -470,8 +469,6 @@ def update_academic_information_page(
 
                 total_iread_tested = total_iread_tested.rename(columns={0: "N-Size"})
                 total_iread_tested["Year"] = total_iread_tested["Year"].str[:4]
-                # print('SCHOOL LEVEL TOTAL TESTED')
-                # print(total_iread_tested)
                 # TODO: Dont currently use the above ^
 
                 # get raw student IREAD data
@@ -757,8 +754,9 @@ def update_academic_information_page(
                 # 'Writing Proficiency Level'
 
                 # get a list of all STNs past and present from the ILEARN
-                # dataset for the given school ID. NOTE: This is not ideal,
-                # as it returns STNs for "current" students only.
+                # dataset for the given school ID. NOTE: None of this is
+                # ideal as we only have STNs and WIDA data for currently
+                # enrolled students
 
                 # This will be empty for Guest schools
                 school_stns = get_ilearn_stns(school)
@@ -1162,11 +1160,6 @@ def update_academic_information_page(
                 )
 
                 # Attendance Rate
-                print('ACINFO SCHOOL TYPE')
-                print(selected_school_type)
-                print('ACINFO SCHOOL ID')
-                print(selected_school_id)
-
                 attendance_rate = get_attendance_data(
                     selected_school_id, selected_school_type, selected_year_string
                 )

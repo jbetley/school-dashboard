@@ -3,7 +3,7 @@
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.13
-# date:     10/13/23
+# date:     02/01/24
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -31,6 +31,7 @@ from .process_data import (
 )
 from .calculations import (
     find_nearest,
+    calculate_proficiency,
     recalculate_total_proficiency,
     check_for_gradespan_overlap,
     calculate_comparison_school_list,
@@ -93,11 +94,13 @@ def set_dropdown_options(
 
     schools_by_distance = get_school_coordinates(numeric_year, school_type)
 
-    # Drop any school not testing at least 20 students. "SchoolTotal|ELATotalTested" is a proxy
-    # for school size here (probably only impacts ~20 schools)
+    # Drop any school not testing at least 20 students (k8 only). "Total|ELATotalTested"
+    # is a proxy for school size here (probably only impacts ~20 schools)
     if school_type == "K8":
+        schools_by_distance["Total|ELA Total Tested"] = \
+            pd.to_numeric(schools_by_distance["Total|ELA Total Tested"], errors="coerce")
         schools_by_distance = schools_by_distance[
-            schools_by_distance["School Total|ELA Total Tested"] >= 20
+            schools_by_distance["Total|ELA Total Tested"] >= 20
         ]
 
     # NOTE: There is some time cost for running the dropdown selection function (typically
@@ -118,121 +121,12 @@ def set_dropdown_options(
             schools_by_distance = check_for_gradespan_overlap(
                 school_id, schools_by_distance
             )
-        # if school_type != "AHS":
-        #     overlap = 1
-        #     schools_by_distance = schools_by_distance.replace(
-        #         {"Low Grade": {"PK": 0, "KG": 1}}
-        #     )
-        #     schools_by_distance["Low Grade"] = schools_by_distance["Low Grade"].astype(
-        #         int
-        #     )
-        #     schools_by_distance["High Grade"] = schools_by_distance[
-        #         "High Grade"
-        #     ].astype(int)
-        #     school_grade_span = (
-        #         schools_by_distance.loc[
-        #             schools_by_distance["School ID"] == int(school_id)
-        #         ][["Low Grade", "High Grade"]]
-        #         .values[0]
-        #         .tolist()
-        #     )
-        #     school_low = school_grade_span[0]
-        #     school_high = school_grade_span[1]
-
-        #     # In order to fit within the distance parameters, the tested school must:
-        #     #   a)  have a low grade that is less than or equal to the selected school and
-        #     #       a high grade minus the selected school's low grade that is greater than or
-        #     #       eqaul to the overlap; or
-        #     #   b) have a low grade that is greater than or equal to the selected school and
-        #     #       a high grade minus the tested school's low grade that is greater than or
-        #     #       equal to the overlap.
-        #     # Examples -> assume a selected school with a gradespan of 5-8:
-        #     #   i) a school with grades 3-7 -   [match]: low grade is less than selected school's
-        #     #       low grade and high grade (7) minus selected school low grade (5) is greater (2)
-        #     #       than the overlap (1).
-        #     #   i) a school with grades 2-5 -   [No match]: low grade is less than selected school's
-        #     #       low grade but high grade (5) minus selected school low grade (5) is not greater (0)
-        #     #       than the overlap (1). In this case while there is an overlap, it is below our
-        #     #       threshold (1 grade).
-        #     #   c) a school with grades 6-12-   [match]: low grade is higher than selected school's
-        #     #       low grade and high grade (12) minus the tested school low grade (5) is greater
-        #     #       (7) than the overlap (1).
-        #     #   d) a school with grades 3-4     [No match]: low grade is lower than selected school's
-        #     #       low grade, but high grade (4) minus the selected school's low grade (5) is not greater
-        #     #       (-1) than the overlap (1).
-
-        #     schools_by_distance = schools_by_distance.loc[
-        #         (
-        #             (schools_by_distance["Low Grade"] <= school_low)
-        #             & (schools_by_distance["High Grade"] - school_low >= overlap)
-        #         )
-        #         | (
-        #             (schools_by_distance["Low Grade"] >= school_low)
-        #             & (school_high - schools_by_distance["Low Grade"] >= overlap)
-        #         ),
-        #         :,
-        #     ]
-
-        #     schools_by_distance = schools_by_distance.reset_index(drop=True)
-
-        # all_schools = schools_by_distance.copy()
 
         num_schools_to_display = 40
 
         comparison_list = calculate_comparison_school_list(
             school_id, schools_by_distance, num_schools_to_display
         )
-
-        # school_idx = schools_by_distance[
-        #     schools_by_distance["School ID"] == int(school_id)
-        # ].index
-
-        # # NOTE: This should never ever happen because we've already determined that the school exists in
-        # # the check above. However, it did happen once, somehow, so we leave this in here just in case.
-        # if school_idx.size == 0:
-        #     return [], [], []
-
-        # # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
-        # index_array, dist_array = find_nearest(school_idx, schools_by_distance)
-
-        # index_list = index_array[0].tolist()
-        # distance_list = dist_array[0].tolist()
-
-        # # Match School ID with indexes
-        # closest_schools = pd.DataFrame()
-        # closest_schools["School ID"] = schools_by_distance[
-        #     schools_by_distance.index.isin(index_list)
-        # ]["School ID"]
-
-        # # Merge the index and distances lists into a dataframe
-        # distances = pd.DataFrame({"index": index_list, "y": distance_list})
-        # distances = distances.set_index(list(distances)[0])
-
-        # # Merge School ID with Distances by index
-        # combined = closest_schools.join(distances)
-
-        # # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
-        # comparison_set = pd.merge(combined, all_schools, on="School ID", how="inner")
-        # comparison_set = comparison_set.rename(columns={"y": "Distance"})
-
-        # # drop selected school (so it cannot be selected in the dropdown)
-        # comparison_set = comparison_set.drop(
-        #     comparison_set[comparison_set["School ID"] == int(school_id)].index
-        # )
-
-        # # limit maximum dropdown to the [n] closest schools
-        # num_schools_expanded = 20
-
-        # comparison_set = comparison_set.sort_values(by=["Distance"], ascending=True)
-
-        # comparison_dropdown = comparison_set.head(num_schools_expanded)
-
-        # comparison_dict = dict(
-        #     zip(comparison_dropdown["School Name"], comparison_dropdown["School ID"])
-        # )
-
-        # # final list will be displayed in order of increasing distance from selected school
-        # comparison_list = dict(comparison_dict.items())
 
         # Set default display selections to all schools in the list
         default_options = [
@@ -434,9 +328,10 @@ def update_academic_analysis_single_year(
             raw_hs_corp_data["School Name"] = hs_corporation_name
             raw_hs_corp_data["School ID"] = hs_corporation_id
             raw_hs_corp_data["School Type"] = "School Corporation"
-            raw_hs_corp_data = raw_hs_corp_data.drop(
-                raw_hs_corp_data.filter(regex="Benchmark %").columns, axis=1
-            )
+            # TODO: Don't think we need this anymore
+            # raw_hs_corp_data = raw_hs_corp_data.drop(
+            #     raw_hs_corp_data.filter(regex="Benchmark %").columns, axis=1
+            # )
 
             # get data for comparable schools (already filtered by selected year in SQL query)
             raw_hs_comparison_data = get_comparable_schools(
@@ -514,12 +409,12 @@ def update_academic_analysis_single_year(
 
                 # SAT Comparison Sets
                 overview = [
-                    "School Total|Math",
-                    "School Total|EBRW",
-                    "School Total|Both",
+                    "Total|Math",
+                    "Total|EBRW",
+                    # "Total|EBRWandMath",
                 ]
                 sat_overview = create_hs_analysis_layout(
-                    "School Total", hs_analysis_data, overview, school_id
+                    "Total", hs_analysis_data, overview, school_id
                 )
                 sat_ethnicity_ebrw = create_hs_analysis_layout(
                     "EBRW", hs_analysis_data, ethnicity, school_id
@@ -691,6 +586,9 @@ def update_academic_analysis_single_year(
                     }
                 )
 
+                # calculate proficiency for all corp categories
+                selected_corp_data = calculate_proficiency(selected_corp_data)
+
                 # recalculate total Math and ELA proficiency including only the
                 # gradespan of selected school (the default is calculated using
                 # all grades)
@@ -698,24 +596,25 @@ def update_academic_analysis_single_year(
                     selected_corp_data, selected_clean_data
                 )
 
-                # replace current school total with revised data
-                selected_corp_data["School Total|Math"] = (
+                #
+                selected_corp_data["Total|Math Proficient %"] = (
                     selected_corp_data["School ID"]
                     .map(
                         revised_school_totals.set_index("School ID")[
-                            "School Total|Math Proficient %"
+                            "Total|Math Proficient %"
                         ]
                     )
-                    .fillna(selected_corp_data["School Total|Math"])
+                    .fillna(selected_corp_data["Total|Math Proficient %"])
                 )
-                selected_corp_data["School Total|ELA"] = (
+
+                selected_corp_data["Total|ELA Proficient %"] = (
                     selected_corp_data["School ID"]
                     .map(
                         revised_school_totals.set_index("School ID")[
-                            "School Total|ELA Proficient %"
+                            "Total|ELA Proficient %"
                         ]
                     )
-                    .fillna(selected_corp_data["School Total|ELA"])
+                    .fillna(selected_corp_data["Total|ELA Proficient %"])
                 )
 
                 if "IREAD Pass N" in selected_corp_data.columns:
@@ -792,7 +691,7 @@ def update_academic_analysis_single_year(
                 ]
 
                 #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
-                category = "School Total|ELA Proficient %"
+                category = "Total|ELA Proficient %"
 
                 # Get school value for specific category
                 if category in combined_selected_data.columns:
@@ -837,7 +736,7 @@ def update_academic_analysis_single_year(
                 fig14c = create_barchart_layout(fig14c_chart, fig14c_table)
 
                 #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
-                category = "School Total|Math Proficient %"
+                category = "Total|Math Proficient %"
 
                 if category in combined_selected_data.columns:
                     fig14d_all_data = combined_selected_data[
