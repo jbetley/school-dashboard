@@ -53,7 +53,7 @@ def process_selected_k8_academic_data(
 
     # filter
     data = data.filter(
-        regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year|ELA and Math",
+        regex=r"Total Tested$|Total Proficient$|IREAD Pass N|IREAD Test N|Year|ELA and Math",
         axis=1,
     )
     data = data[data.columns[~data.columns.str.contains(r"Female|Male")]]
@@ -69,11 +69,11 @@ def process_selected_k8_academic_data(
     else:
         calculated_data = calculate_proficiency(data)
 
-        # separately calculate IREAD Proficiency
-        if "IREAD Test N" in data.columns:
-            calculated_data["IREAD Proficient %"] = calculate_percentage(
-                data["IREAD Pass N"], data["IREAD Test N"]
-            )
+        # # separately calculate IREAD Proficiency
+        # if "IREAD Test N" in data.columns:
+        #     calculated_data["IREAD Proficient %"] = calculate_percentage(
+        #         data["IREAD Pass N"], data["IREAD Test N"]
+        #     )
 
         # Add School Name/School ID back. We can do this because the index hasn't changed in
         # data_proficiency, so it will still match with school_info
@@ -128,7 +128,12 @@ def process_selected_k8_academic_data(
 
         final_data = final_data.reset_index(drop=True)
 
-        # transpose dataframes and clean headers
+# TODO: HERE
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.max_rows', None) 
+        print('k8 post calc data')
+        print(final_data)
+        
         final_data.columns = final_data.columns.astype(str)
 
     return final_data
@@ -789,6 +794,10 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
 
         # Calculate SAT Rates #
         if "Total|EBRW Total Tested" in data.columns:
+
+            # NOTE: Currently not displaying EBRW and Math
+            data = data.drop(list(data.filter(regex="EBRW and Math")), axis=1)
+
             data = calculate_sat_rate(data)
 
         # Calculate AHS Only Data #

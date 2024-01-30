@@ -328,6 +328,7 @@ def update_academic_analysis_single_year(
             raw_hs_corp_data["School Name"] = hs_corporation_name
             raw_hs_corp_data["School ID"] = hs_corporation_id
             raw_hs_corp_data["School Type"] = "School Corporation"
+
             # TODO: Don't think we need this anymore
             # raw_hs_corp_data = raw_hs_corp_data.drop(
             #     raw_hs_corp_data.filter(regex="Benchmark %").columns, axis=1
@@ -548,6 +549,11 @@ def update_academic_analysis_single_year(
                 selected_k8_school_data, school_id
             )
 
+            pd.set_option('display.max_columns', None)
+            pd.set_option('display.max_rows', None) 
+            print('BEFORE FUNCKTION')
+            print(selected_clean_data)
+
             # NOTE: We don't want to get rid of "***" yet, but we also don't want to pass through a
             # dataframe that that is all "***" - so we convert create a copy, coerce all of the academic
             # columns to numeric and check to see if the entire dataframe for NaN
@@ -586,6 +592,11 @@ def update_academic_analysis_single_year(
                     }
                 )
 
+                # pd.set_option('display.max_columns', None)
+                # pd.set_option('display.max_rows', None) 
+                # print('BEFORE FUNC')
+                # print(selected_corp_data)
+
                 # calculate proficiency for all corp categories
                 selected_corp_data = calculate_proficiency(selected_corp_data)
 
@@ -596,7 +607,6 @@ def update_academic_analysis_single_year(
                     selected_corp_data, selected_clean_data
                 )
 
-                #
                 selected_corp_data["Total|Math Proficient %"] = (
                     selected_corp_data["School ID"]
                     .map(
@@ -616,35 +626,51 @@ def update_academic_analysis_single_year(
                     )
                     .fillna(selected_corp_data["Total|ELA Proficient %"])
                 )
+# TODO: TEST
+                # if "IREAD Pass N" in selected_corp_data.columns:
+                #     selected_corp_data["IREAD"] = pd.to_numeric(
+                #         selected_corp_data["IREAD Pass N"], errors="coerce"
+                #     ) / pd.to_numeric(
+                #         selected_corp_data["IREAD Test N"], errors="coerce"
+                #     )
 
-                if "IREAD Pass N" in selected_corp_data.columns:
-                    selected_corp_data["IREAD"] = pd.to_numeric(
-                        selected_corp_data["IREAD Pass N"], errors="coerce"
-                    ) / pd.to_numeric(
-                        selected_corp_data["IREAD Test N"], errors="coerce"
-                    )
+                #     # If either Test or Pass category had a "***" value, the resulting value will be
+                #     # NaN - we want it to display "***", so we just fillna
+                #     selected_corp_data["IREAD"] = selected_corp_data["IREAD"].fillna(
+                #         "***"
+                #     )
+# TODO: TEST
+                
+                # clean up - drop everyhting but 
+                # selected_corp_data = selected_corp_data[
+                #     selected_corp_data.columns[
+                #         ~selected_corp_data.columns.str.contains(
+                #             r"Above|Approaching|At|Tested|Pass|Test|ELA and Math|Male|Female"
+                #         )
+                #     ]
+                # ]
 
-                    # If either Test or Pass category had a "***" value, the resulting value will be
-                    # NaN - we want it to display "***", so we just fillna
-                    selected_corp_data["IREAD"] = selected_corp_data["IREAD"].fillna(
-                        "***"
-                    )
-
-                # clean up
+                # clean up - drop everyhting but 
                 selected_corp_data = selected_corp_data[
                     selected_corp_data.columns[
-                        ~selected_corp_data.columns.str.contains(
-                            r"Above|Approaching|At|Tested|Proficient|Pass|Test|ELA and Math|Male|Female"
+                        selected_corp_data.columns.str.contains(
+                            r"Year|School ID|School Name|Proficient %"
                         )
                     ]
                 ]
-                selected_corp_data = selected_corp_data.rename(
-                    columns={
-                        c: c + " Proficient %"
-                        for c in selected_corp_data.columns
-                        if c not in ["Year", "School Name", "School ID"]
-                    }
-                )
+
+                pd.set_option('display.max_columns', None)
+                pd.set_option('display.max_rows', None)
+                print("Corp Data")
+                print(selected_corp_data)
+
+                # selected_corp_data = selected_corp_data.rename(
+                #     columns={
+                #         c: c + " Proficient %"
+                #         for c in selected_corp_data.columns
+                #         if c not in ["Year", "School Name", "School ID"]
+                #     }
+                # )
 
                 # only keep columns in school df
                 selected_corp_data = selected_corp_data.loc[
@@ -658,6 +684,8 @@ def update_academic_analysis_single_year(
                 combined_selected_data = pd.concat(
                     [selected_clean_data, selected_corp_data]
                 )
+
+
 
                 # Force '***' to NaN for numeric columns
                 numeric_columns = [

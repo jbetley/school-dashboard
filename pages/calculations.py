@@ -177,34 +177,45 @@ def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: the same dataframe with "Proficient %" column added.
     """
 
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None) 
+    print('BEFORE CALCULOOTION')
+    print(data)
+
     # Get a list of all "Total Tested" columns except those for ELA & Math
     tested_categories = data[
-        data.columns[data.columns.str.contains(r"Total Tested")]
+        data.columns[data.columns.str.contains(r"Total Tested|IREAD Test N")]
     ].columns.tolist()
+
     tested_categories = [i for i in tested_categories if "ELA and Math" not in i]
 
-    for total_tested in tested_categories:
-        if total_tested in data.columns:
-            cat_sub = total_tested.split(" Total Tested")[0]
-            total_proficient = cat_sub + " Total Proficient"
-            proficiency = cat_sub + " Proficient %"
+    for tested in tested_categories:
+        if tested in data.columns:
+            if "Total Tested" in tested:
+                cat_sub = tested.split(" Total Tested")[0]
+                total_proficient = cat_sub + " Total Proficient"
+                proficiency = cat_sub + " Proficient %"
+            elif "IREAD Test" in tested:
+                cat_sub = tested.split("|IREAD Test N")[0]
+                total_proficient = cat_sub + "|IREAD Pass N"
+                proficiency = cat_sub + " Proficient %"
 
-            # drop the entire category if ("Total Tested" == 0 or NaN) or if
-            # ("Total Tested" > 0 and "Total Proficient" is NaN. A "Total Proficient"
+            # drop the entire category if ("Tested" == 0 or NaN) or if
+            # ("Tested" > 0 and "Total Proficient" is NaN. A "Total Proficient"
             # value of NaN means it was a "***" before being converted to numeric
             # we use sum/all because there could be one or many columns
 
             if (
-                pd.to_numeric(data[total_tested], errors="coerce").sum() == 0
-                or pd.isna(data[total_tested]).all()
+                pd.to_numeric(data[tested], errors="coerce").sum() == 0
+                or pd.isna(data[tested]).all()
             ) | (
-                pd.to_numeric(data[total_tested], errors="coerce").sum() > 0
+                pd.to_numeric(data[tested], errors="coerce").sum() > 0
                 and pd.isna(data[total_proficient]).all()
             ):
-                data = data.drop([total_tested, total_proficient], axis=1)
+                data = data.drop([tested, total_proficient], axis=1)
             else:
                 data[proficiency] = calculate_percentage(
-                    data[total_proficient], data[total_tested]
+                    data[total_proficient], data[tested]
                 )
 
     return data
