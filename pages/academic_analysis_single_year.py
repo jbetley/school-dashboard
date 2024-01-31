@@ -549,10 +549,10 @@ def update_academic_analysis_single_year(
                 selected_k8_school_data, school_id
             )
 
-            pd.set_option('display.max_columns', None)
-            pd.set_option('display.max_rows', None) 
-            print('BEFORE FUNCKTION')
-            print(selected_clean_data)
+            # pd.set_option('display.max_columns', None)
+            # pd.set_option('display.max_rows', None) 
+            # print('BEFORE FUNCKTION')
+            # print(selected_clean_data)
 
             # NOTE: We don't want to get rid of "***" yet, but we also don't want to pass through a
             # dataframe that that is all "***" - so we convert create a copy, coerce all of the academic
@@ -591,11 +591,6 @@ def update_academic_analysis_single_year(
                         "Corporation ID": "School ID",
                     }
                 )
-
-                # pd.set_option('display.max_columns', None)
-                # pd.set_option('display.max_rows', None) 
-                # print('BEFORE FUNC')
-                # print(selected_corp_data)
 
                 # calculate proficiency for all corp categories
                 selected_corp_data = calculate_proficiency(selected_corp_data)
@@ -659,11 +654,6 @@ def update_academic_analysis_single_year(
                     ]
                 ]
 
-                pd.set_option('display.max_columns', None)
-                pd.set_option('display.max_rows', None)
-                print("Corp Data")
-                print(selected_corp_data)
-
                 # selected_corp_data = selected_corp_data.rename(
                 #     columns={
                 #         c: c + " Proficient %"
@@ -684,8 +674,11 @@ def update_academic_analysis_single_year(
                 combined_selected_data = pd.concat(
                     [selected_clean_data, selected_corp_data]
                 )
-
-
+#TODO: HEEERRRR
+                pd.set_option('display.max_columns', None)
+                pd.set_option('display.max_rows', None)
+                print("Cobined Data")
+                print(combined_selected_data)
 
                 # Force '***' to NaN for numeric columns
                 numeric_columns = [

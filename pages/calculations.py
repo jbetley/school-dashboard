@@ -167,8 +167,9 @@ def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
 def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
     """
     Wrapper around calculate_percentage() used to calculate ILEARN Proficiency from academic
-    dataframe (Total Proficient / Total Tested). If Total Tested == 0 or NaN or if Total Tested > 0,
-    but Total Proficient is NaN, all associated columns are dropped
+    dataframe (Total Proficient / Total Tested) and IREAD Proficiency from (IREAD Pass N /
+    IREAD Test N ). If Tested == 0 or NaN or if Tested > 0, but Proficient is NaN,
+    all associated columns are dropped
 
     Args:
         data (pd.DataFrame): dataframe of ILEARN data
@@ -176,11 +177,6 @@ def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the same dataframe with "Proficient %" column added.
     """
-
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None) 
-    print('BEFORE CALCULOOTION')
-    print(data)
 
     # Get a list of all "Total Tested" columns except those for ELA & Math
     tested_categories = data[
@@ -198,7 +194,7 @@ def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
             elif "IREAD Test" in tested:
                 cat_sub = tested.split("|IREAD Test N")[0]
                 total_proficient = cat_sub + "|IREAD Pass N"
-                proficiency = cat_sub + " Proficient %"
+                proficiency = cat_sub + "|IREAD Proficient %"
 
             # drop the entire category if ("Tested" == 0 or NaN) or if
             # ("Tested" > 0 and "Total Proficient" is NaN. A "Total Proficient"
@@ -214,6 +210,7 @@ def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
             ):
                 data = data.drop([tested, total_proficient], axis=1)
             else:
+
                 data[proficiency] = calculate_percentage(
                     data[total_proficient], data[tested]
                 )

@@ -69,12 +69,6 @@ def process_selected_k8_academic_data(
     else:
         calculated_data = calculate_proficiency(data)
 
-        # # separately calculate IREAD Proficiency
-        # if "IREAD Test N" in data.columns:
-        #     calculated_data["IREAD Proficient %"] = calculate_percentage(
-        #         data["IREAD Pass N"], data["IREAD Test N"]
-        #     )
-
         # Add School Name/School ID back. We can do this because the index hasn't changed in
         # data_proficiency, so it will still match with school_info
         if len(school_info.index) > 0:
@@ -120,20 +114,14 @@ def process_selected_k8_academic_data(
 
             final_data = pd.concat([school_data, comparison_data])
 
-        # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
+        # filter to remove columns used to calculate proficiency %
         final_data = final_data.filter(
-            regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year|School Name|School ID|High Grade|Low Grade",
+            regex=r"\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year|School Name|School ID|High Grade|Low Grade",
             axis=1,
         )
 
         final_data = final_data.reset_index(drop=True)
 
-# TODO: HERE
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_rows', None) 
-        print('k8 post calc data')
-        print(final_data)
-        
         final_data.columns = final_data.columns.astype(str)
 
     return final_data
