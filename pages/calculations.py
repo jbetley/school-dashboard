@@ -647,8 +647,6 @@ def find_nearest(
         index (np.ndarray) & distance (np.ndarray): an array of dataframe indexes
         and an array of distances (in miles)
     """
-
-    # use a copy so as to not modify the provided data
     data = values.copy()
 
     # number of schools to return (add 1 to account for the fact that the selected school
@@ -699,7 +697,6 @@ def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.Dat
 
     schools = schools.replace({"Low Grade": {"PK": 0, "KG": 1}})
 
-# TODO: Error CHecking if null values in these columns
     schools["Low Grade"] = schools["Low Grade"].astype(int)
     schools["High Grade"] = schools["High Grade"].astype(int)
     school_grade_span = (
@@ -762,7 +759,8 @@ def calculate_comparison_school_list(
     if school_idx.size == 0:
         return [], [], []
 
-    # kdtree spatial tree function returns two np arrays: an array of indexes and an array of distances
+    # kdtree spatial tree function returns two np arrays: an array of
+    # indexes and an array of distances
     index_array, dist_array = find_nearest(school_idx, schools)
 
     index_list = index_array[0].tolist()
@@ -770,6 +768,7 @@ def calculate_comparison_school_list(
 
     # Match School ID with indexes
     closest_schools = pd.DataFrame()
+
     closest_schools["School ID"] = schools[schools.index.isin(index_list)]["School ID"]
 
     # Merge the index and distances lists into a dataframe
@@ -779,9 +778,12 @@ def calculate_comparison_school_list(
     # Merge School ID with Distances by index
     combined = closest_schools.join(distances)
 
-    # Merge the original df with the combined distance/SchoolID df (essentially just adding School Name)
+    # Merge the original df with the combined distance/SchoolID df
+    # (essentially just adding School Name)
     comparison_set = pd.merge(combined, schools, on="School ID", how="inner")
     comparison_set = comparison_set.rename(columns={"y": "Distance"})
+
+    print(comparison_set[["School Name", "Distance"]])
 
     # drop selected school (so it cannot be selected in the dropdown)
     comparison_set = comparison_set.drop(

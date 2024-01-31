@@ -719,20 +719,20 @@ def navigation(
                         analysis_multi_subject_value = "EBRW"
 
                     analysis_multi_category_options = [
-                        {"label": "School Total", "value": "School Total"},
+                        {"label": "School Total", "value": "Total"},
                         {"label": "Subgroup", "value": "Subgroup"},
                         {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                     ]
                     analysis_multi_category_container = {"display": "block"}
 
                     if analysis_multi_category_value in [
-                        "School Total",
+                        "Total",
                         "Subgroup",
                         "Race/Ethnicity",
                     ]:
                         analysis_multi_category_value = analysis_multi_category_value
                     else:
-                        analysis_multi_category_value = "School Total"
+                        analysis_multi_category_value = "Total"
 
             else:
                 # subject and categories for K8 and K12 (k8 type)
@@ -796,7 +796,7 @@ def navigation(
                         {"label": g, "value": "Grade " + g} for g in grades
                     ]
                     analysis_multi_subcategory_options.append(
-                        {"label": "Total", "value": "School Total"}
+                        {"label": "School Total", "value": "Total"}
                     )
 
                     grade_strings = ["Grade " + g for g in grades]
@@ -806,7 +806,7 @@ def navigation(
                             analysis_multi_subcategory_value
                         )
                     else:
-                        analysis_multi_subcategory_value = "School Total"
+                        analysis_multi_subcategory_value = "Total"
 
                     analysis_multi_subcategory_container = {"display": "block"}
 
@@ -876,11 +876,11 @@ def navigation(
             # for SAT ('School Total') and Grad Rate ('Total) set single value,
             # with no options
             else:
-                if analysis_multi_hs_group_value == "SAT":
-                    analysis_multi_subcategory_value = "School Total"
+                # if analysis_multi_hs_group_value == "SAT":
+                #     analysis_multi_subcategory_value = "School Total"
 
-                else:  # graduation Rate
-                    analysis_multi_subcategory_value = "Total"
+                # else:  # graduation Rate
+                analysis_multi_subcategory_value = "Total"
 
                 analysis_multi_subcategory_options = []
                 analysis_multi_subcategory_container = {"display": "none"}

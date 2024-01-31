@@ -286,7 +286,7 @@ def update_academic_information_page(
                     )
 
                     k12_sat_overview = k12_sat_table_data[
-                        k12_sat_table_data["Category"].str.contains("School Total")
+                        k12_sat_table_data["Category"].str.contains("Total")
                     ]
                     k12_sat_overview = k12_sat_overview.dropna(axis=1, how="all")
 
@@ -394,7 +394,7 @@ def update_academic_information_page(
             and selected_year_string != "2020"
         ):
             all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data)
-
+# TODO: FIND IREAD
             if not all_k8_school_data.empty:
                 k8_table_container = {"display": "block"}
                 main_container = {"display": "block"}
@@ -449,11 +449,17 @@ def update_academic_information_page(
                 ## IREAD\WIDA School and Student Level Data
 
                 # get school level IREAD data
+                pd.set_option('display.max_columns', None)
+                pd.set_option('display.max_rows', None)
+                print(year_over_year_data)
+# TODO: Somehow broke IREAD data - no IREAD showing up at this poit      ^^^          
                 total_iread_data = year_over_year_data.filter(
                     regex=r"IREAD|^Year$", axis=1
                 ).copy()
 
-                # TODO: Determine why school level IREAD N-Size does not match student level totals
+                print(total_iread_data)
+                # TODO: Determine why school level IREAD N-Size does not
+                # TODO: match student level totals
                 # get IREAD total students tested (school level data)
                 raw_total_iread_tested = all_k8_school_data[
                     all_k8_school_data["Category"] == "IREAD Proficiency (Grade 3)"
@@ -493,7 +499,7 @@ def update_academic_information_page(
                         # Generate simple table and chart with school level IREAD data
                         total_iread_data = total_iread_data.rename(
                             columns={
-                                "IREAD Proficiency (Grade 3)": "School Total",
+                                "IREAD Proficiency (Grade 3)": "Total",
                             }
                         )
 
@@ -574,13 +580,17 @@ def update_academic_information_page(
                         .rename_axis(None, axis=1)
                     )
 
+                    # merge with "total_iread_data" calculated above
+
                     iread_fig_data = pd.merge(
                         final_iread_yoy, total_iread_data, on=["Year"]
                     )
 
+                    # TODO: Issue is here, no Total calc in total_iread_data
+                    print(total_iread_data)
                     iread_fig_data = iread_fig_data.rename(
                         columns={
-                            "IREAD Proficiency (Grade 3)": "School Total",
+                            "IREAD Proficiency (Grade 3)": "Total",
                         }
                     )
 
@@ -598,9 +608,11 @@ def update_academic_information_page(
 
                     # reorder columns (move "Total" to the end and then swap places of
                     # "Summer" and "Spring N-Size")
+                    # TODO: So Crashes here
                     iread_table_cols.append(
-                        iread_table_cols.pop(iread_table_cols.index("School Total"))
+                        iread_table_cols.pop(iread_table_cols.index("Total"))
                     )
+
                     iread_table_cols[2], iread_table_cols[-3] = (
                         iread_table_cols[-3],
                         iread_table_cols[2],
@@ -680,14 +692,6 @@ def update_academic_information_page(
                         iread_retained,
                     ]
 
-                    # NOTE: Doesn't appear as if we need to check for empty df's
-                    # here. Simply adds rows with no data
-                    # remove any empty dataframes to prevent index error
-                    # iread_dfs_to_merge_non_empty = [
-                    #     df
-                    #     for df in iread_dfs_to_merge
-                    #     if not df.empty
-
                     iread_merged = reduce(
                         lambda left, right: pd.merge(
                             left,
@@ -696,7 +700,7 @@ def update_academic_information_page(
                             how="outer",
                             suffixes=("", "_remove"),
                         ),
-                        iread_dfs_to_merge,  # _non_empty,
+                        iread_dfs_to_merge,
                     )
 
                     # select and order columns
@@ -707,7 +711,7 @@ def update_academic_information_page(
                             "Spring N-Size",
                             "Summer",
                             "Summer N-Size",
-                            "School Total",
+                            "Total",
                             "2nd Graders Tested",
                             "2nd Graders Proficiency",
                             "No Pass (Exemption)",

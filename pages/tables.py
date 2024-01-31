@@ -1724,7 +1724,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
 def create_comparison_table(
     data: pd.DataFrame, trace_colors: dict, school_id: str
-) -> list:  # , label: str
+) -> list:
     """
     Takes a dataframe that is a column of schools and one or more columns
     of data, school name, and table label. Uses the school name to find
@@ -1751,7 +1751,8 @@ def create_comparison_table(
     }
     color_df = pd.DataFrame(list(icon_colors.items()), columns=["Name", "Icon"])
 
-    # sort dataframe by the column with the most recent year of datafirst column with data and reset index
+    # sort dataframe by the column with the most recent year of datafirst
+    # column with data and reset index
     data = data.sort_values(data.columns[1], ascending=False, na_position="last")
 
     data = data.reset_index(drop=True)
@@ -1836,7 +1837,7 @@ def create_comparison_table(
             {
                 "if": {"column_id": "School Name"},
                 "textAlign": "left",
-                "width": "20%",
+                "width": "30%",
             },
             {
                 "if": {"column_id": "Icon"},

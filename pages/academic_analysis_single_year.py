@@ -30,7 +30,7 @@ from .process_data import (
     process_selected_k8_academic_data,
 )
 from .calculations import (
-    find_nearest,
+    # find_nearest,
     calculate_proficiency,
     recalculate_total_proficiency,
     check_for_gradespan_overlap,
@@ -58,7 +58,6 @@ dash.register_page(
     order=10,
 )
 
-
 # Set dropdown options for comparison schools
 @callback(
     Output("analysis-single-comparison-dropdown", "options"),
@@ -84,8 +83,8 @@ def set_dropdown_options(
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
-    # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
-    # SQL query depends on school type
+    # Get School ID, School Name, Lat & Lon for all schools in the
+    # set for selected year. SQL query depends on school type
     if school_type == "K12":
         if analysis_type_value == "hs":
             school_type = "HS"
@@ -94,8 +93,9 @@ def set_dropdown_options(
 
     schools_by_distance = get_school_coordinates(numeric_year, school_type)
 
-    # Drop any school not testing at least 20 students (k8 only). "Total|ELATotalTested"
-    # is a proxy for school size here (probably only impacts ~20 schools)
+    # Drop any school not testing at least 20 students (k8 only- probably
+    # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
+
     if school_type == "K8":
         schools_by_distance["Total|ELA Total Tested"] = \
             pd.to_numeric(schools_by_distance["Total|ELA Total Tested"], errors="coerce")
@@ -184,12 +184,16 @@ def set_dropdown_options(
     Output("fig-iread", "children"),
     Output("fig16a1", "children"),
     Output("fig16a1-container", "style"),
+    Output("fig16c1", "children"),
+    Output("fig16c1-container", "style"),
     Output("fig16b1", "children"),
-    Output("fig16b1-container", "style"),
+    Output("fig16b1-container", "style"),    
     Output("fig16a2", "children"),
     Output("fig16a2-container", "style"),
+    Output("fig16c2", "children"),
+    Output("fig16c2-container", "style"),
     Output("fig16b2", "children"),
-    Output("fig16b2-container", "style"),
+    Output("fig16b2-container", "style"),    
     Output("k8-analysis-single-main-container", "style"),
     Output("k8-analysis-single-empty-container", "style"),
     Output("k8-analysis-single-no-data", "children"),
@@ -246,11 +250,15 @@ def update_academic_analysis_single_year(
     fig16a1 = []
     fig16a1_container = {"display": "none"}
     fig16b1 = []
-    fig16b1_container = {"display": "none"}
+    fig16b1_container = {"display": "none"}    
+    fig16c1 = []
+    fig16c1_container = {"display": "none"}
     fig16a2 = []
     fig16a2_container = {"display": "none"}
     fig16b2 = []
-    fig16b2_container = {"display": "none"}
+    fig16b2_container = {"display": "none"}    
+    fig16c2 = []
+    fig16c2_container = {"display": "none"}
     analysis_single_dropdown_container = {"display": "none"}
 
     grad_overview = []
@@ -329,21 +337,14 @@ def update_academic_analysis_single_year(
             raw_hs_corp_data["School ID"] = hs_corporation_id
             raw_hs_corp_data["School Type"] = "School Corporation"
 
-            # TODO: Don't think we need this anymore
-            # raw_hs_corp_data = raw_hs_corp_data.drop(
-            #     raw_hs_corp_data.filter(regex="Benchmark %").columns, axis=1
-            # )
-
             # get data for comparable schools (already filtered by selected year in SQL query)
             raw_hs_comparison_data = get_comparable_schools(
                 comparison_school_list, numeric_year, "HS"
             )
 
-            # concatenate all three dataframes together
-
-            # do not include school corporation data if the selected
-            # school is an AHS - it is not comparable and skews the
-            # output
+            # concatenate all three dataframes together. don't include
+            # school corporation data if the selected school is an AHS,
+            # it is not comparable and skews the output
             if school_type == "AHS":
                 combined_hs_data = pd.concat(
                     [raw_hs_school_data, raw_hs_comparison_data],
@@ -369,7 +370,8 @@ def update_academic_analysis_single_year(
 
             hs_cols = [c for c in hs_analysis_data if c != "School Name"]
 
-            # force all to numeric (this removes '***' strings) - we later use NaN as a proxy
+            # force all to numeric (this removes '***' strings) - we
+            # later use NaN as a proxy
             for col in hs_cols:
                 hs_analysis_data[col] = pd.to_numeric(
                     hs_analysis_data[col], errors="coerce"
@@ -400,7 +402,7 @@ def update_academic_analysis_single_year(
                     hs_analysis_data,
                     grad_overview_categories,
                     school_id,
-                )  # hs_school_name)
+                )
                 grad_ethnicity = create_hs_analysis_layout(
                     "Graduation Rate", hs_analysis_data, ethnicity, school_id
                 )
@@ -412,7 +414,6 @@ def update_academic_analysis_single_year(
                 overview = [
                     "Total|Math",
                     "Total|EBRW",
-                    # "Total|EBRWandMath",
                 ]
                 sat_overview = create_hs_analysis_layout(
                     "Total", hs_analysis_data, overview, school_id
@@ -430,8 +431,7 @@ def update_academic_analysis_single_year(
                     "Math", hs_analysis_data, subgroup, school_id
                 )
 
-                # Display Logic
-
+                # Display Logic - Grad data / SAT data
                 if not grad_overview and not grad_ethnicity and not grad_subgroup:
                     grad_overview = no_data_fig_label(
                         "Comparison: Graduation Rates", 200, "pretty"
@@ -528,6 +528,7 @@ def update_academic_analysis_single_year(
                         sat_subgroup_container = {"display": "none"}
 
     if school_type == "K8" or school_type == "K12":
+        
         # If school is K12 and highschool tab is selected, skip k8 data
         if school_type == "K12" and analysis_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
@@ -549,14 +550,10 @@ def update_academic_analysis_single_year(
                 selected_k8_school_data, school_id
             )
 
-            # pd.set_option('display.max_columns', None)
-            # pd.set_option('display.max_rows', None) 
-            # print('BEFORE FUNCKTION')
-            # print(selected_clean_data)
-
-            # NOTE: We don't want to get rid of "***" yet, but we also don't want to pass through a
-            # dataframe that that is all "***" - so we convert create a copy, coerce all of the academic
-            # columns to numeric and check to see if the entire dataframe for NaN
+            # NOTE: We don't want to get rid of "***" yet, but we also don't
+            # want to pass through a dataframe that that is all "***" - so
+            # we convert create a copy, coerce all of the academic columns
+            # to numeric and check to see if the entire dataframe for NaN
             check_for_unchartable_data = selected_clean_data.copy()
 
             check_for_unchartable_data.drop(
@@ -674,11 +671,6 @@ def update_academic_analysis_single_year(
                 combined_selected_data = pd.concat(
                     [selected_clean_data, selected_corp_data]
                 )
-#TODO: HEEERRRR
-                pd.set_option('display.max_columns', None)
-                pd.set_option('display.max_rows', None)
-                print("Cobined Data")
-                print(combined_selected_data)
 
                 # Force '***' to NaN for numeric columns
                 numeric_columns = [
@@ -692,7 +684,8 @@ def update_academic_analysis_single_year(
                         combined_selected_data[col], errors="coerce"
                     )
 
-                # Now that *** is Nan, we drop all columns where selected school has null data
+                # Now that *** is Nan, we drop all columns where selected school
+                # has null data
                 school_idx = combined_selected_data.index[
                     combined_selected_data["School ID"] == np.int64(school_id)
                 ].tolist()[0]
@@ -743,7 +736,6 @@ def update_academic_analysis_single_year(
                         fig14c_table_data,
                         fig14c_trace_color,
                         school_id
-                        # "ELA Proficiency",
                     )
                 else:
                     # NOTE: This should never ever happen. So yeah.
@@ -788,7 +780,6 @@ def update_academic_analysis_single_year(
                         fig14d_table_data,
                         fig14d_trace_color,
                         school_id
-                        # "Math Proficiency",
                     )
 
                 else:
@@ -802,7 +793,7 @@ def update_academic_analysis_single_year(
                 fig14d = create_barchart_layout(fig14d_chart, fig14d_table)
 
                 #### Current Year IREAD Proficiency Compared to Similar Schools #
-                category = "IREAD Proficient %"
+                category = "Total|IREAD Proficient %"
 
                 if category in combined_selected_data.columns:
                     fig_iread_all_data = combined_selected_data[
@@ -835,21 +826,21 @@ def update_academic_analysis_single_year(
                         fig_iread_table_data,
                         fig_iread_trace_color,
                         school_id
-                        # "IREAD Proficiency",
                     )
 
                 else:
                     fig_iread_chart = no_data_fig_label(
                         "Comparison: Current Year IREAD Proficiency", 200
                     )
-                    fig_iread_table = no_data_table(
-                        "No Data to Display.", "IREAD Proficiency", "none"
-                    )
+
+                    fig_iread_table = []
+                    # no_data_table(
+                    #     "No Data to Display.", "IREAD Proficiency", "none"
+                    # )
 
                 fig_iread = create_barchart_layout(fig_iread_chart, fig_iread_table)
 
                 # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
-
                 headers_16a1 = []
                 for e in ethnicity:
                     headers_16a1.append(e + "|" + "ELA Proficient %")
@@ -875,7 +866,7 @@ def update_academic_analysis_single_year(
                         fig16a1_final_data
                     )
                     fig16a1_table = create_comparison_table(
-                        fig16a1_table_data, fig16a1_trace_color, school_id) #, "")
+                        fig16a1_table_data, fig16a1_trace_color, school_id)
 
                     fig16a1 = create_group_barchart_layout(
                         fig16a1_chart,
@@ -893,10 +884,10 @@ def update_academic_analysis_single_year(
                     )
                     fig16a1_container = {"display": "none"}
 
-                # Math Proficiency by Ethnicity Compared to Similar Schools (1.6.b.1)
+                # IREAD Proficiency by Ethnicity Compared to Similar Schools
                 headers_16b1 = []
                 for e in ethnicity:
-                    headers_16b1.append(e + "|" + "Math Proficient %")
+                    headers_16b1.append(e + "|" + "IREAD Proficient %")
 
                 categories_16b1 = added_categories + headers_16b1
 
@@ -904,6 +895,9 @@ def update_academic_analysis_single_year(
                     :, (combined_selected_data.columns.isin(categories_16b1))
                 ]
 
+                print("IREAD TEST")
+                print(fig16b1_final_data)
+                
                 if len(fig16b1_final_data.columns) > 4:
                     (
                         fig16b1_final_data,
@@ -918,8 +912,9 @@ def update_academic_analysis_single_year(
                     fig16b1_table_data = combine_school_name_and_grade_levels(
                         fig16b1_final_data
                     )
+                    
                     fig16b1_table = create_comparison_table(
-                        fig16b1_table_data, fig16b1_trace_color, school_id) #, "")
+                        fig16b1_table_data, fig16b1_trace_color, school_id)
 
                     fig16b1 = create_group_barchart_layout(
                         fig16b1_chart,
@@ -933,10 +928,54 @@ def update_academic_analysis_single_year(
 
                 else:
                     fig16b1 = no_data_fig_label(
+                        "Comparison: IREAD Proficiency by Ethnicity", 200
+                    )
+                    fig16b1_container = {"display": "none"}
+
+                # Math Proficiency by Ethnicity Compared to Similar Schools (1.6.b.1)
+                headers_16c1 = []
+                for e in ethnicity:
+                    headers_16c1.append(e + "|" + "Math Proficient %")
+
+                categories_16c1 = added_categories + headers_16c1
+
+                fig16c1_final_data = combined_selected_data.loc[
+                    :, (combined_selected_data.columns.isin(categories_16c1))
+                ]
+
+                if len(fig16c1_final_data.columns) > 4:
+                    (
+                        fig16c1_final_data,
+                        fig16c1_category_string,
+                        fig16c1_school_string,
+                    ) = identify_missing_categories(fig16c1_final_data, categories_16c1)
+
+                    fig16c1_label = create_chart_label(fig16c1_final_data)
+                    fig16c1_trace_color, fig16c1_chart = make_group_bar_chart(
+                        fig16c1_final_data, school_id, fig16c1_label
+                    )
+                    fig16c1_table_data = combine_school_name_and_grade_levels(
+                        fig16c1_final_data
+                    )
+                    fig16c1_table = create_comparison_table(
+                        fig16c1_table_data, fig16c1_trace_color, school_id)
+
+                    fig16c1 = create_group_barchart_layout(
+                        fig16c1_chart,
+                        fig16c1_table,
+                        fig16c1_category_string,
+                        fig16c1_school_string,
+                    )
+
+                    fig16c1_container = {"display": "block"}
+                    analysis_single_dropdown_container = {"display": "block"}
+
+                else:
+                    fig16c1 = no_data_fig_label(
                         "Comparison: Math Proficiency by Ethnicity", 200
                     )
 
-                    fig16b1_container = {"display": "none"}
+                    fig16c1_container = {"display": "none"}
 
                 # ELA Proficiency by Subgroup Compared to Similar Schools (1.6.a.2)
                 headers_16a2 = []
@@ -950,7 +989,6 @@ def update_academic_analysis_single_year(
                 ]
 
                 if len(fig16a2_final_data.columns) > 4:
-                    # fig16a2_final_data = merge_schools(fig16a2_k8_school_data, current_corp_data, comparison_schools, headers_16a2, corp_name)
                     (
                         fig16a2_final_data,
                         fig16a2_category_string,
@@ -966,7 +1004,7 @@ def update_academic_analysis_single_year(
                     )
 
                     fig16a2_table = create_comparison_table(
-                        fig16a2_table_data, fig16a2_trace_color, school_id) #, "")
+                        fig16a2_table_data, fig16a2_trace_color, school_id)
 
                     fig16a2 = create_group_barchart_layout(
                         fig16a2_chart,
@@ -983,10 +1021,10 @@ def update_academic_analysis_single_year(
                     )
                     fig16a2_container = {"display": "none"}
 
-                # Math Proficiency by Subgroup Compared to Similar Schools (1.6.b.2)
+                # IREAD Proficiency by Subgroup Compared to Similar Schools
                 headers_16b2 = []
                 for s in subgroup:
-                    headers_16b2.append(s + "|" + "Math Proficient %")
+                    headers_16b2.append(s + "|" + "IREAD Proficient %")
 
                 categories_16b2 = added_categories + headers_16b2
 
@@ -1008,8 +1046,9 @@ def update_academic_analysis_single_year(
                     fig16b2_table_data = combine_school_name_and_grade_levels(
                         fig16b2_final_data
                     )
+
                     fig16b2_table = create_comparison_table(
-                        fig16b2_table_data, fig16b2_trace_color, school_id) #, "")
+                        fig16b2_table_data, fig16b2_trace_color, school_id)
 
                     fig16b2 = create_group_barchart_layout(
                         fig16b2_chart,
@@ -1022,9 +1061,52 @@ def update_academic_analysis_single_year(
 
                 else:
                     fig16b2 = no_data_fig_label(
-                        "Comparison: Math Proficiency by Subgroup", 200
+                        "Comparison: IREAD Proficiency by Subgroup", 200
                     )
                     fig16b2_container = {"display": "none"}
+
+                # Math Proficiency by Subgroup Compared to Similar Schools (1.6.b.2)
+                headers_16c2 = []
+                for s in subgroup:
+                    headers_16c2.append(s + "|" + "Math Proficient %")
+
+                categories_16c2 = added_categories + headers_16c2
+
+                fig16c2_final_data = combined_selected_data.loc[
+                    :, (combined_selected_data.columns.isin(categories_16c2))
+                ]
+
+                if len(fig16c2_final_data.columns) > 4:
+                    (
+                        fig16c2_final_data,
+                        fig16c2_category_string,
+                        fig16c2_school_string,
+                    ) = identify_missing_categories(fig16c2_final_data, categories_16b2)
+
+                    fig16c2_label = create_chart_label(fig16c2_final_data)
+                    fig16c2_trace_color, fig16c2_chart = make_group_bar_chart(
+                        fig16c2_final_data, school_id, fig16c2_label
+                    )
+                    fig16c2_table_data = combine_school_name_and_grade_levels(
+                        fig16c2_final_data
+                    )
+                    fig16c2_table = create_comparison_table(
+                        fig16c2_table_data, fig16c2_trace_color, school_id)
+
+                    fig16c2 = create_group_barchart_layout(
+                        fig16c2_chart,
+                        fig16c2_table,
+                        fig16c2_category_string,
+                        fig16c2_school_string,
+                    )
+                    fig16c2_container = {"display": "block"}
+                    analysis_single_dropdown_container = {"display": "block"}
+
+                else:
+                    fig16c2 = no_data_fig_label(
+                        "Comparison: Math Proficiency by Subgroup", 200
+                    )
+                    fig16c2_container = {"display": "none"}
 
     academic_analysis_notes = [
         html.Div(
@@ -1059,12 +1141,16 @@ def update_academic_analysis_single_year(
         fig_iread,
         fig16a1,
         fig16a1_container,
+        fig16c1,
+        fig16c1_container,
         fig16b1,
-        fig16b1_container,
+        fig16b1_container,        
         fig16a2,
         fig16a2_container,
+        fig16c2,
+        fig16c2_container,
         fig16b2,
-        fig16b2_container,
+        fig16b2_container,        
         k8_analysis_main_container,
         k8_analysis_empty_container,
         k8_analysis_no_data,
@@ -1154,6 +1240,14 @@ def layout():
                                 id="fig16b1-container",
                                 style={"display": "none"},
                                 className="pagebreak",
+                            ),                            
+                            html.Div(
+                                [
+                                    html.Div(id="fig16c1"),
+                                ],
+                                id="fig16c1-container",
+                                style={"display": "none"},
+                                className="pagebreak",
                             ),
                             html.Div(
                                 [
@@ -1168,6 +1262,14 @@ def layout():
                                     html.Div(id="fig16b2"),
                                 ],
                                 id="fig16b2-container",
+                                style={"display": "none"},
+                                className="pagebreak",
+                            ),                            
+                            html.Div(
+                                [
+                                    html.Div(id="fig16c2"),
+                                ],
+                                id="fig16c2-container",
                                 style={"display": "none"},
                                 className="pagebreak",
                             ),
