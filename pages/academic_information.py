@@ -857,7 +857,7 @@ def update_academic_information_page(
                 #     }
                 # )
               
-                ## IREAD\WIDA School and Student Level Data
+            ## IREAD\WIDA School and Student Level Data
 
 # TODO: TO HERE CURRENTLY
                 # get IREAD total students tested (school level data)
@@ -887,10 +887,6 @@ def update_academic_information_page(
                 total_iread_tested = total_iread_tested.rename(columns={0: "N-Size"})
                 total_iread_tested["Year"] = total_iread_tested["Year"].str[:4]
 
-                # all_iread_data = year_over_year_data.filter(regex=r"Year|IREAD",axis=1)
-                # total_iread_data = all_iread_data.filter(regex=r"Year|Total",axis=1)
-                # total_iread_data["Year"] = total_iread_data["Year"].astype(str)
-
                 # get raw student IREAD data
                 raw_student_iread_data = get_iread_student_data(school)
 
@@ -910,7 +906,8 @@ def update_academic_information_page(
                         iread_breakdown = []
 
                     else:
-                        # Generate simple table and chart with school level IREAD data
+                        # Generate simple table and chart with school level IREAD
+                        # data only
                         total_iread_data = total_iread_data.rename(
                             columns={
                                 "Total|IREAD": "Total",
@@ -994,8 +991,8 @@ def update_academic_information_page(
                         .rename_axis(None, axis=1)
                     )
 
-                    # merge with "total_iread_data" calculated above
-
+                    # merge student level data with the school level
+                    # data calculated above
                     iread_fig_data = pd.merge(
                         final_iread_yoy, total_iread_data, on=["Year"]
                     )
@@ -1010,11 +1007,6 @@ def update_academic_information_page(
 
                     iread_fig = make_line_chart(iread_fig_data)
 
-# TODO: Working To This Point - CODE UGLY
-# TODO: ELA BY GRADE MESSED UP
-# TODO: Need to add IREAD by Eth and Subtroup
-                    
-
                     # IREAD Table data
                     # Combine data and num of tested students
 
@@ -1025,7 +1017,6 @@ def update_academic_information_page(
 
                     # reorder columns (move "Total" to the end and then swap places of
                     # "Summer" and "Spring N-Size")
-
                     iread_table_cols.append(
                         iread_table_cols.pop(iread_table_cols.index("Total"))
                     )
@@ -1034,11 +1025,10 @@ def update_academic_information_page(
                         iread_table_cols[-3],
                         iread_table_cols[2],
                     )
+
                     iread_table_data = iread_table_data[iread_table_cols]
 
-                    ## Add Supplementary IREAD information (for Table)
-
-                    # TODO: Is there a better way to do this? Combined groupby/pivot?
+                    # Add supplementary IREAD information to table
                     # Number of 2nd Graders Tested and 2nd Grader Proficiency
                     grade2_count = raw_student_iread_data[
                         raw_student_iread_data["Tested Grade"] == "Grade 2"
@@ -1094,12 +1084,13 @@ def update_academic_information_page(
                         .reset_index(name="No Pass (Retained)")
                     )
 
-                    # TODO: Add column for # of EL students taking IREAD. Not sure how to track
-                    # TODO: WIDA is unreliable (dont have scores for all students only
-                    # TODO: current) and Ethnicity is not broken down by grade.
-                    # TODO: Also add pass rate for EL students
+                    # NOTE: Eventually want to add a column showing the number of EL
+                    # students (according to WIDA) taking IREAD each year. Unfortunately,
+                    # we currently do not have access to historical WIDA data (only for
+                    # currently enrolled students). In addition, Ethnicity and Subgroup
+                    # scores are not broken down by grade
 
-                    # Merge iread table data together
+                    # Merge iread table data
                     iread_dfs_to_merge = [
                         iread_table_data,
                         iread_grade2_tested,
@@ -1159,6 +1150,7 @@ def update_academic_information_page(
                             else:
                                 iread_final_table_data.iat[i, x] = "{:,.0f}".format(iread_final_table_data.iat[i, x])
 
+                    # replace Nan with "-"
                     iread_final_table_data = iread_final_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
                     iread_table = create_single_header_table(
@@ -1169,15 +1161,14 @@ def update_academic_information_page(
                         iread_table, iread_fig, "IREAD"
                     )
 
-                ## WIDA Data (ICSB Schools Only):
-                # 'Comprehension Proficiency Level', 'Listening Proficiency Level', 'Literacy Proficiency Level',
-                # 'Oral Proficiency Level', 'Reading Proficiency Level', 'Speaking Proficiency Level',
+                ## WIDA Data (ICSB cchools and current students only):
+                # 'Comprehension Proficiency Level', 'Listening Proficiency Level',
+                # 'Literacy Proficiency Level', 'Oral Proficiency Level',
+                # 'Reading Proficiency Level', 'Speaking Proficiency Level',
                 # 'Writing Proficiency Level'
 
                 # get a list of all STNs past and present from the ILEARN
-                # dataset for the given school ID. NOTE: None of this is
-                # ideal as we only have STNs and WIDA data for currently
-                # enrolled students
+                # dataset for the given school ID.
 
                 # This will be empty for Guest schools
                 school_stns = get_ilearn_stns(school)
@@ -1191,17 +1182,17 @@ def update_academic_information_page(
                     all_wida = get_wida_student_data()
                     all_wida["STN"] = all_wida["STN"].astype(str)
 
-                    # get IREAD STNs (may be IREAD STNs not in ILEARN STN list)
+                    # get IREAD STNs and merge with ILEARN STNs
                     iread_stns = pd.DataFrame()
                     iread_stns["STN"] = raw_student_iread_data["STN"]
                     iread_stns["STN"] = iread_stns["STN"].astype(str)
 
-                    # merge and drop duplicates
                     all_stns = pd.concat(
                         [school_stns, iread_stns], axis=0, ignore_index=True
                     )
 
-                    # "set" is quite a bit faster than drop_duplicates()
+                    # drop duplicated, "set" is quite a bit faster than
+                    # drop_duplicates()
                     stn_list = list(set(all_stns["STN"].to_list()))
 
                     school_wida = all_wida[all_wida["STN"].isin(stn_list)]
@@ -1211,14 +1202,7 @@ def update_academic_information_page(
 
                     else:
 
-                        # TODO: Check validity of data, determine if it is possible to get
-                        # TODO: WIDA scores for all enrolled students, regardless of where
-                        # TODO: they took the WIDA. Why does CHS/CHW have 400-500 students
-                        # TODO: While 21C has 19, SteelCity has 5, and GVPLA has 0?
-                        # Get N-Size for each grade
-                        wida_nsize = school_wida["Tested Grade"].value_counts().reset_index().rename(columns={"Tested Grade": "N-Size", "index": "Tested Grade"})
-
-                        # Prepare WIDA year over year data
+                        # Get WIDA average per grade by year
                         wida_year = (
                             school_wida.groupby(["Year", "Tested Grade"])[
                                 "Composite Overall Proficiency Level"
@@ -1227,7 +1211,7 @@ def update_academic_information_page(
                             .reset_index(name="Average")
                         )
 
-                        # get WIDA total averages by year
+                        # get WIDA total school average by year
                         wida_total_year = (
                             school_wida.groupby(["Year"])[
                                 "Composite Overall Proficiency Level"
@@ -1263,10 +1247,44 @@ def update_academic_information_page(
                         # Add school Average to by year calcs
                         wida_fig_data = pd.merge(wida_fig_data, wida_total_year, on="Year")
 
-                        # Add N-Size data to table data
-                        # TODO: Need N-size per year/per grade - Add as tooltip
-                        # wida_table_data = pd.merge(wida_year, wida_nsize, on="Tested Grade")
+                        # Get N-Size for each grade for each year and add to
+                        # table data
+                        wida_nsize = school_wida.value_counts(["Tested Grade","Year"]).reset_index().rename(columns={0: "N-Size"})
+                        wida_nsize_data = pd.merge(wida_year, wida_nsize, on=["Year","Tested Grade"])
+
+                        # Get nsize data in same format as scores
+                        wida_nsize_data = wida_nsize_data.drop("Average", axis = 1)
+
+                        wida_nsize_data = (
+                            wida_nsize_data.pivot_table(
+                                index=["Year"], columns="Tested Grade", values="N-Size"
+                            )
+                            .reset_index()
+                            .rename_axis(None, axis=1)
+                        )
+
+                        def atoi(text):
+                            return int(text) if text.isdigit() else text
+
+                        def natural_keys(text):
+                            '''
+                            alist.sort(key=natural_keys) sorts in human order
+                            http://nedbatchelder.com/blog/200712/human_sorting.html
+                            (See Toothy's implementation in the comments)
+                            '''
+                            return [ atoi(c) for c in re.split(r'(\d+)', text) ]
+
+                        # identify year columns to get totals (called Average to match
+                        # scores df)
+                        nsize_years = [c for c in wida_nsize_data.columns if "Grade" in c]                      
+                        wida_nsize_data["Average"] = wida_nsize_data[nsize_years].sum(axis=1)
                         
+                        # sort nsize columns to match data dataframe
+                        nsize_years.sort(key=natural_keys)
+                        nsize_cols_sorted = ["Year"] + nsize_years + ["Average"]
+                        wida_nsize_data = wida_nsize_data[nsize_cols_sorted]
+
+# TODO: Make sure 0s are treated correctly, NaN shouldn't be displayed at all
                         # Create line chart for WIDA Scores by Grade and Total
                         wida_fig = make_line_chart(wida_fig_data)
 
@@ -1276,6 +1294,17 @@ def update_academic_information_page(
                             .rename_axis(None, axis=1)
                             .reset_index()
                         )
+
+# TODO: HERE - Add nsize to table as annotations                        
+                        print('FIG')
+                        print(wida_fig_data)
+
+                        print('TABLE - NSIZE')
+                        print(wida_nsize_data)
+
+                        print('TABLE - Data')
+                        print(wida_table_data)
+
 
                         for col in wida_table_data.columns[1:]:
                             wida_table_data[col] = pd.to_numeric(wida_table_data[col], errors="coerce")
