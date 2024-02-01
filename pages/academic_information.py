@@ -3,7 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.13
-# date:     01/01/24
+# date:     02/01/24
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -19,6 +19,7 @@ from pages.load_data import (
     subgroup,
     subject,
     grades_all,
+    grades,
     grades_ordinal,
     current_academic_year,
     get_ilearn_stns,
@@ -201,7 +202,6 @@ def update_academic_information_page(
             if not all_hs_school_data.empty:
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
-                # radio_input_container = {'display': 'block'} # show k8/hs radio group
 
                 # Graduation Rate Tables ("Strength of Diploma" in data, but not currently displayed)
                 grad_overview_categories = ["Total", "Non Waiver", "State Average"]
@@ -349,8 +349,7 @@ def update_academic_information_page(
                         k12_sat_cut_scores, k12_sat_cut_scores_label
                     )
 
-                # Attendance Rate
-                    
+                ## Attendance Rate & Chronic Absenteeism
                 attendance_rate = get_attendance_data(
                     selected_school_id, selected_school_type, selected_year_string
                 )
@@ -379,22 +378,24 @@ def update_academic_information_page(
         or (selected_school_id == 5874 and selected_year_numeric >= 2021)
     ) and radio_type == "k8":
         
-        # Begin Aggregated K8 School Data
+        # Get all K8 data for selected school
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
         excluded_years = get_excluded_years(selected_year_string)
 
+        # remove any years greater than the selected year
         if excluded_years:
             selected_raw_k8_school_data = selected_raw_k8_school_data[
                 ~selected_raw_k8_school_data["Year"].isin(excluded_years)
             ]
 
-        # No k8 academic data for 2020
+        # Account for the fact that there is no k8 academic data for 2020
         if (
             len(selected_raw_k8_school_data.index) > 0
             and selected_year_string != "2020"
         ):
-            # proficiency and N-Size data for ILEARN and IREAD
+            # process data - end up with proficiency and N-Size data for ILEARN and IREAD
+            # with column names = ["2019School", "2019N-Size", . . . ]
             all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data)
 
             if not all_k8_school_data.empty:                
@@ -402,29 +403,15 @@ def update_academic_information_page(
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                all_k8_school_data = conditional_fillna(all_k8_school_data)
-                
-                all_k8_school_data = (
-                    all_k8_school_data.set_index(["Category"])
-                    .add_suffix("School")
-                    .reset_index()
-                )
-
-                all_k8_school_data.columns = all_k8_school_data.columns.str.replace(
-                    r"School$", "", regex=True
-                )
-
                 all_k8_school_data["Category"] = (
                     all_k8_school_data["Category"]
                     .str.replace(" Proficient %", "")
                     .str.strip()
                 )
 
-                all_k8_school_data.loc[
-                    all_k8_school_data["Category"] == " Total|IREAD", "Category"
-                ] = "IREAD Proficiency (Grade 3)"
-
                 # Reformat data for multi-year line charts
+                # Remove Nsize cols, strip suffix from years, and
+                # transpose dataframe so categories become column names
                 year_over_year_data = all_k8_school_data.loc[
                     :, ~all_k8_school_data.columns.str.contains("N-Size")
                 ].copy()
@@ -442,19 +429,437 @@ def update_academic_information_page(
                 )
                 year_over_year_data["School Name"] = selected_school_name
 
-        # year_over_year_data = year_over_year_data.rename(
-        #     columns={
-        #         "Native Hawaiian or Other Pacific Islander|ELA Proficient %": "Pacific Islander|ELA Proficient %"
-        #     }
-        # )
+            ## ILEARN
+                # get column lists for each subject/category combination
+                categories_ela_subgroup = []
+                categories_math_subgroup = []
+                for s in subgroup:
+                    categories_ela_subgroup.append(s + "|" + "ELA")
+                    categories_math_subgroup.append(s + "|" + "Math")
+
+                categories_ela_ethnicity = []
+                categories_math_ethnicity = []
+                for e in ethnicity:
+                    categories_ela_ethnicity.append(e + "|" + "ELA")
+                    categories_math_ethnicity.append(e + "|" + "Math")
+
+                # ELA by Grade table
+                years_by_grade_ela = all_k8_school_data[
+                    (
+                        all_k8_school_data["Category"].str.contains(
+                            "|".join(grades_all)
+                        )
+                        & all_k8_school_data["Category"].str.contains("ELA")
+                    )
+                ]
+
+                ela_grade_table = create_multi_header_table(years_by_grade_ela)
+
+                # ELA by Grade fig
+                ela_grade_fig_data = year_over_year_data.filter(
+                    regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
+                )
+
+                ela_grade_line_fig = make_line_chart(ela_grade_fig_data)
+
+                proficiency_grades_ela = create_line_fig_layout(
+                    ela_grade_table, ela_grade_line_fig, "ELA By Grade"
+                )
+
+                # ELA by Subgroup table
+                years_by_subgroup_ela = all_k8_school_data[
+                    (
+                        all_k8_school_data["Category"].str.contains("|".join(subgroup))
+                        & all_k8_school_data["Category"].str.contains("ELA")
+                    )
+                ]
+
+                ela_subgroup_table = create_multi_header_table(years_by_subgroup_ela)
+
+                # ELA by Subgroup fig
+                ela_subgroup_fig_data = year_over_year_data.loc[
+                    :,
+                    (year_over_year_data.columns.isin(categories_ela_subgroup))
+                    | (year_over_year_data.columns.isin(["School Name", "Year"])),
+                ]
+                ela_subgroup_line_fig = make_line_chart(ela_subgroup_fig_data)
+
+                proficiency_subgroup_ela = create_line_fig_layout(
+                    ela_subgroup_table, ela_subgroup_line_fig, "ELA By Subgroup"
+                )
+
+                # ELA by Ethnicity table
+                years_by_ethnicity_ela = all_k8_school_data[
+                    (
+                        all_k8_school_data["Category"].str.contains("|".join(ethnicity))
+                        & all_k8_school_data["Category"].str.contains("ELA")
+                    )
+                ]
+
+                ela_ethnicity_table = create_multi_header_table(years_by_ethnicity_ela)
+
+                # ELA by Ethnicity fig
+                ela_ethnicity_fig_data = year_over_year_data.loc[
+                    :,
+                    (year_over_year_data.columns.isin(categories_ela_ethnicity))
+                    | (year_over_year_data.columns.isin(["School Name", "Year"])),
+                ]
+                ela_ethnicity_line_fig = make_line_chart(ela_ethnicity_fig_data)
+
+                proficiency_ethnicity_ela = create_line_fig_layout(
+                    ela_ethnicity_table, ela_ethnicity_line_fig, "ELA By Ethnicity"
+                )
+
+                # Math by Grade table
+                years_by_grade_math = all_k8_school_data[
+                    (
+                        all_k8_school_data["Category"].str.contains(
+                            "|".join(grades_all)
+                        )
+                        & all_k8_school_data["Category"].str.contains("Math")
+                    )
+                ]
+
+                math_grade_table = create_multi_header_table(years_by_grade_math)
+
+                # Math by Grade fig
+                math_grade_fig_data = year_over_year_data.filter(
+                    regex=r"^Grade \d\|Math|^School Name$|^Year$", axis=1
+                )
+                math_grade_line_fig = make_line_chart(math_grade_fig_data)
+
+                proficiency_grades_math = create_line_fig_layout(
+                    math_grade_table, math_grade_line_fig, "Math By Grade"
+                )
+
+                # Math by Subgroup Table
+                years_by_subgroup_math = all_k8_school_data[
+                    (
+                        all_k8_school_data["Category"].str.contains("|".join(subgroup))
+                        & all_k8_school_data["Category"].str.contains("Math")
+                    )
+                ]
+
+                math_subgroup_table = create_multi_header_table(years_by_subgroup_math)
+
+                # Math by Subgroup fig
+                math_subgroup_fig_data = year_over_year_data.loc[
+                    :,
+                    (year_over_year_data.columns.isin(categories_math_subgroup))
+                    | (year_over_year_data.columns.isin(["School Name", "Year"])),
+                ]
+                math_subgroup_line_fig = make_line_chart(math_subgroup_fig_data)
+
+                proficiency_subgroup_math = create_line_fig_layout(
+                    math_subgroup_table, math_subgroup_line_fig, "Math By Subgroup"
+                )
+
+                # Math by Ethnicity table
+                years_by_ethnicity_math = all_k8_school_data[
+                    (
+                        all_k8_school_data["Category"].str.contains("|".join(ethnicity))
+                        & all_k8_school_data["Category"].str.contains("Math")
+                    )
+                ]
+
+                math_ethnicity_table = create_multi_header_table(
+                    years_by_ethnicity_math
+                )
+
+                # Math by Ethnicity fig
+                math_ethnicity_fig_data = year_over_year_data.loc[
+                    :,
+                    (year_over_year_data.columns.isin(categories_math_ethnicity))
+                    | (year_over_year_data.columns.isin(["School Name", "Year"])),
+                ]
+                math_ethnicity_line_fig = make_line_chart(math_ethnicity_fig_data)
+
+                proficiency_ethnicity_math = create_line_fig_layout(
+                    math_ethnicity_table, math_ethnicity_line_fig, "Math By Ethnicity"
+                )
+
+                ## ILEARN proficiency breakdown stacked bar charts
+                all_proficiency_data = selected_raw_k8_school_data.loc[
+                    selected_raw_k8_school_data["Year"] == selected_year_numeric
+                ].copy()
+
+                all_proficiency_data = all_proficiency_data.dropna(axis=1)
+                all_proficiency_data = all_proficiency_data.reset_index()
+
+                for col in all_proficiency_data.columns:
+                    all_proficiency_data[col] = pd.to_numeric(
+                        all_proficiency_data[col], errors="coerce"
+                    )
+
+                # this keeps ELA and Math as well, which we drop later
+                all_proficiency_data = all_proficiency_data.filter(
+                    regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
+                    axis=1,
+                )
+
+                proficiency_rating = [
+                    "Below Proficiency",
+                    "Approaching Proficiency",
+                    "At Proficiency",
+                    "Above Proficiency",
+                ]
+
+                # create dataframe to hold annotations
+                annotations = pd.DataFrame(
+                    columns=["Category", "Total Tested"]
+                )
+
+
+                categories = grades_all + ethnicity + subgroup
+
+                for c in categories:
+                    for s in subject:
+                        category_subject = c + "|" + s
+                        proficiency_columns = [
+                            category_subject + " " + x for x in proficiency_rating
+                        ]
+                        total_tested = category_subject + " " + "Total Tested"
+
+                        # We do not want categories that do not appear in the dataframe to appear
+                        # in a chart. However, we also do not want to lose sight of critical data
+                        # because of the way that IDOE determines insufficient N-Size. There are
+                        # three possible data configurations for each column:
+                        # 1) Total Tested > 0 and the sum of proficiency_rating(s) is > 0: the school
+                        #    has tested category and there is publicly available data [display]
+                        # 2) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
+                        #    have data for the tested category [do not display, but 'may' want
+                        #    annotation]
+                        # 3) Total Tested > 0 and the sum of proficiency_rating(s) are == "NaN": the
+                        #    school has tested category but there is no publicly available data
+                        #    (insufficient N-size) [do not display]
+
+                        # Neither (2) or (3) permit the creation of a valid or meaningful chart.
+                        # However, we do want to track which Category/Subject combinations meet
+                        # either condition (for figure annotation purposes).
+
+                        if total_tested in all_proficiency_data.columns:
+                            # The following is true if: 1) there are any NaN values in the set
+                            # (one or more '***) or 2) the sum of all values is equal to 0 (no
+                            # data) or 0.0 (NaN's converted from '***' meaning insufficient data)
+                            # Can tell whether the annotation reflects insufficient n-size or
+                            # missing data by the value in Total Tested (will be 0 for missing)
+                            if (
+                                all_proficiency_data[proficiency_columns]
+                                .isna()
+                                .sum()
+                                .sum()
+                                > 0
+                            ) or (
+                                all_proficiency_data[proficiency_columns].iloc[0].sum()
+                                == 0
+                            ):
+                                # add the category and value of Total Tested to a df
+                                annotation_category = proficiency_columns[0].split("|")[0]
+                                annotations.loc[len(annotations.index)] = [
+                                    annotation_category + "|" + s,
+                                    all_proficiency_data[total_tested].values[0]
+                                ]
+
+                                # drop any columns in the (non-chartable) category from the df
+                                all_proficiency_columns = proficiency_columns + [
+                                    total_tested
+                                ]
+
+                                all_proficiency_data = all_proficiency_data.drop(
+                                    all_proficiency_columns, axis=1
+                                )
+
+                            else:
+                                # calculate percentage
+                                all_proficiency_data[
+                                    proficiency_columns
+                                ] = all_proficiency_data[proficiency_columns].divide(
+                                    all_proficiency_data[total_tested], axis="index"
+                                )
+
+                                # get a list of all values
+                                row_list = all_proficiency_data[
+                                    proficiency_columns
+                                ].values.tolist()
+
+                                # round percentages using Largest Remainder Method
+                                # to build the 100% stacked bar chart
+                                rounded = round_percentages(row_list[0])
+
+                                # add back to dataframe
+                                rounded_percentages = pd.DataFrame([rounded])
+                                rounded_percentages_cols = list(
+                                    rounded_percentages.columns
+                                )
+                                all_proficiency_data[
+                                    proficiency_columns
+                                ] = rounded_percentages[rounded_percentages_cols]
+
+                all_proficiency_data.drop(
+                    list(
+                        all_proficiency_data.filter(
+                            regex="Total Proficient|ELA and Math"
+                        )
+                    ),
+                    axis=1,
+                    inplace=True,
+                )
+
+                # Replace Grade X with ordinal number (e.g., Grade 4 = 4th)
+                all_proficiency_data = all_proficiency_data.rename(
+                    columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
+                )
+
+                # all use "th" suffix except for 3rd - so we need to specially treat "3""
+                all_proficiency_data.columns = [
+                    x.replace("3th", "3rd")
+                    for x in all_proficiency_data.columns.to_list()
+                ]
+
+                all_proficiency_data = (
+                    all_proficiency_data.T.rename_axis("Category")
+                    .rename_axis(None, axis=1)
+                    .reset_index()
+                )
+
+                # split Grade column into two columns and rename what used to be the index
+                all_proficiency_data[
+                    ["Category", "Proficiency"]
+                ] = all_proficiency_data["Category"].str.split("|", expand=True)
+
+                all_proficiency_data.rename(columns={0: "Percentage"}, inplace=True)
+
+                all_proficiency_data = all_proficiency_data[
+                    all_proficiency_data["Category"] != "index"
+                ]
+
+                bar_fig_title = "Proficiency Breakdown (" + selected_year_string + ")"
+
+                # Proficiency Breakdown - ELA by Grade - Current Year
+                grade_pattern = '|'.join(grades)
+
+                grade_ela_annotations = annotations.loc[
+                    annotations["Category"].str.contains(grade_pattern)
+                    & annotations["Category"].str.contains("ELA")
+                ]
+
+                grade_ela_fig_data = all_proficiency_data[
+                    all_proficiency_data["Category"].isin(grades_ordinal)
+                    & all_proficiency_data["Proficiency"].str.contains("ELA")
+                ]
+
+                if not grade_ela_fig_data.empty:
+                    ela_grade_bar_fig = make_stacked_bar(
+                        grade_ela_fig_data, bar_fig_title, grade_ela_annotations
+                    )
+                else:
+                    ela_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
+
+                # Proficiency Breakdown - Math by Grade - Current Year
+                grade_math_annotations = annotations.loc[
+                    annotations["Category"].str.contains(grade_pattern)
+                    & annotations["Category"].str.contains("Math")
+                ]
+
+                grade_math_fig_data = all_proficiency_data[
+                    all_proficiency_data["Category"].isin(grades_ordinal)
+                    & all_proficiency_data["Proficiency"].str.contains("Math")
+                ]
+
+                if not grade_math_fig_data.empty:
+                    math_grade_bar_fig = make_stacked_bar(
+                        grade_math_fig_data, bar_fig_title, grade_math_annotations
+                    )
+                else:
+                    math_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
+
+                # Proficiency Breakdown - ELA by Ethnicity - Current Year
+                eth_pattern = '|'.join(ethnicity)
+
+                ethnicity_ela_annotations = annotations.loc[
+                    annotations["Category"].str.contains(eth_pattern)
+                    & annotations["Category"].str.contains("ELA")
+                ]
+
+                ethnicity_ela_fig_data = all_proficiency_data[
+                    all_proficiency_data["Category"].isin(ethnicity)
+                    & all_proficiency_data["Proficiency"].str.contains("ELA")
+                ]
+
+                if not ethnicity_ela_fig_data.empty:
+                    ela_ethnicity_bar_fig = make_stacked_bar(
+                        ethnicity_ela_fig_data, bar_fig_title, ethnicity_ela_annotations
+                    )
+                else:
+                    ela_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
+
+                # Proficiency Breakdown - Math by Ethnicity - Current Year
+                ethnicity_math_annotations = annotations.loc[
+                    annotations["Category"].str.contains(eth_pattern)
+                    & annotations["Category"].str.contains("Math")
+                ]
+
+                ethnicity_math_fig_data = all_proficiency_data[
+                    all_proficiency_data["Category"].isin(ethnicity)
+                    & all_proficiency_data["Proficiency"].str.contains("Math")
+                ]
+
+                if not ethnicity_math_fig_data.empty:
+                    math_ethnicity_bar_fig = make_stacked_bar(
+                        ethnicity_math_fig_data, bar_fig_title, ethnicity_math_annotations
+                    )
+                else:
+                    math_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
+
+                # Proficiency Breakdown - ELA by Subgroup - Current Year
+                sub_pattern = '|'.join(subgroup)
+
+                subgroup_ela_annotations = annotations.loc[
+                    annotations["Category"].str.contains(sub_pattern)
+                    & annotations["Category"].str.contains("ELA")
+                ]
+
+                subgroup_ela_fig_data = all_proficiency_data[
+                    all_proficiency_data["Category"].isin(subgroup)
+                    & all_proficiency_data["Proficiency"].str.contains("ELA")
+                ]
+
+                if not subgroup_ela_fig_data.empty:
+                    ela_subgroup_bar_fig = make_stacked_bar(
+                        subgroup_ela_fig_data, bar_fig_title, subgroup_ela_annotations
+                    )
+                else:
+                    ela_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
+
+                # Proficiency Breakdown - Math by Subgroup - Current Year
+                math_subgroup_annotations = annotations.loc[
+                    annotations["Category"].str.contains(sub_pattern)
+                    & annotations["Category"].str.contains("Math")
+                ]
+                    
+                subgroup_math_fig_data = all_proficiency_data[
+                    all_proficiency_data["Category"].isin(subgroup)
+                    & all_proficiency_data["Proficiency"].str.contains("Math")
+                ]
+
+                if not subgroup_math_fig_data.empty:
+                    math_subgroup_bar_fig = make_stacked_bar(
+                        subgroup_math_fig_data, bar_fig_title, math_subgroup_annotations
+                    )
+                else:
+                    math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
+
+                # NOTE: This may be necessary for formatting reasons, but so few schools have
+                # this demographic that it is not much of an issue.
+                # year_over_year_data = year_over_year_data.rename(
+                #     columns={
+                #         "Native Hawaiian or Other Pacific Islander|ELA Proficient %": "Pacific Islander|ELA Proficient %"
+                #     }
+                # )
               
                 ## IREAD\WIDA School and Student Level Data
 
-                # get School Totals IREAD data
-                # total_iread_data = year_over_year_data.filter(
-                #     regex=r"Total\|IREAD|^Year$", axis=1
-                # ).copy()
-
+# TODO: TO HERE CURRENTLY
                 # get IREAD total students tested (school level data)
                 raw_total_iread = all_k8_school_data[
                     all_k8_school_data["Category"] == "Total|IREAD"
@@ -861,7 +1266,7 @@ def update_academic_information_page(
                         # Add N-Size data to table data
                         # TODO: Need N-size per year/per grade - Add as tooltip
                         # wida_table_data = pd.merge(wida_year, wida_nsize, on="Tested Grade")
-
+                        
                         # Create line chart for WIDA Scores by Grade and Total
                         wida_fig = make_line_chart(wida_fig_data)
 
@@ -1023,164 +1428,7 @@ def update_academic_information_page(
                     # # c) measure raw scale score avg
                     # # Avg ELA over time for IREAD No Pass
 
-            ## ILEARN - ELA
-                # by Grade Table
-# TODO: HEEEERREEE - NEED TO REFACTOR THIS BECAUSE TABLE IS NOT TRANSPOSED AT THIS POINT
-# TODO: How does multiheader table want data?
-# TODO: FOOK, NEED N-Size -go back to original function and add it
-                # print('TO HERE')
-                # print(year_over_year_data)
-                years_by_grade_ela = all_k8_school_data[
-                    (
-                        all_k8_school_data["Category"].str.contains(
-                            "|".join(grades_all)
-                        )
-                        & all_k8_school_data["Category"].str.contains("ELA")
-                    )
-                    | (all_k8_school_data["Category"] == "Total|IREAD Proficient %")
-                ]
-
-                ela_grade_table = create_multi_header_table(years_by_grade_ela)
-
-                # by Grade Year over Year Line Chart
-                ela_grade_fig_data = year_over_year_data.filter(
-                    regex=r"^Grade \d\|ELA|IREAD|^School Name$|^Year$", axis=1
-                )
-
-                ela_grade_line_fig = make_line_chart(ela_grade_fig_data)
-
-                proficiency_grades_ela = create_line_fig_layout(
-                    ela_grade_table, ela_grade_line_fig, "ELA By Grade"
-                )
-
-                # by Subgroup Table
-                years_by_subgroup_ela = all_k8_school_data[
-                    (
-                        all_k8_school_data["Category"].str.contains("|".join(subgroup))
-                        & all_k8_school_data["Category"].str.contains("ELA")
-                    )
-                ]
-
-                ela_subgroup_table = create_multi_header_table(years_by_subgroup_ela)
-
-                # get column lists for each subject/category combination
-                categories_ela_subgroup = []
-                categories_math_subgroup = []
-                for s in subgroup:
-                    categories_ela_subgroup.append(s + "|" + "ELA")
-                    categories_math_subgroup.append(s + "|" + "Math")
-
-                categories_ela_ethnicity = []
-                categories_math_ethnicity = []
-                for e in ethnicity:
-                    categories_ela_ethnicity.append(e + "|" + "ELA")
-                    categories_math_ethnicity.append(e + "|" + "Math")
-
-                # by Subgroup Year over Year Line Chart
-                ela_subgroup_fig_data = year_over_year_data.loc[
-                    :,
-                    (year_over_year_data.columns.isin(categories_ela_subgroup))
-                    | (year_over_year_data.columns.isin(["School Name", "Year"])),
-                ]
-                ela_subgroup_line_fig = make_line_chart(ela_subgroup_fig_data)
-
-                proficiency_subgroup_ela = create_line_fig_layout(
-                    ela_subgroup_table, ela_subgroup_line_fig, "ELA By Subgroup"
-                )
-
-                # by Ethnicity
-                years_by_ethnicity_ela = all_k8_school_data[
-                    (
-                        all_k8_school_data["Category"].str.contains("|".join(ethnicity))
-                        & all_k8_school_data["Category"].str.contains("ELA")
-                    )
-                ]
-
-                ela_ethnicity_table = create_multi_header_table(years_by_ethnicity_ela)
-
-                # by Ethnicity Year over Year Line Chart
-                ela_ethnicity_fig_data = year_over_year_data.loc[
-                    :,
-                    (year_over_year_data.columns.isin(categories_ela_ethnicity))
-                    | (year_over_year_data.columns.isin(["School Name", "Year"])),
-                ]
-                ela_ethnicity_line_fig = make_line_chart(ela_ethnicity_fig_data)
-
-                proficiency_ethnicity_ela = create_line_fig_layout(
-                    ela_ethnicity_table, ela_ethnicity_line_fig, "ELA By Ethnicity"
-                )
-
-                ## Math
-
-                # by Grade Table
-                years_by_grade_math = all_k8_school_data[
-                    (
-                        all_k8_school_data["Category"].str.contains(
-                            "|".join(grades_all)
-                        )
-                        & all_k8_school_data["Category"].str.contains("Math")
-                    )
-                ]
-
-                math_grade_table = create_multi_header_table(years_by_grade_math)
-
-                # by Grade Year over Year Line Chart
-                math_grade_fig_data = year_over_year_data.filter(
-                    regex=r"^Grade \d\|Math|^School Name$|^Year$", axis=1
-                )
-                math_grade_line_fig = make_line_chart(math_grade_fig_data)
-
-                proficiency_grades_math = create_line_fig_layout(
-                    math_grade_table, math_grade_line_fig, "Math By Grade"
-                )
-
-                # by Subgroup Table
-                years_by_subgroup_math = all_k8_school_data[
-                    (
-                        all_k8_school_data["Category"].str.contains("|".join(subgroup))
-                        & all_k8_school_data["Category"].str.contains("Math")
-                    )
-                ]
-
-                math_subgroup_table = create_multi_header_table(years_by_subgroup_math)
-
-                # by Subgroup Year over Year Line Chart
-                math_subgroup_fig_data = year_over_year_data.loc[
-                    :,
-                    (year_over_year_data.columns.isin(categories_math_subgroup))
-                    | (year_over_year_data.columns.isin(["School Name", "Year"])),
-                ]
-                math_subgroup_line_fig = make_line_chart(math_subgroup_fig_data)
-
-                proficiency_subgroup_math = create_line_fig_layout(
-                    math_subgroup_table, math_subgroup_line_fig, "Math By Subgroup"
-                )
-
-                # by Ethnicity
-                years_by_ethnicity_math = all_k8_school_data[
-                    (
-                        all_k8_school_data["Category"].str.contains("|".join(ethnicity))
-                        & all_k8_school_data["Category"].str.contains("Math")
-                    )
-                ]
-
-                math_ethnicity_table = create_multi_header_table(
-                    years_by_ethnicity_math
-                )
-
-                # by Ethnicity Year over Year Line Chart
-                math_ethnicity_fig_data = year_over_year_data.loc[
-                    :,
-                    (year_over_year_data.columns.isin(categories_math_ethnicity))
-                    | (year_over_year_data.columns.isin(["School Name", "Year"])),
-                ]
-                math_ethnicity_line_fig = make_line_chart(math_ethnicity_fig_data)
-
-                proficiency_ethnicity_math = create_line_fig_layout(
-                    math_ethnicity_table, math_ethnicity_line_fig, "Math By Ethnicity"
-                )
-
-                # Attendance Rate
+                ## Attendance Data (Attendance Rate/Chronic Absenteeism)
                 attendance_rate = get_attendance_data(
                     selected_school_id, selected_school_type, selected_year_string
                 )
@@ -1198,311 +1446,6 @@ def update_academic_information_page(
                 attendance_table_hs = set_table_layout(
                     attendance_table, attendance_table, attendance_rate.columns
                 )
-
-            ## Proficiency breakdown data for stacked bar charts
-                # NOTE: IDOE's raw proficency data is annoyingly inconsistent. In some cases missing
-                # data is blank and in other cases it is represented by "0." So we need to be extra
-                # careful in interpreting what is missing from what is just inconsistenly recorded
-
-                all_proficiency_data = selected_raw_k8_school_data.loc[
-                    selected_raw_k8_school_data["Year"] == selected_year_numeric
-                ].copy()
-
-                all_proficiency_data = all_proficiency_data.dropna(axis=1)
-                all_proficiency_data = all_proficiency_data.reset_index()
-
-                for col in all_proficiency_data.columns:
-                    all_proficiency_data[col] = pd.to_numeric(
-                        all_proficiency_data[col], errors="coerce"
-                    )
-
-                # this keeps ELA and Math as well, which we drop later
-                all_proficiency_data = all_proficiency_data.filter(
-                    regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
-                    axis=1,
-                )
-
-                proficiency_rating = [
-                    "Below Proficiency",
-                    "Approaching Proficiency",
-                    "At Proficiency",
-                    "Above Proficiency",
-                ]
-
-                # create dataframe to hold annotations (categories & missing data)
-                # NOTE: Annotations are currently not used
-                annotations = pd.DataFrame(
-                    columns=["Category", "Total Tested", "Status"]
-                )
-
-                # NOTE: This may seem kludgy, but runs consistently around .15s
-                # for each category, create a proficiency_columns list of columns using the strings in
-                # "proficiency_rating" and then divide each column by "Total Test
-                categories = grades_all + ethnicity + subgroup
-
-                for c in categories:
-                    for s in subject:
-                        category_subject = c + "|" + s
-                        proficiency_columns = [
-                            category_subject + " " + x for x in proficiency_rating
-                        ]
-                        total_tested = category_subject + " " + "Total Tested"
-
-                        # We do not want categories that do not appear in the dataframe, there are
-                        # four possible data configurations for each column:
-                        # 1) Total Tested > 0 and the sum of proficiency_rating(s) is > 0: the school
-                        #    has tested category and there is publicly available data [display]
-                        # 2) Total Tested > 0 and the sum of proficiency_rating(s) are == "NaN": the
-                        #    school has tested category but there is no publicly available data
-                        #    (insufficient N-size) [do not display]
-                        # 3) Total Tested > 0, but there is one or more NaN values in the group -
-                        #    so while there is some chartable data available, it would be impossible
-                        #    to produce a valid stacked bar
-                        # 4) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
-                        #    have data for the tested category [do not display]
-
-                        # Neither (2), (3), or (4) should be displayed. However, we do want to
-                        # track which Category/Subject combinations meet either condition
-                        # (for figure annotation purposes). So we use a little trick. The
-                        # sum of a series of "0" values is 0 (a numpy.int64). The sum of a
-                        # series of "NaN" values is also 0.0 (but the value is a float because
-                        # numpy treats NaN as a numpy.float64). While either value returns True
-                        # when tested if the value is 0, we can test the "type" of the result (using
-                        # np.integer and np.floating) to distinguish between them.
-
-                        if total_tested in all_proficiency_data.columns:
-                            # This is true if: 1) there are any NaN values in the set (one or
-                            # more '***) or 2) the sum of all values is equal to 0 (no data)
-                            # or 0.0 (NaN's converted from '***' meaning insufficient data)
-                            if (
-                                all_proficiency_data[proficiency_columns]
-                                .isna()
-                                .sum()
-                                .sum()
-                                > 0
-                            ) or (
-                                all_proficiency_data[proficiency_columns].iloc[0].sum()
-                                == 0
-                            ):
-                                # if the value is zero AND a float, all values were NaN,
-                                # meaning insufficient N-Size
-                                if isinstance(
-                                    all_proficiency_data[proficiency_columns]
-                                    .iloc[0]
-                                    .sum(),
-                                    np.floating,
-                                ):
-                                    annotations.loc[len(annotations.index)] = [
-                                        proficiency_columns[0],
-                                        all_proficiency_data[total_tested].values[0],
-                                        "Insufficient",
-                                    ]
-
-                                # if the value is zero and an integer, all values were 0,
-                                # which means "missing data"
-                                elif isinstance(
-                                    all_proficiency_data[proficiency_columns]
-                                    .iloc[0]
-                                    .sum(),
-                                    np.integer,
-                                ):
-                                    # for this category, we only want to add to annotations if it is
-                                    # a non "Grade" category in order to account for IDOE's shitty data
-                                    # practices- sometimes missing grades are blank (the correct way)
-                                    # and sometimes the columns are filled with 0. So if everything is
-                                    # 0 AND it is a Grade category, we assume it is just IDOE's fucked
-                                    # up data entry
-                                    if (
-                                        ~all_proficiency_data[proficiency_columns]
-                                        .columns.str.contains("Grade")
-                                        .any()
-                                    ):
-                                        annotations.loc[len(annotations.index)] = [
-                                            proficiency_columns[0],
-                                            all_proficiency_data[total_tested].values[
-                                                0
-                                            ],
-                                            "Missing",
-                                        ]
-
-                                # if the value is greater than zero - it means there was one or more
-                                # nan values in the set which also indicates insufficient data
-                                elif (
-                                    all_proficiency_data[proficiency_columns]
-                                    .iloc[0]
-                                    .sum()
-                                    > 0
-                                ):
-                                    annotations.loc[len(annotations.index)] = [
-                                        proficiency_columns[0],
-                                        all_proficiency_data[total_tested].values[0],
-                                        "Insufficient",
-                                    ]
-
-                                # either way, drop all columns related to the category from the df
-                                all_proficiency_columns = proficiency_columns + [
-                                    total_tested
-                                ]
-
-                                all_proficiency_data = all_proficiency_data.drop(
-                                    all_proficiency_columns, axis=1
-                                )
-
-                            else:
-                                # calculate percentage
-                                all_proficiency_data[
-                                    proficiency_columns
-                                ] = all_proficiency_data[proficiency_columns].divide(
-                                    all_proficiency_data[total_tested], axis="index"
-                                )
-
-                                # get a list of all values
-                                row_list = all_proficiency_data[
-                                    proficiency_columns
-                                ].values.tolist()
-
-                                # round percentages using Largest Remainder Method
-                                rounded = round_percentages(row_list[0])
-
-                                # add back to dataframe
-                                rounded_percentages = pd.DataFrame([rounded])
-                                rounded_percentages_cols = list(
-                                    rounded_percentages.columns
-                                )
-                                all_proficiency_data[
-                                    proficiency_columns
-                                ] = rounded_percentages[rounded_percentages_cols]
-
-                all_proficiency_data.drop(
-                    list(
-                        all_proficiency_data.filter(
-                            regex="Total Proficient|ELA and Math"
-                        )
-                    ),
-                    axis=1,
-                    inplace=True,
-                )
-
-                # Replace Grade X with ordinal number (e.g., Grade 4 = 4th)
-                all_proficiency_data = all_proficiency_data.rename(
-                    columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
-                )
-
-                # all use "th" suffix except for 3rd - so we need to specially treat "3""
-                all_proficiency_data.columns = [
-                    x.replace("3th", "3rd")
-                    for x in all_proficiency_data.columns.to_list()
-                ]
-
-                all_proficiency_data = (
-                    all_proficiency_data.T.rename_axis("Category")
-                    .rename_axis(None, axis=1)
-                    .reset_index()
-                )
-
-                # split Grade column into two columns and rename what used to be the index
-                all_proficiency_data[
-                    ["Category", "Proficiency"]
-                ] = all_proficiency_data["Category"].str.split("|", expand=True)
-
-                all_proficiency_data.rename(columns={0: "Percentage"}, inplace=True)
-
-                all_proficiency_data = all_proficiency_data[
-                    all_proficiency_data["Category"] != "index"
-                ]
-
-                bar_fig_title = "Proficiency Breakdown (" + selected_year_string + ")"
-
-                # ELA by Grade - Current Year
-                grade_annotations = annotations.loc[
-                    annotations["Category"].str.contains("Grade")
-                ]
-
-                grade_ela_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(grades_ordinal)
-                    & all_proficiency_data["Proficiency"].str.contains("ELA")
-                ]
-
-                if not grade_ela_fig_data.empty:
-                    ela_grade_bar_fig = make_stacked_bar(
-                        grade_ela_fig_data, bar_fig_title
-                    )
-                else:
-                    ela_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # Math by Grade - Current Year
-                grade_math_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(grades_ordinal)
-                    & all_proficiency_data["Proficiency"].str.contains("Math")
-                ]
-
-                if not grade_math_fig_data.empty:
-                    math_grade_bar_fig = make_stacked_bar(
-                        grade_math_fig_data, bar_fig_title
-                    )
-                else:
-                    math_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # ELA by Ethnicity - Current Year
-                ethnicity_annotations = annotations.loc[
-                    annotations["Category"].str.contains("Ethnicity")
-                ]
-
-                ethnicity_ela_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(ethnicity)
-                    & all_proficiency_data["Proficiency"].str.contains("ELA")
-                ]
-
-                if not ethnicity_ela_fig_data.empty:
-                    ela_ethnicity_bar_fig = make_stacked_bar(
-                        ethnicity_ela_fig_data, bar_fig_title
-                    )
-                else:
-                    ela_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # Math by Ethnicity - Current Year
-                ethnicity_math_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(ethnicity)
-                    & all_proficiency_data["Proficiency"].str.contains("Math")
-                ]
-
-                if not ethnicity_math_fig_data.empty:
-                    math_ethnicity_bar_fig = make_stacked_bar(
-                        ethnicity_math_fig_data, bar_fig_title
-                    )
-                else:
-                    math_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # ELA by Subgroup - Current Year
-                subgroup_annotations = annotations.loc[
-                    annotations["Category"].str.contains("Subgroup")
-                ]
-
-                subgroup_ela_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(subgroup)
-                    & all_proficiency_data["Proficiency"].str.contains("ELA")
-                ]
-
-                if not subgroup_ela_fig_data.empty:
-                    ela_subgroup_bar_fig = make_stacked_bar(
-                        subgroup_ela_fig_data, bar_fig_title
-                    )
-                else:
-                    ela_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # Math by Subgroup - Current Year
-                subgroup_math_fig_data = all_proficiency_data[
-                    all_proficiency_data["Category"].isin(subgroup)
-                    & all_proficiency_data["Proficiency"].str.contains("Math")
-                ]
-
-                if not subgroup_math_fig_data.empty:
-                    math_subgroup_bar_fig = make_stacked_bar(
-                        subgroup_math_fig_data, bar_fig_title
-                    )
-                else:
-                    math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
         # variables for display purposes
         if radio_category == "grade":
             wida_breakdown_container = {"display": "block"}

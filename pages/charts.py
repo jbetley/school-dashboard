@@ -171,7 +171,7 @@ def no_data_fig_label(
     return fig_layout
 
 
-def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
+def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame) -> list:
     """
     Create a layout with a 100% stacked bar chart showing proficiency percentages for
     all academic categories
@@ -183,7 +183,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     Returns:
         list: a plotly dash html layout in the form of a list containing a string and a stacked bar chart figure (px.bar)
     """
-
+   
     data = values.copy()
     stacked_color = ["#df8f2d", "#ebbb81", "#96b8db", "#74a2d7"]
 
@@ -260,22 +260,74 @@ def make_stacked_bar(values: pd.DataFrame, label: str) -> list:
     # ticksuffix increases the space between the end of the tick label and the chart
     fig.update_yaxes(title="", ticksuffix="  ")
 
-    fig_layout = [
-        html.Div(
-            [
-                html.Label(label, className="hollow-label__header"),
-                dcc.Graph(
-                    figure=fig,
-                    config={
-                        "displayModeBar": False,
-                        "showAxisDragHandles": False,
-                        "showAxisRangeEntryBoxes": False,
-                        "scrollZoom": False,
-                    },
-                ),
-            ]
-        )
-    ]
+    # add annotations as a Span element to layout if they exist
+    if not annotations.empty:
+
+        annotations = annotations.reset_index(drop=True)
+
+        # create string from annotations df (yeah, yeah, its not vectorized,
+        # but the dfs are tiny so who cares)
+        annotation_string = ""
+        num_rows = len(annotations.index)
+
+        for row in annotations.itertuples():
+            row_string = row[1].split("|")[0] + " (Tested: " + str(row[2]) + ")"
+
+            if num_rows == 1:
+                annotation_string = row_string + "."
+            else:
+                if row[0] == 0:
+                    annotation_string = row_string + ", "
+                elif row[0] == len(annotations.index) - 1:
+                    annotation_string = annotation_string + row_string + "."
+                else:
+                    annotation_string = annotation_string + row_string + ", "
+
+        fig_layout = [
+            html.Div(
+                [
+                    html.Label(label, className="hollow-label__header"),
+                    dcc.Graph(
+                        figure=fig,
+                        config={
+                            "displayModeBar": False,
+                            "showAxisDragHandles": False,
+                            "showAxisRangeEntryBoxes": False,
+                            "scrollZoom": False,
+                        },
+                    ),
+                    html.P(
+                        children=[
+                            html.Span(
+                                "Insufficient n-size for Total Proficiency:",
+                                className="category-string__label",
+                            ),
+                            html.Span(
+                                annotation_string, className="category-string"
+                            ),
+                        ],
+                        style={"marginTop": -10, "marginBottom": -10},
+                    ),
+                ]
+            )
+        ]
+    else:
+        fig_layout = [
+            html.Div(
+                [
+                    html.Label(label, className="hollow-label__header"),
+                    dcc.Graph(
+                        figure=fig,
+                        config={
+                            "displayModeBar": False,
+                            "showAxisDragHandles": False,
+                            "showAxisRangeEntryBoxes": False,
+                            "scrollZoom": False,
+                        },
+                    ),
+                ]
+            )
+        ]
 
     return fig_layout
 
@@ -584,7 +636,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
         # way too cluttered. So it is currently removed. Would prefer to somehow add this
         # to the trace (x-unified) hover, but it doesn't currently seem to be possible.
         # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
-
+        
         data, no_data_string = check_for_no_data(data)
         # nsize_string = check_for_insufficient_n_size(data)
 

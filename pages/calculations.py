@@ -514,6 +514,7 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     """
 
     tmp = data.copy()
+    tmp["Year"] = tmp["Year"].astype(str)
 
     if "School Name" in tmp.columns:
         tmp = tmp.drop("School Name", axis=1)

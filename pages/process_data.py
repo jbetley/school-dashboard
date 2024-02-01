@@ -327,6 +327,9 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
             axis=0,
         ).reset_index(drop=True)
 
+        # replace NaN with specific values based on column name
+        final_data = conditional_fillna(final_data)
+
     return final_data
 
 
