@@ -244,8 +244,10 @@ def update_academic_metrics(school: str, year: str):
                 )
 
                 # iread_data
+                # combined_delta has all IREAD data, but we only use Total
+                # currently
                 iread_data = combined_delta[
-                    combined_delta["Category"] == "IREAD"
+                    combined_delta["Category"] == "Total|IREAD"
                 ].copy()
 
                 if len(iread_data.columns) > 1:

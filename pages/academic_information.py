@@ -36,6 +36,7 @@ from pages.process_data import (
     process_k8_academic_data,
     process_high_school_academic_data,
     filter_high_school_academic_data,
+    process_selected_k8_academic_data
 )
 from pages.tables import (
     no_data_page,
@@ -393,15 +394,16 @@ def update_academic_information_page(
             len(selected_raw_k8_school_data.index) > 0
             and selected_year_string != "2020"
         ):
+            # proficiency and N-Size data for ILEARN and IREAD
             all_k8_school_data = process_k8_academic_data(selected_raw_k8_school_data)
-# TODO: FIND IREAD
-            if not all_k8_school_data.empty:
+
+            if not all_k8_school_data.empty:                
                 k8_table_container = {"display": "block"}
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
                 all_k8_school_data = conditional_fillna(all_k8_school_data)
-
+                
                 all_k8_school_data = (
                     all_k8_school_data.set_index(["Category"])
                     .add_suffix("School")
@@ -419,7 +421,7 @@ def update_academic_information_page(
                 )
 
                 all_k8_school_data.loc[
-                    all_k8_school_data["Category"] == "IREAD", "Category"
+                    all_k8_school_data["Category"] == " Total|IREAD", "Category"
                 ] = "IREAD Proficiency (Grade 3)"
 
                 # Reformat data for multi-year line charts
@@ -440,32 +442,36 @@ def update_academic_information_page(
                 )
                 year_over_year_data["School Name"] = selected_school_name
 
-                year_over_year_data = year_over_year_data.rename(
-                    columns={
-                        "Native Hawaiian or Other Pacific Islander|ELA Proficient %": "Pacific Islander|ELA Proficient %"
-                    }
-                )
-
+        # year_over_year_data = year_over_year_data.rename(
+        #     columns={
+        #         "Native Hawaiian or Other Pacific Islander|ELA Proficient %": "Pacific Islander|ELA Proficient %"
+        #     }
+        # )
+              
                 ## IREAD\WIDA School and Student Level Data
 
-                # get school level IREAD data
-                pd.set_option('display.max_columns', None)
-                pd.set_option('display.max_rows', None)
-                print(year_over_year_data)
-# TODO: Somehow broke IREAD data - no IREAD showing up at this poit      ^^^          
-                total_iread_data = year_over_year_data.filter(
-                    regex=r"IREAD|^Year$", axis=1
-                ).copy()
+                # get School Totals IREAD data
+                # total_iread_data = year_over_year_data.filter(
+                #     regex=r"Total\|IREAD|^Year$", axis=1
+                # ).copy()
 
-                print(total_iread_data)
-                # TODO: Determine why school level IREAD N-Size does not
-                # TODO: match student level totals
                 # get IREAD total students tested (school level data)
-                raw_total_iread_tested = all_k8_school_data[
-                    all_k8_school_data["Category"] == "IREAD Proficiency (Grade 3)"
+                raw_total_iread = all_k8_school_data[
+                    all_k8_school_data["Category"] == "Total|IREAD"
                 ]
 
-                raw_total_iread_tested = raw_total_iread_tested.filter(
+                raw_total_iread_data = raw_total_iread.filter(
+                    regex=r"School", axis=1
+                ).reset_index(drop=True)
+
+                total_iread_data = raw_total_iread_data.T.rename_axis(
+                    "Year"
+                ).reset_index()
+
+                total_iread_data = total_iread_data.rename(columns={0: "Total|IREAD"})
+                total_iread_data["Year"] = total_iread_data["Year"].str[:4]
+
+                raw_total_iread_tested = raw_total_iread.filter(
                     regex=r"N-Size", axis=1
                 ).reset_index(drop=True)
 
@@ -475,7 +481,10 @@ def update_academic_information_page(
 
                 total_iread_tested = total_iread_tested.rename(columns={0: "N-Size"})
                 total_iread_tested["Year"] = total_iread_tested["Year"].str[:4]
-                # TODO: Dont currently use the above ^
+
+                # all_iread_data = year_over_year_data.filter(regex=r"Year|IREAD",axis=1)
+                # total_iread_data = all_iread_data.filter(regex=r"Year|Total",axis=1)
+                # total_iread_data["Year"] = total_iread_data["Year"].astype(str)
 
                 # get raw student IREAD data
                 raw_student_iread_data = get_iread_student_data(school)
@@ -488,7 +497,7 @@ def update_academic_information_page(
                     # column will be "No Data." In this case, no IREAD chart at all.
                     if (
                         pd.to_numeric(
-                            total_iread_data["IREAD Proficiency (Grade 3)"],
+                            total_iread_data["Total|IREAD"],
                             errors="coerce",
                         ).sum()
                         == 0
@@ -499,7 +508,7 @@ def update_academic_information_page(
                         # Generate simple table and chart with school level IREAD data
                         total_iread_data = total_iread_data.rename(
                             columns={
-                                "IREAD Proficiency (Grade 3)": "Total",
+                                "Total|IREAD": "Total",
                             }
                         )
 
@@ -586,17 +595,20 @@ def update_academic_information_page(
                         final_iread_yoy, total_iread_data, on=["Year"]
                     )
 
-                    # TODO: Issue is here, no Total calc in total_iread_data
-                    print(total_iread_data)
                     iread_fig_data = iread_fig_data.rename(
                         columns={
-                            "IREAD Proficiency (Grade 3)": "Total",
+                            "Total|IREAD": "Total",
                         }
                     )
 
                     iread_table_data = iread_fig_data.copy()
 
                     iread_fig = make_line_chart(iread_fig_data)
+
+# TODO: Working To This Point - CODE UGLY
+# TODO: ELA BY GRADE MESSED UP
+# TODO: Need to add IREAD by Eth and Subtroup
+                    
 
                     # IREAD Table data
                     # Combine data and num of tested students
@@ -608,7 +620,7 @@ def update_academic_information_page(
 
                     # reorder columns (move "Total" to the end and then swap places of
                     # "Summer" and "Spring N-Size")
-                    # TODO: So Crashes here
+
                     iread_table_cols.append(
                         iread_table_cols.pop(iread_table_cols.index("Total"))
                     )
@@ -1013,6 +1025,11 @@ def update_academic_information_page(
 
             ## ILEARN - ELA
                 # by Grade Table
+# TODO: HEEEERREEE - NEED TO REFACTOR THIS BECAUSE TABLE IS NOT TRANSPOSED AT THIS POINT
+# TODO: How does multiheader table want data?
+# TODO: FOOK, NEED N-Size -go back to original function and add it
+                # print('TO HERE')
+                # print(year_over_year_data)
                 years_by_grade_ela = all_k8_school_data[
                     (
                         all_k8_school_data["Category"].str.contains(
@@ -1020,7 +1037,7 @@ def update_academic_information_page(
                         )
                         & all_k8_school_data["Category"].str.contains("ELA")
                     )
-                    | (all_k8_school_data["Category"] == "IREAD Proficiency (Grade 3)")
+                    | (all_k8_school_data["Category"] == "Total|IREAD Proficient %")
                 ]
 
                 ela_grade_table = create_multi_header_table(years_by_grade_ela)

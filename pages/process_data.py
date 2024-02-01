@@ -36,8 +36,8 @@ def process_selected_k8_academic_data(
     data: pd.DataFrame, school_id: str
 ) -> pd.DataFrame:
     """
-    Perform various operations on a dataframe with ILEARN/IREAD data for the selected
-    school and a variable number of 'comparison' schools.
+    Perform various operations on a dataframe returning with ILEARN/IREAD
+    data for the selected school
 
     Args:
         data (pd.DataFrame): ilearn/iread data
@@ -58,9 +58,7 @@ def process_selected_k8_academic_data(
     )
     data = data[data.columns[~data.columns.str.contains(r"Female|Male")]]
 
-    # Drop all columns for a Category if the value of "Total Tested" for that Category is "0"
-    # for the school is "0" e.g., where no data could be (and is) alternately represented by
-    # NULL, None, or "0"
+    # Drop columns for all categories where the values are NaN
     data = data.loc[:, ~data.iloc[school_idx].isna()]
 
     if len(data.index) < 1:
@@ -69,6 +67,32 @@ def process_selected_k8_academic_data(
     else:
         calculated_data = calculate_proficiency(data)
 
+# # TODO: NEW
+#         ## Nsize ##
+#         # create new df with Total Tested and Test N (IREAD) values
+#         data_tested = calculated_data.filter(
+#             regex="Total Tested|Test N|Year", axis=1
+#         ).copy()
+#         data_tested = (
+#             data_tested.set_index("Year")
+#             .T.rename_axis("Category")
+#             .rename_axis(None, axis=1)
+#             .reset_index()
+#         )
+#         data_tested = data_tested.rename(
+#             columns={
+#                 c: str(c) + "N-Size"
+#                 for c in data_tested.columns
+#                 if c not in ["Category"]
+#             }
+#         )
+
+#         # Get rid of None types and replace 0's with NaN for tested values
+#         # ensures eventual correct formatting to "-"
+#         data_tested = data_tested.fillna(value=np.nan)
+#         data_tested = data_tested.replace(0, np.nan)
+# # TODO: NEW
+        
         # Add School Name/School ID back. We can do this because the index hasn't changed in
         # data_proficiency, so it will still match with school_info
         if len(school_info.index) > 0:
@@ -127,11 +151,11 @@ def process_selected_k8_academic_data(
     return final_data
 
 
-# TODO: Switch to the above function for processing k8 school/comparison school data
-# NOTE: Currently used in academic_information and academic_metrics
+# NOTE: Returns essentially the same data as above, but in this case,
+# the dataframe is transposed (categories are a column) and includes N-Size
 def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Process a dataframe with ILEARN/IREAD data
+    Process a dataframe with ILEARN/IREAD data -Includes N-Size
 
     Args:
         data (pd.DataFrame): ilearn/iread data
@@ -145,7 +169,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
 
     # filter (and drop ELA and Math Subject Category)
     data = data.filter(
-        regex=r"Total Tested$|Total Proficient$|^IREAD Pass N|^IREAD Test N|Year",
+        regex=r"Total Tested$|Total Proficient$|IREAD Pass N|IREAD Test N|Year",
         axis=1,
     )
     data = data[data.columns[~data.columns.str.contains(r"ELA and Math")]]
@@ -179,10 +203,10 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         data_proficiency = calculate_proficiency(data)
 
         # separately calculate IREAD Proficiency
-        if "IREAD Test N" in data.columns:
-            data_proficiency["IREAD Proficient %"] = calculate_percentage(
-                data["IREAD Pass N"], data["IREAD Test N"]
-            )
+        # if "IREAD Test N" in data.columns:
+        #     data_proficiency["IREAD Proficient %"] = calculate_percentage(
+        #         data["IREAD Pass N"], data["IREAD Test N"]
+        #     )
 
         # create new df with Total Tested and Test N (IREAD) values
         data_tested = data_proficiency.filter(
@@ -209,7 +233,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
 
         # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
         data_proficiency = data_proficiency.filter(
-            regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$",
+            regex=r"\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$",
             axis=1,
         )
 
@@ -254,7 +278,8 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         )
         data_tested = data_tested.drop("Category", axis=1)
 
-        # this cross-merge and substring match process takes about .3s - there must be a faster way
+        # this cross-merge and substring match process takes about .3s -
+        # there must be a faster way
         final_data = data_proficiency.merge(data_tested, how="cross")
 
         # Need to temporarily rename "English Learner" because otherwise it
@@ -305,7 +330,8 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     return final_data
 
 
-# TODO: Revise function to use corp data processing code on analysis_single page (see calculations.py)
+# TODO: Revise function to use corp data processing code on
+# TODO: analysis_single page (see calculations.py)
 def process_k8_corp_academic_data(
     corp_data: pd.DataFrame, school_data: pd.DataFrame
 ) -> pd.DataFrame:
