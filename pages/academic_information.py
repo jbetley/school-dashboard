@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from functools import reduce
 import re
+import itertools
 
 # import local functions
 from pages.load_data import (
@@ -21,14 +22,14 @@ from pages.load_data import (
     grades_all,
     grades,
     grades_ordinal,
-    current_academic_year,
+    # current_academic_year,
     get_ilearn_stns,
     get_iread_student_data,
     get_wida_student_data,
     get_ilearn_student_data,
     get_k8_school_academic_data,
     get_high_school_academic_data,
-    get_demographic_data,
+    # get_demographic_data,
     get_school_index,
     get_excluded_years,
     get_attendance_data
@@ -37,7 +38,7 @@ from pages.process_data import (
     process_k8_academic_data,
     process_high_school_academic_data,
     filter_high_school_academic_data,
-    process_selected_k8_academic_data
+    # process_selected_k8_academic_data
 )
 from pages.tables import (
     no_data_page,
@@ -49,7 +50,8 @@ from pages.tables import (
 )
 from pages.charts import no_data_fig_label, make_stacked_bar, make_line_chart
 from pages.layouts import set_table_layout, create_line_fig_layout
-from pages.calculations import round_percentages, conditional_fillna
+from pages.calculations import round_percentages #, conditional_fillna
+from pages.string_helpers import natural_keys
 
 dash.register_page(
     __name__,
@@ -203,7 +205,8 @@ def update_academic_information_page(
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                # Graduation Rate Tables ("Strength of Diploma" in data, but not currently displayed)
+                # Graduation Rate Tables ("Strength of Diploma" is in data,
+                # but not currently displayed)
                 grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
                 if selected_school_type == "AHS":
@@ -1191,8 +1194,8 @@ def update_academic_information_page(
                         [school_stns, iread_stns], axis=0, ignore_index=True
                     )
 
-                    # drop duplicated, "set" is quite a bit faster than
-                    # drop_duplicates()
+                    # drop duplicated ("set" is quite a bit faster than
+                    # drop_duplicates())
                     stn_list = list(set(all_stns["STN"].to_list()))
 
                     school_wida = all_wida[all_wida["STN"].isin(stn_list)]
@@ -1201,7 +1204,7 @@ def update_academic_information_page(
                         wida_breakdown = []
 
                     else:
-
+# TODO: Organize this better
                         # Get WIDA average per grade by year
                         wida_year = (
                             school_wida.groupby(["Year", "Tested Grade"])[
@@ -1263,28 +1266,20 @@ def update_academic_information_page(
                             .rename_axis(None, axis=1)
                         )
 
-                        def atoi(text):
-                            return int(text) if text.isdigit() else text
-
-                        def natural_keys(text):
-                            '''
-                            alist.sort(key=natural_keys) sorts in human order
-                            http://nedbatchelder.com/blog/200712/human_sorting.html
-                            (See Toothy's implementation in the comments)
-                            '''
-                            return [ atoi(c) for c in re.split(r'(\d+)', text) ]
-
                         # identify year columns to get totals (called Average to match
                         # scores df)
                         nsize_years = [c for c in wida_nsize_data.columns if "Grade" in c]                      
                         wida_nsize_data["Average"] = wida_nsize_data[nsize_years].sum(axis=1)
                         
-                        # sort nsize columns to match data dataframe
+                        # sort nsize columns to match data dataframe (using natural sort)
                         nsize_years.sort(key=natural_keys)
                         nsize_cols_sorted = ["Year"] + nsize_years + ["Average"]
                         wida_nsize_data = wida_nsize_data[nsize_cols_sorted]
 
-# TODO: Make sure 0s are treated correctly, NaN shouldn't be displayed at all
+                        # should not have negative values, but bad data causes them to
+                        # appear from time to time   
+                        wida_fig_data[wida_fig_data < 0] = np.NaN
+
                         # Create line chart for WIDA Scores by Grade and Total
                         wida_fig = make_line_chart(wida_fig_data)
 
@@ -1295,34 +1290,43 @@ def update_academic_information_page(
                             .reset_index()
                         )
 
-# TODO: HERE - Add nsize to table as annotations                        
-                        print('FIG')
-                        print(wida_fig_data)
+                        wida_nsize_data = (
+                            wida_nsize_data.set_index("Year")
+                            .T.rename_axis("Category")
+                            .rename_axis(None, axis=1)
+                            .reset_index()
+                        )
 
-                        print('TABLE - NSIZE')
-                        print(wida_nsize_data)
-
-                        print('TABLE - Data')
-                        print(wida_table_data)
-
+                        wida_nsize_data.columns = wida_nsize_data.columns.astype(str)
+                        wida_nsize_data.columns = ["Category"] + [str(col) + 'N-Size' for col in wida_nsize_data.columns if "Category" not in col]
+                        wida_table_data.columns = wida_table_data.columns.astype(str)
+                        wida_nsize_data.columns = ["Category"] + [str(col) + 'School' for col in wida_nsize_data.columns if "Category" not in col]
 
                         for col in wida_table_data.columns[1:]:
                             wida_table_data[col] = pd.to_numeric(wida_table_data[col], errors="coerce")
                         
-                        # NOTE: Do not like how we are formatting this. Eventually want
-                        # to move ALL formatting to datatable - preferably using AG Grid
                         wida_table_data = wida_table_data.set_index("Category")
                         
-                        # should not have negative values, but bad data causes them to appear from
-                        # time to time                        
-                        wida_table_data[wida_table_data < 0] = np.NaN
-                                                
                         wida_table_data = wida_table_data.applymap("{:.2f}".format)
                         wida_table_data = wida_table_data.reset_index()
 
                         wida_table_data = wida_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True) # add dash
 
-                        wida_table = create_single_header_table(wida_table_data, "WIDA")
+                        # merge nsize data into data to get into format
+                        # expected by table function
+
+                        # interweave columns and add category back
+                        data_cols = [e for e in wida_table_data.columns if "Category" not in e]
+                        nsize_cols = [e for e in wida_nsize_data.columns if "Category" not in e]
+                        final_cols = list(itertools.chain(*zip(data_cols, nsize_cols)))
+                        final_cols.insert(0, "Category")
+
+                        # merge and re-order using final_cols
+                        wida_final_data = pd.merge(wida_table_data, wida_nsize_data, on="Category")
+                        
+                        wida_final_data = wida_final_data[final_cols]
+
+                        wida_table = create_multi_header_table(wida_final_data)
 
                         wida_breakdown = create_line_fig_layout(
                             wida_table, wida_fig, "WIDA"
@@ -1336,7 +1340,7 @@ def update_academic_information_page(
                         # where the student took both WIDA and IREAD. We do not have access to either WIDA or
                         # IREAD data for students who took the tests somewhere else. Given the current data set,
                         # there are almost no matches.
-                        # TODO: ALSO NEED GRADE IN WHICH STUDENT TOOK WIDA SO CAN MATCH WIDA YEAR WITH IREAD YEAR
+# TODO: ALSO NEED GRADE IN WHICH STUDENT TOOK WIDA SO CAN MATCH WIDA YEAR WITH IREAD YEAR
                         
                         # Don't want to use all_wida, want to use school_wida
                         # # In order to make a valid comparison, WIDA Tested Year for a student must be Grade K-3 
@@ -1347,7 +1351,6 @@ def update_academic_information_page(
                         #     all_wida_filter, raw_student_iread_data, on="STN"
                         # )
 
-                        # # TODO: Need to ensure Tested Years correctly Match Up
                         # wida_num = len(wida_iread_merged)
 
                         # # https://stackoverflow.com/questions/66074831/python-get-value-counts-from-multiple-columns-and-average-from-another-column
@@ -1390,8 +1393,9 @@ def update_academic_information_page(
                         #     }
                         # )
 
-                # ## ILEARN - All data for all years
-                 # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA - LONGITUDINAL TRACKING 3-8 ELA
+                # ## Student ILEARN - All data for all years
+                 # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA -
+                 # TODO: LONGITUDINAL TRACKING 3-8 ELA
                     ilearn_student_all = get_ilearn_student_data(school)
 
                     ilearn_filtered = ilearn_student_all.filter(
@@ -1475,6 +1479,7 @@ def update_academic_information_page(
                 attendance_table_hs = set_table_layout(
                     attendance_table, attendance_table, attendance_rate.columns
                 )
+
         # variables for display purposes
         if radio_category == "grade":
             wida_breakdown_container = {"display": "block"}

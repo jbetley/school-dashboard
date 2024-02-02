@@ -625,8 +625,8 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
     data.columns = data.columns.str.split("|").str[0]
 
-    if "IREAD Proficiency (Grade 3)" in data.columns:
-        data = data.rename(columns={"IREAD Proficiency (Grade 3)": "IREAD"})
+    if "Total|IREAD" in data.columns:
+        data = data.rename(columns={"Total|IREAD": "IREAD"})
 
     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
@@ -669,8 +669,9 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             # If data_max is > 1 then it is WIDA data (all other data are decimals)
             if data_max > 1:
+
                 # make sure Year is a str and replace all negative numbers with 0
-                data[data < 0] = 0
+                # data[data < 0] = 0
                 data["Year"] = data["Year"].astype(str)
 
         # If the initial df has data, but after dropping all no data rows is then
@@ -698,7 +699,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             # Set the range based on data_max (highest single value). IREAD is set to 100% regardless.
             # At higher ranges, the values compress together and are hard to read.
-            if "IREAD Proficiency (Grade 3 only)" in data.columns:
+            if "Total|IREAD" in data.columns:
                 range_vals = [0, 1]  # type: list[float]
                 tick_format = ",.0%"
                 y_value = -0.4
@@ -706,9 +707,12 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             # WIDA is only data where the max will be > 1
             elif data_max > 1:
-                range_vals = [0, 5]
+
+                # set lower bound based on min value in df
+                minx = data.astype(float).min().min()
+                range_vals = [minx - .5, 5]
                 tick_format = ".1f"
-                y_value = -0.2
+                y_value = -0.3
                 d_tick = 1
 
             else:

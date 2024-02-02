@@ -202,12 +202,6 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     else:
         data_proficiency = calculate_proficiency(data)
 
-        # separately calculate IREAD Proficiency
-        # if "IREAD Test N" in data.columns:
-        #     data_proficiency["IREAD Proficient %"] = calculate_percentage(
-        #         data["IREAD Pass N"], data["IREAD Test N"]
-        #     )
-
         # create new df with Total Tested and Test N (IREAD) values
         data_tested = data_proficiency.filter(
             regex="Total Tested|Test N|Year", axis=1
@@ -247,6 +241,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
 
         # transpose dataframes and clean headers
         data_proficiency.columns = data_proficiency.columns.astype(str)
+        
         data_proficiency = (
             data_proficiency.set_index("Year")
             .T.rename_axis("Category")

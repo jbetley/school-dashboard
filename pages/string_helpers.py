@@ -13,6 +13,20 @@ from typing import Tuple
 
 from .load_data import ethnicity, subgroup, info_categories
 
+# helper function for natural_keys
+def atoi(text):
+    return int(text) if text.isdigit() else text
+
+# NOTE: function to provide natural sorting
+# https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
+def natural_keys(text):
+    '''
+    alist.sort(key=natural_keys) sorts in human order
+    http://nedbatchelder.com/blog/200712/human_sorting.html
+    (See Toothy's implementation in the comments)
+    '''
+    return [ atoi(c) for c in re.split(r'(\d+)', text) ]
+
 
 def customwrap(s: str, width: int = 16) -> str:
     """
