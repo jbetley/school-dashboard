@@ -372,8 +372,7 @@ def update_academic_information_page(
                 )
 
                 academic_information_notes_string = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
-                    Beginning with the 2023 cohort all students in grade 11 will be required to take the assessment.\
-                    Data Source: Indiana Department of Education Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
+                    Beginning with the 2023 cohort, all students in grade 11 are required to take the SAT per federal requirements."
 
     elif (
         selected_school_type == "K8"
@@ -862,7 +861,6 @@ def update_academic_information_page(
               
             ## IREAD\WIDA School and Student Level Data
 
-# TODO: TO HERE CURRENTLY
                 # get IREAD total students tested (school level data)
                 raw_total_iread = all_k8_school_data[
                     all_k8_school_data["Category"] == "Total|IREAD"
@@ -1171,9 +1169,8 @@ def update_academic_information_page(
                 # 'Writing Proficiency Level'
 
                 # get a list of all STNs past and present from the ILEARN
-                # dataset for the given school ID.
-
-                # This will be empty for Guest schools
+                # dataset for the given school ID. this will be empty for
+                # guest schools
                 school_stns = get_ilearn_stns(school)
 
                 if len(school_stns.index) < 1:
@@ -1184,6 +1181,71 @@ def update_academic_information_page(
 
                     all_wida = get_wida_student_data()
                     all_wida["STN"] = all_wida["STN"].astype(str)
+
+# TODO: Testing WIDA/IREAD Overlap
+                    pd.set_option('display.max_columns', None)
+                    pd.set_option('display.max_rows', None)
+
+                    wida_comp_data = all_wida[["STN", "Year", "Composite Overall Proficiency Level"]].copy()
+                    iread_comp_data = raw_student_iread_data[["STN", "Year", "Test Period", "Status", "Exemption Status"]].copy() 
+                    # NOTE: This captures all students who took WIDA in the same year
+                    # that they took IREAD. It does not match students with a recorded
+                    # WIDA score either before or after a recorded IREAD score. While
+                    # we do not want to capture the latter, we do want to add those
+                    # students who has a prior year WIDA score. So we need to run two
+                    # merge operations, one on STN and YEAR (which captures same year
+                    # testers) and one just on STN where we search for any STN
+                    # matches where IREAD Tested Year is > than Max WIDA Tested Year
+
+                    wida_comp_data["Year"] = wida_comp_data["Year"].astype(str)
+                    iread_comp_data["Year"] = iread_comp_data["Year"].astype(str)              
+                    iread_comp_data["STN"] = iread_comp_data["STN"].astype(str)
+
+                    # matches all STNs with WIDA and IREAD scores from same year.
+                    current_testers = pd.merge(iread_comp_data, wida_comp_data, on=["STN","Year"])
+                    
+                    # need to differentiate between years when not merging on Year
+                    iread_comp_data = iread_comp_data.rename(columns={"Year": "IREAD Year"})
+                    wida_comp_data = wida_comp_data.rename(columns={"Year": "WIDA Year"})
+                    
+                    prior_testers = pd.merge(iread_comp_data, wida_comp_data, on=["STN"])
+                    
+                    # Find Max WIDA Year value for each STN
+                    max_wida = prior_testers.groupby(['STN'])['WIDA Year'].max().reset_index(name="WIDA Max")
+                    
+                    # drop duplicates from the full data set (where the same STN can appear up to 5 times)
+                    # and merge with WIDA Max to add IREAD Year
+                    prior_testers = prior_testers.drop_duplicates(subset=['STN'], keep='last')
+                    max_wida = pd.merge(max_wida,prior_testers,on=["STN"], how="left")
+
+                    # filter by STNs where IREAD Year is > then WIDA Max Year
+                    wida_stn_to_add = max_wida[max_wida["IREAD Year"].astype(int) > \
+                        max_wida["WIDA Max"].astype(int)]
+
+                    # Change name back for merging
+                    # current_testers = current_testers.rename(columns={"IREAD Year": "Year"})
+
+                    # add any matching stns to current_testers
+                    if not wida_stn_to_add.empty:
+                        # print(wida_stn_to_add)
+                        wida_stn_to_add = wida_stn_to_add.drop(["WIDA Max", "WIDA Year"], axis=1)
+                        wida_stn_to_add = wida_stn_to_add.rename(columns={"IREAD Year": "Year"})
+                        print('To Add')
+                        print(wida_stn_to_add.columns)
+                        
+                        print("Orig")
+                        print(current_testers.columns)
+
+                        end = pd.concat([current_testers, wida_stn_to_add])
+                    else:
+                        end = current_testers
+
+                    print(end)
+# TODO: search for STN matches where IREAD Year is > than Max WIDA Year
+                    # filename1 = "wida_test.csv"
+                    # test.to_csv(filename1, index=False)
+
+                    # print(current_testers)
 
                     # get IREAD STNs and merge with ILEARN STNs
                     iread_stns = pd.DataFrame()
@@ -1228,6 +1290,7 @@ def update_academic_information_page(
                             wida_year["Tested Grade"] != "Grade 12+/Adult"
                         ]
 
+                        # TODO: This does?
                         wida_fig_data = (
                             wida_years.pivot_table(
                                 index=["Year"], columns="Tested Grade", values="Average"
@@ -1313,7 +1376,7 @@ def update_academic_information_page(
                         wida_table_data = wida_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True) # add dash
 
                         # merge nsize data into data to get into format
-                        # expected by table function
+                        # expected by multi_table function
 
                         # interweave columns and add category back
                         data_cols = [e for e in wida_table_data.columns if "Category" not in e]
@@ -1335,11 +1398,11 @@ def update_academic_information_page(
                     ## EL Student IREAD Pass Rate (NOT ENOUGH DATA TO MEASURE)
                         # NOTE: The idea here is to display: 1) the number of students taking IREAD who were
                         # considered EL students (score of <= 5 on WIDA) and the average WIDA level with
-                        # respect to Passing and Non-Passing Students.
-                        # The primary issue is that STNs only match if the current school is the same school
-                        # where the student took both WIDA and IREAD. We do not have access to either WIDA or
-                        # IREAD data for students who took the tests somewhere else. Given the current data set,
-                        # there are almost no matches.
+                        # respect to Passing and Non-Passing Students. It is unclear whether we have sufficient
+                        # data to do this. We only have student level data (STN's, WIDA scores, IREAD scores)
+                        # for currently enrolled students. So, for example, we would only have matching STNs
+                        # for a student if the current school is the same school where the student took both WIDA
+                        # and IREAD. (is this true?). We are also missing the year in which the WIDA was taken
 # TODO: ALSO NEED GRADE IN WHICH STUDENT TOOK WIDA SO CAN MATCH WIDA YEAR WITH IREAD YEAR
                         
                         # Don't want to use all_wida, want to use school_wida
