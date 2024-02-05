@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Analysis - Single Year #
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     02/01/24
+# version:  1.14
+# date:     02/04/24
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -30,7 +30,6 @@ from .process_data import (
     process_selected_k8_academic_data,
 )
 from .calculations import (
-    # find_nearest,
     calculate_proficiency,
     recalculate_total_proficiency,
     check_for_gradespan_overlap,
@@ -296,8 +295,7 @@ def update_academic_analysis_single_year(
         academic_analysis_notes_label = "Comparison Data - High School"
         academic_analysis_notes_string = "Use this page to view SAT and Graduation Rate comparison data for all ethnicities, \
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
-            the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
-            Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
+            the selected school. Up to eight (8) schools may be displayed at once."
 
         # get data for school
         raw_hs_school_data = get_high_school_academic_data(school_id)
@@ -537,8 +535,7 @@ def update_academic_analysis_single_year(
             academic_analysis_notes_label = "Comparison Data - K-8"
             academic_analysis_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
                 and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
-                the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
-                Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
+                the selected school. Up to eight (8) schools may be displayed at once."
 
             # get single year academic data
             list_of_schools = comparison_school_list + [school_id]
@@ -618,31 +615,8 @@ def update_academic_analysis_single_year(
                     )
                     .fillna(selected_corp_data["Total|ELA Proficient %"])
                 )
-# TODO: TEST
-                # if "IREAD Pass N" in selected_corp_data.columns:
-                #     selected_corp_data["IREAD"] = pd.to_numeric(
-                #         selected_corp_data["IREAD Pass N"], errors="coerce"
-                #     ) / pd.to_numeric(
-                #         selected_corp_data["IREAD Test N"], errors="coerce"
-                #     )
 
-                #     # If either Test or Pass category had a "***" value, the resulting value will be
-                #     # NaN - we want it to display "***", so we just fillna
-                #     selected_corp_data["IREAD"] = selected_corp_data["IREAD"].fillna(
-                #         "***"
-                #     )
-# TODO: TEST
-                
-                # clean up - drop everyhting but 
-                # selected_corp_data = selected_corp_data[
-                #     selected_corp_data.columns[
-                #         ~selected_corp_data.columns.str.contains(
-                #             r"Above|Approaching|At|Tested|Pass|Test|ELA and Math|Male|Female"
-                #         )
-                #     ]
-                # ]
-
-                # clean up - drop everyhting but 
+                # clean up
                 selected_corp_data = selected_corp_data[
                     selected_corp_data.columns[
                         selected_corp_data.columns.str.contains(
@@ -650,14 +624,6 @@ def update_academic_analysis_single_year(
                         )
                     ]
                 ]
-
-                # selected_corp_data = selected_corp_data.rename(
-                #     columns={
-                #         c: c + " Proficient %"
-                #         for c in selected_corp_data.columns
-                #         if c not in ["Year", "School Name", "School ID"]
-                #     }
-                # )
 
                 # only keep columns in school df
                 selected_corp_data = selected_corp_data.loc[
@@ -834,9 +800,6 @@ def update_academic_analysis_single_year(
                     )
 
                     fig_iread_table = []
-                    # no_data_table(
-                    #     "No Data to Display.", "IREAD Proficiency", "none"
-                    # )
 
                 fig_iread = create_barchart_layout(fig_iread_chart, fig_iread_table)
 
@@ -895,9 +858,6 @@ def update_academic_analysis_single_year(
                     :, (combined_selected_data.columns.isin(categories_16b1))
                 ]
 
-                print("IREAD TEST")
-                print(fig16b1_final_data)
-                
                 if len(fig16b1_final_data.columns) > 4:
                     (
                         fig16b1_final_data,

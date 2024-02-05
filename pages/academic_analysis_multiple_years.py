@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Analysis - Year over Year #
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     10/13/23
+# version:  1.14
+# date:     02/04/24
 
 import dash
 from dash import dcc, ctx, html, Input, Output, State, callback
@@ -14,7 +14,7 @@ import pandas as pd
 from .load_data import get_school_index, get_year_over_year_data, get_school_coordinates
 from .tables import no_data_page
 from .layouts import create_year_over_year_layout
-from .calculations import find_nearest, check_for_gradespan_overlap, calculate_comparison_school_list
+from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
 
 dash.register_page(
     __name__,
@@ -60,7 +60,7 @@ def set_dropdown_options(
 
     schools_by_distance = get_school_coordinates(numeric_year, school_type)
 
-    # Drop any school not testing at least 20 students. "SchoolTotal|ELATotalTested" is a proxy
+    # Drop any school not testing at least 20 students. "Total|ELATotalTested" is a proxy
     # for school size here (probably only impacts ~20 schools)
     # the second condition ensures that the school is retained if it exists
     if school_type == "K8":
@@ -75,7 +75,7 @@ def set_dropdown_options(
 
     else:
         # NOTE: Before we do the distance check, we reduce the size of the df removing
-        # schools where there is no, or only one grade overlap between the comparison schools.
+        # schools where there is no or only one grade overlap between the comparison schools.
         # the variable "overlap" is one less than the the number of grades that we want as a
         # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
 
@@ -104,11 +104,10 @@ def set_dropdown_options(
 
         # create list of comparison schools based on current school id,
         # test whether any of the school ids in the current_comparison_school list
-        # are present in comparison_schools(the input).
-        # isdisjoint() returns True if two sets don't have any common items between
-        # them. If False, we want to replace comparison_schools with
-        # current_comparison_school list - note this will also take care of the initial
-        # load because an empty list will result in False
+        # are present in comparison_schools(the input). isdisjoint() returns True
+        # if two sets don't have any common items between them. If False, we want
+        # to replace comparison_schools with current_comparison_school list - note
+        # this will also take care of the initial load because an empty list return False
         current_comparison_schools = [d["value"] for d in options]
 
         if not comparison_schools or (
@@ -154,7 +153,6 @@ def set_dropdown_options(
     Input("analysis-type-radio", "value"),
     Input("analysis-multi-subject-radio", "value"),
     Input("analysis-multi-hs-group-radio", "value"),
-    # Input("analysis-multi-subcategory-radio", "value"),
     [Input("analysis-multi-comparison-dropdown", "value")],
     State("analysis-multi-subcategory-radio", "value"),
 )
@@ -164,7 +162,6 @@ def update_academic_analysis_multiple_years(
     analysis_type_value: str,
     subject_radio_value: str,
     hs_group_radio_value: str,
-    # subcategory_radio_value: str,
     comparison_school_list: list,
     subcategory_radio_value: str,
 ):
@@ -172,7 +169,7 @@ def update_academic_analysis_multiple_years(
         raise PreventUpdate
 
     string_year = year
-    numeric_year = int(string_year)
+    # numeric_year = int(string_year)
 
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
@@ -211,8 +208,7 @@ def update_academic_analysis_multiple_years(
         analysis__multi_notes_label = "Comparison Data - High School"
         analysis__multi_notes_string = "Use this page to view SAT and Graduation Rate comparison data for all ethnicities, \
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
-            the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
-            Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
+            the selected school. Up to eight (8) schools may be displayed at once."
 
         # get data for school (these labels are used to generate the message on the empty tables)
         if (
@@ -223,12 +219,6 @@ def update_academic_analysis_multiple_years(
             if hs_group_radio_value == "SAT":
                 if subcategory_radio_value:
                     
-                    # # If subcategory_state is "Total" and user flips to "SAT" we need to
-                    # # change subcategory_state to "School Total". This is to ensure that
-                    # # data matches IDOE nomenclature
-                    # if subcategory_radio_value == "Total":
-                    #     subcategory_radio_value = "Total"
-
                     category = subcategory_radio_value + "|" + subject_radio_value
 
                 else:
@@ -244,11 +234,6 @@ def update_academic_analysis_multiple_years(
             elif hs_group_radio_value == "Graduation Rate" or not hs_group_radio_value:
                 if subcategory_radio_value:
                    
-                    # # If subcategory_state is "School Total" and user flips to
-                    # # "Grad" we need to change subcategory_state to "Total"
-                    # if subcategory_radio_value == "Total":
-                    #     subcategory_radio_value = "Total"
-
                     category = subcategory_radio_value + "|"
                 else:
                     category = "Total|"
@@ -298,8 +283,7 @@ def update_academic_analysis_multiple_years(
         analysis__multi_notes_label = "Comparison Data - K-8"
         analysis__multi_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
-            the selected school. Up to eight (8) schools may be displayed at once. Data Source: Indiana Department of Education \
-            Data Center & Reports (https://www.in.gov/doe/it/data-center-and-reports/)."
+            the selected school. Up to eight (8) schools may be displayed at once."
 
         ## K8 Year Over Year Chart
         if (
@@ -352,8 +336,9 @@ def update_academic_analysis_multiple_years(
             k8_analysis_multi_empty_container = {"display": "none"}
             analysis_multi_dropdown_container = {"display": "block"}
 
-            # all_school_info is a dataframe with school names and school ids, it is used in
-            # the comparison_table function to identify the index of the school by Id
+            # all_school_info is a dataframe with school names and school ids,
+            # it is used in the comparison_table function to identify the index
+            # of the school by Id
             year_over_year_grade = create_year_over_year_layout(
                 school,
                 year_over_year_k8_data,
@@ -439,7 +424,6 @@ layout = html.Div(
                         ),
                     ],
                     id="analysis-multi-dropdown-container",
-                    # style={"display": "none"},
                 ),
                 html.Div(
                     [

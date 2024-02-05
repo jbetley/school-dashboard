@@ -10,7 +10,7 @@
 # IREAD - 2023
 # SAT - 2023
 # ADM - 2023
-# Demographics - 2023
+# Demographics - 2024
 # Financial - 2022 (Audited) / 2023 (Q4)
 # Graduation Rate - 2022
 import pandas as pd
@@ -764,7 +764,7 @@ def get_iread_student_data(*args):
         """
         SELECT *
             FROM iread_student
-	        WHERE SchoolID = :id
+	        WHERE SchoolID = :id AND TestYear > 2018
         """
     )
 
@@ -883,7 +883,6 @@ def get_attendance_data(school_id, school_type, year):
 
     return attendance_rate
 
-# TODO: Eventually consolidate and use only second function below.
 def get_k8_school_academic_data(*args):
     keys = ["id"]
     params = dict(zip(keys, args))

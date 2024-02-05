@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Information - Growth  #
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     10/13/23
+# version:  1.14
+# date:     02/04/24
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -41,7 +41,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     if not school:
         raise PreventUpdate
 
-    # show 2019 instead of 2020 as 2020 has no academic growth data
+    # 2020 has no academic growth data
     string_year = year
     selected_year_string = "2019" if string_year == "2020" else string_year
 
@@ -66,15 +66,19 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     no_growth_data = no_data_page("No Data to Display.", "Academic Growth")
 
     # State Growth Data
-    # NOTE: "162-Days" means a student was enrolled at the school where they were assigned for at least
-    # 162 days. "Majority Enrolled" is misleading. It actually means "Greatest Number of Days." So the actual
-    # number of days could be less than half of the year (82) if, for example, a student transferred a few
-    # times, or was out of the system for most of the year. "Tested School" is where the student actually took
-    # the test. IDOE uses "Majority Enrolled" for their calculations. So we do the same here.
+    # NOTE: "162-Days" means a student was enrolled at the school where they were
+    # assigned for at least 162 days. "Majority Enrolled" is misleading. It actually
+    # means "Greatest Number of Days." So the actual number of days could be less
+    # than half of the year (82) if, for example, a student transferred a few
+    # times, or was out of the system for most of the year. "Tested School" is
+    # where the student actually took the test. IDOE uses "Majority Enrolled" for
+    # their calculations. So we do the same here.
 
-    # ICSB growth metrics need to be updated, currently say:
-    #   Percentage of students achieving “typical” or “high” growth on the state assessment in ELA/Math
-    #   Median SGP of students achieving "adequate and sufficient growth" on the state assessment in ELA/Math
+    # ICSB Accountability growth metrics need to be updated, currently say:
+    #   Percentage of students achieving “typical” or “high” growth on the state
+    #   assessment in ELA/Math
+    #   Median SGP of students achieving "adequate and sufficient growth" on the
+    #   state assessment in ELA/Math
 
     # NOTE: Growth data shows: byGrade, byEthnicity, bySES, byEL Status, & by Sped Status
     # Also available in the data, but not currently shown: Homeless Status and High Ability Status
@@ -405,7 +409,8 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     )
 
 
-# this needs to be a function in order for it to be called correctly by subnav_academic_information()
+# this needs to be a function in order for it to be called correctly
+#  by subnav_academic_information()
 def layout():
     return html.Div(
         [

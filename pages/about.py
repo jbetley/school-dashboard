@@ -2,8 +2,8 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     01/28/24
+# version:  1.14
+# date:     02/04/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -26,8 +26,6 @@ from .charts import loading_fig, no_data_fig_label
 from .tables import no_data_table, no_data_page, create_key_table
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
-
-# TODO: Add attendance and chronic absenteeism
 
 @callback(
     Output("update-table", "children"),
@@ -90,16 +88,16 @@ def update_about_page(year: str, school: str):
     update_table_label = ""
     update_table_dict = {
         "Date": [
-            "01.01.24",
             "01.26.24",
             "01.28.24",
-            "02.01.24"
+            "02.01.24",
+            "02.05.24"
         ],
         "Update": [
             "Added 2019-23 WIDA data and 2023 IREAD data.",
             "Added historical Chronic Absenteeism and Corp IREAD data.",
             "Added 2023 graduation rate data.",
-            "Removed State Grade as an Accountability Item."
+            "Release version 1.14"
         ],
     }
 
