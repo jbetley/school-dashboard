@@ -1421,10 +1421,11 @@ def update_academic_information_page(
             
         ## Student level ILEARN data (all data for all years)
         # NOTE: Not currently used
-        # TODO: ADD CROSS REFERENCE TO STUDENT LEVEL ILEARN DATA -
-        # TODO: LONGITUDINAL TRACKING 3-8 ELA
+        # TODO: Student ILEARN Data to IREAD3 data
+
         pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_rows', None)  
+        pd.set_option('display.max_rows', None)
+
         ilearn_student_all = get_ilearn_student_data(school)
         iread_student_data = get_iread_student_data(school)
         ilearn_filtered = ilearn_student_all.filter(
@@ -1442,7 +1443,6 @@ def update_academic_information_page(
             iread_student_data, ilearn_filtered, on="STN"
         )
 
-
         school_all_student_data = school_all_student_data[["Test Year",
             "STN","Tested Grade","Status","Exemption Status","ILEARN Tested Grade",
             "Math Proficiency","ELA Proficiency"]]
@@ -1459,25 +1459,67 @@ def update_academic_information_page(
         all_student_data_nopass = school_all_student_data[school_all_student_data["Status"] == "Did Not Pass"]
         all_student_data_pass = school_all_student_data[school_all_student_data["Status"] == "Pass"]
         
-                        # Group by Year and Period - get percentage passing and not passing
-        iread_ilearn_pass = (
-            all_student_data_pass.groupby(["Test Year", "ILEARN Tested Grade"])[
-                "Math Proficiency"
-            ]
-            .value_counts()
-            .reset_index(name="Proficiency")
-        )
+        # Group by Year and Period - get percentage passing and not passing
+        # iread_ilearn_pass = (
+        #     all_student_data_pass.groupby(["Test Year", "ILEARN Tested Grade"])[
+        #         "Math Proficiency"
+        #     ]
+        #     .value_counts()
+        #     .reset_index(name="Proficiency")
+        # )
 
-        iread_ilearn_nopass = (
-            all_student_data_nopass.groupby(["Test Year", "ILEARN Tested Grade"])[
-                "Math Proficiency"
-            ]
-            .value_counts()
-            .reset_index(name="Proficiency")
-        )
+        # iread_ilearn_pass_perf = (
+        #     all_student_data_pass.groupby("Test Year")[
+        #         "Math Proficiency"
+        #     ]
+        #     .value_counts(normalize=True)
+        #     .reset_index(name="Proficiency")
+        # )
 
-        print(iread_ilearn_pass)
-        print(iread_ilearn_nopass)
+        def find_prof(series):
+            return (
+                ((series == "At Proficiency").sum() + (series == "Above Proficiency").sum()) / 
+                series.value_counts().sum()
+            )
+        
+        pass_proficiency = all_student_data_pass.groupby(by="Test Year")["ELA Proficiency"].apply(find_prof).reset_index(name="Proficiency")
+        nopass_proficiency = all_student_data_nopass.groupby(by="Test Year")["ELA Proficiency"].apply(find_prof).reset_index(name="Proficiency")
+
+        nopass_nsize = all_student_data_nopass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
+        pass_nsize = all_student_data_pass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
+
+        iread_ilearn_pass_final = pd.merge(pass_proficiency,pass_nsize, on="Test Year")
+        iread_ilearn_nopass_final = pd.merge(nopass_proficiency,nopass_nsize, on="Test Year")
+
+
+        # TODO: TEST RESULTS
+        # print('PASSING-ALL')
+        # print(all_student_data_pass)
+        # print('NO PASSING-ALL')
+        # print(all_student_data_nopass)
+
+        print("ELA Proficiency - Passed IREAD")
+        print(iread_ilearn_pass_final)
+        print("ELA Proficiency - Did Not Pass IREAD")
+        print(iread_ilearn_nopass_final)
+
+        # # gives us the number of students for each grade and year for each proficiency
+        # iread_ilearn_nopass = (
+        #     all_student_data_nopass.groupby(["Test Year", "ILEARN Tested Grade"])[
+        #         "Math Proficiency"
+        #     ]
+        #     .value_counts()
+        #     .reset_index(name="N-Size")
+        # )
+
+        # iread_ilearn_nopass_perf = (
+        #     all_student_data_nopass.groupby("Test Year")[
+        #         "Math Proficiency"
+        #     ]
+        #     .value_counts(normalize=True)
+        #     .reset_index(name="Proficiency")
+        # )
+        
         # TODO: Performance on ILEARN for students not passing IREAD
         # Get total # of students for each grade for each year
         # Calculate Proficiency for each year for each grade ->
@@ -1488,8 +1530,8 @@ def update_academic_information_page(
         # % Proficiency for students passing IREAD
         #
 
-        filename = "tst.csv"
-        school_all_student_data.to_csv(filename, index=False)
+        # filename = "tst.csv"
+        # school_all_student_data.to_csv(filename, index=False)
 
         # IREAD data goes back to 2018, ILEARN goes back to 2019,
         # because we typically only show 5 years of data, a current
