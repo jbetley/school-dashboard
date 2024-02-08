@@ -771,6 +771,11 @@ def get_iread_student_data(*args):
     results = run_query(q, params)
     results = results.sort_values(by="Test Year", ascending=False)
 
+    results = results.rename(columns={"Test Year": "Year"})
+
+    results["STN"] = results["STN"].astype(str)
+    results["Year"] = results["Year"].astype(str)
+    
     return results
 
 
@@ -1248,3 +1253,79 @@ def get_year_over_year_data(*args):
         result = result[~result["Year"].isin(excluded_years)]
 
     return result, all_school_info
+
+# TODO: TEST moving logic to helper files
+def get_student_level_ilearn(school):
+
+    ilearn_student_all = get_ilearn_student_data(school)
+
+    # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
+    # TODO: Still missing Test Year!
+    # tst = ilearn_student_all.groupby(by=["Test Year","STN"])["ELA Proficiency"] #.apply(find_prof).reset_index(name="Proficiency")
+    # print(tst)
+
+    # will also be empty for guest schools
+    if not ilearn_student_all.empty:
+
+        iread_student_data = get_iread_student_data(school)
+        ilearn_filtered = ilearn_student_all.filter(
+            regex=r"STN|Current Grade|Tested Grade|Math|ELA"
+        )
+        ilearn_filtered = ilearn_filtered.rename(
+            columns={
+                "Current Grade": "ILEARN Current Grade",
+                "Tested Grade": "ILEARN Tested Grade",
+            }
+        )
+        iread_student_data = iread_student_data.rename(
+            columns={"Year": "Test Year"}
+        )        
+        ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
+
+        school_all_student_data = pd.merge(
+            iread_student_data, ilearn_filtered, on="STN"
+        )
+
+        school_all_student_data = school_all_student_data[["Test Year",
+            "STN","Tested Grade","Status","Exemption Status","ILEARN Tested Grade",
+            "Math Proficiency","ELA Proficiency"]]
+
+        all_student_data_nopass = school_all_student_data[school_all_student_data["Status"] == "Did Not Pass"]
+        all_student_data_pass = school_all_student_data[school_all_student_data["Status"] == "Pass"]
+        
+        def find_prof(series):
+            # get the count of students At or Above proficiency and divide by the total #
+            # of students in the series (essentially calculating proficiency)
+            return (
+                ((series == "At Proficiency").sum() + (series == "Above Proficiency").sum()) / 
+                series.value_counts().sum()
+            )
+        
+        pass_proficiency = all_student_data_pass.groupby(by="Test Year")["ELA Proficiency"].apply(find_prof).reset_index(name="Proficiency")
+        nopass_proficiency = all_student_data_nopass.groupby(by="Test Year")["ELA Proficiency"].apply(find_prof).reset_index(name="Proficiency")
+
+        nopass_nsize = all_student_data_nopass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
+        pass_nsize = all_student_data_pass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
+
+        iread_ilearn_pass_final = pd.merge(pass_proficiency,pass_nsize, on="Test Year")
+        iread_ilearn_nopass_final = pd.merge(nopass_proficiency,nopass_nsize, on="Test Year")
+
+        iread_ilearn_pass_final = iread_ilearn_pass_final.rename(
+            columns={
+                "Proficiency": "Avg. ELA Proficiency - Students Passing IREAD",
+                "Test Year": "Year",
+                "N-Size": "N-Size (Pass IREAD)"                
+            }
+        )
+        iread_ilearn_nopass_final = iread_ilearn_nopass_final.rename(
+            columns={
+                "Proficiency": "Avg. ELA Proficiency - Students not Passing IREAD",
+                "Test Year": "Year",
+                "N-Size": "N-Size (Did Not Pass IREAD)"
+            }
+        )
+
+        iread_ilearn_pass_final["Year"] = iread_ilearn_pass_final["Year"].astype(str)        
+        iread_ilearn_nopass_final["Year"] = iread_ilearn_nopass_final["Year"].astype(str)
+
+    return iread_ilearn_pass_final, iread_ilearn_nopass_final
