@@ -1193,6 +1193,7 @@ def update_academic_information_page(
                     wida_pass = wida_pass.reset_index(drop=True)
                     wida_nopass = wida_nopass.reset_index(drop=True)
 
+# TODO: Replace with merge so we don't lose years.
                     wida_iread_table_data = pd.concat([wida_pass, wida_nopass], axis=1)
                     
                     for col in wida_iread_table_data.columns[1:]:
@@ -1241,13 +1242,30 @@ def update_academic_information_page(
                     
                     # TODO: TMP
                     iread_ilearn_pass_final, iread_ilearn_nopass_final = get_student_level_ilearn(school)
-# TODO: Now do the same for the Ilearn stuff
-                    # print(iread_ilearn_pass_final)
-                    # print(iread_ilearn_nopass_final)
 
-                    ilearn_iread_table_data = pd.concat([iread_ilearn_pass_final, iread_ilearn_nopass_final], axis=1)
+                    iread_ilearn_nopass_final["Year"] = iread_ilearn_nopass_final["Year"].astype(str)
+                    iread_ilearn_pass_final["Year"] = iread_ilearn_pass_final["Year"].astype(str)             
 
-                    ilearn_iread_table_data = ilearn_iread_table_data.drop("Year", axis=1)
+                    ilearn_iread_table_data = iread_ilearn_nopass_final.merge(iread_ilearn_pass_final, how="left")
+                    
+                    ilearn_iread_table_data = (
+                        ilearn_iread_table_data.set_index("Year")
+                        .T.rename_axis("Category")
+                        .rename_axis(None, axis=1)
+                        .reset_index()
+                    )
+
+                    # format
+                    for x in range(1, len(ilearn_iread_table_data.columns)):
+                        for i in range(0, len(ilearn_iread_table_data.index)):
+                            if (i == 0) | (i == 2):
+                                if ~np.isnan(ilearn_iread_table_data.iat[i, x]):
+                                    ilearn_iread_table_data.iat[i, x] = "{:.2%}".format(ilearn_iread_table_data.iat[i, x])                                
+                            else: # (i == 1) | (i == 2):
+                                ilearn_iread_table_data.iat[i, x] = "{:,.0f}".format(ilearn_iread_table_data.iat[i, x])
+
+                    # replace Nan with "-"
+                    ilearn_iread_table_data = ilearn_iread_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
                     ilearn_iread_table = create_single_header_table(
                         ilearn_iread_table_data, "ELA Proficiency IREAD Testers"
