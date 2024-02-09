@@ -859,7 +859,8 @@ def get_attendance_data(school_id, school_type, year):
     attendance_data = attendance_data.drop(["Students Chronically Absent","Total Student Count"], axis=1)
 
     excluded_years = get_excluded_years(year)
-    attendance_data = attendance_data[~attendance_data["Year"].isin(excluded_years)]
+    if excluded_years:
+        attendance_data = attendance_data[~attendance_data["Year"].isin(excluded_years)]
     
     attendance_rate = (
         attendance_data.set_index("Year")
@@ -1259,8 +1260,17 @@ def get_student_level_ilearn(school):
 
     ilearn_student_all = get_ilearn_student_data(school)
 
+    # TODO: Cannot exclude years at this point because there is no Year column
+    # TODO: in the data!
+    # excluded_years = get_excluded_years(year)
+    
+    # if excluded_years:
+    #     ilearn_student_all = ilearn_student_all[
+    #         ~ilearn_student_all["Year"].isin(excluded_years)
+    #     ]
+
     # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
-    # TODO: Still missing Test Year!
+    # TODO: But still missing Test Year!
     # tst = ilearn_student_all.groupby(by=["Test Year","STN"])["ELA Proficiency"] #.apply(find_prof).reset_index(name="Proficiency")
     # print(tst)
 

@@ -128,6 +128,8 @@ def update_academic_information_page(
     # selected_school_name = selected_school_name.strip()
     is_guest = True if selected_school["Guest"].values[0] == "Y" else False
 
+    excluded_years = get_excluded_years(selected_year_string)
+    
     if not radio_type:
         radio_type = "k8"
 
@@ -195,7 +197,7 @@ def update_academic_information_page(
         # load HS academic data
         selected_raw_hs_school_data = get_high_school_academic_data(school)
 
-        excluded_years = get_excluded_years(selected_year_string)
+        # excluded_years = get_excluded_years(selected_year_string)
 
         # exclude years later than the selected year
         if excluded_years:
@@ -395,7 +397,7 @@ def update_academic_information_page(
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
         # remove years of data greater than the selected year
-        excluded_years = get_excluded_years(selected_year_string)
+        # excluded_years = get_excluded_years(selected_year_string)
 
         if excluded_years:
             selected_raw_k8_school_data = selected_raw_k8_school_data[
@@ -1097,7 +1099,6 @@ def update_academic_information_page(
                 # dataset for the given school ID to use to match WIDA data
                 # to each school. the WIDA data, for some reason, does not
                 # have School ID information. This will be empty for guest (non-ICSB) schools
-
                 school_stns = get_ilearn_stns(school)
 
                 if len(school_stns.index) < 1:
@@ -1107,6 +1108,14 @@ def update_academic_information_page(
                     school_stns["STN"] = school_stns["STN"].astype(str)
 
                     all_wida = get_wida_student_data()
+
+                    # excluded_years = get_excluded_years(selected_year_string)
+
+                    # exclude years later than the selected year
+                    if excluded_years:
+                        all_wida = all_wida[
+                            ~all_wida["Year"].isin(excluded_years)
+                        ]
                     all_wida["STN"] = all_wida["STN"].astype(str)
 
                     # get School WIDA data and build dfs to compare IREAD and
@@ -1193,9 +1202,11 @@ def update_academic_information_page(
                     wida_pass = wida_pass.reset_index(drop=True)
                     wida_nopass = wida_nopass.reset_index(drop=True)
 
-# TODO: Replace with merge so we don't lose years.
                     wida_iread_table_data = pd.concat([wida_pass, wida_nopass], axis=1)
                     
+                    # TODO: Testing merge vs concat
+                    # wida_iread_table_data = wida_nopass.merge(wida_pass, how="left")
+
                     for col in wida_iread_table_data.columns[1:]:
                         wida_iread_table_data[col] = pd.to_numeric(wida_iread_table_data[col], errors="coerce")
 
@@ -1247,7 +1258,13 @@ def update_academic_information_page(
                     iread_ilearn_pass_final["Year"] = iread_ilearn_pass_final["Year"].astype(str)             
 
                     ilearn_iread_table_data = iread_ilearn_nopass_final.merge(iread_ilearn_pass_final, how="left")
-                    
+
+                    if excluded_years:
+                        ilearn_iread_table_data = ilearn_iread_table_data[
+                            ~ilearn_iread_table_data["Year"].astype(int).isin(excluded_years)
+                        ]
+
+
                     ilearn_iread_table_data = (
                         ilearn_iread_table_data.set_index("Year")
                         .T.rename_axis("Category")
@@ -1279,10 +1296,6 @@ def update_academic_information_page(
                         iread_exemptions,
                         iread_advance_no_pass,
                         iread_retained
-                        # wida_pass,
-                        # wida_nopass,
-                        # iread_ilearn_pass_final,
-                        # iread_ilearn_nopass_final
                     ]
 
                     iread_merged = reduce(
@@ -1310,16 +1323,13 @@ def update_academic_information_page(
                             "No Pass (Exemption)",
                             "No Pass (Advanced)",
                             "No Pass (Retained)",
-                            # "# of WIDA Tested Students Passing IREAD",
-                            # "Avg. Comp. WIDA for Passing Students",
-                            # "# of WIDA Tested Students Not Passing IREAD",
-                            # "Avg. Comp. WIDA for Non-Passing Students",
-                            # "Avg. ELA Proficiency - Students Passing IREAD",
-                            # "N-Size (Pass IREAD)",
-                            # "Avg. ELA Proficiency - Students not Passing IREAD",
-                            # "N-Size (Did Not Pass IREAD)",
                         ]
                     ]
+
+                    if excluded_years:
+                        iread_merged = iread_merged[
+                            ~iread_merged["Year"].astype(int).isin(excluded_years)
+                        ]
 
                     iread_final_table_data = (
                         iread_merged.set_index("Year")
@@ -1376,6 +1386,12 @@ def update_academic_information_page(
             stn_list = list(set(all_stns["STN"].to_list()))
 
             all_wida = get_wida_student_data()
+
+            # ensure data aligns with selected year
+            if excluded_years:
+                all_wida = all_wida[
+                    ~all_wida["Year"].astype(int).isin(excluded_years)
+                ]
 
             school_wida = all_wida[all_wida["STN"].isin(stn_list)]
 
