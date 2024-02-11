@@ -871,6 +871,11 @@ def update_academic_information_page(
         # get raw student IREAD data
         iread_student_data = get_iread_student_data(school)
 
+        if excluded_years:
+            iread_student_data = iread_student_data[
+                ~iread_student_data["Year"].astype(int).isin(excluded_years)
+            ]
+
         # get student level ilearn data
         iread_ilearn_pass_final, iread_ilearn_nopass_final = get_student_level_ilearn(school)
 
@@ -891,16 +896,17 @@ def update_academic_information_page(
 
         # Get wida data using stn_list. NOTE: This is because wida
         # data does not currently include School ID
-        all_wida = get_wida_student_data(stn_list)
+        school_wida = get_wida_student_data(stn_list)
 
         # ensure data aligns with selected year
         if excluded_years:
-            all_wida = all_wida[
-                ~all_wida["Year"].astype(int).isin(excluded_years)
+            school_wida = school_wida[
+                ~school_wida["Year"].astype(int).isin(excluded_years)
             ]
 
         # if no school level IREAD data, skip this entirely
         if iread_school_total.empty:
+            # TODO: Add empty tables?
             pass
 
         else:
@@ -989,6 +995,15 @@ def update_academic_information_page(
                     .reset_index(name="Percent")
                 )
 
+                print(iread_student_pass)
+                # Need to track Years where there were students tested, but not passing
+                # TODO: WTF. THis gets us a row with the missing Pass with Percent a 0
+                # TODO: Need to add a 0 pass row for years where there were no psasers.s
+                tmp_mask = iread_student_pass.duplicated(['Year','Status'])
+                tst = iread_student_pass[~tmp_mask].set_index(['Year','Status'])
+                tst = (tst.reindex(pd.MultiIndex.from_product(tst.index.levels)).fillna({'Test Period':'Summer', 'Percent':0}).reset_index())
+                print (tst)
+                    
                 # Filter to remove everything but Passing Students
                 iread_student_pass = iread_student_pass[iread_student_pass["Status"].str.startswith("Pass")]
 
@@ -1001,6 +1016,9 @@ def update_academic_information_page(
                     .reset_index(name="N-Size")
                 )
 
+                print('testedbefore')
+                print(iread_student_tested)
+
                 # pivot to get Test Period as Column Name and Year as col value
                 iread_student_tested = (
                     iread_student_tested.pivot_table(
@@ -1010,6 +1028,7 @@ def update_academic_information_page(
                     .rename_axis(None, axis=1)
                 )
 
+                print(iread_student_tested)
                 iread_student_tested = iread_student_tested.rename(
                     columns={"Spring": "Spring N-Size", "Summer": "Summer N-Size"}
                 )
@@ -1127,18 +1146,16 @@ def update_academic_information_page(
 
                 else:
                     school_stns["STN"] = school_stns["STN"].astype(str)
+                    school_wida["STN"] = school_wida["STN"].astype(str)
 
                     # exclude years later than the selected year
-                    if excluded_years:
-                        all_wida = all_wida[
-                            ~all_wida["Year"].isin(excluded_years)
-                        ]
-                    all_wida["STN"] = all_wida["STN"].astype(str)
+                    # school_wida["Year"] = school_wida["Year"].astype(int)
+                    # iread_student_data["Year"] = iread_student_data["Year"].astype(int)
 
                     # get School WIDA data and build dfs to compare IREAD and
                     # WIDA data - NOTE: For many schools this will be empty or
                     # a very small dataset.
-                    wida_comp_data = all_wida[["STN", "Year", "Composite Overall Proficiency Level"]].copy()
+                    wida_comp_data = school_wida[["STN", "Year", "Composite Overall Proficiency Level"]].copy()
                     iread_comp_data = iread_student_data[["STN", "Year", "Test Period", "Status", "Exemption Status"]].copy()
 
                     wida_comp_data["Year"] = wida_comp_data["Year"].astype(str)
@@ -1244,7 +1261,6 @@ def update_academic_information_page(
                         .reset_index()
                     )
 
-# TODO: Check 21c result - shouldn't be WIDA passing avg if no % passing
 # TODO: Add error checking, etc.
                     
                     # format
@@ -1388,43 +1404,17 @@ def update_academic_information_page(
             wida_breakdown = []
 
         else:
-            # get IREAD STNs and merge with ILEARN STNs
-            # iread_stns = pd.DataFrame()
-    
-            # # print("HERE")
-            # # iread_student_data = get_iread_student_data(school)
-      
-            # # TODO: Redundant, but otherwise? school_stns also blocked out?
-            # if len(iread_student_data.index) > 1:              
-            #     iread_stns["STN"] = iread_student_data["STN"]
-            #     iread_stns["STN"] = iread_stns["STN"].astype(str)
+          
+            selected_school_wida = school_wida[school_wida["STN"].isin(stn_list)]
 
-            # all_stns = pd.concat(
-            #     [school_stns, iread_stns], axis=0, ignore_index=True
-            # )
-
-            # drop duplicate STNs ("set" is quite a bit faster than
-            # drop_duplicates())
-            # stn_list = list(set(all_stns["STN"].to_list()))
-
-            # # all_wida = get_wida_student_data()
-
-            # # ensure data aligns with selected year
-            # if excluded_years:
-            #     all_wida = all_wida[
-            #         ~all_wida["Year"].astype(int).isin(excluded_years)
-            #     ]
-
-            school_wida = all_wida[all_wida["STN"].isin(stn_list)]
-
-            if len(school_wida.index) < 1:
+            if len(selected_school_wida.index) < 1:
                 wida_breakdown = []
 
             else:
 
                 # Get WIDA average per grade by year
                 wida_school_total = (
-                    school_wida.groupby(["Year", "Tested Grade"])[
+                    selected_school_wida.groupby(["Year", "Tested Grade"])[
                         "Composite Overall Proficiency Level"
                     ]
                     .mean()
@@ -1433,7 +1423,7 @@ def update_academic_information_page(
 
                 # get WIDA total school average by year
                 wida_school_total_data = (
-                    school_wida.groupby(["Year"])[
+                    selected_school_wida.groupby(["Year"])[
                         "Composite Overall Proficiency Level"
                     ]
                     .mean()
@@ -1469,7 +1459,7 @@ def update_academic_information_page(
                 wida_fig_data = pd.merge(wida_fig_data, wida_school_total_data, on="Year")
 
                 # Get N-Size for each grade for each year and add to table data
-                wida_nsize = school_wida.value_counts(["Tested Grade","Year"]).reset_index().rename(columns={0: "N-Size"})
+                wida_nsize = selected_school_wida.value_counts(["Tested Grade","Year"]).reset_index().rename(columns={0: "N-Size"})
                 wida_nsize_data = pd.merge(wida_school_total, wida_nsize, on=["Year","Tested Grade"])
 
                 # Get nsize data in same format as scores
