@@ -738,16 +738,21 @@ def get_letter_grades(*args):
     return run_query(q, params)
 
 
-def get_wida_student_data(*args):
-    keys = ["id"]
-    params = dict(zip(keys, args))
+def get_wida_student_data(stns):
+
+    params = dict(id="")
+
+    # when looking for a string value in a column, we need to wrap each
+    # value in '', otherwise it will be interpreted as a column name
+    stn_str ="'" + "', '".join([str(v) for v in stns]) + "'"
 
     q = text(
         """
         SELECT *
             FROM WIDA
-            WHERE YEAR >= 2019
-        """
+            WHERE YEAR >= 2019 AND STN IN ({})""".format(
+            stn_str
+        )
     )
 
     results = run_query(q, params)
@@ -1030,7 +1035,7 @@ def get_school_coordinates(*args):
 
     return run_query(q, params)
 
-
+#TODO: NOT USING THIS ANYMORE?
 def get_comparable_schools(*args):
     keys = ["schools", "year", "type"]
     params = dict(zip(keys, args))
