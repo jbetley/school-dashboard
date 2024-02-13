@@ -783,6 +783,21 @@ def get_iread_student_data(*args):
     
     return results
 
+def get_iread_stns(*args):
+    keys = ["id"]
+    params = dict(zip(keys, args))
+
+    q = text(
+        """
+        SELECT STN
+            FROM iread_student
+	        WHERE SchoolID = :id AND TestYear > 2018
+        """
+    )
+
+    results = run_query(q, params)
+
+    return results
 
 def get_ilearn_stns(*args):
     keys = ["id"]
@@ -1265,17 +1280,8 @@ def get_student_level_ilearn(school):
 
     ilearn_student_all = get_ilearn_student_data(school)
 
-    # TODO: Cannot exclude years at this point because there is no Year column
-    # TODO: in the data!
-    # excluded_years = get_excluded_years(year)
-    
-    # if excluded_years:
-    #     ilearn_student_all = ilearn_student_all[
-    #         ~ilearn_student_all["Year"].isin(excluded_years)
-    #     ]
-
     # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
-    # TODO: But still missing Test Year!
+    # TODO:  still missing Test Year!
     # tst = ilearn_student_all.groupby(by=["Test Year","STN"])["ELA Proficiency"] #.apply(find_prof).reset_index(name="Proficiency")
     # print(tst)
 

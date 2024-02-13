@@ -628,7 +628,6 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
 
     return table_layout
 
-
 def create_single_header_table(data: pd.DataFrame, label: str) -> list:
     """
     Takes a dataframe of two or more columns and a label and creates a single

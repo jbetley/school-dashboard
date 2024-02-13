@@ -15,8 +15,8 @@ from .string_helpers import (
     identify_missing_categories,
     create_school_label,
 )
-from .charts import make_group_bar_chart, make_multi_line_chart
-from .tables import create_comparison_table, no_data_page
+from .charts import make_group_bar_chart, make_multi_line_chart, make_line_chart
+from .tables import create_comparison_table, no_data_page, create_single_header_table
 # from typing import Tuple
 
 def create_hs_analysis_layout(
@@ -105,6 +105,42 @@ def create_hs_analysis_layout(
 
     return final_analysis_group
 
+
+def create_simple_iread_layout(data):
+
+    # Simple table and chart
+    data = data.rename(
+        columns={
+            "Total|IREAD": "Total",
+        }
+    )
+
+    fig = make_line_chart(data)
+
+    table_data = (
+        data.set_index("Year")
+        .T.rename_axis("Category")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    table_data = table_data.set_index("Category")
+
+    # format table data (only numeric)
+    numeric_dtypes = table_data.convert_dtypes().select_dtypes("number")
+    table_data[numeric_dtypes.columns] = numeric_dtypes.applymap("{:.2%}".format)
+
+    table_data = table_data.reset_index()
+
+    table = create_single_header_table(
+        table_data, "IREAD"
+    )
+
+    layout = create_line_fig_layout(
+        table, fig, "IREAD"
+    )
+
+    return layout
 
 def create_growth_layout(table: list, fig: list, label: str) -> list:
     """
