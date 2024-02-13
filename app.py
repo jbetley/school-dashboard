@@ -516,6 +516,7 @@ def navigation(
 
     # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
+
         # hide academic analysis navigation
         analysis_type_state = "k8"
 
@@ -546,6 +547,15 @@ def navigation(
             {"label": "By Grade", "value": "grade"},
             {"label": "By Ethnicity", "value": "ethnicity"},
             {"label": "By Subgroup", "value": "subgroup"},
+            {"label": "IREAD", "value": "iread"},
+            {"label": "WIDA", "value": "wida"}
+        ]
+
+        category_options_growth = [
+            {"label": "All Data", "value": "all"},
+            {"label": "By Grade", "value": "grade"},
+            {"label": "By Ethnicity", "value": "ethnicity"},
+            {"label": "By Subgroup", "value": "subgroup"}
         ]
 
         # no subnavigation is displayed for HS/AHS
@@ -568,15 +578,45 @@ def navigation(
             info_type_value = "k8"
             info_type_container = {"display": "none"}
 
-            if info_category_value_state:
-                info_category_value = info_category_value_state
-            else:
-                info_category_value = "all"
+            # growth page does not have IREAD/WIDA buttons - so we check
+            # value_state to make sure those values, and the options are
+            # changed to growth_defaults if the user selects the academic
+            # growth tab (while IREAD/WIDA is selected)
+            if current_page == "academic_information_growth":
+                if info_category_value_state:
+                    if info_category_value_state == "wida" or \
+                        info_category_value_state == "iread":
+                        info_category_value = "all"
+                    else:
+                        info_category_value = info_category_value_state
+                else:
+                    info_category_value = "all"
 
-            if info_category_options_state:
-                info_category_options = info_category_options_state
-            else:
-                info_category_options = category_options_default
+                # if options_state is the default, we need to switch options
+                # to growth, else use state
+                if info_category_options_state:
+                    if info_category_options_state == category_options_default:
+                        info_category_options = category_options_growth
+                    else:
+                      info_category_options = info_category_options_state
+                else:
+                    info_category_options = category_options_growth
+            
+            else:    # academic_information.py          
+                if info_category_value_state:
+                    info_category_value = info_category_value_state
+                else:
+                    info_category_value = "all"
+
+                if info_category_options_state:
+                    # similarly, if options_state is using growth and the user
+                    # switches to info, we need to change options back
+                    if info_category_options_state == category_options_growth:
+                        info_category_options = category_options_default
+                    else: 
+                        info_category_options = info_category_options_state
+                else:
+                    info_category_options = category_options_default 
 
             info_category_container = {"display": "block"}
 
@@ -599,19 +639,44 @@ def navigation(
                     info_type_value = "k8"
                 info_type_container = {"display": "block"}
 
-            if info_category_value_state:
-                info_category_value = info_category_value_state
-            else:
-                info_category_value = "all"
+            # see above growth/info value/otions comment
+            if current_page == "academic_information_growth":
+                if info_category_value_state:
+                    if info_category_value_state == "wida" or \
+                        info_category_value_state == "iread":
+                        info_category_value = "all"
+                    else:
+                        info_category_value = info_category_value_state
+                else:
+                    info_category_value = "all"
 
-            if info_category_options_state:
-                info_category_options = info_category_options_state
-            else:
-                info_category_options = category_options_default
+                if info_category_options_state:
+                    if info_category_options_state == category_options_default:
+                        info_category_options = category_options_growth
+                    else:
+                      info_category_options = info_category_options_state
+                else:
+                    info_category_options = category_options_growth
+            
+            else:    
+            
+                if info_category_value_state:
+                    info_category_value = info_category_value_state
+                else:
+                    info_category_value = "all"
 
+                if info_category_options_state:
+
+                    if info_category_options_state == category_options_growth:
+                        info_category_options = category_options_default
+                    else: 
+                        info_category_options = info_category_options_state
+                else:
+                    info_category_options = category_options_default 
+ 
             info_category_container = {"display": "block"}
 
-        # no subnavigation for K12 school that has selected a type of "hs"
+        # no subnavigation for K12 school that has selected "hs" Type
         elif school_type == "K12" and info_type_value == "hs":
             info_subnav_container = {"display": "none"}
 

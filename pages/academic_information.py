@@ -5,6 +5,8 @@
 # version:  1.14
 # date:     02/04/24
 
+# TODO: Eventually, break down into three pages: ILEARN; IREAD; WIDA
+
 import dash
 from dash import dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
@@ -26,7 +28,6 @@ from pages.load_data import (
     get_iread_stns,
     get_iread_student_data,
     get_wida_student_data,
-    get_ilearn_student_data,
     get_student_level_ilearn,
     get_k8_school_academic_data,
     get_high_school_academic_data,
@@ -60,12 +61,13 @@ dash.register_page(
     order=7,
 )
 
-
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)   
 
 # Main
 @callback(
+    Output("iread-school-level-layout", "children"),
+    Output("iread-school-level-layout-container", "style"),
     Output("iread-breakdown", "children"),
     Output("iread-breakdown-container", "style"),
     Output("wida-breakdown", "children"),
@@ -73,7 +75,7 @@ pd.set_option('display.max_rows', None)
     Output("wida-iread-table", "children"),
     Output("wida-iread-table-container", "style"),
     Output("ilearn-iread-table", "children"),
-    Output("ilearn-iread-table-container", "style"),      
+    Output("ilearn-iread-table-container", "style"),        
     Output("proficiency-grades-ela", "children"),
     Output("ela-grade-bar-fig", "children"),
     Output("proficiency-ela-grades-container", "style"),
@@ -147,10 +149,11 @@ def update_academic_information_page(
     k12_sat_table_container = {"display": "none"}
     k12_grad_table_container = {"display": "none"}
 
+    iread_school_level_layout = []  # type: list       
     iread_breakdown = []  # type: list
     wida_breakdown = []  # type: list
     wida_iread_table = []  # type: list
-    ilearn_iread_table = []  # type: list    
+    ilearn_iread_table = []  # type: list
     proficiency_grades_ela = []
     ela_grade_bar_fig = []
     proficiency_ethnicity_ela = []
@@ -163,17 +166,19 @@ def update_academic_information_page(
     math_ethnicity_bar_fig = []
     proficiency_subgroup_math = []
     math_subgroup_bar_fig = []
+
+    iread_school_level_layout_container = {"display": "none"}    
     wida_breakdown_container = {"display": "none"}
     iread_breakdown_container = {"display": "none"}
     wida_iread_table_container = {"display": "none"}
-    ilearn_iread_table_container = {"display": "none"}    
+    ilearn_iread_table_container = {"display": "none"} 
     proficiency_ela_grades_container = {"display": "none"}
     proficiency_ela_ethnicity_container = {"display": "none"}
     proficiency_ela_subgroup_container = {"display": "none"}
     proficiency_math_grades_container = {"display": "none"}
     proficiency_math_ethnicity_container = {"display": "none"}
     proficiency_math_subgroup_container = {"display": "none"}
-
+   
     attendance_table_k8 = []      # type: list
     attendance_table_hs = []
     k8_table_container = {"display": "none"}
@@ -438,8 +443,8 @@ def update_academic_information_page(
                 ilearn_fig_data["School Name"] = selected_school_name
 
             ## ILEARN Charts and Tables
-                # NOTE: We use ilearn_table_data for tables because we
-                # need N-Size values.
+                # NOTE: We use ilearn_table_data variable for tables because we
+                # need N-Size values. ilearn_fig_data is similar, just transposed
 
                 # get column lists for each subject/category combination
                 categories_ela_subgroup = []
@@ -463,7 +468,7 @@ def update_academic_information_page(
                         & ilearn_table_data["Category"].str.contains("ELA")
                     )
                 ]
-
+                
                 ela_grade_table = create_multi_header_table(years_by_grade_ela)
 
                 # ELA by Grade fig
@@ -861,23 +866,40 @@ def update_academic_information_page(
 
         # End ILEARN block
 
-# TODO: Separate Academic Information into -> IREAD; ILEARN; WIDA
+        # IREAD - School Level Totals, Ethnicity, & Status
+        both = ethnicity + subgroup
+        categories_iread_all = []
 
-# TODO: Add School Total IREAD Data: Ethnicity, Subgroup
-                    
-        ## Get Student Level (WIDA, IREAD, ILEARN) data
-                    
-        # Get School Level IREAD - All Categories
-        iread_school_all_categories = ilearn_table_data[
-            ilearn_table_data["Category"].str.contains("IREAD") == True
+        for b in both:
+            categories_iread_all.append(b + "|IREAD")
+
+        iread_school_table_data = ilearn_table_data[
+                ilearn_table_data["Category"].str.contains("|".join(both))
+                & ilearn_table_data["Category"].str.contains("IREAD")
         ]
-        print(iread_school_all_categories)
-
-# TODO: IREAD
         
-        ## WIDA data
+        if iread_school_table_data.empty:
+            iread_school_level_layout = []
+        
+        else:
+            iread_school_level_layout_container = {"display": "block"}    
+            
+            iread_all_table = create_multi_header_table(iread_school_table_data)
 
-        # Student Level WIDA
+            iread_school_fig_data = ilearn_fig_data.loc[
+                :,
+                (ilearn_fig_data.columns.isin(categories_iread_all))
+                | (ilearn_fig_data.columns.isin(["School Name", "Year"]))
+            ]
+
+            iread_all_fig = make_line_chart(iread_school_fig_data)
+
+            iread_school_level_layout = create_line_fig_layout(
+                iread_all_table, iread_all_fig, "IREAD Breakdown"
+            )
+
+        ## WIDA - Student Level Data
+
         if is_guest == True:
             wida_breakdown = []
 
@@ -1041,7 +1063,7 @@ def update_academic_information_page(
                 wida_table = create_multi_header_table(wida_final_data)
 
                 wida_breakdown = create_line_fig_layout(
-                    wida_table, wida_fig, "WIDA"
+                    wida_table, wida_fig, "WIDA Breakdown"
                 )
 
         # End WIDA block
@@ -1358,8 +1380,9 @@ def update_academic_information_page(
                     )
 
                     iread_breakdown = create_line_fig_layout(
-                        iread_table, iread_fig, "IREAD"
+                        iread_table, iread_fig, "IREAD Details"
                     )
+
                 # End IREAD Table and Fig block
                 
                 ## WIDA to IREAD table
@@ -1508,17 +1531,40 @@ def update_academic_information_page(
                         wida_iread_table_data = wida_iread_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
                         wida_iread_table = create_single_header_table(
-                            wida_iread_table_data, "IREAD - WIDA Tested Students "
+                            wida_iread_table_data, "WIDA Details"
                         )
 
                 # End WIDA to IREAD Table
                     
                 # IREAD to ILEARN Table
+# TODO: Add 2 year ILEARN comparisons (YoY comparing STN) - but need Test Year column in ILEARN data
+
+            # Get total # of students for each grade for each year
+            # Calculate Proficiency for each year for each grade ->
+            #   # students / # At or Above
+            #   # students / # Approaching
+            #   for IREAD Passing Students and IREAD not passing students
+            # % Proficiency for students not passing IREAD
+            # % Proficiency for students passing IREAD
+
+            # # Avg ELA/Math over time for IREAD Pass - 2018-19, 21, 22, 23
+            # # group by IREAD Pass and ILEARN Year:
+            # # a) count Exceeds, At, Approach, Below
+            # # b) measure point diff between Cut and Scale and Average
+            # # c) measure raw scale score avg
+            # # Avg ELA over time for IREAD No Pass
+                        
                 # NOTE: We only get to this point if student level IREAD data exists and 
                 # student level ilearn data exists.
-                iread_ilearn_pass_final, iread_ilearn_nopass_final = get_student_level_ilearn(school)
+    
+    # TODO: Add Math and ELA Both 
+                iread_ilearn_pass_final, iread_ilearn_nopass_final = get_student_level_ilearn(school, "Math")
 
                 if iread_ilearn_pass_final.empty and iread_ilearn_nopass_final.empty:
+
+                    ilearn_iread_table = []
+                
+                else:
                     iread_ilearn_nopass_final["Year"] = iread_ilearn_nopass_final["Year"].astype(str)
                     iread_ilearn_pass_final["Year"] = iread_ilearn_pass_final["Year"].astype(str)             
 
@@ -1550,240 +1596,11 @@ def update_academic_information_page(
                     ilearn_iread_table_data = ilearn_iread_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
                     ilearn_iread_table = create_single_header_table(
-                        ilearn_iread_table_data, "ELA Proficiency IREAD Testers"
+                        ilearn_iread_table_data, "IREAD Tested Students - ELA Proficiency"
                     )
 
-        # ## WIDA data
-        # if is_guest == True:
-        #     wida_breakdown = []
-
-        # else:
-          
-        #     selected_school_wida = school_wida[school_wida["STN"].isin(stn_list)]
-
-        #     if len(selected_school_wida.index) < 1:
-        #         wida_breakdown = []
-
-        #     else:
-
-        #         # Get WIDA average per grade by year
-        #         wida_school_total = (
-        #             selected_school_wida.groupby(["Year", "Tested Grade"])[
-        #                 "Composite Overall Proficiency Level"
-        #             ]
-        #             .mean()
-        #             .reset_index(name="Average")
-        #         )
-
-        #         # get WIDA total school average by year
-        #         wida_school_total_data = (
-        #             selected_school_wida.groupby(["Year"])[
-        #                 "Composite Overall Proficiency Level"
-        #             ]
-        #             .mean()
-        #             .reset_index(name="Average")
-        #         )
-
-        #         # Drop data for AHS students
-        #         wida_school_total = wida_school_total.loc[
-        #             wida_school_total["Tested Grade"] != "Grade 12+/Adult"
-        #         ]
-
-        #         # pivot to show average WIDA schore by grade (col) by year (row)
-        #         wida_fig_data = (
-        #             wida_school_total.pivot_table(
-        #                 index=["Year"], columns="Tested Grade", values="Average"
-        #             )
-        #             .reset_index()
-        #             .rename_axis(None, axis=1)
-        #         )
-
-        #         # Sort the Grade columns in ascending order
-        #         tmp_col = wida_fig_data["Year"]
-        #         wida_fig_data = wida_fig_data.drop(["Year"], axis=1)
-
-        #         # reindex and sort columns using only the numerical part
-        #         wida_fig_data = wida_fig_data.reindex(
-        #             sorted(wida_fig_data.columns, key=lambda x: float(x[6:])),
-        #             axis=1,
-        #         )
-        #         wida_fig_data.insert(loc=0, column="Year", value=tmp_col)
-
-        #         # Add school Average to by year calcs
-        #         wida_fig_data = pd.merge(wida_fig_data, wida_school_total_data, on="Year")
-
-        #         # Get N-Size for each grade for each year and add to table data
-        #         wida_nsize = selected_school_wida.value_counts(["Tested Grade","Year"]).reset_index().rename(columns={0: "N-Size"})
-        #         wida_nsize_data = pd.merge(wida_school_total, wida_nsize, on=["Year","Tested Grade"])
-
-        #         # Get nsize data in same format as scores
-        #         wida_nsize_data = wida_nsize_data.drop("Average", axis = 1)
-
-        #         wida_nsize_data = (
-        #             wida_nsize_data.pivot_table(
-        #                 index=["Year"], columns="Tested Grade", values="N-Size"
-        #             )
-        #             .reset_index()
-        #             .rename_axis(None, axis=1)
-        #         )
-
-        #         # identify year columns to get totals (named Average to match
-        #         # scores df col name)
-        #         nsize_years = [c for c in wida_nsize_data.columns if "Grade" in c]
-        #         wida_nsize_data["Average"] = wida_nsize_data[nsize_years].sum(axis=1)
-
-        #         # sort nsize columns to match data dataframe (using natural sort)
-        #         nsize_years.sort(key=natural_keys)
-        #         nsize_cols_sorted = ["Year"] + nsize_years + ["Average"]
-        #         wida_nsize_data = wida_nsize_data[nsize_cols_sorted]
-
-        #         # should not have negative values, but bad data causes them to
-        #         # appear from time to time
-        #         wida_fig_data[wida_fig_data < 0] = np.NaN
-
-        #         # Create line chart for WIDA Scores by Grade and Total
-        #         wida_fig = make_line_chart(wida_fig_data)
-
-        #         wida_table_data = (
-        #             wida_fig_data.set_index("Year")
-        #             .T.rename_axis("Category")
-        #             .rename_axis(None, axis=1)
-        #             .reset_index()
-        #         )
-
-        #         wida_nsize_data = (
-        #             wida_nsize_data.set_index("Year")
-        #             .T.rename_axis("Category")
-        #             .rename_axis(None, axis=1)
-        #             .reset_index()
-        #         )
-
-        #         wida_nsize_data.columns = wida_nsize_data.columns.astype(str)
-        #         wida_nsize_data.columns = ["Category"] + [str(col) + 'N-Size' for col in wida_nsize_data.columns if "Category" not in col]
-        #         wida_table_data.columns = wida_table_data.columns.astype(str)
-        #         wida_nsize_data.columns = ["Category"] + [str(col) + 'School' for col in wida_nsize_data.columns if "Category" not in col]
-
-        #         for col in wida_table_data.columns[1:]:
-        #             wida_table_data[col] = pd.to_numeric(wida_table_data[col], errors="coerce")
-
-        #         wida_table_data = wida_table_data.set_index("Category")
-
-        #         wida_table_data = wida_table_data.applymap("{:.2f}".format)
-        #         wida_table_data = wida_table_data.reset_index()
-
-        #         wida_table_data = wida_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True) # add dash
-
-        #         # merge nsize data into data to get into format
-        #         # expected by multi_table function
-
-        #         # interweave columns and add category back
-        #         data_cols = [e for e in wida_table_data.columns if "Category" not in e]
-        #         nsize_cols = [e for e in wida_nsize_data.columns if "Category" not in e]
-        #         final_cols = list(itertools.chain(*zip(data_cols, nsize_cols)))
-        #         final_cols.insert(0, "Category")
-
-        #         # merge and re-order using final_cols
-        #         wida_final_data = pd.merge(wida_table_data, wida_nsize_data, on="Category")
-
-        #         wida_final_data = wida_final_data[final_cols]
-
-        #         wida_table = create_multi_header_table(wida_final_data)
-
-        #         wida_breakdown = create_line_fig_layout(
-        #             wida_table, wida_fig, "WIDA"
-        #         )
-
-        #     # End WIDA block
-
-
-        ## Student level ILEARN data (all data for all years) -
-        # currently only used to compare iread pass - ilearn prof
-        # ilearn_student_all = get_ilearn_student_data(school)
-
-        # # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
-        # # TODO: Still missing Test Year!
-        # # tst = ilearn_student_all.groupby(by=["Test Year","STN"])["ELA Proficiency"] #.apply(find_prof).reset_index(name="Proficiency")
-        # # print(tst)
-
-        # # will also be empty for guest schools
-        # if not ilearn_student_all.empty:
-
-        #     iread_student_data = get_iread_student_data(school)
-        #     ilearn_filtered = ilearn_student_all.filter(
-        #         regex=r"STN|Current Grade|Tested Grade|Math|ELA"
-        #     )
-        #     ilearn_filtered = ilearn_filtered.rename(
-        #         columns={
-        #             "Current Grade": "ILEARN Current Grade",
-        #             "Tested Grade": "ILEARN Tested Grade",
-        #         }
-        #     )
-        #     ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
-
-        #     school_all_student_data = pd.merge(
-        #         iread_student_data, ilearn_filtered, on="STN"
-        #     )
-
-        #     school_all_student_data = school_all_student_data[["Test Year",
-        #         "STN","Tested Grade","Status","Exemption Status","ILEARN Tested Grade",
-        #         "Math Proficiency","ELA Proficiency"]]
-
-        #     all_student_data_nopass = school_all_student_data[school_all_student_data["Status"] == "Did Not Pass"]
-        #     all_student_data_pass = school_all_student_data[school_all_student_data["Status"] == "Pass"]
-
-        #     def find_prof(series):
-        #         # get the count of students At or Above proficiency and divide by the total #
-        #         # of students in the series (essentially calculating proficiency)
-        #         return (
-        #             ((series == "At Proficiency").sum() + (series == "Above Proficiency").sum()) /
-        #             series.value_counts().sum()
-        #         )
-
-        #     pass_proficiency = all_student_data_pass.groupby(by="Test Year")["ELA Proficiency"].apply(find_prof).reset_index(name="Proficiency")
-        #     nopass_proficiency = all_student_data_nopass.groupby(by="Test Year")["ELA Proficiency"].apply(find_prof).reset_index(name="Proficiency")
-
-        #     nopass_nsize = all_student_data_nopass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
-        #     pass_nsize = all_student_data_pass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
-
-        #     iread_ilearn_pass_final = pd.merge(pass_proficiency,pass_nsize, on="Test Year")
-        #     iread_ilearn_nopass_final = pd.merge(nopass_proficiency,nopass_nsize, on="Test Year")
-
-        #     # TODO: TEST RESULTS
-        #     # print('PASSING-ALL')
-        #     # print(all_student_data_pass)
-        #     # print('NO PASSING-ALL')
-        #     # print(all_student_data_nopass)
-
-        #     iread_ilearn_pass_final = iread_ilearn_pass_final.rename(
-        #         columns={
-        #             "Proficiency": "ELA Proficiency - Passed IREAD",
-        #             "Test Year": "Year",
-        #         }
-        #     )
-        #     iread_ilearn_nopass_final = iread_ilearn_nopass_final.rename(
-        #         columns={
-        #             "Proficiency": "ELA Proficiency - Did Not Pass IREAD",
-        #             "Test Year": "Year",
-        #         }
-        #     )
-
-            # TODO: Performance on ILEARN for students not passing IREAD
-            # Get total # of students for each grade for each year
-            # Calculate Proficiency for each year for each grade ->
-            #   # students / # At or Above
-            #   # students / # Approaching
-            #   for IREAD Passing Students and IREAD not passing students
-            # % Proficiency for students not passing IREAD
-            # % Proficiency for students passing IREAD
-
-            # # Avg ELA/Math over time for IREAD Pass - 2018-19, 21, 22, 23
-            # # group by IREAD Pass and ILEARN Year:
-            # # a) count Exceeds, At, Approach, Below
-            # # b) measure point diff between Cut and Scale and Average
-            # # c) measure raw scale score avg
-            # # Avg ELA over time for IREAD No Pass
-
-
+                    print(ilearn_iread_table_data)
+                    
         # filename = "tst.csv"
         # school_all_student_data.to_csv(filename, index=False)
 
@@ -1808,12 +1625,13 @@ def update_academic_information_page(
 
     # variables for display purposes
     if radio_category == "grade":
-        wida_breakdown_container = {"display": "block"}
-        iread_breakdown_container = {"display": "block"}
-        wida_iread_table_container = {"display": "block"}
-        ilearn_iread_table_container = {"display": "block"}         
         proficiency_ela_grades_container = {"display": "block"}
         proficiency_math_grades_container = {"display": "block"}
+        iread_school_level_layout = []
+        iread_breakdown = []
+        ilearn_iread_table = []
+        wida_breakdown = []
+        wida_iread_table = []
         proficiency_ethnicity_math = []
         math_ethnicity_bar_fig = []
         proficiency_subgroup_math = []
@@ -1825,6 +1643,11 @@ def update_academic_information_page(
     elif radio_category == "ethnicity":
         proficiency_ela_ethnicity_container = {"display": "block"}
         proficiency_math_ethnicity_container = {"display": "block"}
+        iread_school_level_layout = []
+        iread_breakdown = []
+        ilearn_iread_table = []
+        wida_breakdown = []
+        wida_iread_table = []        
         proficiency_grades_ela = []
         ela_grade_bar_fig = []
         proficiency_subgroup_ela = []
@@ -1836,6 +1659,11 @@ def update_academic_information_page(
     elif radio_category == "subgroup":
         proficiency_ela_subgroup_container = {"display": "block"}
         proficiency_math_subgroup_container = {"display": "block"}
+        iread_school_level_layout = []
+        iread_breakdown = []
+        ilearn_iread_table = []
+        wida_breakdown = []
+        wida_iread_table = []
         proficiency_grades_ela = []
         ela_grade_bar_fig = []
         proficiency_ethnicity_ela = []
@@ -1844,11 +1672,40 @@ def update_academic_information_page(
         math_grade_bar_fig = []
         proficiency_ethnicity_math = []
         math_ethnicity_bar_fig = []
-    elif radio_category == "all":
-        wida_breakdown_container = {"display": "block"}
+    elif radio_category == "iread":
+        iread_school_level_layout_container = {"display": "block"} 
         iread_breakdown_container = {"display": "block"}
+        ilearn_iread_table_container = {"display": "block"}
+        wida_breakdown = []
+        wida_iread_table = []
+        proficiency_grades_ela = []
+        ela_grade_bar_fig = []
+        proficiency_ethnicity_ela = []
+        ela_ethnicity_bar_fig = []
+        proficiency_grades_math = []
+        math_grade_bar_fig = []
+        proficiency_ethnicity_math = []
+        math_ethnicity_bar_fig = []
+    elif radio_category == "wida":
+        wida_breakdown_container = {"display": "block"}
         wida_iread_table_container = {"display": "block"}
-        ilearn_iread_table_container = {"display": "block"}           
+        iread_school_level_layout = []
+        iread_breakdown = []
+        ilearn_iread_table = []
+        proficiency_grades_ela = []
+        ela_grade_bar_fig = []
+        proficiency_ethnicity_ela = []
+        ela_ethnicity_bar_fig = []
+        proficiency_grades_math = []
+        math_grade_bar_fig = []
+        proficiency_ethnicity_math = []
+        math_ethnicity_bar_fig = []                
+    elif radio_category == "all":
+        iread_school_level_layout_container = {"display": "block"}
+        iread_breakdown_container = {"display": "block"} 
+        ilearn_iread_table_container = {"display": "block"}                 
+        wida_breakdown_container = {"display": "block"}
+        wida_iread_table_container = {"display": "block"}
         proficiency_ela_grades_container = {"display": "block"}
         proficiency_math_grades_container = {"display": "block"}
         proficiency_ela_ethnicity_container = {"display": "block"}
@@ -1856,8 +1713,9 @@ def update_academic_information_page(
         proficiency_ela_subgroup_container = {"display": "block"}
         proficiency_math_subgroup_container = {"display": "block"}
     else:
+        iread_school_level_layout = []
         iread_breakdown = []
-        ilearn_iread_table = []        
+        ilearn_iread_table = []
         wida_breakdown = []
         wida_iread_table = []
         proficiency_grades_ela = []
@@ -1881,10 +1739,12 @@ def update_academic_information_page(
         testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
 
     return (
-        wida_breakdown,
-        wida_breakdown_container,
+        iread_school_level_layout,
+        iread_school_level_layout_container,
         iread_breakdown,
         iread_breakdown_container,
+        wida_breakdown,
+        wida_breakdown_container,
         wida_iread_table,
         wida_iread_table_container,
         ilearn_iread_table,
@@ -1950,21 +1810,12 @@ def layout():
                                             html.Div(
                                                 [
                                                     html.Div(
-                                                        id="wida-breakdown",
+                                                        id="iread-school-level-layout",
                                                         children=[],
                                                     ),
                                                 ],
-                                                id="wida-breakdown-container",
+                                                id="iread-school-level-layout-container",
                                                 className="pagebreak-after",
-                                            ),
-                                            html.Div(
-                                                [
-                                                    html.Div(
-                                                        id="wida-iread-table",
-                                                        children=[],
-                                                    ),
-                                                ],
-                                                id="wida-iread-table-container",
                                             ),                                            
                                             html.Div(
                                                 [
@@ -1981,10 +1832,29 @@ def layout():
                                                     html.Div(
                                                         id="ilearn-iread-table",
                                                         children=[],
-                                                    ),                                                    
+                                                    ),
                                                 ],
                                                 id="ilearn-iread-table-container",
-                                            ),                                               
+                                            ),                                            
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        id="wida-breakdown",
+                                                        children=[],
+                                                    ),
+                                                ],
+                                                id="wida-breakdown-container",
+                                                className="pagebreak-after",
+                                            ),
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        id="wida-iread-table",
+                                                        children=[],
+                                                    ),
+                                                ],
+                                                id="wida-iread-table-container",
+                                            ),                                            
                                             html.Div(
                                                 [
                                                     html.Div(

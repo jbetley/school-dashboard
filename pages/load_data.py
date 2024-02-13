@@ -1275,23 +1275,19 @@ def get_year_over_year_data(*args):
 
     return result, all_school_info
 
-# TODO: TEST moving logic to helper files
-def get_student_level_ilearn(school):
+def get_student_level_ilearn(school, subject):
 
     ilearn_student_all = get_ilearn_student_data(school)
-
-    # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
-    # TODO:  still missing Test Year!
-    # tst = ilearn_student_all.groupby(by=["Test Year","STN"])["ELA Proficiency"] #.apply(find_prof).reset_index(name="Proficiency")
-    # print(tst)
 
     # will also be empty for guest schools
     if not ilearn_student_all.empty:
 
         iread_student_data = get_iread_student_data(school)
+
         ilearn_filtered = ilearn_student_all.filter(
-            regex=r"STN|Current Grade|Tested Grade|Math|ELA"
+            regex=rf"STN|Current Grade|Tested Grade|{subject}"
         )
+
         ilearn_filtered = ilearn_filtered.rename(
             columns={
                 "Current Grade": "ILEARN Current Grade",
@@ -1307,9 +1303,10 @@ def get_student_level_ilearn(school):
             iread_student_data, ilearn_filtered, on="STN"
         )
 
+        category = subject + " Proficiency"
+
         school_all_student_data = school_all_student_data[["Test Year",
-            "STN","Tested Grade","Status","Exemption Status","ILEARN Tested Grade",
-            "Math Proficiency","ELA Proficiency"]]
+            "STN","Tested Grade","Status","Exemption Status","ILEARN Tested Grade", category]]
 
         all_student_data_nopass = school_all_student_data[school_all_student_data["Status"] == "Did Not Pass"]
         all_student_data_pass = school_all_student_data[school_all_student_data["Status"] == "Pass"]
@@ -1322,8 +1319,8 @@ def get_student_level_ilearn(school):
                 series.value_counts().sum()
             )
         
-        pass_proficiency = all_student_data_pass.groupby(by="Test Year")["ELA Proficiency"].apply(find_prof).reset_index(name="Proficiency")
-        nopass_proficiency = all_student_data_nopass.groupby(by="Test Year")["ELA Proficiency"].apply(find_prof).reset_index(name="Proficiency")
+        pass_proficiency = all_student_data_pass.groupby(by="Test Year")[category].apply(find_prof).reset_index(name="Proficiency")
+        nopass_proficiency = all_student_data_nopass.groupby(by="Test Year")[category].apply(find_prof).reset_index(name="Proficiency")
 
         nopass_nsize = all_student_data_nopass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
         pass_nsize = all_student_data_pass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
@@ -1331,16 +1328,19 @@ def get_student_level_ilearn(school):
         iread_ilearn_pass_final = pd.merge(pass_proficiency,pass_nsize, on="Test Year")
         iread_ilearn_nopass_final = pd.merge(nopass_proficiency,nopass_nsize, on="Test Year")
 
+        pass_column_name = "Avg. " + subject + " Proficiency - Students Passing IREAD"
         iread_ilearn_pass_final = iread_ilearn_pass_final.rename(
             columns={
-                "Proficiency": "Avg. ELA Proficiency - Students Passing IREAD",
+                "Proficiency": pass_column_name, 
                 "Test Year": "Year",
                 "N-Size": "N-Size (Pass IREAD)"                
             }
         )
+
+        nopass_column_name = "Avg. " + subject + " Proficiency - Students not Passing IREAD"
         iread_ilearn_nopass_final = iread_ilearn_nopass_final.rename(
             columns={
-                "Proficiency": "Avg. ELA Proficiency - Students not Passing IREAD",
+                "Proficiency": nopass_column_name,
                 "Test Year": "Year",
                 "N-Size": "N-Size (Did Not Pass IREAD)"
             }
