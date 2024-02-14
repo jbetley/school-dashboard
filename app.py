@@ -487,6 +487,7 @@ def get_school_type(school_id: str, analysis_type_value: str):
     Input("analysis-multi-category-radio", "value"),
     Input("analysis-multi-subcategory-radio", "value"),
     Input("analysis-type-radio", "value"),
+    Input("analysis-multi-subject-radio", "value"),    
     State("academic-information-category-radio", "options"),
     State("academic-information-category-radio", "value"),
     State("analysis-multi-subject-radio", "value"),
@@ -499,10 +500,11 @@ def navigation(
     analysis_hs_group_value: str,
     analysis_multi_category_value: str,
     analysis_multi_subcategory_value: str,
-    analysis_type_state: str,
+    analysis_type_value: str,
+    analysis_multi_subject_value: str,   # Testing this
     info_category_options_state: list,
     info_category_value_state: str,
-    analysis_multi_subject_state: str,
+    analysis_multi_subject_state: str
 ):
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
@@ -511,14 +513,14 @@ def navigation(
 
     type_options_default = [
         {"label": "K8", "value": "k8"},
-        {"label": "High School", "value": "hs"},
+        {"label": "High School", "value": "hs"}
     ]
 
     # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
 
         # hide academic analysis navigation
-        analysis_type_state = "k8"
+        analysis_type_value = "k8"
 
         analysis_multi_hs_group_options = []
         analysis_multi_hs_group_value = ""
@@ -529,7 +531,6 @@ def navigation(
         analysis_multi_subject_container = {"display": "none"}
 
         analysis_multi_category_options = []
-        analysis_multi_category_iread_options = []
         analysis_multi_category_value = ""
         analysis_multi_category_container = {"display": "none"}
 
@@ -718,7 +719,7 @@ def navigation(
             if (
                 school_type == "HS"
                 or school_type == "AHS"
-                or (school_type == "K12" and analysis_type_state == "hs")
+                or (school_type == "K12" and analysis_type_value == "hs")
             ):
                 analysis_multi_hs_group_options = [
                     {"label": "Graduation Rate", "value": "Graduation Rate"},
@@ -741,7 +742,7 @@ def navigation(
             if (
                 school_type == "HS"
                 or school_type == "AHS"
-                or (school_type == "K12" and analysis_type_state == "hs")
+                or (school_type == "K12" and analysis_type_value == "hs")
             ):
                 # graduation rate categories
                 if (
@@ -803,13 +804,15 @@ def navigation(
             else:
                 # subject and categories for K8 and K12 (k8 type)
                 if school_type == "K8" or (
-                    school_type == "K12" and analysis_type_state == "k8"
+                    school_type == "K12" and analysis_type_value == "k8"
                 ):
+                    
                     analysis_multi_subject_options = [
                         {"label": "ELA", "value": "ELA"},
                         {"label": "Math", "value": "Math"},
                         {"label": "IREAD", "value": "IREAD"}
                     ]
+
                     analysis_multi_subject_container = {"display": "block"}
 
                     if analysis_multi_subject_state in ["ELA", "Math", "IREAD"]:
@@ -817,17 +820,18 @@ def navigation(
                     else:
                         analysis_multi_subject_value = "ELA"
 
-                    # Options - different options for ELA/Math and IREAD
+                    # ELA/Math and IREAD have different options
                     analysis_multi_category_container = {"display": "block"}
 
-                    if analysis_multi_subject_value == "IREAD":
+                    if analysis_multi_subject_value == "IREAD" or \
+                        analysis_multi_subject_state == "IREAD":
 
                         analysis_multi_category_options = [
                             {"label": "Total", "value": "Total"},
                             {"label": "Subgroup", "value": "Subgroup"},
                             {"label": "Race/Ethnicity", "value": "Race/Ethnicity"}
                         ]
-
+                        print(analysis_multi_category_options)
                         if analysis_multi_category_value in [
                             "Total",
                             "Subgroup",
@@ -854,8 +858,8 @@ def navigation(
                             analysis_multi_category_value = "Grade"
 
             # get years for subcategoires
-            if school_type == "K8" and analysis_type_state == "hs":
-                analysis_type_state = "k8"
+            if school_type == "K8" and analysis_type_value == "hs":
+                analysis_type_value = "k8"
 
             # Guest schools do not have financial data
             if (
@@ -868,7 +872,7 @@ def navigation(
                     "academic_information" in current_page
                     or "analysis_single" in current_page
                     or "analysis_multiple" in current_page
-                ) and analysis_type_state == "hs":
+                ) and analysis_type_value == "hs":
                     years = get_academic_dropdown_years(school_id, "HS")
 
                 else:
@@ -903,14 +907,14 @@ def navigation(
                     analysis_multi_subcategory_container = {"display": "block"}
 
             elif analysis_multi_category_value == "Race/Ethnicity":
-                print(analysis_multi_hs_group_value)
-                print(analysis_type_state)
+
                 ethnicity = get_ethnicity(
                     school_id,
-                    analysis_type_state,
+                    analysis_type_value,
                     analysis_multi_hs_group_value,
+                    analysis_multi_subject_value,           
                     year_value,
-                    years,
+                    years
                 )
                 analysis_multi_subcategory_options = [
                     {"label": e, "value": e} for e in ethnicity
@@ -935,10 +939,11 @@ def navigation(
             elif analysis_multi_category_value == "Subgroup":
                 subgroup = get_subgroup(
                     school_id,
-                    analysis_type_state,
+                    analysis_type_value,
                     analysis_multi_hs_group_value,
+                    analysis_multi_subject_value,
                     year_value,
-                    years,
+                    years
                 )
                 subgroup.sort()
 
@@ -965,12 +970,7 @@ def navigation(
             # for SAT ('School Total') and Grad Rate ('Total) set single value,
             # with no options
             else:
-                # if analysis_multi_hs_group_value == "SAT":
-                #     analysis_multi_subcategory_value = "School Total"
-
-                # else:  # graduation Rate
                 analysis_multi_subcategory_value = "Total"
-
                 analysis_multi_subcategory_options = []
                 analysis_multi_subcategory_container = {"display": "none"}
 
@@ -997,7 +997,7 @@ def navigation(
     # TODO: Move Financial Tab [School][Network] subnavigation here
     else:
         # analysis both
-        analysis_type_state = "k8"
+        analysis_type_value = "k8"
 
         # analysis multi
         analysis_nav_container = {"display": "none"}

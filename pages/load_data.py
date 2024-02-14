@@ -555,7 +555,7 @@ def get_gradespan(school_id, selected_year, all_years):
     return result
 
 
-def get_ethnicity(school_id, school_type, hs_category, selected_year, all_years):
+def get_ethnicity(school_id, school_type, hs_category, subject_value, selected_year, all_years):
     # returns a list of ethnicities for which a school has numbers for both Tested
     # and Proficient students for the selected year (and all earlier years)
 
@@ -591,15 +591,27 @@ def get_ethnicity(school_id, school_type, hs_category, selected_year, all_years)
 
     else:
         # k8
-        q = text(
-            """
-            SELECT "AmericanIndian|ELATotalTested", "Asian|ELATotalTested", "Black|ELATotalTested", "Hispanic|ELATotalTested", "Multiracial|ELATotalTested","NativeHawaiianorOtherPacificIslander|ELATotalTested", "White|ELATotalTested",
-                "AmericanIndian|ELATotalProficient", "Asian|ELATotalProficient", "Black|ELATotalProficient", "Hispanic|ELATotalProficient", "Multiracial|ELATotalProficient","NativeHawaiianorOtherPacificIslander|ELATotalProficient", "White|ELATotalProficient"
-                FROM academic_data_k8
-                WHERE SchoolID = :id AND Year IN ({})""".format(
-                year_str
+        if subject_value == "IREAD":
+            q = text(
+                """
+                SELECT "AmericanIndian|IREADTestN", "Asian|IREADTestN", "Black|IREADTestN", "Hispanic|IREADTestN", "Multiracial|IREADTestN","NativeHawaiianorOtherPacificIslander|IREADTestN", "White|IREADTestN",
+                    "AmericanIndian|IREADPassN", "Asian|IREADPassN", "Black|IREADPassN", "Hispanic|IREADPassN", "Multiracial|IREADPassN","NativeHawaiianorOtherPacificIslander|IREADPassN", "White|IREADPassN"
+                    FROM academic_data_k8
+                    WHERE SchoolID = :id AND Year IN ({})""".format(
+                    year_str
+                )
             )
-        )
+        else:
+
+            q = text(
+                """
+                SELECT "AmericanIndian|ELATotalTested", "Asian|ELATotalTested", "Black|ELATotalTested", "Hispanic|ELATotalTested", "Multiracial|ELATotalTested","NativeHawaiianorOtherPacificIslander|ELATotalTested", "White|ELATotalTested",
+                    "AmericanIndian|ELATotalProficient", "Asian|ELATotalProficient", "Black|ELATotalProficient", "Hispanic|ELATotalProficient", "Multiracial|ELATotalProficient","NativeHawaiianorOtherPacificIslander|ELATotalProficient", "White|ELATotalProficient"
+                    FROM academic_data_k8
+                    WHERE SchoolID = :id AND Year IN ({})""".format(
+                    year_str
+                )
+            )
 
     result = run_query(q, params)
 
@@ -619,7 +631,7 @@ def get_ethnicity(school_id, school_type, hs_category, selected_year, all_years)
     return result
 
 
-def get_subgroup(school_id, school_type, hs_category, selected_year, all_years):
+def get_subgroup(school_id, school_type, hs_category, subject_value, selected_year, all_years):
     # returns a list of subgroups for which a school has numbers for both Tested
     # and Proficient students for the selected year (and all earlier years)
 
@@ -655,15 +667,29 @@ def get_subgroup(school_id, school_type, hs_category, selected_year, all_years):
 
     else:
         # k8
-        q = text(
-            """
-            SELECT "PaidMeals|ELATotalTested", "FreeorReducedPriceMeals|ELATotalTested", "GeneralEducation|ELATotalTested", "SpecialEducation|ELATotalTested", "EnglishLanguageLearners|ELATotalTested","NonEnglishLanguageLearners|ELATotalTested",
-                "PaidMeals|ELATotalProficient", "FreeorReducedPriceMeals|ELATotalProficient", "GeneralEducation|ELATotalProficient", "SpecialEducation|ELATotalProficient", "EnglishLanguageLearners|ELATotalProficient","NonEnglishLanguageLearners|ELATotalProficient"
-                FROM academic_data_k8
-                WHERE SchoolID = :id AND Year IN ({})""".format(
-                year_str
+        if subject_value == "IREAD":
+
+            q = text(
+                """
+                SELECT "PaidMeals|IREADTestN", "FreeorReducedPriceMeals|IREADTestN", "GeneralEducation|IREADTestN", "SpecialEducation|IREADTestN", "EnglishLanguageLearners|IREADTestN","NonEnglishLanguageLearners|IREADTestN",
+                    "PaidMeals|IREADPassN", "FreeorReducedPriceMeals|IREADPassN", "GeneralEducation|IREADPassN", "SpecialEducation|IREADPassN", "EnglishLanguageLearners|IREADPassN","NonEnglishLanguageLearners|IREADPassN"
+                    FROM academic_data_k8
+                    WHERE SchoolID = :id AND Year IN ({})""".format(
+                    year_str
+                )
             )
-        )
+
+        else:
+
+            q = text(
+                """
+                SELECT "PaidMeals|ELATotalTested", "FreeorReducedPriceMeals|ELATotalTested", "GeneralEducation|ELATotalTested", "SpecialEducation|ELATotalTested", "EnglishLanguageLearners|ELATotalTested","NonEnglishLanguageLearners|ELATotalTested",
+                    "PaidMeals|ELATotalProficient", "FreeorReducedPriceMeals|ELATotalProficient", "GeneralEducation|ELATotalProficient", "SpecialEducation|ELATotalProficient", "EnglishLanguageLearners|ELATotalProficient","NonEnglishLanguageLearners|ELATotalProficient"
+                    FROM academic_data_k8
+                    WHERE SchoolID = :id AND Year IN ({})""".format(
+                    year_str
+                )
+            )
 
     result = run_query(q, params)
 
@@ -1128,12 +1154,10 @@ def get_year_over_year_data(*args):
             passed = passed.replace("| ", "|")
             result = result.replace("| ", "|")
 
-# TODO: HERE IREAD
-            
     else:  # k8 categories
         school_table = "academic_data_k8"
         corp_table = "corporation_data_k8"
-        print(params["category"])
+
         if "IREAD" in params["category"]:
             tested = params["category"] + " Test N"
             passed = params["category"] + " Pass N"
@@ -1178,8 +1202,6 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
-    print(school_data)
-
     # get school type and then drop column (this just gets the string
     # value with the highest frequency - avoids situations where a
     # specific year may not have a value)
@@ -1192,18 +1214,24 @@ def get_year_over_year_data(*args):
 
     school_name = school_data["School Name"][0]
 
+    print('HERE')
+    print(school_data)
     school_data[school_name] = pd.to_numeric(
         school_data[passed], errors="coerce"
     ) / pd.to_numeric(school_data[tested], errors="coerce")
+
+    print(school_data)
 
     school_data = school_data.drop(
         ["School Name", "Low Grade", "High Grade", passed, tested], axis=1
     )
     school_data = school_data.sort_values("Year").reset_index(drop=True)
 
+    print(school_data)
     # drop rows (years) where the school has no data
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]
+    print(school_data)
 
     if len(school_data.columns) == 0:
         result = school_data
