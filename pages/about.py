@@ -89,15 +89,21 @@ def update_about_page(year: str, school: str):
     update_table_dict = {
         "Date": [
             "01.26.24",
-            "01.28.24",
-            "02.01.24",
-            "02.05.24"
+            "01.31.24",
+            "02.03.24",
+            "02.05.24",
+            "02.10.24",
+            "02.11.24",            
+            "02.14.24"
         ],
         "Update": [
-            "Added 2019-23 WIDA data and 2023 IREAD data.",
-            "Added historical Chronic Absenteeism and Corp IREAD data.",
+            "Added 2023 IREAD data to Information page.",
+            "Added historical Chronic Absenteeism and Attendance data.",
+            "Added IREAD breakdowns to Information and Analysis pages.",
             "Added 2023 graduation rate data.",
-            "Release version 1.14"
+            "Added student level WIDA and IREAD data to Information page.",
+            "Added WIDA to IREAD and IREAD to ILEARN analysis to Information page.",
+            "Release version 1.15"
         ],
     }
 

@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Analysis - Year over Year #
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.14
-# date:     02/04/24
+# version:  1.15
+# date:     02/14/24
 
 import dash
 from dash import dcc, ctx, html, Input, Output, State, callback
@@ -169,7 +169,6 @@ def update_academic_analysis_multiple_years(
         raise PreventUpdate
 
     string_year = year
-    # numeric_year = int(string_year)
 
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
@@ -281,71 +280,139 @@ def update_academic_analysis_multiple_years(
         year_over_year_hs = []
 
         analysis__multi_notes_label = "Comparison Data - K-8"
-        analysis__multi_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
+        analysis__multi_notes_string = "Use this page to view ILEARN & IREAD proficiency comparison data for all grades, ethnicities, \
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
             the selected school. Up to eight (8) schools may be displayed at once."
 
         ## K8 Year Over Year Chart
-        if (
-            subcategory_radio_value != "No Subgroup Data"
-            and subcategory_radio_value != "No Race/Ethnicity Data"
-            and subcategory_radio_value != "No Data"
-        ):
-            if subcategory_radio_value:
-                category = subcategory_radio_value + "|" + subject_radio_value
+        print(subject_radio_value)
+        print(subcategory_radio_value)
+
+        if subject_radio_value == "IREAD":
+
+            if (
+                subcategory_radio_value != "No Subgroup Data"
+                and subcategory_radio_value != "No Race/Ethnicity Data"
+                and subcategory_radio_value != "No Data"
+            ):
+                if subcategory_radio_value:
+                    category = subcategory_radio_value + "|" + subject_radio_value
+                else:
+                    category = "Total|IREAD"
+
+                label = "Year over Year Comparison - " + category
+                msg = ""
+
+                year_over_year_k8_data, all_school_info = get_year_over_year_data(
+                    school, comparison_school_list, category, string_year, "k8"
+                )
+
             else:
-                category = "Total|ELA"
+                year_over_year_k8_data = pd.DataFrame()
 
-            label = "Year over Year Comparison - " + category
-            msg = ""
+                if subcategory_radio_value == "No Data" or subcategory_radio_value == "":
+                    label = (
+                        "Year over Year Comparison ("
+                        + subcategory_radio_value
+                        + "|"
+                        + subject_radio_value
+                        + ")"
+                    )
+                    msg = "No Data for Selected School."
+                else:
+                    label = (
+                        "Year over Year Comparison ("
+                        + subcategory_radio_value
+                        + "|"
+                        + subject_radio_value
+                        + ") - "
+                        + subcategory_radio_value[3:-5:]
+                    )
+                    msg = subcategory_radio_value + " for Selected School."
 
-            year_over_year_k8_data, all_school_info = get_year_over_year_data(
-                school, comparison_school_list, category, string_year, "k8"
-            )
+            if year_over_year_k8_data.empty:
+                analysis_multi_dropdown_container = {"display": "none"}
+                k8_analysis_multi_empty_container = {"display": "block"}
+                year_over_year_grade = []
+
+            else:
+                k8_analysis_multi_main_container = {"display": "block"}
+                k8_analysis_multi_empty_container = {"display": "none"}
+                analysis_multi_dropdown_container = {"display": "block"}
+
+                # all_school_info is a dataframe with school names and school ids,
+                # it is used in the comparison_table function to identify the index
+                # of the school by Id
+                year_over_year_grade = create_year_over_year_layout(
+                    school,
+                    year_over_year_k8_data,
+                    all_school_info,
+                    label,
+                    subcategory_radio_value,
+                )
 
         else:
-            year_over_year_k8_data = pd.DataFrame()
 
-            if subcategory_radio_value == "No Data" or subcategory_radio_value == "":
-                label = (
-                    "Year over Year Comparison ("
-                    + subcategory_radio_value
-                    + "|"
-                    + subject_radio_value
-                    + ")"
+            if (
+                subcategory_radio_value != "No Subgroup Data"
+                and subcategory_radio_value != "No Race/Ethnicity Data"
+                and subcategory_radio_value != "No Data"
+            ):
+                if subcategory_radio_value:
+                    category = subcategory_radio_value + "|" + subject_radio_value
+                else:
+                    category = "Total|ELA"
+
+                label = "Year over Year Comparison - " + category
+                msg = ""
+
+                year_over_year_k8_data, all_school_info = get_year_over_year_data(
+                    school, comparison_school_list, category, string_year, "k8"
                 )
-                msg = "No Data for Selected School."
+
             else:
-                label = (
-                    "Year over Year Comparison ("
-                    + subcategory_radio_value
-                    + "|"
-                    + subject_radio_value
-                    + ") - "
-                    + subcategory_radio_value[3:-5:]
+                year_over_year_k8_data = pd.DataFrame()
+
+                if subcategory_radio_value == "No Data" or subcategory_radio_value == "":
+                    label = (
+                        "Year over Year Comparison ("
+                        + subcategory_radio_value
+                        + "|"
+                        + subject_radio_value
+                        + ")"
+                    )
+                    msg = "No Data for Selected School."
+                else:
+                    label = (
+                        "Year over Year Comparison ("
+                        + subcategory_radio_value
+                        + "|"
+                        + subject_radio_value
+                        + ") - "
+                        + subcategory_radio_value[3:-5:]
+                    )
+                    msg = subcategory_radio_value + " for Selected School."
+
+            if year_over_year_k8_data.empty:
+                analysis_multi_dropdown_container = {"display": "none"}
+                k8_analysis_multi_empty_container = {"display": "block"}
+                year_over_year_grade = []
+
+            else:
+                k8_analysis_multi_main_container = {"display": "block"}
+                k8_analysis_multi_empty_container = {"display": "none"}
+                analysis_multi_dropdown_container = {"display": "block"}
+
+                # all_school_info is a dataframe with school names and school ids,
+                # it is used in the comparison_table function to identify the index
+                # of the school by Id
+                year_over_year_grade = create_year_over_year_layout(
+                    school,
+                    year_over_year_k8_data,
+                    all_school_info,
+                    label,
+                    subcategory_radio_value,
                 )
-                msg = subcategory_radio_value + " for Selected School."
-
-        if year_over_year_k8_data.empty:
-            analysis_multi_dropdown_container = {"display": "none"}
-            k8_analysis_multi_empty_container = {"display": "block"}
-            year_over_year_grade = []
-
-        else:
-            k8_analysis_multi_main_container = {"display": "block"}
-            k8_analysis_multi_empty_container = {"display": "none"}
-            analysis_multi_dropdown_container = {"display": "block"}
-
-            # all_school_info is a dataframe with school names and school ids,
-            # it is used in the comparison_table function to identify the index
-            # of the school by Id
-            year_over_year_grade = create_year_over_year_layout(
-                school,
-                year_over_year_k8_data,
-                all_school_info,
-                label,
-                subcategory_radio_value,
-            )
 
     analysis__multi_notes = [
         html.Div(

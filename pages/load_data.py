@@ -1100,10 +1100,10 @@ def get_year_over_year_data(*args):
 
     school_str = ", ".join([str(int(v)) for v in params["comp_list"]])
 
-    school_table = "academic_data_hs"
-    corp_table = "corporation_data_hs"
-
     if params["flag"] == "sat":
+        school_table = "academic_data_hs"
+        corp_table = "corporation_data_hs"
+        
         tested = params["category"] + " Total Tested"
         passed = params["category"] + " At Benchmark"
         result = params["category"] + " % At Benchmark"
@@ -1115,6 +1115,9 @@ def get_year_over_year_data(*args):
             result = result.replace("| ", "|")
 
     elif params["flag"] == "grad":
+        school_table = "academic_data_hs"
+        corp_table = "corporation_data_hs"        
+        
         tested = params["category"] + "Cohort Count"
         passed = params["category"] + "Graduates"
         result = params["category"] + "Graduation Rate"
@@ -1125,13 +1128,20 @@ def get_year_over_year_data(*args):
             passed = passed.replace("| ", "|")
             result = result.replace("| ", "|")
 
+# TODO: HERE IREAD
+            
     else:  # k8 categories
-        tested = params["category"] + " Total Tested"
-        passed = params["category"] + " Total Proficient"
-        result = params["category"] + " Proficient"
-
         school_table = "academic_data_k8"
         corp_table = "corporation_data_k8"
+        print(params["category"])
+        if "IREAD" in params["category"]:
+            tested = params["category"] + " Test N"
+            passed = params["category"] + " Pass N"
+            result = params["category"] + " Passed"
+        else:
+            tested = params["category"] + " Total Tested"
+            passed = params["category"] + " Total Proficient"
+            result = params["category"] + " Proficient"
 
     # Query strings (param must be passed in with spaces)
     passed_query = passed.replace(" ", "")
@@ -1167,6 +1177,8 @@ def get_year_over_year_data(*args):
     q1 = text(query_string1)
 
     school_data = run_query(q1, params)
+
+    print(school_data)
 
     # get school type and then drop column (this just gets the string
     # value with the highest frequency - avoids situations where a

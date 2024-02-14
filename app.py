@@ -529,6 +529,7 @@ def navigation(
         analysis_multi_subject_container = {"display": "none"}
 
         analysis_multi_category_options = []
+        analysis_multi_category_iread_options = []
         analysis_multi_category_value = ""
         analysis_multi_category_container = {"display": "none"}
 
@@ -807,29 +808,50 @@ def navigation(
                     analysis_multi_subject_options = [
                         {"label": "ELA", "value": "ELA"},
                         {"label": "Math", "value": "Math"},
+                        {"label": "IREAD", "value": "IREAD"}
                     ]
                     analysis_multi_subject_container = {"display": "block"}
 
-                    if analysis_multi_subject_state in ["ELA", "Math"]:
+                    if analysis_multi_subject_state in ["ELA", "Math", "IREAD"]:
                         analysis_multi_subject_value = analysis_multi_subject_state
                     else:
                         analysis_multi_subject_value = "ELA"
 
-                    analysis_multi_category_options = [
-                        {"label": "Grade", "value": "Grade"},
-                        {"label": "Subgroup", "value": "Subgroup"},
-                        {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
-                    ]
+                    # Options - different options for ELA/Math and IREAD
                     analysis_multi_category_container = {"display": "block"}
 
-                    if analysis_multi_category_value in [
-                        "Grade",
-                        "Subgroup",
-                        "Race/Ethnicity",
-                    ]:
-                        analysis_multi_category_value = analysis_multi_category_value
+                    if analysis_multi_subject_value == "IREAD":
+
+                        analysis_multi_category_options = [
+                            {"label": "Total", "value": "Total"},
+                            {"label": "Subgroup", "value": "Subgroup"},
+                            {"label": "Race/Ethnicity", "value": "Race/Ethnicity"}
+                        ]
+
+                        if analysis_multi_category_value in [
+                            "Total",
+                            "Subgroup",
+                            "Race/Ethnicity",
+                        ]:
+                            analysis_multi_category_value = analysis_multi_category_value
+                        else:
+                            analysis_multi_category_value = "Total"
+                    
                     else:
-                        analysis_multi_category_value = "Grade"
+                        analysis_multi_category_options = [
+                            {"label": "Grade", "value": "Grade"},
+                            {"label": "Subgroup", "value": "Subgroup"},
+                            {"label": "Race/Ethnicity", "value": "Race/Ethnicity"}
+                        ]
+
+                        if analysis_multi_category_value in [
+                            "Grade",
+                            "Subgroup",
+                            "Race/Ethnicity",
+                        ]:
+                            analysis_multi_category_value = analysis_multi_category_value
+                        else:
+                            analysis_multi_category_value = "Grade"
 
             # get years for subcategoires
             if school_type == "K8" and analysis_type_state == "hs":
@@ -881,6 +903,8 @@ def navigation(
                     analysis_multi_subcategory_container = {"display": "block"}
 
             elif analysis_multi_category_value == "Race/Ethnicity":
+                print(analysis_multi_hs_group_value)
+                print(analysis_type_state)
                 ethnicity = get_ethnicity(
                     school_id,
                     analysis_type_state,

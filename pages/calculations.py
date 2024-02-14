@@ -784,7 +784,7 @@ def calculate_comparison_school_list(
     comparison_set = pd.merge(combined, schools, on="School ID", how="inner")
     comparison_set = comparison_set.rename(columns={"y": "Distance"})
 
-    print(comparison_set[["School Name", "Distance"]])
+    # print(comparison_set[["School Name", "Distance"]])
 
     # drop selected school (so it cannot be selected in the dropdown)
     comparison_set = comparison_set.drop(

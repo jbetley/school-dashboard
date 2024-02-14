@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Analysis - Single Year #
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.14
-# date:     02/04/24
+# version:  1.15
+# date:     02/14/24
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -94,7 +94,6 @@ def set_dropdown_options(
 
     # Drop any school not testing at least 20 students (k8 only- probably
     # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
-
     if school_type == "K8":
         schools_by_distance["Total|ELA Total Tested"] = \
             pd.to_numeric(schools_by_distance["Total|ELA Total Tested"], errors="coerce")
@@ -539,6 +538,7 @@ def update_academic_analysis_single_year(
 
             # get single year academic data
             list_of_schools = comparison_school_list + [school_id]
+            
             selected_k8_school_data = get_selected_k8_school_academic_data(
                 list_of_schools, year
             )
@@ -547,6 +547,7 @@ def update_academic_analysis_single_year(
                 selected_k8_school_data, school_id
             )
 
+            # print(selected_clean_data)
             # NOTE: We don't want to get rid of "***" yet, but we also don't
             # want to pass through a dataframe that that is all "***" - so
             # we convert create a copy, coerce all of the academic columns
@@ -578,65 +579,71 @@ def update_academic_analysis_single_year(
                     raw_corp_data["Year"] == numeric_year
                 ]
 
-                # align Name and ID
-                selected_corp_data = selected_corp_data.rename(
-                    columns={
-                        "Corporation Name": "School Name",
-                        "Corporation ID": "School ID",
-                    }
-                )
+                # if no corp data, just use school data
+                if selected_corp_data.empty:
+                    combined_selected_data = selected_clean_data.copy()
 
-                # calculate proficiency for all corp categories
-                selected_corp_data = calculate_proficiency(selected_corp_data)
+                else:
 
-                # recalculate total Math and ELA proficiency including only the
-                # gradespan of selected school (the default is calculated using
-                # all grades)
-                revised_school_totals = recalculate_total_proficiency(
-                    selected_corp_data, selected_clean_data
-                )
-
-                selected_corp_data["Total|Math Proficient %"] = (
-                    selected_corp_data["School ID"]
-                    .map(
-                        revised_school_totals.set_index("School ID")[
-                            "Total|Math Proficient %"
-                        ]
+                    # align Name and ID
+                    selected_corp_data = selected_corp_data.rename(
+                        columns={
+                            "Corporation Name": "School Name",
+                            "Corporation ID": "School ID",
+                        }
                     )
-                    .fillna(selected_corp_data["Total|Math Proficient %"])
-                )
 
-                selected_corp_data["Total|ELA Proficient %"] = (
-                    selected_corp_data["School ID"]
-                    .map(
-                        revised_school_totals.set_index("School ID")[
-                            "Total|ELA Proficient %"
-                        ]
+                    # calculate proficiency for all corp categories
+                    selected_corp_data = calculate_proficiency(selected_corp_data)
+
+                    # recalculate total Math and ELA proficiency including only the
+                    # gradespan of selected school (the default is calculated using
+                    # all grades)
+                    revised_school_totals = recalculate_total_proficiency(
+                        selected_corp_data, selected_clean_data
                     )
-                    .fillna(selected_corp_data["Total|ELA Proficient %"])
-                )
 
-                # clean up
-                selected_corp_data = selected_corp_data[
-                    selected_corp_data.columns[
-                        selected_corp_data.columns.str.contains(
-                            r"Year|School ID|School Name|Proficient %"
+                    selected_corp_data["Total|Math Proficient %"] = (
+                        selected_corp_data["School ID"]
+                        .map(
+                            revised_school_totals.set_index("School ID")[
+                                "Total|Math Proficient %"
+                            ]
                         )
+                        .fillna(selected_corp_data["Total|Math Proficient %"])
+                    )
+
+                    selected_corp_data["Total|ELA Proficient %"] = (
+                        selected_corp_data["School ID"]
+                        .map(
+                            revised_school_totals.set_index("School ID")[
+                                "Total|ELA Proficient %"
+                            ]
+                        )
+                        .fillna(selected_corp_data["Total|ELA Proficient %"])
+                    )
+
+                    # clean up
+                    selected_corp_data = selected_corp_data[
+                        selected_corp_data.columns[
+                            selected_corp_data.columns.str.contains(
+                                r"Year|School ID|School Name|Proficient %"
+                            )
+                        ]
                     ]
-                ]
 
-                # only keep columns in school df
-                selected_corp_data = selected_corp_data.loc[
-                    :, selected_corp_data.columns.isin(selected_clean_data.columns)
-                ].copy()
+                    # only keep columns in school df
+                    selected_corp_data = selected_corp_data.loc[
+                        :, selected_corp_data.columns.isin(selected_clean_data.columns)
+                    ].copy()
 
-                # add two missing cols
-                selected_corp_data["Low Grade"] = np.nan
-                selected_corp_data["High Grade"] = np.nan
+                    # add two missing cols
+                    selected_corp_data["Low Grade"] = np.nan
+                    selected_corp_data["High Grade"] = np.nan
 
-                combined_selected_data = pd.concat(
-                    [selected_clean_data, selected_corp_data]
-                )
+                    combined_selected_data = pd.concat(
+                        [selected_clean_data, selected_corp_data]
+                    )
 
                 # Force '***' to NaN for numeric columns
                 numeric_columns = [
@@ -794,15 +801,16 @@ def update_academic_analysis_single_year(
                         school_id
                     )
 
+                    fig_iread = create_barchart_layout(fig_iread_chart, fig_iread_table)
+
                 else:
-                    fig_iread_chart = no_data_fig_label(
-                        "Comparison: Current Year IREAD Proficiency", 200
-                    )
+                    fig_iread_chart = []
+                    # no_data_fig_label(
+                    #     "Comparison: Current Year IREAD Proficiency", 200
+                    # )
 
                     fig_iread_table = []
-
-                fig_iread = create_barchart_layout(fig_iread_chart, fig_iread_table)
-
+                    
                 # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
                 headers_16a1 = []
                 for e in ethnicity:
