@@ -285,9 +285,6 @@ def update_academic_analysis_multiple_years(
             the selected school. Up to eight (8) schools may be displayed at once."
 
         ## K8 Year Over Year Chart
-        print(subject_radio_value)
-        print(subcategory_radio_value)
-
         if subject_radio_value == "IREAD":
 
             if (

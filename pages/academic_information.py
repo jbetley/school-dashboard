@@ -2,10 +2,10 @@
 # ICSB Dashboard - Academic Information - Proficiency #
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.14
-# date:     02/04/24
+# version:  1.15
+# date:     02/14/24
 
-# TODO: Eventually, break down into three pages: ILEARN; IREAD; WIDA
+# TODO: Break down into three pages: ILEARN; IREAD; WIDA
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -28,7 +28,6 @@ from pages.load_data import (
     get_iread_stns,
     get_iread_student_data,
     get_wida_student_data,
-    get_student_level_ilearn,
     get_k8_school_academic_data,
     get_high_school_academic_data,
     get_school_index,
@@ -47,6 +46,7 @@ from pages.tables import (
     create_key_table,
     create_single_header_table,
     create_multi_header_table,
+    create_iread_ilearn_table
 )
 from pages.charts import no_data_fig_label, make_stacked_bar, make_line_chart
 from pages.layouts import set_table_layout, create_line_fig_layout, create_simple_iread_layout
@@ -61,9 +61,6 @@ dash.register_page(
     order=7,
 )
 
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', None)   
-
 # Main
 @callback(
     Output("iread-school-level-layout", "children"),
@@ -74,7 +71,8 @@ pd.set_option('display.max_rows', None)
     Output("wida-breakdown-container", "style"),
     Output("wida-iread-table", "children"),
     Output("wida-iread-table-container", "style"),
-    Output("ilearn-iread-table", "children"),
+    Output("iread-ilearn-ela-table", "children"),
+    Output("iread-ilearn-math-table", "children"),    
     Output("ilearn-iread-table-container", "style"),        
     Output("proficiency-grades-ela", "children"),
     Output("ela-grade-bar-fig", "children"),
@@ -153,7 +151,8 @@ def update_academic_information_page(
     iread_breakdown = []  # type: list
     wida_breakdown = []  # type: list
     wida_iread_table = []  # type: list
-    ilearn_iread_table = []  # type: list
+    iread_ilearn_ela_table = []  # type: list
+    iread_ilearn_math_table = []  # type: list    
     proficiency_grades_ela = []
     ela_grade_bar_fig = []
     proficiency_ethnicity_ela = []
@@ -906,10 +905,8 @@ def update_academic_information_page(
         else:
 
             # NOTE: WIDA file does not have a School ID column, so we have
-            # to match by STN
-
-            # get a list of all STNs associated with the school (from both
-            # IREAD and ILEARN data files)
+            # to match by STN. get a list of all STNs associated with the
+            # school (from both IREAD and ILEARN data files)
             school_stns = get_ilearn_stns(school)
             school_stns["STN"] = school_stns["STN"].astype(str)
         
@@ -1078,7 +1075,8 @@ def update_academic_information_page(
             iread_breakdown = []
             wida_breakdown = []
             wida_iread_table = []
-            ilearn_iread_table = []
+            iread_ilearn_ela_table = []
+            iread_ilearn_math_table = []            
 
         else:
             k8_table_container = {"display": "block"}
@@ -1556,54 +1554,13 @@ def update_academic_information_page(
                         
                 # NOTE: We only get to this point if student level IREAD data exists and 
                 # student level ilearn data exists.
-    
-    # TODO: Add Math and ELA Both 
-                iread_ilearn_pass_final, iread_ilearn_nopass_final = get_student_level_ilearn(school, "Math")
+                iread_ilearn_ela_table = create_iread_ilearn_table(school,"ELA",excluded_years)
+                iread_ilearn_math_table = create_iread_ilearn_table(school,"Math",excluded_years)
 
-                if iread_ilearn_pass_final.empty and iread_ilearn_nopass_final.empty:
-
-                    ilearn_iread_table = []
-                
-                else:
-                    iread_ilearn_nopass_final["Year"] = iread_ilearn_nopass_final["Year"].astype(str)
-                    iread_ilearn_pass_final["Year"] = iread_ilearn_pass_final["Year"].astype(str)             
-
-                    ilearn_iread_table_data = iread_ilearn_nopass_final.merge(iread_ilearn_pass_final, how="left")
-
-                    if excluded_years:
-                        ilearn_iread_table_data = ilearn_iread_table_data[
-                            ~ilearn_iread_table_data["Year"].astype(int).isin(excluded_years)
-                        ]
-
-
-                    ilearn_iread_table_data = (
-                        ilearn_iread_table_data.set_index("Year")
-                        .T.rename_axis("Category")
-                        .rename_axis(None, axis=1)
-                        .reset_index()
-                    )
-
-                    # format
-                    for x in range(1, len(ilearn_iread_table_data.columns)):
-                        for i in range(0, len(ilearn_iread_table_data.index)):
-                            if (i == 0) | (i == 2):
-                                if ~np.isnan(ilearn_iread_table_data.iat[i, x]):
-                                    ilearn_iread_table_data.iat[i, x] = "{:.2%}".format(ilearn_iread_table_data.iat[i, x])                                
-                            else: # (i == 1) | (i == 2):
-                                ilearn_iread_table_data.iat[i, x] = "{:,.0f}".format(ilearn_iread_table_data.iat[i, x])
-
-                    # replace Nan with "-"
-                    ilearn_iread_table_data = ilearn_iread_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
-
-                    ilearn_iread_table = create_single_header_table(
-                        ilearn_iread_table_data, "IREAD Tested Students - ELA Proficiency"
-                    )
-
-                    print(ilearn_iread_table_data)
-                    
         # filename = "tst.csv"
         # school_all_student_data.to_csv(filename, index=False)
 
+# TODO: move attendance somewhere else
     ## Attendance Data (Attendance Rate/Chronic Absenteeism)
     attendance_rate = get_attendance_data(
         selected_school_id, selected_school_type, selected_year_string
@@ -1629,7 +1586,8 @@ def update_academic_information_page(
         proficiency_math_grades_container = {"display": "block"}
         iread_school_level_layout = []
         iread_breakdown = []
-        ilearn_iread_table = []
+        iread_ilearn_ela_table = []
+        iread_ilearn_math_table = []        
         wida_breakdown = []
         wida_iread_table = []
         proficiency_ethnicity_math = []
@@ -1645,7 +1603,8 @@ def update_academic_information_page(
         proficiency_math_ethnicity_container = {"display": "block"}
         iread_school_level_layout = []
         iread_breakdown = []
-        ilearn_iread_table = []
+        iread_ilearn_ela_table = []
+        iread_ilearn_math_table = []        
         wida_breakdown = []
         wida_iread_table = []        
         proficiency_grades_ela = []
@@ -1661,7 +1620,8 @@ def update_academic_information_page(
         proficiency_math_subgroup_container = {"display": "block"}
         iread_school_level_layout = []
         iread_breakdown = []
-        ilearn_iread_table = []
+        iread_ilearn_ela_table = []
+        iread_ilearn_math_table = []        
         wida_breakdown = []
         wida_iread_table = []
         proficiency_grades_ela = []
@@ -1691,7 +1651,8 @@ def update_academic_information_page(
         wida_iread_table_container = {"display": "block"}
         iread_school_level_layout = []
         iread_breakdown = []
-        ilearn_iread_table = []
+        iread_ilearn_ela_table = []
+        iread_ilearn_math_table = []        
         proficiency_grades_ela = []
         ela_grade_bar_fig = []
         proficiency_ethnicity_ela = []
@@ -1715,7 +1676,8 @@ def update_academic_information_page(
     else:
         iread_school_level_layout = []
         iread_breakdown = []
-        ilearn_iread_table = []
+        iread_ilearn_ela_table = []
+        iread_ilearn_math_table = []        
         wida_breakdown = []
         wida_iread_table = []
         proficiency_grades_ela = []
@@ -1747,7 +1709,8 @@ def update_academic_information_page(
         wida_breakdown_container,
         wida_iread_table,
         wida_iread_table_container,
-        ilearn_iread_table,
+        iread_ilearn_ela_table,
+        iread_ilearn_math_table,
         ilearn_iread_table_container,        
         proficiency_grades_ela,
         ela_grade_bar_fig,
@@ -1830,9 +1793,13 @@ def layout():
                                             html.Div(
                                                 [
                                                     html.Div(
-                                                        id="ilearn-iread-table",
+                                                        id="iread-ilearn-ela-table",
                                                         children=[],
                                                     ),
+                                                    html.Div(
+                                                        id="iread-ilearn-math-table",
+                                                        children=[],
+                                                    ),                                                    
                                                 ],
                                                 id="ilearn-iread-table-container",
                                             ),                                            

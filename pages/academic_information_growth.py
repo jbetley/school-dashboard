@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Information - Growth  #
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.14
-# date:     02/04/24
+# version:  1.15
+# date:     02/14/24
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -126,7 +126,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
             [fig_data_ses_growth, fig_data_el_growth, fig_data_sped_growth], axis=1
         )
 
-        ## By grade
+        ## By Grade
 
         # grades growth ela table/fig #1
         table_data_grades_growth_ela = table_data_grades_growth[
@@ -202,7 +202,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
             table_grades_growth_math, fig_grades_growth_math, label_grades_growth_math
         )
 
-        ## By ethnicity
+        ## By Ethnicity
 
         # ethnicity growth ela table/fig #5
         table_data_ethnicity_growth_ela = table_data_ethnicity_growth[
@@ -282,7 +282,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
             label_ethnicity_growth_math,
         )
 
-        ## By subgroup
+        ## By Subgroup
 
         # subgroup growth ela table/fig #9
         table_data_subgroup_growth_ela = table_data_subgroup_growth[

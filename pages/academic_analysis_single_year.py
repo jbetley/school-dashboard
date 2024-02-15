@@ -103,8 +103,6 @@ def set_dropdown_options(
 
     # NOTE: There is some time cost for running the dropdown selection function (typically
     # ~0.8 - 1.2s), so we want to exit out as early as possible if we know it isn't necessary
-
-    # It is a year when the school didnt exist
     if int(school_id) not in schools_by_distance["School ID"].values:
         return [], [], []
 
@@ -547,7 +545,6 @@ def update_academic_analysis_single_year(
                 selected_k8_school_data, school_id
             )
 
-            # print(selected_clean_data)
             # NOTE: We don't want to get rid of "***" yet, but we also don't
             # want to pass through a dataframe that that is all "***" - so
             # we convert create a copy, coerce all of the academic columns
@@ -804,6 +801,7 @@ def update_academic_analysis_single_year(
                     fig_iread = create_barchart_layout(fig_iread_chart, fig_iread_table)
 
                 else:
+                    # NOTE: Better to display empty chart or no chart?
                     fig_iread_chart = []
                     # no_data_fig_label(
                     #     "Comparison: Current Year IREAD Proficiency", 200

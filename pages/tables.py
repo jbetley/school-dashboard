@@ -2,8 +2,8 @@
 # ICSB Dashboard - DataTable Functions #
 ########################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     01/01/24
+# version:  1.15
+# date:     02/14/24
 
 import pandas as pd
 from typing import Tuple
@@ -14,7 +14,7 @@ from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 import dash_mantine_components as dmc
 
-from .load_data import metric_strings
+from .load_data import metric_strings, get_student_level_ilearn
 
 # default table styles
 table_style = {"fontSize": "12px", "border": "none", "fontFamily": "Inter, sans-serif"}
@@ -470,6 +470,49 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
     return table_layout
 
+def create_iread_ilearn_table(school, subject, excluded_years):
+
+    iread_pass_ilearn, iread_nopass_ilearn = get_student_level_ilearn(school, subject)
+
+    if iread_pass_ilearn.empty and iread_nopass_ilearn.empty:
+
+        iread_ilearn_table = []
+    
+    else:
+        iread_nopass_ilearn["Year"] = iread_nopass_ilearn["Year"].astype(str)
+        iread_pass_ilearn["Year"] = iread_pass_ilearn["Year"].astype(str)             
+
+        table_data = iread_nopass_ilearn.merge(iread_pass_ilearn, how="left")
+
+        if excluded_years:
+            table_data = table_data[
+                ~table_data["Year"].astype(int).isin(excluded_years)
+            ]
+
+        table_data = (
+            table_data.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        # format
+        for x in range(1, len(table_data.columns)):
+            for i in range(0, len(table_data.index)):
+                if (i == 0) | (i == 2):
+                    if ~np.isnan(table_data.iat[i, x]):
+                        table_data.iat[i, x] = "{:.2%}".format(table_data.iat[i, x])                                
+                else:
+                    table_data.iat[i, x] = "{:,.0f}".format(table_data.iat[i, x])
+
+        # replace Nan with "-"
+        table_data = table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
+
+        iread_ilearn_table = create_single_header_table(
+            table_data, "IREAD Tested Students - " + subject + " Proficiency"
+        )
+
+    return iread_ilearn_table
 
 def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> list:
     """
@@ -760,19 +803,32 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
         ]
     )
 
-    # Special layout for IREAD table on Academic Information page
-    if label == "IREAD" or label == "WIDA":
+    # Special layout for IREAD/WIDA tables on Academic Information page
+    # and Attendance table on About page
+    if label == "IREAD" or label == "WIDA" or label == "Attendance":
 
+        if label == "Attendance":
+            cols = [
+                {
+                    "name": i,
+                    "id": i,
+                    "type": "numeric",
+                    "format": FormatTemplate.percentage(2),
+                }
+                for i in data.columns
+            ]
+        else:
+            cols = [
+                {
+                    "name": i,
+                    "id": i,
+                }
+                for i in data.columns
+            ]
         table_layout = [
             dash_table.DataTable(
                 data.to_dict("records"),
-                columns=[
-                    {
-                        "name": i,
-                        "id": i,
-                    }
-                    for i in data.columns
-                ],
+                columns = cols,
                 style_data={
                     "fontSize": "12px",
                     "fontFamily": "Inter, sans-serif",

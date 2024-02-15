@@ -2,8 +2,8 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.14
-# date:     02/04/24
+# version:  1.15
+# date:     02/14/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -21,9 +21,11 @@ from .load_data import (
     get_financial_data,
     get_demographic_data,
     get_adm,
+    get_attendance_data
 )
-from .charts import loading_fig, no_data_fig_label
-from .tables import no_data_table, no_data_page, create_key_table
+from .charts import loading_fig, no_data_fig_label, make_line_chart
+from .tables import no_data_table, no_data_page, create_key_table, create_single_header_table
+from .layouts import create_line_fig_layout
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
 
@@ -32,6 +34,7 @@ dash.register_page(__name__, path="/", order=0, top_nav=True)
     Output("enroll-title", "children"),
     Output("enroll-table", "children"),
     Output("adm-fig", "figure"),
+    Output("attendance-layout", "children"),    
     Output("ethnicity-title", "children"),
     Output("ethnicity-fig", "figure"),
     Output("subgroup-title", "children"),
@@ -51,6 +54,13 @@ def update_about_page(year: str, school: str):
     previous_year_numeric = selected_year_numeric - 1
     previous_year_string = str(previous_year_numeric)
 
+    selected_school = get_school_index(school)
+    selected_school_type = selected_school["School Type"].values[0]
+    selected_school_id = int(selected_school["School ID"].values[0])
+    
+    # demographic data for the school is stored by Corporation ID
+    school_corp_id = str(selected_school["Corporation ID"].values[0])
+
     year_title = previous_year_string + "-" + selected_year_string[-2:]
     enroll_title = "Enrollment " + "(" + year_title + ")"
     ethnicity_title = "Enrollment by Ethnicity " + "(" + year_title + ")"
@@ -58,6 +68,7 @@ def update_about_page(year: str, school: str):
 
     update_table = []
     enroll_table = []
+    attendance_layout= []    
     adm_fig = px.line()
     ethnicity_fig = px.bar()
     subgroup_fig = px.bar()
@@ -72,14 +83,17 @@ def update_about_page(year: str, school: str):
     linecolor = ["#df8f2d"]
     bar_colors = ["#74a2d7", "#df8f2d"]
 
-    selected_school = get_school_index(school)
-    selected_school_type = selected_school["School Type"].values[0]
-     
-     # demographic data for the school is stored by Corporation ID
-    school_corp_id = str(selected_school["Corporation ID"].values[0])
-
+    print(selected_school_id)
+    # TODO: need to build a relationship list is DEMographics corp only?
+    if selected_school_id == "9709":
+        print('CHM')
+    if selected_school_id == "5874":
+        print('CHM')        
     # Get data for enrollment table, and subgroup/ethnicity demographic figs (single year)
     demographic_data = get_demographic_data(school_corp_id)
+    print(demographic_data)
+    # TODO: Christel House South (5874) colliding with Manual (9709)
+    # TODO: Need to distinguish between schools when sharing corp id
     demographic_data = demographic_data.loc[
         demographic_data["Year"] == selected_year_numeric
     ]
@@ -339,7 +353,6 @@ def update_about_page(year: str, school: str):
             )
 
         # Enrollment by subgroup fig
-
         subgroup_school = demographic_data.loc[
             :,
             (demographic_data.columns.isin(subgroup))
@@ -554,7 +567,7 @@ def update_about_page(year: str, school: str):
                 :, ~adm_values.columns.str.contains("|".join(excluded_years))
             ]
 
-        # strip any (Q#) suffix
+        # strip (Q#) suffix
         adm_values.columns = adm_values.columns.str[:4]
 
         # turn single row dataframe into two lists (column headers and data)
@@ -583,11 +596,43 @@ def update_about_page(year: str, school: str):
             plot_bgcolor="rgba(0,0,0,0)",
         )
 
+    ## Attendance Rate & Chronic Absenteeism
+    attendance_rate_data = get_attendance_data(
+        selected_school_id, selected_school_type, selected_year_string
+    )
+
+    if len(attendance_rate_data.index) > 0 and len(attendance_rate_data.columns) > 1:
+
+        # print(type(attendance_rate_data["2019"][0]))
+        # # format table data
+        # for col in attendance_rate_data.columns[1:]:
+        #     attendance_rate_data[col] = pd.to_numeric(attendance_rate_data[col], errors="coerce")
+        # print(type(attendance_rate_data["2019"][0]))
+        attendance_table = create_single_header_table(
+            attendance_rate_data, "Attendance"
+        )
+    else:
+        attendance_table = no_data_table(
+            "No Data to Display.", "Attendance Data", "six"
+        )
+
+    attendance_fig_data = (
+        attendance_rate_data.set_index("Category")
+        .T.rename_axis("Year")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    attendance_fig = make_line_chart(attendance_fig_data)
+ 
+    attendance_layout = create_line_fig_layout(attendance_table, attendance_fig,"Attendance and Chronic Absenteeism")
+    
     return (
         update_table,
         enroll_title,
         enroll_table,
         adm_fig,
+        attendance_layout,
         ethnicity_title,
         ethnicity_fig,
         subgroup_title,
@@ -644,6 +689,14 @@ def layout():
                                     ),
                                 ],
                                 className="bare-container--flex twelve columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        id="attendance-layout",
+                                        children=[],
+                                    ),  
+                                ],
                             ),
                             html.Div(
                                 [
