@@ -809,6 +809,7 @@ def get_iread_student_data(*args):
     
     return results
 
+
 def get_iread_stns(*args):
     keys = ["id"]
     params = dict(zip(keys, args))
@@ -824,6 +825,7 @@ def get_iread_stns(*args):
     results = run_query(q, params)
 
     return results
+
 
 def get_ilearn_stns(*args):
     keys = ["id"]
@@ -855,9 +857,9 @@ def get_ilearn_student_data(*args):
     )
 
     results = run_query(q, params)
-    # results = results.sort_values(by="Test Year", ascending=False)
 
     return results
+
 
 def get_attendance_data(school_id, school_type, year):
     params = dict(id=school_id)
@@ -934,6 +936,7 @@ def get_attendance_data(school_id, school_type, year):
         )
 
     return attendance_rate
+
 
 def get_k8_school_academic_data(*args):
     keys = ["id"]

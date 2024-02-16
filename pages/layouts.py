@@ -133,7 +133,7 @@ def create_simple_iread_layout(data):
     table_data = table_data.reset_index()
 
     table = create_single_header_table(
-        table_data, "IREAD"
+        table_data, "IREAD School Level Proficiency"
     )
 
     layout = create_line_fig_layout(

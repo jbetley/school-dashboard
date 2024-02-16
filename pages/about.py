@@ -84,7 +84,13 @@ def update_about_page(year: str, school: str):
     bar_colors = ["#74a2d7", "#df8f2d"]
 
     print(selected_school_id)
-    # TODO: need to build a relationship list is DEMographics corp only?
+    # TODO: Add school level demographics to DB
+    # NOTE: One disadvantage of demographic data being stored by Corp ID
+    # is that some (very few) Corp IDs are shared by schools
+    #   Christel House Watanabe Manual High School (school id: 9709) and
+    #   Christel House Academy South (school id: 5874) share corp_id: 9380
+    # 
+    # Circle City? Thought they had two, but only one (Corp: 9150 / School: 1126)
     if selected_school_id == "9709":
         print('CHM')
     if selected_school_id == "5874":
