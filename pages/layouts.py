@@ -409,12 +409,12 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     layout = [
         html.Div(
             [
-                html.Label(label, className="label__header"),
+                html.Label(label, className="label__header", style={"marginTop": "10px"}),
                 html.Div(
                     [
                         html.Div(
                             [
-                                html.Div(table, style={"marginTop": "20px"}),
+                                html.Div(table, style={"marginTop": "10px"}),
                                 html.P(""),
                                 html.P(endnote,
                                     style={

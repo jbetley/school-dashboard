@@ -31,13 +31,12 @@ from pages.load_data import (
     get_k8_school_academic_data,
     get_high_school_academic_data,
     get_school_index,
-    get_excluded_years,
-    # get_attendance_data
+    get_excluded_years
 )
 from pages.process_data import (
     process_k8_academic_data,
     process_high_school_academic_data,
-    filter_high_school_academic_data,
+    filter_high_school_academic_data
 )
 from pages.tables import (
     no_data_page,
@@ -136,48 +135,39 @@ def update_academic_information_page(
     if not radio_category:
         radio_category = "all"
 
-    k12_grad_overview_table = []
-    k12_grad_ethnicity_table = []
-    k12_grad_subgroup_table = []
-    k12_grad_table_container = {"display": "none"}
+    k12_grad_overview_table = []  # type: list 
+    k12_grad_ethnicity_table = []  # type: list 
+    k12_grad_subgroup_table = []  # type: list 
+
     
-    k12_sat_overview_table = []
-    k12_sat_ethnicity_table = []
-    k12_sat_subgroup_table = []
-    k12_sat_cut_scores_table = []
-    k12_sat_table_container = {"display": "none"}
+    k12_sat_overview_table = []  # type: list 
+    k12_sat_ethnicity_table = []  # type: list 
+    k12_sat_subgroup_table = []  # type: list 
+    k12_sat_cut_scores_table = []  # type: list 
 
     iread_school_level_layout = []  # type: list       
     iread_breakdown = []  # type: list
-    wida_breakdown = []  # type: list
-    wida_iread_table = []  # type: list
     iread_ilearn_ela_table = []  # type: list
     iread_ilearn_math_table = []  # type: list
-    iread_school_level_layout_container = {"display": "none"}    
-    wida_breakdown_container = {"display": "none"}
-    iread_breakdown_container = {"display": "none"}
-    wida_iread_table_container = {"display": "none"}
-    ilearn_iread_table_container = {"display": "none"} 
+    # iread_school_level_layout_container = {"display": "none"}
+    # iread_breakdown_container = {"display": "none"}
+    # ilearn_iread_table_container = {"display": "none"} 
+    
+    wida_breakdown = []  # type: list
+    wida_iread_table = []  # type: list
 
-    proficiency_grades_ela = []
-    ela_grade_bar_fig = []
-    proficiency_ethnicity_ela = []
-    ela_ethnicity_bar_fig = []
-    proficiency_subgroup_ela = []
-    ela_subgroup_bar_fig = []
-    proficiency_grades_math = []
-    math_grade_bar_fig = []
-    proficiency_ethnicity_math = []
-    math_ethnicity_bar_fig = []
-    proficiency_subgroup_math = []
-    math_subgroup_bar_fig = []
-    proficiency_ela_grades_container = {"display": "none"}
-    proficiency_ela_ethnicity_container = {"display": "none"}
-    proficiency_ela_subgroup_container = {"display": "none"}
-    proficiency_math_grades_container = {"display": "none"}
-    proficiency_math_ethnicity_container = {"display": "none"}
-    proficiency_math_subgroup_container = {"display": "none"}
-    k8_table_container = {"display": "none"}
+    proficiency_grades_ela = []  # type: list 
+    ela_grade_bar_fig = []  # type: list 
+    proficiency_ethnicity_ela = []  # type: list 
+    ela_ethnicity_bar_fig = []  # type: list 
+    proficiency_subgroup_ela = []  # type: list 
+    ela_subgroup_bar_fig = []  # type: list 
+    proficiency_grades_math = []  # type: list 
+    math_grade_bar_fig = []  # type: list 
+    proficiency_ethnicity_math = []  # type: list 
+    math_ethnicity_bar_fig = []  # type: list 
+    proficiency_subgroup_math = []  # type: list 
+    math_subgroup_bar_fig = []  # type: list 
 
     academic_information_notes_string = ""
     academic_information_notes_string_container = {"display": "none"}
@@ -193,8 +183,7 @@ def update_academic_information_page(
         selected_school_type == "HS"
         or selected_school_type == "AHS"
         or (selected_school_id == 5874 and selected_year_numeric < 2021)
-        or selected_school_type == "K12"
-        and radio_type == "hs"
+        or (selected_school_type == "K12" and radio_type == "hs")
     ):
         # load HS academic data
         selected_raw_hs_school_data = get_high_school_academic_data(school)
@@ -215,6 +204,18 @@ def update_academic_information_page(
             )
 
             if all_hs_school_data.empty:
+
+                # k12_grad_overview_table = []
+                # k12_grad_ethnicity_table = []
+                # k12_grad_subgroup_table = []
+                k12_grad_table_container = {"display": "none"}
+                
+                # k12_sat_overview_table = []
+                # k12_sat_ethnicity_table = []
+                # k12_sat_subgroup_table = []
+                # k12_sat_cut_scores_table = []
+                k12_sat_table_container = {"display": "none"}
+
                 no_display_data = no_data_page("No Data to Display.", "High School Academic Data")
             
             else:
@@ -235,6 +236,7 @@ def update_academic_information_page(
                 ].copy()
 
                 if len(graduation_data.columns) > 1 and len(graduation_data.index) > 0:
+                    
                     k12_grad_table_container = {"display": "block"}
 
                     graduation_data["Category"] = (
@@ -253,6 +255,7 @@ def update_academic_information_page(
                     k12_grad_overview_table = create_multi_header_table_with_container(
                         grad_overview, "Graduation Rate Overview"
                     )
+
                     k12_grad_overview_table = set_table_layout(
                         k12_grad_overview_table,
                         k12_grad_overview_table,
@@ -262,11 +265,13 @@ def update_academic_information_page(
                     grad_ethnicity = graduation_data[
                         graduation_data["Category"].str.contains("|".join(ethnicity))
                     ]
+
                     grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
 
                     k12_grad_ethnicity_table = create_multi_header_table_with_container(
                         grad_ethnicity, "Graduation Rate by Ethnicity"
                     )
+
                     k12_grad_ethnicity_table = set_table_layout(
                         k12_grad_ethnicity_table,
                         k12_grad_ethnicity_table,
@@ -276,6 +281,7 @@ def update_academic_information_page(
                     grad_subgroup = graduation_data[
                         graduation_data["Category"].str.contains("|".join(subgroup))
                     ]
+
                     grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
 
                     k12_grad_subgroup_table = create_multi_header_table_with_container(
@@ -296,6 +302,7 @@ def update_academic_information_page(
                     len(k12_sat_table_data.columns) > 1
                     and len(k12_sat_table_data.index) > 0
                 ):
+                    
                     k12_sat_table_container = {"display": "block"}
 
                     k12_sat_table_data["Category"] = (
@@ -307,11 +314,13 @@ def update_academic_information_page(
                     k12_sat_overview = k12_sat_table_data[
                         k12_sat_table_data["Category"].str.contains("Total")
                     ]
+
                     k12_sat_overview = k12_sat_overview.dropna(axis=1, how="all")
 
                     k12_sat_overview_table = create_multi_header_table_with_container(
                         k12_sat_overview, "SAT Overview"
                     )
+
                     k12_sat_overview_table = set_table_layout(
                         k12_sat_overview_table,
                         k12_sat_overview_table,
@@ -321,11 +330,13 @@ def update_academic_information_page(
                     k12_sat_ethnicity = k12_sat_table_data[
                         k12_sat_table_data["Category"].str.contains("|".join(ethnicity))
                     ]
+
                     k12_sat_ethnicity = k12_sat_ethnicity.dropna(axis=1, how="all")
 
                     k12_sat_ethnicity_table = create_multi_header_table_with_container(
                         k12_sat_ethnicity, "SAT Benchmarks by Ethnicity"
                     )
+
                     k12_sat_ethnicity_table = set_table_layout(
                         k12_sat_ethnicity_table,
                         k12_sat_ethnicity_table,
@@ -335,11 +346,13 @@ def update_academic_information_page(
                     k12_sat_subgroup = k12_sat_table_data[
                         k12_sat_table_data["Category"].str.contains("|".join(subgroup))
                     ]
+
                     k12_sat_subgroup = k12_sat_subgroup.dropna(axis=1, how="all")
 
                     k12_sat_subgroup_table = create_multi_header_table_with_container(
                         k12_sat_subgroup, "SAT Benchmarks by Subgroup"
                     )
+
                     k12_sat_subgroup_table = set_table_layout(
                         k12_sat_subgroup_table,
                         k12_sat_subgroup_table,
@@ -370,14 +383,13 @@ def update_academic_information_page(
                 academic_information_notes_string = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
                     Beginning with the 2023 cohort, all students in grade 11 are required to take the SAT per federal requirements."
                 academic_information_notes_string_container = {"display": "block"}
-
     # End HS block
 
+    # Begin K8 ILEARN
     elif (
         selected_school_type == "K8"
-        or selected_school_type == "K12"
+        or (selected_school_type == "K12" and radio_type == "k8")
         or (selected_school_id == 5874 and selected_year_numeric >= 2021)
-        and radio_type == "k8"
     ):
 
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
@@ -398,10 +410,32 @@ def update_academic_information_page(
             # use N-Size data for table tooltips
             ilearn_table_data = process_k8_academic_data(selected_raw_k8_school_data)
 
-            if ilearn_table_data.empty:             
+            if ilearn_table_data.empty:
+
+                # proficiency_grades_ela = []
+                # ela_grade_bar_fig = []
+                # proficiency_ethnicity_ela = []
+                # ela_ethnicity_bar_fig = []
+                # proficiency_subgroup_ela = []
+                # ela_subgroup_bar_fig = []
+                # proficiency_grades_math = []
+                # math_grade_bar_fig = []
+                # proficiency_ethnicity_math = []
+                # math_ethnicity_bar_fig = []
+                # proficiency_subgroup_math = []
+                # math_subgroup_bar_fig = []
+                proficiency_ela_grades_container = {"display": "none"}
+                proficiency_ela_ethnicity_container = {"display": "none"}
+                proficiency_ela_subgroup_container = {"display": "none"}
+                proficiency_math_grades_container = {"display": "none"}
+                proficiency_math_ethnicity_container = {"display": "none"}
+                proficiency_math_subgroup_container = {"display": "none"}
+                k8_table_container = {"display": "none"}
+
                 no_display_data = no_data_page("No Data to Display.", "Academic Proficiency")
             
             else:
+
                 k8_table_container = {"display": "block"}
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
@@ -853,20 +887,22 @@ def update_academic_information_page(
                 else:
                     math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                academic_information_notes_string = "There are a number of factors that make it difficult to make \
-                    valid and reliable comparisons between test scores from 2019 to 2022. For example, ILEARN was \
-                    administered for the first time during the 2018-19 SY and represented an entirely new type and \
-                    mode of assessment (adaptive and online-only). No State assessment was administered in 2020 because \
-                    of the Covid-19 pandemic. Finally, the 2019 data set includes only students  who attended the \
-                    testing school for 162 days, while the 2021 and 2022 data sets included all tested students."
+                academic_information_notes_string = "ILEARN was administered for the first time during the 2018-19 SY, \
+                    representing an entirely new type and mode of assessment (adaptive and online-only). No State assessment \
+                    was administered in 2020 due to the Covid-19 pandemic. The students included in the tested cohort for purposes \
+                    of calculating the proficiency percentage has not been consistent- in 2019, the cohort included only students \
+                    who attended the testing school for 162 days, the 2021 and 2022 calculations included all tested students, regardless \
+                    of the length of time that the student attended the testing school, and the 2023 calculation included students in the \
+                    cohort of the school in which the student spent the majority of time enrolled."
+                
                 academic_information_notes_string_container = {"display": "block"}        
-        # End ILEARN block
+        # End K-8 ILEARN block
 
 ## WIDA - Student Level Data
 
     if is_guest == True:
         no_display_data = no_data_page("No Data to Display.", "WIDA")
-        wida_breakdown = []
+        # wida_breakdown = []
 
     else:
 
@@ -899,10 +935,10 @@ def update_academic_information_page(
 
         if len(selected_school_wida.index) < 1:
             no_display_data = no_data_page("No Data to Display.", "WIDA")
-            wida_breakdown = []
+            # wida_breakdown = []
 
         else:
-            k8_table_container = {"display": "block"}                
+            # k8_table_container = {"display": "block"}                
             main_container = {"display": "block"}
             empty_container = {"display": "none"}
 
@@ -1046,13 +1082,13 @@ def update_academic_information_page(
                 & ilearn_table_data["Category"].str.contains("IREAD")
         ]
         
-        if iread_school_table_data.empty:
-            iread_school_level_layout = []
+        if not iread_school_table_data.empty:
+        #     iread_school_level_layout = []
         
-        else:
-            k8_table_container = {"display": "block"}            
+        # else:
+            # k8_table_container = {"display": "block"}            
             main_container = {"display": "block"}
-            iread_school_level_layout_container = {"display": "block"}             
+            # iread_school_level_layout_container = {"display": "block"}
             empty_container = {"display": "none"}         
             
             iread_all_table = create_multi_header_table(iread_school_table_data)
@@ -1080,17 +1116,16 @@ def update_academic_information_page(
             if iread_school_table_data.empty:
 
                 no_display_data = no_data_page("No Data to Display.", "IREAD")            
-                iread_breakdown = []
-                iread_ilearn_ela_table = []
-                iread_ilearn_math_table = []
+            #     iread_breakdown = []
+            #     iread_ilearn_ela_table = []
+            #     iread_ilearn_math_table = []
 
-            else:
-                iread_breakdown = []
-                iread_ilearn_ela_table = []
-                iread_ilearn_math_table = []
+            # else:
+            #     iread_breakdown = []
+            #     iread_ilearn_ela_table = []
+            #     iread_ilearn_math_table = []
 
         else:
-            k8_table_container = {"display": "block"}
             main_container = {"display": "block"}
             empty_container = {"display": "none"}
 
@@ -1143,14 +1178,14 @@ def update_academic_information_page(
                     if iread_school_table_data.empty:
 
                         no_display_data = no_data_page("No Data to Display.", "IREAD")            
-                        iread_breakdown = []
-                        iread_ilearn_ela_table = []
-                        iread_ilearn_math_table = []
+                        # iread_breakdown = []
+                        # iread_ilearn_ela_table = []
+                        # iread_ilearn_math_table = []
 
-                    else:
-                        iread_breakdown = []
-                        iread_ilearn_ela_table = []
-                        iread_ilearn_math_table = []
+                    # else:
+                    #     iread_breakdown = []
+                    #     iread_ilearn_ela_table = []
+                    #     iread_ilearn_math_table = []
                 
                 else:
 
@@ -1158,7 +1193,6 @@ def update_academic_information_page(
 
             else:
                 # student level IREAD chart and table
-                k8_table_container = {"display": "block"}
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"} 
 
@@ -1272,10 +1306,10 @@ def update_academic_information_page(
 
                         iread_breakdown = create_simple_iread_layout(total_iread_data)
 
-                    else:
-                        iread_breakdown = []
-                        iread_ilearn_ela_table = []
-                        iread_ilearn_math_table = []
+                    # else:
+                    #     iread_breakdown = []
+                    #     iread_ilearn_ela_table = []
+                    #     iread_ilearn_math_table = []
                 else:
 
                     # Number of 2nd Graders Tested and 2nd Grader Proficiency
@@ -1422,7 +1456,6 @@ def update_academic_information_page(
 
                 else:
 
-                    k8_table_container = {"display": "block"}
                     main_container = {"display": "block"}
                     empty_container = {"display": "none"}
 
@@ -1482,7 +1515,6 @@ def update_academic_information_page(
 
                     if wida_iread_data.empty:
                         no_display_data = no_data_page("No Data to Display.", "WIDA")
-                        wida_iread_table = []
 
                     else:
                         # Get WIDA Average by Year and Status (Pass/No Pass)
@@ -1563,24 +1595,25 @@ def update_academic_information_page(
 
                 # End WIDA to IREAD Table
                     
+            # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
+            # TODO: but still need Test Year column in ILEARN data
+                # Get total # of students for each grade for each year
+                # Calculate Proficiency for each year for each grade ->
+                #   # students / # At or Above
+                #   # students / # Approaching
+                #   for IREAD Passing Students and IREAD not passing students
+                # % Proficiency for students not passing IREAD
+                # % Proficiency for students passing IREAD
+
+                # # Avg ELA/Math over time for IREAD Pass - 2018-19, 21, 22, 23
+                # # group by IREAD Pass and ILEARN Year:
+                # # a) count Exceeds, At, Approach, Below
+                # # b) measure point diff between Cut and Scale and Average
+                # # c) measure raw scale score avg
+                # # Avg ELA over time for IREAD No Pass
+
                 # IREAD to ILEARN Table
-# TODO: Add 2 year ILEARN comparisons (YoY comparing STN) - but need Test Year column in ILEARN data
-
-            # Get total # of students for each grade for each year
-            # Calculate Proficiency for each year for each grade ->
-            #   # students / # At or Above
-            #   # students / # Approaching
-            #   for IREAD Passing Students and IREAD not passing students
-            # % Proficiency for students not passing IREAD
-            # % Proficiency for students passing IREAD
-
-            # # Avg ELA/Math over time for IREAD Pass - 2018-19, 21, 22, 23
-            # # group by IREAD Pass and ILEARN Year:
-            # # a) count Exceeds, At, Approach, Below
-            # # b) measure point diff between Cut and Scale and Average
-            # # c) measure raw scale score avg
-            # # Avg ELA over time for IREAD No Pass
-                        
+                                                
                 # NOTE: We only get to this point if student level IREAD data exists and 
                 # student level ilearn data exists.
                 k8_table_container = {"display": "block"}
@@ -1590,100 +1623,96 @@ def update_academic_information_page(
                 iread_ilearn_ela_table = create_iread_ilearn_table(school,"ELA",excluded_years)
                 iread_ilearn_math_table = create_iread_ilearn_table(school,"Math",excluded_years)
 
-        # filename = "tst.csv"
-        # school_all_student_data.to_csv(filename, index=False)
-
-# TODO: Do We need this? Don't we set them above?
-    # variables for display purposes
+    # category selection determines which divs are displayed
     if radio_category == "grade":
         proficiency_ela_grades_container = {"display": "block"}
-        proficiency_math_grades_container = {"display": "block"}
-        academic_information_notes_string_container = {"display": "block"}          
-        iread_school_level_layout = []
-        iread_breakdown = []
-        iread_ilearn_ela_table = []
-        iread_ilearn_math_table = []        
-        wida_breakdown = []
-        wida_iread_table = []
-        proficiency_ethnicity_math = []
-        math_ethnicity_bar_fig = []
-        proficiency_subgroup_math = []
-        math_subgroup_bar_fig = []
-        proficiency_ethnicity_ela = []
-        ela_ethnicity_bar_fig = []
-        proficiency_subgroup_ela = []
-        ela_subgroup_bar_fig = []
+        proficiency_math_grades_container = {"display": "block"}        
+        k8_table_container = {"display": "block"}        
+        academic_information_notes_string_container = {"display": "block"}
 
+        iread_school_level_layout_container = {"display": "none"} 
+        iread_breakdown_container = {"display": "none"}
+        ilearn_iread_table_container = {"display": "none"}
+        wida_breakdown_container = {"display": "none"}
+        wida_iread_table_container = {"display": "none"}
+        proficiency_ela_subgroup_container = {"display": "none"}
+        proficiency_math_subgroup_container = {"display": "none"}
+        proficiency_ela_ethnicity_container = {"display": "none"}
+        proficiency_math_ethnicity_container = {"display": "none"}
+        k12_sat_table_container = {"display": "none"}
+        k12_grad_table_container = {"display": "none"}
+               
     elif radio_category == "ethnicity":
         proficiency_ela_ethnicity_container = {"display": "block"}
         proficiency_math_ethnicity_container = {"display": "block"}
-        academic_information_notes_string_container = {"display": "block"}          
-        iread_school_level_layout = []
-        iread_breakdown = []
-        iread_ilearn_ela_table = []
-        iread_ilearn_math_table = []        
-        wida_breakdown = []
-        wida_iread_table = []        
-        proficiency_grades_ela = []
-        ela_grade_bar_fig = []
-        proficiency_subgroup_ela = []
-        ela_subgroup_bar_fig = []
-        proficiency_grades_math = []
-        math_grade_bar_fig = []
-        proficiency_subgroup_math = []
-        math_subgroup_bar_fig = []
+        k8_table_container = {"display": "block"}        
+        academic_information_notes_string_container = {"display": "block"}
+
+        iread_school_level_layout_container = {"display": "none"} 
+        iread_breakdown_container = {"display": "none"}
+        ilearn_iread_table_container = {"display": "none"}
+        wida_breakdown_container = {"display": "none"}
+        wida_iread_table_container = {"display": "none"}
+        proficiency_ela_subgroup_container = {"display": "none"}
+        proficiency_math_subgroup_container = {"display": "none"}
+        proficiency_ela_grades_container = {"display": "none"}
+        proficiency_math_grades_container = {"display": "none"}
+        k12_sat_table_container = {"display": "none"}
+        k12_grad_table_container = {"display": "none"}
 
     elif radio_category == "subgroup":
         proficiency_ela_subgroup_container = {"display": "block"}
         proficiency_math_subgroup_container = {"display": "block"}
-        academic_information_notes_string_container = {"display": "block"}        
-        iread_school_level_layout = []
-        iread_breakdown = []
-        iread_ilearn_ela_table = []
-        iread_ilearn_math_table = []        
-        wida_breakdown = []
-        wida_iread_table = []
-        proficiency_grades_ela = []
-        ela_grade_bar_fig = []
-        proficiency_ethnicity_ela = []
-        ela_ethnicity_bar_fig = []
-        proficiency_grades_math = []
-        math_grade_bar_fig = []
-        proficiency_ethnicity_math = []
-        math_ethnicity_bar_fig = []
+        k8_table_container = {"display": "block"}        
+        academic_information_notes_string_container = {"display": "block"}
+
+        iread_school_level_layout_container = {"display": "none"} 
+        iread_breakdown_container = {"display": "none"}
+        ilearn_iread_table_container = {"display": "none"}
+        wida_breakdown_container = {"display": "none"}
+        wida_iread_table_container = {"display": "none"}
+        proficiency_ela_ethnicity_container = {"display": "none"}
+        proficiency_math_ethnicity_container = {"display": "none"}
+        proficiency_ela_grades_container = {"display": "none"}
+        proficiency_math_grades_container = {"display": "none"}
+        k12_sat_table_container = {"display": "none"}
+        k12_grad_table_container = {"display": "none"}
 
     elif radio_category == "iread":
         iread_school_level_layout_container = {"display": "block"} 
         iread_breakdown_container = {"display": "block"}
         ilearn_iread_table_container = {"display": "block"}
+        k8_table_container = {"display": "block"}
+
+        wida_breakdown_container = {"display": "none"}
+        wida_iread_table_container = {"display": "none"}
+        proficiency_ela_grades_container = {"display": "none"}
+        proficiency_ela_ethnicity_container = {"display": "none"}
+        proficiency_ela_subgroup_container = {"display": "none"}
+        proficiency_math_grades_container = {"display": "none"}
+        proficiency_math_ethnicity_container = {"display": "none"}
+        proficiency_math_subgroup_container = {"display": "none"}
+        k12_sat_table_container = {"display": "none"}
+        k12_grad_table_container = {"display": "none"}
         academic_information_notes_string_container = {"display": "none"}
-        wida_breakdown = []
-        wida_iread_table = []
-        proficiency_grades_ela = []
-        ela_grade_bar_fig = []
-        proficiency_ethnicity_ela = []
-        ela_ethnicity_bar_fig = []
-        proficiency_grades_math = []
-        math_grade_bar_fig = []
-        proficiency_ethnicity_math = []
-        math_ethnicity_bar_fig = []
 
     elif radio_category == "wida":
         wida_breakdown_container = {"display": "block"}
         wida_iread_table_container = {"display": "block"}
-        academic_information_notes_string_container = {"display": "none"}        
-        iread_school_level_layout = []
-        iread_breakdown = []
-        iread_ilearn_ela_table = []
-        iread_ilearn_math_table = []        
-        proficiency_grades_ela = []
-        ela_grade_bar_fig = []
-        proficiency_ethnicity_ela = []
-        ela_ethnicity_bar_fig = []
-        proficiency_grades_math = []
-        math_grade_bar_fig = []
-        proficiency_ethnicity_math = []
-        math_ethnicity_bar_fig = []
+        k8_table_container = {"display": "block"}
+
+        iread_school_level_layout_container = {"display": "none"}
+        iread_breakdown_container = {"display": "none"}
+        ilearn_iread_table_container = {"display": "none"}          
+        proficiency_ela_grades_container = {"display": "none"}
+        proficiency_ela_ethnicity_container = {"display": "none"}
+        proficiency_ela_subgroup_container = {"display": "none"}
+        proficiency_math_grades_container = {"display": "none"}
+        proficiency_math_ethnicity_container = {"display": "none"}
+        proficiency_math_subgroup_container = {"display": "none"}
+        k12_sat_table_container = {"display": "none"}
+        k12_grad_table_container = {"display": "none"}
+        academic_information_notes_string_container = {"display": "none"}
 
     elif radio_category == "all":
         iread_school_level_layout_container = {"display": "block"}
@@ -1697,31 +1726,10 @@ def update_academic_information_page(
         proficiency_math_ethnicity_container = {"display": "block"}
         proficiency_ela_subgroup_container = {"display": "block"}
         proficiency_math_subgroup_container = {"display": "block"}
-
-    else:
-        iread_school_level_layout = []
-        iread_breakdown = []
-        iread_ilearn_ela_table = []
-        iread_ilearn_math_table = []        
-        wida_breakdown = []
-        wida_iread_table = []
-        proficiency_grades_ela = []
-        ela_grade_bar_fig = []
-        proficiency_ethnicity_ela = []
-        ela_ethnicity_bar_fig = []
-        proficiency_subgroup_ela = []
-        ela_subgroup_bar_fig = []
-        proficiency_grades_math = []
-        math_grade_bar_fig = []
-        proficiency_ethnicity_math = []
-        math_ethnicity_bar_fig = []
-        proficiency_subgroup_math = []
-        math_subgroup_bar_fig = []
-
-    print("****************")
-    print(iread_school_level_layout_container)
-# TODO: Why is this always on?
-# TODO: Why no space at bottom of iread ilearn tables?
+        k8_table_container = {"display": "block"}
+        
+        k12_sat_table_container = {"display": "none"}
+        k12_grad_table_container = {"display": "none"}
 
     return (
         iread_school_level_layout,
@@ -2048,10 +2056,10 @@ def layout():
                                             ),
                                         ],
                                         className="pretty-container__key ten columns",
+                                        id="academic-information-notes-string-container",
                                     ),
                                 ],
                                 className="bare-container--flex--center twelve columns",
-                                id="academic-information-notes-string-container",
                             ),
                         ],
                     ),

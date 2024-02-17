@@ -98,6 +98,7 @@ def update_about_page(year: str, school: str):
     # Get data for enrollment table, and subgroup/ethnicity demographic figs (single year)
     demographic_data = get_demographic_data(school_corp_id)
     print(demographic_data)
+    # TODO: Add school level demographic data to database
     # TODO: Christel House South (5874) colliding with Manual (9709)
     # TODO: Need to distinguish between schools when sharing corp id
     demographic_data = demographic_data.loc[
