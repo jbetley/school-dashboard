@@ -856,6 +856,21 @@ def get_ilearn_stns(*args):
 
     return results
 
+# combines the above functions
+def get_school_stns(school):
+
+    ilearn_stns = get_ilearn_stns(school)
+    ilearn_stns["STN"] = ilearn_stns["STN"].astype(str)
+
+    # get student level IREAD data
+    iread_stns = get_iread_stns(school)
+    iread_stns["STN"] = iread_stns["STN"].astype(str)
+
+    school_stns = pd.concat(
+        [ilearn_stns, iread_stns], axis=0, ignore_index=True
+    )
+
+    return school_stns
 
 def get_ilearn_student_data(*args):
     keys = ["id"]
