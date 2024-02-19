@@ -11,12 +11,12 @@ import itertools
 
 from .load_data import (
     get_school_index,
-    get_demographic_data,
+    # get_corp_demographic_data,
+    # get_school_demographic_data,
     get_letter_grades,
     get_excluded_years,
     get_attendance_data
 )
-# from .process_data import get_attendance_data
 from .calculations import (
     calculate_year_over_year,
     set_academic_rating,
@@ -41,8 +41,8 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
     selected_school = get_school_index(school)
     corp_id = int(selected_school["GEO Corp"].values[0])
 
-    # corp_demographics = get_demographic_data(corp_id)
-    # school_demographics = get_demographic_data(school)
+    # corp_demographics = get_corp_demographic_data(corp_id)
+    # school_demographics = get_school_demographic_data(school)
 
 # TODO: Change origin of attendance from demographic to academic
 # TODO: Drop Corp Attendance Rate(?) - not apples to apples

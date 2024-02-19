@@ -20,20 +20,20 @@ from .load_data import (
     get_high_school_academic_data,
     get_hs_corporation_academic_data,
     get_k8_corporation_academic_data,
-    get_excluded_years,
+    get_excluded_years
 )
 from .process_data import (
     process_k8_academic_data,
     process_high_school_academic_data,
     merge_high_school_data,
     filter_high_school_academic_data,
-    process_k8_corp_academic_data,
+    process_k8_corp_academic_data
 )
 from .tables import (
     no_data_page,
     no_data_table,
     create_metric_table,
-    create_proficiency_key,
+    create_proficiency_key
 )
 from .layouts import set_table_layout
 from .string_helpers import convert_to_svg_circle
@@ -43,7 +43,7 @@ from .calculate_metrics import (
     calculate_high_school_metrics,
     calculate_adult_high_school_metrics,
     calculate_attendance_metrics,
-    calculate_iread_metrics,
+    calculate_iread_metrics
 )
 from .calculations import conditional_fillna
 

@@ -19,7 +19,8 @@ from .load_data import (
     current_academic_year,
     get_school_index,
     get_financial_data,
-    get_demographic_data,
+    get_corp_demographic_data,
+    get_school_demographic_data,
     get_adm,
     get_attendance_data
 )
@@ -83,24 +84,15 @@ def update_about_page(year: str, school: str):
     linecolor = ["#df8f2d"]
     bar_colors = ["#74a2d7", "#df8f2d"]
 
-    print(selected_school_id)
-    # TODO: Add school level demographics to DB
-    # NOTE: One disadvantage of demographic data being stored by Corp ID
-    # is that some (very few) Corp IDs are shared by schools
+    # NOTE: Need to use both school and corp files because some Corp IDs
+    # are shared by schools:
     #   Christel House Watanabe Manual High School (school id: 9709) and
     #   Christel House Academy South (school id: 5874) share corp_id: 9380
-    # 
-    # Circle City? Thought they had two, but only one (Corp: 9150 / School: 1126)
-    if selected_school_id == "9709":
-        print('CHM')
-    if selected_school_id == "5874":
-        print('CHM')        
+
     # Get data for enrollment table, and subgroup/ethnicity demographic figs (single year)
-    demographic_data = get_demographic_data(school_corp_id)
-    print(demographic_data)
-    # TODO: Add school level demographic data to database
-    # TODO: Christel House South (5874) colliding with Manual (9709)
-    # TODO: Need to distinguish between schools when sharing corp id
+    # demographic_data = get_corp_demographic_data(school_corp_id)
+    demographic_data = get_school_demographic_data(selected_school_id)
+
     demographic_data = demographic_data.loc[
         demographic_data["Year"] == selected_year_numeric
     ]
@@ -114,8 +106,9 @@ def update_about_page(year: str, school: str):
             "02.03.24",
             "02.05.24",
             "02.10.24",
-            "02.11.24",            
-            "02.14.24"
+            "02.11.24",
+            "02.14.24",
+            "02.20.24"
         ],
         "Update": [
             "Added 2023 IREAD data to Information page.",
@@ -124,6 +117,7 @@ def update_about_page(year: str, school: str):
             "Added 2023 graduation rate data.",
             "Added student level WIDA and IREAD data to Information page.",
             "Added WIDA to IREAD and IREAD to ILEARN analysis to Information page.",
+            "Updated financial audit data when possible.",
             "Release version 1.15"
         ],
     }
@@ -147,7 +141,7 @@ def update_about_page(year: str, school: str):
         # Enrollment table
         corp_id = str(selected_school["GEO Corp"].values[0])
 
-        corp_demographics = get_demographic_data(corp_id)
+        corp_demographics = get_corp_demographic_data(corp_id)
         corp_demographics = corp_demographics.loc[
             corp_demographics["Year"] == selected_year_numeric
         ]
@@ -160,7 +154,9 @@ def update_about_page(year: str, school: str):
             [c for c in enrollment_filter if c not in ["Total Enrollment"]]
             + ["Total Enrollment"]
         ]
-        enrollment_filter = enrollment_filter.dropna(axis=1, how="all")
+
+        # drop columns with no data
+        enrollment_filter = enrollment_filter.loc[:, (~enrollment_filter.isin([np.nan, 0, "0"])).all()]
 
         enrollment = enrollment_filter.T
         enrollment.rename(columns={enrollment.columns[0]: "Enrollment"}, inplace=True)

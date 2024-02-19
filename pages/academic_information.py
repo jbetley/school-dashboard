@@ -40,7 +40,6 @@ from pages.process_data import (
 )
 from pages.tables import (
     no_data_page,
-    no_data_table,
     create_multi_header_table_with_container,
     create_key_table,
     create_single_header_table,
@@ -149,9 +148,6 @@ def update_academic_information_page(
     iread_breakdown = []  # type: list
     iread_ilearn_ela_table = []  # type: list
     iread_ilearn_math_table = []  # type: list
-    # iread_school_level_layout_container = {"display": "none"}
-    # iread_breakdown_container = {"display": "none"}
-    # ilearn_iread_table_container = {"display": "none"} 
     
     wida_breakdown = []  # type: list
     wida_iread_table = []  # type: list
@@ -205,15 +201,8 @@ def update_academic_information_page(
 
             if all_hs_school_data.empty:
 
-                # k12_grad_overview_table = []
-                # k12_grad_ethnicity_table = []
-                # k12_grad_subgroup_table = []
                 k12_grad_table_container = {"display": "none"}
                 
-                # k12_sat_overview_table = []
-                # k12_sat_ethnicity_table = []
-                # k12_sat_subgroup_table = []
-                # k12_sat_cut_scores_table = []
                 k12_sat_table_container = {"display": "none"}
 
                 no_display_data = no_data_page("No Data to Display.", "High School Academic Data")
@@ -412,18 +401,6 @@ def update_academic_information_page(
 
             if ilearn_table_data.empty:
 
-                # proficiency_grades_ela = []
-                # ela_grade_bar_fig = []
-                # proficiency_ethnicity_ela = []
-                # ela_ethnicity_bar_fig = []
-                # proficiency_subgroup_ela = []
-                # ela_subgroup_bar_fig = []
-                # proficiency_grades_math = []
-                # math_grade_bar_fig = []
-                # proficiency_ethnicity_math = []
-                # math_ethnicity_bar_fig = []
-                # proficiency_subgroup_math = []
-                # math_subgroup_bar_fig = []
                 proficiency_ela_grades_container = {"display": "none"}
                 proficiency_ela_ethnicity_container = {"display": "none"}
                 proficiency_ela_subgroup_container = {"display": "none"}
@@ -898,178 +875,8 @@ def update_academic_information_page(
                 academic_information_notes_string_container = {"display": "block"}        
         # End K-8 ILEARN block
 
-## WIDA - Student Level Data
-
-    if is_guest == True:
-        no_display_data = no_data_page("No Data to Display.", "WIDA")
-        # wida_breakdown = []
-
-    else:
-
-        # NOTE: WIDA file does not have a School ID column, so we have
-        # to match by STN. get a list of all STNs associated with the
-        # school (from both IREAD and ILEARN data files)
-        school_stns = get_ilearn_stns(school)
-        school_stns["STN"] = school_stns["STN"].astype(str)
-    
-        # get student level IREAD data
-        iread_stns = get_iread_stns(school)
-        iread_stns["STN"] = iread_stns["STN"].astype(str)
-
-        all_stns = pd.concat(
-            [school_stns, iread_stns], axis=0, ignore_index=True
-        )
-
-        stn_list = list(set(all_stns["STN"].to_list()))
-
-        # Get wida data using stn_list. NOTE: Use STN because
-        # wida data does not currently include School ID
-        school_wida = get_wida_student_data(stn_list)
-
-        if excluded_years:
-            school_wida = school_wida[
-                ~school_wida["Year"].astype(int).isin(excluded_years)
-            ]
-        
-        selected_school_wida = school_wida[school_wida["STN"].isin(stn_list)]
-
-        if len(selected_school_wida.index) < 1:
-            no_display_data = no_data_page("No Data to Display.", "WIDA")
-            # wida_breakdown = []
-
-        else:
-            # k8_table_container = {"display": "block"}                
-            main_container = {"display": "block"}
-            empty_container = {"display": "none"}
-
-            # Get WIDA average per grade by year
-            wida_school_total = (
-                selected_school_wida.groupby(["Year", "Tested Grade"])[
-                    "Composite Overall Proficiency Level"
-                ]
-                .mean()
-                .reset_index(name="Average")
-            )
-
-            # get WIDA total school average by year
-            wida_school_total_data = (
-                selected_school_wida.groupby(["Year"])[
-                    "Composite Overall Proficiency Level"
-                ]
-                .mean()
-                .reset_index(name="Average")
-            )
-
-            # Drop data for AHS students
-            wida_school_total = wida_school_total.loc[
-                wida_school_total["Tested Grade"] != "Grade 12+/Adult"
-            ]
-
-            # pivot to show average WIDA schore by grade (col) by year (row)
-            wida_fig_data = (
-                wida_school_total.pivot_table(
-                    index=["Year"], columns="Tested Grade", values="Average"
-                )
-                .reset_index()
-                .rename_axis(None, axis=1)
-            )
-
-            # Sort the Grade columns in ascending order
-            tmp_col = wida_fig_data["Year"]
-            wida_fig_data = wida_fig_data.drop(["Year"], axis=1)
-
-            # reindex and sort columns using only the numerical part
-            wida_fig_data = wida_fig_data.reindex(
-                sorted(wida_fig_data.columns, key=lambda x: float(x[6:])),
-                axis=1,
-            )
-            wida_fig_data.insert(loc=0, column="Year", value=tmp_col)
-
-            # Add school Average to by year calcs
-            wida_fig_data = pd.merge(wida_fig_data, wida_school_total_data, on="Year")
-
-            # Get N-Size for each grade for each year and add to table data
-            wida_nsize = selected_school_wida.value_counts(["Tested Grade","Year"]).reset_index().rename(columns={0: "N-Size"})
-            wida_nsize_data = pd.merge(wida_school_total, wida_nsize, on=["Year","Tested Grade"])
-
-            # Get nsize data in same format as scores
-            wida_nsize_data = wida_nsize_data.drop("Average", axis = 1)
-
-            wida_nsize_data = (
-                wida_nsize_data.pivot_table(
-                    index=["Year"], columns="Tested Grade", values="N-Size"
-                )
-                .reset_index()
-                .rename_axis(None, axis=1)
-            )
-
-            # identify year columns to get totals (named Average to match
-            # scores df col name)
-            nsize_years = [c for c in wida_nsize_data.columns if "Grade" in c]
-            wida_nsize_data["Average"] = wida_nsize_data[nsize_years].sum(axis=1)
-
-            # sort nsize columns to match data dataframe (using natural sort)
-            nsize_years.sort(key=natural_keys)
-            nsize_cols_sorted = ["Year"] + nsize_years + ["Average"]
-            wida_nsize_data = wida_nsize_data[nsize_cols_sorted]
-
-            # should not have negative values, but bad data causes them to
-            # appear from time to time
-            wida_fig_data[wida_fig_data < 0] = np.NaN
-
-            # Create line chart for WIDA Scores by Grade and Total
-            wida_fig = make_line_chart(wida_fig_data)
-
-            wida_table_data = (
-                wida_fig_data.set_index("Year")
-                .T.rename_axis("Category")
-                .rename_axis(None, axis=1)
-                .reset_index()
-            )
-
-            wida_nsize_data = (
-                wida_nsize_data.set_index("Year")
-                .T.rename_axis("Category")
-                .rename_axis(None, axis=1)
-                .reset_index()
-            )
-
-            wida_nsize_data.columns = wida_nsize_data.columns.astype(str)
-            wida_nsize_data.columns = ["Category"] + [str(col) + 'N-Size' for col in wida_nsize_data.columns if "Category" not in col]
-            wida_table_data.columns = wida_table_data.columns.astype(str)
-            wida_nsize_data.columns = ["Category"] + [str(col) + 'School' for col in wida_nsize_data.columns if "Category" not in col]
-
-            for col in wida_table_data.columns[1:]:
-                wida_table_data[col] = pd.to_numeric(wida_table_data[col], errors="coerce")
-
-            wida_table_data = wida_table_data.set_index("Category")
-
-            wida_table_data = wida_table_data.applymap("{:.2f}".format)
-            wida_table_data = wida_table_data.reset_index()
-
-            wida_table_data = wida_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True) # add dash
-
-            # merge nsize data into data to get into format
-            # expected by multi_table function
-
-            # interweave columns and add category back
-            data_cols = [e for e in wida_table_data.columns if "Category" not in e]
-            nsize_cols = [e for e in wida_nsize_data.columns if "Category" not in e]
-            final_cols = list(itertools.chain(*zip(data_cols, nsize_cols)))
-            final_cols.insert(0, "Category")
-
-            # merge and re-order using final_cols
-            wida_final_data = pd.merge(wida_table_data, wida_nsize_data, on="Category")
-
-            wida_final_data = wida_final_data[final_cols]
-
-            wida_table = create_multi_header_table(wida_final_data)
-
-            wida_breakdown = create_line_fig_layout(
-                wida_table, wida_fig, "WIDA Breakdown"
-            )
-    # End WIDA block
-            
+# TODO: WORK THROUGH DATA LOGIC AGAIN - CRASHING
+                
         # IREAD - School Level Totals, Ethnicity, & Status
         both = ethnicity + subgroup
         categories_iread_all = []
@@ -1082,13 +889,13 @@ def update_academic_information_page(
                 & ilearn_table_data["Category"].str.contains("IREAD")
         ]
         
-        if not iread_school_table_data.empty:
-        #     iread_school_level_layout = []
-        
-        # else:
-            # k8_table_container = {"display": "block"}            
+        if iread_school_table_data.empty:
+            main_container = {"display": "none"}
+            empty_container = {"display": "block"}
+            no_display_data = no_data_page("No Data to Display.", "IREAD")
+
+        else:
             main_container = {"display": "block"}
-            # iread_school_level_layout_container = {"display": "block"}
             empty_container = {"display": "none"}         
             
             iread_all_table = create_multi_header_table(iread_school_table_data)
@@ -1105,25 +912,19 @@ def update_academic_information_page(
                 iread_all_table, iread_all_fig, "IREAD Breakdown"
             )
 
-        # School total IREAD data (from public ILEARN table data)
-        iread_school_total = ilearn_table_data[
-            ilearn_table_data["Category"] == "Total|IREAD"
-        ]
+            # School total IREAD data (from public ILEARN table data)
+            iread_school_total = ilearn_table_data[
+                ilearn_table_data["Category"] == "Total|IREAD"
+            ]
 
         # this would be Middle Schools or Elementary Schools without Grade 3
         if iread_school_total.empty:
 
             if iread_school_table_data.empty:
-
+                main_container = {"display": "block"}
+                empty_container = {"display": "none"}                 
                 no_display_data = no_data_page("No Data to Display.", "IREAD")            
-            #     iread_breakdown = []
-            #     iread_ilearn_ela_table = []
-            #     iread_ilearn_math_table = []
 
-            # else:
-            #     iread_breakdown = []
-            #     iread_ilearn_ela_table = []
-            #     iread_ilearn_math_table = []
 
         else:
             main_container = {"display": "block"}
@@ -1441,159 +1242,332 @@ def update_academic_information_page(
                     )
 
                 # End IREAD Table and Fig block
+
+        ## WIDA - Student Level Data
+        # Guests won't have WIDA data, but may have IREAD data
+        if is_guest == True and radio_category == "WIDA":
+            main_container = {"display": "none"}
+            empty_container = {"display": "block"}
+            no_display_data = no_data_page("No Data to Display.", "WIDA")
+
+        else:
+
+            # NOTE: WIDA file does not have a School ID column, so we have
+            # to match by STN. get a list of all STNs associated with the
+            # school (from both IREAD and ILEARN data files)
+            school_stns = get_ilearn_stns(school)
+            school_stns["STN"] = school_stns["STN"].astype(str)
+        
+            # get student level IREAD data
+            iread_stns = get_iread_stns(school)
+            iread_stns["STN"] = iread_stns["STN"].astype(str)
+
+            all_stns = pd.concat(
+                [school_stns, iread_stns], axis=0, ignore_index=True
+            )
+
+            stn_list = list(set(all_stns["STN"].to_list()))
+
+            # Get wida data using stn_list. NOTE: Use STN because
+            # wida data does not currently include School ID
+            school_wida = get_wida_student_data(stn_list)
+
+            if excluded_years:
+                school_wida = school_wida[
+                    ~school_wida["Year"].astype(int).isin(excluded_years)
+                ]
+            
+            selected_school_wida = school_wida[school_wida["STN"].isin(stn_list)]
+
+            if len(selected_school_wida.index) < 1:
+                main_container = {"display": "none"}
+                empty_container = {"display": "block"}
+                no_display_data = no_data_page("No Data to Display.", "WIDA")
+
+            else:
+                main_container = {"display": "block"}
+                empty_container = {"display": "none"}
+
+                # Get WIDA average per grade by year
+                wida_school_total = (
+                    selected_school_wida.groupby(["Year", "Tested Grade"])[
+                        "Composite Overall Proficiency Level"
+                    ]
+                    .mean()
+                    .reset_index(name="Average")
+                )
+
+                # get WIDA total school average by year
+                wida_school_total_data = (
+                    selected_school_wida.groupby(["Year"])[
+                        "Composite Overall Proficiency Level"
+                    ]
+                    .mean()
+                    .reset_index(name="Average")
+                )
+
+                # Drop data for AHS students
+                wida_school_total = wida_school_total.loc[
+                    wida_school_total["Tested Grade"] != "Grade 12+/Adult"
+                ]
+
+                # pivot to show average WIDA schore by grade (col) by year (row)
+                wida_fig_data = (
+                    wida_school_total.pivot_table(
+                        index=["Year"], columns="Tested Grade", values="Average"
+                    )
+                    .reset_index()
+                    .rename_axis(None, axis=1)
+                )
+
+                # Sort the Grade columns in ascending order
+                tmp_col = wida_fig_data["Year"]
+                wida_fig_data = wida_fig_data.drop(["Year"], axis=1)
+
+                # reindex and sort columns using only the numerical part
+                wida_fig_data = wida_fig_data.reindex(
+                    sorted(wida_fig_data.columns, key=lambda x: float(x[6:])),
+                    axis=1,
+                )
+                wida_fig_data.insert(loc=0, column="Year", value=tmp_col)
+
+                # Add school Average to by year calcs
+                wida_fig_data = pd.merge(wida_fig_data, wida_school_total_data, on="Year")
+
+                # Get N-Size for each grade for each year and add to table data
+                wida_nsize = selected_school_wida.value_counts(["Tested Grade","Year"]).reset_index().rename(columns={0: "N-Size"})
+                wida_nsize_data = pd.merge(wida_school_total, wida_nsize, on=["Year","Tested Grade"])
+
+                # Get nsize data in same format as scores
+                wida_nsize_data = wida_nsize_data.drop("Average", axis = 1)
+
+                wida_nsize_data = (
+                    wida_nsize_data.pivot_table(
+                        index=["Year"], columns="Tested Grade", values="N-Size"
+                    )
+                    .reset_index()
+                    .rename_axis(None, axis=1)
+                )
+
+                # identify year columns to get totals (named Average to match
+                # scores df col name)
+                nsize_years = [c for c in wida_nsize_data.columns if "Grade" in c]
+                wida_nsize_data["Average"] = wida_nsize_data[nsize_years].sum(axis=1)
+
+                # sort nsize columns to match data dataframe (using natural sort)
+                nsize_years.sort(key=natural_keys)
+                nsize_cols_sorted = ["Year"] + nsize_years + ["Average"]
+                wida_nsize_data = wida_nsize_data[nsize_cols_sorted]
+
+                # should not have negative values, but bad data causes them to
+                # appear from time to time
+                wida_fig_data[wida_fig_data < 0] = np.NaN
+
+                # Create line chart for WIDA Scores by Grade and Total
+                wida_fig = make_line_chart(wida_fig_data)
+
+                wida_table_data = (
+                    wida_fig_data.set_index("Year")
+                    .T.rename_axis("Category")
+                    .rename_axis(None, axis=1)
+                    .reset_index()
+                )
+
+                wida_nsize_data = (
+                    wida_nsize_data.set_index("Year")
+                    .T.rename_axis("Category")
+                    .rename_axis(None, axis=1)
+                    .reset_index()
+                )
+
+                wida_nsize_data.columns = wida_nsize_data.columns.astype(str)
+                wida_nsize_data.columns = ["Category"] + [str(col) + 'N-Size' for col in wida_nsize_data.columns if "Category" not in col]
+                wida_table_data.columns = wida_table_data.columns.astype(str)
+                wida_nsize_data.columns = ["Category"] + [str(col) + 'School' for col in wida_nsize_data.columns if "Category" not in col]
+
+                for col in wida_table_data.columns[1:]:
+                    wida_table_data[col] = pd.to_numeric(wida_table_data[col], errors="coerce")
+
+                wida_table_data = wida_table_data.set_index("Category")
+
+                wida_table_data = wida_table_data.applymap("{:.2f}".format)
+                wida_table_data = wida_table_data.reset_index()
+
+                wida_table_data = wida_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True) # add dash
+
+                # merge nsize data into data to get into format
+                # expected by multi_table function
+
+                # interweave columns and add category back
+                data_cols = [e for e in wida_table_data.columns if "Category" not in e]
+                nsize_cols = [e for e in wida_nsize_data.columns if "Category" not in e]
+                final_cols = list(itertools.chain(*zip(data_cols, nsize_cols)))
+                final_cols.insert(0, "Category")
+
+                # merge and re-order using final_cols
+                wida_final_data = pd.merge(wida_table_data, wida_nsize_data, on="Category")
+
+                wida_final_data = wida_final_data[final_cols]
+
+                wida_table = create_multi_header_table(wida_final_data)
+
+                wida_breakdown = create_line_fig_layout(
+                    wida_table, wida_fig, "WIDA Breakdown"
+                )
+
+        # End WIDA block                
+        ## WIDA to IREAD table
+        # NOTE: We only get to this point if student level IREAD data exists
+        # (tested above) and student level WIDA data exists
+        # Available WIDA data fields: 'Comprehension Proficiency Level',
+        # 'Listening Proficiency Level', 'Literacy Proficiency Level',
+        # 'Oral Proficiency Level', 'Reading Proficiency Level',
+        # 'Speaking Proficiency Level', 'Writing Proficiency Level'
+
+        if selected_school_wida.empty:
+            no_display_data = no_data_page("No Data to Display.", "WIDA")
+            wida_iread_table = []
+
+        else:
+
+            main_container = {"display": "block"}
+            empty_container = {"display": "none"}
+
+            school_stns["STN"] = school_stns["STN"].astype(str)
+            school_wida["STN"] = school_wida["STN"].astype(str)
+
+            # get School WIDA data and build dfs to compare IREAD and
+            # WIDA data - NOTE: For many schools this will be empty or
+            # a very small dataset.
+            wida_comp_data = school_wida[["STN", "Year", "Composite Overall Proficiency Level"]].copy()
+            iread_comp_data = iread_student_data[["STN", "Year", "Test Period", "Status", "Exemption Status"]].copy()
+
+            wida_comp_data["Year"] = wida_comp_data["Year"].astype(str)
+            iread_comp_data["Year"] = iread_comp_data["Year"].astype(str)
+            iread_comp_data["STN"] = iread_comp_data["STN"].astype(str)
+
+            # matches all STNs with WIDA and IREAD scores from same year.
+            # NOTE: This captures all students who took WIDA in the same year
+            # that they took IREAD. It does not match students with a recorded
+            # WIDA score either before or after a recorded IREAD score. While
+            # we do not want to capture the latter, we do want to add those
+            # students who has a prior year WIDA score. So we need to run two
+            # merge operations, one on STN and YEAR (which captures same year
+            # testers) and one just on STN where we search for any STN
+            # matches where IREAD Tested Year is > than Max WIDA Tested Year
+            current_testers = pd.merge(iread_comp_data, wida_comp_data, on=["STN","Year"])
+
+            # need to differentiate between years when not merging on Year
+            iread_comp_data = iread_comp_data.rename(columns={"Year": "IREAD Year"})
+            wida_comp_data = wida_comp_data.rename(columns={"Year": "WIDA Year"})
+
+            # find STNs where WIDA tested year < IREAD Year
+            prior_testers = pd.merge(iread_comp_data, wida_comp_data, on=["STN"])
+
+            # Find Max WIDA Year value for each STN
+            max_wida = prior_testers.groupby(['STN'])['WIDA Year'].max().reset_index(name="WIDA Max")
+
+            # drop duplicates from the full data set (where the same STN can appear
+            # up to 5 times) and merge with WIDA Max to add IREAD Year
+            prior_testers = prior_testers.drop_duplicates(subset=['STN'], keep='last')
+            max_wida = pd.merge(max_wida,prior_testers,on=["STN"], how="left")
+
+            # filter by STNs where IREAD Year is > then WIDA Max Year
+            wida_stn_to_add = max_wida[max_wida["IREAD Year"].astype(int) > \
+                max_wida["WIDA Max"].astype(int)]
+
+            # Merge the prior and current testers into one df
+            if not wida_stn_to_add.empty:
+
+                # change column names to match
+                wida_stn_to_add = wida_stn_to_add.drop(["WIDA Max", "WIDA Year"], axis=1)
+                wida_stn_to_add = wida_stn_to_add.rename(columns={"IREAD Year": "Year"})
+
+                wida_iread_data = pd.concat([current_testers, wida_stn_to_add])
+            else:
+                wida_iread_data = current_testers
+
+            if wida_iread_data.empty:
+                no_display_data = no_data_page("No Data to Display.", "WIDA")
+
+            else:
+                # Get WIDA Average by Year and Status (Pass/No Pass)
+                wida_iread_avg = (
+                    wida_iread_data.groupby(["Year","Status"])["Composite Overall Proficiency Level"]
+                    .mean()
+                    .reset_index(name="Average")
+                )
+
+                # Get N-Size for each Year and category (Pass/No Pass)
+                wida_iread_nsize = (
+                    wida_iread_data.groupby("Year")["Status"]
+                    .value_counts()
+                    .reset_index(name="N-Size")
+                )
+
+                # Merge to add N-Size to WIDA Average df
+                wida_iread_final = pd.merge(wida_iread_avg, wida_iread_nsize, on=["Year","Status"])
+
+                wida_nopass = wida_iread_final[wida_iread_final["Status"] == "Did Not Pass"]
+                wida_pass = wida_iread_final[wida_iread_final["Status"] == "Pass"]
+
+                wida_pass = wida_pass.rename(columns={
+                    "Average": "Avg. WIDA for Students Passing IREAD",
+                    "N-Size": "# of WIDA Tested Students Passing IREAD"})
+                wida_nopass = wida_nopass.rename(columns={
+                    "Average": "Avg. WIDA for Students Not Passing IREAD",
+                    "N-Size": "# of WIDA Tested Students Not Passing IREAD"})
+
+                # prepare to combine
+                wida_nopass = wida_nopass.drop(["Year","Status"], axis=1)
+                wida_pass = wida_pass.drop("Status", axis=1)
+                wida_pass = wida_pass.reset_index(drop=True)
+                wida_nopass = wida_nopass.reset_index(drop=True)
+
+                wida_iread_table_data = pd.concat([wida_pass, wida_nopass], axis=1)
+
+                for col in wida_iread_table_data.columns[1:]:
+                    wida_iread_table_data[col] = pd.to_numeric(wida_iread_table_data[col], errors="coerce")
+
+                wida_nsize = wida_iread_table_data["# of WIDA Tested Students Passing IREAD"].fillna(0) + \
+                    wida_iread_table_data["# of WIDA Tested Students Not Passing IREAD"].fillna(0)
+
+                wida_iread_table_data["N-Size"] = wida_nsize
+                wida_iread_table_data["% of WIDA Tested Students Passing IREAD"] = \
+                    wida_iread_table_data["# of WIDA Tested Students Passing IREAD"] / wida_nsize
+
+                wida_iread_table_data = wida_iread_table_data.drop(["# of WIDA Tested Students Passing IREAD", 
+                    "# of WIDA Tested Students Not Passing IREAD"], axis=1)
                 
-                ## WIDA to IREAD table
-                # NOTE: We only get to this point if student level IREAD data exists
-                # (tested above) and student level WIDA data exists
-                # Available WIDA data fields: 'Comprehension Proficiency Level',
-                # 'Listening Proficiency Level', 'Literacy Proficiency Level',
-                # 'Oral Proficiency Level', 'Reading Proficiency Level',
-                # 'Speaking Proficiency Level', 'Writing Proficiency Level'
+                wida_iread_table_data=wida_iread_table_data[["Year","% of WIDA Tested Students Passing IREAD",
+                    "Avg. WIDA for Students Passing IREAD", "Avg. WIDA for Students Not Passing IREAD","N-Size"]]
+                
+                wida_iread_table_data = (
+                    wida_iread_table_data.set_index("Year")
+                    .T.rename_axis("Category")
+                    .rename_axis(None, axis=1)
+                    .reset_index()
+                )
 
-                if selected_school_wida.empty:
-                    no_display_data = no_data_page("No Data to Display.", "WIDA")
-                    wida_iread_table = []
+                # format
+                for x in range(1, len(wida_iread_table_data.columns)):
+                    for i in range(0, len(wida_iread_table_data.index)):
+                        if (i == 0):
+                            if ~np.isnan(wida_iread_table_data.iat[i, x]):
+                                wida_iread_table_data.iat[i, x] = "{:.2%}".format(wida_iread_table_data.iat[i, x])                                
+                        elif (i == 1) | (i == 2):
+                            wida_iread_table_data.iat[i, x] = "{:,.2f}".format(wida_iread_table_data.iat[i, x])
+                        else:
+                            wida_iread_table_data.iat[i, x] = "{:,.0f}".format(wida_iread_table_data.iat[i, x])
 
-                else:
+                # replace Nan with "-"
+                wida_iread_table_data = wida_iread_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
-                    main_container = {"display": "block"}
-                    empty_container = {"display": "none"}
+                wida_iread_table = create_single_header_table(
+                    wida_iread_table_data, "WIDA Details"
+                )
 
-                    school_stns["STN"] = school_stns["STN"].astype(str)
-                    school_wida["STN"] = school_wida["STN"].astype(str)
-
-                    # get School WIDA data and build dfs to compare IREAD and
-                    # WIDA data - NOTE: For many schools this will be empty or
-                    # a very small dataset.
-                    wida_comp_data = school_wida[["STN", "Year", "Composite Overall Proficiency Level"]].copy()
-                    iread_comp_data = iread_student_data[["STN", "Year", "Test Period", "Status", "Exemption Status"]].copy()
-
-                    wida_comp_data["Year"] = wida_comp_data["Year"].astype(str)
-                    iread_comp_data["Year"] = iread_comp_data["Year"].astype(str)
-                    iread_comp_data["STN"] = iread_comp_data["STN"].astype(str)
-
-                    # matches all STNs with WIDA and IREAD scores from same year.
-                    # NOTE: This captures all students who took WIDA in the same year
-                    # that they took IREAD. It does not match students with a recorded
-                    # WIDA score either before or after a recorded IREAD score. While
-                    # we do not want to capture the latter, we do want to add those
-                    # students who has a prior year WIDA score. So we need to run two
-                    # merge operations, one on STN and YEAR (which captures same year
-                    # testers) and one just on STN where we search for any STN
-                    # matches where IREAD Tested Year is > than Max WIDA Tested Year
-                    current_testers = pd.merge(iread_comp_data, wida_comp_data, on=["STN","Year"])
-
-                    # need to differentiate between years when not merging on Year
-                    iread_comp_data = iread_comp_data.rename(columns={"Year": "IREAD Year"})
-                    wida_comp_data = wida_comp_data.rename(columns={"Year": "WIDA Year"})
-
-                    # find STNs where WIDA tested year < IREAD Year
-                    prior_testers = pd.merge(iread_comp_data, wida_comp_data, on=["STN"])
-
-                    # Find Max WIDA Year value for each STN
-                    max_wida = prior_testers.groupby(['STN'])['WIDA Year'].max().reset_index(name="WIDA Max")
-
-                    # drop duplicates from the full data set (where the same STN can appear
-                    # up to 5 times) and merge with WIDA Max to add IREAD Year
-                    prior_testers = prior_testers.drop_duplicates(subset=['STN'], keep='last')
-                    max_wida = pd.merge(max_wida,prior_testers,on=["STN"], how="left")
-
-                    # filter by STNs where IREAD Year is > then WIDA Max Year
-                    wida_stn_to_add = max_wida[max_wida["IREAD Year"].astype(int) > \
-                        max_wida["WIDA Max"].astype(int)]
-
-                    # Merge the prior and current testers into one df
-                    if not wida_stn_to_add.empty:
-
-                        # change column names to match
-                        wida_stn_to_add = wida_stn_to_add.drop(["WIDA Max", "WIDA Year"], axis=1)
-                        wida_stn_to_add = wida_stn_to_add.rename(columns={"IREAD Year": "Year"})
-
-                        wida_iread_data = pd.concat([current_testers, wida_stn_to_add])
-                    else:
-                        wida_iread_data = current_testers
-
-                    if wida_iread_data.empty:
-                        no_display_data = no_data_page("No Data to Display.", "WIDA")
-
-                    else:
-                        # Get WIDA Average by Year and Status (Pass/No Pass)
-                        wida_iread_avg = (
-                            wida_iread_data.groupby(["Year","Status"])["Composite Overall Proficiency Level"]
-                            .mean()
-                            .reset_index(name="Average")
-                        )
-
-                        # Get N-Size for each Year and category (Pass/No Pass)
-                        wida_iread_nsize = (
-                            wida_iread_data.groupby("Year")["Status"]
-                            .value_counts()
-                            .reset_index(name="N-Size")
-                        )
-
-                        # Merge to add N-Size to WIDA Average df
-                        wida_iread_final = pd.merge(wida_iread_avg, wida_iread_nsize, on=["Year","Status"])
-
-                        wida_nopass = wida_iread_final[wida_iread_final["Status"] == "Did Not Pass"]
-                        wida_pass = wida_iread_final[wida_iread_final["Status"] == "Pass"]
-
-                        wida_pass = wida_pass.rename(columns={
-                            "Average": "Avg. WIDA for Students Passing IREAD",
-                            "N-Size": "# of WIDA Tested Students Passing IREAD"})
-                        wida_nopass = wida_nopass.rename(columns={
-                            "Average": "Avg. WIDA for Students Not Passing IREAD",
-                            "N-Size": "# of WIDA Tested Students Not Passing IREAD"})
-
-                        # prepare to combine
-                        wida_nopass = wida_nopass.drop(["Year","Status"], axis=1)
-                        wida_pass = wida_pass.drop("Status", axis=1)
-                        wida_pass = wida_pass.reset_index(drop=True)
-                        wida_nopass = wida_nopass.reset_index(drop=True)
-
-                        wida_iread_table_data = pd.concat([wida_pass, wida_nopass], axis=1)
-
-                        for col in wida_iread_table_data.columns[1:]:
-                            wida_iread_table_data[col] = pd.to_numeric(wida_iread_table_data[col], errors="coerce")
-
-                        wida_nsize = wida_iread_table_data["# of WIDA Tested Students Passing IREAD"].fillna(0) + \
-                            wida_iread_table_data["# of WIDA Tested Students Not Passing IREAD"].fillna(0)
-
-                        wida_iread_table_data["N-Size"] = wida_nsize
-                        wida_iread_table_data["% of WIDA Tested Students Passing IREAD"] = \
-                            wida_iread_table_data["# of WIDA Tested Students Passing IREAD"] / wida_nsize
-
-                        wida_iread_table_data = wida_iread_table_data.drop(["# of WIDA Tested Students Passing IREAD", 
-                            "# of WIDA Tested Students Not Passing IREAD"], axis=1)
-                        
-                        wida_iread_table_data=wida_iread_table_data[["Year","% of WIDA Tested Students Passing IREAD",
-                            "Avg. WIDA for Students Passing IREAD", "Avg. WIDA for Students Not Passing IREAD","N-Size"]]
-                        
-                        wida_iread_table_data = (
-                            wida_iread_table_data.set_index("Year")
-                            .T.rename_axis("Category")
-                            .rename_axis(None, axis=1)
-                            .reset_index()
-                        )
-
-                        # format
-                        for x in range(1, len(wida_iread_table_data.columns)):
-                            for i in range(0, len(wida_iread_table_data.index)):
-                                if (i == 0):
-                                    if ~np.isnan(wida_iread_table_data.iat[i, x]):
-                                        wida_iread_table_data.iat[i, x] = "{:.2%}".format(wida_iread_table_data.iat[i, x])                                
-                                elif (i == 1) | (i == 2):
-                                    wida_iread_table_data.iat[i, x] = "{:,.2f}".format(wida_iread_table_data.iat[i, x])
-                                else:
-                                    wida_iread_table_data.iat[i, x] = "{:,.0f}".format(wida_iread_table_data.iat[i, x])
-
-                        # replace Nan with "-"
-                        wida_iread_table_data = wida_iread_table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
-
-                        wida_iread_table = create_single_header_table(
-                            wida_iread_table_data, "WIDA Details"
-                        )
-
-                # End WIDA to IREAD Table
+        # End WIDA to IREAD Table
                     
             # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
             # TODO: but still need Test Year column in ILEARN data

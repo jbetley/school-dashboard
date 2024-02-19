@@ -193,7 +193,7 @@ metric_strings = {
 }
 
 # TODO: Move this to app? import engine? use a function to pull the table?
-engine = create_engine("sqlite:///data/db_updated.db")
+engine = create_engine("sqlite:///data/indiana_schools.db")
 
 users = create_engine("sqlite:///users.db")
 
@@ -733,16 +733,29 @@ def get_financial_ratios(corp_id):
     return run_query(q, params)
 
 
-# for school corporations, SchoolID and CorpID are the same
-def get_demographic_data(*args):
+def get_corp_demographic_data(*args):
     keys = ["id"]
     params = dict(zip(keys, args))
 
     q = text(
         """
         SELECT *
-            FROM demographic_data
+            FROM demographic_data_corp
 	        WHERE CorporationID = :id
+        """
+    )
+
+    return run_query(q, params)
+
+def get_school_demographic_data(*args):
+    keys = ["id"]
+    params = dict(zip(keys, args))
+
+    q = text(
+        """
+        SELECT *
+            FROM demographic_data_school
+	        WHERE SchoolID = :id
         """
     )
 
