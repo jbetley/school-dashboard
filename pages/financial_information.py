@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Information #
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     10/13/23
+# version:  1.15
+# date:     02/14/24
 
 import dash
 from dash import html, dash_table, Input, State, Output, callback
@@ -136,6 +136,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         available_years = financial_data.columns.difference(
             ["Category"], sort=False
         ).tolist()
+
         available_years = [int(c[:4]) for c in available_years]
         most_recent_finance_year = max(available_years)
 
@@ -234,6 +235,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
             # Force correct format for display of df in datatable (accounting, no decimals, no "$")
             for year in string_years:
+
                 financial_data[year] = pd.Series(
                     ["{:,.0f}".format(val) for val in financial_data[year]],
                     index=financial_data.index,

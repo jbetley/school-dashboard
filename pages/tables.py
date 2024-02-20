@@ -17,7 +17,9 @@ import dash_mantine_components as dmc
 from .load_data import metric_strings, get_student_level_ilearn
 
 # default table styles
-table_style = {"fontSize": "12px", "border": "none", "fontFamily": "Inter, sans-serif"}
+# table_style = {"fontSize": "12px", "border": "none", "fontFamily": "Inter, sans-serif"}
+
+table_style = {"border": "none", "fontFamily": "Inter, sans-serif"}
 
 table_cell = {
     "whiteSpace": "normal",
@@ -470,6 +472,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
     return table_layout
 
+
 def create_iread_ilearn_table(school, subject, excluded_years):
 
     iread_pass_ilearn, iread_nopass_ilearn = get_student_level_ilearn(school, subject)
@@ -513,6 +516,7 @@ def create_iread_ilearn_table(school, subject, excluded_years):
         )
 
     return iread_ilearn_table
+
 
 def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> list:
     """
@@ -670,6 +674,7 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
     ]
 
     return table_layout
+
 
 def create_single_header_table(data: pd.DataFrame, label: str) -> list:
     """
