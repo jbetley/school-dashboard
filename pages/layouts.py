@@ -403,6 +403,8 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     elif label == "WIDA":
         endnote = "Values are the average Composite Overall Proficiency Level for all students with a reported WIDA \
             score who are currently enrolled in the school."
+    elif label == "Attendance":
+        endnote = "Chronic absenteeism is the percentage of students who miss 18 or more days in a school year."
     else:
         endnote = "Hover over each data point to see N-Size."
 

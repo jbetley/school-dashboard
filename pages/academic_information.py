@@ -27,8 +27,6 @@ from pages.load_data import (
     grades_all,
     grades,
     grades_ordinal,
-    get_ilearn_stns,
-    get_iread_stns,
     get_school_stns,
     get_iread_student_data,
     get_wida_student_data,
@@ -51,7 +49,7 @@ from pages.tables import (
     create_iread_ilearn_table
 )
 from pages.charts import no_data_fig_label, make_stacked_bar, make_line_chart
-from pages.layouts import set_table_layout, create_line_fig_layout, create_simple_iread_layout
+from pages.layouts import set_table_layout, create_line_fig_layout #, create_simple_iread_layout
 from pages.calculations import round_percentages
 from pages.string_helpers import natural_keys
 

@@ -197,14 +197,6 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                 : (financial_data["Category"] == "Audit Information").idxmax() - 1
             ]
 
-            # Each column (year) in the df must have at least 12 values to be valid. To avoid the
-            # situation where there is a year column that only contains financial ratio data (e.g.,
-            # when a school existed prior to being required to report financial data to ICSB),
-            # drop any column where more than 31 rows contain empty strings (df has 43 total rows)
-            # for c in financial_data.columns:
-            #     if len(financial_data[financial_data[c] == ""].index) > 31:
-            #         financial_data.drop([c], inplace=True, axis=1)
-
             # not currently used
             remove_categories = [
                 "Administrative Staff",

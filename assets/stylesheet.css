@@ -368,7 +368,7 @@ hr {
   padding: 15px;
   position: relative;
   outline: 2px solid #b2bdd4;
-  outline-offset: -16px;
+  outline-offset: -12px;
   box-shadow: 2px 2px 2px lightgrey;
 }
 
@@ -1241,10 +1241,12 @@ label>.label-body {
 
 .hollow-label__header {
   height: auto;
-  background-color: #ffffff;
+  /* background-color: #ffffff; */
+  background-color: #6783a9;
   font-size: 12px;
   font-family: 'Montserrat', sans-serif;
-  color: #6783a9;
+  /* color: #6783a9; */
+  color: #ffffff;
   text-align: center;
   width: 50%;
   margin: auto;

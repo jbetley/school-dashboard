@@ -660,6 +660,7 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
                         "textAlign": "center",
                         "fontWeight": "bold",
                         "text-decoration": "none",
+                        "borderTop": "none",
                         "borderBottom": ".75px solid rgb(103,131,169)",
                     },
                     style_cell={

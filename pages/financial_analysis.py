@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     10/13/23
+# version:  1.15
+# date:     02/21/24
 
 import dash
 from dash import dcc, html, dash_table, Input, State, Output, callback
@@ -669,7 +669,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                             ],
                             tooltip_duration=None,
                             style_data={
-                                "fontSize": "12px",
+                                "fontSize": "11px",
                                 "fontFamily": "Inter, sans-serif",
                             },
                             style_data_conditional=[
@@ -678,6 +678,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                                         "column_id": "Category",
                                     },
                                     "borderRight": ".5px solid #6783a9",
+                                    "fontWeight": "600",
+                                    "fontSize": "11px"                                    
                                 },
                                 {
                                     "if": {
@@ -699,7 +701,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                                 "borderRight": "none",
                                 "borderLeft": "none",
                                 "fontSize": "12px",
-                                "fontFamily": "Inter, sans-serif",
+                                "fontFamily": "Montserrat, sans-serif",
                                 "color": "#6783a9",
                                 "textAlign": "center",
                                 "fontWeight": "bold",

@@ -117,7 +117,7 @@ def update_about_page(year: str, school: str):
             "Added 2023 graduation rate data.",
             "Added student level WIDA and IREAD data to Information page.",
             "Added WIDA to IREAD and IREAD to ILEARN analysis to Information page.",
-            "Updated financial audit data when possible.",
+            "Updated financial data to include 2023 audits when available.",
             "Release version 1.15"
         ],
     }
@@ -313,7 +313,9 @@ def update_about_page(year: str, school: str):
                 tickformat=",.0%",
                 title="",
             )
-            ethnicity_fig.update_yaxes(ticks="outside", tickcolor="#a9a9a9", title="")
+            ethnicity_fig.update_yaxes(ticks="outside", tickcolor="#a9a9a9", title="",
+                tickfont = dict(size=11))
+
             ethnicity_fig.update_traces(textposition="outside")
             ethnicity_fig.for_each_trace(
                 lambda t: t.update(textfont_color=t.marker.color, textfont_size=11)
@@ -606,11 +608,6 @@ def update_about_page(year: str, school: str):
 
     if len(attendance_rate_data.index) > 0 and len(attendance_rate_data.columns) > 1:
 
-        # print(type(attendance_rate_data["2019"][0]))
-        # # format table data
-        # for col in attendance_rate_data.columns[1:]:
-        #     attendance_rate_data[col] = pd.to_numeric(attendance_rate_data[col], errors="coerce")
-        # print(type(attendance_rate_data["2019"][0]))
         attendance_table = create_single_header_table(
             attendance_rate_data, "Attendance"
         )

@@ -231,7 +231,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
         margin=dict(l=10, r=10, t=20, b=0),
         font_family="Inter, sans-serif",
         font_color="steelblue",
-        font_size=9,
+        font_size=11,
         bargroupgap=0,
         showlegend=False,
         plot_bgcolor="white",
