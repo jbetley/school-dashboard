@@ -1345,10 +1345,10 @@ label>.label-body {
 
 .banner {
   color: #6783a9;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 400;
+  padding-top: 5px;
   border-top: .5px solid rgb(201, 211, 224);
-  border-bottom: .5px solid rgb(201, 211, 224);
 }
 
 /** Logout Button **/

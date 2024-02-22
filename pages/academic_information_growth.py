@@ -466,12 +466,12 @@ def layout():
                                         className="pretty-container__key ten columns",
                                     ),
                                 ],
-                                className="bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                    ),
-                ],
-            ),
+                                className="bare-container--flex--center twelve columns"
+                            )
+                        ]
+                    )
+                ]
+            )
         ],
-        id="main-container",
+        id="main-container"
     )

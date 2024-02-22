@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Metrics #
 #####################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     02/01/24
+# version:  1.15
+# date:     02/21/24
 
 import dash
 from dash import html, Input, Output, callback
@@ -249,7 +249,7 @@ def update_academic_metrics(school: str, year: str):
                     combined_delta["Category"] == "Total|IREAD"
                 ].copy()
 
-                if len(iread_data.columns) > 1:
+                if len(iread_data.index) > 0:
                     iread_data.loc[
                         iread_data["Category"] == "IREAD", "Category"
                     ] = "IREAD Proficient %"
@@ -269,11 +269,14 @@ def update_academic_metrics(school: str, year: str):
 
                 else:
                     # create_metric_table requies label to be a list, while no_data_table wants a string
-                    table_container_14g = no_data_table(
+                    empty_table_14g = no_data_table(
                         "No Data to Display.",
                         "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.",
+                        "six"
                     )
-
+                    table_container_14g = set_table_layout(
+                        empty_table_14g, empty_table_14g, [""]
+                    )
                 # Placeholders for Growth data metrics (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
 
                 # growth_metrics_empty = pd.DataFrame(columns = simple_cols)
@@ -642,14 +645,25 @@ def update_academic_metrics(school: str, year: str):
         )
 
     else:
-        table_container_11ab = no_data_table(
+        empty_table_11ab = no_data_table(
             "No Data to Display.",
             "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation.",
+            "six"
         )
-        table_container_11cd = no_data_table(
+
+        table_container_11ab = set_table_layout(
+            empty_table_11ab, empty_table_11ab, [""]
+        )
+        
+        empty_table_11cd = no_data_table(
             "No Data to Display.",
             "End of Year to Beginning of Year (1.1.c) and Year over Year (1.1.d) Student Re-Enrollment Rate.",
         )
+
+        table_container_11cd = set_table_layout(
+            empty_table_11cd, empty_table_11cd, [""]
+        )
+
         attendance_container = {"display": "none"}
 
     return (

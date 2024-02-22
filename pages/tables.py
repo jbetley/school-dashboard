@@ -222,7 +222,7 @@ def empty_table(text: str) -> dash_table.DataTable:
             "color": "#6783a9",
             "backgroundColor": "#ffffff",
             "fontFamily": "Inter, sans-serif",
-            "height": "30vh",
+            "height": "20vh",
         },
     )
 
@@ -1407,7 +1407,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             category_width = 15
 
         data.columns = data.columns.str.replace("N-Size", "(N)", regex=True)
-        data.columns = data.columns.str.replace("Rate", "Rating", regex=True)
+        # data.columns = data.columns.str.replace("Rate", "Rating", regex=True)
         data.columns = data.columns.str.replace("Diff", "Difference", regex=True)
 
         # different column headers for AHS
@@ -1420,7 +1420,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             school_headers = [y for y in data.columns.tolist() if "%" in y]
 
         nsize_headers = [y for y in data.columns.tolist() if "N" in y]
-        rating_headers = [y for y in data.columns.tolist() if "Rating" in y]
+        rating_headers = [y for y in data.columns.tolist() if "Rate" in y]
+        # rating_headers = [y for y in data.columns.tolist() if "Rating" in y]
         diff_headers = [y for y in data.columns.tolist() if "Difference" in y]
 
         # get new col list after renaming N-Size
@@ -1439,7 +1440,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         else:
             nsize_width = 2
             rating_width = 3
-            diff_width = 4
+            diff_width = 5
             remaining_width = 100 - category_width - (nsize_width + rating_width + diff_width)
 
             data_col_width = remaining_width / (table_size - 1)
@@ -1510,8 +1511,10 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
         for item in all_cols:
             if item.startswith("20"):
-                if "Rating" in item:
-                    item = item[:10]
+                if "Rate" in item:
+                    item = item[:8]                
+                # if "Rating" in item:
+                #     item = item[:10]
 
                 name_cols.append([item[:4], item[4:]])
 
@@ -1525,7 +1528,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # we can apply a right hand border to that column when styling the table
         first_year = None
 
-        if any("Rating" in s for s in all_cols):
+        # if any("Rating" in s for s in all_cols):
+        if any("Rate" in s for s in all_cols):            
             if (
                 name_cols[1][1] == "%"
                 and name_cols[2][1] == "(N)"
@@ -1714,7 +1718,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
         table_columns = [
             {"name": col, "id": all_cols[idx], "presentation": "markdown"}
-            if "Rating" in col or "(N)" in col
+            if "Rate" in col or "(N)" in col
+            # if "Rating" in col or "(N)" in col
             # NOTE: Cannot figure out how to have three different col formatting conditions
             # {
             #     "name": col,
@@ -1769,7 +1774,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 header = [
                     html.Tr(
                         [
-                            html.Th("Rating"),
+                            html.Th("Rate"),
+                            # html.Th("Rating"),                            
                             html.Th("Metric (" + header_string + ")"),
                         ]
                     )

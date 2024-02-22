@@ -11,8 +11,6 @@ import itertools
 
 from .load_data import (
     get_school_index,
-    # get_corp_demographic_data,
-    # get_school_demographic_data,
     get_letter_grades,
     get_excluded_years,
     get_attendance_data
