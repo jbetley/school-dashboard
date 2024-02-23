@@ -1,8 +1,8 @@
 ##############################################
 # ICSB Dashboard - Organizational Compliance #
 ##############################################
-# version:  1.13 (https://github.com/jbetley)
-# date:     10/13/23
+# version:  1.15 (https://github.com/jbetley)
+# date:     02/21/24
 
 import dash
 from dash import html, dash_table, Input, Output, callback
@@ -350,8 +350,6 @@ def update_organizational_compliance(school, year):
 
     return org_compliance_table, org_compliance_definitions_table
 
-
-# layout = html.Div(
 def layout():
     return html.Div(
         [
@@ -372,7 +370,7 @@ def layout():
                 ],
                 className="row",
             ),
-            html.Div(""),  # className="hide_line"),
+            html.Div(""),
             html.Div(id="org-compliance-table"),
             html.Div(
                 [

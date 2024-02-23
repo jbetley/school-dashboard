@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     10/13/23
+# version:  1.15
+# date:     02/21/24
 
 import dash
 from dash import html, dash_table, Input, State, Output, callback
@@ -688,7 +688,7 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
         financial_metrics_definitions_table,
         main_container,
         empty_container,
-        no_data_to_display,
+        no_data_to_display
     )
 
 

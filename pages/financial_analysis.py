@@ -769,7 +769,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         main_container,
         empty_container,
         no_data_to_display,
-        financial_analysis_notes_string,
+        financial_analysis_notes_string
     )
 
 
@@ -789,8 +789,7 @@ def layout():
                                         labelClassName="btn btn-outline-primary",
                                         labelCheckedClassName="active",
                                         value=[],
-                                        persistence=False,
-                                        # persistence_type="memory",
+                                        persistence=False
                                     ),
                                 ],
                                 className="radio-group-finance",
@@ -810,7 +809,7 @@ def layout():
                         style={
                             "position": "absolute",
                             "alignSelf": "center",
-                            "backgroundColor": "#F2F2F2",
+                            "backgroundColor": "#F2F2F2"
                         },
                         children=[
                             html.Div(

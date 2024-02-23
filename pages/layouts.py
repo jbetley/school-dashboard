@@ -2,8 +2,8 @@
 # ICSB Dashboard - Layout Functions #
 #####################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     10/13/23
+# version:  1.15
+# date:     02/21/24
 
 import pandas as pd
 import numpy as np
@@ -454,7 +454,7 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
     group = page + "-" + group_catagory + "-radio"
     container = group + "-container"
 
-    # NOTE: THis is dumb, need to find a better way to distinguish
+    # NOTE: THis is dumb, need to find a better way to distinguish between
     if width == "twelve":
         layout = "bare-container--flex--center " + width + " columns"
     else:

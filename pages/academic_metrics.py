@@ -685,7 +685,7 @@ def update_academic_metrics(school: str, year: str):
         ahs_metrics_container,
         main_container,
         empty_container,
-        no_data_to_display,
+        no_data_to_display
     )  # table_container_15abcd,
 
 

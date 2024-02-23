@@ -2,8 +2,8 @@
 # ICSB Dashboard - Calculation Functions #
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     10/13/23
+# version:  1.15
+# date:     02/21/24
 
 # NOTE: having mypy typing issues with numpy. Not sure how to resolve.
 import pandas as pd
@@ -163,7 +163,7 @@ def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-# TODO: This is somewhat slow. Refactor at some point.
+# NOTE: This is somewhat slow. Refactor at some point.
 def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
     """
     Wrapper around calculate_percentage() used to calculate ILEARN Proficiency from academic
@@ -243,7 +243,7 @@ def recalculate_total_proficiency(
     revised_totals["School ID"] = revised_data["School ID"]
 
     # TODO: revise process_k8_corp_academic_data to use corp processing code on analysis_single_page
-    # We then can eliminate the need to sumbit school_data to the function. See process_data.py
+    # TODO: We then can eliminate the need to submit school_data to the function. See process_data.py
 
     numeric_columns = [
         c

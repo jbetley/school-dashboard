@@ -3,7 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/14/24
+# date:     02/21/24
 
 import dash
 from dash import dcc, ctx, html, Input, Output, State, callback
@@ -452,8 +452,6 @@ def update_academic_analysis_multiple_years(
 
 
 layout = html.Div(
-    # def layout():
-    #     return html.Div(
     [
         html.Div(
             [

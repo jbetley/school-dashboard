@@ -2,8 +2,8 @@
 # ICSB Dashboard - Metric Calculations #
 ########################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     10/13/23
+# version:  1.15
+# date:     02/21/24
 
 import pandas as pd
 import numpy as np
@@ -38,30 +38,6 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
     """
     selected_school = get_school_index(school)
     corp_id = int(selected_school["GEO Corp"].values[0])
-
-    # corp_demographics = get_corp_demographic_data(corp_id)
-    # school_demographics = get_school_demographic_data(school)
-
-# TODO: Change origin of attendance from demographic to academic
-# TODO: Drop Corp Attendance Rate(?) - not apples to apples
-        # # load K8 academic data
-        # selected_raw_k8_school_data = get_k8_school_academic_data(school)
-        # excluded_years = get_excluded_years(selected_year_string)
-
-        # if excluded_years:
-        #     selected_raw_k8_school_data = selected_raw_k8_school_data[
-        #         ~selected_raw_k8_school_data["Year"].isin(excluded_years)
-        #     ]
-
-        # # load HS academic data
-        # selected_raw_hs_school_data = get_high_school_academic_data(school)
-        # excluded_years = get_excluded_years(selected_year_string)
-
-        # # exclude years later than the selected year
-        # if excluded_years:
-        #     selected_raw_hs_school_data = selected_raw_hs_school_data[
-        #         ~selected_raw_hs_school_data["Year"].isin(excluded_years)
-        #     ]
 
     corp_type = "corp_" + school_type
 
@@ -192,7 +168,7 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
     # and col - 2 (Previous Year) and inserting the result at the last position col[-1] and then every 3rd index
     # position prior.
 
-    # TODO: Vectorize using shift() and then insert result at proper index?
+    # NOTE: Vectorize using shift() and then insert result at proper index?
     # Could do, but would require reworking calculate_year_over_year() - so leave in loop for now
     # shifted_data = data.shift(2, axis=1)
     # result_data = calculate_year_over_year(data,shifted_data)
@@ -637,9 +613,6 @@ def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-# TODO: Test this!
-
-
 def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a dataframe of float values and returns the same dataframe with one
@@ -671,9 +644,6 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         data["Category"].str.contains("State Grants")
     ].tolist()[0]
     operating_data = data.loc[:, ~(data.iloc[state_grant_idx] == 0)].copy()
-
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
 
     if len(operating_data.columns) <= 1:
         final_grid = pd.DataFrame()
@@ -906,6 +876,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         # for the first test, we stop the loop when i == 1 (the second to last item in the
         # loop)
         for i in range(len(metric_grid["Cash Flow"]) - 1, 1, -1):
+            
             # get current year value
             current_year_cash = metric_grid.loc[i, "Cash Flow"]
 

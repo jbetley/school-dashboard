@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/14/24
+# date:     02/21/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -642,8 +642,6 @@ def update_about_page(year: str, school: str):
         no_data_to_display,
     )
 
-
-# layout = html.Div(
 def layout():
     return html.Div(
         [

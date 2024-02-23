@@ -2,8 +2,8 @@
 # ICSB Dashboard - Charting Functions #
 #######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     01/01/24
+# version:  1.15
+# date:     02/21/24
 
 from dash import html, dcc
 import plotly.express as px
@@ -177,11 +177,13 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
     all academic categories
 
     Args:
-        values (pd.DataFrame): a dataframe with categories, proficiency categories, and proficiency percentages
+        values (pd.DataFrame): a dataframe with categories, proficiency categories, and proficiency
+        percentages
         label (str): title of the figure
 
     Returns:
-        list: a plotly dash html layout in the form of a list containing a string and a stacked bar chart figure (px.bar)
+        list: a plotly dash html layout in the form of a list containing a string and a stacked bar
+        chart figure (px.bar)
     """
    
     data = values.copy()
@@ -332,8 +334,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
     return fig_layout
 
 
-# TODO: Merge this and make_single_line_chart ?
-
+# TODO: Merge this and use make_single_line_chart
 
 def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]:
     """
@@ -653,17 +654,12 @@ def make_line_chart(values: pd.DataFrame) -> list:
             # all columns with only NaN- otherwise the traces will be displayed on the chart
             # even though they are listed as having no data to display - afterwards we need
             # to reset the cols variable to make sure it matches the changed df
-            # if len(data.index) == 1:
-            #     data = data.dropna(axis=1, how="all")
-            #     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
-
             data = data.dropna(axis=1, how="all")
             cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
             data = data.reset_index(drop=True)
 
-            # Used below to set tick ranges
-
+            # Used to set tick ranges
             data_max = data.drop("Year", axis=1).copy()
             data_max = data_max.max(numeric_only=True).max()
 
@@ -878,9 +874,7 @@ def make_growth_chart(
                 x=data_me.index,
                 y=data_me[col],
                 name=col,
-                meta=[
-                    col
-                ],  # wtf is this?? [https://community.plotly.com/t/hovertemplate-does-not-show-name-property/36139]
+                meta=[col],  # wtf is this?? [https://community.plotly.com/t/hovertemplate-does-not-show-name-property/36139]
                 mode="markers+lines",
                 marker=dict(color=color[i], symbol="square"),
                 line={"dash": "solid"},
@@ -916,7 +910,7 @@ def make_growth_chart(
         # )
 
     # TODO: Rework this to use a regular px.line so that we can adjust the ticks
-    # TODO: the same way we do in make_line_chart (that is edge to edge)
+    # TODO: the same way we do in make_line_chart (edge to edge)
     xaxis_data = pd.DataFrame()
     xaxis_data["Year"] = data_me.index.astype(str)
 

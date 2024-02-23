@@ -3,7 +3,7 @@
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/14/24
+# date:     02/21/24
 
 import dash
 from dash import html, dash_table, Input, State, Output, callback
@@ -376,8 +376,6 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         no_data_to_display,
     )
 
-
-# layout = html.Div(
 def layout():
     return html.Div(
         [

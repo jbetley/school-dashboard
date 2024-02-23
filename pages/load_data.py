@@ -2,8 +2,8 @@
 # ICSB Dashboard - Database Queries (SQLite) #
 ##############################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     02/01/24
+# version:  1.15
+# date:     02/21/24
 
 # Current data:
 # ILEARN - 2023
@@ -23,7 +23,6 @@ from .calculations import calculate_percentage, conditional_fillna
 # NOTE: No K8 academic data exists for 2020
 
 # global variables - yes, global variable bad.
-
 max_display_years = 5
 
 subject = ["Math", "ELA"]
@@ -192,13 +191,12 @@ metric_strings = {
     ],
 }
 
-# TODO: Move this to app? import engine? use a function to pull the table?
+# NOTE: Consider moving engine instantiaion to app.py
 engine = create_engine("sqlite:///data/indiana_schools.db")
 
 users = create_engine("sqlite:///users.db")
 
 print("Database Engine Created . . .")
-
 
 # Return Dataframe (read_sql is a convenience function wrapper around read_sql_query)
 # If no data matches query, returns an empty dataframe
@@ -236,9 +234,7 @@ def get_current_year():
 
     return year
 
-
 current_academic_year = get_current_year()
-
 
 # Used to dynamically count the number of network logins (all of which have
 # negative group_id values) so we know how far to offset group_id in determining
@@ -253,7 +249,6 @@ def get_network_count():
     db.close()
 
     return count
-
 
 network_count = get_network_count()
 
@@ -344,7 +339,7 @@ def get_academic_growth_dropdown_years(*args):
     return years
 
 
-# TODO: The next two functions are almost identical (difference is Q#s). Maybe consolidate?
+# NOTE: Consolidate this with next function (only difference is Q#s)
 def get_financial_info_dropdown_years(school_id):
     # Processes financial df and returns a list of Year column names for
     # each year for which ADM Average is greater than '0'
@@ -965,7 +960,7 @@ def get_attendance_data(school_id, school_type, year):
 
     return attendance_rate
 
-
+# NOTE: Can this and the next function be combined?
 def get_k8_school_academic_data(*args):
     keys = ["id"]
     params = dict(zip(keys, args))
@@ -1107,7 +1102,7 @@ def get_school_coordinates(*args):
 
     return run_query(q, params)
 
-#TODO: NOT USING THIS ANYMORE?
+#TODO: Is this being used?
 def get_comparable_schools(*args):
     keys = ["schools", "year", "type"]
     params = dict(zip(keys, args))
@@ -1245,24 +1240,18 @@ def get_year_over_year_data(*args):
 
     school_name = school_data["School Name"][0]
 
-    print('HERE')
-    print(school_data)
     school_data[school_name] = pd.to_numeric(
         school_data[passed], errors="coerce"
     ) / pd.to_numeric(school_data[tested], errors="coerce")
-
-    print(school_data)
 
     school_data = school_data.drop(
         ["School Name", "Low Grade", "High Grade", passed, tested], axis=1
     )
     school_data = school_data.sort_values("Year").reset_index(drop=True)
 
-    print(school_data)
     # drop rows (years) where the school has no data
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]
-    print(school_data)
 
     if len(school_data.columns) == 0:
         result = school_data
@@ -1345,6 +1334,7 @@ def get_year_over_year_data(*args):
         result = result[~result["Year"].isin(excluded_years)]
 
     return result, all_school_info
+
 
 def get_student_level_ilearn(school, subject):
 

@@ -3,7 +3,7 @@
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/14/24
+# date:     02/21/24
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -405,7 +405,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         main_growth_container,
         empty_growth_container,
         no_growth_data,
-        academic_growth_notes_string,
+        academic_growth_notes_string
     )
 
 

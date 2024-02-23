@@ -3,7 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/14/24
+# date:     02/21/24
 
 # TODO: Break down into three pages: ILEARN; IREAD; WIDA
 
@@ -15,9 +15,6 @@ import pandas as pd
 from functools import reduce
 import re
 import itertools
-
-pd.set_option('display.max_columns', None)
-pd.set_option('display.max_rows', None)  
 
 # import local functions
 from pages.load_data import (
@@ -49,7 +46,7 @@ from pages.tables import (
     create_iread_ilearn_table
 )
 from pages.charts import no_data_fig_label, make_stacked_bar, make_line_chart
-from pages.layouts import set_table_layout, create_line_fig_layout #, create_simple_iread_layout
+from pages.layouts import set_table_layout, create_line_fig_layout
 from pages.calculations import round_percentages
 from pages.string_helpers import natural_keys
 
@@ -58,10 +55,10 @@ dash.register_page(
     top_nav=True,
     name="Academic Information",
     path="/academic_information",
-    order=7,
+    order=7
 )
 
-# Main
+
 @callback(
     Output("iread-school-level-layout", "children"),
     Output("iread-school-level-layout-container", "style"),

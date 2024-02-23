@@ -3,7 +3,7 @@
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/14/24
+# date:     02/21/24
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -1137,7 +1137,7 @@ def update_academic_analysis_single_year(
         hs_analysis_main_container,
         hs_analysis_empty_container,
         hs_analysis_no_data,
-        academic_analysis_notes,
+        academic_analysis_notes
     )
 
 
