@@ -2,8 +2,8 @@
 # ICSB Dashboard - String Maninpulation Functions #
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     10/13/23
+# version:  1.15
+# date:     02/21/24
 
 import pandas as pd
 import numpy as np
@@ -231,11 +231,6 @@ def create_school_label(data: pd.DataFrame) -> pd.Series:
     Returns:
         label (pd.Series): a series of labels one for each school
     """
-    # Original Version:
-    # label = data["School Name"] + " (" + data["Low Grade"].fillna("").astype(str) + \
-    #     "-" + data["High Grade"].fillna("").astype(str) + ")"
-    # label = label.str.replace("\(-\)", "",regex=True)
-    # label = label.str.replace(".0","",regex=False)
 
     label = data[["School Name", "Low Grade", "High Grade"]].copy()
 

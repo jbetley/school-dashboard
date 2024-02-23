@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
 from .calculations import check_for_insufficient_n_size, check_for_no_data
 from .string_helpers import customwrap
 from .load_data import get_school_index

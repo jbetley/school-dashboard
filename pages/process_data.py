@@ -18,12 +18,10 @@ from .load_data import (
     ethnicity,
     subgroup,
     info_categories,
-    get_excluded_years,
     get_school_index,
     get_graduation_data,
 )
 from .calculations import (
-    calculate_percentage,
     calculate_difference,
     calculate_proficiency,
     recalculate_total_proficiency,
@@ -67,7 +65,7 @@ def process_selected_k8_academic_data(
     else:
         calculated_data = calculate_proficiency(data)
 
-# # TODO: NEW
+# # TODO: TESTING (not sure I remember for what tho)
 #         ## Nsize ##
 #         # create new df with Total Tested and Test N (IREAD) values
 #         data_tested = calculated_data.filter(
@@ -91,7 +89,7 @@ def process_selected_k8_academic_data(
 #         # ensures eventual correct formatting to "-"
 #         data_tested = data_tested.fillna(value=np.nan)
 #         data_tested = data_tested.replace(0, np.nan)
-# # TODO: NEW
+# # TODO: TESTING
         
         # Add School Name/School ID back. We can do this because the index hasn't changed in
         # data_proficiency, so it will still match with school_info
@@ -100,10 +98,10 @@ def process_selected_k8_academic_data(
                 [school_info, calculated_data], axis=1, join="inner"
             )
 
-            # In order for an apples to apples comparison between School Total Proficiency, we need
-            # to recalculate it for the comparison schools using the same grade span as the selected
-            # school. E.g., school is k-5, comparison school is k-8, we recalculate comparison school
-            # totals usings grade k-5.
+            # In order for an apples to apples comparison between School Total Proficiency,
+            # we need to recalculate it for the comparison schools using the same grade span
+            # as the selected school. E.g., school is k-5, comparison school is k-8, we
+            # recalculate comparison school totals using only grade k-5 data.
 
             comparison_data = combined_data.loc[
                 combined_data["School ID"] != np.int64(school_id)
@@ -153,9 +151,10 @@ def process_selected_k8_academic_data(
 
 # NOTE: Returns essentially the same data as above, but in this case,
 # the dataframe is transposed (categories are a column) and includes N-Size
+# NOTE: explore merging this and the above into one function
 def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Process a dataframe with ILEARN/IREAD data -Includes N-Size
+    Process a dataframe with ILEARN/IREAD data includeing N-Size
 
     Args:
         data (pd.DataFrame): ilearn/iread data
@@ -334,7 +333,8 @@ def process_k8_corp_academic_data(
     corp_data: pd.DataFrame, school_data: pd.DataFrame
 ) -> pd.DataFrame:
     """
-    Perform various operations on a dataframe with ILEARN/IREAD data at corporation level (aggregated)
+    Perform various operations on a dataframe with ILEARN/IREAD data at corporation
+    level (aggregated)
 
     Args:
         corp_data (pd.DataFrame): ilearn/iread data for local school corporation
@@ -405,7 +405,7 @@ def process_k8_corp_academic_data(
         )
 
         # recalculate total proficiency numbers using only school grades
-        # before we can do this, we need to flip the school df so school categories are column headers
+        # after transposing so school categories are column headers
         school_grade_data = school_data.copy()
         school_grade_data = (
             school_grade_data.set_index("Category")
@@ -426,7 +426,8 @@ def process_k8_corp_academic_data(
             "Total|Math Proficient %"
         ].values
 
-        # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
+        # filter to remove columns used to calculate the final proficiency (Total
+        # Tested and Total Proficient)
         corp_data = corp_data.filter(
             regex=r"\|ELA Proficient %$|\|Math Proficient %$|^IREAD Proficient %|^Year$",
             axis=1,
@@ -578,8 +579,8 @@ def process_high_school_academic_data(
             .reset_index()
         )
 
-        # NOTE: Currently do not use CN-Size (Corp N-Size) for anything, but leaving here just in case
-        # temp name N-Size cols in order to differentiate.
+        # NOTE: Currently do not use CN-Size (Corp N-Size) for anything, but leaving
+        # here just in case.
         if data_geo_code == school_geo_code:
             data_tested = data_tested.rename(
                 columns={
@@ -602,7 +603,7 @@ def process_high_school_academic_data(
             regex=r"Cohort Count$|Graduates$|AHS|Benchmark|Total Tested|^Year$", axis=1
         )
 
-        # remove "ELA and Math" columns (NOTE: Comment this out to retain "ELA and Math" columns)
+        # remove "ELA and Math" columns
         data = data.drop(list(data.filter(regex="ELA and Math")), axis=1)
 
         if data_geo_code == school_geo_code:
@@ -801,8 +802,9 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
         # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
         # cohort, there were no "waiver" graduates (which means no Non Waiver data).
         # so we replace 0 with NaN (to ensure a NaN result rather than 0)
+        # TODO: Add NonWaiver rate back?
         # if "Non Waiver|Cohort Count" in data.columns:
-        # data = calculate_nonwaiver_graduation_rate(data)
+        #   data = calculate_nonwaiver_graduation_rate(data)
 
         # Calculate SAT Rates #
         if "Total|EBRW Total Tested" in data.columns:
@@ -869,7 +871,7 @@ def merge_high_school_data(
 ) -> pd.DataFrame:
     """
     Perform various operations on two dataframes, selected school and local school corporaiton
-    and ultimately merg them
+    and ultimately merge them
 
     Args:
     all_school_data (pd.DataFrame): school data
@@ -917,6 +919,7 @@ def merge_high_school_data(
 
     # If no Total Graduation Rate Category exists for a school, we add it with all NaNs
     if "Total Graduation Rate" not in all_school_data["Category"].values:
+        
         # add row of all nan (by enlargement) and set Category value
         all_school_data.loc[len(all_school_data)] = np.nan
         all_school_data.loc[
@@ -972,8 +975,8 @@ def merge_high_school_data(
     all_school_data = all_school_data.fillna(value=np.nan)
     all_corp_data = all_corp_data.fillna(value=np.nan)
 
-    # calculate difference between two dataframes
-    # NOTE: yes a for-loop, but almost instantaneous
+    # calculate difference between two dataframes (for loop
+    # not great - but it is still fast)
     hs_results = pd.DataFrame()
     for y in year_cols:
         hs_results[y] = calculate_difference(
@@ -1001,6 +1004,20 @@ def merge_high_school_data(
 def process_growth_data(
     data: pd.DataFrame, category: str
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Process a dataframe with student levelgrowth data into two dataframes with
+    aggregated data using both Majority Enrolled (ME) and 162-Day counts. primary
+    difference between dataframes is table data has been pivoted from long to
+    wide.
+
+    Args:
+    data (pd.DataFrame): student level growth data
+    category (str): the category being processed
+
+    Returns:
+        table_data (pd.DataFrame): processed dataframe used to create table
+        fig_data (pd.DataFrame): processed dataframe used to create fig
+    """    
     # step 1: find the percentage of students with Adequate growth using
     # "Majority Enrolled" students (all available data) and the percentage
     # of students with Adequate growth using the set of students enrolled for
@@ -1121,12 +1138,15 @@ def merge_schools(
     corp_name: str,
 ) -> pd.DataFrame:
     """
-    Takes three dataframes of school academic data, drops Categories not tested by the school and merges them.
+    Takes three dataframes of school academic data, drops Categories not tested by the
+    school and merges them.
 
     Args:
         school_data (pd.DataFrame): academic data from the selected school
-        corporation_data (pd.DataFrame): academic data from the school corporation where the school is located
-        comparison_data (pd.DataFrame): academic data from comparable schools (may or may not be in school corp)
+        corporation_data (pd.DataFrame): academic data from the school corporation
+        where the school is located
+        comparison_data (pd.DataFrame): academic data from comparable schools (may
+        or may not be in school corp)
         categories (list): a list of academic categories
         corp_name (str): the name of the school corporation
 

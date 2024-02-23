@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 from dash import html
 import dash_bootstrap_components as dbc
+
 from .string_helpers import (
     create_chart_label,
     combine_school_name_and_grade_levels,
@@ -17,7 +18,7 @@ from .string_helpers import (
 )
 from .charts import make_group_bar_chart, make_multi_line_chart, make_line_chart
 from .tables import create_comparison_table, no_data_page, create_single_header_table
-# from typing import Tuple
+
 
 def create_hs_analysis_layout(
     data_type: str, data: pd.DataFrame, categories: list, school_id: str

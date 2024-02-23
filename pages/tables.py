@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/14/24
+# date:     02/21/24
 
 import pandas as pd
 from typing import Tuple
@@ -17,8 +17,6 @@ import dash_mantine_components as dmc
 from .load_data import metric_strings, get_student_level_ilearn
 
 # default table styles
-# table_style = {"fontSize": "12px", "border": "none", "fontFamily": "Inter, sans-serif"}
-
 table_style = {"border": "none", "fontFamily": "Inter, sans-serif"}
 
 table_cell = {
@@ -198,10 +196,10 @@ def create_proficiency_key() -> list:
 
 def empty_table(text: str) -> dash_table.DataTable:
     """
-    empty dash_table.Datatable with given text as only data.
+    return empty dash_table.Datatable with given text as only data.
 
     Args:
-        text (list): table content
+        text (str): table content
 
     Returns:
         dash datatable (dash_table.DataTable): a dash DataTable
@@ -271,7 +269,7 @@ def no_data_page(text: str, label: str = "No Data to Display") -> list:
 
     Args:
         label (str): string label
-        text (list)
+        text (str)
 
     Returns:
         table_layout (list): dash html.Div objects enclosing a dash html.Label
@@ -331,7 +329,6 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     Args:
         label (str): Table title
         content (pd.DataTable): dash dataTable
-        kind (str): "sgp|growth"
     Returns:
         table_layout (list): dash html.Div enclosing html.Label and DataTable
     """
@@ -487,7 +484,19 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     return table_layout
 
 
-def create_iread_ilearn_table(school, subject, excluded_years):
+def create_iread_ilearn_table(school: str, subject: str, excluded_years: list) -> list:
+    """
+    Takes school id, subject (ELA/Math), and a list of exlcuded years and returns a
+    simple, single header table.
+
+    Args:
+        school (str): school id
+        subject (str): ELA or Math
+        excluded_years (list): list of none or more years to exclude from df
+
+    Returns:
+        iread_ilearn_table (list): dash DataTable wrapped in dash html components
+    """
 
     iread_pass_ilearn, iread_nopass_ilearn = get_student_level_ilearn(school, subject)
 
@@ -619,17 +628,6 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
             }
         ]
         + [
-            # {
-            #     "if": {
-            #         "column_id": first_column,
-            #     },
-            #     # "borderRight": "none",
-            #     "borderBottom": "none",
-            #     "borderLeft": "none",
-            #     "borderTop": "none",
-            # },
-        ]
-        + [
             {
                 "if": {
                     "column_id": other,
@@ -663,31 +661,8 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
                                     for i in data.columns
                                 ],
                                 style_data=table_style,
-                                # style_data={
-                                #     "fontSize": "12px",
-                                #     "fontFamily": "Inter, sans-serif",
-                                #     "border": "none",
-                                #     "color": "#6783a9",
-                                # },
                                 style_header=table_header,
-                                # {
-                                #     "backgroundColor": "#ffffff",
-                                #     "fontSize": "12px",
-                                #     "fontFamily": "Montserrat, sans-serif",
-                                #     "color": "#6783a9",
-                                #     "textAlign": "center",
-                                #     "fontWeight": "bold",
-                                #     "border": "none",
-                                # },
                                 style_cell=table_cell,
-                                # style_cell={    # difference from default is no color
-                                #     "whiteSpace": "normal",
-                                #     "height": "auto",
-                                #     "textAlign": "center",
-                                #     "minWidth": "25px",
-                                #     "width": "25px",
-                                #     "maxWidth": "25px",
-                                # },
                                 style_data_conditional=table_data_conditional,
                                 style_cell_conditional=table_cell_conditional,
                                 merge_duplicate_headers=True,
@@ -697,7 +672,7 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
                     className=class_name,
                 )
             ],
-            className="bare-container--flex--center twelve columns",
+            className="bare-container--flex--center twelve columns"
         )
     ]
 
@@ -887,26 +862,12 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
                 data.to_dict("records"),
                 columns = cols,
                 style_data=table_style,
-                # style_data = {
-                #     "fontSize": "12px",
-                #     "fontFamily": "Inter, sans-serif",
-                #     "border": "none",
-                # },
                 style_data_conditional=table_data_conditional,
                 style_header=table_header,
                 style_cell=table_cell,
-                # style_cell = {
-                #     "whiteSpace": "normal",
-                #     "height": "auto",
-                #     "textAlign": "center",
-                #     "color": "#6783a9",
-                #     "minWidth": "25px",
-                #     "width": "25px",
-                #     "maxWidth": "25px",
-                # },
                 style_header_conditional=table_header_conditional,
                 style_cell_conditional=table_cell_conditional,
-            ),
+            )
         ]
 
     else:
@@ -929,22 +890,8 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
                                         for i in data.columns
                                     ],
                                     style_data=table_style,
-                                    # {
-                                    #     "fontSize": "12px",
-                                    #     "fontFamily": "Inter, sans-serif",
-                                    #     "border": "none",
-                                    # },
                                     style_header=table_header,
                                     style_cell=table_cell,
-                                    # {
-                                    #     "whiteSpace": "normal",
-                                    #     "height": "auto",
-                                    #     "textAlign": "center",
-                                    #     "color": "#6783a9",
-                                    #     "minWidth": "25px",
-                                    #     "width": "25px",
-                                    #     "maxWidth": "25px",
-                                    # },
                                     style_data_conditional=table_data_conditional,
                                     style_header_conditional=table_header_conditional,
                                     style_cell_conditional=table_cell_conditional,
@@ -955,7 +902,7 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
                         className=class_name,
                     )
                 ],
-                className="bare-container--flex--center twelve columns",
+                className="bare-container--flex--center twelve columns"
             )
         ]
 
@@ -1157,8 +1104,6 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
                     "if": {
                         "column_id": nsize,
                     },
-                    # "fontSize": "11px",
-                    # "textAlign": "center",
                     "borderRight": ".5px solid #b2bdd4",
                 }
                 for nsize in nsize_headers
@@ -1288,12 +1233,25 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
         table_data_conditional = [
             {
-                "if": {"state": "selected"},
+                "if": {
+                    "state": "selected"
+                },
                 "backgroundColor": "rgba(112,128,144, .3)",
                 "border": "thin solid silver",
             },
-            {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
-        ] + [{"if": {"row_index": 0}, "paddingTop": "5px"}]
+            {
+                "if": {
+                    "row_index": "odd"
+                },
+                "backgroundColor": "#eeeeee"},
+        ] + [
+            {
+                "if": {
+                    "row_index": 0
+                },
+                "paddingTop": "5px"
+            }
+        ]
 
         table_columns = [
             {
@@ -1407,11 +1365,12 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             category_width = 15
 
         data.columns = data.columns.str.replace("N-Size", "(N)", regex=True)
+        # NOTE: Experimenting with "Rate" vs. "Rating" to shrink the rating
+        # column width. Leaving old code commented in the event we want to go back
         # data.columns = data.columns.str.replace("Rate", "Rating", regex=True)
         data.columns = data.columns.str.replace("Diff", "Difference", regex=True)
 
         # different column headers for AHS
-
         if data["Category"].str.contains("1.1|1.2.a").any() == True:
             data.columns = data.columns.str.replace("School", "Value", regex=True)
             school_headers = [y for y in data.columns.tolist() if "Value" in y]
@@ -1626,11 +1585,17 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         table_data_conditional = (
             [
                 {
-                    "if": {"state": "selected"},
+                    "if": {
+                        "state": "selected"
+                    },
                     "backgroundColor": "rgba(112,128,144, .3)",
                     "border": "thin solid silver",
                 },
-                {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
+                {
+                    "if": {
+                        "row_index": "odd"
+                    },
+                    "backgroundColor": "#eeeeee"},
             ]
             + [
                 {
@@ -1640,10 +1605,19 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                     "borderRight": ".5px solid #b2bdd4",
                 },
             ]
-            + [{"if": {"row_index": 0}, "paddingTop": "5px"}]
             + [
                 {
-                    "if": {"row_index": len(data) - 1},
+                    "if": {
+                        "row_index": 0
+                    },
+                    "paddingTop": "5px"
+                }
+            ]
+            + [
+                {
+                    "if": {
+                        "row_index": len(data) - 1
+                    },
                     "borderBottom": ".5px solid #b2bdd4",
                 }
             ]
@@ -1656,16 +1630,6 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                     "borderBottom": "none",
                 },
             ]
-            # + [
-            #     {
-            #         "if": {
-            #             "column_id": nsize,
-            #         },
-            #         "fontSize": "10px",  # NOTE: This doesn't work as cell_conditional - is it because its markdown?
-            #         "textAlign": "center",
-            #     }
-            #     for nsize in nsize_headers
-            # ]
             + [
                 {
                     "if": {

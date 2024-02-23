@@ -1,7 +1,7 @@
 /*  ICSB Dashboard - Stylesheet
     author:   jbetley (https://github.com/jbetley)
-    version:  1.11
-    date:     10/03/23
+    version:  1.15
+    date:     02/21/24
 
     source: https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css
 */
@@ -573,8 +573,9 @@ hr {
 }
 
 /** Dash Mantine Components Overrides **/
-/* This css is solely for the dmc.HoverCard and Table elements on the academic_metric page. Overriding
-  with substring matches ended up being easier than trying to style the DMC components directly */
+/* This css is solely for the dmc.HoverCard and Table elements on the academic_metric page.
+  Overriding with substring matches ended up being easier than trying to style the DMC
+  components directly */
 
 /* Overrides dmc.HoverCard attributes */
 [id^=mantine] {
@@ -665,9 +666,8 @@ hr {
 /* Overrides certain styles within the hoverlayer (for x hover mode) 
    Control the page using the id of the single-analysis page div*/
 
-/* Love me some CSS but there's otta be a better way to do this */
+/* Love me some CSS but there's gotta be a better way to do this */
 /* 1st group */
-
 #year-over-year-hs .hoverlayer>.hovertext>path {
   stroke-width: 0px !important;
   stroke: none !important;
@@ -709,7 +709,6 @@ hr {
 }
 
 /* 2nd group */
-
 #year-over-year-hs .hoverlayer>.hovertext>text.nums {
   font-weight: 500;
   fill: #ffffff !important;
@@ -751,7 +750,6 @@ hr {
 }
 
 /* 3rd Group */
-
 #year-over-year-hs .hoverlayer>.axistext>path {
   fill: steelblue !important;
 }
@@ -1078,7 +1076,6 @@ a.nav-link:hover {
 }
 
 .nav-link.active {
-  /* line-height: 1; */
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
   color: white;
@@ -1097,7 +1094,6 @@ a.nav-link:hover {
 }
 
 .tab {
-  /* line-height: 1; */
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
   color: steelblue;
@@ -1141,8 +1137,6 @@ a.nav-link:hover {
   width: fit-content;
   white-space: nowrap;
   float: left;
-  /* width: 100%; */
-  /* display: block; */
 }
 
 .radio-group-academic-subheader {
@@ -1156,10 +1150,6 @@ a.nav-link:hover {
   margin-bottom: 7px;
 }
 
-/* #analysis-type-radio-container, #info-type-radio-container
-{
-  margin-bottom: 7px;
-} */
 #analysis-multi-subject-radio-container {
   padding-right: 10px;
 }
@@ -1239,6 +1229,7 @@ label>.label-body {
   padding-top: 5px;
 }
 
+/* TODO: Not using this any more on HS Academic Info - switch style to normal header */
 .hollow-label__header {
   height: auto;
   /* background-color: #ffffff; */
@@ -1289,8 +1280,6 @@ label>.label-body {
   margin-right: 5px;
   margin-top: 0px;
   position: relative;
-  /* display: block; */
-  /* border-top: .5px solid rgb(201,211,224); */
   font-weight: bold;
 }
 
