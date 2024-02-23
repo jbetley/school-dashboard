@@ -17,7 +17,7 @@ import re
 import itertools
 
 # import local functions
-from pages.load_data import (
+from .load_data import (
     ethnicity,
     subgroup,
     subject,
@@ -32,12 +32,12 @@ from pages.load_data import (
     get_school_index,
     get_excluded_years
 )
-from pages.process_data import (
+from .process_data import (
     process_k8_academic_data,
     process_high_school_academic_data,
     filter_high_school_academic_data
 )
-from pages.tables import (
+from .tables import (
     no_data_page,
     create_multi_header_table_with_container,
     create_key_table,
@@ -45,10 +45,10 @@ from pages.tables import (
     create_multi_header_table,
     create_iread_ilearn_table
 )
-from pages.charts import no_data_fig_label, make_stacked_bar, make_line_chart
-from pages.layouts import set_table_layout, create_line_fig_layout
-from pages.calculations import round_percentages
-from pages.string_helpers import natural_keys
+from .charts import no_data_fig_label, make_stacked_bar, make_line_chart
+from .layouts import set_table_layout, create_line_fig_layout
+from .calculations import round_percentages
+from .string_helpers import natural_keys
 
 dash.register_page(
     __name__,

@@ -1123,7 +1123,7 @@ def layout():
                                         className="logout-button no-print",
                                     ),
                                 ],
-                                className="bare-container--flex--center one columns no-print",
+                                className="bare-container--flex two columns no-print",
                             ),
                             html.Div(
                                 [
@@ -1148,7 +1148,7 @@ def layout():
                                         style={"display": "none"},
                                     ),
                                 ],
-                                className="bare-container--slim four columns no-print",
+                                className="bare-container--slim six columns no-print",
                             ),
                             html.Div(
                                 [

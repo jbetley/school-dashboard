@@ -11,11 +11,11 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from pages.load_data import get_school_index, get_growth_data, get_excluded_years
-from pages.process_data import process_growth_data
-from pages.tables import no_data_page, create_growth_table
-from pages.charts import make_growth_chart
-from pages.layouts import create_growth_layout
+from .load_data import get_school_index, get_growth_data, get_excluded_years
+from .process_data import process_growth_data
+from .tables import no_data_page, create_growth_table
+from .charts import make_growth_chart
+from .layouts import create_growth_layout
 
 dash.register_page(
     __name__, name="Academic Growth", path="/academic_information_growth", order=8
