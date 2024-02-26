@@ -171,6 +171,156 @@ def no_data_fig_label(
 
     return fig_layout
 
+bar_colors = ["#74a2d7", "#df8f2d"]
+
+# TODO: Add the inside bar tick maximum size thingie
+def make_demographics_bar_chart(df: pd.DataFrame) -> list:
+    """
+    Creates a horizontal bar chart showing demographic data for school and the school
+    corporation they are in
+
+    Args:
+        df (pd.DataFrame): dataframe of demographic data
+
+    Returns:
+        fig (px.bar): a plotly express bar chart
+    """
+
+    raw_data = df.copy()
+
+    total_enrollment = raw_data["Total Enrollment"].tolist()
+    total_enrollment = [int(i) for i in total_enrollment]
+    raw_data.drop("Total Enrollment", axis=1, inplace=True)
+
+    cols = [i for i in raw_data.columns if i not in ["Corporation Name"]]
+    
+    for col in cols:
+        raw_data[col] = pd.to_numeric(raw_data[col], errors="coerce")
+
+    data = raw_data.set_index("Corporation Name").T
+
+    # Calculate Percentage
+    for i in range(0, 2):
+        data.iloc[:, i] = (data.iloc[:, i] / total_enrollment[i])
+
+    missing_categories = data[
+        (
+            (data.iloc[:, 0] < 0.005)
+            | (pd.isnull(data.iloc[:, 0]))
+        )
+    ]
+
+    # Drop rows that meet the above condition
+    data = data.drop(
+        data[
+            (
+                (data.iloc[:, 0] < 0.005)
+                | (pd.isnull(data.iloc[:, 0]))
+            )
+        ].index
+    )
+
+    data = data.fillna(0)
+
+    # force categories to wrap if longer than 16 characters and
+    # remove extra spaces
+    categories_wrap = data.index.map(customwrap)
+    categories = [sub.replace("  <br>", "<br>") for sub in categories_wrap]
+
+    elements = data.columns.tolist()
+
+    trace_color = {elements[i]: bar_colors[i] for i in range(len(elements))}
+
+    fig = px.bar(
+        data,
+        x=[c for c in data.columns],
+        y=categories,
+        text_auto=True,
+        color_discrete_map=trace_color,
+        opacity=0.9,
+        orientation="h",
+        barmode="group",
+    )
+
+    fig.update_xaxes(
+        ticks="outside",
+        tickcolor="#a9a9a9",
+        range=[0, 1],
+        dtick=0.2,
+        tickformat=",.0%",
+        title="",
+    )
+
+    fig.update_yaxes(
+        ticks="outside",
+        tickcolor="#a9a9a9",
+        title="",
+        tickfont = dict(size=11)
+    )
+
+    # add text traces
+    fig.update_traces(
+        textposition="outside",
+        hovertemplate=None,
+        hoverinfo="skip"
+    )
+
+    # Uncomment to add hover
+    # fig["data"][0]["hovertemplate"] = fig["data"][0]["name"] + ": %{x}<extra></extra>"
+    # fig["data"][1]["hovertemplate"] = fig["data"][1]["name"] + ": %{x}<extra></extra>"
+
+    # NOTE: In order to distinguish between null (no data) and "0" values,  loop through
+    # the data and only color text traces when the value of x (t.x) is not NaN
+    fig.for_each_trace(
+        lambda t: t.update(
+            textfont_color=np.where(~np.isnan(t.x), t.marker.color, "white"),
+            textfont_size=11,
+        )
+    )
+
+    fig.update_layout(
+        margin=dict(l=10, r=40, t=60, b=70, pad=0),
+        font=dict(
+            family="Inter, sans-serif",
+            color="#6783a9",
+            size=11
+        ),
+        legend=dict(
+            yanchor="top",
+            xanchor="center",
+            orientation="h",
+            x=0.4,
+            y=1.2
+        ),
+        bargap=0.15,
+        bargroupgap=0,
+        height=400,
+        legend_title="",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+
+    if not missing_categories.empty:
+        anno_txt = ", ".join(missing_categories.index.values.astype(str))
+
+        fig.add_annotation(
+            text=(
+                f"Less than .05% of student population: " + anno_txt + "."
+            ),
+            showarrow=False,
+            x=-0.1,
+            y=-0.25,
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="bottom",
+            xshift=-1,
+            yshift=-5,
+            font=dict(size=10, color="#6783a9"),
+            align="left",
+        )
+
+    return fig
 
 def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame) -> list:
     """

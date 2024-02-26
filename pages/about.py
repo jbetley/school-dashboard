@@ -24,10 +24,9 @@ from .load_data import (
     get_adm,
     get_attendance_data
 )
-from .charts import loading_fig, no_data_fig_label, make_line_chart
+from .charts import loading_fig, no_data_fig_label, make_line_chart, make_demographics_bar_chart
 from .tables import no_data_table, no_data_page, create_key_table, create_single_header_table
 from .layouts import create_line_fig_layout
-from .string_helpers import customwrap
 
 dash.register_page(__name__, path="/", order=0, top_nav=True)
 
@@ -36,7 +35,7 @@ dash.register_page(__name__, path="/", order=0, top_nav=True)
     Output("enroll-title", "children"),
     Output("enroll-table", "children"),
     Output("adm-fig", "figure"),
-    Output("attendance-layout", "children"),    
+    Output("attendance-layout", "children"),
     Output("ethnicity-title", "children"),
     Output("ethnicity-fig", "figure"),
     Output("subgroup-title", "children"),
@@ -59,9 +58,6 @@ def update_about_page(year: str, school: str):
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
     selected_school_id = int(selected_school["School ID"].values[0])
-    
-    # demographic data for the school is stored by Corporation ID
-    # school_corp_id = str(selected_school["Corporation ID"].values[0])
 
     year_title = previous_year_string + "-" + selected_year_string[-2:]
     enroll_title = "Enrollment " + "(" + year_title + ")"
@@ -70,7 +66,7 @@ def update_about_page(year: str, school: str):
 
     update_table = []
     enroll_table = []
-    attendance_layout= []    
+    attendance_layout= []
     adm_fig = px.line()
     ethnicity_fig = px.bar()
     subgroup_fig = px.bar()
@@ -212,186 +208,6 @@ def update_about_page(year: str, school: str):
             )
         ]
 
-        bar_colors = ["#74a2d7", "#df8f2d"]
-# TODO: ADD SPED/ELL SCHOOL AND CORP FILES FOR ALL YEARS 
-        def make_horizontal_bar_chart(df: pd.DataFrame):
-           
-            raw_data = df.copy()
-
-            total_enrollment = raw_data["Total Enrollment"].tolist()
-            total_enrollment = [int(i) for i in total_enrollment]
-            raw_data.drop("Total Enrollment", axis=1, inplace=True)
-
-            cols = [i for i in raw_data.columns if i not in ["Corporation Name"]]
-            
-            for col in cols:
-                raw_data[col] = pd.to_numeric(raw_data[col], errors="coerce")
-
-            data = raw_data.set_index("Corporation Name").T
-
-            # Calculate Percentage
-            for i in range(0, 2):
-                data.iloc[:, i] = (data.iloc[:, i] / total_enrollment[i])
-
-
-            # TODO: What is going on here? Not dropping 0 values - this logic
-            # TODO: doesn't even make sense. Why are we testing whether the
-            # TODO: school corp has data?? WORKING NOW??
-            missing_categories = data[
-                (
-                    (data.iloc[:, 0] < 0.005)
-                    | (pd.isnull(data.iloc[:, 0]))
-                    # & (data.iloc[:, 1] < 0.005)
-                    # | (pd.isnull(data.iloc[:, 1]))
-                )
-            ]
-
-            # anno_txt = ", ".join(missing_categories.index.values.astype(str))
-
-            print("data befor edrop")
-            print(data)
-
-            # Drop rows that meet the above condition
-            data = data.drop(
-                data[
-                    (
-                        (data.iloc[:, 0] < 0.005)
-                        | (pd.isnull(data.iloc[:, 0]))
-                        # & (data.iloc[:, 1] < 0.005)
-                        # | (pd.isnull(data.iloc[:, 1]))
-                    )
-                ].index
-            )
-
-            data = data.fillna(0)
-
-            # force categories to wrap if longer than 16 characters and
-            # remove extra spaces
-            categories_wrap = data.index.map(customwrap)
-            categories = [sub.replace("  <br>", "<br>") for sub in categories_wrap]
-
-            print("display data")
-            print(data)
-
-            print("missing_categories")
-            print(missing_categories)
-            elements = data.columns.tolist()
-
-            trace_color = {elements[i]: bar_colors[i] for i in range(len(elements))}
-
-            fig = px.bar(
-                data,
-                x=[c for c in data.columns],
-                y=categories,
-                text_auto=True,
-                color_discrete_map=trace_color,
-                opacity=0.9,
-                orientation="h",
-                barmode="group",
-            )
-
-            fig.update_xaxes(
-                ticks="outside",
-                tickcolor="#a9a9a9",
-                range=[0, 1],
-                dtick=0.2,
-                tickformat=",.0%",
-                title="",
-            )
-
-            fig.update_yaxes(
-                ticks="outside",
-                tickcolor="#a9a9a9",
-                title="",
-                tickfont = dict(size=11)
-            )
-
-            # add text traces
-            # fig.update_traces(hovertemplate=None, hoverinfo="skip")                
-            fig.update_traces(
-                textposition="outside",
-                hovertemplate=None,
-                hoverinfo="skip"
-            )
-
-            # Uncomment to add hover
-            # fig["data"][0]["hovertemplate"] = fig["data"][0]["name"] + ": %{x}<extra></extra>"
-            # fig["data"][1]["hovertemplate"] = fig["data"][1]["name"] + ": %{x}<extra></extra>"
-
-            # NOTE: In order to distinguish between null (no data) and "0" values,  loop through
-            # the data and only color text traces when the value of x (t.x) is not NaN
-            fig.for_each_trace(
-                lambda t: t.update(
-                    textfont_color=np.where(~np.isnan(t.x), t.marker.color, "white"),
-                    textfont_size=11,
-                )
-            )
-
-            # ethnicity_fig.for_each_trace(
-            #     lambda t: t.update(textfont_color=t.marker.color, textfont_size=11)
-            # )
-
-
-            fig.update_layout(
-                margin=dict(l=10, r=40, t=60, b=70, pad=0),
-                font=dict(
-                    family="Inter, sans-serif",
-                    color="#6783a9",
-                    size=11
-                ),
-                legend=dict(
-                    yanchor="top",
-                    xanchor="center",
-                    orientation="h",
-                    x=0.4,
-                    y=1.2
-                ),
-                bargap=0.15,
-                bargroupgap=0,
-                height=400,
-                legend_title="",
-                paper_bgcolor="rgba(0,0,0,0)",
-                plot_bgcolor="rgba(0,0,0,0)",
-            )
-
-            if not missing_categories.empty:
-                anno_txt = ", ".join(missing_categories.index.values.astype(str))
-
-                # fig.add_annotation(
-                #     text=(f"Data not available: " + anno_txt + "."),
-                #     showarrow=False,
-                #     x=-0.1,
-                #     y=-0.25,
-                #     xref="paper",
-                #     yref="paper",
-                #     xanchor="left",
-                #     yanchor="bottom",
-                #     xshift=-1,
-                #     yshift=-5,
-                #     font=dict(size=10, color="#6783a9"),
-                #     align="left",
-                # )
-
-                fig.add_annotation(
-                    text=(
-                        f"Less than .05% of student population: " + anno_txt + "."
-                    ),
-                    showarrow=False,
-                    x=-0.1,
-                    y=-0.25,
-                    xref="paper",
-                    yref="paper",
-                    xanchor="left",
-                    yanchor="bottom",
-                    xshift=-1,
-                    yshift=-5,
-                    font=dict(size=10, color="#6783a9"),
-                    align="left",
-                )
-
-
-            return fig    
-        
         # Enrollment by ethnicity fig
         ethnicity_school = demographic_data.loc[
             :,
@@ -415,7 +231,7 @@ def update_about_page(year: str, school: str):
                     "Native Hawaiian or Other Pacific Islander": "Pacific Islander"
                 }
             )
-            
+
             ethnicity_corp = ethnicity_corp.rename(
                 columns={
                     "Native Hawaiian or Other Pacific Islander": "Pacific Islander"
@@ -424,120 +240,7 @@ def update_about_page(year: str, school: str):
 
             ethnicity_data = pd.concat([ethnicity_school, ethnicity_corp])
 
-            ethnicity_fig = make_horizontal_bar_chart(ethnicity_data)
-
-            # # Only need to calculate total enrollment once
-            # total_enrollment = ethnicity_data["Total Enrollment"].tolist()
-            # total_enrollment = [int(i) for i in total_enrollment]
-            # ethnicity_data.drop("Total Enrollment", axis=1, inplace=True)
-
-            # cols = [i for i in ethnicity_data.columns if i not in ["Corporation Name"]]
-
-            # for col in cols:
-            #     ethnicity_data[col] = pd.to_numeric(
-            #         ethnicity_data[col], errors="coerce"
-            #     )
-
-            # ethnicity_data_t = ethnicity_data.set_index("Corporation Name").T
-
-            # # Calculate Percentage
-            # for i in range(0, 2):
-            #     ethnicity_data_t.iloc[:, i] = (
-            #         ethnicity_data_t.iloc[:, i] / total_enrollment[i]
-            #     )
-
-            # # Find rows where percentage is < .005 (1% after rounding) -
-            # # and create string for annotation purposes
-            # no_show = ethnicity_data_t[
-            #     (
-            #         (ethnicity_data_t.iloc[:, 0] < 0.005)
-            #         | (pd.isnull(ethnicity_data_t.iloc[:, 0]))
-            #         & (ethnicity_data_t.iloc[:, 1] < 0.005)
-            #         | (pd.isnull(ethnicity_data_t.iloc[:, 1]))
-            #     )
-            # ]
-            # ethnicity_anno_txt = ", ".join(no_show.index.values.astype(str))
-
-            # # Drop rows that meet the above condition
-            # ethnicity_data_t = ethnicity_data_t.drop(
-            #     ethnicity_data_t[
-            #         (
-            #             (ethnicity_data_t.iloc[:, 0] < 0.005)
-            #             | (pd.isnull(ethnicity_data_t.iloc[:, 0]))
-            #             & (ethnicity_data_t.iloc[:, 1] < 0.005)
-            #             | (pd.isnull(ethnicity_data_t.iloc[:, 1]))
-            #         )
-            #     ].index
-            # )
-
-            # ethnicity_data_t = ethnicity_data_t.fillna(0)
-
-            # categories = ethnicity_data_t.index.tolist()
-            # elements = ethnicity_data_t.columns.tolist()
-
-            # trace_color = {elements[i]: bar_colors[i] for i in range(len(elements))}
-
-            # ethnicity_fig = px.bar(
-            #     data_frame=ethnicity_data_t,
-            #     x=[c for c in ethnicity_data_t.columns],
-            #     y=categories,
-            #     text_auto=True,
-            #     color_discrete_map=trace_color,
-            #     opacity=0.9,
-            #     orientation="h",
-            #     barmode="group",
-            # )
-            # ethnicity_fig.update_xaxes(
-            #     ticks="outside",
-            #     tickcolor="#a9a9a9",
-            #     range=[0, 1],
-            #     dtick=0.2,
-            #     tickformat=",.0%",
-            #     title="",
-            # )
-            # ethnicity_fig.update_yaxes(ticks="outside", tickcolor="#a9a9a9", title="",
-            #     tickfont = dict(size=11))
-
-            # ethnicity_fig.update_traces(textposition="outside")
-            # ethnicity_fig.for_each_trace(
-            #     lambda t: t.update(textfont_color=t.marker.color, textfont_size=11)
-            # )
-            # ethnicity_fig.update_traces(hovertemplate=None, hoverinfo="skip")
-
-            # # Uncomment to add hover
-            # # ethnicity_fig["data"][0]["hovertemplate"] = ethnicity_fig["data"][0]["name"] + ": %{x}<extra></extra>"
-            # # ethnicity_fig["data"][1]["hovertemplate"] = ethnicity_fig["data"][1]["name"] + ": %{x}<extra></extra>"
-
-            # ethnicity_fig.update_layout(
-            #     margin=dict(l=10, r=40, t=60, b=70, pad=0),
-            #     font=dict(family="Inter, sans-serif", color="#6783a9", size=11),
-            #     legend=dict(
-            #         yanchor="top", xanchor="center", orientation="h", x=0.4, y=1.2
-            #     ),
-            #     bargap=0.15,
-            #     bargroupgap=0,
-            #     height=400,
-            #     legend_title="",
-            #     paper_bgcolor="rgba(0,0,0,0)",
-            #     plot_bgcolor="rgba(0,0,0,0)",
-            # )
-
-            # ethnicity_fig.add_annotation(
-            #     text=(
-            #         f"Less than .05% of student population: " + ethnicity_anno_txt + "."
-            #     ),
-            #     showarrow=False,
-            #     x=-0.1,
-            #     y=-0.25,
-            #     xref="paper",
-            #     yref="paper",
-            #     xanchor="left",
-            #     yanchor="bottom",
-            #     xshift=-1,
-            #     yshift=-5,
-            #     font=dict(size=10, color="#6783a9"),
-            #     align="left",
-            # )
+            ethnicity_fig = make_demographics_bar_chart(ethnicity_data)
 
         # Enrollment by subgroup fig
         subgroup_school = demographic_data.loc[
@@ -559,110 +262,7 @@ def update_about_page(year: str, school: str):
 
             subgroup_merged_data = pd.concat([subgroup_school, subgroup_corp])
 
-            subgroup_fig = make_horizontal_bar_chart(subgroup_merged_data)
-            # subgroup_total_enrollment = subgroup_merged_data["Total Enrollment"].tolist()
-            # subgroup_total_enrollment = [int(i) for i in subgroup_total_enrollment]
-            # subgroup_merged_data.drop("Total Enrollment", axis=1, inplace=True)
-
-            # cols = [i for i in subgroup_merged_data.columns if i not in ["Corporation Name"]]
-            # for col in cols:
-            #     subgroup_merged_data[col] = pd.to_numeric(subgroup_merged_data[col], errors="coerce")
-
-            # # store categories with no data (NaN)
-            # subgroup_no_data = subgroup_merged_data[
-            #     subgroup_merged_data.columns[subgroup_merged_data.isna().any()]
-            # ].columns.tolist()
-
-            # subgroup_fig_data = subgroup_merged_data.set_index("Corporation Name").T
-
-            # # Calculate Percentage
-            # for i in range(0, 2):
-            #     subgroup_fig_data.iloc[:, i] = (
-            #         subgroup_fig_data.iloc[:, i] / subgroup_total_enrollment[i]
-            #     )
-
-
-            # # force categories to wrap
-            # categories_wrap = [
-            #     "English<br>Language<br>Learners",
-            #     "Special<br>Education",
-            #     "Free or Reduced<br>Price Meals",
-            #     "Paid Meals",
-            # ]
-
-            # elements = subgroup_fig_data.columns.tolist()
-
-            # trace_color = {elements[i]: bar_colors[i] for i in range(len(elements))}
-
-            # subgroup_fig = px.bar(
-            #     data_frame=subgroup_fig_data,
-            #     x=[c for c in subgroup_fig_data.columns],
-            #     y=categories_wrap,
-            #     text_auto=True,
-            #     color_discrete_map=trace_color,
-            #     opacity=0.9,
-            #     orientation="h",
-            #     barmode="group",
-            # )
-            # subgroup_fig.update_xaxes(
-            #     ticks="outside",
-            #     tickcolor="#a9a9a9",
-            #     range=[0, 1],
-            #     dtick=0.2,
-            #     tickformat=",.0%",
-            #     title="",
-            # )
-            # subgroup_fig.update_yaxes(ticks="outside", tickcolor="#a9a9a9", title="")
-
-            # # add text traces
-            # subgroup_fig.update_traces(textposition="outside")
-
-            # # NOTE: In order to distinguish between null (no data) and "0" values,  loop through
-            # # the data and only color text traces when the value of x (t.x) is not NaN
-            # subgroup_fig.for_each_trace(
-            #     lambda t: t.update(
-            #         textfont_color=np.where(~np.isnan(t.x), t.marker.color, "white"),
-            #         textfont_size=11,
-            #     )
-            # )
-
-            # subgroup_fig.update_traces(hovertemplate=None, hoverinfo="skip")
-
-            # # Uncomment to add hover
-            # # subgroup_fig["data"][0]["hovertemplate"] = subgroup_fig["data"][0]["name"] + ": %{x}<extra></extra>"
-            # # subgroup_fig["data"][1]["hovertemplate"] = subgroup_fig["data"][1]["name"] + ": %{x}<extra></extra>"
-
-            # subgroup_fig.update_layout(
-            #     margin=dict(l=10, r=40, t=60, b=70, pad=0),
-            #     font=dict(family="Inter, sans-serif", color="#6783a9", size=11),
-            #     legend=dict(
-            #         yanchor="top", xanchor="center", orientation="h", x=0.4, y=1.2
-            #     ),
-            #     bargap=0.15,
-            #     bargroupgap=0,
-            #     height=400,
-            #     legend_title="",
-            #     paper_bgcolor="rgba(0,0,0,0)",
-            #     plot_bgcolor="rgba(0,0,0,0)",
-            # )
-
-            # if subgroup_no_data:
-            #     subgroup_anno_txt = ", ".join(subgroup_no_data)
-
-            #     subgroup_fig.add_annotation(
-            #         text=(f"Data not available: " + subgroup_anno_txt + "."),
-            #         showarrow=False,
-            #         x=-0.1,
-            #         y=-0.25,
-            #         xref="paper",
-            #         yref="paper",
-            #         xanchor="left",
-            #         yanchor="bottom",
-            #         xshift=-1,
-            #         yshift=-5,
-            #         font=dict(size=10, color="#6783a9"),
-            #         align="left",
-            #     )
+            subgroup_fig = make_demographics_bar_chart(subgroup_merged_data)
 
     # ADM Data
     # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is
@@ -808,9 +408,9 @@ def update_about_page(year: str, school: str):
     )
 
     attendance_fig = make_line_chart(attendance_fig_data)
- 
+
     attendance_layout = create_line_fig_layout(attendance_table, attendance_fig,"Attendance and Chronic Absenteeism")
-    
+
     return (
         update_table,
         enroll_title,
@@ -853,7 +453,7 @@ def layout():
                                             ),
                                             html.Div(id="enroll-table"),
                                         ],
-                                        className="pretty-container--left six columns",
+                                        className="pretty-container six columns",
                                     ),
                                     html.Div(
                                         [
@@ -877,7 +477,7 @@ def layout():
                                     html.Div(
                                         id="attendance-layout",
                                         children=[],
-                                    ),  
+                                    ),
                                 ],
                             ),
                             html.Div(
