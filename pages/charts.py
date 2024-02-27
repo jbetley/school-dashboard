@@ -171,9 +171,7 @@ def no_data_fig_label(
 
     return fig_layout
 
-bar_colors = ["#74a2d7", "#df8f2d"]
 
-# TODO: Add the inside bar tick maximum size thingie
 def make_demographics_bar_chart(df: pd.DataFrame) -> list:
     """
     Creates a horizontal bar chart showing demographic data for school and the school
@@ -187,6 +185,8 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
     """
 
     raw_data = df.copy()
+
+    bar_colors = ["#74a2d7", "#df8f2d"]
 
     total_enrollment = raw_data["Total Enrollment"].tolist()
     total_enrollment = [int(i) for i in total_enrollment]
@@ -242,42 +242,6 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
         barmode="group",
     )
 
-    fig.update_xaxes(
-        ticks="outside",
-        tickcolor="#a9a9a9",
-        range=[0, 1],
-        dtick=0.2,
-        tickformat=",.0%",
-        title="",
-    )
-
-    fig.update_yaxes(
-        ticks="outside",
-        tickcolor="#a9a9a9",
-        title="",
-        tickfont = dict(size=11)
-    )
-
-    # add text traces
-    fig.update_traces(
-        textposition="outside",
-        hovertemplate=None,
-        hoverinfo="skip"
-    )
-
-    # Uncomment to add hover
-    # fig["data"][0]["hovertemplate"] = fig["data"][0]["name"] + ": %{x}<extra></extra>"
-    # fig["data"][1]["hovertemplate"] = fig["data"][1]["name"] + ": %{x}<extra></extra>"
-
-    # NOTE: In order to distinguish between null (no data) and "0" values,  loop through
-    # the data and only color text traces when the value of x (t.x) is not NaN
-    fig.for_each_trace(
-        lambda t: t.update(
-            textfont_color=np.where(~np.isnan(t.x), t.marker.color, "white"),
-            textfont_size=11,
-        )
-    )
-
     fig.update_layout(
         margin=dict(l=10, r=40, t=60, b=70, pad=0),
         font=dict(
@@ -298,7 +262,48 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
         legend_title="",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
+        uniformtext_minsize=9,
+        uniformtext_mode="hide"
     )
+
+    # add text traces
+    fig.update_traces(
+        hovertemplate=None,
+        hoverinfo="skip",
+        insidetextanchor="end",
+    )
+
+    # Need to loop through the data by trace in order to: 1) distinguish between
+    # null (no data) and "0" values (only color text traces when the value of x (t.x)
+    # is not NaN; and 2) place the text outside the bar unless the value of x is > .9
+    
+    fig.for_each_trace(
+        lambda t: t.update(
+            textfont_color=np.where(np.isnan(t.x), "#ffffff", np.where((t.x > .9), "#ffffff", t.marker.color)),
+            textposition=np.where(t.x > .9, "inside", "outside"),
+            textfont_size=10
+        )
+    )
+
+    fig.update_xaxes(
+        ticks="outside",
+        tickcolor="#a9a9a9",
+        range=[0, 1],
+        dtick=0.2,
+        tickformat=",.0%",
+        title="",
+    )
+
+    fig.update_yaxes(
+        ticks="outside",
+        tickcolor="#a9a9a9",
+        title="",
+        tickfont = dict(size=11)
+    )
+
+    # Uncomment to add hover
+    # fig["data"][0]["hovertemplate"] = fig["data"][0]["name"] + ": %{x}<extra></extra>"
+    # fig["data"][1]["hovertemplate"] = fig["data"][1]["name"] + ": %{x}<extra></extra>"
 
     if not missing_categories.empty:
         anno_txt = ", ".join(missing_categories.index.values.astype(str))
@@ -485,7 +490,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
     return fig_layout
 
 
-# TODO: Merge this and use make_single_line_chart
+# TODO: add this logic to make_single_line_chart and drop function
 
 def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]:
     """
@@ -578,9 +583,6 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
                     zeroline=False,
                 ),
                 showlegend=False,
-                # legend=dict(
-                #     orientation="v", yanchor="bottom", y=0.5, xanchor="right", x=-0.05
-                # ),
                 hovermode="x",
                 height=400,
                 legend_title="",
@@ -783,6 +785,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
     if (len(cols)) > 0:
+
         # NOTE: the "insufficient n-size" and "no data" information is usually displayed
         # below the fig in the layout. However, given the size of the figs, it makes them
         # way too cluttered. So it is currently removed. Would prefer to somehow add this
@@ -877,7 +880,8 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 tick_format = ",.0%"
                 d_tick = 0.2
 
-            # use this template if using x-unified
+            # use this template and change the hovermode to "x unified" if want to use
+            # x-unified hovermode
             # fig.update_traces(hovertemplate= 'Year=%{x}<br>value=%{y}<br>%{customdata}<extra></extra>''')
 
             fig.update_traces(hovertemplate=None)  # type: ignore
@@ -910,7 +914,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 legend=dict(
                     orientation="h", yanchor="bottom", y=y_value, xanchor="left", x=0.01
                 ),
-                hovermode="x",  # unified',
+                hovermode="x",  # "x unified"
                 height=400,
                 legend_title="",
             )
@@ -1025,7 +1029,7 @@ def make_growth_chart(
                 x=data_me.index,
                 y=data_me[col],
                 name=col,
-                meta=[col],  # wtf is this?? [https://community.plotly.com/t/hovertemplate-does-not-show-name-property/36139]
+                meta=[col],
                 mode="markers+lines",
                 marker=dict(color=color[i], symbol="square"),
                 line={"dash": "solid"},
@@ -1038,14 +1042,17 @@ def make_growth_chart(
                 # NOTE: the legendgroup variable separates each dataframe into a separate
                 # legend group, which is great because it allows you to turn on and off each
                 # group. However, it looks bad because it does not currently allow you to display
-                # the legends horizontally. It is a matter of preference
+                # the legends horizontally. It is a matter of preference. Uncomment to use
+                # legendgroup.
                 # legendgroup = '1',
                 # legendgrouptitle_text="Majority Enrolled"
             ),
             secondary_y=False,
         )
 
-        # NOTE: Uncomment to add scatter traces for 162-Day data (it gets cluttered fast)
+        # NOTE: right now only displaying ME data with 162-day data in the hover, because
+        # having both sets of traces looks too cluttered. uncomment this and the annotation
+        # below to add scatter traces and a legend for 162-Day data
         # fig.add_trace(
         #     go.Scatter(
         #         x=data_162.index,
@@ -1074,11 +1081,6 @@ def make_growth_chart(
         xaxis=dict(
             title="",
             type="date",
-            # autorange=False,
-            # range=[0, len(xaxis_data['Year'])-1],
-            # tick0=0,
-            # dtick=1,
-            # tickvals=xaxis_data['Year'],
             tickvals=data_me.index,
             tickformat="%Y",
             mirror=True,  #
@@ -1117,7 +1119,8 @@ def make_growth_chart(
         )
     )
 
-    # NOTE: annotation is used as a master legend to identify 162-day vs 162-ME scatter lines
+    # NOTE: this creates an annotation used to identify the difference
+    # between 162-day vs 162-ME scatter lines
     # diamond - &#9670;	&#x25C6;
     # square - &#9632;	&#x25A0;
     # fig.add_annotation(
@@ -1163,12 +1166,7 @@ def make_bar_chart(
 
     data = values.copy()
 
-    # NOTE: Unless the entire page is blank, e.g., no data at all, the
-    # dataframe for this chart should never be blank due to error
-    # handling in the calling script. However, we know that 'should never'
-    # is code for 'almost with certainty' so we test here too.
-
-    # the dataframe should always have at least 4 columns ('School Name',
+    # dataframe should always have at least 4 columns ('School Name',
     # 'Low Grade', 'High Grade' & one data column)
     if (len(data.columns)) > 3:
         schools = data["School Name"].tolist()
@@ -1180,9 +1178,10 @@ def make_bar_chart(
         # use specific color for selected school
         for key, value in trace_color.items():
             if key == school_name:
-                trace_color[key] = "#7b6888"  # "#0a66c2"
+                trace_color[key] = "#7b6888"
 
-        # Uncomment this and below to display distance from selected school
+        # Uncomment this and the other 'customdata' lines below to display
+        # the distance of each comparable school from the selected school
         # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
 
         fig = px.bar(
@@ -1191,7 +1190,7 @@ def make_bar_chart(
             y=category,
             color_discrete_map=trace_color,
             color="School Name",
-            # custom_data=["Low Grade", "High Grade"],  # ,'Distance']
+            # custom_data=["Low Grade", "High Grade","Distance"]
             text_auto=True,
         )
 
@@ -1216,7 +1215,6 @@ def make_bar_chart(
             title_x=0.5,
             margin=dict(l=40, r=40, t=40, b=60),
             font=dict(family="Inter, sans-serif", color="steelblue", size=11),
-            # legend=dict(orientation="h", title="", xanchor="center", x=0.45),
             showlegend=False,
             height=350,
             paper_bgcolor="rgba(0,0,0,0)",
@@ -1226,8 +1224,8 @@ def make_bar_chart(
                 font_color="steelblue",
                 font_size=11,
                 font_family="Inter, sans-serif",
-                align="left",
-            ),
+                align="left"
+            )
         )
 
         fig.update_traces(
@@ -1282,7 +1280,6 @@ def make_group_bar_chart(
     # remove trailing string
     # "School Total" is for SAT and includes all three subjects - so we dont want to split
     if data.columns.str.contains("Total").any() == True:
-        # keep everything between | and "Benchmark %"
         data.columns = data.columns.str.replace("Benchmark %", "")
         data.columns = data.columns.str.replace("Total\|", "", regex=True)
 
@@ -1371,7 +1368,8 @@ def make_group_bar_chart(
             font_family="Inter, sans-serif",
             align="left",
         ),
-        # hoverlabel_align = 'left'
+        uniformtext_minsize=9,
+        uniformtext_mode="hide"
     )
 
     fig.update_traces(
@@ -1383,52 +1381,19 @@ def make_group_bar_chart(
                     "<b>Proficiency: </b>%{y}<br><extra></extra>",
                 ]
             ]
-        )
+        ),
+        insidetextanchor="end"
     )
 
-    # NOTE: Some dict manipulation to address two issues: 1) display values between 0 and 4% as text
-    # outside of the trace, and all other values inside; and 2) display a 'marker' for '0' values.
-    # Both have relatively simple solutions for single bar charts- neither of which work for
-    # grouped bar charts, because both solutions end up applying 'per group' of bars rather than
-    # to the individual bars in the group. See, e.g.:
-    # https://stackoverflow.com/questions/70658955/how-do-i-display-bar-plot-for-values-that-are-zero-in-plotly
-    # https://stackoverflow.com/questions/73905861/fully-display-the-amount-in-horizontal-bar-chart
-
-    #  This uses a loop (ick) to directly manipulate each fig data object.
-
-    for i in range(0, len(data_set["School Name"].unique())):
-        marker_array = []
-        position_array = []
-
-        for j in range(0, len(fig["data"][i]["y"])):
-            # # track location of school in index (to add border)
-            # if fig['data'][i]['name'] == school_name:
-            #     loc = i
-
-            if fig["data"][i]["y"][j] < 0.05:
-                position_array.append("outside")
-            else:
-                position_array.append("inside")
-
-            if fig["data"][i]["y"][j] == 0:
-                marker_array.append("#999999")
-            else:
-                marker_array.append(fig["data"][i]["marker"]["color"])
-
-        fig["data"][i]["marker"]["line"]["color"] = marker_array
-        fig["data"][i]["marker"]["line"]["width"] = 2
-
-        fig["data"][i]["textposition"] = position_array
-
-    # NOTE: Uncomment to add border around selected school
-    # having hard time making this look decent.
-    # fig['data'][loc]['marker']['line']['color'] = 'grey'
-
-    # NOTE: From testing, it appears that the legend marker uses the first item in the
-    # marker_line_color array ([0]) as the border for the legend marker. So if the
-    # marker_line_color is set to grey for a specific trace (e.g., the value of the trace
-    # is '0'), that color is used for the legend marker. We do not want a grey border
-    # around a legend marker. We fix this in stylesheet.css (See: .legendundefined))
+    # switch text position and color based on size of bar (under 5%).
+    # color "0" values black
+    fig.for_each_trace(
+        lambda t: t.update(
+            textposition=np.where(t.y <= .05, "outside", "inside"),
+            textfont_color=np.where(t.y == 0, "#999999", np.where(t.y <= .05, "#6783a9", "#ffffff")),
+            textfont_size=10
+        )
+    )
 
     fig_layout = [
         html.Div(
