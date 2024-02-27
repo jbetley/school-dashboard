@@ -79,10 +79,9 @@ def update_about_page(year: str, school: str):
 
     # see full color list in charts.py
     linecolor = ["#df8f2d"]
-    # bar_colors = ["#74a2d7", "#df8f2d"]
 
-    # NOTE: Need to use both school and corp files because some Corp IDs
-    # are shared by schools:
+    # Using both school and corp demographic data files because some charter schools
+    # share Corp IDs:
     #   Christel House Watanabe Manual High School (school id: 9709) and
     #   Christel House Academy South (school id: 5874) share corp_id: 9380
 

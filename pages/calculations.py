@@ -5,7 +5,7 @@
 # version:  1.15
 # date:     02/21/24
 
-# NOTE: having mypy typing issues with numpy. Not sure how to resolve.
+# NOTE: having mypy typing issues with numpy.
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
@@ -36,9 +36,10 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
         if "Diff" in i or "Tested" in i or "N-Size" in i or "(N)" in i
     ]
 
+    # \u2014 is an em dash (—)
     data[fill_with_dash] = data[fill_with_dash].fillna(
         value="\u2014"
-    )  # \u2014 is an em dash (—)
+    )  
 
     fill_with_no_data = [
         i
@@ -130,7 +131,7 @@ def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
     for cohort in cohorts:
         if cohort in data.columns:
             cat_sub = cohort.split("|Cohort Count")[0]
-            data[cat_sub + " Graduation Rate"] = calculate_percentage(
+            data[cat_sub + "|Graduation Rate"] = calculate_percentage(            
                 data[cat_sub + "|Graduates"], data[cohort]
             )
 
@@ -154,6 +155,7 @@ def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
 
     for test in tested:
         if test in data.columns:
+
             # get Category + Subject string
             cat_sub = test.split(" Total Tested")[0]
             data[cat_sub + " Benchmark %"] = calculate_percentage(
@@ -163,7 +165,6 @@ def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-# NOTE: This is somewhat slow. Refactor at some point.
 def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
     """
     Wrapper around calculate_percentage() used to calculate ILEARN Proficiency from academic
@@ -224,8 +225,8 @@ def recalculate_total_proficiency(
     """
     In order for an apples to apples comparison between aggregated school corporation academic
     data and the academic data of the selected school, we need to recalculate Total School
-    Proficiency for both Math and ELA using only the grade levels for which we have school
-    data.
+    Proficiency for the school corporation in which the school is located for both Math and ELA
+    using only the grade levels for which we have school data.
 
     Args:
         corp_data (pd.DataFrame):   aggregated academic data for the school corporation in which
@@ -236,23 +237,21 @@ def recalculate_total_proficiency(
         pd.DataFrame: the corp_data dataframe after Total Proficiency is recalculated
     """
 
-    # calculations are made on copy of df
     revised_data = data.copy()
     revised_totals = pd.DataFrame()
 
     revised_totals["School ID"] = revised_data["School ID"]
-
-    # TODO: revise process_k8_corp_academic_data to use corp processing code on analysis_single_page
-    # TODO: We then can eliminate the need to submit school_data to the function. See process_data.py
 
     numeric_columns = [
         c
         for c in revised_data.columns
         if c not in ["School Name", "School ID", "Low Grade", "High Grade"]
     ]
+
     for col in numeric_columns:
         revised_data[col] = pd.to_numeric(revised_data[col], errors="coerce")
 
+    # get a list of the school grades offered by the school
     all_cols = school_data.columns.to_list()
     school_grades = [g.split("|")[0] for g in all_cols if g.startswith("Grade")]
     school_grades = list(set(school_grades))
@@ -262,22 +261,23 @@ def recalculate_total_proficiency(
     ela_prof = [e + "|ELA Total Proficient" for e in school_grades]
     ela_test = [e + "|ELA Total Tested" for e in school_grades]
 
-    adj_corp_math_prof = revised_data[revised_data.columns.intersection(math_prof)]
-    adj_corp_math_test = revised_data[revised_data.columns.intersection(math_test)]
+    # filter school corp data by available grades, and recalculate Total
+    # Proficiency for both Math and ELA
     adj_corp_ela_prof = revised_data[revised_data.columns.intersection(ela_prof)]
     adj_corp_ela_test = revised_data[revised_data.columns.intersection(ela_test)]
 
-    # TODO: Test to see if the following conditions are being handled properly:
-    #       None/None - ignore
-    #       "***"/"***" - ignore
-    #       number/*** - treat *** as 0 in proficiency calculations
-    #
-    revised_totals["Total|ELA Proficient %"] = adj_corp_ela_prof.sum(
-        axis=1
-    ) / adj_corp_ela_test.sum(axis=1)
-    revised_totals["Total|Math Proficient %"] = adj_corp_math_prof.sum(
-        axis=1
-    ) / adj_corp_math_test.sum(axis=1)
+    ela_proficiency_sum = adj_corp_ela_prof.sum(axis=1)
+    ela_test_sum = adj_corp_ela_test.sum(axis=1)
+
+    revised_totals["Total|ELA Proficient %"] = ela_proficiency_sum/ela_test_sum
+
+    adj_corp_math_prof = revised_data[revised_data.columns.intersection(math_prof)]
+    adj_corp_math_test = revised_data[revised_data.columns.intersection(math_test)]
+
+    math_proficiency_sum = adj_corp_math_prof.sum(axis=1)
+    math_test_sum = adj_corp_math_test.sum(axis=1)
+
+    revised_totals["Total|Math Proficient %"] = math_proficiency_sum/math_test_sum
 
     return revised_totals
 
@@ -346,8 +346,7 @@ def set_academic_rating(data: str | float | None, threshold: list, flag: int) ->
         str: metric rating
     """
 
-    # NOTE: The order of these operations matters
-    # if data is a string
+    # NOTE: The order of operations matter
     if data == "***" or data == "No Grade" or data == "No Data":
         indicator = "NA"
         return indicator
@@ -452,8 +451,8 @@ def round_percentages(percentages: list) -> list:
     """
     https://github.com/simondo92/round-percentages
     Given an iterable of float percentages that add up to 100 (or decimals that add up
-    to 1), round them to the nearest integer such that the integers
-    also add up to 100. Uses the largest remainder method.
+    to 1), round them to the nearest integer such that the integers also add up to 100.
+    Uses the largest remainder method.
 
     E.g. round_percentages([13.626332, 47.989636, 9.596008, 28.788024])
     -> [14, 48, 9, 29]
@@ -553,6 +552,7 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
     to "***"(insufficient n-size), and turns the results into a single string,
     grouped by year, where duplicates have one or more years in parenthesis.
     E.g., "White (2021, 2022); Hispanic, Multiracial (2019)"
+    
     NOTE: This turned out to be more complicated that I thought. The below solution
     seems overly convoluted, but works. Felt cute, may refactor later.
 
@@ -572,8 +572,8 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
     )
 
     if len(df.index) > 0:
-        # use map, in conjunction with mask, to replace the index values in the dataframes with the Year
-        # and Category values
+        # use map in conjunction with mask to replace the index values in the dataframes
+        # with the Year and Category values
         df["Category"] = df["Category"].mask(
             df["Category"] >= 0,
             df["Category"].map(dict(enumerate(data.columns.tolist()))),
@@ -582,10 +582,8 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
             df["Year"] >= 0, df["Year"].map(dict(enumerate(data["Year"].tolist())))
         )
 
-        # strip everything after "|"
         df["Category"] = df["Category"].str.replace("\|.*$", "", regex=True)
 
-        # sort so earliest year is first
         df = df.sort_values(by=["Year"], ascending=True)
 
         # Shift the Year column one unit down then compare the shifted column with the
@@ -605,14 +603,13 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
         # reverse order of columns
         df = df[df.columns[::-1]]
 
-        # add parentheses around year values
         df["Year"] = "(" + df["Year"].astype(str) + ")"
 
         # Finally combine all rows into a single string.
         int_string = [", ".join(val) for val in df.astype(str).values.tolist()]
         df_string = "; ".join(int_string) + "."
 
-        # clean up extra comma
+        # clean up any extra commas
         df_string = df_string.replace(", (", " (")
 
     else:
@@ -783,8 +780,6 @@ def calculate_comparison_school_list(
     # (essentially just adding School Name)
     comparison_set = pd.merge(combined, schools, on="School ID", how="inner")
     comparison_set = comparison_set.rename(columns={"y": "Distance"})
-
-    # print(comparison_set[["School Name", "Distance"]])
 
     # drop selected school (so it cannot be selected in the dropdown)
     comparison_set = comparison_set.drop(

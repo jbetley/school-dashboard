@@ -93,8 +93,8 @@ def create_hs_analysis_layout(
 
             analysis_table = create_comparison_table(
                 analysis_table_data, analysis_trace_colors, school_id
-            )  # , "")
-            final_analysis_group = create_group_barchart_layout(
+            )
+            final_analysis_group = create_barchart_layout(
                 analysis_chart, analysis_table, category_string, school_string
             )
 
@@ -241,7 +241,7 @@ def set_table_layout(table1: list, table2: list, cols: pd.Series) -> list:
     return table_layout
 
 
-def create_group_barchart_layout(
+def create_barchart_layout(
     fig: list, table: list, category_string: str, school_string: str
 ) -> list:
     """
@@ -256,12 +256,8 @@ def create_group_barchart_layout(
         school_string (str): a string
 
     Returns:
-        list: list layout html.Div object
+        layout: a list of a layout html.Div object
     """
-
-    # the difference between this layout and the barchart layout below
-    # is the addition of the information strings
-    # TODO: Combine the two and just add a check for the strings
 
     # year_over_year charts do not have category or school strings
     if category_string == "" and school_string == "":
@@ -273,7 +269,7 @@ def create_group_barchart_layout(
                         className="pretty-container--close eleven columns",
                     ),
                 ],
-                className="row",
+                className="row bar-chart-print" # "row",
             ),
             html.Div(
                 [
@@ -282,8 +278,8 @@ def create_group_barchart_layout(
                         className="container__close eleven columns",
                     ),
                 ],
-                className="row",
-            ),
+                className="row bar-chart-print" # "row",
+            )
         ]
     else:
         layout = [
@@ -329,60 +325,6 @@ def create_group_barchart_layout(
                 className="row",
             ),
         ]
-
-    return layout
-
-
-def create_barchart_layout(fig: list, table: list) -> list:
-    """
-    Combine a px.bar fig and a dash datatable
-
-    Args:
-        fig (list): a px.bar
-        table (list): a dash DataTable
-
-    Returns:
-        layout (list): a dash html.Div layout with fig and DataTable
-    """
-
-    # a two row layout (like group_barchart layout), uncomment
-    # this to use the side-by-side-layout
-    # layout = [
-    #     html.Div(
-    #         [
-    #             html.Div(
-    #                 [html.Div(fig)],
-    #                 className="pretty-container nine columns",
-    #             ),
-    #             html.Div(
-    #                 [html.Div(table)],
-    #                 className="pretty-container three columns",
-    #             ),
-    #         ],
-    #         className="row bar-chart-print",
-    #     )
-    # ]
-
-    layout = [
-        html.Div(
-            [
-                html.Div(
-                    [html.Div(fig, style={"marginBottom": "-20px"})],
-                    className="pretty-container--close eleven columns",
-                ),
-            ],
-            className="row bar-chart-print",
-        ),
-        html.Div(
-            [
-                html.Div(
-                    [html.Div(table)],
-                    className="container__close eleven columns",
-                ),
-            ],
-            className="row bar-chart-print",
-        ),
-    ]
 
     return layout
 
@@ -451,11 +393,27 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     return layout
 
 
-def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelve"):
+def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelve") -> html.Div:
+    """
+    Creates a layout for a group of radio buttons (used by app.py)
+
+    Args:
+        page (str): a string identifying the page (e.g., "analysis", "academic-information")
+        used as part of the container id name
+        group_category (str): a string identifying the type of button (e.g., subject, category)
+        used as part of the container id name
+        width (str): column width string
+
+    Returns:
+        radio_button_group (html.Div): a dashbootstrap components radioitems object wrapped
+        in nested dash html objects
+    """
+
     group = page + "-" + group_catagory + "-radio"
     container = group + "-container"
 
-    # NOTE: THis is dumb, need to find a better way to distinguish between
+    # NOTE: the default width is twelve, used to a single line of buttons. If a width is
+    # provided, it indicates a group of buttons on the same row as another group.
     if width == "twelve":
         layout = "bare-container--flex--center " + width + " columns"
     else:
@@ -494,8 +452,22 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
     return radio_button_group
 
 
-def create_year_over_year_layout(school_id, data, school_id_list, label, msg):
-    # drop columns where all values are nan
+def create_year_over_year_layout(school_id: str, data: pd.DataFrame, school_id_list: list,
+                                 label: str, msg: str) -> list:
+    """
+    Creates a layout for a year over year chart and table grouping
+
+    Args:
+        school_id (str): four digit number as a string
+        data (pd.DataFrame): a dataframe of academic data for all k8 or hs schools
+        school_id_list (list): a list of comparison schools
+        label (str): layout label
+        msg (str): message when there is no data to display
+
+    Returns:
+        layout: a list of a layout html.Div object
+    """
+
     data = data.dropna(axis=1, how="all")
 
     if not msg:
@@ -536,7 +508,7 @@ def create_year_over_year_layout(school_id, data, school_id_list, label, msg):
         table = create_comparison_table(table_data, fig_trace_colors, school_id)  # , "")
         category_string = ""
         school_string = ""
-        layout = create_group_barchart_layout(
+        layout = create_barchart_layout(
             fig, table, category_string, school_string
         )
 

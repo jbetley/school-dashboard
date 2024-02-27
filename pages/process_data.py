@@ -6,7 +6,6 @@
 # date:     02/21/24
 
 # TODO: Explore serverside disk caching for data loading
-# https://community.plotly.com/t/the-value-of-the-global-variable-does-not-change-when-background-true-is-set-in-the-python-dash-callback/73835
 
 from typing import Tuple
 import pandas as pd
@@ -64,32 +63,6 @@ def process_selected_k8_academic_data(
 
     else:
         calculated_data = calculate_proficiency(data)
-
-# # TODO: TESTING (not sure I remember for what tho)
-#         ## Nsize ##
-#         # create new df with Total Tested and Test N (IREAD) values
-#         data_tested = calculated_data.filter(
-#             regex="Total Tested|Test N|Year", axis=1
-#         ).copy()
-#         data_tested = (
-#             data_tested.set_index("Year")
-#             .T.rename_axis("Category")
-#             .rename_axis(None, axis=1)
-#             .reset_index()
-#         )
-#         data_tested = data_tested.rename(
-#             columns={
-#                 c: str(c) + "N-Size"
-#                 for c in data_tested.columns
-#                 if c not in ["Category"]
-#             }
-#         )
-
-#         # Get rid of None types and replace 0's with NaN for tested values
-#         # ensures eventual correct formatting to "-"
-#         data_tested = data_tested.fillna(value=np.nan)
-#         data_tested = data_tested.replace(0, np.nan)
-# # TODO: TESTING
         
         # Add School Name/School ID back. We can do this because the index hasn't changed in
         # data_proficiency, so it will still match with school_info
@@ -149,9 +122,9 @@ def process_selected_k8_academic_data(
     return final_data
 
 
+# TODO: merge the two k8 processing functions into one
 # NOTE: Returns essentially the same data as above, but in this case,
 # the dataframe is transposed (categories are a column) and includes N-Size
-# NOTE: explore merging this and the above into one function
 def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     """
     Process a dataframe with ILEARN/IREAD data includeing N-Size
@@ -173,9 +146,10 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     )
     data = data[data.columns[~data.columns.str.contains(r"ELA and Math")]]
 
-    # Drop all columns for a Category if the value of "Total Tested" for that Category is "0"
-    # This method works even if data is inconsistent, e.g., where no data could be (and is)
-    # alternately represented by NULL, None, or "0"
+    # Drop all columns for a Category if the value of "Total Tested" for
+    # that Category is "0." This method works even if data is inconsistent,
+    # e.g., where no data could be (and is) alternately represented by NULL,
+    # None, or "0"
     tested_cols = data.filter(regex="Total Tested").columns.tolist()
 
     drop_columns = []
@@ -205,12 +179,14 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         data_tested = data_proficiency.filter(
             regex="Total Tested|Test N|Year", axis=1
         ).copy()
+
         data_tested = (
             data_tested.set_index("Year")
             .T.rename_axis("Category")
             .rename_axis(None, axis=1)
             .reset_index()
         )
+
         data_tested = data_tested.rename(
             columns={
                 c: str(c) + "N-Size"
@@ -230,7 +206,8 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
             axis=1,
         )
 
-        # add School Name column back (school data has School Name column, corp data does not)
+        # add School Name column back (school data has School Name column,
+        # corp data does not)
         if len(school_info.index) > 0:
             data_proficiency = pd.concat(
                 [data_proficiency, school_info], axis=1, join="inner"
@@ -247,9 +224,11 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
             .rename_axis(None, axis=1)
             .reset_index()
         )
+
         data_proficiency = data_proficiency[
             data_proficiency["Category"].str.contains("School Name") == False
         ]
+
         data_proficiency = data_proficiency.reset_index(drop=True)
         data_proficiency = data_proficiency.rename(
             columns={
@@ -270,6 +249,7 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
         data_tested["Substring"] = data_tested["Category"].replace(
             {" Total Tested": "", " Test N": ""}, regex=True
         )
+
         data_tested = data_tested.drop("Category", axis=1)
 
         # this cross-merge and substring match process takes about .3s -
@@ -327,8 +307,6 @@ def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     return final_data
 
 
-# TODO: Revise function to use corp data processing code on
-# TODO: analysis_single page (see calculations.py)
 def process_k8_corp_academic_data(
     corp_data: pd.DataFrame, school_data: pd.DataFrame
 ) -> pd.DataFrame:
@@ -465,19 +443,22 @@ def process_k8_corp_academic_data(
 
 def filter_high_school_academic_data(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Process a dataframe with grad rate/sat data. Used for Academic Information and Metrics only
-    # Drop columns without data. Generally, we want to keep "result" (e.g., "Graduates", "Pass N",
-    # "Benchmark") columns with "0" values if the "tested" (e.g., "Cohort Count", "Total Tested",
-    # "Test N") values are greater than "0". The data is pretty shitty as well, using blank, null,
-    # and "0" interchangeably depending on the type. This makes it difficult to simply use dropna() or
-    # masking with any() because they may erroneously drop a 0 value that we want to keep. So we need to
-    # iterate through each tested category, if it is NaN or 0, we drop it and all associate categories.
+    Process a dataframe with grad rate/sat data. Used for Academic Information and
+    # Metrics only. Drop columns without data. Generally, we want to keep "result"
+    # (e.g., "Graduates", "Pass N", "Benchmark") columns with "0" values if the
+    # "tested" (e.g., "Cohort Count", "Total Tested", "Test N") values are greater
+    # than "0". The data is pretty shitty as well, using blank, null, and "0"
+    # interchangeably depending on the type. This makes it difficult to simply use
+    # dropna() or masking with any() because they may erroneously drop a 0 value
+    # that we want to keep. So we need to iterate through each tested category,
+    # if it is NaN or 0, we drop it and all associate categories.
 
     Args:
         data (pd.DataFrame): grad rate/sat data
 
     Returns:
-        pd.DataFrame: removes categories with no data/calculates grad rate/benchmark proficiency
+        pd.DataFrame: removes categories with no data/calculates grad rate/benchmark
+        proficiency
     """
 
     data = data.replace({"^": "***"})
@@ -539,7 +520,8 @@ def process_high_school_academic_data(
         school_id (str): a four digit school number as a string
 
     Returns:
-        pd.DataFrame: removes categories with no data/calculates grad rate/benchmark proficiency
+        pd.DataFrame: removes categories with no data/calculates grad rate/benchmark
+        proficiency
     """
     school_information = get_school_index(school_id)
 
@@ -560,7 +542,8 @@ def process_high_school_academic_data(
         data = data.reset_index(drop=True)
         data_geo_code = data["Corporation ID"][0]
 
-        # it is "corp" data if "Corporation ID" is equal to the value of the school"s "GEO Corp".
+        # it is "corp" data if "Corporation ID" is equal to the value of the school"s
+        # "GEO Corp".
         if data_geo_code == school_geo_code:
             school_info = data[["Corporation Name"]].copy()
         else:
@@ -694,14 +677,13 @@ def process_high_school_academic_data(
 
             # add new column with substring values and drop old Category column
             data_tested["Substring"] = data_tested["Category"].replace(
-                {" Total Tested": "", "\|Cohort Count": " Graduation"}, regex=True
+                {" Total Tested": "", "\|Cohort Count": "|Graduation"}, regex=True
             )
 
             data_tested = data_tested.drop("Category", axis=1)
 
             # NOTE: the cross-merge and substring match process takes about .3s,
             # is there a faster way?
-
             final_data = data.merge(data_tested, how="cross")
 
             # keep only those rows where substring is in Category
@@ -754,7 +736,7 @@ def process_high_school_academic_data(
     return final_data
 
 
-def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.DataFrame:
+def process_comparable_high_school_academic_data(raw_data: pd.DataFrame) -> pd.DataFrame:
     """
     Perform various operations on a dataframe with graduation rate/SAT data for display
     in charts and tables on the academic analysis pages.
@@ -765,6 +747,7 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
     Returns:
         pd.DataFrame: removes categories with no data and calculates grad rate & benchmark proficiency
     """
+
     # All df at this point should have a minimum of eight cols (Year, Corporation ID,
     # Corporation Name, School ID, School Name, School Type, AHS|Grad, & All AHS|CCR). If
     # a df has eight or fewer cols, it means they have no data. Note this includes an AHS
@@ -788,23 +771,13 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
         ).copy()
 
         # Calculate Grad Rate
-        if "Total|Cohort Count" in data.columns:
-            data = calculate_graduation_rate(data)
 
-        # TODO: Align column name reuqirements - the following line is a TEMP fix
-        # NOTE: Need to align academic info and academic analysis. academic info result does not have a "|"
-        # separator in category name - while academic analysis requires it - so a temporary fix is to add it
-        # back here
-        data.columns = data.columns.str.replace(" Graduation Rate", "|Graduation Rate")
-
-        # Calculate Non Waiver Grad Rate #
         # NOTE: In spring of 2020, SBOE waived the GQE requirement for students in the
         # 2020 cohort who where otherwise on schedule to graduate, so, for the 2020
         # cohort, there were no "waiver" graduates (which means no Non Waiver data).
         # so we replace 0 with NaN (to ensure a NaN result rather than 0)
-        # TODO: Add NonWaiver rate back?
-        # if "Non Waiver|Cohort Count" in data.columns:
-        #   data = calculate_nonwaiver_graduation_rate(data)
+        if "Total|Cohort Count" in data.columns:
+            data = calculate_graduation_rate(data)
 
         # Calculate SAT Rates #
         if "Total|EBRW Total Tested" in data.columns:
@@ -815,8 +788,8 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
             data = calculate_sat_rate(data)
 
         # Calculate AHS Only Data #
-        # NOTE: All other values pulled from HS dataframe required for AHS calculations
-        # should be addressed in this block
+        # NOTE: Any other values that exist in the HS dataframe and that are required
+        # for AHS calculations should be addressed in this block
 
         # CCR Rate
         if school_type == "AHS":
@@ -859,7 +832,6 @@ def process_high_school_academic_analysis_data(raw_data: pd.DataFrame) -> pd.Dat
 
             data = data.reset_index(drop=True)
 
-            # make sure there are no lingering NoneTypes
             data = data.fillna(value=np.nan)
 
     return data
@@ -936,7 +908,7 @@ def merge_high_school_data(
 
     # Clean up and merge school and corporation dataframes
     year_cols = list(all_school_data.columns[:0:-1])
-    year_cols = [c[0:4] for c in year_cols]  # keeps only YYYY part of string]
+    year_cols = [c[0:4] for c in year_cols]  # keeps only YYYY part of string
     year_cols = list(set(year_cols))
     year_cols.sort()
 
@@ -971,12 +943,11 @@ def merge_high_school_data(
     all_school_data = all_school_data.drop("Category", axis=1)
     all_corp_data = all_corp_data.drop("Category", axis=1)
 
-    # make sure there are no lingering NoneTypes to screw up the creation of hs_results
     all_school_data = all_school_data.fillna(value=np.nan)
     all_corp_data = all_corp_data.fillna(value=np.nan)
 
     # calculate difference between two dataframes (for loop
-    # not great - but it is still fast)
+    # not great - but still relatively fast)
     hs_results = pd.DataFrame()
     for y in year_cols:
         hs_results[y] = calculate_difference(

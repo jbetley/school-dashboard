@@ -306,7 +306,6 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
                 # column based on the size on the dataframe
                 table_size = len(financial_metrics.columns)
 
-                # NOTE: Consider turning this table_size into a function
                 if table_size <= 3:
                     col_width = "four"
                     category_width = 70
@@ -576,7 +575,8 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
                 ]
 
         # Financial Metric Definitions - Currently this is always displayed
-        # NOTE: At some point would like to style this better. Markdown? or DMC Table (see Academic Metrics tooltips)
+        # NOTE: At some point would like to style this better. Markdown or dmc Table?
+        # (see Academic Metrics tooltips)
         financial_metrics_definitions_data = [
             [
                 "Current Ratio = Current Assets ÷ Current Liabilities",
@@ -726,7 +726,6 @@ def layout():
                                         labelCheckedClassName="active",
                                         value=[],
                                         persistence=False,
-                                        # persistence_type="memory",
                                     ),
                                 ],
                                 className="radio-group-finance",

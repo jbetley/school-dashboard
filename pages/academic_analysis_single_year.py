@@ -26,7 +26,7 @@ from .load_data import (
     get_selected_k8_school_academic_data,
 )
 from .process_data import (
-    process_high_school_academic_analysis_data,
+    process_comparable_high_school_academic_data,
     process_selected_k8_academic_data,
 )
 from .calculations import (
@@ -38,7 +38,6 @@ from .calculations import (
 from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
 from .tables import create_comparison_table, no_data_page, no_data_table
 from .layouts import (
-    create_group_barchart_layout,
     create_barchart_layout,
     create_hs_analysis_layout,
 )
@@ -161,8 +160,15 @@ def set_dropdown_options(
 
         # count the number of schools shared by the two lists
         overlap = 0
-        for sch in new_comparison_schools_list:
-            overlap += existing_comparison_schools_list.count(sch)
+        
+        if not existing_comparison_schools_list:
+            
+            overlap = 0
+        
+        else:
+
+            for sch in new_comparison_schools_list:
+                overlap += existing_comparison_schools_list.count(sch)
 
         if not existing_comparison_schools_list or existing_comparison_schools_list and (
             # isdisjoint returns True if there are no common items between the sets
@@ -403,7 +409,7 @@ def update_academic_analysis_single_year(
                 )
 
             # calculate values
-            processed_hs_data = process_high_school_academic_analysis_data(
+            processed_hs_data = process_comparable_high_school_academic_data(
                 combined_hs_data
             )
 
@@ -767,7 +773,7 @@ def update_academic_analysis_single_year(
                         "No Data to Display.", "ELA Proficiency", "none"
                     )
 
-                fig14c = create_barchart_layout(fig14c_chart, fig14c_table)
+                fig14c = create_barchart_layout(fig14c_chart, fig14c_table,"","")
 
                 #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
                 category = "Total|Math Proficient %"
@@ -811,7 +817,7 @@ def update_academic_analysis_single_year(
                         "No Data to Display.", "Math Proficiency", "none"
                     )
 
-                fig14d = create_barchart_layout(fig14d_chart, fig14d_table)
+                fig14d = create_barchart_layout(fig14d_chart, fig14d_table,"","")
 
                 #### Current Year IREAD Proficiency Compared to Similar Schools #
                 category = "Total|IREAD Proficient %"
@@ -849,7 +855,7 @@ def update_academic_analysis_single_year(
                         school_id
                     )
 
-                    fig_iread = create_barchart_layout(fig_iread_chart, fig_iread_table)
+                    fig_iread = create_barchart_layout(fig_iread_chart, fig_iread_table, "", "")
 
                 else:
                     # NOTE: Better to display empty chart or no chart?
@@ -888,7 +894,7 @@ def update_academic_analysis_single_year(
                     fig16a1_table = create_comparison_table(
                         fig16a1_table_data, fig16a1_trace_color, school_id)
 
-                    fig16a1 = create_group_barchart_layout(
+                    fig16a1 = create_barchart_layout(
                         fig16a1_chart,
                         fig16a1_table,
                         fig16a1_category_string,
@@ -933,7 +939,7 @@ def update_academic_analysis_single_year(
                     fig16b1_table = create_comparison_table(
                         fig16b1_table_data, fig16b1_trace_color, school_id)
 
-                    fig16b1 = create_group_barchart_layout(
+                    fig16b1 = create_barchart_layout(
                         fig16b1_chart,
                         fig16b1_table,
                         fig16b1_category_string,
@@ -977,7 +983,7 @@ def update_academic_analysis_single_year(
                     fig16c1_table = create_comparison_table(
                         fig16c1_table_data, fig16c1_trace_color, school_id)
 
-                    fig16c1 = create_group_barchart_layout(
+                    fig16c1 = create_barchart_layout(
                         fig16c1_chart,
                         fig16c1_table,
                         fig16c1_category_string,
@@ -1023,7 +1029,7 @@ def update_academic_analysis_single_year(
                     fig16a2_table = create_comparison_table(
                         fig16a2_table_data, fig16a2_trace_color, school_id)
 
-                    fig16a2 = create_group_barchart_layout(
+                    fig16a2 = create_barchart_layout(
                         fig16a2_chart,
                         fig16a2_table,
                         fig16a2_category_string,
@@ -1067,7 +1073,7 @@ def update_academic_analysis_single_year(
                     fig16b2_table = create_comparison_table(
                         fig16b2_table_data, fig16b2_trace_color, school_id)
 
-                    fig16b2 = create_group_barchart_layout(
+                    fig16b2 = create_barchart_layout(
                         fig16b2_chart,
                         fig16b2_table,
                         fig16b2_category_string,
@@ -1110,7 +1116,7 @@ def update_academic_analysis_single_year(
                     fig16c2_table = create_comparison_table(
                         fig16c2_table_data, fig16c2_trace_color, school_id)
 
-                    fig16c2 = create_group_barchart_layout(
+                    fig16c2 = create_barchart_layout(
                         fig16c2_chart,
                         fig16c2_table,
                         fig16c2_category_string,

@@ -294,37 +294,11 @@ def no_data_page(text: str, label: str = "No Data to Display") -> list:
     return table_layout
 
 
-# def hidden_table() -> list:
-#     """
-#     Creates an empty table with no cells. Will be automatically hidden
-#     ("display": "none") by css selector chaining for pretty-container.
-#     Don't remember why I needed this.
-#     See stylesheet.css
-
-#     Args:
-#         None
-
-#     Returns:
-#         table_layout (list): a dash html.Div object enclosing a dash DataTable
-#     """
-#     table_layout = [
-#                 html.Div(
-#                     dash_table.DataTable(
-#                         columns = [
-#                             {"id": "hidden-table", "name": "hidden-table"},
-#                         ],
-#                     ),
-#                 ),
-#             ]
-
-#     return table_layout
-
-
 def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     """
-    Takes a label, a dataframe, and a descriptive (type) string and creates a multi-header
-    table with academic growth and sgp data using Majority Enrolled Students (162-Day Student
-    data in in tooltips).
+    Takes a label, a dataframe, and a descriptive (type) string and creates a
+    multi-header table with academic growth and sgp data using Majority Enrolled
+    Students (162-Day Student data in in tooltips).
 
     Args:
         label (str): Table title
@@ -476,7 +450,11 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
             style_cell=table_cell,
             style_cell_conditional=table_cell_conditional,
             tooltip_data=tooltip_format,
-            css=[{"selector": ".dash-table-tooltip", "rule": "font-size: 12px"}],
+            css=[
+                {
+                    "selector": ".dash-table-tooltip", "rule": "font-size: 12px"
+                }
+            ]
         )
 
         table_layout = [html.Div([html.Div(table)])]
@@ -522,7 +500,7 @@ def create_iread_ilearn_table(school: str, subject: str, excluded_years: list) -
             .reset_index()
         )
 
-        # format
+        # conditionally format columns
         for x in range(1, len(table_data.columns)):
             for i in range(0, len(table_data.index)):
                 if (i == 0) | (i == 2):
@@ -555,8 +533,8 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
-    # NOTE: Currently only used for dashboard_update table on about page and SAT cut
-    # score table on academic_information page.
+    # NOTE: The key_table is currently only used for the dashboard_update table
+    # in about.py page and the SAT cut score table on academic_information.py page.
 
     table_size = len(data.columns)
 
@@ -685,10 +663,10 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
     header table with borders around each cell. If more rows are added, need
     to adjust logic to remove horizontal borders between rows.
 
-    Note: If "IREAD" or "WIDA" is passed as a label, a special layout is produced.
+    Note: Special layout if "IREAD", "WIDA", or "Attendance" is passed as a label.
 
     Args:
-        label (String): Table title
+        label (String): table title
         data (pd.DataTable): dash dataTable
         table_type (String): type of table.
 
@@ -857,6 +835,7 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
                 }
                 for i in data.columns
             ]
+
         table_layout = [
             dash_table.DataTable(
                 data.to_dict("records"),
@@ -1180,6 +1159,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
     table_size = len(data.columns)
 
     if table_size > 1:
+
         # pull out nsize data for tooltips and drop from main df
         nsize_data = data.loc[:, data.columns.str.contains("N-Size")].copy()
         nsize_data = nsize_data.rename(columns={c: c[:4] for c in nsize_data.columns})
@@ -1195,7 +1175,6 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
         all_cols = data.columns.tolist()
 
-        # nsize_width = 2
         category_width = 20
         data_width = 100 - category_width
         school_width = data_width / (table_size - 1)
@@ -1324,8 +1303,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
     table_size = len(data.columns)
 
-    # this is annoying, but some labels are passed as lists so they can include html
-    # elements (html.U() & html.Br()) - so we need to remove these elements and convert
+    # this is annoying, but some labels are passed as lists with included html
+    # elements (html.U() & html.Br()) - we need to remove these elements and convert
     # to a string for empty tables.
     if len(label) == 1:
         string_label = label[0]
@@ -1365,8 +1344,10 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             category_width = 15
 
         data.columns = data.columns.str.replace("N-Size", "(N)", regex=True)
-        # NOTE: Experimenting with "Rate" vs. "Rating" to shrink the rating
-        # column width. Leaving old code commented in the event we want to go back
+
+        # NOTE: Experimenting with using "Rate" vs. "Rating" to shrink the rating
+        # column width. Leaving old code commented out in the event we want to go
+        # back to Rating
         # data.columns = data.columns.str.replace("Rate", "Rating", regex=True)
         data.columns = data.columns.str.replace("Diff", "Difference", regex=True)
 
@@ -1482,12 +1463,12 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # with "Initial Year." The problem is in the variety of dataframes. We can't just check one
         # index to make a determination. I'm sure there is a more elegant way, but right now, we
         # check the 2nd, 3rd, and 4th cols looking for the pattern "%, (N), %", which (trust me),
-        # is 'a' way to tell when we need to add str "Initial Year" to idx 1 & 2.
+        # is a way to tell when we need to add str "Initial Year" to idx 1 & 2.
+                
         # we also want to save the name of the second column header (in format YYYY(N)), so
         # we can apply a right hand border to that column when styling the table
         first_year = None
 
-        # if any("Rating" in s for s in all_cols):
         if any("Rate" in s for s in all_cols):            
             if (
                 name_cols[1][1] == "%"
@@ -1502,7 +1483,6 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
         # and uncomment style_as_list in table declaration
-
         table_header_conditional = (
             [
                 {
@@ -1569,7 +1549,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                         #    "column_id": all_cols[1],
                         "header_index": 1,
                     },
-                    "borderRight": ".5px solid #b2bdd4",
+                    "borderRight": ".5px solid #b2bdd4", # "borderLeft"
                 }
             ]
         )
@@ -1577,7 +1557,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # NOTE: A wee kludge here. Typically, we want a border on the right side of every Rating
         # column to signify the right edge of a year. However, for IREAD, we actually want the
         # border on the right side of the Difference column and not on the Rating column. So we
-        # simply swap rating headers for diff headers if we are dealing with the IREAD data.
+        # simply swap rating headers for diff headers for formatting purposes for IREAD data.
         if "IREAD-3" in label[0]:
             rating_headers = diff_headers
 
@@ -1681,10 +1661,15 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         )
 
         table_columns = [
-            {"name": col, "id": all_cols[idx], "presentation": "markdown"}
+            {
+                "name": col,
+                "id": all_cols[idx],
+                "presentation": "markdown"
+            }
             if "Rate" in col or "(N)" in col
+            # NOTE: Cannot figure out how to have a block here with three
+            # different col formatting conditions
             # if "Rating" in col or "(N)" in col
-            # NOTE: Cannot figure out how to have three different col formatting conditions
             # {
             #     "name": col,
             #     "id": headers[idx],
@@ -1704,13 +1689,14 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         ]
 
         # Create custom tooltip with metric/rating definitions- because the default tooltip is limited,
-        # we use dash-mantine-components: a dmc.Table inside of a dmc.HoverCard
+        # we use two dash-mantine-components: a dmc.Table inside of a dmc.HoverCard
 
         # Metric definitions are stored in a dictionary keyed to the metric number in load_data.py.
         metric_id = re.findall(r"[\d\.]+[a-z]{1}|[\d\.]+", label[0])
 
         def create_tooltip(id: list) -> Tuple[list, list]:
-            # TODO: AHS - split out 1.1, 1.3 (AHS), 1.2.a (AHS) and 1.2.b (AHS)
+            
+            # TODO: AHS - Eventually need to split out 1.1, 1.3 (AHS), 1.2.a (AHS) and 1.2.b (AHS)
             # NOTE: There is a known bug in HoverCard that can cause the browser to hang if the pop
             # up opens in a space where there is no room for it (e.g., if it is set to position "top"
             # and it is triggered by something at the top of the browser window. One workaround is to
@@ -1846,7 +1832,7 @@ def create_comparison_table(
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
-    # replace color with Font Awesome string and create df to merge
+    # replace color with Font Awesome icon and create df to merge
     icon_colors = {
         k: v.replace(
             v,
@@ -1993,6 +1979,17 @@ def create_comparison_table(
 
 
 def create_financial_analysis_table(data: pd.DataFrame, categories: list) -> list:
+    """
+    Takes a dataframe of financial data and creates a simple table showing two
+    years of data for each category and the % difference.
+
+    Args:
+        data (pd.DataFrame): dataframe of financial data
+        categories (list): a list of financial categories
+
+    Returns:
+        table_layout (list): dash DataTable wrapped in a list
+    """
     category_data = data.loc[data["Category"].isin(categories)]
 
     years = [c for c in category_data if "Category" not in c]

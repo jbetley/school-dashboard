@@ -60,8 +60,7 @@ def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     """
     result = val.copy()
 
-    # Use regex beginning(^) and end-of-line ($) regex anchors to ensure exact matches only
-    # NOTE: Using font-awesome circle icon.
+    # NOTE: Using font-awesome circle icon to replace string ratings.
     result = result.replace(
         ["^DNMS$", "Does Not Meet Expectations"],
         "<span style='font-size: 1em; color: #ea5545;'><i class='fa fa-circle center-icon'></i></span>",
@@ -234,7 +233,7 @@ def create_school_label(data: pd.DataFrame) -> pd.Series:
 
     label = data[["School Name", "Low Grade", "High Grade"]].copy()
 
-    # conditionally replace School Name using .loc
+    # Add low/high grades to school name
     label.loc[label["Low Grade"] == 13, "School Name"] = label["School Name"] + " (AHS)"
     label.loc[label["Low Grade"] != 13, "School Name"] = (
         label["School Name"]

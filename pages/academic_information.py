@@ -236,9 +236,10 @@ def update_academic_information_page(
                     
                     k12_grad_table_container = {"display": "block"}
 
+                    # clean up grad rate category
                     graduation_data["Category"] = (
                         graduation_data["Category"]
-                        .str.replace("Graduation Rate", "")
+                        .str.replace("|Graduation Rate", "", regex=False)
                         .str.strip()
                     )
 
