@@ -90,13 +90,13 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     if not school:
         raise PreventUpdate
 
-    main_container = {"display": "block"}
-    empty_container = {"display": "none"}
-    no_data_to_display = no_data_page("No Data to Display.", "Financial Analysis")
-
     selected_year_string = year
     selected_year_numeric = int(selected_year_string)
     previous_year_numeric = selected_year_numeric - 1
+
+    main_container = {"display": "block"}
+    empty_container = {"display": "none"}
+    no_data_to_display = no_data_page("No Data to Display.", selected_year_string + " Financial Analysis")
 
     selected_school = get_school_index(school)
 
@@ -118,10 +118,11 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         else:
             financial_data = {}
 
-        RandE_title = "Revenue and Expenses (" + financial_data["School Name"][0] + ")"
+        RandE_title = selected_year_string + " Revenue and Expenses (" + financial_data["School Name"][0] + ")"
         AandL_title = (
-            "Assets and Liabilities (" + financial_data["School Name"][0] + ")"
+            selected_year_string + " Assets and Liabilities (" + financial_data["School Name"][0] + ")"
         )
+
         FP_title = (
             "2-Year Financial Position (" + financial_data["School Name"][0] + ")"
         )
@@ -137,17 +138,18 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         financial_data = get_financial_data(school)
 
         if selected_school["Network"].values[0] == "None":
-            RandE_title = "Revenue and Expenses"
-            AandL_title = "Assets and Liabilities"
+            RandE_title = selected_year_string + " Revenue and Expenses"
+            AandL_title = selected_year_string + " Assets and Liabilities"
             FP_title = "2-Year Financial Position"
             FA_title = "2-Year Financial Activities"
         else:
             RandE_title = (
-                "Revenue and Expenses (" + financial_data["School Name"][0] + ")"
+                selected_year_string + " Revenue and Expenses (" + financial_data["School Name"][0] + ")"
             )
             AandL_title = (
-                "Assets and Liabilities (" + financial_data["School Name"][0] + ")"
+                selected_year_string + " Assets and Liabilities (" + financial_data["School Name"][0] + ")"
             )
+
             FP_title = (
                 "2-Year Financial Position (" + financial_data["School Name"][0] + ")"
             )

@@ -71,15 +71,15 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
     if not school:
         raise PreventUpdate
 
-    main_container = {"display": "block"}
-    empty_container = {"display": "none"}
-    no_data_to_display = no_data_page(
-        "No Data to Display", "Audited Financial Information"
-    )
-
     selected_year_string = year
     selected_year_numeric = int(selected_year_string)
     selected_school = get_school_index(school)
+
+    main_container = {"display": "block"}
+    empty_container = {"display": "none"}
+    no_data_to_display = no_data_page(
+        "No Data to Display", selected_year_string + " Financial Information"
+    )
 
     if radio_value == "network-finance":
         network_id = selected_school["Network"].values[0]
@@ -92,7 +92,8 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             financial_data = pd.DataFrame()
 
         table_title = (
-            "Audited Financial Information (" + financial_data["School Name"][0] + ")"
+            selected_year_string + " Financial Information ("
+                + financial_data["School Name"][0] + ")"
         )
 
     else:
@@ -106,12 +107,12 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         # don't display the school name in table title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
             if selected_school["Guest"].values[0] == "Y":
-                table_title = "Financial Information (SAMPLE DATA)"
+                table_title = selected_year_string + " Financial Information (SAMPLE DATA)"
             else:
-                table_title = "Audited Financial Information"
+                table_title = selected_year_string + " Financial Information"
         else:
             table_title = (
-                "Audited Financial Information ("
+                selected_year_string + " Financial Information ("
                 + financial_data["School Name"][0]
                 + ")"
             )

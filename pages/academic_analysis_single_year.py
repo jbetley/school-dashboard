@@ -24,6 +24,7 @@ from .load_data import (
     get_high_school_academic_data,
     get_hs_corporation_academic_data,
     get_selected_k8_school_academic_data,
+    get_selected_hs_school_academic_data        
 )
 from .process_data import (
     process_comparable_high_school_academic_data,
@@ -394,6 +395,19 @@ def update_academic_analysis_single_year(
                 comparison_school_list, numeric_year, "HS"
             )
 
+            # get single year academic data
+            list_of_hs_schools = comparison_school_list + [school_id]
+
+# TODO: In order to to do this, we need to revisit all of the HS processing
+# TODO: Functions. So slightly more complicated. Goal is to make HS look
+# TODO: Like K8, get rid of 'get_comparable_schools' and merge get_selected
+# TODO: hs and k8 functions in to one                 
+            selected_hs_tst_data = get_selected_hs_school_academic_data(
+                list_of_hs_schools, year
+            )
+            print('NEW')
+            print(selected_hs_tst_data.columns.to_list())
+
             # concatenate all three dataframes together. don't include
             # school corporation data if the selected school is an AHS,
             # it is not comparable and skews the output
@@ -723,7 +737,7 @@ def update_academic_analysis_single_year(
 
                 combined_selected_data = combined_selected_data.reset_index(drop=True)
 
-                # We want to add the information categories back to each dataframe
+                # add the information categories back to each dataframe
                 added_categories = [
                     "School Name",
                     "School ID",

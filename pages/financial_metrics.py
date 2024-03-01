@@ -75,14 +75,14 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
     if not school:
         raise PreventUpdate
 
-    financial_indicators_container = {"display": "block"}
-    main_container = {"display": "block"}
-    empty_container = {"display": "none"}
-    no_data_to_display = no_data_page("No Data to Display.", "Financial Metrics")
-
     selected_year_string = year
     selected_year_numeric = int(selected_year_string)
     selected_school = get_school_index(school)
+
+    financial_indicators_container = {"display": "block"}
+    main_container = {"display": "block"}
+    empty_container = {"display": "none"}
+    no_data_to_display = no_data_page("No Data to Display.", selected_year_string + " Financial Metrics")
 
     if radio_value == "network-finance":
         network_id = selected_school["Network"].values[0]
@@ -93,7 +93,7 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
             financial_data = {}
 
         table_title = (
-            "Financial Accountability Metrics ("
+            selected_year_string + " Financial Accountability Metrics ("
             + financial_data["School Name"][0]
             + ")"
         )
@@ -108,12 +108,12 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
         # don't display school name in title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
             if selected_school["Guest"].values[0] == "Y":
-                table_title = "Financial Accountability (SAMPLE DATA)"
+                table_title = selected_year_string + " Financial Accountability (SAMPLE DATA)"
             else:
-                table_title = "Financial Accountability Metrics"
+                table_title = selected_year_string + " Financial Accountability Metrics"
         else:
             table_title = (
-                "Financial Accountability Metrics ("
+                selected_year_string + " Financial Accountability Metrics ("
                 + financial_data["School Name"][0]
                 + ")"
             )
@@ -121,10 +121,10 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
     # Financial Metrics
     if len(financial_data.columns) <= 1 or financial_data.empty:
         financial_metrics_table = no_data_table(
-            "No Data to Display.", "Financial Metrics"
+            "No Data to Display.", selected_year_string + " Financial Metrics"
         )
         financial_indicators_table = no_data_table(
-            "No Data to Display.", "Financial Indicators"
+            "No Data to Display.", selected_year_string + " Financial Indicators"
         )
 
         # if no data, show no data page
@@ -159,10 +159,10 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
             (len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == "0")
         ):
             financial_metrics_table = no_data_table(
-                "No Data to Display.", "Financial Metrics"
+                "No Data to Display.", selected_year_string + " Financial Metrics"
             )
             financial_indicators_table = no_data_table(
-                "No Data to Display.", "Financial Indicators"
+                "No Data to Display.", selected_year_string + " Financial Indicators"
             )
 
             financial_indicators_container = {"display": "none"}

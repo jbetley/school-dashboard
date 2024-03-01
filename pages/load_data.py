@@ -55,7 +55,6 @@ grades_all = ["Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", 
 grades_ordinal = ["3rd", "4th", "5th", "6th", "7th", "8th"]
 
 # K8 Not yet included: 1.3.a, 1.3.b (Mission Specific)
-
 # K8 Deprecated: 1.2.a, 1.2.b, 1.5.a, 1.5.b
 # HS Depracted:  1.7.d, 1.7.e
 # AHS Deprecated: 1.2.a, 1.2b
@@ -191,16 +190,26 @@ metric_strings = {
     ],
 }
 
-# NOTE: Consider moving engine instantiaion to app.py
+# NOTE: Consider moving engine instantiation to app.py
 engine = create_engine("sqlite:///data/indiana_schools.db")
 
 users = create_engine("sqlite:///users.db")
 
 print("Database Engine Created . . .")
 
-# Return Dataframe (read_sql is a convenience function wrapper around read_sql_query)
-# If no data matches query, returns an empty dataframe
+
 def run_query(q, *args):
+    """
+    Takes sql text query, gets query as a dataframe (read_sql is a convenience function
+    wrapper around read_sql_query), and perform a variety of basic clean up functions
+    If no data matches the query, an empty df is returned
+
+    Args:
+        q (string): a sqlalchemy "text" query 
+        args (dict): a dict of query parameters
+    Returns:
+        pd.DataFrame: pandas dataframe of the query results
+    """
     conditions = None
 
     with engine.connect() as conn:
@@ -226,6 +235,13 @@ def run_query(q, *args):
         return df
 
 def get_current_year():
+    """
+    the most recent academic year of data according to the k8 ilearn
+    data file
+
+    Returns:
+        int: an int representing the most recent year
+    """    
     db = engine.raw_connection()
     cur = db.cursor()
     cur.execute(""" SELECT MAX(Year) FROM academic_data_k8 """)
@@ -236,11 +252,16 @@ def get_current_year():
 
 current_academic_year = get_current_year()
 
-# Used to dynamically count the number of network logins (all of which have
-# negative group_id values) so we know how far to offset group_id in determining
-# the charter dropdown in app.py. Otherwise we would have to hardcode this
-# value. we add one to the total to account for the admin login
+# Used to 
 def get_network_count():
+    """
+    Helper function to dynamically count the number of network logins present
+    in the users database (identified with a negative group_id values). used to
+    determine the offset for creation of the charter dropdown in app.py. 
+
+    Returns:
+        int: the number of network logins
+    """    
     db = users.raw_connection()
     cur = db.cursor()
     cur.execute(""" SELECT COUNT(groupid) FROM users WHERE groupid < 0 """)
@@ -277,6 +298,15 @@ def get_excluded_years(year: str) -> list:
 
 
 def get_school_index(school_id):
+    """
+    returns school index information
+
+    Args:
+        school_id (string): a 4 digit number in string format
+
+    Returns:
+        pd.DataFrame: df of basic school information
+    """    
     params = dict(id=school_id)
 
     q = text(
@@ -291,6 +321,15 @@ def get_school_index(school_id):
 
 
 def get_academic_dropdown_years(*args):
+    """
+    gets a list of all available years of academic proficiency data
+
+    Args:
+        school_id (string): a 4 digit number in string format
+        school_type(string): K8, HS, AHS, or K12
+    Returns:
+        list: a list of integers representing years
+    """     
     keys = ["id", "type"]
     params = dict(zip(keys, args))
 
@@ -320,6 +359,15 @@ def get_academic_dropdown_years(*args):
 
 
 def get_academic_growth_dropdown_years(*args):
+    """
+    gets a list of all available years of academic growth data
+
+    Args:
+        school_id (string): a 4 digit number in string format
+
+    Returns:
+        list: a list of integers representing years
+    """      
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -339,48 +387,19 @@ def get_academic_growth_dropdown_years(*args):
     return years
 
 
-# NOTE: Consolidate this with next function (only difference is Q#s)
-def get_financial_info_dropdown_years(school_id):
-    # Processes financial df and returns a list of Year column names for
-    # each year for which ADM Average is greater than '0'
-
-    params = dict(id=school_id)
-
-    q = text(
-        """
-        SELECT * 
-        FROM financial_data 
-        WHERE SchoolID = :id
+def get_financial_dropdown_years(school_id, page):
     """
-    )
+    gets a list of all available years of financial data - returns
+    # a list of Year column names for each year for which ADM Average
+    # for that year is greater than '0'
 
-    results = run_query(q, params)
-
-    if len(results.columns) > 3:
-        adm_index = results.index[results["Category"] == "ADM Average"].values[0]
-
-        results = results.filter(regex="^\d{4}")
-
-        for col in results.columns:
-            results[col] = pd.to_numeric(results[col], errors="coerce")
-
-        mask = results.iloc[adm_index] > 0
-
-        results = results.loc[:, mask]
-
-        # trim excess info (Q#) if present
-        years = [x[:4] for x in results.columns.to_list()]
-
-    else:
-        years = []
-
-    return years
-
-
-def get_financial_analysis_dropdown_years(school_id):
-    # Processes financial df and returns a list of Year column names for
-    # each year for which ADM Average is greater than '0'
-
+    Args:
+        school_id (string): a 4 digit number in string format
+        page(string): a string identifying the url for which the call
+        is being made
+    Returns:
+        list: a list of integers representing years
+    """       
     params = dict(id=school_id)
     q = text(
         """
@@ -395,8 +414,16 @@ def get_financial_analysis_dropdown_years(school_id):
     if len(results.columns) > 3:
         adm_index = results.index[results["Category"] == "ADM Average"].values[0]
 
-        # adding '$' to the end of the regex skips (Q#) years
-        results = results.filter(regex="^\d{4}$")
+        # for the financial analysis page, we skip years with
+        # quarterly data (Q#) entirely (the "$" skips years with
+        # a suffix).
+        if page == "financial_analysis":
+            results = results.filter(regex="^\d{4}$")
+        else:
+            # for all other pages, we want to display the quarterly
+            # data, so we keep the year and just trim the Q# suffix
+            # below
+            results = results.filter(regex="^\d{4}")
 
         for col in results.columns:
             results[col] = pd.to_numeric(results[col], errors="coerce")
@@ -405,8 +432,10 @@ def get_financial_analysis_dropdown_years(school_id):
 
         results = results.loc[:, mask]
 
-        years = results.columns.to_list()
-
+        if page == "financial_analysis":
+            years = [int(x) for x in results.columns.to_list()]
+        else:
+            years = [int(x[:4]) for x in results.columns.to_list()]
     else:
         years = []
 
@@ -960,7 +989,7 @@ def get_attendance_data(school_id, school_type, year):
 
     return attendance_rate
 
-# NOTE: Can this and the next function be combined?
+# Get k8 academic data for single school
 def get_k8_school_academic_data(*args):
     keys = ["id"]
     params = dict(zip(keys, args))
@@ -978,7 +1007,7 @@ def get_k8_school_academic_data(*args):
 
     return results
 
-
+# get k8 academic data for a list of schools
 def get_selected_k8_school_academic_data(*args):
     keys = ["schools", "year"]
     params = dict(zip(keys, args))
@@ -1033,6 +1062,24 @@ def get_high_school_academic_data(*args):
 
     return run_query(q, params)
 
+# get hs academic data for a list of schools
+def get_selected_hs_school_academic_data(*args):
+    keys = ["schools", "year"]
+    params = dict(zip(keys, args))
+
+    school_str = ", ".join([str(int(v)) for v in params["schools"]])
+
+    q = text(
+        """SELECT *
+                FROM academic_data_hs
+                WHERE Year = :year AND SchoolID IN ({})""".format(
+            school_str
+        )
+    )
+
+    results = run_query(q, params)
+
+    return results
 
 def get_hs_corporation_academic_data(*args):
     keys = ["id"]
@@ -1102,7 +1149,8 @@ def get_school_coordinates(*args):
 
     return run_query(q, params)
 
-#TODO: Is this being used?
+#TODO: Is this being used? ONCE for HS in SINGLE YEAR
+#TODO: want to merge get_selected functions and remove this
 def get_comparable_schools(*args):
     keys = ["schools", "year", "type"]
     params = dict(zip(keys, args))
@@ -1144,6 +1192,7 @@ def get_comparable_schools(*args):
 
     return run_query(q, params)
 
+# TODO: CONVERT PROCESSING FUNCTIONS TO SOMETHING LIKE THIS
 
 def get_year_over_year_data(*args):
     keys = ["school_id", "comp_list", "category", "year", "flag"]

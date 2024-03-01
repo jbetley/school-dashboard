@@ -28,7 +28,7 @@ from .charts import loading_fig, no_data_fig_label, make_line_chart, make_demogr
 from .tables import no_data_table, no_data_page, create_key_table, create_single_header_table
 from .layouts import create_line_fig_layout
 
-dash.register_page(__name__, path="/", order=0, top_nav=True)
+dash.register_page(__name__, path="/about", order=0, top_nav=True)
 
 @callback(
     Output("update-table", "children"),
@@ -159,7 +159,7 @@ def update_about_page(year: str, school: str):
         enrollment.rename(index={"Total Enrollment": "Total"}, inplace=True)
 
         if selected_school_type == "AHS":
-            sum = enrollment["Enrollment"].sum()
+            sum = enrollment["Enrollment"].astype(int).sum()
             school_enrollment = pd.DataFrame(columns=["index", "Enrollment"])
             school_enrollment.loc[0] = ["Adults", sum]
             school_enrollment.loc[1] = ["Total", sum]

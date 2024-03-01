@@ -2,8 +2,8 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley (https://github.com/jbetley)
-# version:  1.13
-# date:     02/01/24
+# version:  1.15
+# date:     02/21/24
 
 # This is the main application file for the Indiana Charter School Board school
 # dashboard. This dashboard consists of ~10 tabs of charts and tables created
@@ -62,13 +62,15 @@ from dash import dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 
 from pages.load_data import (
+    current_academic_year,
     network_count,
     get_school_index,
     get_academic_dropdown_years,
     get_academic_growth_dropdown_years,
-    get_financial_info_dropdown_years,
+    # get_financial_info_dropdown_years,
+    get_financial_dropdown_years,
     get_school_dropdown_list,
-    get_financial_analysis_dropdown_years,
+    # get_financial_analysis_dropdown_years,
     get_gradespan,
     get_ethnicity,
     get_subgroup,
@@ -168,7 +170,7 @@ def login(message=""):
     if request.method == "GET":
         # if user is authenticated - redirect to dash app
         if current_user.is_authenticated:
-            return redirect("/")
+            return redirect("/about")
 
         # otherwise show the login page
         return render_template("login.html", message=message)
@@ -194,14 +196,14 @@ def login(message=""):
                             url = session["url"]
                             session["url"] = None
                             return redirect(url)  # redirect to target url
-                    return redirect("/")  # redirect to home
+                    return redirect("/about")  # redirect to home
                 return render_template("login.html", message=message)
             else:
                 return render_template("login.html", message=message)
     else:
         if current_user:
             if current_user.is_authenticated:
-                return redirect("/")
+                return redirect("/about")
 
     return render_template("login.html", message=message)
     # return redirect(url_for("login", error=1))
@@ -304,26 +306,72 @@ def set_dropdown_value(charter_options):
 # All other pages use 'financial_info_dropdown_years' which is the same as
 # 'financial_analysis_dropdown_years' except the quarterly data string (Q#) is removed.
 
-
 # "url" and "hidden" are used to track the currently selected url
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
     Output("hidden", "children"),
+    Output("input-state", "data"),
     Input("charter-dropdown", "value"),
     Input("url", "href"),
     Input("analysis-type-radio", "value"),
+    Input("year-dropdown", "value"),
     State("year-dropdown", "value"),
+    Input("input-state", "data")
 )
 def set_year_dropdown_options(
-    school_id: str, current_page: str, analysis_type_value: str, year_state: str
+    school_id: str, current_page: str, analysis_type_value: str,
+    year_value: str, year_state: str, input_state: dict 
 ):
     max_dropdown_years = 5
-
+    
     current_page = current_page.rsplit("/", 1)[-1]
+
+    # on initial login or history clear, this will be Nonetype
+    if not year_value:
+        year_value = str(current_academic_year)
+
+    # input_state saves (in a dcc.store) the values for previous and
+    # current year and page. think of previous as the state of the variable
+    # and current as the value
+    if input_state:
+
+        # input_state can exist with a None previousyear, so need to
+        # make sure it has a value for the initial test below
+        if not input_state["previousyear"]:
+            input_state["previousyear"] = input_state["currentyear"]
+        
+        # there are two pages (financial_analysis and academic_growth) that
+        # will almost always lag behind all other data in the respective
+        # category (financial or academic) by at least a year. the year
+        # dropdown logic automatically switches the selected year to the
+        # closest earlier year with data for pages that have no data for
+        # the selected year- a change which may or may not be obvious to
+        # the user (ie. they select 2023, go to one of those two pages, the
+        # code switches the year to 2022, and when they exit out to a new
+        # page, they may assume they are still in the selected year, when they
+        # are actually in the adjusted year. The following code tracks the
+        # previous page and previous year and switches back to previous year
+        # in that instance.
+
+        if (input_state["currentpage"] == "financial_analysis" or \
+            input_state["currentpage"] == "academic_information_growth") and \
+            int(input_state["currentyear"]) < int(input_state["previousyear"]):
+                input_state["currentyear"] = input_state["previousyear"]
+        else:
+            input_state["currentyear"] = year_value
+            input_state["previousyear"] = input_state["currentyear"]
+
+        input_state["previouspage"] = input_state["currentpage"]
+        input_state["currentpage"] = current_page
+
+    else:
+        input_state = {}
 
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
+
+    previous_page = input_state["previouspage"]
 
     # for K12 schools, we need to use "HS" data when analysis_type is "hs". We also
     # want to make sure that we reset the type if the user switches to a k8 school
@@ -331,55 +379,87 @@ def set_year_dropdown_options(
     if school_type == "K8" and analysis_type_value == "hs":
         analysis_type_value = "k8"
 
-    # Guest schools do not have financial data or academic growth data
+    # guest schools use academic_dropdown_years
     if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
-        if (
-            "academic_information" in current_page
-            or "academic_analysis_single" in current_page
-            or "academic_analysis_multiple" in current_page
-        ) and analysis_type_value == "hs":
-            years = get_academic_dropdown_years(school_id, "HS")
+        if "academic_information_growth" in current_page and \
+                selected_school["Guest"].values[0] != "Y":
+            years = get_academic_growth_dropdown_years(school_id)
         else:
-            if "academic_information_growth" in current_page and \
-                    selected_school["Guest"].values[0] != "Y":
-                years = get_academic_growth_dropdown_years(school_id)
-            else:
-                years = get_academic_dropdown_years(school_id, school_type)
-
-    elif "financial_analysis" in current_page:
-        years = get_financial_analysis_dropdown_years(school_id)
-
+            years = get_academic_dropdown_years(school_id, school_type)
     else:
-        years = get_financial_info_dropdown_years(school_id)
+        years = get_financial_dropdown_years(school_id, input_state["currentpage"])  
+
+    # TODO: Keep tmp         
+    # if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
+    #     if (
+    #         "academic_information" in current_page
+    #         or "academic_analysis_single" in current_page
+    #         or "academic_analysis_multiple" in current_page
+    #     ) and analysis_type_value == "hs":
+    #         years = get_academic_dropdown_years(school_id, "HS")
+    #     else:
+    #         if "academic_information_growth" in current_page and \
+    #                 selected_school["Guest"].values[0] != "Y":
+    #             years = get_academic_growth_dropdown_years(school_id)
+    #         else:
+    #             years = get_academic_dropdown_years(school_id, school_type)
+
+    # else:
+    #     years = get_financial_dropdown_years(school_id, input_state["currentpage"])
 
     # set year_value and year_options
     number_of_years_to_display = (
         len(years) if len(years) <= max_dropdown_years else max_dropdown_years
     )
-    dropdown_years = years[0:number_of_years_to_display]
-    first_available_year = dropdown_years[0]
-    earliest_available_year = dropdown_years[-1]
 
-    # "year" represents the State of the year-dropdown when a school is
-    # selected. current_year is set to one of:
-    #   1) current_academic year (when app is first opened);
-    #   2) the earliest year for which the school has data (if the selected year is earlier
-    #       than the first year of available data);
-    #   3) the latest year for which the school has data (if the selected year is later
-    #       than the first year of available data); or
-    #   4) the selected year.
+    dropdown_years = years[0:number_of_years_to_display]
+
+    latest_year = dropdown_years[0]
+    oldest_year = dropdown_years[-1]
+   
+    # year_value for the dropdown is determined as follows:
+    # 1) initial load: "latest_year"
+    # 2) if selected year is earlier than the school's oldest year: "oldest_year"
+    # 3) if selected year is later than the school's latest_year: "latest_year"
+    # 4) if user switches from a financial tab to an academic tab or from
+    #    an academic tab to a financial tab: "latest_year"
+    # 5) if user visits academic_information_growth or financial_analysis and then
+    #    switches back to another page in the same category: "input_state["current_year"]"
+    #    (which is equivalent to the selected year prior to visiting the growth or
+    #    analysis page.
+    # 6) do not change the year value
 
     if year_state is None:
-        year_value = str(first_available_year)
+        year_value = str(latest_year)
 
-    elif int(year_state) < int(earliest_available_year):
-        year_value = str(earliest_available_year)
+    elif int(year_state) < oldest_year:
+        year_value = str(oldest_year)
 
-    elif int(year_state) > int(first_available_year):
-        year_value = str(first_available_year)
+    elif int(year_state) > latest_year:
+        year_value = str(latest_year)
+
+    elif "academic" in current_page and "academic" not in previous_page:
+        year_value = str(latest_year)
+
+    elif "academic" not in current_page and "academic" in previous_page:        
+        year_value = str(latest_year)
+
+    elif previous_page == "financial_analysis" and \
+        ("financial" in current_page or "about" in current_page
+         or "organizational" in current_page):
+        year_value = input_state["currentyear"]
+
+    elif previous_page == "academic_information_growth" and \
+        "academic" in current_page:
+        year_value = input_state["currentyear"]
 
     else:
-        year_value = str(year_state)
+        year_value = year_state
+
+    # if the above logic changes the value of the current year, we
+    # need to replace with the changed value
+    if input_state["currentyear"] != year_value:
+        input_state["currentyear"] = year_value
 
     # K8 schools do not have data for 2020 - so that year should never appear in the dropdown.
     # HS, AHS, and K12 schools with the "HS" academic_type_radio button selected can have
@@ -406,7 +486,7 @@ def set_year_dropdown_options(
 
     year_options = [{"label": str(y), "value": str(y)} for y in dropdown_years]
 
-    return year_options, year_value, current_page
+    return year_options, year_value, current_page, input_state
 
 
 # this needs to be in a separate callback in order to avoid circular callback issue.
@@ -1111,6 +1191,7 @@ def layout():
         [
             dcc.Location(id="url", refresh="callback-nav"),
             html.Div(id="hidden", style={"display": "none"}),
+            dcc.Store(id="input-state", storage_type="local"), #"session"),
             html.Div(
                 [
                     html.Div(
@@ -1186,7 +1267,7 @@ def layout():
                                                 [
                                                     dbc.NavLink(
                                                         "About",
-                                                        href="/",
+                                                        href="/about",
                                                         className="tab",
                                                         active="exact",
                                                     ),
