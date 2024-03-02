@@ -29,12 +29,12 @@ from .calculations import (
     conditional_fillna,
 )
 
-def process_selected_k8_academic_data(
+def process_k8_analysis_data(
     data: pd.DataFrame, school_id: str
 ) -> pd.DataFrame:
     """
     Perform various operations on a dataframe returning with ILEARN/IREAD
-    data for the selected school
+    data for the selected school. Used on academic_analysis page.
 
     Args:
         data (pd.DataFrame): ilearn/iread data
@@ -122,12 +122,10 @@ def process_selected_k8_academic_data(
     return final_data
 
 
-# TODO: merge the two k8 processing functions into one
-# NOTE: Returns essentially the same data as above, but in this case,
-# the dataframe is transposed (categories are a column) and includes N-Size
-def process_k8_academic_data(data: pd.DataFrame) -> pd.DataFrame:
+def process_k8_info_data(data: pd.DataFrame) -> pd.DataFrame:
     """
-    Process a dataframe with ILEARN/IREAD data includeing N-Size
+    Process a dataframe with ILEARN/IREAD data including N-Size. Includes additional
+    formatting. Used on academic_information and academic_metrics pages.
 
     Args:
         data (pd.DataFrame): ilearn/iread data

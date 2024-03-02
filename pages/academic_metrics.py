@@ -23,7 +23,7 @@ from .load_data import (
     get_excluded_years
 )
 from .process_data import (
-    process_k8_academic_data,
+    process_k8_info_data,
     process_high_school_academic_data,
     merge_high_school_data,
     filter_high_school_academic_data,
@@ -129,7 +129,7 @@ def update_academic_metrics(school: str, year: str):
                 {"^": "***"}
             )
 
-            clean_school_data = process_k8_academic_data(selected_raw_k8_school_data)
+            clean_school_data = process_k8_info_data(selected_raw_k8_school_data)
 
             if not clean_school_data.empty:
                 k8_metrics_container = {"display": "block"}
@@ -381,6 +381,7 @@ def update_academic_metrics(school: str, year: str):
             )
 
             if not raw_hs_school_data.empty:
+
 # TODO: DROP STATE GRADE
 # TODO: Add State AHS Calculation
 # weighted graduation calculation score (20%) and weighted ccr score (80%) - yr1

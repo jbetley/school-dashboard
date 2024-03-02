@@ -989,6 +989,7 @@ def get_attendance_data(school_id, school_type, year):
 
     return attendance_rate
 
+
 # Get k8 academic data for single school
 def get_k8_school_academic_data(*args):
     keys = ["id"]
@@ -1006,6 +1007,7 @@ def get_k8_school_academic_data(*args):
     results = results.sort_values(by="Year", ascending=False)
 
     return results
+
 
 # get k8 academic data for a list of schools
 def get_selected_k8_school_academic_data(*args):
@@ -1062,6 +1064,7 @@ def get_high_school_academic_data(*args):
 
     return run_query(q, params)
 
+
 # get hs academic data for a list of schools
 def get_selected_hs_school_academic_data(*args):
     keys = ["schools", "year"]
@@ -1080,6 +1083,7 @@ def get_selected_hs_school_academic_data(*args):
     results = run_query(q, params)
 
     return results
+
 
 def get_hs_corporation_academic_data(*args):
     keys = ["id"]
@@ -1149,6 +1153,7 @@ def get_school_coordinates(*args):
 
     return run_query(q, params)
 
+
 #TODO: Is this being used? ONCE for HS in SINGLE YEAR
 #TODO: want to merge get_selected functions and remove this
 def get_comparable_schools(*args):
@@ -1192,8 +1197,8 @@ def get_comparable_schools(*args):
 
     return run_query(q, params)
 
-# TODO: CONVERT PROCESSING FUNCTIONS TO SOMETHING LIKE THIS
 
+# TODO: CONVERT PROCESSING FUNCTIONS TO SOMETHING LIKE THIS
 def get_year_over_year_data(*args):
     keys = ["school_id", "comp_list", "category", "year", "flag"]
 

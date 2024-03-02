@@ -28,7 +28,7 @@ from .load_data import (
 )
 from .process_data import (
     process_comparable_high_school_academic_data,
-    process_selected_k8_academic_data,
+    process_k8_analysis_data
 )
 from .calculations import (
     calculate_proficiency,
@@ -395,18 +395,15 @@ def update_academic_analysis_single_year(
                 comparison_school_list, numeric_year, "HS"
             )
 
-            # get single year academic data
-            list_of_hs_schools = comparison_school_list + [school_id]
-
+# TODO: Want to replace the get comparable schools with get_selected
 # TODO: In order to to do this, we need to revisit all of the HS processing
 # TODO: Functions. So slightly more complicated. Goal is to make HS look
 # TODO: Like K8, get rid of 'get_comparable_schools' and merge get_selected
 # TODO: hs and k8 functions in to one                 
-            selected_hs_tst_data = get_selected_hs_school_academic_data(
-                list_of_hs_schools, year
-            )
-            print('NEW')
-            print(selected_hs_tst_data.columns.to_list())
+            # list_of_hs_schools = comparison_school_list + [school_id]
+            # selected_hs_tst_data = get_selected_hs_school_academic_data(
+            #     list_of_hs_schools, year
+            # )
 
             # concatenate all three dataframes together. don't include
             # school corporation data if the selected school is an AHS,
@@ -612,7 +609,7 @@ def update_academic_analysis_single_year(
                 list_of_schools, year
             )
 
-            selected_clean_data = process_selected_k8_academic_data(
+            selected_clean_data = process_k8_analysis_data(
                 selected_k8_school_data, school_id
             )
 

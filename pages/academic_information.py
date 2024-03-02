@@ -33,7 +33,7 @@ from .load_data import (
     get_excluded_years
 )
 from .process_data import (
-    process_k8_academic_data,
+    process_k8_info_data,
     process_high_school_academic_data,
     filter_high_school_academic_data
 )
@@ -194,7 +194,7 @@ def update_academic_information_page(
 
         # load HS academic data
         selected_raw_hs_school_data = get_high_school_academic_data(school)
-
+        
         # remove excluded years (more recent than selected)
         if excluded_years:
             selected_raw_hs_school_data = selected_raw_hs_school_data[
@@ -406,7 +406,7 @@ def update_academic_information_page(
             # this gives us proficiency and N-Size data for ILEARN and IREAD
             # with column names = ["2019School", "2019N-Size", . . . ] -
             # use N-Size data for table tooltips
-            ilearn_table_data = process_k8_academic_data(selected_raw_k8_school_data)
+            ilearn_table_data = process_k8_info_data(selected_raw_k8_school_data)
 
             if ilearn_table_data.empty:
 
