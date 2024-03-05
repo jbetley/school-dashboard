@@ -165,7 +165,7 @@ def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
+def calculate_proficiency(df: pd.DataFrame) -> pd.DataFrame:
     """
     Wrapper around calculate_percentage() used to calculate ILEARN Proficiency from academic
     dataframe (Total Proficient / Total Tested) and IREAD Proficiency from (IREAD Pass N /
@@ -178,6 +178,7 @@ def calculate_proficiency(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the same dataframe with "Proficient %" column added.
     """
+    data = df.copy()
 
     # Get a list of all "Total Tested" columns except those for ELA & Math
     tested_categories = data[
@@ -229,18 +230,18 @@ def recalculate_total_proficiency(
     using only the grade levels for which we have school data.
 
     Args:
-        corp_data (pd.DataFrame):   aggregated academic data for the school corporation in which
-                                    the school is located
+        corp_data (pd.DataFrame):   academic data for the school corporation in which
+                                    the school is located and/or comparable schools
         school_data (pd.DataFrame): school academic data
 
     Returns:
-        pd.DataFrame: the corp_data dataframe after Total Proficiency is recalculated
+        pd.DataFrame: the dataframe after Total Proficiency is recalculated
     """
 
     revised_data = data.copy()
     revised_totals = pd.DataFrame()
 
-    revised_totals["School ID"] = revised_data["School ID"]
+    revised_totals[["Year","School ID","School Name"]] = revised_data[["Year","School ID","School Name"]]
 
     numeric_columns = [
         c
@@ -563,6 +564,9 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
         string (str): A single string listing all years (rows) for which there is insufficient data
     """
 
+    print("insuf")
+    print(data)
+    
     #  returns the indices of elements in a tuple of arrays where the condition is satisfied
     insufficient_n_size = np.where(data == "***")
 

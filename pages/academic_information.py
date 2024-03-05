@@ -30,7 +30,8 @@ from .load_data import (
     get_k8_school_academic_data,
     get_high_school_academic_data,
     get_school_index,
-    get_excluded_years
+    get_excluded_years,
+    get_all_the_data
 )
 from .process_data import (
     process_k8_info_data,

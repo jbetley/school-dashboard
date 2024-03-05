@@ -671,6 +671,7 @@ def process_high_school_academic_data(
             # make sure there are no lingering NoneTypes
             data = data.fillna(value=np.nan)
 
+            
             # Merge Total Tested DF with Proficiency DF based on substring match
 
             # add new column with substring values and drop old Category column

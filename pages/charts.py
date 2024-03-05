@@ -509,6 +509,8 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
     data = values.copy()
 
     school_cols = [i for i in data.columns if i not in ["Year"]]
+    
+    print(data)
 
     if (len(school_cols)) > 0 and len(data.index) > 0:
         data, no_data_string = check_for_no_data(data)
@@ -791,9 +793,9 @@ def make_line_chart(values: pd.DataFrame) -> list:
         # way too cluttered. So it is currently removed. Would prefer to somehow add this
         # to the trace (x-unified) hover, but it doesn't currently seem to be possible.
         # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
-        
-        data, no_data_string = check_for_no_data(data)
+        # data, no_data_string = check_for_no_data(data)
         # nsize_string = check_for_insufficient_n_size(data)
+        no_data_string = ""
 
         # first check, if dataframe has more than one column, but not data
         # to display ("",NaN, or "***"), we catch it here

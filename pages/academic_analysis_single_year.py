@@ -24,7 +24,8 @@ from .load_data import (
     get_high_school_academic_data,
     get_hs_corporation_academic_data,
     get_selected_k8_school_academic_data,
-    get_selected_hs_school_academic_data        
+    get_all_the_data
+    # get_selected_hs_school_academic_data
 )
 from .process_data import (
     process_comparable_high_school_academic_data,
@@ -395,6 +396,11 @@ def update_academic_analysis_single_year(
                 comparison_school_list, numeric_year, "HS"
             )
 
+# TODO:     
+            list_of_schools = [school_id] + comparison_school_list
+            tst_data_hs = get_all_the_data(list_of_schools, "HS", numeric_year)
+# TODO:
+            
 # TODO: Want to replace the get comparable schools with get_selected
 # TODO: In order to to do this, we need to revisit all of the HS processing
 # TODO: Functions. So slightly more complicated. Goal is to make HS look
@@ -448,7 +454,7 @@ def update_academic_analysis_single_year(
             hs_analysis_data = hs_analysis_data.loc[
                 :, ~hs_analysis_data.iloc[school_name_idx].isna()
             ]
-
+# TODO: HERE
             # check to see if there is data after processing
             if len(hs_analysis_data.columns) <= 5:
                 analysis_single_dropdown_container = {"display": "none"}
@@ -460,6 +466,7 @@ def update_academic_analysis_single_year(
 
                 # Graduation Comparison Sets
                 grad_overview_categories = ["Total", "Non Waiver"]
+                
                 grad_overview = create_hs_analysis_layout(
                     "Graduation Rate",
                     hs_analysis_data,
@@ -597,13 +604,20 @@ def update_academic_analysis_single_year(
             k8_analysis_main_container = {"display": "none"}
 
         else:
+            
+            school_type = "K8"  # converts K12
+
             academic_analysis_notes_label = "Comparison Data - K-8"
             academic_analysis_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
                 and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
                 the selected school. Up to eight (8) schools may be displayed at once."
 
-            # get single year academic data
-            list_of_schools = comparison_school_list + [school_id]
+            # add school_id first
+            list_of_schools = [school_id] + comparison_school_list
+# # TODO:
+
+#             tst_data_k8 = get_all_the_data(list_of_schools, school_type, numeric_year)
+# # TODO:
             
             selected_k8_school_data = get_selected_k8_school_academic_data(
                 list_of_schools, year
@@ -871,10 +885,6 @@ def update_academic_analysis_single_year(
                 else:
                     # NOTE: Better to display empty chart or no chart?
                     fig_iread_chart = []
-                    # no_data_fig_label(
-                    #     "Comparison: Current Year IREAD Proficiency", 200
-                    # )
-
                     fig_iread_table = []
                     
                 # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
