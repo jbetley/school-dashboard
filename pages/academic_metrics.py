@@ -136,6 +136,11 @@ def update_academic_metrics(school: str, year: str):
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
+                filename5 = (
+                    "punc4kes.csv"
+                )
+                clean_school_data.to_csv(filename5, index=False)
+
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
 
                 raw_corp_data = get_k8_corporation_academic_data(school)

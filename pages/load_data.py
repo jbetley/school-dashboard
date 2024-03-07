@@ -1230,14 +1230,15 @@ def get_comparable_schools(*args):
 
     return run_query(q, params)
 
-
+# Gets all academic data and formats it for display
 def get_all_the_data(*args):
 
     
     from .calculations import calculate_proficiency, recalculate_total_proficiency, \
         check_for_no_data, check_for_insufficient_n_size, conditional_fillna, \
         calculate_graduation_rate, calculate_sat_rate
-    
+    import itertools
+
     keys = ["schools", "type", "year"]
 
     params = dict(zip(keys, args))
@@ -1303,6 +1304,7 @@ def get_all_the_data(*args):
 
     # convert from float to str while dropping the decimal
     data["School ID"] = data["School ID"].astype('Int64').astype('str')
+    data["Corporation ID"] = data["Corporation ID"].astype('Int64').astype('str')
 
     if params["type"] == "K8":
         tested_cols = [col for col in data.columns.to_list() if "Total Tested" in col or "Test N" in col]
@@ -1333,9 +1335,11 @@ def get_all_the_data(*args):
     drop_all = [i for sub_list in drop_columns for i in sub_list]
 
     data = data.drop(drop_all, axis=1).copy()
+
+    # NOTE: k8 or hs data with excluded years and non-tested categories dropped
     data = data.reset_index(drop=True)
 
-    # TODO: HS Analysis
+    ## High School Analysis data ##
     if params["type"] == "HS":
         hs_data = data.copy()
 
@@ -1364,43 +1368,215 @@ def get_all_the_data(*args):
             if {"AHS|CCR", "AHS|Grad All"}.issubset(data.columns):
                 hs_data["CCR Percentage"] = hs_data["AHS|CCR"] / hs_data["AHS|Grad All"]
 
+        hs_info_data = hs_data.copy()
         # Need to check data again to see if anything is left after the above operations
         # if all columns in data other than the 1st (Year) are null then return empty df
-        if data.iloc[:, 1:].isna().all().all():
-            hs_data = pd.DataFrame()
+        if hs_data.iloc[:, 1:].isna().all().all():
+            hs_analysis_data = pd.DataFrame()
 
         else:
-            hs_data = hs_data.filter(
-                regex=r"School ID|School Name|Corporation ID|Corporation Name|^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|^Year$",
+            hs_analysis_data = hs_data.filter(
+                regex=r"School ID|School Name|Corporation ID|Corporation Name|Graduation Rate$|Benchmark \%|^Year$",
+                # regex=r"School ID|School Name|Corporation ID|Corporation Name|^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|^Year$",
                 axis=1,
-            )
+            ).copy()
 
-            hs_cols = [c for c in hs_data.columns if c not in ["School Name", "Corporation Name"]]
+            hs_analysis_data = hs_analysis_data.drop(list(hs_analysis_data.filter(regex="EBRW and Math")), axis=1)
+
+            hs_cols = [c for c in hs_analysis_data.columns if c not in ["School Name", "Corporation Name"]]
        
             # get index of rows where school_id matches selected school
-            school_idx = hs_data.index[hs_data["School ID"] == school_id].tolist()[0]
+            school_idx = hs_analysis_data.index[hs_analysis_data["School ID"] == school_id].tolist()[0]
 
             # force all to numeric (this removes '***' strings) - we
             # later use NaN as a proxy
             for col in hs_cols:
-                hs_data[col] = pd.to_numeric(
-                    hs_data[col], errors="coerce"
+                hs_analysis_data[col] = pd.to_numeric(
+                    hs_analysis_data[col], errors="coerce"
                 )
-            print(hs_data["School Name"])
+
+            ## final hs_analysis data
+
             # drop all columns where the row at school_name_idx has a NaN value
-            # school_idx = hs_data.index[hs_data["School ID"] == school_id].tolist()[0]
-            hs_data = hs_data.loc[:, ~hs_data.iloc[school_idx].isna()]                
-    # TODO: HS Analysis
-            
+            hs_analysis_data = hs_analysis_data.loc[:, ~hs_data.iloc[school_idx].isna()]                
+
+        ### HS Information data ###
+        hs_info_data = hs_info_data[hs_info_data["School ID"] == school_id]
+        
+        # remove "ELA and Math" columns
+        hs_info_data = hs_info_data.drop(list(hs_info_data.filter(regex="EBRW and Math")), axis=1)
+
+#TODO: Merge this with K8 info process
+
+        # Get "Total Tested" & "Cohort Count" (nsize) data and store in separate dataframe.
+        hs_data_tested = hs_info_data.filter(regex="Total Tested|Cohort Count|Year", axis=1).copy()
+        hs_data_tested = (
+            hs_data_tested.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        hs_data_tested = hs_data_tested.rename(
+            columns={
+                c: str(c) + "N-Size"
+                for c in hs_data_tested.columns
+                if c not in ["Category"]
+            }
+        )
+        
+        # hs_info_data = hs_info_data.filter(
+        #     regex=r"Cohort Count$|Graduates$|AHS|Benchmark|Total Tested|^Year$", axis=1
+        # )
+
+        # CCR Rate
+        # if params["type"] == "AHS":
+        #     if "AHS|CCR" in hs_info_data.columns:
+        #         hs_info_data["AHS|CCR"] = pd.to_numeric(hs_info_data["AHS|CCR"], errors="coerce")
+
+        #     if "AHS|Grad All" in hs_info_data.columns:
+        #         hs_info_data["AHS|Grad All"] = pd.to_numeric(
+        #             hs_info_data["AHS|Grad All"], errors="coerce"
+        #         )
+
+        #     if {"AHS|CCR", "AHS|Grad All"}.issubset(hs_info_data.columns):
+        #         hs_info_data["CCR Percentage"] = hs_info_data["AHS|CCR"] / hs_info_data["AHS|Grad All"]
+
+####
+        # Need to check data again to see if anything is left after the above operations
+        # if all columns in data other than the 1st (Year) are null then return empty df
+        if hs_info_data.iloc[:, 1:].isna().all().all():
+            final_hs_info_data = pd.DataFrame()
+
+        else:
+
+            hs_info_data = hs_info_data.filter(
+                regex=r"^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|^Year$",  # ^Strength of Diploma
+                axis=1,
+            )
+
+            # school_info = school_info.reset_index(drop=True)
+            # hs_info_data = hs_info_data.reset_index(drop=True)
+
+            # hs_info_data = pd.concat([hs_info_data, school_info], axis=1, join="inner")
+
+            hs_info_data.columns = hs_info_data.columns.astype(str)
+
+            hs_info_data = (
+                hs_info_data.set_index("Year")
+                .T.rename_axis("Category")
+                .rename_axis(None, axis=1)
+                .reset_index()
+            )
+
+            # State/Federal grade rows not used at this point
+            hs_info_data = hs_info_data[
+                hs_info_data["Category"].str.contains("State Grade|Federal Rating|School Name")
+                == False
+            ]
+
+            hs_info_data = hs_info_data.rename(
+                columns={
+                    c: str(c) + "School"
+                    for c in hs_info_data.columns
+                    if c not in ["Category"]
+                }
+            )
+
+            hs_info_data = hs_info_data.reset_index(drop=True)
+
+            # make sure there are no lingering NoneTypes
+            hs_info_data = hs_info_data.fillna(value=np.nan)
+
+            # Merge Total Tested DF with Proficiency DF based on substring match
+
+            # add new column with substring values and drop old Category column
+            hs_data_tested["Substring"] = hs_data_tested["Category"].replace(
+                {" Total Tested": "", "\|Cohort Count": "|Graduation"}, regex=True
+            )
+
+            hs_data_tested = hs_data_tested.drop("Category", axis=1)
+
+            # NOTE: the cross-merge and substring match process takes about .3s,
+            # is there a faster way?
+            final_hs_info_data = hs_info_data.merge(hs_data_tested, how="cross")
+
+            # keep only those rows where substring is in Category
+            # Need to temporarily rename "English Learner" because otherwise it
+            # will match both "English" and "Non English"
+            final_hs_info_data = final_hs_info_data.replace(
+                {
+                    "Non English Language Learners": "Temp1",
+                    "English Language Learners": "Temp2",
+                },
+                regex=True,
+            )
+
+            final_hs_info_data = final_hs_info_data[
+                [
+                    a in b
+                    for a, b in zip(final_hs_info_data["Substring"], final_hs_info_data["Category"])
+                ]
+            ]
+
+            final_hs_info_data = final_hs_info_data.replace(
+                {
+                    "Temp1": "Non English Language Learners",
+                    "Temp2": "English Language Learners",
+                },
+                regex=True,
+            )
+
+            final_hs_info_data = final_hs_info_data.drop("Substring", axis=1)
+            final_hs_info_data = final_hs_info_data.reset_index(drop=True)
+
+            # reorder columns for display
+            # NOTE: This final data keeps the Corp N-Size cols, which are not used
+            # currently. We drop them later in the merge_high_school_data() step.
+            school_cols = [e for e in final_hs_info_data.columns if "School" in e]
+            nsize_cols = [e for e in final_hs_info_data.columns if "N-Size" in e]
+
+            school_cols.sort()
+            nsize_cols.sort()
+
+            final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+
+            final_cols.insert(0, "Category")
+            final_hs_info_data = final_hs_info_data[final_cols]
+
+            print(final_hs_info_data)
+            filename4 = (
+                "t0asty.csv"
+            )
+            final_hs_info_data.to_csv(filename4, index=False)
+
+####                
+
+
+        # TODO: End HS Info data
+                                
+# TODO: HS Metrics Data
+            # merge_high_school
+            # calculate_high_school_metrics
+# TODO: HS Metrics
+        
+
+        # filename5 = (
+        #     "puddy.csv"
+        # )
+        # corp_metric_data.to_csv(filename5, index=False)
+
     elif params["type"] == "K8":
 
+        # info_columns = data[["Low Grade","High Grade", "School ID", "School Name","Corporation ID", "Corporation Name"]]
+        
+        # calculate proficiency from Tested/Test N and Proficient/Passed
         calculated_data = calculate_proficiency(data)
 
         # In order for an apples to apples comparison between School Total Proficiency,
         # we need to recalculate it for the comparison schools using the same grade span
         # as the selected school. E.g., school is k-5, comparison school is k-8, we
         # recalculate comparison school totals using only grade k-5 data.
-
         comparison_data = calculated_data.loc[
             calculated_data["School ID"] != school_id
         ].copy()
@@ -1416,17 +1592,195 @@ def get_all_the_data(*args):
         calculated_data = calculated_data.set_index(["School ID","Year"])
         calculated_data.update(revised_totals.set_index(["School ID","Year"]))
 
-        calculated_data = calculated_data.reset_index()  # to recover the initial structure
+        # this is school, school corporation, and comparable school data
+        calculated_data = calculated_data.reset_index()
 
-        print('MERGED')
+        # make a copy for k8_metric and k8_info data
+        metric_data = calculated_data.copy()
+
+        ## K8 Information (table data) and Academic Metric data ##
+
+        # create new df with Total Tested and Test N (IREAD) values
+        data_tested = school_data.filter(
+            regex="Total Tested|Test N|Year", axis=1
+        ).copy()
+
+        data_tested = (
+            data_tested.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        data_tested = data_tested.rename(
+            columns={
+                c: str(c) + "N-Size"
+                for c in data_tested.columns
+                if c not in ["Category"]
+            }
+        )
+
+        # clean up nulls and 0
+        data_tested = data_tested.fillna(value=np.nan)
+        data_tested = data_tested.replace(0, np.nan)
+
+        # # filter to remove columns used to calculate final proficiency
+        # school_data = school_data.filter(
+        #     regex=r"Low Grade|High Grade|\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$",
+        #     axis=1,
+        # )
+
+        # # transpose dataframes and clean headers
+        # school_data.columns = school_data.columns.astype(str)
+        
+        # school_data = (
+        #     school_data.set_index("Year")
+        #     .T.rename_axis("Category")
+        #     .rename_axis(None, axis=1)
+        #     .reset_index()
+        # )
+
+        # # remove school_name row
+        # # school_data = school_data[
+        # #     school_data["Category"].str.contains("School Name") == False
+        # # ]
+
+        # school_data = school_data.reset_index(drop=True)
+
+        # filter to remove columns used to calculate final proficiency
+        metric_data = metric_data.filter(
+            regex=r"School ID|Corporation ID|Corporation Name|Low Grade|High Grade|\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$",
+            axis=1,
+        )
+
+        # transpose dataframes and clean headers
+        metric_data.columns = metric_data.columns.astype(str)
+        
+        metric_data = (
+            metric_data.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        # remove school_name row
+        # metric_data = metric_data[
+        #     metric_data["Category"].str.contains("School Name") == False
+        # ]
+
+        metric_data = metric_data.reset_index(drop=True)
+        metric_data = metric_data.set_index("Category")
+
+        # school metric and info data
+        school_metric_data = metric_data.loc[:, metric_data.loc["School ID"] == school_id]
+        school_metric_data = school_metric_data.drop(["School ID","Corporation ID","Corporation Name"])
+
+        school_metric_data = school_metric_data.reset_index(drop=False)
+
+        # corporation metric data (used to calculate difference)
+        corp_metric_data = metric_data.loc[:, metric_data.loc["School ID"] == metric_data.loc["Corporation ID"]]
+        corp_metric_data = corp_metric_data.drop(["Low Grade","High Grade","School ID"])
+        corp_metric_data = corp_metric_data.reset_index(drop=False)
+
+        # format school data -> "YYYYSchool", "YYYYN0Size","YYYYSchool", . . .
+
+        school_metric_data = school_metric_data.rename(
+            columns={
+                c: str(c) + "School"
+                for c in school_metric_data.columns
+                if c not in ["Category"]
+            }
+        )
+
+        # temporarily store Low and High Grade rows
+        other_rows = school_metric_data[
+            school_metric_data["Category"].str.contains(r"Low|High")
+        ]
+
+        # Merge Total Tested DF with Proficiency DF based on a cross
+        # merge substring match
+
+        # add new column with substring values and drop old Category column
+        data_tested["Substring"] = data_tested["Category"].replace(
+            {" Total Tested": "", " Test N": ""}, regex=True
+        )
+
+        data_tested = data_tested.drop("Category", axis=1)
+
+        # this cross-merge and substring match process takes about .3s -
+        # there must be a faster way
+        final_data = school_metric_data.merge(data_tested, how="cross")
+
+        # temporarily rename "English Learner" category because otherwise the
+        # cross merge will match both "English" and "Non English"
+        final_data = final_data.replace(
+            {
+                "Non English Language Learners": "Temp1",
+                "English Language Learners": "Temp2",
+            },
+            regex=True,
+        )
+
+        # filter rows - keeping only those rows where a substring is in Category
+        final_data = final_data[
+            [a in b for a, b in zip(final_data["Substring"], final_data["Category"])]
+        ]
+
+        final_data = final_data.replace(
+            {
+                "Temp1": "Non English Language Learners",
+                "Temp2": "English Language Learners",
+            },
+            regex=True,
+        )
+
+        final_data = final_data.drop("Substring", axis=1)
+        final_data = final_data.reset_index(drop=True)
+
+        # reorder columns for display
+        school_cols = [e for e in final_data.columns if "School" in e]
+        nsize_cols = [e for e in final_data.columns if "N-Size" in e]
+        school_cols.sort()
+        nsize_cols.sort()
+
+        # alternate columns in the School,N-Size,School,N-Size . . . pattern
+        final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+        final_cols.insert(0, "Category")
+
+        final_data = final_data[final_cols]
+
+        # Add Low Grade, and High Grade rows back (missing cols will populate with NaN)
+        final_data = pd.concat(
+            [final_data.reset_index(drop=True), other_rows.reset_index(drop=True)],
+            axis=0,
+        ).reset_index(drop=True)
+
+        # NOTE: final pre-calculated school K8 Metric data and final K8 info table data
+        final_data = conditional_fillna(final_data)
 
         # TODO: THis belongs right before final data
         # result, no_data = check_for_no_data(result)
         # print(no_data)
         # insuf_string = check_for_insufficient_n_size(result)
         # print(insuf_string)
+        # TODO: ADD BACK
 
-        # TODO: k8 Analysis
+    ### K8 Information (fig data)
+        school_info_fig = calculated_data[calculated_data["School ID"] == school_id].copy()
+
+        # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
+        school_info_fig = school_info_fig.filter(
+            regex=r"\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$|Low|High|School Name",
+            axis=1,
+        )
+        school_info_fig = school_info_fig.sort_values("Year").reset_index(drop=True)
+
+        # NOTE: final k8_info data for figs
+        school_info_fig = conditional_fillna(school_info_fig)
+
+
+
+        ### K8 Analysis data
         k8_analysis = calculated_data.copy()
         k8_analysis = k8_analysis.filter(
             regex=r"\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$|Low|High|School Name|School ID|Corporation ID",
@@ -1440,11 +1794,10 @@ def get_all_the_data(*args):
         school_idx = k8_analysis.index[k8_analysis["School ID"] == school_id].tolist()[0]
         k8_analysis = k8_analysis.loc[:, ~k8_analysis.iloc[school_idx].isna()]
 
-        # NOTE: We don't want to get rid of "***" yet, but we also don't
+        # We don't want to get rid of "***" yet, but we also don't
         # want to pass through a dataframe that that is all "***" - so
         # we convert create a copy, coerce all of the academic columns
         # to numeric and check to see if the entire dataframe for NaN
-        
         check_for_unchartable_data = k8_analysis.copy()
 
         check_for_unchartable_data.drop(
@@ -1466,28 +1819,10 @@ def get_all_the_data(*args):
             k8_analysis = pd.DataFrame()
 
         # NOTE: Return here- filter by year and then drop '***' - line 723 in analysis_single_year
-        # TODO: k8 Analysis
 
 
-        # TODO: k8-info FIG
-        school_info_fig = calculated_data[calculated_data["School ID"] == school_id].copy()
-
-        # filter to remove columns used to calculate the final proficiency (Total Tested and Total Proficient)
-        school_info_fig = school_info_fig.filter(
-            regex=r"\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$|Low|High|School Name",
-            axis=1,
-        )
-        school_info_fig = school_info_fig.sort_values("Year").reset_index(drop=True)
-        school_info_fig = conditional_fillna(school_info_fig)
-        # TODO: k8-info FIG
 
 
-    filename4 = (
-        "t0asty.csv"
-    )
-    hs_data.to_csv(filename4, index=False)
-
-    
     return data
 
 def get_year_over_year_data(*args):

@@ -121,7 +121,6 @@ def process_k8_analysis_data(
 
     return final_data
 
-
 def process_k8_info_data(data: pd.DataFrame) -> pd.DataFrame:
     """
     Process a dataframe with ILEARN/IREAD data including N-Size. Includes additional
@@ -584,8 +583,8 @@ def process_high_school_academic_data(
             regex=r"Cohort Count$|Graduates$|AHS|Benchmark|Total Tested|^Year$", axis=1
         )
 
-        # remove "ELA and Math" columns
-        data = data.drop(list(data.filter(regex="ELA and Math")), axis=1)
+        # remove "ELA and Math" columns #TODO: Check, EBRW?
+        data = data.drop(list(data.filter(regex="EBRW and Math")), axis=1)
 
         if data_geo_code == school_geo_code:
             # group corp dataframe by year and sum all rows for each category
@@ -671,7 +670,6 @@ def process_high_school_academic_data(
             # make sure there are no lingering NoneTypes
             data = data.fillna(value=np.nan)
 
-            
             # Merge Total Tested DF with Proficiency DF based on substring match
 
             # add new column with substring values and drop old Category column
