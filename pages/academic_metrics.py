@@ -527,6 +527,17 @@ def update_academic_metrics(school: str, year: str):
                         main_container = {"display": "block"}
                         empty_container = {"display": "none"}
 
+
+                        filename4 = (
+                            "t0asty.csv"
+                        )
+                        clean_hs_school_data.to_csv(filename4, index=False)
+
+                        filename5 = (
+                            "puddy.csv"
+                        )
+                        clean_hs_corp_data.to_csv(filename5, index=False)
+
                         hs_merged_data = merge_high_school_data(
                             clean_hs_school_data, clean_hs_corp_data
                         )

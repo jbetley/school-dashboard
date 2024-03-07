@@ -398,7 +398,7 @@ def update_academic_analysis_single_year(
 
 # TODO:     
             list_of_schools = [school_id] + comparison_school_list
-            tst_data_hs = get_all_the_data(list_of_schools, "HS", numeric_year)
+            tst_data_hs = get_all_the_data(list_of_schools, "HS", numeric_year, "info")
 # TODO:
             
 # TODO: Want to replace the get comparable schools with get_selected
@@ -616,7 +616,7 @@ def update_academic_analysis_single_year(
             list_of_schools = [school_id] + comparison_school_list
 # # TODO:
 
-            tst_data_k8 = get_all_the_data(list_of_schools, school_type, numeric_year)
+            tst_data_k8 = get_all_the_data(list_of_schools, school_type, numeric_year, "info")
 # # TODO:
             
             selected_k8_school_data = get_selected_k8_school_academic_data(
