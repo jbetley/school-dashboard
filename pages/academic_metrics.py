@@ -136,11 +136,15 @@ def update_academic_metrics(school: str, year: str):
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                filename5 = (
-                    "punc4kes.csv"
-                )
-                clean_school_data.to_csv(filename5, index=False)
-
+                # filename5 = (
+                #     "punc4kes.csv"
+                # )
+                # clean_school_data.to_csv(filename5, index=False)
+                from .load_data import get_all_the_data
+    # TODO:     
+                list_of_schools = [school]
+                tst_data_metrics = get_all_the_data(list_of_schools, "K8", selected_year_numeric, "metrics")
+    # TODO:
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
 
                 raw_corp_data = get_k8_corporation_academic_data(school)
@@ -541,6 +545,7 @@ def update_academic_metrics(school: str, year: str):
                         hs_merged_data = merge_high_school_data(
                             clean_hs_school_data, clean_hs_corp_data
                         )
+
                         combined_grad_metrics_data = calculate_high_school_metrics(
                             hs_merged_data
                         )

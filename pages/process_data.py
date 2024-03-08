@@ -833,6 +833,148 @@ def process_comparable_high_school_academic_data(raw_data: pd.DataFrame) -> pd.D
 
     return data
 
+# filters tested (nsize) cols and proficiency calculations into
+# separate dataframes, performs some cleanup, including a transposition,
+# moving years to column headers and listing categories in their own
+# columns and then cross-merging the two. variables change depending on
+# whether we are analyzing a school or a corporation
+def transpose_data(df,params):
+
+    # dataset is corp if SchoolID == CorpID and SchoolName == CorpName
+    if df["School ID"].equals(df["Corporation ID"]) and \
+            df["School Name"].equals(df["Corporation Name"]):
+        # type_id = "Corporation ID"
+        nsize_id = "CN-Size"
+        name_id = "Corp"
+    else:
+        # type_id = "School ID"
+        nsize_id = "SN-Size"
+        name_id = "School"
+
+    # create dataframes with N-Size data for info/analysis pages
+    if params["type"] == "HS" or params["type"] == "AHS":
+        tested_cols = "Total Tested|Cohort Count|Year"
+        filter_cols = r"^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|^Year$"
+        substring_dict = {" Total Tested": "", "\|Cohort Count": "|Graduation"} 
+    
+    else:
+        tested_cols = "Total Tested|Test N|Year"        
+        filter_cols = r"School ID|Corporation ID|Corporation Name|Low Grade|High Grade|\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$"
+        substring_dict = {" Total Tested": "", " Test N": ""}
+
+    # Get Proficiency and Tested (N-Size) data by id in separate dataframe.
+    df.columns = df.columns.astype(str)
+
+    tested_data = df.filter(regex=tested_cols, axis=1).copy()
+    proficiency_data = df.filter(regex=filter_cols, axis=1).copy()
+
+    tested_data = (
+        tested_data.set_index("Year")
+        .T.rename_axis("Category")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    tested_data = tested_data.rename(
+        columns={
+            c: str(c) + nsize_id #"N-Size"
+            for c in tested_data.columns
+            if c not in ["Category"]
+        }
+    )
+
+    tested_data = tested_data.fillna(value=np.nan)
+    tested_data = tested_data.replace(0, np.nan)
+
+    # add new column with substring values and drop the original
+    # Category column
+    tested_data["Substring"] = tested_data["Category"].replace(
+        substring_dict, regex=True
+    )
+
+    tested_data = tested_data.drop("Category", axis=1)
+
+    proficiency_data = (
+        proficiency_data.set_index("Year")
+        .T.rename_axis("Category")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    proficiency_data = proficiency_data.rename(
+        columns={
+            c: str(c) + name_id #"School"
+            for c in proficiency_data.columns
+            if c not in ["Category"]
+        }
+    )
+
+    proficiency_data = proficiency_data.reset_index(drop=True)
+    
+    # temporarily store Low/High grade cols for K8
+    if params["type"] == "K8":
+        other_rows = proficiency_data[
+            proficiency_data["Category"].str.contains(r"Low|High")
+        ]
+
+    proficiency_data = proficiency_data.fillna(value=np.nan)
+
+    # Merge Total Tested DF with Proficiency DF based on substring match
+    # NOTE: the cross-merge and substring match process takes about .3s,
+    # is there a faster way?
+    merged_data = proficiency_data.merge(tested_data, how="cross")
+
+    # Need to temporarily rename "English Learner" because otherwise merge
+    # will match both "English" and "Non English"
+    merged_data = merged_data.replace(
+        {
+            "Non English Language Learners": "Temp1",
+            "English Language Learners": "Temp2",
+        },
+        regex=True,
+    )
+
+    # keep only those rows where substring is in Category
+    merged_data = merged_data[
+        [
+            a in b
+            for a, b in zip(merged_data["Substring"], merged_data["Category"])
+        ]
+    ]
+
+    merged_data = merged_data.replace(
+        {
+            "Temp1": "Non English Language Learners",
+            "Temp2": "English Language Learners",
+        },
+        regex=True,
+    )
+
+    merged_data = merged_data.drop("Substring", axis=1)
+    merged_data = merged_data.reset_index(drop=True)
+
+    # reorder columns for display
+    school_cols = [e for e in merged_data.columns if name_id in e]
+    nsize_cols = [e for e in merged_data.columns if nsize_id in e]
+
+    school_cols.sort()
+    nsize_cols.sort()
+
+    final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+
+    final_cols.insert(0, "Category")
+    final_data = merged_data[final_cols]
+
+    # Add Low and High Grade rows back to k8 data and
+    # create df for information figs
+    if params["type"] == "K8":
+        final_data = pd.concat(
+            [final_data.reset_index(drop=True), other_rows.reset_index(drop=True)],
+            axis=0,
+        ).reset_index(drop=True)
+
+    return final_data
+
 
 # NOTE: Used in Academic Metrics only
 def merge_high_school_data(

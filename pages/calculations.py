@@ -242,7 +242,8 @@ def recalculate_total_proficiency(
     revised_totals = pd.DataFrame()
 
 # TODO: ADD CHANGE ONCE REFACTOR IS COMPLETE (OLD is shorter one)
-    # revised_totals["School ID"] = revised_data["School ID"]
+    # TODO: FIX THIS BUGGIN THIS SHIT OUT OF ME
+    #revised_totals["School ID"] = revised_data["School ID"]
     revised_totals[["Year","School ID","School Name"]] = revised_data[["Year", "School ID","School Name"]]
 
     numeric_columns = [
