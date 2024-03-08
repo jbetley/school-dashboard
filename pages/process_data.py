@@ -840,14 +840,19 @@ def process_comparable_high_school_academic_data(raw_data: pd.DataFrame) -> pd.D
 # whether we are analyzing a school or a corporation
 def transpose_data(df,params):
 
-    # dataset is corp if SchoolID == CorpID and SchoolName == CorpName
-    if df["School ID"].equals(df["Corporation ID"]) and \
-            df["School Name"].equals(df["Corporation Name"]):
-        # type_id = "Corporation ID"
+    # Determine whether df is of charter school or school corporation.
+    # Need to check both. Generally the Name and IDs will be the same for a
+    # school corporation, while a charter will have different IDs. However,
+    # in the event that a charter does have the same ID as the corp, it will
+    # have different Names- so we need both tests to be true to be sure the
+    # dataframe belonds to a corporation.
+    if ((df["School ID"] == df["Corporation ID"]) & 
+        (df["School Name"] == df["Corporation Name"])).sum() > 1:
+
+        print("PRCOESS CORP")
         nsize_id = "CN-Size"
         name_id = "Corp"
     else:
-        # type_id = "School ID"
         nsize_id = "SN-Size"
         name_id = "School"
 
@@ -995,25 +1000,25 @@ def merge_high_school_data(
     all_corp_data.columns = all_corp_data.columns.astype(str)
 
     # Add State Graduation Average to Corp DataFrame
-    state_grad_average = get_graduation_data()
-    state_grad_average = state_grad_average.loc[::-1].reset_index(drop=True)
+    state_grad_average_corp = get_graduation_data()
+    # state_grad_average = state_grad_average.loc[::-1].reset_index(drop=True)
 
-    # merge state_grad_average with corp_data
-    state_grad_average = (
-        state_grad_average.set_index("Year")
-        .T.rename_axis("Category")
-        .rename_axis(None, axis=1)
-        .reset_index()
-    )
+    # # merge state_grad_average with corp_data
+    # state_grad_average = (
+    #     state_grad_average.set_index("Year")
+    #     .T.rename_axis("Category")
+    #     .rename_axis(None, axis=1)
+    #     .reset_index()
+    # )
 
-    # rename columns and add state_grad average to corp df
-    state_grad_average_corp = state_grad_average.rename(
-        columns={
-            c: str(c) + "Corp"
-            for c in state_grad_average.columns
-            if c not in ["Category"]
-        }
-    )
+    # # rename columns and add state_grad average to corp df
+    # state_grad_average_corp = state_grad_average.rename(
+    #     columns={
+    #         c: str(c) + "Corp"
+    #         for c in state_grad_average.columns
+    #         if c not in ["Category"]
+    #     }
+    # )
     all_corp_data = pd.concat(
         [
             all_corp_data.reset_index(drop=True),
@@ -1077,13 +1082,23 @@ def merge_high_school_data(
 
     hs_merged_data = all_school_data.merge(all_corp_data, on="Category", how="left")
     hs_merged_data = hs_merged_data[merged_cols]
-
+    
     tmp_category = all_school_data["Category"]
     all_school_data = all_school_data.drop("Category", axis=1)
     all_corp_data = all_corp_data.drop("Category", axis=1)
 
     all_school_data = all_school_data.fillna(value=np.nan)
     all_corp_data = all_corp_data.fillna(value=np.nan)
+
+    filename28 = (
+        "orange_sch.csv"
+    )
+    all_school_data.to_csv(filename28, index=False)
+
+    filename29 = (
+        "orange_crp.csv"
+    )
+    all_corp_data.to_csv(filename29, index=False)
 
     # calculate difference between two dataframes (for loop
     # not great - but still relatively fast)
@@ -1092,6 +1107,11 @@ def merge_high_school_data(
         hs_results[y] = calculate_difference(
             all_school_data[y + "School"], all_corp_data[y + "Corp"]
         )
+                
+    # filename18 = (
+    #     "blair.csv"
+    # )
+    # hs_results.to_csv(filename18, index=False)
 
     # Create final column order - dropping the corp avg and corp N-Size cols
     # (by not including them in the list) because we do not display them

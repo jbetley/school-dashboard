@@ -18,7 +18,7 @@ import numpy as np
 import re
 from sqlalchemy import create_engine, text
 
-from .calculations import calculate_percentage, conditional_fillna
+from .calculations import calculate_percentage, conditional_fillna, calculate_difference
 
 # NOTE: No K8 academic data exists for 2020
 
@@ -526,8 +526,29 @@ def get_graduation_data():
             Year
         """
     )
+    
+    results = run_query(q, params)
+    
+    results = results.loc[::-1].reset_index(drop=True)
 
-    return run_query(q, params)
+    # merge state_grad_average with corp_data
+    results = (
+        results.set_index("Year")
+        .T.rename_axis("Category")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    # rename columns and add state_grad average to corp df
+    results = results.rename(
+        columns={
+            c: str(c) + "Corp"
+            for c in results.columns
+            if c not in ["Category"]
+        }
+    )
+
+    return results
 
 
 def get_gradespan(school_id, selected_year, all_years):
@@ -1276,6 +1297,10 @@ def get_all_the_data(*args):
 
     q = text(query_string)
 
+###
+    print(params)
+###
+    
     school_data = run_query(q, params)
     school_data = school_data.sort_values(by="Year", ascending=False)
 
@@ -1485,17 +1510,148 @@ def get_all_the_data(*args):
             # TODO: HS Metrics Data
             # TODO New HS has CorpID/Name is missing Low/High Grade - not sure that this matters
             from .calculate_metrics import calculate_adult_high_school_metrics, calculate_high_school_metrics
-            metric_data = processed_data.copy()
 
-            school_metrics_data = transpose_data(metric_data,params)
-            corp_metrics_data = transpose_data(metric_data,params)
-
+            corp_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]].copy()
+            school_data = processed_data[processed_data["School ID"] == school_id].copy()
+            
+            school_metrics_data = transpose_data(school_data,params)
+            corp_metrics_data = transpose_data(corp_data,params)
+            
             if params["type"] == "AHS":
                 final_metric_data = calculate_adult_high_school_metrics(school_id, metric_data)
 
             elif params["type"] == "HS":
-                merged_data = merge_high_school_data(school_id,school_id) # school, corp
-                final_metric_data = calculate_high_school_metrics(metric_data)
+
+                # all_school_data.columns = all_school_data.columns.astype(str)
+                # all_corp_data.columns = all_corp_data.columns.astype(str)
+
+                # Add State Graduation Average to Corp DataFrame
+                state_grad_average = get_graduation_data()
+
+                corp_metrics_data = pd.concat(
+                    [
+                        corp_metrics_data.reset_index(drop=True),
+                        state_grad_average.reset_index(drop=True),
+                    ],
+                    axis=0,
+                ).reset_index(drop=True)
+
+                # For the school calculation we duplicate the school"s Total Graduation rate and
+                # rename it "State Grad Average" - when the difference is calculated
+                # between the two data frames, the difference between the Total Graduation Rates
+                # will be School minus Corportion and the difference between State Grad Average Rates
+                # will be School minus State Average
+
+# TODO: Why Are We Doing this?
+                # If no Total Graduation Rate Category exists for a school, we add
+                # a new row filled with nan (by enlargement)
+                if "Total|Graduation Rate" not in school_metrics_data["Category"].values:
+
+                    school_metrics_data.loc[len(school_metrics_data)] = np.nan
+                    school_metrics_data.loc[
+                        school_metrics_data.index[-1], "Category"
+                    ] = "Total|Graduation Rate"
+
+                duplicate_row = school_metrics_data[
+                    school_metrics_data["Category"] == "Total|Graduation Rate"
+                ].copy()
+                duplicate_row["Category"] = "State Graduation Average"
+                school_metrics_data = pd.concat(
+                    [school_metrics_data, duplicate_row], axis=0, ignore_index=True
+                )
+
+                # Clean up and merge school and corporation dataframes
+                year_cols = list(school_metrics_data.columns[:0:-1])
+                year_cols = [c[0:4] for c in year_cols]  # keeps only YYYY part of string
+                year_cols = list(set(year_cols))
+                year_cols.sort()
+
+                # last bit of cleanup is to drop "Corporation Name" Category from corp df
+                corp_metrics_data = corp_metrics_data.drop(
+                    corp_metrics_data.loc[corp_metrics_data["Category"] == "Corporation Name"].index
+                ).reset_index(drop=True)
+
+                # Create list of alternating columns
+                # we technically do not need the Corporation N-Size at this point, but
+                # we will keep it just in case. We drop it in the final df
+                corp_cols = [e for e in corp_metrics_data.columns if "Corp" in e]
+                cnsize_cols = [e for e in corp_metrics_data.columns if "CN-Size" in e]
+                school_cols = [e for e in school_metrics_data.columns if "School" in e]
+                snsize_cols = [e for e in school_metrics_data.columns if "SN-Size" in e]
+                school_cols.sort()
+                snsize_cols.sort()
+                corp_cols.sort()
+                cnsize_cols.sort()
+
+                result_cols = [str(s) + "Diff" for s in year_cols]
+
+                merged_cols = list(
+                    itertools.chain(*zip(school_cols, snsize_cols, corp_cols, cnsize_cols))
+                )
+                merged_cols.insert(0, "Category")
+
+                hs_merged_data = school_metrics_data.merge(corp_metrics_data, on="Category", how="left")
+                hs_merged_data = hs_merged_data[merged_cols]
+
+                # create temp dataframe to calculate differences between school
+                # and corp proficiency
+                tmp_category = school_metrics_data["Category"]
+                school_metrics_data = school_metrics_data.drop("Category", axis=1)
+                school_metrics_data = school_metrics_data.fillna(value=np.nan)
+                
+                corp_metrics_data = corp_metrics_data.drop("Category", axis=1)
+                corp_metrics_data = corp_metrics_data.fillna(value=np.nan)
+                
+                filename38 = (
+                        "banana_sch.csv"
+                    )
+                school_metrics_data.to_csv(filename38, index=False)
+
+                filename39 = (
+                        "banana_crp.csv"
+                    )
+                corp_metrics_data.to_csv(filename39, index=False)
+                
+                # calculate difference between two dataframes (for loop
+                # not great - but still relatively fast)
+                hs_results = pd.DataFrame()
+                for y in year_cols:
+                    hs_results[y] = calculate_difference(
+                        school_metrics_data[y + "School"], corp_metrics_data[y + "Corp"]
+                    )
+
+                # filename17 = (
+                #     "tootie.csv"
+                # )
+                # hs_results.to_csv(filename17, index=False)
+
+                # Create final column order - dropping the corp avg and corp N-Size cols
+                # (by not including them in the list) because we do not display them
+                final_cols = list(itertools.chain(*zip(school_cols, snsize_cols, result_cols)))
+                final_cols.insert(0, "Category")
+
+                hs_results = hs_results.set_axis(result_cols, axis=1)
+                hs_results.insert(loc=0, column="Category", value=tmp_category)
+
+                final_hs_academic_data = hs_merged_data.merge(hs_results, on="Category", how="left")
+                final_hs_academic_data = final_hs_academic_data[final_cols]
+
+                final_hs_academic_data.columns = final_hs_academic_data.columns.str.replace(
+                    "SN-Size", "N-Size", regex=True
+                )
+
+                print('HS Grad')
+                filename7 = (
+                    "puddy.csv"
+                )
+                final_hs_academic_data.to_csv(filename7, index=False)
+                
+                return final_hs_academic_data
+
+                # final_metric_data = calculate_high_school_metrics(metric_data)
+
+
+
 
             #metric_data = metric_data.set_index("Category")
             # school_metric_data = school_metric_data.drop(["School ID","Corporation ID","Corporation Name"])
@@ -1527,11 +1683,11 @@ def get_all_the_data(*args):
                         
             else:   # academic_metrics
                 corp_info_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]]
-                
+
                 final_corp_data = transpose_data(corp_info_data,params)        
-
+                
                 corp_proficiency_cols = [col for col in final_corp_data.columns.to_list() if "Corp" in col]
-
+                
                 # School Proficiency and N-Size and Corp Profiency
                 metric_data = pd.concat([final_school_data, final_corp_data[corp_proficiency_cols]], axis=1)
             
@@ -1539,16 +1695,8 @@ def get_all_the_data(*args):
                 #calculate_k8_yearly_metrics # school
                 #calculate_k8_comparison_metrics # both
 
-            
-                # filename6 = (
-                #     "duddy.csv"
-                # )
-                # final_school_data.to_csv(filename6, index=False)
+                return metric_data
 
-                filename7 = (
-                    "puddy.csv"
-                )
-                metric_data.to_csv(filename7, index=False)
 
 
 

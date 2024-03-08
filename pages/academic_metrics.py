@@ -20,7 +20,8 @@ from .load_data import (
     get_high_school_academic_data,
     get_hs_corporation_academic_data,
     get_k8_corporation_academic_data,
-    get_excluded_years
+    get_excluded_years,
+    get_all_the_data    
 )
 from .process_data import (
     process_k8_info_data,
@@ -140,11 +141,11 @@ def update_academic_metrics(school: str, year: str):
                 #     "punc4kes.csv"
                 # )
                 # clean_school_data.to_csv(filename5, index=False)
-                from .load_data import get_all_the_data
-    # TODO:     
-                list_of_schools = [school]
-                tst_data_metrics = get_all_the_data(list_of_schools, "K8", selected_year_numeric, "metrics")
-    # TODO:
+
+    # # TODO:     
+    #             list_of_schools = [school]
+    #             tst_data_metrics = get_all_the_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
+    # # TODO:
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
 
                 raw_corp_data = get_k8_corporation_academic_data(school)
@@ -378,6 +379,13 @@ def update_academic_metrics(school: str, year: str):
     ):
         selected_raw_hs_school_data = get_high_school_academic_data(school)
 
+        if selected_school_type == "K12":
+            selected_school_type = "HS"
+    # TODO:     
+        list_of_schools = [school]
+        tst_data_metrics = get_all_the_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
+    # TODO:
+        
         if excluded_years:
             selected_raw_hs_school_data = selected_raw_hs_school_data[
                 ~selected_raw_hs_school_data["Year"].isin(excluded_years)
@@ -530,17 +538,6 @@ def update_academic_metrics(school: str, year: str):
                         hs_metrics_container = {"display": "block"}
                         main_container = {"display": "block"}
                         empty_container = {"display": "none"}
-
-
-                        filename4 = (
-                            "t0asty.csv"
-                        )
-                        clean_hs_school_data.to_csv(filename4, index=False)
-
-                        filename5 = (
-                            "puddy.csv"
-                        )
-                        clean_hs_corp_data.to_csv(filename5, index=False)
 
                         hs_merged_data = merge_high_school_data(
                             clean_hs_school_data, clean_hs_corp_data

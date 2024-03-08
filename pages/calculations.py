@@ -243,6 +243,8 @@ def recalculate_total_proficiency(
 
 # TODO: ADD CHANGE ONCE REFACTOR IS COMPLETE (OLD is shorter one)
     # TODO: FIX THIS BUGGIN THIS SHIT OUT OF ME
+    if "School Name" not in revised_data:
+        revised_data["School Name"] = "TEMP"
     #revised_totals["School ID"] = revised_data["School ID"]
     revised_totals[["Year","School ID","School Name"]] = revised_data[["Year", "School ID","School Name"]]
 
