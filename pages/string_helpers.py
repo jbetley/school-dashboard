@@ -11,7 +11,11 @@ import re
 import textwrap
 from typing import Tuple
 
-from .load_data import ethnicity, subgroup, info_categories
+from .globals import (
+    ethnicity,
+    subgroup,
+    info_categories
+)
 
 # helper function for natural_keys
 def atoi(text):

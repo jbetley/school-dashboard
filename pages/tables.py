@@ -14,31 +14,8 @@ from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 import dash_mantine_components as dmc
 
-from .load_data import metric_strings, get_student_level_ilearn
-
-# default table styles
-table_style = {"border": "none", "fontFamily": "Inter, sans-serif"}
-
-table_cell = {
-    "whiteSpace": "normal",
-    "height": "auto",
-    "textAlign": "center",
-    "color": "#6783a9",
-    "minWidth": "25px",
-    "width": "25px",
-    "maxWidth": "25px",
-}
-
-table_header = {
-    "backgroundColor": "#ffffff",
-    "fontSize": "12px",
-    "fontFamily": "Montserrat, sans-serif",
-    "color": "#6783a9",
-    "textAlign": "center",
-    "fontWeight": "bold",
-    "border": "none",
-}
-
+from .globals import metric_strings, table_style, table_cell, table_header
+from .load_data import get_student_level_ilearn
 
 def create_proficiency_key() -> list:
     """

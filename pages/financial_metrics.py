@@ -11,7 +11,8 @@ import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
-from .load_data import max_display_years, get_school_index, get_financial_data
+from .globals import max_display_years
+from .load_data import get_school_index, get_financial_data
 from .calculate_metrics import calculate_financial_metrics
 from .tables import no_data_page, no_data_table, create_proficiency_key
 from .string_helpers import convert_to_svg_circle

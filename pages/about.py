@@ -12,10 +12,12 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-from .load_data import (
+from .globals import (
     ethnicity,
     subgroup,
-    max_display_years,
+    max_display_years
+)
+from .load_data import (
     current_academic_year,
     get_school_index,
     get_financial_data,

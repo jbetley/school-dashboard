@@ -12,11 +12,14 @@ import pandas as pd
 import numpy as np
 
 # import local functions
-from .load_data import (
+from .globals import (
     ethnicity,
     subgroup,
     ethnicity,
-    info_categories,
+    info_categories
+)
+
+from .load_data import (
     get_school_index,
     get_school_coordinates,
     get_comparable_schools,
@@ -25,7 +28,6 @@ from .load_data import (
     get_hs_corporation_academic_data,
     get_selected_k8_school_academic_data,
     get_all_the_data
-    # get_selected_hs_school_academic_data
 )
 from .process_data import (
     process_comparable_high_school_academic_data,

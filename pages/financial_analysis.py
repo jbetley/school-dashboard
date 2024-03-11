@@ -14,8 +14,9 @@ import plotly.express as px
 import pandas as pd
 import plotly.graph_objects as go
 
+from .globals import max_display_years
+
 from .load_data import (
-    max_display_years,
     get_school_index,
     get_financial_data,
     get_financial_ratios,

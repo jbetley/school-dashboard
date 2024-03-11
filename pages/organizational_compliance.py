@@ -8,7 +8,8 @@ import dash
 from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 
-from .load_data import get_financial_data, get_school_index, max_display_years
+from .globals import max_display_years
+from .load_data import get_financial_data, get_school_index
 from .tables import no_data_table, create_proficiency_key
 from .string_helpers import convert_to_svg_circle
 

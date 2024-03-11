@@ -11,10 +11,12 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from .load_data import (
+from .globals import (
     ethnicity,
     subgroup,
-    grades_all,
+    grades_all
+)
+from .load_data import (
     get_school_index,
     get_k8_school_academic_data,
     get_high_school_academic_data,
@@ -137,14 +139,14 @@ def update_academic_metrics(school: str, year: str):
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                # filename5 = (
-                #     "punc4kes.csv"
-                # )
-                # clean_school_data.to_csv(filename5, index=False)
-
     # # TODO:     
     #             list_of_schools = [school]
-    #             tst_data_metrics = get_all_the_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
+    #             if selected_school_type == "K12":
+    #                 tmp_type = "K8"
+    #             else:
+    #                 tmp_type = selected_school_type
+
+    #             tst_data_metrics = get_all_the_data(list_of_schools, tmp_type, selected_year_numeric, "metrics")
     # # TODO:
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
 
@@ -542,6 +544,10 @@ def update_academic_metrics(school: str, year: str):
                         hs_merged_data = merge_high_school_data(
                             clean_hs_school_data, clean_hs_corp_data
                         )
+                        # filename7 = (
+                        #     "puddy.csv"
+                        # )
+                        # hs_merged_data.to_csv(filename7, index=False)
 
                         combined_grad_metrics_data = calculate_high_school_metrics(
                             hs_merged_data

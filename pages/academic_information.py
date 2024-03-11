@@ -17,13 +17,17 @@ import re
 import itertools
 
 # import local functions
-from .load_data import (
+from .globals import (
     ethnicity,
     subgroup,
     subject,
     grades_all,
     grades,
-    grades_ordinal,
+    grades_ordinal
+)
+
+from .load_data import (
+
     get_school_stns,
     get_iread_student_data,
     get_wida_student_data,
@@ -219,6 +223,11 @@ def update_academic_information_page(
             else:
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
+
+                filename7 = (
+                    "puddy.csv"
+                )
+                all_hs_school_data.to_csv(filename7, index=False)
 
                 # Graduation Rate Tables
                 grad_overview_categories = ["Total", "Non Waiver", "State Average"]
