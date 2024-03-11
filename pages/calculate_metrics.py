@@ -283,6 +283,8 @@ def calculate_metrics(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.D
     school_data = data.filter(regex="Category|School|N-Size", axis=1).copy()
     school_delta_data = data.filter(regex="Category|School|N-Size", axis=1).copy()
     
+    # Calculate Year over Year Metrics
+
     # Two columns for each year - [School, N-Size]; years are ascending. We want calculate
     # the difference between the second to last column (the school column for the most recent Year) and
     # the fourth from last column (the school column for the most recent previous year) and continue doing
@@ -377,16 +379,30 @@ def calculate_metrics(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.D
         for k, v in col_pair:
             school_data[v] = np.where(school_data[k] == 0, "DNMS", school_data[v])
 
-## DIFFERNECE ALGO
+
+    # Calculate Comparison Metrics
+    filename47 = (
+        "sch_compare.csv"
+    )
+    school_delta_data.to_csv(filename47, index=False)
+
+## DIFFERENCE ALGO
+
+    filename48 = (
+        "cor_compare.csv"
+    )
+    corp_data.to_csv(filename48, index=False)
+
     excluded_years = get_excluded_years(year)
 
     # NOTE: using difference() reverses the order of the columns which would normally
     # be an issue, except that in this case we are manually organizing the columns (merged_cols)
     if excluded_years:
         corp_data = corp_data[corp_data.columns.difference(excluded_years)]
-
-    school_delta_data.columns = school_delta_data.columns.astype(str)
-    corp_data.columns = corp_data.columns.astype(str)
+        school_delta_data = school_delta_data[school_delta_data.columns.difference(excluded_years)]
+    
+    # school_delta_data.columns = school_delta_data.columns.astype(str)
+    # corp_data.columns = corp_data.columns.astype(str)
 
     category_list = school_delta_data["Category"].tolist() + ["Year"]
 
@@ -401,8 +417,14 @@ def calculate_metrics(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.D
     year_cols = list(set(year_cols))
     year_cols.sort()
 
-    # add_suffix to year cols
-    corp_data = corp_data.set_index(["Category"]).add_suffix("Corp").reset_index()
+    # TODO ?
+    # last bit of cleanup is to drop "Corporation Name" Category from corp df
+    corp_data = corp_data.drop(
+        corp_data.loc[corp_data["Category"] == "Corporation Name"].index
+    ).reset_index(drop=True)
+
+    # # add_suffix to year cols
+    # corp_data = corp_data.set_index(["Category"]).add_suffix("Corp").reset_index()
 
     # Use column list to merge
     corp_cols = [e for e in corp_data.columns if "Corp" in e]
@@ -414,7 +436,6 @@ def calculate_metrics(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.D
 
     result_cols = [str(s) + "Diff" for s in year_cols]
 
-## TODO: Combine these more efficiently - this is redundant
     # temporarily place school and corp cols next to each other
     merged_cols = list(itertools.chain(*zip(school_cols, corp_cols, nsize_cols)))
     merged_cols.insert(0, "Category")
@@ -422,12 +443,22 @@ def calculate_metrics(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.D
     merged_data = school_delta_data.merge(corp_data, on="Category", how="left")
     merged_data = merged_data[merged_cols]
 
+    # TODO: ?
     school_delta_data = school_delta_data.reset_index(drop=True)
-
+    
+    # create temp dataframe to calculate differences between school
+    # and corp proficiency
     tmp_category = school_delta_data["Category"]
     school_delta_data = school_delta_data.drop("Category", axis=1)
+    # TODO: ?
+    school_delta_data = school_delta_data.fillna(value=np.nan)
+    
     corp_data = corp_data.drop("Category", axis=1)
+    # TODO: ?
+    corp_data = corp_data.fillna(value=np.nan)
 
+    # calculate difference between two dataframes (using a for loop
+    # is not ideal, but we need to use row-wise calculations)
     k8_result = pd.DataFrame()
     for c in school_delta_data.columns:
         c = c[0:4]
@@ -435,7 +466,19 @@ def calculate_metrics(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.D
             school_delta_data[c + "School"], corp_data[c + "Corp"]
         )
 
+    # TODO: High School Version??
+    # hs_results = pd.DataFrame()
+    # for y in year_cols:
+    #     hs_results[y] = calculate_difference(
+    #         school_metrics_data[y + "School"], corp_metrics_data[y + "Corp"]
+    #     )
+
+
     # reorganize headers
+        
+    # Create final column order - dropping the corp avg and corp N-Size cols
+    # (by not including them in the list) because we do not display them
+
     final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
     final_cols.insert(0, "Category")
 
@@ -447,6 +490,14 @@ def calculate_metrics(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.D
 
     final_data = final_data[final_cols]
 
+    
+    filename45 = (
+        "final-compare.csv"
+    )
+    final_data.to_csv(filename45, index=False)
+
+# TODO: Test the above
+    
     # NOTE: Pretty sure this is redundant as we add "Proficient %; suffix to totals
     # above, then remove it here, then pass to academic_analysis page, and add it
     # back. But I tried to fix it once and broke everything. So I"m just gonna
@@ -473,19 +524,7 @@ def calculate_metrics(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.D
 
     final_data = conditional_fillna(final_data)
 
-    # filename47 = (
-    #     "pre-peppy.csv"
-    # )
-    # final_k8_academic_data.to_csv(filename47, index=False)
-
-## DIFFERENCE ALGO
-
-    filename47 = (
-        "peppy.csv"
-    )
-    final_data.to_csv(filename47, index=False)
-
-    return school_data, corp_data
+    return school_data, final_data
 
 ## TODO:
 def calculate_k8_comparison_metrics(
@@ -504,15 +543,10 @@ def calculate_k8_comparison_metrics(
         pd.DataFrame: dataframe with School, Tested, Diff, and Rate columns for each year
     """
 
-    filename47 = (
-        "sch-pre-k8-compare.csv"
-    )
-    school_data.to_csv(filename47, index=False)
-
-    filename48 = (
-        "crp-pre-k8-compare.csv"
-    )
-    corp_data.to_csv(filename48, index=False)
+    # filename47 = (
+    #     "sch-pre-k8-compare.csv"
+    # )
+    # school_data.to_csv(filename47, index=False)
 
 # TODO: Take this merge/calculate difference section and merge with hS in load_data into one function
     excluded_years = get_excluded_years(year)

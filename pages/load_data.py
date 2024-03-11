@@ -1415,15 +1415,15 @@ def get_all_the_data(*args):
                             [school_metrics_data, duplicate_row], axis=0, ignore_index=True
                         )
 
-                        filename47 = (
-                            "sch-pre-hs-compare.csv"
-                        )
-                        school_metrics_data.to_csv(filename47, index=False)
+                        # filename47 = (
+                        #     "sch-pre-hs-compare.csv"
+                        # )
+                        # school_metrics_data.to_csv(filename47, index=False)
 
-                        filename48 = (
-                            "crp-pre-hs-compare.csv"
-                        )
-                        corp_metrics_data.to_csv(filename48, index=False)
+                        # filename48 = (
+                        #     "crp-pre-hs-compare.csv"
+                        # )
+                        # corp_metrics_data.to_csv(filename48, index=False)
 # TODO: Take this merge/calculate difference section and merge with K8 into one function
                         # Clean up and merge school and corporation dataframes
                         year_cols = list(school_metrics_data.columns[:0:-1])
