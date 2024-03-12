@@ -147,7 +147,7 @@ def update_academic_metrics(school: str, year: str):
     #                 tmp_type = selected_school_type
 
     #             tst_data_metrics = get_all_the_data(list_of_schools, tmp_type, selected_year_numeric, "metrics")
-    # # TODO:
+    # # # TODO:
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
 
                 raw_corp_data = get_k8_corporation_academic_data(school)

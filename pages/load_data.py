@@ -1351,6 +1351,9 @@ def get_all_the_data(*args):
         ## data for academic_information and academic_metrics pages
         elif params["page"] == "info" or params["page"] == "metrics":
 
+            # TODO:
+            from .calculate_metrics import calculate_metrics
+                        
             if params["type"] == "HS" or params["type"] == "AHS":
                 # TODO: MOVE THIS ABOVE ONCE OLD FUNCTIONS ARE REMOBED
                 from .process_data import transpose_data
@@ -1363,6 +1366,8 @@ def get_all_the_data(*args):
 
                 # Remove N-Size columns from corp dataframe
                 corp_metrics_data = corp_metrics_data.filter(regex=r"Category|Corp", axis=1)
+
+# TODO: Handle K12 Schools -when HS AND K8 Data is needed
 
                 ## AHS data for academic_information and academic_metrics
                 if params["type"] == "AHS":
@@ -1415,92 +1420,23 @@ def get_all_the_data(*args):
                             [school_metrics_data, duplicate_row], axis=0, ignore_index=True
                         )
 
-                        # filename47 = (
-                        #     "sch-pre-hs-compare.csv"
-                        # )
-                        # school_metrics_data.to_csv(filename47, index=False)
+                        # add corp data to df
+                        corp_proficiency_cols = [col for col in corp_metrics_data.columns.to_list() if "Corp" in col]
+                        merged_data = pd.concat([school_metrics_data, corp_metrics_data[corp_proficiency_cols]], axis=1)
 
-                        # filename48 = (
-                        #     "crp-pre-hs-compare.csv"
-                        # )
-                        # corp_metrics_data.to_csv(filename48, index=False)
-# TODO: Take this merge/calculate difference section and merge with K8 into one function
-                        # Clean up and merge school and corporation dataframes
-                        year_cols = list(school_metrics_data.columns[:0:-1])
-                        year_cols = [c[0:4] for c in year_cols]  # keeps only YYYY part of string
-                        year_cols = list(set(year_cols))
-                        year_cols.sort()
-
-                        # last bit of cleanup is to drop "Corporation Name" Category from corp df
-                        corp_metrics_data = corp_metrics_data.drop(
-                            corp_metrics_data.loc[corp_metrics_data["Category"] == "Corporation Name"].index
-                        ).reset_index(drop=True)
-
-                        # Create list of alternating columns - we technically do not need or use
-                        # the Corporation N-Size at this point, but we keep it just in case. It
-                        # is dropped in the final df
-                        corp_cols = [e for e in corp_metrics_data.columns if "Corp" in e]
-                        school_cols = [e for e in school_metrics_data.columns if "School" in e]
-                        nsize_cols = [e for e in school_metrics_data.columns if "N-Size" in e]
-                        school_cols.sort()
-                        nsize_cols.sort()
-                        corp_cols.sort()
-
-                        result_cols = [str(s) + "Diff" for s in year_cols]
-
-                        merged_cols = list(
-                            itertools.chain(*zip(school_cols, corp_cols, nsize_cols))
+                        filename27 = (
+                            "pre-pre-compare.csv"
                         )
-                        merged_cols.insert(0, "Category")
+                        merged_data.to_csv(filename27, index=False)
 
-                        hs_merged_data = school_metrics_data.merge(corp_metrics_data, on="Category", how="left")
-                        hs_merged_data = hs_merged_data[merged_cols]
+                        # filter
+                        hs_categories =["Graduation Rate","Benchmark %","State Graduation Average"]
+                        metric_data = merged_data[merged_data["Category"].str.contains('|'.join(hs_categories))]
 
-                        # create temp dataframe to calculate differences between school
-                        # and corp proficiency
-                        tmp_category = school_metrics_data["Category"]
-                        school_metrics_data = school_metrics_data.drop("Category", axis=1)
-                        school_metrics_data = school_metrics_data.fillna(value=np.nan)
-                        
-                        corp_metrics_data = corp_metrics_data.drop("Category", axis=1)
-                        corp_metrics_data = corp_metrics_data.fillna(value=np.nan)
-                        
-                        # calculate difference between two dataframes (using a for loop
-                        # is not ideal, but we need to use row-wise calculations)
-                        hs_results = pd.DataFrame()
-                        for y in year_cols:
-                            hs_results[y] = calculate_difference(
-                                school_metrics_data[y + "School"], corp_metrics_data[y + "Corp"]
-                            )
-
-                        # Create final column order - dropping the corp avg and corp N-Size cols
-                        # (by not including them in the list) because we do not display them
-                        final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
-                        final_cols.insert(0, "Category")
-
-                        hs_results = hs_results.set_axis(result_cols, axis=1)
-                        hs_results.insert(loc=0, column="Category", value=tmp_category)
-
-                        final_hs_academic_data = hs_merged_data.merge(hs_results, on="Category", how="left")
-                        final_hs_academic_data = final_hs_academic_data[final_cols]
-# TODO: Take this merge/calculate difference section and merge with K8 into one function
-                        # final_hs_academic_data.columns = final_hs_academic_data.columns.str.replace(
-                        #     "SN-Size", "N-Size", regex=True
-                        # )
-
-                        # TODO: Return this right before "calculate_high_school_metrics"                
-                        return final_hs_academic_data
-
-                #metric_data = metric_data.set_index("Category")
-                # school_metric_data = school_metric_data.drop(["School ID","Corporation ID","Corporation Name"])
-                # school_metric_data = school_metric_data.reset_index(drop=False)
-
-                # corporation metric data (used to calculate difference)
-                # corp_metric_data = metric_data.loc[:, metric_data.loc["School ID"] == metric_data.loc["Corporation ID"]]
-                # corp_metric_data = corp_metric_data.drop(["Low Grade","High Grade","School ID"])
-                # corp_metric_data = corp_metric_data.reset_index(drop=False)
-                # # temporarily store Low and High Grade rows
-                # print(final_hs_info_data)
+                        # TODO: Return this right before "calculate_high_school_metrics"    [AHS Metrics?]
+                        combined_years, delta_years = calculate_metrics(metric_data, params["year"])
+            
+                        return metric_data
 
             else:
 
@@ -1521,8 +1457,7 @@ def get_all_the_data(*args):
                 # TODO: ADD BACK - WHERE?
                             
                 else:   # K8 academic_metrics data
-                    # TODO:
-                    from .calculate_metrics import calculate_metrics, calculate_k8_comparison_metrics
+
 
                     corp_info_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]]
 
