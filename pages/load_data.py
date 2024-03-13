@@ -1332,7 +1332,6 @@ def get_all_the_data(*args):
                         check_for_unchartable_data[col], errors="coerce"
                     )
 
-
                 # one last check
                 if (
                     (params["type"] == "K8" or params["type"] == "K12")
@@ -1351,9 +1350,6 @@ def get_all_the_data(*args):
         ## data for academic_information and academic_metrics pages
         elif params["page"] == "info" or params["page"] == "metrics":
 
-            # TODO:
-            from .calculate_metrics import calculate_metrics
-                        
             if params["type"] == "HS" or params["type"] == "AHS":
                 # TODO: MOVE THIS ABOVE ONCE OLD FUNCTIONS ARE REMOBED
                 from .process_data import transpose_data
@@ -1366,8 +1362,6 @@ def get_all_the_data(*args):
 
                 # Remove N-Size columns from corp dataframe
                 corp_metrics_data = corp_metrics_data.filter(regex=r"Category|Corp", axis=1)
-
-# TODO: Handle K12 Schools -when HS AND K8 Data is needed
 
                 ## AHS data for academic_information and academic_metrics
                 if params["type"] == "AHS":
@@ -1395,7 +1389,9 @@ def get_all_the_data(*args):
 
                         # for the school calculation we duplicate the school's Total
                         # Graduation rate values and rename the first column ("Category")
-                        # to  "State Grad Average" - when the difference is calculated
+                        # to "State Grad Average" - for the corporation df, Total Graduation
+                        # is equal to the Corp Average and State Grade Average is the
+                        # Stat Average. So when the difference is calculated
                         # between the two data frames, Total Graduation Rate is the diff
                         # between school total and corp total and "State Average" is the
                         # diff between school total and state average
@@ -1420,22 +1416,34 @@ def get_all_the_data(*args):
                             [school_metrics_data, duplicate_row], axis=0, ignore_index=True
                         )
 
+                        # Corp -State Grad Rate should equal State Grad Rate
+                        # Corp - Total Grad Rate and Nonwaiver Grad Rate should equal corp totals
+                        # School - Both State and Total Grad Rate should equal school total grad rate
+                        # School - Nonwaiver = school
+
+                        # calcs = School (Grad) - Corp (State) = State Grad Avg diff
+                        #       = School (Grad) - Corp (Total) = Corp Grad Avg diff
+                        #       = School (NonW) - Corp 
+
                         # add corp data to df
                         corp_proficiency_cols = [col for col in corp_metrics_data.columns.to_list() if "Corp" in col]
                         merged_data = pd.concat([school_metrics_data, corp_metrics_data[corp_proficiency_cols]], axis=1)
 
-                        filename27 = (
-                            "pre-pre-compare.csv"
-                        )
-                        merged_data.to_csv(filename27, index=False)
-
                         # filter
-                        hs_categories =["Graduation Rate","Benchmark %","State Graduation Average"]
+                        # NOTE: at the moment, for metric purposes, only using Total Graduation Rate,
+                        # Non Waiver Graduation Rate, and State Graduation Average
+                        # TODO: WTF this not workings?
+                        merged_data = merged_data.replace({"Total|": "Total ", "Waiver|": "Waiver "}, regex=False)
+
+                        print(merged_data["Category"])
+                        hs_categories =["Total Graduation Rate","Non Waiver Graduation Rate","State Graduation Average"]
                         metric_data = merged_data[merged_data["Category"].str.contains('|'.join(hs_categories))]
 
-                        # TODO: Return this right before "calculate_high_school_metrics"    [AHS Metrics?]
-                        combined_years, delta_years = calculate_metrics(metric_data, params["year"])
-            
+                        filename17 = (
+                            "hs_corp_merged.csv"
+                        )
+                        metric_data.to_csv(filename17, index=False)
+
                         return metric_data
 
             else:
@@ -1458,7 +1466,6 @@ def get_all_the_data(*args):
                             
                 else:   # K8 academic_metrics data
 
-
                     corp_info_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]]
 
                     final_corp_data = transpose_data(corp_info_data,params)        
@@ -1468,23 +1475,8 @@ def get_all_the_data(*args):
                     # School Proficiency and N-Size and Corp Profiency
                     metric_data = pd.concat([final_school_data, final_corp_data[corp_proficiency_cols]], axis=1)
 
-                    filename8 = (
-                        "strawberry.csv"
-                    )
-                    metric_data.to_csv(filename8, index=False)
-
-                # TODO: send back to main to calculate metrics - COMBINE THESE TWO
-                    combined_years, delta_years = calculate_metrics(metric_data, params["year"])
-                    # combined_delta = calculate_k8_comparison_metrics(
-                    #     clean_school_data, clean_corp_data, selected_year_string
-                    # )
-                    filename9 = (
-                        "minty.csv"
-                    )
-                    delta_years.to_csv(filename9, index=False)
-
                     return metric_data
-
+# TODO: Catch-all?
     # return data
 
 def get_year_over_year_data(*args):

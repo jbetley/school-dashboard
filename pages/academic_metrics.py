@@ -46,7 +46,9 @@ from .calculate_metrics import (
     calculate_high_school_metrics,
     calculate_adult_high_school_metrics,
     calculate_attendance_metrics,
-    calculate_iread_metrics
+    calculate_iread_metrics,
+    calculate_values,
+    calculate_metrics
 )
 from .calculations import conditional_fillna
 
@@ -139,14 +141,40 @@ def update_academic_metrics(school: str, year: str):
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-    # # TODO:     
-    #             list_of_schools = [school]
-    #             if selected_school_type == "K12":
-    #                 tmp_type = "K8"
-    #             else:
-    #                 tmp_type = selected_school_type
+    # TODO:     
+                print('NEW Process - K8')
+                list_of_schools = [school]
+                if selected_school_type == "K12":
+                    tmp_type = "K8"
+                else:
+                    tmp_type = selected_school_type
 
-    #             tst_data_metrics = get_all_the_data(list_of_schools, tmp_type, selected_year_numeric, "metrics")
+                metric_data = get_all_the_data(list_of_schools, tmp_type, selected_year_numeric, "metrics")
+                
+                k8_year_values, k8_comparison_values = calculate_values(metric_data,selected_year_string)
+
+                filename17 = (
+                    "k8_years_going_in.csv"
+                )
+                k8_year_values.to_csv(filename17, index=False)
+
+                filename18 = (
+                    "k8_delta_going_in.csv"
+                )
+                k8_comparison_values.to_csv(filename18, index=False)
+
+                # k8_tst_years, k8_tst_delta = calculate_metrics(metric_data, selected_year_string)
+
+                # filename17 = (
+                #     "k8_years.csv"
+                # )
+                # k8_tst_years.to_csv(filename17, index=False)
+
+                # filename18 = (
+                #     "k8_delta.csv"
+                # )
+                # k8_tst_delta.to_csv(filename18, index=False)
+                                
     # # # TODO:
                 combined_years = calculate_k8_yearly_metrics(clean_school_data)
 
@@ -159,6 +187,16 @@ def update_academic_metrics(school: str, year: str):
                 combined_delta = calculate_k8_comparison_metrics(
                     clean_school_data, clean_corp_data, selected_year_string
                 )
+
+                filename19 = (
+                    "k8_years_original.csv"
+                )
+                combined_years.to_csv(filename19, index=False)
+
+                filename20 = (
+                    "k8_delta_original.csv"
+                )
+                combined_delta.to_csv(filename20, index=False)
 
                 category = ethnicity + subgroup
 
@@ -383,11 +421,34 @@ def update_academic_metrics(school: str, year: str):
 
         if selected_school_type == "K12":
             selected_school_type = "HS"
-    # TODO:     
+
+        print("NEW PROCESS - HS")
+
+        # TODO:
         list_of_schools = [school]
-        tst_data_metrics = get_all_the_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
-    # TODO:
+        metric_data = get_all_the_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
+
+        hs_year_over_year_values, hs_comparison_values = calculate_values(metric_data,selected_year_string)
         
+        filename73 = (
+            "hs_yoy_going_in.csv"
+        )
+        hs_year_over_year_values.to_csv(filename73, index=False)
+
+        filename74 = (
+            "hs_compare_going_in.csv"
+        )
+        hs_comparison_values.to_csv(filename74, index=False)
+
+        # hs_tst_metrics = calculate_high_school_metrics(metric_data)
+
+        # filename15 = (
+        #     "hs_metrics.csv"
+        # )
+        # hs_tst_metrics.to_csv(filename15, index=False)
+
+        # TODO:
+
         if excluded_years:
             selected_raw_hs_school_data = selected_raw_hs_school_data[
                 ~selected_raw_hs_school_data["Year"].isin(excluded_years)
@@ -544,14 +605,20 @@ def update_academic_metrics(school: str, year: str):
                         hs_merged_data = merge_high_school_data(
                             clean_hs_school_data, clean_hs_corp_data
                         )
-                        # filename7 = (
-                        #     "puddy.csv"
-                        # )
-                        # hs_merged_data.to_csv(filename7, index=False)
+
+                        filename11 = (
+                            "hs_metrics_original_going_in.csv"
+                        )
+                        hs_merged_data.to_csv(filename11, index=False)
 
                         combined_grad_metrics_data = calculate_high_school_metrics(
                             hs_merged_data
                         )
+
+                        filename14 = (
+                            "hs_combined_original.csv"
+                        )
+                        combined_grad_metrics_data.to_csv(filename14, index=False)
 
                         metric_17ab_label = [
                             "High School Accountability Metrics 1.7.a & 1.7.b"
