@@ -185,10 +185,7 @@ def calculate_k8_yearly_metrics(data: pd.DataFrame) -> pd.DataFrame:
         data.insert(loc=end + 2, column=data.columns[end][0:4] + "Diff", value=values)
         end -= 2
 
-    # filename7 = (
-    #     "vanilla.csv"
-    # )
-    # data.to_csv(filename7, index=False)
+
 
     data.insert(loc=0, column="Category", value=category_column)
     data["Category"] = data["Category"].str.replace(" Proficient %", "").str.strip()
@@ -294,7 +291,7 @@ def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Da
     category_column = data["Category"]
     data = data.drop("Category", axis=1)
 
-    # school and corp data for year over year dataframe
+    # school data for year over year dataframe
     year_over_year_data = data.filter(regex="School|N-Size", axis=1).copy()
     
 
@@ -379,9 +376,9 @@ def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Da
     # slightly different difference calculation for HS vs K8
     if is_high_school:
 
-        for y in year_cols:
-            comparison_result[y] = calculate_difference(
-                school_comparison_data[str(y) + "School"], corp_comparison_data[str(y) + "Corp"]
+        for c in year_cols:
+            comparison_result[c + "Diff"] = calculate_difference(
+                school_comparison_data[c + "School"], corp_comparison_data[c + "Corp"]
             )
             
     else:
@@ -397,14 +394,17 @@ def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Da
     final_cols.insert(0, "Category")
 
     comparison_result = comparison_result.set_axis(result_cols, axis=1)
-    comparison_result.insert(loc=0, column="Category", value=category_column)
 
+    # category_column = category_column.reset_index(drop=True)
+    comparison_result.insert(loc=0, column="Category", value=category_column)
+    
     # merge and reorder cols
     comparison_data = merged_comparison_data.merge(comparison_result, on="Category", how="left")
 
     comparison_data = comparison_data[final_cols]
 
-    comparison_data = conditional_fillna(comparison_data)
+    # TODO: Testing removing this
+    # comparison_data = conditional_fillna(comparison_data)
 
     return year_over_year_data, comparison_data
 
@@ -621,42 +621,6 @@ def calculate_metrics(year_over_year_data: pd.DataFrame, comparison_data: pd.Dat
 
     # Add metric ratings. See calculate_year_over_year() for a description
 
-#     grad_limits_local = [0, -0.05, -0.10]
-#     grad_limits_state = [0, -0.05, -0.15]
-# TODO: HS MERTRICS
-#    state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
-
-#     [
-#         state_grad_metric.insert(
-#             i + 1,
-#             str(state_grad_metric.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-#             state_grad_metric.apply(
-#                 lambda x: set_academic_rating(
-#                     x[state_grad_metric.columns[i]], grad_limits_state, 2
-#                 ),
-#                 axis=1,
-#             ),
-#         )
-#         for i in range(state_grad_metric.shape[1] - 1, 1, -3)
-#     ]
-
-#     local_grad_metric = data[
-#         data["Category"].isin(["Total Graduation Rate", "Non Waiver Graduation Rate"])
-#     ]
-
-#     [
-#         local_grad_metric.insert(
-#             i + 1,
-#             str(local_grad_metric.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-#             local_grad_metric.apply(
-#                 lambda x: set_academic_rating(
-#                     x[local_grad_metric.columns[i]], grad_limits_local, 2
-#                 ),
-#                 axis=1,
-#             ),
-#         )
-#         for i in range(local_grad_metric.shape[1] - 1, 1, -3)
-#     ]
             
     # delta limits for ilearn
     comparison_limits = [0.1, 0.02, 0]
@@ -814,6 +778,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
     grad_limits_state = [0, -0.05, -0.15]
     state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
 
+    print(data.T)
     [
         state_grad_metric.insert(
             i + 1,

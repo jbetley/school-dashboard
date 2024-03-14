@@ -422,45 +422,19 @@ def update_academic_metrics(school: str, year: str):
         if selected_school_type == "K12":
             selected_school_type = "HS"
 
-        print("NEW PROCESS - HS")
-
-        # TODO:
         list_of_schools = [school]
-        metric_data = get_all_the_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
+        raw_metric_data = get_all_the_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
 
-        hs_year_over_year_values, hs_comparison_values = calculate_values(metric_data,selected_year_string)
-        
-        filename73 = (
-            "hs_yoy_going_in.csv"
-        )
-        hs_year_over_year_values.to_csv(filename73, index=False)
+        print('HERE1')
+        print(raw_metric_data)
+        if len(raw_metric_data.index) > 0:
 
-        filename74 = (
-            "hs_compare_going_in.csv"
-        )
-        hs_comparison_values.to_csv(filename74, index=False)
+            # NOTE: We do not currently use hs_year_over_year_values
+            hs_year_over_year_values, hs_comparison_values = calculate_values(raw_metric_data,selected_year_string)
 
-        # hs_tst_metrics = calculate_high_school_metrics(metric_data)
-
-        # filename15 = (
-        #     "hs_metrics.csv"
-        # )
-        # hs_tst_metrics.to_csv(filename15, index=False)
-
-        # TODO:
-
-        if excluded_years:
-            selected_raw_hs_school_data = selected_raw_hs_school_data[
-                ~selected_raw_hs_school_data["Year"].isin(excluded_years)
-            ]
-
-        # AHS data is stored in hs_academic_data file
-        if len(selected_raw_hs_school_data.index) > 0:
-            raw_hs_school_data = filter_high_school_academic_data(
-                selected_raw_hs_school_data
-            )
-
-            if not raw_hs_school_data.empty:
+            if not hs_comparison_values.empty:            
+                print('HERE2')
+            # TODO:
 
 # TODO: DROP STATE GRADE
 # TODO: Add State AHS Calculation
@@ -501,11 +475,16 @@ def update_academic_metrics(school: str, year: str):
 # (2) the college and career readiness factor (100/.8); and
 # (3) one hundred (100).
 
+# TODO: Process AHS Metrics
                 # Adult High School Metrics
                 if selected_school_type == "AHS":
                     ahs_metrics_container = {"display": "block"}
                     main_container = {"display": "block"}
                     empty_container = {"display": "none"}
+
+                    raw_hs_school_data = filter_high_school_academic_data(
+                        selected_raw_hs_school_data
+                    )
 
                     raw_ahs_metrics = raw_hs_school_data[
                         ["Year", "AHS|CCR", "AHS|Grad All"]
@@ -572,110 +551,106 @@ def update_academic_metrics(school: str, year: str):
                     )
 
                 else:
-                    raw_hs_corp_data = get_hs_corporation_academic_data(school)
+                    hs_metrics_container = {"display": "block"}
+                    main_container = {"display": "block"}
+                    empty_container = {"display": "none"}                    
+                    
+                    # raw_hs_corp_data = get_hs_corporation_academic_data(school)
 
-                    for col in raw_hs_corp_data.columns:
-                        raw_hs_corp_data[col] = pd.to_numeric(
-                            raw_hs_corp_data[col], errors="coerce"
-                        )
+                    # for col in raw_hs_corp_data.columns:
+                    #     raw_hs_corp_data[col] = pd.to_numeric(
+                    #         raw_hs_corp_data[col], errors="coerce"
+                    #     )
 
-                    # NOTE: hs_data columns are a subset of school_data columns, but we still need to ensure hs_data
-                    # only includes columns that are in school_data (after being cleaned/filtered above). So we find
-                    # the intersection of the two sets and use it to filtered hs_data
-                    common_cols = [
-                        col
-                        for col in set(raw_hs_school_data.columns).intersection(
-                            raw_hs_corp_data.columns
-                        )
+                    # # NOTE: hs_data columns are a subset of school_data columns, but we still need to ensure hs_data
+                    # # only includes columns that are in school_data (after being cleaned/filtered above). So we find
+                    # # the intersection of the two sets and use it to filtered hs_data
+                    # common_cols = [
+                    #     col
+                    #     for col in set(raw_hs_school_data.columns).intersection(
+                    #         raw_hs_corp_data.columns
+                    #     )
+                    # ]
+                    # raw_hs_corp_data = raw_hs_corp_data[common_cols]
+
+                    # clean_hs_school_data = process_high_school_academic_data(
+                    #     raw_hs_school_data, school
+                    # )
+                    # clean_hs_corp_data = process_high_school_academic_data(
+                    #     raw_hs_corp_data, school
+                    # )
+
+                    # if not clean_hs_school_data.empty:
+                    #     hs_metrics_container = {"display": "block"}
+                    #     main_container = {"display": "block"}
+                    #     empty_container = {"display": "none"}
+
+                    #     hs_merged_data = merge_high_school_data(
+                    #         clean_hs_school_data, clean_hs_corp_data
+                    #     )
+
+                        # combined_grad_metrics_data = calculate_high_school_metrics(
+                        #     hs_merged_data
+                        # )
+
+                    hs_metric_data = calculate_high_school_metrics(hs_comparison_values)
+
+                    metric_17ab_label = [
+                        "High School Accountability Metrics 1.7.a & 1.7.b"
                     ]
-                    raw_hs_corp_data = raw_hs_corp_data[common_cols]
-
-                    clean_hs_school_data = process_high_school_academic_data(
-                        raw_hs_school_data, school
+                    hs_metric_data = convert_to_svg_circle(
+                        hs_metric_data
                     )
-                    clean_hs_corp_data = process_high_school_academic_data(
-                        raw_hs_corp_data, school
+                    table_17ab = create_metric_table(
+                        metric_17ab_label, hs_metric_data
+                    )
+                    table_container_17ab = set_table_layout(
+                        table_17ab, table_17ab, hs_metric_data.columns
                     )
 
-                    if not clean_hs_school_data.empty:
-                        hs_metrics_container = {"display": "block"}
-                        main_container = {"display": "block"}
-                        empty_container = {"display": "none"}
+                    # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
+                    all_cols = hs_metric_data.columns.tolist()
 
-                        hs_merged_data = merge_high_school_data(
-                            clean_hs_school_data, clean_hs_corp_data
-                        )
+                    simple_cols = [
+                        x
+                        for x in all_cols
+                        if (not x.endswith("+/-") and not x.endswith("Difference"))
+                    ]
 
-                        filename11 = (
-                            "hs_metrics_original_going_in.csv"
-                        )
-                        hs_merged_data.to_csv(filename11, index=False)
+                    grad_metrics_empty = pd.DataFrame(columns=simple_cols)
 
-                        combined_grad_metrics_data = calculate_high_school_metrics(
-                            hs_merged_data
-                        )
-
-                        filename14 = (
-                            "hs_combined_original.csv"
-                        )
-                        combined_grad_metrics_data.to_csv(filename14, index=False)
-
-                        metric_17ab_label = [
-                            "High School Accountability Metrics 1.7.a & 1.7.b"
+                    grad_metrics_dict = {
+                        "Category": [
+                            "1.7.c The percentage of students entering Grade 12 at beginning of year who graduated",
+                            # "1.7.d. The percentage of graduating students planning to pursue college or career."
                         ]
-                        combined_grad_metrics_data = convert_to_svg_circle(
-                            combined_grad_metrics_data
-                        )
-                        table_17ab = create_metric_table(
-                            metric_17ab_label, combined_grad_metrics_data
-                        )
-                        table_container_17ab = set_table_layout(
-                            table_17ab, table_17ab, combined_grad_metrics_data.columns
-                        )
+                    }
+                    grad_metrics = pd.DataFrame(grad_metrics_dict)
 
-                        # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
-                        all_cols = combined_grad_metrics_data.columns.tolist()
+                    metric_17cd_data = pd.concat(
+                        [grad_metrics_empty, grad_metrics], ignore_index=True
+                    )
+                    metric_17cd_data.reset_index()
 
-                        simple_cols = [
-                            x
-                            for x in all_cols
-                            if (not x.endswith("+/-") and not x.endswith("Difference"))
-                        ]
+                    # fill only value columns with "No Data" (until we actually HAVE the data)
+                    empty_year_cols = [
+                        col for col in metric_17cd_data.columns if "%" in col
+                    ]
+                    for col in empty_year_cols:
+                        metric_17cd_data[col] = "No Data"
 
-                        grad_metrics_empty = pd.DataFrame(columns=simple_cols)
+                    metric_17cd_data = conditional_fillna(metric_17cd_data)
 
-                        grad_metrics_dict = {
-                            "Category": [
-                                "1.7.c The percentage of students entering Grade 12 at beginning of year who graduated",
-                                # "1.7.d. The percentage of graduating students planning to pursue college or career."
-                            ]
-                        }
-                        grad_metrics = pd.DataFrame(grad_metrics_dict)
-
-                        metric_17cd_data = pd.concat(
-                            [grad_metrics_empty, grad_metrics], ignore_index=True
-                        )
-                        metric_17cd_data.reset_index()
-
-                        # fill only value columns with "No Data" (until we actually HAVE the data)
-                        empty_year_cols = [
-                            col for col in metric_17cd_data.columns if "%" in col
-                        ]
-                        for col in empty_year_cols:
-                            metric_17cd_data[col] = "No Data"
-
-                        metric_17cd_data = conditional_fillna(metric_17cd_data)
-
-                        metric_17cd_label = [
-                            "High School Accountability Metrics 1.7.c & 1.7.d"
-                        ]
-                        metric_17cd_data = convert_to_svg_circle(metric_17cd_data)
-                        table_17cd = create_metric_table(
-                            metric_17cd_label, metric_17cd_data
-                        )
-                        table_container_17cd = set_table_layout(
-                            table_17cd, table_17cd, metric_17cd_data.columns
-                        )
+                    metric_17cd_label = [
+                        "High School Accountability Metrics 1.7.c & 1.7.d"
+                    ]
+                    metric_17cd_data = convert_to_svg_circle(metric_17cd_data)
+                    table_17cd = create_metric_table(
+                        metric_17cd_label, metric_17cd_data
+                    )
+                    table_container_17cd = set_table_layout(
+                        table_17cd, table_17cd, metric_17cd_data.columns
+                    )
 
     # Attendance Data & Teacher Retention Rate (all schools have this data)
     metric_11ab_label = [

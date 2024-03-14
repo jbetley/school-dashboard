@@ -1217,6 +1217,7 @@ def get_all_the_data(*args):
 
         # process additional AHS only data
         if params["type"] == "AHS":
+            
             if "AHS|CCR" in processed_data.columns:
                 processed_data["AHS|CCR"] = pd.to_numeric(processed_data["AHS|CCR"], errors="coerce")
 
@@ -1350,13 +1351,17 @@ def get_all_the_data(*args):
         ## data for academic_information and academic_metrics pages
         elif params["page"] == "info" or params["page"] == "metrics":
 
+# TODO: Fix lack of Corp Average for AHS - use AHS Average
+
             if params["type"] == "HS" or params["type"] == "AHS":
-                # TODO: MOVE THIS ABOVE ONCE OLD FUNCTIONS ARE REMOBED
+
                 from .process_data import transpose_data
                 
                 corp_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]].copy()
                 school_data = processed_data[processed_data["School ID"] == school_id].copy()
-                
+
+# TODO: Issue is with transpose- it is removing the AHS data
+
                 school_metrics_data = transpose_data(school_data,params)
                 corp_metrics_data = transpose_data(corp_data,params)
 
@@ -1367,6 +1372,7 @@ def get_all_the_data(*args):
                 if params["type"] == "AHS":
                     # TODO: Add AHS State Grade Average? Other AHS Averages if metric?
                     # TODO: Send to calculate_adult_metrics in analysis_page
+
                     return school_metrics_data
 
                 elif params["type"] == "HS":
@@ -1429,20 +1435,18 @@ def get_all_the_data(*args):
                         corp_proficiency_cols = [col for col in corp_metrics_data.columns.to_list() if "Corp" in col]
                         merged_data = pd.concat([school_metrics_data, corp_metrics_data[corp_proficiency_cols]], axis=1)
 
-                        # filter
-                        # NOTE: at the moment, for metric purposes, only using Total Graduation Rate,
+                        # NOTE: at the moment HS metrics only include Total Graduation Rate,
                         # Non Waiver Graduation Rate, and State Graduation Average
-                        # TODO: WTF this not workings?
-                        merged_data = merged_data.replace({"Total|": "Total ", "Waiver|": "Waiver "}, regex=False)
 
-                        print(merged_data["Category"])
+                        # clean up and filter
+                        merged_data = merged_data.replace({
+                            "Total|Graduation Rate": "Total Graduation Rate",
+                            "Non Waiver|Graduation Rate": "Non Waiver Graduation Rate"}, regex=False)
+
                         hs_categories =["Total Graduation Rate","Non Waiver Graduation Rate","State Graduation Average"]
                         metric_data = merged_data[merged_data["Category"].str.contains('|'.join(hs_categories))]
 
-                        filename17 = (
-                            "hs_corp_merged.csv"
-                        )
-                        metric_data.to_csv(filename17, index=False)
+                        metric_data = metric_data.reset_index(drop=True)
 
                         return metric_data
 
