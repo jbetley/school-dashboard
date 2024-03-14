@@ -27,20 +27,19 @@ from .globals import (
 )
 
 from .load_data import (
-
     get_school_stns,
     get_iread_student_data,
     get_wida_student_data,
     get_k8_school_academic_data,
-    get_high_school_academic_data,
+    # get_high_school_academic_data,
     get_school_index,
     get_excluded_years,
-    get_all_the_data
+    get_academic_data
 )
 from .process_data import (
     process_k8_info_data,
-    process_high_school_academic_data,
-    filter_high_school_academic_data
+    # process_high_school_academic_data,
+    # filter_high_school_academic_data
 )
 from .tables import (
     no_data_page,
@@ -197,200 +196,214 @@ def update_academic_information_page(
         proficiency_math_subgroup_container = {"display": "none"}
         k8_table_container = {"display": "none"}
 
-        # load HS academic data
-        selected_raw_hs_school_data = get_high_school_academic_data(school)
+# TODO: PAGE LOAD IS TAKING FOREVER
         
-        # remove excluded years (more recent than selected)
-        if excluded_years:
-            selected_raw_hs_school_data = selected_raw_hs_school_data[
-                ~selected_raw_hs_school_data["Year"].isin(excluded_years)
-            ]
+        # load HS academic data
+        # selected_raw_hs_school_data = get_high_school_academic_data(school)
 
-        if len(selected_raw_hs_school_data.index) > 0:
-            selected_raw_hs_school_data = filter_high_school_academic_data(
-                selected_raw_hs_school_data
-            )
+        if selected_school_type == "K12":
+            school_type = "HS"
+        else:
+            school_type = selected_school_type
 
-            all_hs_school_data = process_high_school_academic_data(
-                selected_raw_hs_school_data, school
-            )
+        list_of_schools = [school]
 
-            if all_hs_school_data.empty:
-                k12_grad_table_container = {"display": "none"}
-                k12_sat_table_container = {"display": "none"}
-                no_display_data = no_data_page("No Data to Display.", "High School Academic Data")
+        hs_info_data = get_academic_data(list_of_schools, school_type, selected_year_numeric, "info")
+
+        # filename17 = (
+        #     "new_hs_info.csv"
+        # )
+        # new_info_data.to_csv(filename17, index=False)
+
+        # # remove excluded years (more recent than selected)
+        # if excluded_years:
+        #     selected_raw_hs_school_data = selected_raw_hs_school_data[
+        #         ~selected_raw_hs_school_data["Year"].isin(excluded_years)
+        #     ]
+
+        if len(hs_info_data.index) < 0:
+
+        # if len(selected_raw_hs_school_data.index) > 0:
+        #     selected_raw_hs_school_data = filter_high_school_academic_data(
+        #         selected_raw_hs_school_data
+        #     )
+
+        #     all_hs_school_data = process_high_school_academic_data(
+        #         selected_raw_hs_school_data, school
+        #     )
+
+            # if all_hs_school_data.empty:
+            k12_grad_table_container = {"display": "none"}
+            k12_sat_table_container = {"display": "none"}
+            no_display_data = no_data_page("No Data to Display.", "High School Academic Data")
             
-            else:
-                main_container = {"display": "block"}
-                empty_container = {"display": "none"}
+        else:
+            main_container = {"display": "block"}
+            empty_container = {"display": "none"}
 
-                filename7 = (
-                    "puddy.csv"
+            # Graduation Rate Tables
+            grad_overview_categories = ["Total", "Non Waiver", "State Average"]
+
+# TODO: Add CCR Data? Would need new table        
+            if selected_school_type == "AHS":
+                grad_overview_categories.append("CCR Percentage")
+
+            hs_info_data.columns = hs_info_data.columns.astype(str)
+
+            # Graduation Rate Tables
+            graduation_data = hs_info_data[
+                hs_info_data["Category"].str.contains("Graduation")
+            ].copy()
+
+            if len(graduation_data.columns) > 1 and len(graduation_data.index) > 0:
+                
+                k12_grad_table_container = {"display": "block"}
+
+                # clean up grad rate category
+                graduation_data["Category"] = (
+                    graduation_data["Category"]
+                    .str.replace("|Graduation Rate", "", regex=False)
+                    .str.strip()
                 )
-                all_hs_school_data.to_csv(filename7, index=False)
 
-                # Graduation Rate Tables
-                grad_overview_categories = ["Total", "Non Waiver", "State Average"]
-
-                if selected_school_type == "AHS":
-                    grad_overview_categories.append("CCR Percentage")
-
-                all_hs_school_data.columns = all_hs_school_data.columns.astype(str)
-
-                # Graduation Rate Tables
-                graduation_data = all_hs_school_data[
-                    all_hs_school_data["Category"].str.contains("Graduation")
-                ].copy()
-
-                if len(graduation_data.columns) > 1 and len(graduation_data.index) > 0:
-                    
-                    k12_grad_table_container = {"display": "block"}
-
-                    # clean up grad rate category
-                    graduation_data["Category"] = (
-                        graduation_data["Category"]
-                        .str.replace("|Graduation Rate", "", regex=False)
-                        .str.strip()
+                grad_overview = graduation_data[
+                    graduation_data["Category"].str.contains(
+                        "|".join(grad_overview_categories)
                     )
+                ]
+                grad_overview = grad_overview.dropna(axis=1, how="all")
 
-                    grad_overview = graduation_data[
-                        graduation_data["Category"].str.contains(
-                            "|".join(grad_overview_categories)
-                        )
-                    ]
-                    grad_overview = grad_overview.dropna(axis=1, how="all")
+                k12_grad_overview_table = create_multi_header_table_with_container(
+                    grad_overview, "Graduation Rate Overview"
+                )
 
-                    k12_grad_overview_table = create_multi_header_table_with_container(
-                        grad_overview, "Graduation Rate Overview"
-                    )
+                k12_grad_overview_table = set_table_layout(
+                    k12_grad_overview_table,
+                    k12_grad_overview_table,
+                    grad_overview.columns,
+                )
 
-                    k12_grad_overview_table = set_table_layout(
-                        k12_grad_overview_table,
-                        k12_grad_overview_table,
-                        grad_overview.columns,
-                    )
+                grad_ethnicity = graduation_data[
+                    graduation_data["Category"].str.contains("|".join(ethnicity))
+                ]
 
-                    grad_ethnicity = graduation_data[
-                        graduation_data["Category"].str.contains("|".join(ethnicity))
-                    ]
+                grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
 
-                    grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
+                k12_grad_ethnicity_table = create_multi_header_table_with_container(
+                    grad_ethnicity, "Graduation Rate by Ethnicity"
+                )
 
-                    k12_grad_ethnicity_table = create_multi_header_table_with_container(
-                        grad_ethnicity, "Graduation Rate by Ethnicity"
-                    )
+                k12_grad_ethnicity_table = set_table_layout(
+                    k12_grad_ethnicity_table,
+                    k12_grad_ethnicity_table,
+                    grad_ethnicity.columns,
+                )
 
-                    k12_grad_ethnicity_table = set_table_layout(
-                        k12_grad_ethnicity_table,
-                        k12_grad_ethnicity_table,
-                        grad_ethnicity.columns,
-                    )
+                grad_subgroup = graduation_data[
+                    graduation_data["Category"].str.contains("|".join(subgroup))
+                ]
 
-                    grad_subgroup = graduation_data[
-                        graduation_data["Category"].str.contains("|".join(subgroup))
-                    ]
+                grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
 
-                    grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
+                k12_grad_subgroup_table = create_multi_header_table_with_container(
+                    grad_subgroup, "Graduation Rate by Subgroup"
+                )
+                k12_grad_subgroup_table = set_table_layout(
+                    k12_grad_subgroup_table,
+                    k12_grad_subgroup_table,
+                    grad_subgroup.columns,
+                )
 
-                    k12_grad_subgroup_table = create_multi_header_table_with_container(
-                        grad_subgroup, "Graduation Rate by Subgroup"
-                    )
-                    k12_grad_subgroup_table = set_table_layout(
-                        k12_grad_subgroup_table,
-                        k12_grad_subgroup_table,
-                        grad_subgroup.columns,
-                    )
+            # SAT Benchmark Table
+            k12_sat_table_data = hs_info_data[
+                hs_info_data["Category"].str.contains("Benchmark %")
+            ].copy()
 
-                # SAT Benchmark Table
-                k12_sat_table_data = all_hs_school_data[
-                    all_hs_school_data["Category"].str.contains("Benchmark %")
-                ].copy()
+            if (
+                len(k12_sat_table_data.columns) > 1
+                and len(k12_sat_table_data.index) > 0
+            ):
+                
+                k12_sat_table_container = {"display": "block"}
 
-                if (
-                    len(k12_sat_table_data.columns) > 1
-                    and len(k12_sat_table_data.index) > 0
-                ):
-                    
-                    k12_sat_table_container = {"display": "block"}
+                k12_sat_table_data["Category"] = (
+                    k12_sat_table_data["Category"]
+                    .str.replace("Benchmark %", "")
+                    .str.strip()
+                )
 
-                    k12_sat_table_data["Category"] = (
-                        k12_sat_table_data["Category"]
-                        .str.replace("Benchmark %", "")
-                        .str.strip()
-                    )
+                k12_sat_overview = k12_sat_table_data[
+                    k12_sat_table_data["Category"].str.contains("Total")
+                ]
 
-                    k12_sat_overview = k12_sat_table_data[
-                        k12_sat_table_data["Category"].str.contains("Total")
-                    ]
+                k12_sat_overview = k12_sat_overview.dropna(axis=1, how="all")
 
-                    k12_sat_overview = k12_sat_overview.dropna(axis=1, how="all")
+                k12_sat_overview_table = create_multi_header_table_with_container(
+                    k12_sat_overview, "SAT Overview"
+                )
 
-                    k12_sat_overview_table = create_multi_header_table_with_container(
-                        k12_sat_overview, "SAT Overview"
-                    )
+                k12_sat_overview_table = set_table_layout(
+                    k12_sat_overview_table,
+                    k12_sat_overview_table,
+                    k12_sat_overview.columns,
+                )
 
-                    k12_sat_overview_table = set_table_layout(
-                        k12_sat_overview_table,
-                        k12_sat_overview_table,
-                        k12_sat_overview.columns,
-                    )
+                k12_sat_ethnicity = k12_sat_table_data[
+                    k12_sat_table_data["Category"].str.contains("|".join(ethnicity))
+                ]
 
-                    k12_sat_ethnicity = k12_sat_table_data[
-                        k12_sat_table_data["Category"].str.contains("|".join(ethnicity))
-                    ]
+                k12_sat_ethnicity = k12_sat_ethnicity.dropna(axis=1, how="all")
 
-                    k12_sat_ethnicity = k12_sat_ethnicity.dropna(axis=1, how="all")
+                k12_sat_ethnicity_table = create_multi_header_table_with_container(
+                    k12_sat_ethnicity, "SAT Benchmarks by Ethnicity"
+                )
 
-                    k12_sat_ethnicity_table = create_multi_header_table_with_container(
-                        k12_sat_ethnicity, "SAT Benchmarks by Ethnicity"
-                    )
+                k12_sat_ethnicity_table = set_table_layout(
+                    k12_sat_ethnicity_table,
+                    k12_sat_ethnicity_table,
+                    k12_sat_ethnicity.columns,
+                )
 
-                    k12_sat_ethnicity_table = set_table_layout(
-                        k12_sat_ethnicity_table,
-                        k12_sat_ethnicity_table,
-                        k12_sat_ethnicity.columns,
-                    )
+                k12_sat_subgroup = k12_sat_table_data[
+                    k12_sat_table_data["Category"].str.contains("|".join(subgroup))
+                ]
 
-                    k12_sat_subgroup = k12_sat_table_data[
-                        k12_sat_table_data["Category"].str.contains("|".join(subgroup))
-                    ]
+                k12_sat_subgroup = k12_sat_subgroup.dropna(axis=1, how="all")
 
-                    k12_sat_subgroup = k12_sat_subgroup.dropna(axis=1, how="all")
+                k12_sat_subgroup_table = create_multi_header_table_with_container(
+                    k12_sat_subgroup, "SAT Benchmarks by Subgroup"
+                )
 
-                    k12_sat_subgroup_table = create_multi_header_table_with_container(
-                        k12_sat_subgroup, "SAT Benchmarks by Subgroup"
-                    )
+                k12_sat_subgroup_table = set_table_layout(
+                    k12_sat_subgroup_table,
+                    k12_sat_subgroup_table,
+                    k12_sat_subgroup.columns,
+                )
 
-                    k12_sat_subgroup_table = set_table_layout(
-                        k12_sat_subgroup_table,
-                        k12_sat_subgroup_table,
-                        k12_sat_subgroup.columns,
-                    )
+                # SAT cut score key table
+                # https://www.in.gov/sboe/files/2021-2022-k12-sat-Standard-Setting-SBOE-Review.pdf
+                k12_sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
+                k12_sat_cut_scores_dict = {
+                    "Content Area": [
+                        "Mathematics",
+                        "Evidenced-Based Reading and Writing",
+                    ],
+                    "Below College-Ready Benchmark": ["200 - 450", "200 - 440"],
+                    "Approaching College-Ready Benchmark": [
+                        "460 - 520",
+                        "450 - 470",
+                    ],
+                    "At College-Ready Benchmark": ["530 - 800", "480 - 800"],
+                }
 
-                    # SAT cut score key table
-                    # https://www.in.gov/sboe/files/2021-2022-k12-sat-Standard-Setting-SBOE-Review.pdf
-                    k12_sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
-                    k12_sat_cut_scores_dict = {
-                        "Content Area": [
-                            "Mathematics",
-                            "Evidenced-Based Reading and Writing",
-                        ],
-                        "Below College-Ready Benchmark": ["200 - 450", "200 - 440"],
-                        "Approaching College-Ready Benchmark": [
-                            "460 - 520",
-                            "450 - 470",
-                        ],
-                        "At College-Ready Benchmark": ["530 - 800", "480 - 800"],
-                    }
+                k12_sat_cut_scores = pd.DataFrame(k12_sat_cut_scores_dict)
+                k12_sat_cut_scores_table = create_key_table(
+                    k12_sat_cut_scores, k12_sat_cut_scores_label
+                )
 
-                    k12_sat_cut_scores = pd.DataFrame(k12_sat_cut_scores_dict)
-                    k12_sat_cut_scores_table = create_key_table(
-                        k12_sat_cut_scores, k12_sat_cut_scores_label
-                    )
-
-                academic_information_notes_string = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
-                    Beginning with the 2023 cohort, all students in grade 11 are required to take the SAT per federal requirements."
-                academic_information_notes_string_container = {"display": "block"}
+            academic_information_notes_string = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
+                Beginning with the 2023 cohort, all students in grade 11 are required to take the SAT per federal requirements."
+            academic_information_notes_string_container = {"display": "block"}
     # End HS block
 
     # Begin K8 block
@@ -400,8 +413,23 @@ def update_academic_information_page(
         or (selected_school_id == 5874 and selected_year_numeric >= 2021)
     ):
 
+        if selected_school_type == "K12":
+            school_type = "K8"
+        else:
+            school_type = selected_school_type
+
+        list_of_schools = [school]
+
+# TODO: HERE - Recreate Fig and Table Data
+        k8_info_data = get_academic_data(list_of_schools, school_type, selected_year_numeric, "info")
+
         selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
+        filename77 = (
+            "info_process_new.csv"
+        )
+        k8_info_data.to_csv(filename77, index=False)
+        
         if excluded_years:
             selected_raw_k8_school_data = selected_raw_k8_school_data[
                 ~selected_raw_k8_school_data["Year"].isin(excluded_years)
@@ -417,6 +445,11 @@ def update_academic_information_page(
             # with column names = ["2019School", "2019N-Size", . . . ] -
             # use N-Size data for table tooltips
             ilearn_table_data = process_k8_info_data(selected_raw_k8_school_data)
+
+            filename97 = (
+                "info_original_process.csv"
+            )
+            ilearn_table_data.to_csv(filename97, index=False)
 
             if ilearn_table_data.empty:
 
@@ -461,6 +494,16 @@ def update_academic_information_page(
                     .reset_index()
                 )
                 ilearn_fig_data["School Name"] = selected_school_name
+
+                filename71 = (
+                    "info_fig_original.csv"
+                )
+                ilearn_fig_data.to_csv(filename71, index=False)
+
+                filename81 = (
+                    "info_table_original.csv"
+                )
+                ilearn_fig_data.to_csv(filename81, index=False)
 
             ## ILEARN Charts and Tables
                 

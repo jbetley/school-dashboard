@@ -18,20 +18,20 @@ from .globals import (
 )
 from .load_data import (
     get_school_index,
-    get_k8_school_academic_data,
-    get_high_school_academic_data,
-    get_hs_corporation_academic_data,
-    get_k8_corporation_academic_data,
+    # get_k8_school_academic_data,
+    # get_high_school_academic_data,
+    # get_hs_corporation_academic_data,
+    # get_k8_corporation_academic_data,
     get_excluded_years,
-    get_all_the_data    
+    get_academic_data
 )
-from .process_data import (
-    process_k8_info_data,
-    process_high_school_academic_data,
-    merge_high_school_data,
-    filter_high_school_academic_data,
-    process_k8_corp_academic_data
-)
+# from .process_data import (
+#     process_k8_info_data,
+#     # process_high_school_academic_data,
+#     # merge_high_school_data,
+#     # filter_high_school_academic_data,
+#     # process_k8_corp_academic_data
+# )
 from .tables import (
     no_data_page,
     no_data_table,
@@ -41,8 +41,8 @@ from .tables import (
 from .layouts import set_table_layout
 from .string_helpers import convert_to_svg_circle
 from .calculate_metrics import (
-    calculate_k8_yearly_metrics,
-    calculate_k8_comparison_metrics,
+    # calculate_k8_yearly_metrics,
+    # calculate_k8_comparison_metrics,
     calculate_high_school_metrics,
     calculate_adult_high_school_metrics,
     calculate_attendance_metrics,
@@ -88,7 +88,7 @@ def update_academic_metrics(school: str, year: str):
     selected_year_string = "2019" if string_year == "2020" else string_year
     selected_year_numeric = int(selected_year_string)
 
-    excluded_years = get_excluded_years(year)
+    # excluded_years = get_excluded_years(year)
 
     # default values (only empty container displayed)
     table_container_11ab = []
@@ -122,294 +122,265 @@ def update_academic_metrics(school: str, year: str):
 
     # K8 Academic Metrics (for K8 and K12 schools)
     if selected_school_type == "K8" or selected_school_type == "K12":
-        selected_raw_k8_school_data = get_k8_school_academic_data(school)
+        list_of_schools = [school]
+        if selected_school_type == "K12":
+            school_type = "K8"
+        else:
+            school_type = selected_school_type
+        
+        metric_data = get_academic_data(list_of_schools, school_type, selected_year_numeric, "metrics")
+        
+        # selected_raw_k8_school_data = get_k8_school_academic_data(school)
 
-        if excluded_years:
-            selected_raw_k8_school_data = selected_raw_k8_school_data[
-                ~selected_raw_k8_school_data["Year"].isin(excluded_years)
-            ]
+        # if excluded_years:
+        #     selected_raw_k8_school_data = selected_raw_k8_school_data[
+        #         ~selected_raw_k8_school_data["Year"].isin(excluded_years)
+        #     ]
 
-        if len(selected_raw_k8_school_data.index) > 0:
-            selected_raw_k8_school_data = selected_raw_k8_school_data.replace(
+        if len(metric_data.index) > 0:
+
+            metric_data = metric_data.replace(
                 {"^": "***"}
             )
 
-            clean_school_data = process_k8_info_data(selected_raw_k8_school_data)
+            # clean_school_data = process_k8_info_data(selected_raw_k8_school_data)
 
-            if not clean_school_data.empty:
-                k8_metrics_container = {"display": "block"}
-                main_container = {"display": "block"}
-                empty_container = {"display": "none"}
+            # if not clean_school_data.empty:
+            k8_metrics_container = {"display": "block"}
+            main_container = {"display": "block"}
+            empty_container = {"display": "none"}
 
-    # TODO:     
-                print('NEW Process - K8')
-                list_of_schools = [school]
-                if selected_school_type == "K12":
-                    tmp_type = "K8"
-                else:
-                    tmp_type = selected_school_type
+# TODO: Test for empty here
+            k8_year_values, k8_comparison_values = calculate_values(metric_data,selected_year_string)
 
-                metric_data = get_all_the_data(list_of_schools, tmp_type, selected_year_numeric, "metrics")
-                
-                k8_year_values, k8_comparison_values = calculate_values(metric_data,selected_year_string)
+            # Get Year over Year and Combined Metrics
+            combined_years, combined_delta = calculate_metrics(k8_year_values, k8_comparison_values)
 
-                filename17 = (
-                    "k8_years_going_in.csv"
-                )
-                k8_year_values.to_csv(filename17, index=False)
+            # Get Year over Year metrics
+            # combined_years = calculate_k8_yearly_metrics(clean_school_data)
 
-                filename18 = (
-                    "k8_delta_going_in.csv"
-                )
-                k8_comparison_values.to_csv(filename18, index=False)
+            # raw_corp_data = get_k8_corporation_academic_data(school)
 
-                # k8_tst_years, k8_tst_delta = calculate_metrics(metric_data, selected_year_string)
+            # clean_corp_data = process_k8_corp_academic_data(
+            #     raw_corp_data, clean_school_data
+            # )
 
-                # filename17 = (
-                #     "k8_years.csv"
-                # )
-                # k8_tst_years.to_csv(filename17, index=False)
+            # combined_delta = calculate_k8_comparison_metrics(
+            #     clean_school_data, clean_corp_data, selected_year_string
+            # )
 
-                # filename18 = (
-                #     "k8_delta.csv"
-                # )
-                # k8_tst_delta.to_csv(filename18, index=False)
-                                
-    # # # TODO:
-                combined_years = calculate_k8_yearly_metrics(clean_school_data)
+            category = ethnicity + subgroup
 
-                raw_corp_data = get_k8_corporation_academic_data(school)
+            metric_14a_data = combined_years[
+                (combined_years["Category"].str.contains("|".join(grades_all)))
+                & (combined_years["Category"].str.contains("ELA"))
+            ]
+            metric_14a_label = [
+                "1.4.a Grade level proficiency on the state assessment in",
+                html.Br(),
+                html.U("English Language Arts"),
+                " compared with the previous school year.",
+            ]
 
-                clean_corp_data = process_k8_corp_academic_data(
-                    raw_corp_data, clean_school_data
-                )
+            metric_14a_data = convert_to_svg_circle(metric_14a_data)
+            table_14a = create_metric_table(metric_14a_label, metric_14a_data)
 
-                combined_delta = calculate_k8_comparison_metrics(
-                    clean_school_data, clean_corp_data, selected_year_string
-                )
+            metric_14b_data = combined_years[
+                (combined_years["Category"].str.contains("|".join(grades_all)))
+                & (combined_years["Category"].str.contains("Math"))
+            ]
+            metric_14b_label = [
+                "1.4.b Grade level proficiency on the state assessment in",
+                html.Br(),
+                html.U("Math"),
+                " compared with the previous school year.",
+            ]
 
-                filename19 = (
-                    "k8_years_original.csv"
-                )
-                combined_years.to_csv(filename19, index=False)
+            metric_14b_data = convert_to_svg_circle(metric_14b_data)
+            table_14b = create_metric_table(metric_14b_label, metric_14b_data)
 
-                filename20 = (
-                    "k8_delta_original.csv"
-                )
-                combined_delta.to_csv(filename20, index=False)
+            table_container_14ab = set_table_layout(
+                table_14a, table_14b, combined_years.columns
+            )
 
-                category = ethnicity + subgroup
+            metric_14c_data = combined_delta[
+                (combined_delta["Category"].str.contains("|".join(grades_all)))
+                & (combined_delta["Category"].str.contains("ELA"))
+            ]
+            metric_14c_label = [
+                "1.4.c Grade level proficiency on the state assessment in",
+                html.Br(),
+                html.U("English Language Arts"),
+                " compared with traditional school corporation.",
+            ]
 
-                metric_14a_data = combined_years[
-                    (combined_years["Category"].str.contains("|".join(grades_all)))
-                    & (combined_years["Category"].str.contains("ELA"))
+            metric_14c_data = convert_to_svg_circle(metric_14c_data)
+            table_14c = create_metric_table(metric_14c_label, metric_14c_data)
+
+            metric_14d_data = combined_delta[
+                (combined_delta["Category"].str.contains("|".join(grades_all)))
+                & (combined_delta["Category"].str.contains("Math"))
+            ]
+            metric_14d_label = [
+                "1.4.d Grade level proficiency on the state assessment in",
+                html.Br(),
+                html.U("Math"),
+                " compared with traditional school corporation.",
+            ]
+
+            metric_14d_data = convert_to_svg_circle(metric_14d_data)
+            table_14d = create_metric_table(metric_14d_label, metric_14d_data)
+
+            table_container_14cd = set_table_layout(
+                table_14c, table_14d, combined_delta.columns
+            )
+
+            # Accountability Metrics 1.4.e & 1.4.f (Placeholder)
+            all_cols = combined_years.columns.tolist()
+
+            simple_cols = [x for x in all_cols if "School" in x or "N-Size" in x]
+            simple_cols = ["Category"] + simple_cols
+
+            year_proficiency_empty = pd.DataFrame(columns=simple_cols)
+
+            year_proficiency_dict = {
+                "Category": [
+                    "1.4.e Two year student proficiency in ELA.",
+                    "1.4.f Two year student proficiency in Math.",
                 ]
-                metric_14a_label = [
-                    "1.4.a Grade level proficiency on the state assessment in",
-                    html.Br(),
-                    html.U("English Language Arts"),
-                    " compared with the previous school year.",
+            }
+            year_proficiency = pd.DataFrame(year_proficiency_dict)
+
+            metric_14ef_data = pd.concat(
+                [year_proficiency_empty, year_proficiency], ignore_index=True
+            )
+            metric_14ef_data.reset_index()
+            metric_14ef_data = conditional_fillna(metric_14ef_data)
+            metric_14ef_label = [
+                "Percentage of students enrolled for at least two school years achieving proficiency on the state assessment in English Language Arts (1.4.e) and Math (1.4.f)"
+            ]
+            table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
+            table_container_14ef = set_table_layout(
+                table_14ef, table_14ef, metric_14ef_data.columns
+            )
+
+            # iread_data -combined_delta has all IREAD data, but we
+            # currently only use Total
+            iread_data = combined_delta[
+                combined_delta["Category"] == "Total|IREAD"
+            ].copy()
+
+            if len(iread_data.index) > 0:
+                iread_data.loc[
+                    iread_data["Category"] == "IREAD", "Category"
+                ] = "IREAD Proficient %"
+
+                iread_data = iread_data.reset_index(drop=True)
+
+                iread_data = calculate_iread_metrics(iread_data)
+
+                metric_14g_label = [
+                    "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment."
                 ]
-
-                metric_14a_data = convert_to_svg_circle(metric_14a_data)
-                table_14a = create_metric_table(metric_14a_label, metric_14a_data)
-
-                metric_14b_data = combined_years[
-                    (combined_years["Category"].str.contains("|".join(grades_all)))
-                    & (combined_years["Category"].str.contains("Math"))
-                ]
-                metric_14b_label = [
-                    "1.4.b Grade level proficiency on the state assessment in",
-                    html.Br(),
-                    html.U("Math"),
-                    " compared with the previous school year.",
-                ]
-
-                metric_14b_data = convert_to_svg_circle(metric_14b_data)
-                table_14b = create_metric_table(metric_14b_label, metric_14b_data)
-
-                table_container_14ab = set_table_layout(
-                    table_14a, table_14b, combined_years.columns
-                )
-
-                metric_14c_data = combined_delta[
-                    (combined_delta["Category"].str.contains("|".join(grades_all)))
-                    & (combined_delta["Category"].str.contains("ELA"))
-                ]
-                metric_14c_label = [
-                    "1.4.c Grade level proficiency on the state assessment in",
-                    html.Br(),
-                    html.U("English Language Arts"),
-                    " compared with traditional school corporation.",
-                ]
-
-                metric_14c_data = convert_to_svg_circle(metric_14c_data)
-                table_14c = create_metric_table(metric_14c_label, metric_14c_data)
-
-                metric_14d_data = combined_delta[
-                    (combined_delta["Category"].str.contains("|".join(grades_all)))
-                    & (combined_delta["Category"].str.contains("Math"))
-                ]
-                metric_14d_label = [
-                    "1.4.d Grade level proficiency on the state assessment in",
-                    html.Br(),
-                    html.U("Math"),
-                    " compared with traditional school corporation.",
-                ]
-
-                metric_14d_data = convert_to_svg_circle(metric_14d_data)
-                table_14d = create_metric_table(metric_14d_label, metric_14d_data)
-
-                table_container_14cd = set_table_layout(
-                    table_14c, table_14d, combined_delta.columns
-                )
-
-                # Accountability Metrics 1.4.e & 1.4.f (Placeholder)
-                all_cols = combined_years.columns.tolist()
-
-                simple_cols = [x for x in all_cols if "School" in x or "N-Size" in x]
-                simple_cols = ["Category"] + simple_cols
-
-                year_proficiency_empty = pd.DataFrame(columns=simple_cols)
-
-                year_proficiency_dict = {
-                    "Category": [
-                        "1.4.e Two year student proficiency in ELA.",
-                        "1.4.f Two year student proficiency in Math.",
-                    ]
-                }
-                year_proficiency = pd.DataFrame(year_proficiency_dict)
-
-                metric_14ef_data = pd.concat(
-                    [year_proficiency_empty, year_proficiency], ignore_index=True
-                )
-                metric_14ef_data.reset_index()
-                metric_14ef_data = conditional_fillna(metric_14ef_data)
-                metric_14ef_label = [
-                    "Percentage of students enrolled for at least two school years achieving proficiency on the state assessment in English Language Arts (1.4.e) and Math (1.4.f)"
-                ]
-                table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
-                table_container_14ef = set_table_layout(
-                    table_14ef, table_14ef, metric_14ef_data.columns
+                iread_data = convert_to_svg_circle(iread_data)
+                table_14g = create_metric_table(metric_14g_label, iread_data)
+                table_container_14g = set_table_layout(
+                    table_14g, table_14g, iread_data.columns
                 )
 
-                # iread_data -combined_delta has all IREAD data, but we
-                # currently only use Total
-                iread_data = combined_delta[
-                    combined_delta["Category"] == "Total|IREAD"
-                ].copy()
-
-                if len(iread_data.index) > 0:
-                    iread_data.loc[
-                        iread_data["Category"] == "IREAD", "Category"
-                    ] = "IREAD Proficient %"
-
-                    iread_data = iread_data.reset_index(drop=True)
-
-                    iread_data = calculate_iread_metrics(iread_data)
-
-                    metric_14g_label = [
-                        "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment."
-                    ]
-                    iread_data = convert_to_svg_circle(iread_data)
-                    table_14g = create_metric_table(metric_14g_label, iread_data)
-                    table_container_14g = set_table_layout(
-                        table_14g, table_14g, iread_data.columns
-                    )
-
-                else:
-                    # create_metric_table requies label to be a list, while no_data_table wants a string
-                    empty_table_14g = no_data_table(
-                        "No Data to Display.",
-                        "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.",
-                        "six"
-                    )
-                    table_container_14g = set_table_layout(
-                        empty_table_14g, empty_table_14g, [""]
-                    )
-                # Placeholders for Growth data metrics (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
-
-                # growth_metrics_empty = pd.DataFrame(columns = simple_cols)
-                # growth_metrics_dict = {
-                #     "Category": ["1.5.a Percentage of students achieving “typical” or “high” growth on the state assessment in \
-                #         English Language Arts according to Indiana\'s Growth Model",
-                #     "1.5.b Percentage of students achieving “typical” or “high” growth on the state assessment in \
-                #         Math according to Indiana\'s Growth Model",
-                #     "1.5.c. Median Student Growth Percentile ('SGP') of students achieving 'adequate and sufficient growth' \
-                #         on the state assessment in English Language Arts according to Indiana\'s Growth Model",
-                #     "1.5.d. Median SGP of students achieving 'adequate and sufficient growth' on the state assessment \
-                #         in Math according to Indiana\'s Growth Model",
-                #         ]
-                #     }
-                # growth_metrics = pd.DataFrame(growth_metrics_dict)
-                # metric_15abcd_data = pd.concat([growth_metrics_empty, growth_metrics], ignore_index = True)
-                # metric_15abcd_data.reset_index()
-                # metric_15abcd_data = conditional_fill(metric_15abcd_data)
-                # metric_15abcd_label = "Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d"
-                # metric_15abcd_data = convert_to_svg_circle(metric_15abcd_data)
-                # table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
-                # table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
-
-                metric_16a_data = combined_delta[
-                    (combined_delta["Category"].str.contains("|".join(category)))
-                    & (combined_delta["Category"].str.contains("ELA"))
-                ]
-                metric_16a_label = [
-                    "1.6.a Proficiency on the state assessment in ",
-                    html.U("English Language Arts"),
-                    html.Br(),
-                    "for each subgroup compared with traditional school corporation.",
-                ]
-                metric_16a_data = convert_to_svg_circle(metric_16a_data)
-                table_16a = create_metric_table(metric_16a_label, metric_16a_data)
-
-                metric_16b_data = combined_delta[
-                    (combined_delta["Category"].str.contains("|".join(category)))
-                    & (combined_delta["Category"].str.contains("Math"))
-                ]
-                metric_16b_label = [
-                    "1.6.b Proficiency on the state assessment in ",
-                    html.U("Math"),
-                    " for each",
-                    html.Br(),
-                    "subgroup compared with traditional school corporation.",
-                ]
-                metric_16b_data = convert_to_svg_circle(metric_16b_data)
-                table_16b = create_metric_table(metric_16b_label, metric_16b_data)
-
-                table_container_16ab = set_table_layout(
-                    table_16a, table_16b, combined_delta.columns
+            else:
+                # create_metric_table requies label to be a list, while no_data_table wants a string
+                empty_table_14g = no_data_table(
+                    "No Data to Display.",
+                    "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.",
+                    "six"
                 )
-
-                metric_16c_data = combined_years[
-                    (combined_years["Category"].str.contains("|".join(category)))
-                    & (combined_years["Category"].str.contains("ELA"))
-                ]
-                metric_16c_label = [
-                    "1.6.c The change in proficiency on the state assessment in",
-                    html.Br(),
-                    html.U("English Language Arts"),
-                    " for each subgroup compared with the previous school year.",
-                ]
-                metric_16c_data = convert_to_svg_circle(metric_16c_data)
-                table_16c = create_metric_table(metric_16c_label, metric_16c_data)
-
-                metric_16d_data = combined_years[
-                    (combined_years["Category"].str.contains("|".join(category)))
-                    & (combined_years["Category"].str.contains("Math"))
-                ]
-                metric_16d_label = [
-                    "1.6.d The change in proficiency on the state assessment in",
-                    html.Br(),
-                    html.U("Math"),
-                    " for each subgroup compared with the previous school year.",
-                ]
-                metric_16d_data = convert_to_svg_circle(metric_16d_data)
-                table_16d = create_metric_table(metric_16d_label, metric_16d_data)
-
-                table_container_16cd = set_table_layout(
-                    table_16c, table_16d, combined_years.columns
+                table_container_14g = set_table_layout(
+                    empty_table_14g, empty_table_14g, [""]
                 )
+            # Placeholders for Growth data metrics (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
+
+            # growth_metrics_empty = pd.DataFrame(columns = simple_cols)
+            # growth_metrics_dict = {
+            #     "Category": ["1.5.a Percentage of students achieving “typical” or “high” growth on the state assessment in \
+            #         English Language Arts according to Indiana\'s Growth Model",
+            #     "1.5.b Percentage of students achieving “typical” or “high” growth on the state assessment in \
+            #         Math according to Indiana\'s Growth Model",
+            #     "1.5.c. Median Student Growth Percentile ('SGP') of students achieving 'adequate and sufficient growth' \
+            #         on the state assessment in English Language Arts according to Indiana\'s Growth Model",
+            #     "1.5.d. Median SGP of students achieving 'adequate and sufficient growth' on the state assessment \
+            #         in Math according to Indiana\'s Growth Model",
+            #         ]
+            #     }
+            # growth_metrics = pd.DataFrame(growth_metrics_dict)
+            # metric_15abcd_data = pd.concat([growth_metrics_empty, growth_metrics], ignore_index = True)
+            # metric_15abcd_data.reset_index()
+            # metric_15abcd_data = conditional_fill(metric_15abcd_data)
+            # metric_15abcd_label = "Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d"
+            # metric_15abcd_data = convert_to_svg_circle(metric_15abcd_data)
+            # table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
+            # table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
+
+            metric_16a_data = combined_delta[
+                (combined_delta["Category"].str.contains("|".join(category)))
+                & (combined_delta["Category"].str.contains("ELA"))
+            ]
+            metric_16a_label = [
+                "1.6.a Proficiency on the state assessment in ",
+                html.U("English Language Arts"),
+                html.Br(),
+                "for each subgroup compared with traditional school corporation.",
+            ]
+            metric_16a_data = convert_to_svg_circle(metric_16a_data)
+            table_16a = create_metric_table(metric_16a_label, metric_16a_data)
+
+            metric_16b_data = combined_delta[
+                (combined_delta["Category"].str.contains("|".join(category)))
+                & (combined_delta["Category"].str.contains("Math"))
+            ]
+            metric_16b_label = [
+                "1.6.b Proficiency on the state assessment in ",
+                html.U("Math"),
+                " for each",
+                html.Br(),
+                "subgroup compared with traditional school corporation.",
+            ]
+            metric_16b_data = convert_to_svg_circle(metric_16b_data)
+            table_16b = create_metric_table(metric_16b_label, metric_16b_data)
+
+            table_container_16ab = set_table_layout(
+                table_16a, table_16b, combined_delta.columns
+            )
+
+            metric_16c_data = combined_years[
+                (combined_years["Category"].str.contains("|".join(category)))
+                & (combined_years["Category"].str.contains("ELA"))
+            ]
+            metric_16c_label = [
+                "1.6.c The change in proficiency on the state assessment in",
+                html.Br(),
+                html.U("English Language Arts"),
+                " for each subgroup compared with the previous school year.",
+            ]
+            metric_16c_data = convert_to_svg_circle(metric_16c_data)
+            table_16c = create_metric_table(metric_16c_label, metric_16c_data)
+
+            metric_16d_data = combined_years[
+                (combined_years["Category"].str.contains("|".join(category)))
+                & (combined_years["Category"].str.contains("Math"))
+            ]
+            metric_16d_label = [
+                "1.6.d The change in proficiency on the state assessment in",
+                html.Br(),
+                html.U("Math"),
+                " for each subgroup compared with the previous school year.",
+            ]
+            metric_16d_data = convert_to_svg_circle(metric_16d_data)
+            table_16d = create_metric_table(metric_16d_label, metric_16d_data)
+
+            table_container_16cd = set_table_layout(
+                table_16c, table_16d, combined_years.columns
+            )
 
     if (
         selected_school_type == "HS"
@@ -417,144 +388,141 @@ def update_academic_metrics(school: str, year: str):
         or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric < 2021)
     ):
-        selected_raw_hs_school_data = get_high_school_academic_data(school)
+        # selected_raw_hs_school_data = get_high_school_academic_data(school)
 
         if selected_school_type == "K12":
             selected_school_type = "HS"
 
         list_of_schools = [school]
-        raw_metric_data = get_all_the_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
+        raw_metric_data = get_academic_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
 
-        print('HERE1')
-        print(raw_metric_data)
+        # if len(selected_raw_hs_school_data.index) > 0:
         if len(raw_metric_data.index) > 0:
 
-            # NOTE: We do not currently use hs_year_over_year_values
-            hs_year_over_year_values, hs_comparison_values = calculate_values(raw_metric_data,selected_year_string)
+        # TODO: At some point need to add the State AHS Calculation
+        # weighted graduation calculation score (20%) and weighted ccr score (80%) - yr1
+        # other years grad (40%) / ccr (60%)
+        # GRAD Calc:
+        # (1) the graduation to enrollment percentage of the school year(90% - max 100);
+        #   denominator- the school's within-year-average number of students
+        #   numerator of which is - the number of students who graduated during the school year
+        #       multiplied by four (4)
+        # (2) the graduation rate (10%):
+        #   STEP ONE: Calculate the five (5) year graduation rate for the cohort
+        #   immediately preceding the prior year cohort.
+        #   STEP TWO: Subtract the four (4) year graduation rate for the cohort
+        #   immediately preceding the prior year cohort from the number determined
+        #   under STEP ONE.
+        #   STEP THREE: Add the number determined under STEP TWO to the four (4) year
+        #   graduation rate from the prior year cohort.
 
-            if not hs_comparison_values.empty:            
-                print('HERE2')
-            # TODO:
+        # final grad calc score:
 
-# TODO: DROP STATE GRADE
-# TODO: Add State AHS Calculation
-# weighted graduation calculation score (20%) and weighted ccr score (80%) - yr1
-# other years grad (40%) / ccr (60%)
-# grad:
-# (1) the graduation to enrollment percentage of the school year(90% - max 100);
-#   denominator- the school's within-year-average number of students
-#   numerator of which is - the number of students who graduated during the school year
-#       multiplied by four (4)
-# (2) the graduation rate (10%): 
-#   STEP ONE: Calculate the five (5) year graduation rate for the cohort
-#   immediately preceding the prior year cohort.
-#   STEP TWO: Subtract the four (4) year graduation rate for the cohort
-#   immediately preceding the prior year cohort from the number determined
-#   under STEP ONE.
-#   STEP THREE: Add the number determined under STEP TWO to the four (4) year
-#   graduation rate from the prior year cohort.
+        # (1) the sum of the weighted percentages for graduation to enrollment and graduation rate;
+        # multiplied by
+        # (2) the graduation qualifying examination passing rate:
+        #   equal either to 1 if the graduation qualifying examination passing rate is at
+        #   least 90% or the actual percent passing if below 90%.
 
-# final grad calc score:
+        # CCR
+        # (1) the college and career achievement rate;
+        #   the percentage of all graduates in the school year being
+        #   assessed who accomplished any of the following:
+        #       (1) Passed an AP exam with a score of 3, 4, or 5.
+        #       (2) Passed an IB exam with a score of 4, 5, 6, or 7.
+        #       (3) Earned three (3) college credits, defined as credits awarded by a
+        #       regionally accredited postsecondary institution in a department approved
+        #       liberal arts or career or technical education dual credit course verifiable
+        #       by a transcript.
+        #       (4) Obtained an industry certification.
+        #       (5) Any other benchmarks approved by the board.
+        # (2) the college and career readiness factor (100/.8); and
+        # (3) one hundred (100).
 
-# (1) the sum of the weighted percentages for graduation to enrollment and graduation rate;
-# multiplied by
-# (2) the graduation qualifying examination passing rate:
-#   equal either to 1 if the graduation qualifying examination passing rate is at
-#   least 90% or the actual percent passing if below 90%.
+            # Adult High School Metrics
+            if selected_school_type == "AHS":
+                ahs_metrics_container = {"display": "block"}
+                main_container = {"display": "block"}
+                empty_container = {"display": "none"}
 
-# ccr
-# (1) the college and career achievement rate;
-#   the percentage of all graduates in the school year being
-#   assessed who accomplished any of the following:
-#       (1) Passed an AP exam with a score of 3, 4, or 5.
-#       (2) Passed an IB exam with a score of 4, 5, 6, or 7.
-#       (3) Earned three (3) college credits, defined as credits awarded by a regionally accredited postsecondary institution in a
-#       department approved liberal arts or career or technical education dual credit course verifiable by a transcript.
-#       (4) Obtained an industry certification.
-#       (5) Any other benchmarks approved by the board.
-# (2) the college and career readiness factor (100/.8); and
-# (3) one hundred (100).
+                # raw_hs_school_data = filter_high_school_academic_data(
+                #     selected_raw_hs_school_data
+                # )
 
-# TODO: Process AHS Metrics
-                # Adult High School Metrics
-                if selected_school_type == "AHS":
-                    ahs_metrics_container = {"display": "block"}
+                # raw_ahs_metrics = raw_hs_school_data[
+                #     ["Year", "AHS|CCR", "AHS|Grad All"]
+                # ]
+
+                ahs_metric_data_113 = calculate_adult_high_school_metrics(
+                    school, raw_metric_data
+                )
+
+                ahs_metric_data_113["Category"] = (
+                    ahs_metric_data_113["Metric"]
+                    + " "
+                    + ahs_metric_data_113["Category"]
+                )
+
+                ahs_metric_data_113 = ahs_metric_data_113.drop("Metric", axis=1)
+
+                ahs_metric_label_113 = [
+                    "Adult High School Accountability Metrics 1.1 & 1.3"
+                ]
+                ahs_metric_data_113 = convert_to_svg_circle(ahs_metric_data_113)
+                ahs_table_113 = create_metric_table(
+                    ahs_metric_label_113, ahs_metric_data_113
+                )
+                ahs_table_container_113 = set_table_layout(
+                    ahs_table_113, ahs_table_113, ahs_metric_data_113.columns
+                )
+
+                # Create placeholders (Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b)
+                all_cols = ahs_metric_data_113.columns.tolist()
+                simple_cols = [x for x in all_cols if not x.endswith("+/-")]
+
+                ahs_nocalc_empty = pd.DataFrame(columns=simple_cols)
+
+                ahs_nocalc_dict = {
+                    "Category": [
+                        "1.2.a Students graduate from high school in 4 years.",
+                        "1.2.b Students enrolled in grade 12 graduate within the school year being assessed.",
+                    ]
+                }
+                ahs_no_calc = pd.DataFrame(ahs_nocalc_dict)
+
+                ahs_metric_data_1214 = pd.concat(
+                    [ahs_nocalc_empty, ahs_no_calc], ignore_index=True
+                )
+                ahs_metric_data_1214.reset_index()
+
+                # fill only value columns with "No Data" (until we actually HAVE the data)
+                empty_year_cols = [
+                    col for col in ahs_metric_data_1214.columns if "Value" in col
+                ]
+                for col in empty_year_cols:
+                    ahs_metric_data_1214[col] = "No Data"
+
+                ahs_metric_label_1214 = [
+                    "Adult Accountability Metrics 1.2.a & 1.2.b"
+                ]
+                ahs_metric_data_1214 = convert_to_svg_circle(ahs_metric_data_1214)
+                ahs_table_1214 = create_metric_table(
+                    ahs_metric_label_1214, ahs_metric_data_1214
+                )
+                ahs_table_container_1214 = set_table_layout(
+                    ahs_table_1214, ahs_table_1214, ahs_metric_data_1214.columns
+                )
+
+            else:
+                # NOTE: We do not currently use hs_year_over_year_values for
+                # hs metrics
+                hs_year_over_year_values, hs_comparison_values = calculate_values(raw_metric_data,selected_year_string)
+
+                if not hs_comparison_values.empty:
+                    hs_metrics_container = {"display": "block"}
                     main_container = {"display": "block"}
                     empty_container = {"display": "none"}
 
-                    raw_hs_school_data = filter_high_school_academic_data(
-                        selected_raw_hs_school_data
-                    )
-
-                    raw_ahs_metrics = raw_hs_school_data[
-                        ["Year", "AHS|CCR", "AHS|Grad All"]
-                    ]
-
-                    ahs_metric_data_113 = calculate_adult_high_school_metrics(
-                        school, raw_ahs_metrics
-                    )
-
-                    ahs_metric_data_113["Category"] = (
-                        ahs_metric_data_113["Metric"]
-                        + " "
-                        + ahs_metric_data_113["Category"]
-                    )
-
-                    ahs_metric_data_113 = ahs_metric_data_113.drop("Metric", axis=1)
-
-                    ahs_metric_label_113 = [
-                        "Adult High School Accountability Metrics 1.1 & 1.3"
-                    ]
-                    ahs_metric_data_113 = convert_to_svg_circle(ahs_metric_data_113)
-                    ahs_table_113 = create_metric_table(
-                        ahs_metric_label_113, ahs_metric_data_113
-                    )
-                    ahs_table_container_113 = set_table_layout(
-                        ahs_table_113, ahs_table_113, ahs_metric_data_113.columns
-                    )
-
-                    # Create placeholders (Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b)
-                    all_cols = ahs_metric_data_113.columns.tolist()
-                    simple_cols = [x for x in all_cols if not x.endswith("+/-")]
-
-                    ahs_nocalc_empty = pd.DataFrame(columns=simple_cols)
-
-                    ahs_nocalc_dict = {
-                        "Category": [
-                            "1.2.a Students graduate from high school in 4 years.",
-                            "1.2.b Students enrolled in grade 12 graduate within the school year being assessed.",
-                        ]
-                    }
-                    ahs_no_calc = pd.DataFrame(ahs_nocalc_dict)
-
-                    ahs_metric_data_1214 = pd.concat(
-                        [ahs_nocalc_empty, ahs_no_calc], ignore_index=True
-                    )
-                    ahs_metric_data_1214.reset_index()
-
-                    # fill only value columns with "No Data" (until we actually HAVE the data)
-                    empty_year_cols = [
-                        col for col in ahs_metric_data_1214.columns if "Value" in col
-                    ]
-                    for col in empty_year_cols:
-                        ahs_metric_data_1214[col] = "No Data"
-
-                    ahs_metric_label_1214 = [
-                        "Adult Accountability Metrics 1.2.a & 1.2.b"
-                    ]
-                    ahs_metric_data_1214 = convert_to_svg_circle(ahs_metric_data_1214)
-                    ahs_table_1214 = create_metric_table(
-                        ahs_metric_label_1214, ahs_metric_data_1214
-                    )
-                    ahs_table_container_1214 = set_table_layout(
-                        ahs_table_1214, ahs_table_1214, ahs_metric_data_1214.columns
-                    )
-
-                else:
-                    hs_metrics_container = {"display": "block"}
-                    main_container = {"display": "block"}
-                    empty_container = {"display": "none"}                    
-                    
                     # raw_hs_corp_data = get_hs_corporation_academic_data(school)
 
                     # for col in raw_hs_corp_data.columns:
@@ -721,7 +689,7 @@ def update_academic_metrics(school: str, year: str):
         table_container_11ab = set_table_layout(
             empty_table_11ab, empty_table_11ab, [""]
         )
-        
+
         empty_table_11cd = no_data_table(
             "No Data to Display.",
             "End of Year to Beginning of Year (1.1.c) and Year over Year (1.1.d) Student Re-Enrollment Rate.",

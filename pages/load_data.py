@@ -652,12 +652,12 @@ def get_letter_grades(*args):
 
     q = text(
         """
-        SELECT demographic_data.Year, demographic_data.StateGrade, demographic_data.FederalRating
-            FROM demographic_data
+        SELECT Year, StateGrade, FederalRating
+            FROM demographic_data_corp
 	        WHERE CorporationID = :id
         """
     )
-
+# demographic_data.Year, demographic_data.StateGrade, demographic_data.FederalRating
     return run_query(q, params)
 
 
@@ -771,6 +771,25 @@ def get_ilearn_student_data(*args):
     )
 
     results = run_query(q, params)
+
+    return results
+
+# Calculates AHS average for all categories and for all years
+def get_ahs_averages(*args):
+    keys = ["id","type"]
+    params = dict(zip(keys, args))
+
+    q = text (
+        """
+        SELECT *
+            FROM academic_data_hs
+            WHERE SchoolType = "AHS"
+        """
+    )
+
+    results = run_query(q, params)
+
+    results = results.sort_values(by="Year")
 
     return results
 
@@ -948,11 +967,11 @@ def get_corporation_academic_data(*args):
     q = text(
         """
         SELECT *
-	        FROM {}
-	        WHERE CorporationID = (
-		        SELECT GEOCorp
-			        FROM school_index
-			        WHERE SchoolID = :id)""".format(table)
+            FROM {}
+            WHERE CorporationID = (
+                SELECT GEOCorp
+                    FROM school_index
+                    WHERE SchoolID = :id)""".format(table)
     )
 
     results = run_query(q, params)
@@ -1091,7 +1110,7 @@ def get_comparable_schools(*args):
 
 # Where all the magic happens
 # Gets all the academic data and formats it for display
-def get_all_the_data(*args):
+def get_academic_data(*args):
 
     keys = ["schools", "type", "year", "page"]
 
@@ -1114,22 +1133,21 @@ def get_all_the_data(*args):
     else:
         school_table = "academic_data_hs"
 
-    # TODO: NEED THIS FOR COMPARABLE SCHOOLS?
-    # TODO: DO WE HAVE A STATE AHS AVERAGE?
-    if params["type"] == "AHS":
-        query_string = """
-            SELECT *
-                FROM {}
-                WHERE SchoolType = "AHS" AND SchoolID IN ({})""".format(
-            school_table, school_str
-        )
-    else:
-        query_string = """
-            SELECT *
-                FROM {}
-                WHERE SchoolID IN ({})""".format(
-            school_table, school_str
-        )
+    # TODO: AHS Comparable Schools?
+    # if params["type"] == "AHS":
+    #     query_string = """
+    #         SELECT *
+    #             FROM {}
+    #             WHERE SchoolType = "AHS" AND SchoolID IN ({})""".format(
+    #         school_table, school_str
+    #     )
+    # else:
+    query_string = """
+        SELECT *
+            FROM {}
+            WHERE SchoolID IN ({})""".format(
+        school_table, school_str
+    )
 
     q = text(query_string)
 
@@ -1138,7 +1156,6 @@ def get_all_the_data(*args):
 ###
     
     school_data = run_query(q, params)
-    school_data = school_data.sort_values(by="Year", ascending=False)
 
     # get corp data (for academic_metrics and academic_analysis_single_year)
     # and add to dataframe
@@ -1150,18 +1167,25 @@ def get_all_the_data(*args):
 
     # merge - result includes school, school corp, and comparable schools if
     # multiple school ids in the schools variable
-    result = pd.concat([school_data,corp_data],axis=0)
+    raw_merged_data = pd.concat([school_data,corp_data],axis=0)
 
+    print(raw_merged_data)
+    # Drop years of data that have been excluded by the
+    # selected year (are later than)
     excluded_years = get_excluded_years(params["year"])
     
     if excluded_years:
-        result = result[~result["Year"].isin(excluded_years)]
+        raw_merged_data = raw_merged_data[~raw_merged_data["Year"].isin(excluded_years)]
+ 
+    raw_merged_data = raw_merged_data.sort_values(by="Year", ascending=False)
+    
+    raw_merged_data = raw_merged_data.reset_index(drop=True)
 
     # Drop all columns for a Category if the value of "Total Tested" for
     # the Category for the school is null or 0 for the "school"
     drop_columns = []
 
-    data = result.copy()
+    data = raw_merged_data.copy()
 
     # convert from float to str while dropping the decimal
     data["School ID"] = data["School ID"].astype('Int64').astype('str')
@@ -1230,7 +1254,6 @@ def get_all_the_data(*args):
                 processed_data["CCR Percentage"] = processed_data["AHS|CCR"] / processed_data["AHS|Grad All"]
 
     # process K8 data
-    #TODO K12?
     elif params["type"] == "K8": 
 
         processed_data = data.copy()
@@ -1261,11 +1284,14 @@ def get_all_the_data(*args):
 
         # this is school, school corporation, and comparable school data
         processed_data = processed_data.reset_index()
-
+        
     # if all columns in data other than the 1st (Year) are null
     # then return empty df
     if processed_data.iloc[:, 1:].isna().all().all():
-        analysis_data = pd.DataFrame()
+        
+        # data = pd.DataFrame()
+
+        return pd.DataFrame()
 
     else:
         
@@ -1351,16 +1377,34 @@ def get_all_the_data(*args):
         ## data for academic_information and academic_metrics pages
         elif params["page"] == "info" or params["page"] == "metrics":
 
-# TODO: Fix lack of Corp Average for AHS - use AHS Average
+            from .process_data import transpose_data
+            
+            corp_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]].copy()
+            school_data = processed_data[processed_data["School ID"] == school_id].copy()
 
-            if params["type"] == "HS" or params["type"] == "AHS":
+            # No corp_data is used and school_data limited to single metric (CCR)
+            if params["type"] == "AHS" and params["page"] == "metrics":
+                    
+                # TODO: Add AHS State Grade Average? Other AHS Averages if metric?
+                
+                # AHS metric data is extremely limited atm
+                school_metric_data = school_data[["Year","AHS|CCR", "AHS|Grad All"]]
+
+                print(school_metric_data)
+
+                # filename18 = (
+                #     "ahs_metric_data.csv"
+                # )
+                # school_data.to_csv(filename18, index=False)
+
+                return school_metric_data
+            
+            elif params["type"] == "HS":
 
                 from .process_data import transpose_data
                 
                 corp_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]].copy()
                 school_data = processed_data[processed_data["School ID"] == school_id].copy()
-
-# TODO: Issue is with transpose- it is removing the AHS data
 
                 school_metrics_data = transpose_data(school_data,params)
                 corp_metrics_data = transpose_data(corp_data,params)
@@ -1368,87 +1412,78 @@ def get_all_the_data(*args):
                 # Remove N-Size columns from corp dataframe
                 corp_metrics_data = corp_metrics_data.filter(regex=r"Category|Corp", axis=1)
 
-                ## AHS data for academic_information and academic_metrics
-                if params["type"] == "AHS":
-                    # TODO: Add AHS State Grade Average? Other AHS Averages if metric?
-                    # TODO: Send to calculate_adult_metrics in analysis_page
-
+                ## HS data for academic_information
+                if params["page"] == "info":
                     return school_metrics_data
+                
+                else:
+                    # add state graduation average to corp df
+                    state_grad_average = get_graduation_data()
 
-                elif params["type"] == "HS":
+                    corp_metrics_data = pd.concat(
+                        [
+                            corp_metrics_data.reset_index(drop=True),
+                            state_grad_average.reset_index(drop=True),
+                        ],
+                        axis=0,
+                    ).reset_index(drop=True)
 
-                    ## HS data for academic_information
-                    if params["page"] == "info":
-                        return school_metrics_data
-                    
-                    else:
-                        # add state graduation average to corp df
-                        state_grad_average = get_graduation_data()
+                    # for the school calculation we duplicate the school's Total
+                    # Graduation rate values and rename the first column ("Category")
+                    # to "State Grad Average" - for the corporation df, Total Graduation
+                    # is equal to the Corp Average and State Grade Average is the
+                    # Stat Average. So when the difference is calculated
+                    # between the two data frames, Total Graduation Rate is the diff
+                    # between school total and corp total and "State Average" is the
+                    # diff between school total and state average
 
-                        corp_metrics_data = pd.concat(
-                            [
-                                corp_metrics_data.reset_index(drop=True),
-                                state_grad_average.reset_index(drop=True),
-                            ],
-                            axis=0,
-                        ).reset_index(drop=True)
+                    # for this to work, we need to make sure the school has a "Total
+                    # Graduation Rate" Category- if is missing, we add a new row filled
+                    # with nan (by enlargement)
+                    if "Total|Graduation Rate" not in school_metrics_data["Category"].values:
 
-                        # for the school calculation we duplicate the school's Total
-                        # Graduation rate values and rename the first column ("Category")
-                        # to "State Grad Average" - for the corporation df, Total Graduation
-                        # is equal to the Corp Average and State Grade Average is the
-                        # Stat Average. So when the difference is calculated
-                        # between the two data frames, Total Graduation Rate is the diff
-                        # between school total and corp total and "State Average" is the
-                        # diff between school total and state average
+                        school_metrics_data.loc[len(school_metrics_data)] = np.nan
+                        school_metrics_data.loc[
+                            school_metrics_data.index[-1], "Category"
+                        ] = "Total|Graduation Rate"
 
-                        # for this to work, we need to make sure the school has a "Total
-                        # Graduation Rate" Category- if is missing, we add a new row filled
-                        # with nan (by enlargement)
-                        if "Total|Graduation Rate" not in school_metrics_data["Category"].values:
+                    duplicate_row = school_metrics_data[
+                        school_metrics_data["Category"] == "Total|Graduation Rate"
+                    ].copy()
 
-                            school_metrics_data.loc[len(school_metrics_data)] = np.nan
-                            school_metrics_data.loc[
-                                school_metrics_data.index[-1], "Category"
-                            ] = "Total|Graduation Rate"
+                    duplicate_row["Category"] = "State Graduation Average"
 
-                        duplicate_row = school_metrics_data[
-                            school_metrics_data["Category"] == "Total|Graduation Rate"
-                        ].copy()
+                    school_metrics_data = pd.concat(
+                        [school_metrics_data, duplicate_row], axis=0, ignore_index=True
+                    )
 
-                        duplicate_row["Category"] = "State Graduation Average"
+                    # Corp -State Grad Rate should equal State Grad Rate
+                    # Corp - Total Grad Rate and Nonwaiver Grad Rate should equal corp totals
+                    # School - Both State and Total Grad Rate should equal school total grad rate
+                    # School - Nonwaiver = school
 
-                        school_metrics_data = pd.concat(
-                            [school_metrics_data, duplicate_row], axis=0, ignore_index=True
-                        )
+                    # calcs = School (Grad) - Corp (State) = State Grad Avg diff
+                    #       = School (Grad) - Corp (Total) = Corp Grad Avg diff
+                    #       = School (NonW) - Corp 
 
-                        # Corp -State Grad Rate should equal State Grad Rate
-                        # Corp - Total Grad Rate and Nonwaiver Grad Rate should equal corp totals
-                        # School - Both State and Total Grad Rate should equal school total grad rate
-                        # School - Nonwaiver = school
+                    # add corp data to df
+                    corp_proficiency_cols = [col for col in corp_metrics_data.columns.to_list() if "Corp" in col]
+                    merged_data = pd.concat([school_metrics_data, corp_metrics_data[corp_proficiency_cols]], axis=1)
 
-                        # calcs = School (Grad) - Corp (State) = State Grad Avg diff
-                        #       = School (Grad) - Corp (Total) = Corp Grad Avg diff
-                        #       = School (NonW) - Corp 
+                    # NOTE: at the moment HS metrics only include Total Graduation Rate,
+                    # Non Waiver Graduation Rate, and State Graduation Average
 
-                        # add corp data to df
-                        corp_proficiency_cols = [col for col in corp_metrics_data.columns.to_list() if "Corp" in col]
-                        merged_data = pd.concat([school_metrics_data, corp_metrics_data[corp_proficiency_cols]], axis=1)
+                    # clean up and filter
+                    merged_data = merged_data.replace({
+                        "Total|Graduation Rate": "Total Graduation Rate",
+                        "Non Waiver|Graduation Rate": "Non Waiver Graduation Rate"}, regex=False)
 
-                        # NOTE: at the moment HS metrics only include Total Graduation Rate,
-                        # Non Waiver Graduation Rate, and State Graduation Average
+                    hs_categories =["Total Graduation Rate","Non Waiver Graduation Rate","State Graduation Average"]
+                    metric_data = merged_data[merged_data["Category"].str.contains('|'.join(hs_categories))]
 
-                        # clean up and filter
-                        merged_data = merged_data.replace({
-                            "Total|Graduation Rate": "Total Graduation Rate",
-                            "Non Waiver|Graduation Rate": "Non Waiver Graduation Rate"}, regex=False)
+                    metric_data = metric_data.reset_index(drop=True)
 
-                        hs_categories =["Total Graduation Rate","Non Waiver Graduation Rate","State Graduation Average"]
-                        metric_data = merged_data[merged_data["Category"].str.contains('|'.join(hs_categories))]
-
-                        metric_data = metric_data.reset_index(drop=True)
-
-                        return metric_data
+                    return metric_data
 
             else:
 

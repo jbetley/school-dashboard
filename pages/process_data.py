@@ -862,7 +862,7 @@ def transpose_data(df,params):
     # create dataframes with N-Size data for info/analysis pages
     if params["type"] == "HS" or params["type"] == "AHS":
         tested_cols = "Total Tested|Cohort Count|Year"
-        filter_cols = r"^Category|Graduation Rate$|CCR Percentage|Pass Rate$|Benchmark %|Below|Approaching|At|^CCR Percentage|^Year$"
+        filter_cols = r"^Category|Graduation Rate$|AHS|Pass Rate$|Benchmark %|Below|Approaching|At|^Year$"
         substring_dict = {" Total Tested": "", "\|Cohort Count": "|Graduation"} 
     
     else:
@@ -911,14 +911,14 @@ def transpose_data(df,params):
 
     proficiency_data = proficiency_data.rename(
         columns={
-            c: str(c) + name_id #"School"
+            c: str(c) + name_id
             for c in proficiency_data.columns
             if c not in ["Category"]
         }
     )
 
     proficiency_data = proficiency_data.reset_index(drop=True)
-    
+
     # temporarily store Low/High grade cols for K8
     if params["type"] == "K8":
         other_rows = proficiency_data[
@@ -960,7 +960,7 @@ def transpose_data(df,params):
 
     merged_data = merged_data.drop("Substring", axis=1)
     merged_data = merged_data.reset_index(drop=True)
-
+    
     # reorder columns for display
     school_cols = [e for e in merged_data.columns if name_id in e]
     nsize_cols = [e for e in merged_data.columns if nsize_id in e]
@@ -980,7 +980,7 @@ def transpose_data(df,params):
             [final_data.reset_index(drop=True), other_rows.reset_index(drop=True)],
             axis=0,
         ).reset_index(drop=True)
-
+        
     return final_data
 
 
