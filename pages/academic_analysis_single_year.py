@@ -355,59 +355,71 @@ def update_academic_analysis_single_year(
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
             the selected school. Up to eight (8) schools may be displayed at once."
 
-        # get data for school
-        raw_hs_school_data = get_high_school_academic_data(school_id)
+# TODO: SEEMS TO BE WORKING - TEST
+        list_of_schools = [school_id] + comparison_school_list
+        raw_hs_analysis_data = get_academic_data(list_of_schools, "HS", numeric_year, "analysis")
+        hs_analysis_data = raw_hs_analysis_data.loc[
+                raw_hs_analysis_data["Year"] == numeric_year
+            ]
 
-        # filter by selected year
-        raw_hs_school_data = raw_hs_school_data.loc[
-            raw_hs_school_data["Year"] == numeric_year
-        ]
-        raw_hs_school_data = raw_hs_school_data.reset_index(drop=True)
+        filename18 = (
+            "new_hs_analysis.csv"
+        )
+        hs_analysis_data.to_csv(filename18, index=False)
+# TODO:
 
-        if raw_hs_school_data.empty:
+        if hs_analysis_data.empty:
+
+        # # get data for school
+        # raw_hs_school_data = get_high_school_academic_data(school_id)
+
+        # # filter by selected year
+        # raw_hs_school_data = raw_hs_school_data.loc[
+        #     raw_hs_school_data["Year"] == numeric_year
+        # ]
+        # raw_hs_school_data = raw_hs_school_data.reset_index(drop=True)
+
+        # if raw_hs_school_data.empty:
             analysis_single_dropdown_container = {"display": "none"}
             hs_analysis_empty_container = {"display": "block"}
 
         else:
-            hs_school_name = raw_hs_school_data["School Name"].values[0]
+            print("HUUUUR")
+            print(hs_analysis_data[["School ID","School Name"]])
+            print(type(hs_analysis_data["School ID"][0]))
+            print(type(school_id))
+            hs_school_name = hs_analysis_data[hs_analysis_data["School ID"] == int(school_id)]["School Name"].values[0]
+            print(hs_school_name)
+
+            # hs_school_name = raw_hs_school_data["School Name"].values[0]
             hs_school_name = hs_school_name.strip()
 
-            # get data for corporation
-            raw_hs_corp_data = get_hs_corporation_academic_data(school_id)
-            hs_corporation_name = raw_hs_corp_data["Corporation Name"].values[0]
-            hs_corporation_id = raw_hs_corp_data["Corporation ID"].values[0]
+            # # get data for corporation
+            # raw_hs_corp_data = get_hs_corporation_academic_data(school_id)
+            # hs_corporation_name = raw_hs_corp_data["Corporation Name"].values[0]
+            # hs_corporation_id = raw_hs_corp_data["Corporation ID"].values[0]
 
-            raw_hs_corp_data = raw_hs_corp_data.loc[
-                raw_hs_corp_data["Year"] == numeric_year
-            ]
-            raw_hs_corp_data = raw_hs_corp_data.reset_index(drop=True)
+            # raw_hs_corp_data = raw_hs_corp_data.loc[
+            #     raw_hs_corp_data["Year"] == numeric_year
+            # ]
+            # raw_hs_corp_data = raw_hs_corp_data.reset_index(drop=True)
 
-            # need to add some missing categories that aren't in corp df and drop
-            # some columns that are in corp df but shouldnt be
-            hs_info_columns = ["School Name", "School ID", "Lat", "Lon"]
+            # # need to add some missing categories that aren't in corp df and drop
+            # # some columns that are in corp df but shouldnt be
+            # hs_info_columns = ["School Name", "School ID", "Lat", "Lon"]
 
-            add_columns = hs_info_columns + raw_hs_corp_data.columns.tolist()
-            raw_hs_corp_data = raw_hs_corp_data.reindex(columns=add_columns)
+            # add_columns = hs_info_columns + raw_hs_corp_data.columns.tolist()
+            # raw_hs_corp_data = raw_hs_corp_data.reindex(columns=add_columns)
 
-            raw_hs_corp_data["School Name"] = hs_corporation_name
-            raw_hs_corp_data["School ID"] = hs_corporation_id
-            raw_hs_corp_data["School Type"] = "School Corporation"
+            # raw_hs_corp_data["School Name"] = hs_corporation_name
+            # raw_hs_corp_data["School ID"] = hs_corporation_id
+            # raw_hs_corp_data["School Type"] = "School Corporation"
 
-            # get data for comparable schools (already filtered by selected year in SQL query)
-            raw_hs_comparison_data = get_comparable_schools(
-                comparison_school_list, numeric_year, "HS"
-            )
+            # # get data for comparable schools (already filtered by selected year in SQL query)
+            # raw_hs_comparison_data = get_comparable_schools(
+            #     comparison_school_list, numeric_year, "HS"
+            # )
 
-# TODO:     
-            list_of_schools = [school_id] + comparison_school_list
-            tst_data_hs = get_academic_data(list_of_schools, "HS", numeric_year, "info")
-# TODO:
-            
-# TODO: Want to replace the get comparable schools with get_selected
-# TODO: In order to to do this, we need to revisit all of the HS processing
-# TODO: Functions. So slightly more complicated. Goal is to make HS look
-# TODO: Like K8, get rid of 'get_comparable_schools' and merge get_selected
-# TODO: hs and k8 functions in to one                 
             # list_of_hs_schools = comparison_school_list + [school_id]
             # selected_hs_tst_data = get_selected_hs_school_academic_data(
             #     list_of_hs_schools, year
@@ -416,28 +428,28 @@ def update_academic_analysis_single_year(
             # concatenate all three dataframes together. don't include
             # school corporation data if the selected school is an AHS,
             # it is not comparable and skews the output
-            if school_type == "AHS":
-                combined_hs_data = pd.concat(
-                    [raw_hs_school_data, raw_hs_comparison_data],
-                    ignore_index=True,
-                )
-            else:
-                combined_hs_data = pd.concat(
-                    [raw_hs_school_data, raw_hs_corp_data, raw_hs_comparison_data],
-                    ignore_index=True,
-                )
+            # if school_type == "AHS":
+            #     combined_hs_data = pd.concat(
+            #         [raw_hs_school_data, raw_hs_comparison_data],
+            #         ignore_index=True,
+            #     )
+            # else:
+            #     combined_hs_data = pd.concat(
+            #         [raw_hs_school_data, raw_hs_corp_data, raw_hs_comparison_data],
+            #         ignore_index=True,
+            #     )
 
             # calculate values
-            processed_hs_data = process_comparable_high_school_academic_data(
-                combined_hs_data
-            )
+            # processed_hs_data = process_comparable_high_school_academic_data(
+            #     combined_hs_data
+            # )
 
-            hs_analysis_data = (
-                processed_hs_data.set_index("Category")
-                .T.rename_axis("Year")
-                .rename_axis(None, axis=1)
-                .reset_index()
-            )
+            # hs_analysis_data = (
+            #     processed_hs_data.set_index("Category")
+            #     .T.rename_axis("Year")
+            #     .rename_axis(None, axis=1)
+            #     .reset_index()
+            # )
 
             hs_cols = [c for c in hs_analysis_data if c != "School Name"]
 
@@ -448,7 +460,7 @@ def update_academic_analysis_single_year(
                     hs_analysis_data[col], errors="coerce"
                 )
 
-            # drop all columns where the row at school_name_idx has a NaN value
+            # # drop all columns where the row at school_name_idx has a NaN value
             school_name_idx = hs_analysis_data.index[
                 hs_analysis_data["School Name"].str.contains(hs_school_name)
             ].tolist()[0]
@@ -456,6 +468,11 @@ def update_academic_analysis_single_year(
             hs_analysis_data = hs_analysis_data.loc[
                 :, ~hs_analysis_data.iloc[school_name_idx].isna()
             ]
+
+            filename88 = (
+                "hs_analysis_original.csv"
+            )
+            hs_analysis_data.to_csv(filename88, index=False)            
 # TODO: HERE
             # check to see if there is data after processing
             if len(hs_analysis_data.columns) <= 5:

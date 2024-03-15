@@ -870,9 +870,28 @@ def get_attendance_data(school_id, school_type, year):
 
     return attendance_rate
 
-
+# TODO: Drop
 # Get k8 academic data for single school
 def get_k8_school_academic_data(*args):
+    keys = ["id"]
+    params = dict(zip(keys, args))
+
+    q = text(
+        """
+        SELECT *
+            FROM academic_data_k8
+	        WHERE SchoolID = :id
+        """
+    )
+
+    results = run_query(q, params)
+    results = results.sort_values(by="Year", ascending=False)
+
+    return results
+
+
+# Get k8 academic data for single school
+def get_proficiency_data(*args):
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -1169,7 +1188,6 @@ def get_academic_data(*args):
     # multiple school ids in the schools variable
     raw_merged_data = pd.concat([school_data,corp_data],axis=0)
 
-    print(raw_merged_data)
     # Drop years of data that have been excluded by the
     # selected year (are later than)
     excluded_years = get_excluded_years(params["year"])
@@ -1303,7 +1321,7 @@ def get_academic_data(*args):
                 hs_data = processed_data.copy()
 
                 analysis_data = hs_data.filter(
-                    regex=r"School ID|School Name|Corporation ID|Corporation Name|Graduation Rate$|Benchmark \%|^Year$",
+                    regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name|Graduation Rate$|Benchmark \%|^Year$",
                     axis=1,
                 ).copy()
 
@@ -1385,17 +1403,8 @@ def get_academic_data(*args):
             # No corp_data is used and school_data limited to single metric (CCR)
             if params["type"] == "AHS" and params["page"] == "metrics":
                     
-                # TODO: Add AHS State Grade Average? Other AHS Averages if metric?
-                
                 # AHS metric data is extremely limited atm
                 school_metric_data = school_data[["Year","AHS|CCR", "AHS|Grad All"]]
-
-                print(school_metric_data)
-
-                # filename18 = (
-                #     "ahs_metric_data.csv"
-                # )
-                # school_data.to_csv(filename18, index=False)
 
                 return school_metric_data
             

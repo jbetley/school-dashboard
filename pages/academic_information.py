@@ -30,17 +30,18 @@ from .load_data import (
     get_school_stns,
     get_iread_student_data,
     get_wida_student_data,
-    get_k8_school_academic_data,
+    get_proficiency_data,
+    # get_k8_school_academic_data,
     # get_high_school_academic_data,
     get_school_index,
     get_excluded_years,
     get_academic_data
 )
-from .process_data import (
-    process_k8_info_data,
-    # process_high_school_academic_data,
-    # filter_high_school_academic_data
-)
+# from .process_data import (
+#     process_k8_info_data,
+#     # process_high_school_academic_data,
+#     # filter_high_school_academic_data
+# )
 from .tables import (
     no_data_page,
     create_multi_header_table_with_container,
@@ -420,525 +421,524 @@ def update_academic_information_page(
 
         list_of_schools = [school]
 
-# TODO: HERE - Recreate Fig and Table Data
         k8_info_data = get_academic_data(list_of_schools, school_type, selected_year_numeric, "info")
 
-        selected_raw_k8_school_data = get_k8_school_academic_data(school)
-
-        filename77 = (
-            "info_process_new.csv"
+        k8_info_data["Category"] = (
+            k8_info_data["Category"]
+            .str.replace(" Proficient %", "")
+            .str.strip()
         )
-        k8_info_data.to_csv(filename77, index=False)
-        
-        if excluded_years:
-            selected_raw_k8_school_data = selected_raw_k8_school_data[
-                ~selected_raw_k8_school_data["Year"].isin(excluded_years)
-            ]
 
+        if len(k8_info_data.index) < 0:
         # NOTE: no ilearn/iread data available for 2020
-        if (
-            len(selected_raw_k8_school_data.index) > 0
-            and selected_year_string != "2020"
-        ):
+        # if (
+        #     len(raw_k8_info_data.index) > 0
+        #     and selected_year_string != "2020"
+        # ):
 
             # this gives us proficiency and N-Size data for ILEARN and IREAD
             # with column names = ["2019School", "2019N-Size", . . . ] -
             # use N-Size data for table tooltips
-            ilearn_table_data = process_k8_info_data(selected_raw_k8_school_data)
+            # ilearn_table_data = process_k8_info_data(raw_k8_info_data)
 
-            filename97 = (
-                "info_original_process.csv"
-            )
-            ilearn_table_data.to_csv(filename97, index=False)
+            # filename97 = (
+            #     "info_original_process.csv"
+            # )
+            # ilearn_table_data.to_csv(filename97, index=False)
 
-            if ilearn_table_data.empty:
+            # if ilearn_table_data.empty:
 
-                #TODO: this necessary here? Container logic?
-                # proficiency_ela_grades_container = {"display": "none"}
-                # proficiency_ela_ethnicity_container = {"display": "none"}
-                # proficiency_ela_subgroup_container = {"display": "none"}
-                # proficiency_math_grades_container = {"display": "none"}
-                # proficiency_math_ethnicity_container = {"display": "none"}
-                # proficiency_math_subgroup_container = {"display": "none"}
-                k8_table_container = {"display": "none"}
+            #TODO: this necessary here? Container logic?
+            # proficiency_ela_grades_container = {"display": "none"}
+            # proficiency_ela_ethnicity_container = {"display": "none"}
+            # proficiency_ela_subgroup_container = {"display": "none"}
+            # proficiency_math_grades_container = {"display": "none"}
+            # proficiency_math_ethnicity_container = {"display": "none"}
+            # proficiency_math_subgroup_container = {"display": "none"}
 
-                no_display_data = no_data_page("No Data to Display.", "Academic Proficiency")
+            k8_table_container = {"display": "none"}
+            no_display_data = no_data_page("No Data to Display.", "Academic Proficiency")
             
+        else:
+
+            k8_table_container = {"display": "block"}
+            main_container = {"display": "block"}
+            empty_container = {"display": "none"}
+
+            ilearn_table_data = k8_info_data.copy()
+           
+           # TODO: needed?
+            # ilearn_table_data["Category"] = (
+            #     ilearn_table_data["Category"]
+            #     .str.replace(" Proficient %", "")
+            #     .str.strip()
+            # )
+
+            # Reformat data for multi-year line charts
+            # Remove N-Size cols, strip suffix from years, and
+            # transpose dataframe so categories become column names
+            ilearn_fig_data = k8_info_data.loc[
+                :, ~k8_info_data.columns.str.contains("N-Size")
+            ].copy()
+
+            ilearn_fig_data = ilearn_fig_data.set_index("Category")
+            ilearn_fig_data.columns = ilearn_fig_data.columns.str[:4]
+            ilearn_fig_data = ilearn_fig_data.reset_index()
+
+            ilearn_fig_data = (
+                ilearn_fig_data.set_index("Category")
+                .T.rename_axis("Year")
+                .rename_axis(None, axis=1)
+                .reset_index()
+            )
+            ilearn_fig_data["School Name"] = selected_school_name
+
+            filename71 = (
+                "info_fig_new.csv"
+            )
+            ilearn_fig_data.to_csv(filename71, index=False)
+
+        ## ILEARN Charts and Tables
+            
+            # NOTE: We use ilearn_table_data variable for tables because we
+            # need N-Size values. ilearn_fig_data is similar, just transposed
+
+            # get column lists for each subject/category combination
+            categories_ela_subgroup = []
+            categories_math_subgroup = []
+            for s in subgroup:
+                categories_ela_subgroup.append(s + "|" + "ELA")
+                categories_math_subgroup.append(s + "|" + "Math")
+
+            categories_ela_ethnicity = []
+            categories_math_ethnicity = []
+            for e in ethnicity:
+                categories_ela_ethnicity.append(e + "|" + "ELA")
+                categories_math_ethnicity.append(e + "|" + "Math")
+
+            # ELA by Grade table
+            years_by_grade_ela = ilearn_table_data[
+                (
+                    ilearn_table_data["Category"].str.contains(
+                        "|".join(grades_all)
+                    )
+                    & ilearn_table_data["Category"].str.contains("ELA")
+                )
+            ]
+            
+            ela_grade_table = create_multi_header_table(years_by_grade_ela)
+
+            # ELA by Grade fig
+            ela_grade_fig_data = ilearn_fig_data.filter(
+                regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
+            )
+
+            ela_grade_line_fig = make_line_chart(ela_grade_fig_data)
+
+            proficiency_grades_ela = create_line_fig_layout(
+                ela_grade_table, ela_grade_line_fig, "ELA By Grade"
+            )
+
+            # ELA by Subgroup table
+            years_by_subgroup_ela = ilearn_table_data[
+                (
+                    ilearn_table_data["Category"].str.contains("|".join(subgroup))
+                    & ilearn_table_data["Category"].str.contains("ELA")
+                )
+            ]
+
+            ela_subgroup_table = create_multi_header_table(years_by_subgroup_ela)
+
+            # ELA by Subgroup fig
+            ela_subgroup_fig_data = ilearn_fig_data.loc[
+                :,
+                (ilearn_fig_data.columns.isin(categories_ela_subgroup))
+                | (ilearn_fig_data.columns.isin(["School Name", "Year"])),
+            ]
+            ela_subgroup_line_fig = make_line_chart(ela_subgroup_fig_data)
+
+            proficiency_subgroup_ela = create_line_fig_layout(
+                ela_subgroup_table, ela_subgroup_line_fig, "ELA By Subgroup"
+            )
+
+            # ELA by Ethnicity table
+            years_by_ethnicity_ela = ilearn_table_data[
+                (
+                    ilearn_table_data["Category"].str.contains("|".join(ethnicity))
+                    & ilearn_table_data["Category"].str.contains("ELA")
+                )
+            ]
+
+            ela_ethnicity_table = create_multi_header_table(years_by_ethnicity_ela)
+
+            # ELA by Ethnicity fig
+            ela_ethnicity_fig_data = ilearn_fig_data.loc[
+                :,
+                (ilearn_fig_data.columns.isin(categories_ela_ethnicity))
+                | (ilearn_fig_data.columns.isin(["School Name", "Year"])),
+            ]
+            ela_ethnicity_line_fig = make_line_chart(ela_ethnicity_fig_data)
+
+            proficiency_ethnicity_ela = create_line_fig_layout(
+                ela_ethnicity_table, ela_ethnicity_line_fig, "ELA By Ethnicity"
+            )
+
+            # Math by Grade table
+            years_by_grade_math = ilearn_table_data[
+                (
+                    ilearn_table_data["Category"].str.contains(
+                        "|".join(grades_all)
+                    )
+                    & ilearn_table_data["Category"].str.contains("Math")
+                )
+            ]
+
+            math_grade_table = create_multi_header_table(years_by_grade_math)
+
+            # Math by Grade fig
+            math_grade_fig_data = ilearn_fig_data.filter(
+                regex=r"^Grade \d\|Math|^School Name$|^Year$", axis=1
+            )
+            math_grade_line_fig = make_line_chart(math_grade_fig_data)
+
+            proficiency_grades_math = create_line_fig_layout(
+                math_grade_table, math_grade_line_fig, "Math By Grade"
+            )
+
+            # Math by Subgroup Table
+            years_by_subgroup_math = ilearn_table_data[
+                (
+                    ilearn_table_data["Category"].str.contains("|".join(subgroup))
+                    & ilearn_table_data["Category"].str.contains("Math")
+                )
+            ]
+
+            math_subgroup_table = create_multi_header_table(years_by_subgroup_math)
+
+            # Math by Subgroup fig
+            math_subgroup_fig_data = ilearn_fig_data.loc[
+                :,
+                (ilearn_fig_data.columns.isin(categories_math_subgroup))
+                | (ilearn_fig_data.columns.isin(["School Name", "Year"])),
+            ]
+            math_subgroup_line_fig = make_line_chart(math_subgroup_fig_data)
+
+            proficiency_subgroup_math = create_line_fig_layout(
+                math_subgroup_table, math_subgroup_line_fig, "Math By Subgroup"
+            )
+
+            # Math by Ethnicity table
+            years_by_ethnicity_math = ilearn_table_data[
+                (
+                    ilearn_table_data["Category"].str.contains("|".join(ethnicity))
+                    & ilearn_table_data["Category"].str.contains("Math")
+                )
+            ]
+
+            math_ethnicity_table = create_multi_header_table(
+                years_by_ethnicity_math
+            )
+
+            # Math by Ethnicity fig
+            math_ethnicity_fig_data = ilearn_fig_data.loc[
+                :,
+                (ilearn_fig_data.columns.isin(categories_math_ethnicity))
+                | (ilearn_fig_data.columns.isin(["School Name", "Year"])),
+            ]
+            math_ethnicity_line_fig = make_line_chart(math_ethnicity_fig_data)
+
+            proficiency_ethnicity_math = create_line_fig_layout(
+                math_ethnicity_table, math_ethnicity_line_fig, "Math By Ethnicity"
+            )
+
+        ## ILEARN proficiency breakdown stacked bar charts
+            raw_k8_info_data = get_proficiency_data(school)
+
+            # filename77 = (
+            #     "info_process_new.csv"
+            # )
+            # k8_info_data.to_csv(filename77, index=False)
+                        
+            ilearn_proficency_data = raw_k8_info_data.loc[
+                raw_k8_info_data["Year"] == selected_year_numeric
+            ].copy()
+
+            ilearn_proficency_data = ilearn_proficency_data.dropna(axis=1)
+            ilearn_proficency_data = ilearn_proficency_data.reset_index()
+
+            for col in ilearn_proficency_data.columns:
+                ilearn_proficency_data[col] = pd.to_numeric(
+                    ilearn_proficency_data[col], errors="coerce"
+                )
+
+            # this keeps ELA and Math as well, which we drop later
+            ilearn_proficency_data = ilearn_proficency_data.filter(
+                regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
+                axis=1,
+            )
+
+            proficiency_rating = [
+                "Below Proficiency",
+                "Approaching Proficiency",
+                "At Proficiency",
+                "Above Proficiency",
+            ]
+
+            # create dataframe to hold fig annotations
+            annotations = pd.DataFrame(
+                columns=["Category", "Total Tested"]
+            )
+
+            categories = grades_all + ethnicity + subgroup
+
+            for c in categories:
+                for s in subject:
+                    category_subject = c + "|" + s
+                    proficiency_columns = [
+                        category_subject + " " + x for x in proficiency_rating
+                    ]
+                    total_tested = category_subject + " " + "Total Tested"
+
+                    # We do not want categories that do not appear in the dataframe to appear
+                    # in a chart. However, we also do not want to lose sight of critical data
+                    # because of the way that IDOE determines insufficient N-Size. There are
+                    # three possible data configurations for each column:
+                    # 1) Total Tested > 0 and the sum of proficiency_rating(s) is > 0: the school
+                    #    has tested category and there is publicly available data [display]
+                    # 2) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
+                    #    have data for the tested category [do not display, but 'may' want
+                    #    annotation as "Missing"]
+                    # 3) Total Tested > 0 and the sum of proficiency_rating(s) are == "NaN": the
+                    #    school has tested category but there is no publicly available data
+                    #    [do not display, but 'may' want annotation as "Insufficient N-size"
+
+                    # Neither (2) or (3) permit the creation of a valid or meaningful chart.
+                    # However, we do want to track which Category/Subject combinations meet
+                    # either condition (for figure annotation purposes).
+
+                    if total_tested in ilearn_proficency_data.columns:
+                        # The following is true if: 1) there are any NaN values in the set
+                        # (one or more '***) or 2) the sum of all values is equal to 0 (no
+                        # data) or 0.0 (NaN's converted from '***' meaning insufficient data)
+                        # Can tell whether the annotation reflects insufficient n-size or
+                        # missing data by the value in Total Tested (will be 0 for missing)
+                        if (
+                            ilearn_proficency_data[proficiency_columns]
+                            .isna()
+                            .sum()
+                            .sum()
+                            > 0
+                        ) or (
+                            ilearn_proficency_data[proficiency_columns].iloc[0].sum()
+                            == 0
+                        ):
+                            # add the category and value of Total Tested to a df
+                            annotation_category = proficiency_columns[0].split("|")[0]
+                            annotations.loc[len(annotations.index)] = [
+                                annotation_category + "|" + s,
+                                ilearn_proficency_data[total_tested].values[0]
+                            ]
+
+                            # drop any columns in the (non-chartable) category from the df
+                            all_proficiency_columns = proficiency_columns + [
+                                total_tested
+                            ]
+
+                            ilearn_proficency_data = ilearn_proficency_data.drop(
+                                all_proficiency_columns, axis=1
+                            )
+
+                        else:
+                            # calculate percentage
+                            ilearn_proficency_data[
+                                proficiency_columns
+                            ] = ilearn_proficency_data[proficiency_columns].divide(
+                                ilearn_proficency_data[total_tested], axis="index"
+                            )
+
+                            # get a list of all values
+                            row_list = ilearn_proficency_data[
+                                proficiency_columns
+                            ].values.tolist()
+
+                            # round percentages using Largest Remainder Method
+                            # to build the 100% stacked bar chart
+                            rounded = round_percentages(row_list[0])
+
+                            # add back to dataframe
+                            rounded_percentages = pd.DataFrame([rounded])
+                            rounded_percentages_cols = list(
+                                rounded_percentages.columns
+                            )
+                            ilearn_proficency_data[
+                                proficiency_columns
+                            ] = rounded_percentages[rounded_percentages_cols]
+
+            ilearn_proficency_data.drop(
+                list(
+                    ilearn_proficency_data.filter(
+                        regex="Total Proficient|ELA and Math"
+                    )
+                ),
+                axis=1,
+                inplace=True,
+            )
+
+            # Replace Grade X with ordinal number (e.g., Grade 4 = 4th)
+            ilearn_proficency_data = ilearn_proficency_data.rename(
+                columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
+            )
+
+            # all use "th" suffix except for 3rd - so we need to specially treat "3""
+            ilearn_proficency_data.columns = [
+                x.replace("3th", "3rd")
+                for x in ilearn_proficency_data.columns.to_list()
+            ]
+
+            ilearn_proficency_data = (
+                ilearn_proficency_data.T.rename_axis("Category")
+                .rename_axis(None, axis=1)
+                .reset_index()
+            )
+
+            # split Grade column into two columns and rename what used to be the index
+            ilearn_proficency_data[
+                ["Category", "Proficiency"]
+            ] = ilearn_proficency_data["Category"].str.split("|", expand=True)
+
+            ilearn_proficency_data.rename(columns={0: "Percentage"}, inplace=True)
+
+            ilearn_proficency_data = ilearn_proficency_data[
+                ilearn_proficency_data["Category"] != "index"
+            ]
+
+            bar_fig_title = "Proficiency Breakdown (" + selected_year_string + ")"
+
+            # Proficiency Breakdown - ELA by Grade - Current Year
+            grade_pattern = '|'.join(grades)
+
+            grade_ela_annotations = annotations.loc[
+                annotations["Category"].str.contains(grade_pattern)
+                & annotations["Category"].str.contains("ELA")
+            ]
+
+            grade_ela_fig_data = ilearn_proficency_data[
+                ilearn_proficency_data["Category"].isin(grades_ordinal)
+                & ilearn_proficency_data["Proficiency"].str.contains("ELA")
+            ]
+
+            if not grade_ela_fig_data.empty:
+                ela_grade_bar_fig = make_stacked_bar(
+                    grade_ela_fig_data, bar_fig_title, grade_ela_annotations
+                )
             else:
+                ela_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                k8_table_container = {"display": "block"}
-                main_container = {"display": "block"}
-                empty_container = {"display": "none"}
+            # Proficiency Breakdown - Math by Grade - Current Year
+            grade_math_annotations = annotations.loc[
+                annotations["Category"].str.contains(grade_pattern)
+                & annotations["Category"].str.contains("Math")
+            ]
 
-                ilearn_table_data["Category"] = (
-                    ilearn_table_data["Category"]
-                    .str.replace(" Proficient %", "")
-                    .str.strip()
+            grade_math_fig_data = ilearn_proficency_data[
+                ilearn_proficency_data["Category"].isin(grades_ordinal)
+                & ilearn_proficency_data["Proficiency"].str.contains("Math")
+            ]
+
+            if not grade_math_fig_data.empty:
+                math_grade_bar_fig = make_stacked_bar(
+                    grade_math_fig_data, bar_fig_title, grade_math_annotations
                 )
+            else:
+                math_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                # Reformat data for multi-year line charts
-                # Remove N-Size cols, strip suffix from years, and
-                # transpose dataframe so categories become column names
-                ilearn_fig_data = ilearn_table_data.loc[
-                    :, ~ilearn_table_data.columns.str.contains("N-Size")
-                ].copy()
+            # Proficiency Breakdown - ELA by Ethnicity - Current Year
+            eth_pattern = '|'.join(ethnicity)
 
-                ilearn_fig_data = ilearn_fig_data.set_index("Category")
-                ilearn_fig_data.columns = ilearn_fig_data.columns.str[:4]
-                ilearn_fig_data = ilearn_fig_data.reset_index()
+            ethnicity_ela_annotations = annotations.loc[
+                annotations["Category"].str.contains(eth_pattern)
+                & annotations["Category"].str.contains("ELA")
+            ]
 
-                ilearn_fig_data = (
-                    ilearn_fig_data.set_index("Category")
-                    .T.rename_axis("Year")
-                    .rename_axis(None, axis=1)
-                    .reset_index()
+            ethnicity_ela_fig_data = ilearn_proficency_data[
+                ilearn_proficency_data["Category"].isin(ethnicity)
+                & ilearn_proficency_data["Proficiency"].str.contains("ELA")
+            ]
+
+            if not ethnicity_ela_fig_data.empty:
+                ela_ethnicity_bar_fig = make_stacked_bar(
+                    ethnicity_ela_fig_data, bar_fig_title, ethnicity_ela_annotations
                 )
-                ilearn_fig_data["School Name"] = selected_school_name
+            else:
+                ela_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                filename71 = (
-                    "info_fig_original.csv"
+            # Proficiency Breakdown - Math by Ethnicity - Current Year
+            ethnicity_math_annotations = annotations.loc[
+                annotations["Category"].str.contains(eth_pattern)
+                & annotations["Category"].str.contains("Math")
+            ]
+
+            ethnicity_math_fig_data = ilearn_proficency_data[
+                ilearn_proficency_data["Category"].isin(ethnicity)
+                & ilearn_proficency_data["Proficiency"].str.contains("Math")
+            ]
+
+            if not ethnicity_math_fig_data.empty:
+                math_ethnicity_bar_fig = make_stacked_bar(
+                    ethnicity_math_fig_data, bar_fig_title, ethnicity_math_annotations
                 )
-                ilearn_fig_data.to_csv(filename71, index=False)
+            else:
+                math_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-                filename81 = (
-                    "info_table_original.csv"
+            # Proficiency Breakdown - ELA by Subgroup - Current Year
+            sub_pattern = '|'.join(subgroup)
+
+            subgroup_ela_annotations = annotations.loc[
+                annotations["Category"].str.contains(sub_pattern)
+                & annotations["Category"].str.contains("ELA")
+            ]
+
+            subgroup_ela_fig_data = ilearn_proficency_data[
+                ilearn_proficency_data["Category"].isin(subgroup)
+                & ilearn_proficency_data["Proficiency"].str.contains("ELA")
+            ]
+
+            if not subgroup_ela_fig_data.empty:
+                ela_subgroup_bar_fig = make_stacked_bar(
+                    subgroup_ela_fig_data, bar_fig_title, subgroup_ela_annotations
                 )
-                ilearn_fig_data.to_csv(filename81, index=False)
+            else:
+                ela_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            ## ILEARN Charts and Tables
-                
-                # NOTE: We use ilearn_table_data variable for tables because we
-                # need N-Size values. ilearn_fig_data is similar, just transposed
+            # Proficiency Breakdown - Math by Subgroup - Current Year
+            math_subgroup_annotations = annotations.loc[
+                annotations["Category"].str.contains(sub_pattern)
+                & annotations["Category"].str.contains("Math")
+            ]
 
-                # get column lists for each subject/category combination
-                categories_ela_subgroup = []
-                categories_math_subgroup = []
-                for s in subgroup:
-                    categories_ela_subgroup.append(s + "|" + "ELA")
-                    categories_math_subgroup.append(s + "|" + "Math")
+            subgroup_math_fig_data = ilearn_proficency_data[
+                ilearn_proficency_data["Category"].isin(subgroup)
+                & ilearn_proficency_data["Proficiency"].str.contains("Math")
+            ]
 
-                categories_ela_ethnicity = []
-                categories_math_ethnicity = []
-                for e in ethnicity:
-                    categories_ela_ethnicity.append(e + "|" + "ELA")
-                    categories_math_ethnicity.append(e + "|" + "Math")
-
-                # ELA by Grade table
-                years_by_grade_ela = ilearn_table_data[
-                    (
-                        ilearn_table_data["Category"].str.contains(
-                            "|".join(grades_all)
-                        )
-                        & ilearn_table_data["Category"].str.contains("ELA")
-                    )
-                ]
-                
-                ela_grade_table = create_multi_header_table(years_by_grade_ela)
-
-                # ELA by Grade fig
-                ela_grade_fig_data = ilearn_fig_data.filter(
-                    regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
+            if not subgroup_math_fig_data.empty:
+                math_subgroup_bar_fig = make_stacked_bar(
+                    subgroup_math_fig_data, bar_fig_title, math_subgroup_annotations
                 )
-
-                ela_grade_line_fig = make_line_chart(ela_grade_fig_data)
-
-                proficiency_grades_ela = create_line_fig_layout(
-                    ela_grade_table, ela_grade_line_fig, "ELA By Grade"
-                )
-
-                # ELA by Subgroup table
-                years_by_subgroup_ela = ilearn_table_data[
-                    (
-                        ilearn_table_data["Category"].str.contains("|".join(subgroup))
-                        & ilearn_table_data["Category"].str.contains("ELA")
-                    )
-                ]
-
-                ela_subgroup_table = create_multi_header_table(years_by_subgroup_ela)
-
-                # ELA by Subgroup fig
-                ela_subgroup_fig_data = ilearn_fig_data.loc[
-                    :,
-                    (ilearn_fig_data.columns.isin(categories_ela_subgroup))
-                    | (ilearn_fig_data.columns.isin(["School Name", "Year"])),
-                ]
-                ela_subgroup_line_fig = make_line_chart(ela_subgroup_fig_data)
-
-                proficiency_subgroup_ela = create_line_fig_layout(
-                    ela_subgroup_table, ela_subgroup_line_fig, "ELA By Subgroup"
-                )
-
-                # ELA by Ethnicity table
-                years_by_ethnicity_ela = ilearn_table_data[
-                    (
-                        ilearn_table_data["Category"].str.contains("|".join(ethnicity))
-                        & ilearn_table_data["Category"].str.contains("ELA")
-                    )
-                ]
-
-                ela_ethnicity_table = create_multi_header_table(years_by_ethnicity_ela)
-
-                # ELA by Ethnicity fig
-                ela_ethnicity_fig_data = ilearn_fig_data.loc[
-                    :,
-                    (ilearn_fig_data.columns.isin(categories_ela_ethnicity))
-                    | (ilearn_fig_data.columns.isin(["School Name", "Year"])),
-                ]
-                ela_ethnicity_line_fig = make_line_chart(ela_ethnicity_fig_data)
-
-                proficiency_ethnicity_ela = create_line_fig_layout(
-                    ela_ethnicity_table, ela_ethnicity_line_fig, "ELA By Ethnicity"
-                )
-
-                # Math by Grade table
-                years_by_grade_math = ilearn_table_data[
-                    (
-                        ilearn_table_data["Category"].str.contains(
-                            "|".join(grades_all)
-                        )
-                        & ilearn_table_data["Category"].str.contains("Math")
-                    )
-                ]
-
-                math_grade_table = create_multi_header_table(years_by_grade_math)
-
-                # Math by Grade fig
-                math_grade_fig_data = ilearn_fig_data.filter(
-                    regex=r"^Grade \d\|Math|^School Name$|^Year$", axis=1
-                )
-                math_grade_line_fig = make_line_chart(math_grade_fig_data)
-
-                proficiency_grades_math = create_line_fig_layout(
-                    math_grade_table, math_grade_line_fig, "Math By Grade"
-                )
-
-                # Math by Subgroup Table
-                years_by_subgroup_math = ilearn_table_data[
-                    (
-                        ilearn_table_data["Category"].str.contains("|".join(subgroup))
-                        & ilearn_table_data["Category"].str.contains("Math")
-                    )
-                ]
-
-                math_subgroup_table = create_multi_header_table(years_by_subgroup_math)
-
-                # Math by Subgroup fig
-                math_subgroup_fig_data = ilearn_fig_data.loc[
-                    :,
-                    (ilearn_fig_data.columns.isin(categories_math_subgroup))
-                    | (ilearn_fig_data.columns.isin(["School Name", "Year"])),
-                ]
-                math_subgroup_line_fig = make_line_chart(math_subgroup_fig_data)
-
-                proficiency_subgroup_math = create_line_fig_layout(
-                    math_subgroup_table, math_subgroup_line_fig, "Math By Subgroup"
-                )
-
-                # Math by Ethnicity table
-                years_by_ethnicity_math = ilearn_table_data[
-                    (
-                        ilearn_table_data["Category"].str.contains("|".join(ethnicity))
-                        & ilearn_table_data["Category"].str.contains("Math")
-                    )
-                ]
-
-                math_ethnicity_table = create_multi_header_table(
-                    years_by_ethnicity_math
-                )
-
-                # Math by Ethnicity fig
-                math_ethnicity_fig_data = ilearn_fig_data.loc[
-                    :,
-                    (ilearn_fig_data.columns.isin(categories_math_ethnicity))
-                    | (ilearn_fig_data.columns.isin(["School Name", "Year"])),
-                ]
-                math_ethnicity_line_fig = make_line_chart(math_ethnicity_fig_data)
-
-                proficiency_ethnicity_math = create_line_fig_layout(
-                    math_ethnicity_table, math_ethnicity_line_fig, "Math By Ethnicity"
-                )
-
-            ## ILEARN proficiency breakdown stacked bar charts
-                ilearn_proficency_data = selected_raw_k8_school_data.loc[
-                    selected_raw_k8_school_data["Year"] == selected_year_numeric
-                ].copy()
-
-                ilearn_proficency_data = ilearn_proficency_data.dropna(axis=1)
-                ilearn_proficency_data = ilearn_proficency_data.reset_index()
-
-                for col in ilearn_proficency_data.columns:
-                    ilearn_proficency_data[col] = pd.to_numeric(
-                        ilearn_proficency_data[col], errors="coerce"
-                    )
-
-                # this keeps ELA and Math as well, which we drop later
-                ilearn_proficency_data = ilearn_proficency_data.filter(
-                    regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
-                    axis=1,
-                )
-
-                proficiency_rating = [
-                    "Below Proficiency",
-                    "Approaching Proficiency",
-                    "At Proficiency",
-                    "Above Proficiency",
-                ]
-
-                # create dataframe to hold fig annotations
-                annotations = pd.DataFrame(
-                    columns=["Category", "Total Tested"]
-                )
-
-                categories = grades_all + ethnicity + subgroup
-
-                for c in categories:
-                    for s in subject:
-                        category_subject = c + "|" + s
-                        proficiency_columns = [
-                            category_subject + " " + x for x in proficiency_rating
-                        ]
-                        total_tested = category_subject + " " + "Total Tested"
-
-                        # We do not want categories that do not appear in the dataframe to appear
-                        # in a chart. However, we also do not want to lose sight of critical data
-                        # because of the way that IDOE determines insufficient N-Size. There are
-                        # three possible data configurations for each column:
-                        # 1) Total Tested > 0 and the sum of proficiency_rating(s) is > 0: the school
-                        #    has tested category and there is publicly available data [display]
-                        # 2) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
-                        #    have data for the tested category [do not display, but 'may' want
-                        #    annotation as "Missing"]
-                        # 3) Total Tested > 0 and the sum of proficiency_rating(s) are == "NaN": the
-                        #    school has tested category but there is no publicly available data
-                        #    [do not display, but 'may' want annotation as "Insufficient N-size"
-
-                        # Neither (2) or (3) permit the creation of a valid or meaningful chart.
-                        # However, we do want to track which Category/Subject combinations meet
-                        # either condition (for figure annotation purposes).
-
-                        if total_tested in ilearn_proficency_data.columns:
-                            # The following is true if: 1) there are any NaN values in the set
-                            # (one or more '***) or 2) the sum of all values is equal to 0 (no
-                            # data) or 0.0 (NaN's converted from '***' meaning insufficient data)
-                            # Can tell whether the annotation reflects insufficient n-size or
-                            # missing data by the value in Total Tested (will be 0 for missing)
-                            if (
-                                ilearn_proficency_data[proficiency_columns]
-                                .isna()
-                                .sum()
-                                .sum()
-                                > 0
-                            ) or (
-                                ilearn_proficency_data[proficiency_columns].iloc[0].sum()
-                                == 0
-                            ):
-                                # add the category and value of Total Tested to a df
-                                annotation_category = proficiency_columns[0].split("|")[0]
-                                annotations.loc[len(annotations.index)] = [
-                                    annotation_category + "|" + s,
-                                    ilearn_proficency_data[total_tested].values[0]
-                                ]
-
-                                # drop any columns in the (non-chartable) category from the df
-                                all_proficiency_columns = proficiency_columns + [
-                                    total_tested
-                                ]
-
-                                ilearn_proficency_data = ilearn_proficency_data.drop(
-                                    all_proficiency_columns, axis=1
-                                )
-
-                            else:
-                                # calculate percentage
-                                ilearn_proficency_data[
-                                    proficiency_columns
-                                ] = ilearn_proficency_data[proficiency_columns].divide(
-                                    ilearn_proficency_data[total_tested], axis="index"
-                                )
-
-                                # get a list of all values
-                                row_list = ilearn_proficency_data[
-                                    proficiency_columns
-                                ].values.tolist()
-
-                                # round percentages using Largest Remainder Method
-                                # to build the 100% stacked bar chart
-                                rounded = round_percentages(row_list[0])
-
-                                # add back to dataframe
-                                rounded_percentages = pd.DataFrame([rounded])
-                                rounded_percentages_cols = list(
-                                    rounded_percentages.columns
-                                )
-                                ilearn_proficency_data[
-                                    proficiency_columns
-                                ] = rounded_percentages[rounded_percentages_cols]
-
-                ilearn_proficency_data.drop(
-                    list(
-                        ilearn_proficency_data.filter(
-                            regex="Total Proficient|ELA and Math"
-                        )
-                    ),
-                    axis=1,
-                    inplace=True,
-                )
-
-                # Replace Grade X with ordinal number (e.g., Grade 4 = 4th)
-                ilearn_proficency_data = ilearn_proficency_data.rename(
-                    columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
-                )
-
-                # all use "th" suffix except for 3rd - so we need to specially treat "3""
-                ilearn_proficency_data.columns = [
-                    x.replace("3th", "3rd")
-                    for x in ilearn_proficency_data.columns.to_list()
-                ]
-
-                ilearn_proficency_data = (
-                    ilearn_proficency_data.T.rename_axis("Category")
-                    .rename_axis(None, axis=1)
-                    .reset_index()
-                )
-
-                # split Grade column into two columns and rename what used to be the index
-                ilearn_proficency_data[
-                    ["Category", "Proficiency"]
-                ] = ilearn_proficency_data["Category"].str.split("|", expand=True)
-
-                ilearn_proficency_data.rename(columns={0: "Percentage"}, inplace=True)
-
-                ilearn_proficency_data = ilearn_proficency_data[
-                    ilearn_proficency_data["Category"] != "index"
-                ]
-
-                bar_fig_title = "Proficiency Breakdown (" + selected_year_string + ")"
-
-                # Proficiency Breakdown - ELA by Grade - Current Year
-                grade_pattern = '|'.join(grades)
-
-                grade_ela_annotations = annotations.loc[
-                    annotations["Category"].str.contains(grade_pattern)
-                    & annotations["Category"].str.contains("ELA")
-                ]
-
-                grade_ela_fig_data = ilearn_proficency_data[
-                    ilearn_proficency_data["Category"].isin(grades_ordinal)
-                    & ilearn_proficency_data["Proficiency"].str.contains("ELA")
-                ]
-
-                if not grade_ela_fig_data.empty:
-                    ela_grade_bar_fig = make_stacked_bar(
-                        grade_ela_fig_data, bar_fig_title, grade_ela_annotations
-                    )
-                else:
-                    ela_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # Proficiency Breakdown - Math by Grade - Current Year
-                grade_math_annotations = annotations.loc[
-                    annotations["Category"].str.contains(grade_pattern)
-                    & annotations["Category"].str.contains("Math")
-                ]
-
-                grade_math_fig_data = ilearn_proficency_data[
-                    ilearn_proficency_data["Category"].isin(grades_ordinal)
-                    & ilearn_proficency_data["Proficiency"].str.contains("Math")
-                ]
-
-                if not grade_math_fig_data.empty:
-                    math_grade_bar_fig = make_stacked_bar(
-                        grade_math_fig_data, bar_fig_title, grade_math_annotations
-                    )
-                else:
-                    math_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # Proficiency Breakdown - ELA by Ethnicity - Current Year
-                eth_pattern = '|'.join(ethnicity)
-
-                ethnicity_ela_annotations = annotations.loc[
-                    annotations["Category"].str.contains(eth_pattern)
-                    & annotations["Category"].str.contains("ELA")
-                ]
-
-                ethnicity_ela_fig_data = ilearn_proficency_data[
-                    ilearn_proficency_data["Category"].isin(ethnicity)
-                    & ilearn_proficency_data["Proficiency"].str.contains("ELA")
-                ]
-
-                if not ethnicity_ela_fig_data.empty:
-                    ela_ethnicity_bar_fig = make_stacked_bar(
-                        ethnicity_ela_fig_data, bar_fig_title, ethnicity_ela_annotations
-                    )
-                else:
-                    ela_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # Proficiency Breakdown - Math by Ethnicity - Current Year
-                ethnicity_math_annotations = annotations.loc[
-                    annotations["Category"].str.contains(eth_pattern)
-                    & annotations["Category"].str.contains("Math")
-                ]
-
-                ethnicity_math_fig_data = ilearn_proficency_data[
-                    ilearn_proficency_data["Category"].isin(ethnicity)
-                    & ilearn_proficency_data["Proficiency"].str.contains("Math")
-                ]
-
-                if not ethnicity_math_fig_data.empty:
-                    math_ethnicity_bar_fig = make_stacked_bar(
-                        ethnicity_math_fig_data, bar_fig_title, ethnicity_math_annotations
-                    )
-                else:
-                    math_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # Proficiency Breakdown - ELA by Subgroup - Current Year
-                sub_pattern = '|'.join(subgroup)
-
-                subgroup_ela_annotations = annotations.loc[
-                    annotations["Category"].str.contains(sub_pattern)
-                    & annotations["Category"].str.contains("ELA")
-                ]
-
-                subgroup_ela_fig_data = ilearn_proficency_data[
-                    ilearn_proficency_data["Category"].isin(subgroup)
-                    & ilearn_proficency_data["Proficiency"].str.contains("ELA")
-                ]
-
-                if not subgroup_ela_fig_data.empty:
-                    ela_subgroup_bar_fig = make_stacked_bar(
-                        subgroup_ela_fig_data, bar_fig_title, subgroup_ela_annotations
-                    )
-                else:
-                    ela_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                # Proficiency Breakdown - Math by Subgroup - Current Year
-                math_subgroup_annotations = annotations.loc[
-                    annotations["Category"].str.contains(sub_pattern)
-                    & annotations["Category"].str.contains("Math")
-                ]
-
-                subgroup_math_fig_data = ilearn_proficency_data[
-                    ilearn_proficency_data["Category"].isin(subgroup)
-                    & ilearn_proficency_data["Proficiency"].str.contains("Math")
-                ]
-
-                if not subgroup_math_fig_data.empty:
-                    math_subgroup_bar_fig = make_stacked_bar(
-                        subgroup_math_fig_data, bar_fig_title, math_subgroup_annotations
-                    )
-                else:
-                    math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-                academic_information_notes_string = "ILEARN was administered for the first time during the 2018-19 SY, \
-                    representing an entirely new type and mode of assessment (adaptive and online-only). No State assessment \
-                    was administered in 2020 due to the Covid-19 pandemic. The students included in the tested cohort for purposes \
-                    of calculating the proficiency percentage has not been consistent- in 2019, the cohort included only students \
-                    who attended the testing school for 162 days, the 2021 and 2022 calculations included all tested students, regardless \
-                    of the length of time that the student attended the testing school, and the 2023 calculation included students in the \
-                    cohort of the school in which the student spent the majority of time enrolled."
-                
-                academic_information_notes_string_container = {"display": "block"}
-
-        # End K-8 ILEARN block
+            else:
+                math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
+
+            academic_information_notes_string = "ILEARN was administered for the first time during the 2018-19 SY, \
+                representing an entirely new type and mode of assessment (adaptive and online-only). No State assessment \
+                was administered in 2020 due to the Covid-19 pandemic. The students included in the tested cohort for purposes \
+                of calculating the proficiency percentage has not been consistent- in 2019, the cohort included only students \
+                who attended the testing school for 162 days, the 2021 and 2022 calculations included all tested students, regardless \
+                of the length of time that the student attended the testing school, and the 2023 calculation included students in the \
+                cohort of the school in which the student spent the majority of time enrolled."
+            
+            academic_information_notes_string_container = {"display": "block"}
+
+    # End K-8 ILEARN block
                 
 # NOTE: Do we want to add classification for "MS" and "ES" ?
 
@@ -1000,7 +1000,6 @@ def update_academic_information_page(
             # school details
             if is_guest == True or len(iread_student_data.index) < 1:
                 iread_school_details = []
-                # iread_student_data = pd.DataFrame()
 
             else:
 
@@ -1127,16 +1126,6 @@ def update_academic_information_page(
                 if iread_details_table_data.empty:
                     
                     iread_school_details = []
-
-                #     if not total_iread_data.empty:
-
-                #         iread_school_details = create_simple_iread_layout(total_iread_data)
-
-                #     # else:
-                #     #     iread_school_details = []
-                #     #     iread_ilearn_ela_table = []
-                #     #     iread_ilearn_math_table = []
-                # else:
                     
                 else:
                     # Number of 2nd Graders Tested and 2nd Grader Proficiency
