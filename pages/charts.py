@@ -11,28 +11,12 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from typing import Tuple
 
 from .calculations import check_for_insufficient_n_size, check_for_no_data
 from .string_helpers import customwrap
 from .load_data import get_school_index
-
-from typing import Tuple
-
-# Colors
-# https://codepen.io/ctf0/pen/BwLezW
-
-color = [
-    "#7b6888",
-    "#df8f2d",
-    "#a8b462",
-    "#ebbb81",
-    "#74a2d7",
-    "#d4773f",
-    "#83941f",
-    "#f0c33b",
-    "#bc986a",
-    "#96b8db",
-]
+from .globals import color
 
 
 def loading_fig() -> dict:
@@ -276,7 +260,6 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
     # Need to loop through the data by trace in order to: 1) distinguish between
     # null (no data) and "0" values (only color text traces when the value of x (t.x)
     # is not NaN; and 2) place the text outside the bar unless the value of x is > .9
-    
     fig.for_each_trace(
         lambda t: t.update(
             textfont_color=np.where(np.isnan(t.x), "#ffffff", np.where((t.x > .9), "#ffffff", t.marker.color)),
@@ -326,6 +309,7 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
         )
 
     return fig
+
 
 def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame) -> list:
     """
@@ -469,7 +453,9 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
                 ]
             )
         ]
+
     else:
+
         fig_layout = [
             html.Div(
                 [
@@ -490,8 +476,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
     return fig_layout
 
 
-# TODO: add this logic to make_single_line_chart and drop function
-
+# TODO: add this logic to make_single_line_chart and remove that function
 def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
@@ -509,9 +494,7 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
     data = values.copy()
 
     school_cols = [i for i in data.columns if i not in ["Year"]]
-    
-    print(data)
-
+ 
     if (len(school_cols)) > 0 and len(data.index) > 0:
         data, no_data_string = check_for_no_data(data)
 
@@ -1122,7 +1105,7 @@ def make_growth_chart(
     )
 
     # NOTE: this creates an annotation used to identify the difference
-    # between 162-day vs 162-ME scatter lines
+    # between 162-day vs 162-ME scatter lines (if lines are displayed)
     # diamond - &#9670;	&#x25C6;
     # square - &#9632;	&#x25A0;
     # fig.add_annotation(

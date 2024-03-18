@@ -17,6 +17,7 @@ import dash_mantine_components as dmc
 from .globals import metric_strings, table_style, table_cell, table_header
 from .load_data import get_student_level_ilearn
 
+
 def create_proficiency_key() -> list:
     """
     Creates a dash datatable "key" using proficiency ratings and
@@ -1829,7 +1830,10 @@ def create_comparison_table(
     data.columns = data.columns.astype(str)
 
     # locate school index by School ID and then drop School ID column
-    school_name_idx = data.index[data["School ID"] == np.int64(school_id)].tolist()[0]
+    school_name_idx = data.index[data["School ID"] == school_id].tolist()[0]
+    
+    # school_name_idx = data.index[data["School ID"] == np.int64(school_id)].tolist()[0]
+    
     data = data.drop("School ID", axis=1)
 
     # strip gradespan data and whitespace for merge key
@@ -1901,15 +1905,23 @@ def create_comparison_table(
                 "border": "thin solid silver",
             },
         ],
-        style_header=table_header,
-        style_header_conditional=[
-            {
-                "if": {
-                    "header_index": 0
-                },
-                "text-decoration": "underline",
-            },
-        ],
+        style_header={
+            "backgroundColor": "#ffffff",
+            "fontSize": "10px",
+            "fontFamily": "Montserrat, sans-serif",
+            "color": "#6783a9",
+            "textAlign": "center",
+            "fontWeight": "bold",
+            "border": "none",
+        },
+        # style_header_conditional=[
+        #     {
+        #         "if": {
+        #             "header_index": 0
+        #         },
+        #         "text-decoration": "underline",
+        #     },
+        # ],
         style_cell=table_cell,
         style_cell_conditional=[
             {
@@ -1928,11 +1940,11 @@ def create_comparison_table(
                 "paddingLeft": "20px",
             },
         ],
-        # This has the effect of hiding the header row
+        # Hides first two header names ("Icon" & "School Name")
         css=[
             {
-                "selector": "tr:first-child",
-                "rule": "display: none",
+                "selector": "tr:first-child > th:first-child, tr:first-child > th:nth-child(2)",
+                "rule": "visibility: hidden"
             },
         ],
     )

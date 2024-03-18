@@ -19,6 +19,7 @@ from .string_helpers import (
 from .charts import make_group_bar_chart, make_multi_line_chart, make_line_chart
 from .tables import create_comparison_table, no_data_page, create_single_header_table
 
+
 def create_hs_analysis_layout(
     data_type: str, data: pd.DataFrame, categories: list, school_id: str
 ) -> list:
@@ -141,6 +142,7 @@ def create_simple_iread_layout(data):
     )
 
     return layout
+
 
 def create_growth_layout(table: list, fig: list, label: str) -> list:
     """
@@ -504,7 +506,7 @@ def create_year_over_year_layout(school_id: str, data: pd.DataFrame, school_id_l
         table_data["School Name"] = create_school_label(table_data)
         table_data = table_data.drop(["Low Grade", "High Grade"], axis=1)
 
-        table = create_comparison_table(table_data, fig_trace_colors, school_id)  # , "")
+        table = create_comparison_table(table_data, fig_trace_colors, school_id)
         category_string = ""
         school_string = ""
         layout = create_barchart_layout(

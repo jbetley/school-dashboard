@@ -22,7 +22,7 @@ from .load_data import (
     # get_high_school_academic_data,
     # get_hs_corporation_academic_data,
     # get_k8_corporation_academic_data,
-    get_excluded_years,
+    # get_excluded_years,
     get_academic_data
 )
 # from .process_data import (

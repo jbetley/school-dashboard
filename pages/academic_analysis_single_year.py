@@ -9,33 +9,33 @@ import dash
 from dash import ctx, dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
-import numpy as np
+# import numpy as np
 
 # import local functions
 from .globals import (
     ethnicity,
     subgroup,
     ethnicity,
-    info_categories
+    # info_categories
 )
 
 from .load_data import (
     get_school_index,
     get_school_coordinates,
-    get_comparable_schools,
-    get_k8_corporation_academic_data,
-    get_high_school_academic_data,
-    get_hs_corporation_academic_data,
-    get_selected_k8_school_academic_data,
+    # get_comparable_schools,
+    # get_k8_corporation_academic_data,
+    # get_high_school_academic_data,
+    # get_hs_corporation_academic_data,
+    # get_selected_k8_school_academic_data,
     get_academic_data
 )
-from .process_data import (
-    process_comparable_high_school_academic_data,
-    process_k8_analysis_data
-)
+# from .process_data import (
+#     # process_comparable_high_school_academic_data,
+#     # process_k8_analysis_data
+# )
 from .calculations import (
-    calculate_proficiency,
-    recalculate_total_proficiency,
+    # calculate_proficiency,
+    # recalculate_total_proficiency,
     check_for_gradespan_overlap,
     calculate_comparison_school_list,
 )
@@ -164,11 +164,11 @@ def set_dropdown_options(
 
         # count the number of schools shared by the two lists
         overlap = 0
-        
+
         if not existing_comparison_schools_list:
-            
+
             overlap = 0
-        
+
         else:
 
             for sch in new_comparison_schools_list:
@@ -197,7 +197,7 @@ def set_dropdown_options(
             # list to make sure it hasn't exceeded max display
 
             if len(existing_comparison_schools_list) > max_num_to_display:
-                
+
                 # if it does, we throw a warning, keep the selected values the same
                 # and disable all of the options
                 input_warning = html.P(
@@ -206,7 +206,7 @@ def set_dropdown_options(
                     + str(max_num_to_display + 1)
                     + " schools).",
                 )
-                
+
                 comparison_schools = existing_comparison_schools_list
 
                 school_options = [
@@ -217,7 +217,7 @@ def set_dropdown_options(
                     }
                     for option in new_comparison_schools
                 ]
-            
+
             else:
                 # if it doesn't, we return the selected list and options.
                 comparison_schools = existing_comparison_schools_list
@@ -244,13 +244,13 @@ def set_dropdown_options(
     Output("fig16c1", "children"),
     Output("fig16c1-container", "style"),
     Output("fig16b1", "children"),
-    Output("fig16b1-container", "style"),    
+    Output("fig16b1-container", "style"),
     Output("fig16a2", "children"),
     Output("fig16a2-container", "style"),
     Output("fig16c2", "children"),
     Output("fig16c2-container", "style"),
     Output("fig16b2", "children"),
-    Output("fig16b2-container", "style"),    
+    Output("fig16b2-container", "style"),
     Output("k8-analysis-single-main-container", "style"),
     Output("k8-analysis-single-empty-container", "style"),
     Output("k8-analysis-single-no-data", "children"),
@@ -307,13 +307,13 @@ def update_academic_analysis_single_year(
     fig16a1 = []
     fig16a1_container = {"display": "none"}
     fig16b1 = []
-    fig16b1_container = {"display": "none"}    
+    fig16b1_container = {"display": "none"}
     fig16c1 = []
     fig16c1_container = {"display": "none"}
     fig16a2 = []
     fig16a2_container = {"display": "none"}
     fig16b2 = []
-    fig16b2_container = {"display": "none"}    
+    fig16b2_container = {"display": "none"}
     fig16c2 = []
     fig16c2_container = {"display": "none"}
     analysis_single_dropdown_container = {"display": "none"}
@@ -355,18 +355,11 @@ def update_academic_analysis_single_year(
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
             the selected school. Up to eight (8) schools may be displayed at once."
 
-# TODO: SEEMS TO BE WORKING - TEST
         list_of_schools = [school_id] + comparison_school_list
         raw_hs_analysis_data = get_academic_data(list_of_schools, "HS", numeric_year, "analysis")
         hs_analysis_data = raw_hs_analysis_data.loc[
                 raw_hs_analysis_data["Year"] == numeric_year
             ]
-
-        filename18 = (
-            "new_hs_analysis.csv"
-        )
-        hs_analysis_data.to_csv(filename18, index=False)
-# TODO:
 
         if hs_analysis_data.empty:
 
@@ -384,12 +377,8 @@ def update_academic_analysis_single_year(
             hs_analysis_empty_container = {"display": "block"}
 
         else:
-            print("HUUUUR")
-            print(hs_analysis_data[["School ID","School Name"]])
-            print(type(hs_analysis_data["School ID"][0]))
-            print(type(school_id))
+
             hs_school_name = hs_analysis_data[hs_analysis_data["School ID"] == int(school_id)]["School Name"].values[0]
-            print(hs_school_name)
 
             # hs_school_name = raw_hs_school_data["School Name"].values[0]
             hs_school_name = hs_school_name.strip()
@@ -467,13 +456,8 @@ def update_academic_analysis_single_year(
 
             hs_analysis_data = hs_analysis_data.loc[
                 :, ~hs_analysis_data.iloc[school_name_idx].isna()
-            ]
+            ].copy()
 
-            filename88 = (
-                "hs_analysis_original.csv"
-            )
-            hs_analysis_data.to_csv(filename88, index=False)            
-# TODO: HERE
             # check to see if there is data after processing
             if len(hs_analysis_data.columns) <= 5:
                 analysis_single_dropdown_container = {"display": "none"}
@@ -485,7 +469,7 @@ def update_academic_analysis_single_year(
 
                 # Graduation Comparison Sets
                 grad_overview_categories = ["Total", "Non Waiver"]
-                
+
                 grad_overview = create_hs_analysis_layout(
                     "Graduation Rate",
                     hs_analysis_data,
@@ -617,14 +601,14 @@ def update_academic_analysis_single_year(
                         sat_subgroup_container = {"display": "none"}
 
     if school_type == "K8" or school_type == "K12":
-        
+
         # If school is K12 and highschool tab is selected, skip k8 data
         if school_type == "K12" and analysis_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
 
         else:
-            
-            school_type = "K8"  # converts K12
+
+            school_type = "K8"  # set K12 school type to K8
 
             academic_analysis_notes_label = "Comparison Data - K-8"
             academic_analysis_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
@@ -633,139 +617,170 @@ def update_academic_analysis_single_year(
 
             # add school_id first
             list_of_schools = [school_id] + comparison_school_list
-# # TODO:
 
-            tst_data_k8 = get_academic_data(list_of_schools, school_type, numeric_year, "info")
-# # TODO:
-            
-            selected_k8_school_data = get_selected_k8_school_academic_data(
-                list_of_schools, year
-            )
+            raw_k8_analysis_data = get_academic_data(list_of_schools, school_type, numeric_year, "analysis")
 
-            selected_clean_data = process_k8_analysis_data(
-                selected_k8_school_data, school_id
-            )
+            k8_analysis_data = raw_k8_analysis_data.loc[
+                    raw_k8_analysis_data["Year"] == numeric_year
+                ].copy()
 
-            # NOTE: We don't want to get rid of "***" yet, but we also don't
-            # want to pass through a dataframe that that is all "***" - so
-            # we convert create a copy, coerce all of the academic columns
-            # to numeric and check to see if the entire dataframe for NaN
-            check_for_unchartable_data = selected_clean_data.copy()
+            # Force '***' to NaN for numeric columns
+            numeric_columns = [
+                col
+                for col in k8_analysis_data.columns.to_list()
+                if col not in ["School Name", "School ID", "Low Grade", "High Grade"]
+            ]
 
-            check_for_unchartable_data.drop(
-                ["School Name", "School ID", "Low Grade", "High Grade", "Year"],
-                axis=1,
-                inplace=True,
-            )
-
-            for col in check_for_unchartable_data.columns:
-                check_for_unchartable_data[col] = pd.to_numeric(
-                    check_for_unchartable_data[col], errors="coerce"
+            for col in numeric_columns:
+                k8_analysis_data[col] = pd.to_numeric(
+                    k8_analysis_data[col], errors="coerce"
                 )
 
-            if (
-                (school_type == "K8" or school_type == "K12")
-                and len(selected_clean_data.index) > 0
-            ) and check_for_unchartable_data.isnull().all().all() == False:
+            k8_analysis_data = k8_analysis_data.reset_index(drop=True)
+
+            # Now that *** is Nan, we drop all columns where selected school
+            # has null data
+            school_idx = k8_analysis_data.index[
+                k8_analysis_data["School ID"] == school_id
+            ].tolist()[0]
+
+            combined_selected_data = k8_analysis_data.loc[
+                :, ~k8_analysis_data.iloc[school_idx].isna()
+            ].copy()
+
+            combined_selected_data = combined_selected_data.reset_index(drop=True)
+            
+            # selected_k8_school_data = get_selected_k8_school_academic_data(
+            #     list_of_schools, year
+            # )
+
+            # selected_clean_data = process_k8_analysis_data(
+            #     selected_k8_school_data, school_id
+            # )
+
+            # # NOTE: We don't want to get rid of "***" yet, but we also don't
+            # # want to pass through a dataframe that that is all "***" - so
+            # # we convert create a copy, coerce all of the academic columns
+            # # to numeric and check to see if the entire dataframe for NaN
+            # check_for_unchartable_data = selected_clean_data.copy()
+
+            # check_for_unchartable_data.drop(
+            #     ["School Name", "School ID", "Low Grade", "High Grade", "Year"],
+            #     axis=1,
+            #     inplace=True,
+            # )
+
+            # for col in check_for_unchartable_data.columns:
+            #     check_for_unchartable_data[col] = pd.to_numeric(
+            #         check_for_unchartable_data[col], errors="coerce"
+            #     )
+
+            if len(k8_analysis_data.index) > 0:
+
+            # if (
+            #     (school_type == "K8" or school_type == "K12")
+            #     and len(selected_clean_data.index) > 0
+            # ) and check_for_unchartable_data.isnull().all().all() == False:
                 k8_analysis_main_container = {"display": "block"}
                 k8_analysis_empty_container = {"display": "none"}
                 analysis_single_dropdown_container = {"display": "block"}
 
-                raw_corp_data = get_k8_corporation_academic_data(school_id)
+                # raw_corp_data = get_k8_corporation_academic_data(school_id)
 
-                selected_corp_data = raw_corp_data.loc[
-                    raw_corp_data["Year"] == numeric_year
-                ]
+                # selected_corp_data = raw_corp_data.loc[
+                #     raw_corp_data["Year"] == numeric_year
+                # ]
 
-                # if no corp data, just use school data
-                if selected_corp_data.empty:
-                    combined_selected_data = selected_clean_data.copy()
+                # # if no corp data, just use school data
+                # if selected_corp_data.empty:
+                #     combined_selected_data = selected_clean_data.copy()
 
-                else:
+                # else:
 
-                    # align Name and ID
-                    selected_corp_data = selected_corp_data.rename(
-                        columns={
-                            "Corporation Name": "School Name",
-                            "Corporation ID": "School ID",
-                        }
-                    )
+                #     # align Name and ID
+                #     selected_corp_data = selected_corp_data.rename(
+                #         columns={
+                #             "Corporation Name": "School Name",
+                #             "Corporation ID": "School ID",
+                #         }
+                #     )
 
-                    # calculate proficiency for all corp categories
-                    selected_corp_data = calculate_proficiency(selected_corp_data)
+                #     # calculate proficiency for all corp categories
+                #     selected_corp_data = calculate_proficiency(selected_corp_data)
 
-                    # recalculate total Math and ELA proficiency including only the
-                    # gradespan of selected school (the default is calculated using
-                    # all grades)
-                    revised_school_totals = recalculate_total_proficiency(
-                        selected_corp_data, selected_clean_data
-                    )
+                #     # recalculate total Math and ELA proficiency including only the
+                #     # gradespan of selected school (the default is calculated using
+                #     # all grades)
+                #     revised_school_totals = recalculate_total_proficiency(
+                #         selected_corp_data, selected_clean_data
+                #     )
 
-                    selected_corp_data["Total|Math Proficient %"] = (
-                        selected_corp_data["School ID"]
-                        .map(
-                            revised_school_totals.set_index("School ID")[
-                                "Total|Math Proficient %"
-                            ]
-                        )
-                        .fillna(selected_corp_data["Total|Math Proficient %"])
-                    )
+                #     selected_corp_data["Total|Math Proficient %"] = (
+                #         selected_corp_data["School ID"]
+                #         .map(
+                #             revised_school_totals.set_index("School ID")[
+                #                 "Total|Math Proficient %"
+                #             ]
+                #         )
+                #         .fillna(selected_corp_data["Total|Math Proficient %"])
+                #     )
 
-                    selected_corp_data["Total|ELA Proficient %"] = (
-                        selected_corp_data["School ID"]
-                        .map(
-                            revised_school_totals.set_index("School ID")[
-                                "Total|ELA Proficient %"
-                            ]
-                        )
-                        .fillna(selected_corp_data["Total|ELA Proficient %"])
-                    )
+                #     selected_corp_data["Total|ELA Proficient %"] = (
+                #         selected_corp_data["School ID"]
+                #         .map(
+                #             revised_school_totals.set_index("School ID")[
+                #                 "Total|ELA Proficient %"
+                #             ]
+                #         )
+                #         .fillna(selected_corp_data["Total|ELA Proficient %"])
+                #     )
 
-                    # clean up
-                    selected_corp_data = selected_corp_data[
-                        selected_corp_data.columns[
-                            selected_corp_data.columns.str.contains(
-                                r"Year|School ID|School Name|Proficient %"
-                            )
-                        ]
-                    ]
+                #     # clean up
+                #     selected_corp_data = selected_corp_data[
+                #         selected_corp_data.columns[
+                #             selected_corp_data.columns.str.contains(
+                #                 r"Year|School ID|School Name|Proficient %"
+                #             )
+                #         ]
+                #     ]
 
-                    # only keep columns in school df
-                    selected_corp_data = selected_corp_data.loc[
-                        :, selected_corp_data.columns.isin(selected_clean_data.columns)
-                    ].copy()
+                #     # only keep columns in school df
+                #     selected_corp_data = selected_corp_data.loc[
+                #         :, selected_corp_data.columns.isin(selected_clean_data.columns)
+                #     ].copy()
 
-                    # add two missing cols
-                    selected_corp_data["Low Grade"] = np.nan
-                    selected_corp_data["High Grade"] = np.nan
+                #     # add two missing cols
+                #     selected_corp_data["Low Grade"] = np.nan
+                #     selected_corp_data["High Grade"] = np.nan
 
-                    combined_selected_data = pd.concat(
-                        [selected_clean_data, selected_corp_data]
-                    )
+                #     combined_selected_data = pd.concat(
+                #         [selected_clean_data, selected_corp_data]
+                #     )
 
-                # Force '***' to NaN for numeric columns
-                numeric_columns = [
-                    col
-                    for col in combined_selected_data.columns.to_list()
-                    if col not in info_categories
-                ]
+                # # Force '***' to NaN for numeric columns
+                # numeric_columns = [
+                #     col
+                #     for col in combined_selected_data.columns.to_list()
+                #     if col not in info_categories
+                # ]
 
-                for col in numeric_columns:
-                    combined_selected_data[col] = pd.to_numeric(
-                        combined_selected_data[col], errors="coerce"
-                    )
+                # for col in numeric_columns:
+                #     combined_selected_data[col] = pd.to_numeric(
+                #         combined_selected_data[col], errors="coerce"
+                #     )
 
-                # Now that *** is Nan, we drop all columns where selected school
-                # has null data
-                school_idx = combined_selected_data.index[
-                    combined_selected_data["School ID"] == np.int64(school_id)
-                ].tolist()[0]
+                # # Now that *** is Nan, we drop all columns where selected school
+                # # has null data
+                # school_idx = combined_selected_data.index[
+                #     combined_selected_data["School ID"] == np.int64(school_id)
+                # ].tolist()[0]
 
-                combined_selected_data = combined_selected_data.loc[
-                    :, ~combined_selected_data.iloc[school_idx].isna()
-                ]
+                # combined_selected_data = combined_selected_data.loc[
+                #     :, ~combined_selected_data.iloc[school_idx].isna()
+                # ]
 
-                combined_selected_data = combined_selected_data.reset_index(drop=True)
+                # combined_selected_data = combined_selected_data.reset_index(drop=True)
+
 
                 # add the information categories back to each dataframe
                 added_categories = [
@@ -774,6 +789,16 @@ def update_academic_analysis_single_year(
                     "Low Grade",
                     "High Grade",
                 ]
+
+                # filename88 = (
+                #     "k8_analysis_new.csv"
+                # )
+                # k8_analysis_data.to_csv(filename88, index=False)
+
+                # filename88 = (
+                #     "k8_analysis_orig.csv"
+                # )
+                # combined_selected_data.to_csv(filename88, index=False)
 
                 #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
                 category = "Total|ELA Proficient %"
@@ -905,7 +930,7 @@ def update_academic_analysis_single_year(
                     # NOTE: Better to display empty chart or no chart?
                     fig_iread_chart = []
                     fig_iread_table = []
-                    
+
                 # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
                 headers_16a1 = []
                 for e in ethnicity:
@@ -975,7 +1000,7 @@ def update_academic_analysis_single_year(
                     fig16b1_table_data = combine_school_name_and_grade_levels(
                         fig16b1_final_data
                     )
-                    
+
                     fig16b1_table = create_comparison_table(
                         fig16b1_table_data, fig16b1_trace_color, school_id)
 
@@ -1207,13 +1232,13 @@ def update_academic_analysis_single_year(
         fig16c1,
         fig16c1_container,
         fig16b1,
-        fig16b1_container,        
+        fig16b1_container,
         fig16a2,
         fig16a2_container,
         fig16c2,
         fig16c2_container,
         fig16b2,
-        fig16b2_container,        
+        fig16b2_container,
         k8_analysis_main_container,
         k8_analysis_empty_container,
         k8_analysis_no_data,
@@ -1303,7 +1328,7 @@ def layout():
                                 id="fig16b1-container",
                                 style={"display": "none"},
                                 className="pagebreak",
-                            ),                            
+                            ),
                             html.Div(
                                 [
                                     html.Div(id="fig16c1"),
@@ -1327,7 +1352,7 @@ def layout():
                                 id="fig16b2-container",
                                 style={"display": "none"},
                                 className="pagebreak",
-                            ),                            
+                            ),
                             html.Div(
                                 [
                                     html.Div(id="fig16c2"),

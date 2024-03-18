@@ -9,11 +9,11 @@
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
-from typing import Tuple, Any
+from typing import Tuple #, Any
 import scipy.spatial as spatial
 
-# for typing purposes
-result: Any = [float | None | str]
+# # for typing purposes
+# result: Any = [float | None | str]
 
 def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     """
@@ -51,7 +51,7 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def calculate_percentage(numerator: str, denominator: str) -> npt.NDArray[result]:
+def calculate_percentage(numerator: str, denominator: str) -> npt.NDArray:
     """
     Calculates a percentage given a numerator and a denominator, while accounting for two
     special cases: a string representing insufficent n-size ("***") and certain conditions
@@ -86,7 +86,7 @@ def calculate_percentage(numerator: str, denominator: str) -> npt.NDArray[result
     return result
 
 
-def calculate_difference(value1: str, value2: str) -> npt.NDArray[result]:
+def calculate_difference(value1: str, value2: str) -> npt.NDArray:
     """
     Calculate the difference between two dataframes with specific mixed datatypes
     and conditions.
@@ -241,6 +241,7 @@ def recalculate_total_proficiency(
     revised_data = data.copy()
     revised_totals = pd.DataFrame()
 
+# TODO: Not sure what's going on here - test
 # TODO: ADD CHANGE ONCE REFACTOR IS COMPLETE (OLD is shorter one)
     # TODO: FIX THIS BUGGIN THIS SHIT OUT OF ME
     if "School Name" not in revised_data:
@@ -288,9 +289,7 @@ def recalculate_total_proficiency(
     return revised_totals
 
 
-def calculate_year_over_year(
-    current_year: pd.Series, previous_year: pd.Series
-) -> npt.NDArray[result]:
+def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) -> npt.NDArray:
     """
     Calculates year_over_year differences, accounting for string representation ("***")
     of insufficent n-size (there is available data, but not enough of it to show under privacy laws).

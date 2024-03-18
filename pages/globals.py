@@ -7,6 +7,21 @@
 
 max_display_years = 5
 
+# Colors
+# https://codepen.io/ctf0/pen/BwLezW
+color = [
+    "#7b6888",
+    "#df8f2d",
+    "#a8b462",
+    "#ebbb81",
+    "#74a2d7",
+    "#d4773f",
+    "#83941f",
+    "#f0c33b",
+    "#bc986a",
+    "#96b8db",
+]
+
 subject = ["Math", "ELA"]
 
 info_categories = ["School Name", "Low Grade", "High Grade"]

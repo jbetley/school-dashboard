@@ -5,6 +5,8 @@
 # version:  1.15
 # date:     02/21/24
 
+# NOTE: No K8 academic data exists for 2020
+
 # Current data:
 # ILEARN - 2023
 # IREAD - 2023
@@ -13,20 +15,18 @@
 # Demographics - 2024
 # Financial - 2022 (Audited) / 2023 (Q4)
 # Graduation Rate - 2022
+
 import pandas as pd
 import numpy as np
 import re
-import itertools
+# import itertools
 from sqlalchemy import create_engine, text
 
 from .calculations import (
-    calculate_percentage, conditional_fillna, calculate_difference,
-    calculate_proficiency, recalculate_total_proficiency, check_for_no_data,
-    check_for_insufficient_n_size, conditional_fillna, calculate_graduation_rate,
-    calculate_sat_rate
+    calculate_percentage, conditional_fillna, #, calculate_difference,
+    calculate_proficiency, recalculate_total_proficiency, #, check_for_no_data,
+    conditional_fillna, calculate_graduation_rate, calculate_sat_rate #, check_for_insufficient_n_size,
 )
-
-# NOTE: No K8 academic data exists for 2020
 
 # NOTE: Consider moving engine instantiation to app.py
 engine = create_engine("sqlite:///data/indiana_schools.db")
@@ -34,7 +34,6 @@ engine = create_engine("sqlite:///data/indiana_schools.db")
 users = create_engine("sqlite:///users.db")
 
 print("Database Engine Created . . .")
-
 
 def run_query(q, *args):
     """
@@ -72,6 +71,7 @@ def run_query(q, *args):
 
         return df
 
+
 def get_current_year():
     """
     the most recent academic year of data according to the k8 ilearn
@@ -90,7 +90,7 @@ def get_current_year():
 
 current_academic_year = get_current_year()
 
-# Used to 
+
 def get_network_count():
     """
     Helper function to dynamically count the number of network logins present
@@ -548,8 +548,8 @@ def get_subgroup(school_id, school_type, hs_category, subject_value, selected_ye
                 )
             )
 
-    else:
-        # k8
+    else:   # k8
+
         if subject_value == "IREAD":
 
             q = text(
@@ -741,7 +741,7 @@ def get_ilearn_stns(*args):
     return results
 
 
-# combines the above functions
+# combines the above two functions
 def get_school_stns(school):
 
     ilearn_stns = get_ilearn_stns(school)
@@ -774,7 +774,8 @@ def get_ilearn_student_data(*args):
 
     return results
 
-# Calculates AHS average for all categories and for all years
+
+# Calculates AHS average for all categories for all years
 def get_ahs_averages(*args):
     keys = ["id","type"]
     params = dict(zip(keys, args))
@@ -872,22 +873,22 @@ def get_attendance_data(school_id, school_type, year):
 
 # TODO: Drop
 # Get k8 academic data for single school
-def get_k8_school_academic_data(*args):
-    keys = ["id"]
-    params = dict(zip(keys, args))
+# def get_k8_school_academic_data(*args):
+#     keys = ["id"]
+#     params = dict(zip(keys, args))
 
-    q = text(
-        """
-        SELECT *
-            FROM academic_data_k8
-	        WHERE SchoolID = :id
-        """
-    )
+#     q = text(
+#         """
+#         SELECT *
+#             FROM academic_data_k8
+# 	        WHERE SchoolID = :id
+#         """
+#     )
 
-    results = run_query(q, params)
-    results = results.sort_values(by="Year", ascending=False)
+#     results = run_query(q, params)
+#     results = results.sort_values(by="Year", ascending=False)
 
-    return results
+#     return results
 
 
 # Get k8 academic data for single school
@@ -909,71 +910,68 @@ def get_proficiency_data(*args):
     return results
 
 
-# get k8 academic data for a list of schools
-def get_selected_k8_school_academic_data(*args):
-    keys = ["schools", "year"]
-    params = dict(zip(keys, args))
+# def get_selected_k8_school_academic_data(*args):
+#     keys = ["schools", "year"]
+#     params = dict(zip(keys, args))
 
-    school_str = ", ".join([str(int(v)) for v in params["schools"]])
+#     school_str = ", ".join([str(int(v)) for v in params["schools"]])
 
-    q = text(
-        """SELECT *
-                FROM academic_data_k8
-                WHERE Year = :year AND SchoolID IN ({})""".format(
-            school_str
-        )
-    )
+#     q = text(
+#         """SELECT *
+#                 FROM academic_data_k8
+#                 WHERE Year = :year AND SchoolID IN ({})""".format(
+#             school_str
+#         )
+#     )
 
-    results = run_query(q, params)
+#     results = run_query(q, params)
 
-    return results
-
-
-def get_k8_corporation_academic_data(*args):
-    keys = ["id"]
-    params = dict(zip(keys, args))
-
-    q = text(
-        """
-        SELECT *
-	        FROM corporation_data_k8
-	        WHERE CorporationID = (
-		        SELECT GEOCorp
-			        FROM school_index
-			        WHERE SchoolID = :id)
-        """
-    )
-
-    results = run_query(q, params)
-    results = results.sort_values(by="Year", ascending=False)
-
-    return results
+#     return results
 
 
-# TODO: Combine this function
-def get_hs_corporation_academic_data(*args):
-    keys = ["id"]
-    params = dict(zip(keys, args))
+# def get_k8_corporation_academic_data(*args):
+#     keys = ["id"]
+#     params = dict(zip(keys, args))
 
-    q = text(
-        """
-        SELECT *
-	        FROM corporation_data_hs
-	        WHERE CorporationID = (
-		        SELECT GEOCorp
-			        FROM school_index
-			        WHERE SchoolID = :id)
-        """
-    )
+#     q = text(
+#         """
+#         SELECT *
+# 	        FROM corporation_data_k8
+# 	        WHERE CorporationID = (
+# 		        SELECT GEOCorp
+# 			        FROM school_index
+# 			        WHERE SchoolID = :id)
+#         """
+#     )
 
-    results = run_query(q, params)
+#     results = run_query(q, params)
+#     results = results.sort_values(by="Year", ascending=False)
 
-    results = results.sort_values(by="Year")
+#     return results
 
-    return results
 
-###
-# get corp_data by type
+# def get_hs_corporation_academic_data(*args):
+#     keys = ["id"]
+#     params = dict(zip(keys, args))
+
+#     q = text(
+#         """
+#         SELECT *
+# 	        FROM corporation_data_hs
+# 	        WHERE CorporationID = (
+# 		        SELECT GEOCorp
+# 			        FROM school_index
+# 			        WHERE SchoolID = :id)
+#         """
+#     )
+
+#     results = run_query(q, params)
+
+#     results = results.sort_values(by="Year")
+
+#     return results
+
+
 def get_corporation_academic_data(*args):
     keys = ["id","type"]
     params = dict(zip(keys, args))
@@ -998,43 +996,41 @@ def get_corporation_academic_data(*args):
     results = results.sort_values(by="Year")
 
     return results
-###
 
 
+# def get_high_school_academic_data(*args):
+#     keys = ["id"]
+#     params = dict(zip(keys, args))
 
-def get_high_school_academic_data(*args):
-    keys = ["id"]
-    params = dict(zip(keys, args))
+#     q = text(
+#         """
+#         SELECT *
+#             FROM academic_data_hs
+# 	        WHERE SchoolID = :id
+#         """
+#     )
 
-    q = text(
-        """
-        SELECT *
-            FROM academic_data_hs
-	        WHERE SchoolID = :id
-        """
-    )
-
-    return run_query(q, params)
+#     return run_query(q, params)
 
 
 # get hs academic data for a list of schools
-def get_selected_hs_school_academic_data(*args):
-    keys = ["schools", "year"]
-    params = dict(zip(keys, args))
+# def get_selected_hs_school_academic_data(*args):
+#     keys = ["schools", "year"]
+#     params = dict(zip(keys, args))
 
-    school_str = ", ".join([str(int(v)) for v in params["schools"]])
+#     school_str = ", ".join([str(int(v)) for v in params["schools"]])
 
-    q = text(
-        """SELECT *
-                FROM academic_data_hs
-                WHERE Year = :year AND SchoolID IN ({})""".format(
-            school_str
-        )
-    )
+#     q = text(
+#         """SELECT *
+#                 FROM academic_data_hs
+#                 WHERE Year = :year AND SchoolID IN ({})""".format(
+#             school_str
+#         )
+#     )
 
-    results = run_query(q, params)
+#     results = run_query(q, params)
 
-    return results
+#     return results
 
 
 def get_growth_data(*args):
@@ -1084,48 +1080,47 @@ def get_school_coordinates(*args):
     return run_query(q, params)
 
 
-#TODO: Is this being used? ONCE for HS in SINGLE YEAR
-#TODO: want to merge get_selected functions and remove this
-def get_comparable_schools(*args):
-    keys = ["schools", "year", "type"]
-    params = dict(zip(keys, args))
+# def get_comparable_schools(*args):
+#     keys = ["schools", "year", "type"]
+#     params = dict(zip(keys, args))
 
-    school_str = ", ".join([str(int(v)) for v in params["schools"]])
+#     school_str = ", ".join([str(int(v)) for v in params["schools"]])
 
-    if params["type"] == "HS":
-        query_string = """
-            SELECT *
-                FROM academic_data_hs
-                WHERE Year = :year AND SchoolID IN ({})""".format(
-            school_str
-        )
+#     if params["type"] == "HS":
+#         query_string = """
+#             SELECT *
+#                 FROM academic_data_hs
+#                 WHERE Year = :year AND SchoolID IN ({})""".format(
+#             school_str
+#         )
 
-    elif params["type"] == "AHS":
-        query_string = """
-            SELECT *
-                FROM academic_data_hs
-                WHERE Year = :year AND SchoolType = "AHS" AND SchoolID IN ({})""".format(
-            school_str
-        )
-    else:  # K8
-        if params["year"] == "All":
-            query_string = """
-                SELECT *
-                    FROM academic_data_k8
-                    WHERE SchoolID IN ({})""".format(
-                school_str
-            )
-        else:
-            query_string = """
-                SELECT *
-                    FROM academic_data_k8
-                    WHERE Year = :year AND SchoolID IN ({})""".format(
-                school_str
-            )
+#     elif params["type"] == "AHS":
+#         query_string = """
+#             SELECT *
+#                 FROM academic_data_hs
+#                 WHERE Year = :year AND SchoolType = "AHS" AND SchoolID IN ({})""".format(
+#             school_str
+#         )
+#     else:  # K8
+#         if params["year"] == "All":
+#             query_string = """
+#                 SELECT *
+#                     FROM academic_data_k8
+#                     WHERE SchoolID IN ({})""".format(
+#                 school_str
+#             )
+#         else:
+#             query_string = """
+#                 SELECT *
+#                     FROM academic_data_k8
+#                     WHERE Year = :year AND SchoolID IN ({})""".format(
+#                 school_str
+#             )
 
-    q = text(query_string)
+#     q = text(query_string)
 
-    return run_query(q, params)
+#     return run_query(q, params)
+
 
 # Where all the magic happens
 # Gets all the academic data and formats it for display
@@ -1152,15 +1147,6 @@ def get_academic_data(*args):
     else:
         school_table = "academic_data_hs"
 
-    # TODO: AHS Comparable Schools?
-    # if params["type"] == "AHS":
-    #     query_string = """
-    #         SELECT *
-    #             FROM {}
-    #             WHERE SchoolType = "AHS" AND SchoolID IN ({})""".format(
-    #         school_table, school_str
-    #     )
-    # else:
     query_string = """
         SELECT *
             FROM {}
@@ -1169,10 +1155,6 @@ def get_academic_data(*args):
     )
 
     q = text(query_string)
-
-###
-    print(params)
-###
     
     school_data = run_query(q, params)
 
@@ -1307,12 +1289,22 @@ def get_academic_data(*args):
     # then return empty df
     if processed_data.iloc[:, 1:].isna().all().all():
         
-        # data = pd.DataFrame()
-
         return pd.DataFrame()
 
     else:
-        
+
+        # # TODO: Test
+        # filename88 = (
+        #     "k8_multi_analysis_orig.csv"
+        # )
+        # year_over_year_k8_data.to_csv(filename88, index=False)            
+
+        # filename18 = (
+        #     "k8_multi_analysis_orig_all.csv"
+        # )
+        # all_school_info.to_csv(filename18, index=False)
+        # # TODO: Test
+                        
         ## data for academic_analysis_single_page ## # TODO add multipage analysis data?
         if params["page"] == "analysis":
 
@@ -1388,9 +1380,8 @@ def get_academic_data(*args):
                     return analysis_data
                 
                 else:
-                # TODO: Return analysis data here and then in body- filter by year
-                # TODO: and drop '***' - line 723 in analysis_single_year    
-                    return analysis_data
+
+                     return analysis_data
 
         ## data for academic_information and academic_metrics pages
         elif params["page"] == "info" or params["page"] == "metrics":

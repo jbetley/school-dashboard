@@ -17,9 +17,11 @@ from .globals import (
     info_categories
 )
 
+
 # helper function for natural_keys
 def atoi(text):
     return int(text) if text.isdigit() else text
+
 
 # NOTE: function to provide natural sorting
 # https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside

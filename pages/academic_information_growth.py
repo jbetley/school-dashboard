@@ -408,7 +408,6 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         academic_growth_notes_string
     )
 
-
 # this needs to be a function in order for it to be called correctly
 #  by subnav_academic_information()
 def layout():

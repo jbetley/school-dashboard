@@ -12,8 +12,8 @@ from typing import Tuple
 
 from .load_data import (
     get_school_index,
-    get_letter_grades,
-    get_excluded_years,
+    # get_letter_grades,
+    # get_excluded_years,
     get_attendance_data
 )
 from .calculations import (
