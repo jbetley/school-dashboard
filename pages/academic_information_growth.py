@@ -393,7 +393,8 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         over the entire school year (Majority Enrolled). This does not necessarily mean that the student was \
         enrolled in the school for an actual majority of the year (e.g., 82 days). This calculation thus includes \
         more students than previous year calculations which only included students who were enrolled in the \
-        school for 162 Days. The 162 Day value is included in the tooltip of each table and chart for comparison purposes."
+        school for 162 Days. The 162 Day value is included in the tooltip of each table and chart when you hover \
+        over the individual data point for comparison purposes."
 
     return (
         growth_grades_ela,

@@ -364,14 +364,16 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
         }
 
         if "IREAD" in label:
-            endnote = "Percentages represent the percentage of students passing IREAD during the applicable period."
+            endnote = "Percentages represent the percentage of students passing IREAD during the applicable period. \
+                No test data data is available for 2020 due to Covid."
         elif "WIDA" in label:
-            endnote = "Values are the average Composite Overall Proficiency Level for all students with a reported WIDA \
+            endnote = "Hover over each data point to see N-Size. Values are the average Composite Overall Proficiency Level for all students with a reported WIDA \
                 score who are currently enrolled in the school."
         elif "Attendance" in label:
-            endnote = "Chronic absenteeism is the percentage of students who miss 18 or more days in a school year."
+            endnote = "Chronic absenteeism is the percentage of students who miss 18 or more days in a school year. \
+                Attendance and absenteeism data is not available for 2020 due to Covid."
         else:
-            endnote = "Hover over each data point to see N-Size."
+            endnote = "Hover over each data point to see N-Size. No test data data is available for 2020 due to Covid."
 
     layout = [
         html.Div(

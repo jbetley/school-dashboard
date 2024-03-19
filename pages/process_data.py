@@ -25,17 +25,22 @@ from .globals import (
 # whether we are analyzing a school or a corporation
 def transpose_data(df,params):
 
-    # Determine whether df is of charter school or school corporation.
-    # Need to check both. Generally the Name and IDs will be the same for a
-    # school corporation, while a charter will have different IDs. However,
-    # in the event that a charter does have the same ID as the corp, it will
-    # have different Names- so we need both tests to be true to be sure the
-    # dataframe belonds to a corporation.
-    # NOTE: currently keeping record of N-Size data for both school and corp
-    # although we do not currently use corp n-size
-    if ((df["School ID"] == df["Corporation ID"]) & 
-        (df["School Name"] == df["Corporation Name"])).sum() > 1:
+    # First, determine whether df contains data for the charter school or
+    # the  geo school corporation. A school corporation will always have the
+    # same School and Corporation Name and School and Corporation ID.
+    # a charter school that is not part of a network will have the same
+    # School and Corporation Name, but different School and Corporation IDs.
+    # a charter school that IS part of a network may have the same or different
+    # School and Corporation ID, but will have a different School and Corporation
+    # Name. So we check whether the two sets of columns are equivalent and if
+    # both are, the data must belong to a school corporation.
+    df = df.reset_index(drop=True)
+    
+    if ((df["School ID"][0] == df["Corporation ID"][0]) +
+        (df["School Name"][0] == df["Corporation Name"][0])) == 2:
 
+        # NOTE: currently keeping record of N-Size data for both school and corp
+        # although we do not currently use corp n-size
         nsize_id = "CN-Size"
         name_id = "Corp"
     else:

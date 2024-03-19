@@ -971,7 +971,19 @@ def get_school_coordinates(*args):
 # Where all the magic happens
 # Gets all the academic data and formats it for display
 def get_academic_data(*args):
+    """Where the magic happens. Gets academic data for school, geo school corporation,
+    and comparable schools, if relevant, and formats it for tables and figs depending
+    on the requesting page.
 
+    Args:
+    schools (list): list of school IDs
+    type (str): school type ("K8","K12","HS","AHS")
+    year (str): selected year
+    page (str): page from which data is requested
+
+    Returns:
+        data: pd.DataFrame
+    """
     keys = ["schools", "type", "year", "page"]
 
     params = dict(zip(keys, args))
@@ -1342,11 +1354,15 @@ def get_academic_data(*args):
                     corp_info_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]]
 
                     final_corp_data = transpose_data(corp_info_data,params)        
-                    
+
+
                     corp_proficiency_cols = [col for col in final_corp_data.columns.to_list() if "Corp" in col]
                     
                     # School Proficiency and N-Size and Corp Profiency
                     metric_data = pd.concat([final_school_data, final_corp_data[corp_proficiency_cols]], axis=1)
+
+                    filename97 = ("Testing.csv")
+                    metric_data.to_csv(filename97, index=False)
 
                     return metric_data
 
@@ -1577,7 +1593,7 @@ def get_student_level_ilearn(school, subject):
 
         school_all_student_data = school_all_student_data[["Test Year",
             "STN","Tested Grade","Status","Exemption Status","ILEARN Tested Grade", category]]
-
+        print(school_all_student_data)
         all_student_data_nopass = school_all_student_data[school_all_student_data["Status"] == "Did Not Pass"]
         all_student_data_pass = school_all_student_data[school_all_student_data["Status"] == "Pass"]
         

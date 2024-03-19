@@ -815,7 +815,6 @@ hr {
   font-weight: 600;
 }
 
-
 /* Overides base color of all dropdown menu options */
 .VirtualizedSelectOption {
   background-color: white;
@@ -872,6 +871,11 @@ hr {
   of an empty_table to 0 */
 .empty-table tr:nth-of-type(2) {
   height: 0px !important;
+}
+
+#comparison-table tr:first-child > th:first-child, 
+#comparison-table tr:first-child > th:nth-child(2) {
+  visibility: hidden;
 }
 
 /** Buttons (modified Bootstrap.css) **/

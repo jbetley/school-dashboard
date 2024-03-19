@@ -1320,7 +1320,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             col_width = "twelve"
             category_width = 15
 
-        data.columns = data.columns.str.replace("N-Size", "(N)", regex=True)
+        data.columns = data.columns.str.replace("SN-Size", "(N)", regex=True)
 
         # NOTE: Experimenting with using "Rate" vs. "Rating" to shrink the rating
         # column width. Leaving old code commented out in the event we want to go
@@ -1446,7 +1446,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # we can apply a right hand border to that column when styling the table
         first_year = None
 
-        if any("Rate" in s for s in all_cols):            
+        if any("Rate" in s for s in all_cols):
             if (
                 name_cols[1][1] == "%"
                 and name_cols[2][1] == "(N)"
@@ -1768,6 +1768,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                             style_cell=table_cell,
                             style_cell_conditional=table_cell_conditional,
                             merge_duplicate_headers=True,
+                            id="metric-table",
                             markdown_options={"html": True},
                             tooltip_conditional=[
                                 {
@@ -1829,7 +1830,7 @@ def create_comparison_table(
     data.columns = data.columns.astype(str)
 
     # locate school index by School ID and then drop School ID column
-    school_name_idx = data.index[data["School ID"] == school_id].tolist()[0]
+    school_name_idx = data.index[data["School ID"].astype(str) == str(school_id)].tolist()[0]
     
     data = data.drop("School ID", axis=1)
 
@@ -1930,12 +1931,12 @@ def create_comparison_table(
             },
         ],
         # Hides first two header names ("Icon" & "School Name")
-        css=[
-            {
-                "selector": "tr:first-child > th:first-child, tr:first-child > th:nth-child(2)",
-                "rule": "visibility: hidden"
-            },
-        ],
+        # css=[
+        #     {
+        #         "selector": "tr:first-child > th:first-child, tr:first-child > th:nth-child(2)",
+        #         "rule": "visibility: hidden"
+        #     },
+        # ],
     )
 
     table_layout = [html.Div([html.Div(table)])]
