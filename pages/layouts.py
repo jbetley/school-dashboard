@@ -270,7 +270,7 @@ def create_barchart_layout(
                         className="pretty-container--close eleven columns",
                     ),
                 ],
-                className="row bar-chart-print" # "row",
+                className="row bar-chart-print"
             ),
             html.Div(
                 [
@@ -279,7 +279,7 @@ def create_barchart_layout(
                         className="container__close eleven columns",
                     ),
                 ],
-                className="row bar-chart-print" # "row",
+                className="row bar-chart-print"
             )
         ]
     else:
@@ -332,7 +332,8 @@ def create_barchart_layout(
 
 def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     """
-    Creates a layout combining a px.line fig and dash datatable
+    Creates a layout combining a px.line fig and dash datatable. If table and fig are identical, it means
+    they are empty and no endnote should appear.
 
     Args:
         fig (list): a px.line
@@ -342,15 +343,35 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
         layout (list): a dash html.Div layout with fig
     """
 
-    if label == "IREAD":
-        endnote = "Percentages represent the percentage of students passing IREAD during the applicable period."
-    elif label == "WIDA":
-        endnote = "Values are the average Composite Overall Proficiency Level for all students with a reported WIDA \
-            score who are currently enrolled in the school."
-    elif label == "Attendance":
-        endnote = "Chronic absenteeism is the percentage of students who miss 18 or more days in a school year."
+    # a bit of a hack. typically "fig"" is of type class "dash.html.Div.Div" and table
+    # is of type 'dash.dash_table.DataTable.DataTable'. we use an empty fig when No Data
+    # is available for both the fig and the table, so their type (class "dash.html.Div.Div")
+    # will be the same. if so, we hide the endnote.
+    if type(fig[0]) is type(table[0]):
+        endnote = ""
+        endnote_style = {}
+        
     else:
-        endnote = "Hover over each data point to see N-Size."
+        endnote_style = {
+            "color": "#6783a9",
+            "fontSize": 10,
+            "textAlign": "left",
+            "marginLeft": "10px",
+            "marginRight": "10px",
+            "marginTop": "20px",
+            "paddingTop": "5px",
+            "borderTop": ".5px solid #c9d3e0",
+        }
+
+        if "IREAD" in label:
+            endnote = "Percentages represent the percentage of students passing IREAD during the applicable period."
+        elif "WIDA" in label:
+            endnote = "Values are the average Composite Overall Proficiency Level for all students with a reported WIDA \
+                score who are currently enrolled in the school."
+        elif "Attendance" in label:
+            endnote = "Chronic absenteeism is the percentage of students who miss 18 or more days in a school year."
+        else:
+            endnote = "Hover over each data point to see N-Size."
 
     layout = [
         html.Div(
@@ -362,18 +383,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
                             [
                                 html.Div(table, style={"marginTop": "10px"}),
                                 html.P(""),
-                                html.P(endnote,
-                                    style={
-                                        "color": "#6783a9",
-                                        "fontSize": 10,
-                                        "textAlign": "left",
-                                        "marginLeft": "10px",
-                                        "marginRight": "10px",
-                                        "marginTop": "20px",
-                                        "paddingTop": "5px",
-                                        "borderTop": ".5px solid #c9d3e0",
-                                    },
-                                ),
+                                html.P(endnote, style = endnote_style),
                             ],
                             className="pretty-container six columns",
                         ),
@@ -475,7 +485,6 @@ def create_year_over_year_layout(school_id: str, data: pd.DataFrame, school_id_l
         msg = "No Data for Selected School."
 
     # if school was dropped because it has no data return empty table
-
     if data["School ID"][0] != np.int64(school_id):
         layout = no_data_page(label, msg)
     else:

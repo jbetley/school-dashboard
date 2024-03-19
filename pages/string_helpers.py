@@ -23,7 +23,7 @@ def atoi(text):
     return int(text) if text.isdigit() else text
 
 
-# NOTE: function to provide natural sorting
+# function to provide natural sorting
 # https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
 def natural_keys(text):
     '''
@@ -138,6 +138,7 @@ def create_chart_label(data: pd.DataFrame) -> str:
                 label = ""
 
         elif data.columns.str.contains("Proficient").any() == True:
+            
             # pull subject from the first "subject" column using regex
             subject_columns = [
                 c

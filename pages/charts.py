@@ -131,7 +131,15 @@ def no_data_fig_label(
                             html.Div(
                                 [
                                     html.Label(label, className="label__header"),
-                                    dcc.Graph(figure=fig),
+                                    dcc.Graph(
+                                        figure=fig, 
+                                        config={
+                                            "displayModeBar": False,
+                                            "showAxisDragHandles": False,
+                                            "showAxisRangeEntryBoxes": False,
+                                            "scrollZoom": False,
+                                        },
+                                    ),
                                 ],
                                 className="pretty-container ten columns",
                             )
@@ -148,7 +156,15 @@ def no_data_fig_label(
             html.Div(
                 [
                     html.Label(label, className="label__header"),
-                    dcc.Graph(figure=fig),
+                    dcc.Graph(
+                        figure=fig, 
+                        config={
+                            "displayModeBar": False,
+                            "showAxisDragHandles": False,
+                            "showAxisRangeEntryBoxes": False,
+                            "scrollZoom": False,
+                        },
+                    ),
                 ]
             )
         ]

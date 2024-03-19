@@ -30,6 +30,7 @@ from .charts import loading_fig, no_data_fig_label, make_line_chart, make_demogr
 from .tables import no_data_table, no_data_page, create_key_table, create_single_header_table
 from .layouts import create_line_fig_layout
 
+
 dash.register_page(__name__, path="/about", order=0, top_nav=True)
 
 @callback(
@@ -69,6 +70,8 @@ def update_about_page(year: str, school: str):
     update_table = []
     enroll_table = []
     attendance_layout= []
+
+    # NOTE: first load of any plotly object is very slow
     adm_fig = px.line()
     ethnicity_fig = px.bar()
     subgroup_fig = px.bar()
@@ -207,7 +210,7 @@ def update_about_page(year: str, school: str):
                     "color": "#6783a9",
                 },
             )
-        ]
+        ]    
 
         # Enrollment by ethnicity fig
         ethnicity_school = demographic_data.loc[
@@ -265,7 +268,7 @@ def update_about_page(year: str, school: str):
 
             subgroup_fig = make_demographics_bar_chart(subgroup_merged_data)
 
-    # ADM Data
+    # ADM Values
     # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is
     # known for the year. So we check the first data column and if ADM Avg
     # has data we use it. If there is no financial_data, we use IDOE's
@@ -396,21 +399,23 @@ def update_about_page(year: str, school: str):
         attendance_table = create_single_header_table(
             attendance_rate_data, "Attendance"
         )
-    else:
-        attendance_table = no_data_table(
-            "No Data to Display.", "Attendance Data", "six"
+
+        attendance_fig_data = (
+            attendance_rate_data.set_index("Category")
+            .T.rename_axis("Year")
+            .rename_axis(None, axis=1)
+            .reset_index()
         )
 
-    attendance_fig_data = (
-        attendance_rate_data.set_index("Category")
-        .T.rename_axis("Year")
-        .rename_axis(None, axis=1)
-        .reset_index()
-    )
+        attendance_fig = make_line_chart(attendance_fig_data)
+    
+    else:
 
-    attendance_fig = make_line_chart(attendance_fig_data)
+        # bit of a hack - ensure empty containers are identical
+        attendance_table = no_data_fig_label()
+        attendance_fig = no_data_fig_label()
 
-    attendance_layout = create_line_fig_layout(attendance_table, attendance_fig,"Attendance and Chronic Absenteeism")
+    attendance_layout = create_line_fig_layout(attendance_table, attendance_fig, "Attendance and Chronic Absenteeism")
 
     return (
         update_table,
@@ -426,6 +431,7 @@ def update_about_page(year: str, school: str):
         empty_container,
         no_data_to_display,
     )
+
 
 def layout():
     return html.Div(

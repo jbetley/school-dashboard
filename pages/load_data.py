@@ -19,14 +19,15 @@
 import pandas as pd
 import numpy as np
 import re
-# import itertools
 from sqlalchemy import create_engine, text
 
 from .calculations import (
-    calculate_percentage, conditional_fillna, #, calculate_difference,
-    calculate_proficiency, recalculate_total_proficiency, #, check_for_no_data,
-    conditional_fillna, calculate_graduation_rate, calculate_sat_rate #, check_for_insufficient_n_size,
+    calculate_percentage, conditional_fillna, calculate_proficiency,
+    recalculate_total_proficiency, conditional_fillna, calculate_graduation_rate,
+    calculate_sat_rate
 )
+
+from .process_data import transpose_data
 
 # NOTE: Consider moving engine instantiation to app.py
 engine = create_engine("sqlite:///data/indiana_schools.db")
@@ -34,6 +35,7 @@ engine = create_engine("sqlite:///data/indiana_schools.db")
 users = create_engine("sqlite:///users.db")
 
 print("Database Engine Created . . .")
+
 
 def run_query(q, *args):
     """
@@ -281,9 +283,9 @@ def get_financial_dropdown_years(school_id, page):
 
 
 def get_adm(corp_id):
-    # Use this when there is no financial data - financial data will almost
-    # always be more accurate, but some schools (Guests) don't have financial
-    # data.
+    # financial data will almost always be more accurate, but
+    # some schools (Guests) don't have financial data and this
+    # is an adequate substitute.
 
     params = dict(id=corp_id)
 
@@ -310,9 +312,10 @@ def get_adm(corp_id):
         axis=1,
     )
 
-    # Each adm average requires 2 columns (Fall and Spring). If there are an odd number of columns
-    # after the above drop, that means that the last column is a Fall without a Spring, so
-    # we store that column, drop it, and add it back later
+    # Each adm average requires 2 columns (Fall and Spring). If there are an
+    # odd number of columns after the above drop, that means that the last
+    # column is a Fall without a Spring, so we store that column, drop it,
+    # and add it back later
     if (len(results.columns) % 2) != 0:
         last_col = pd.DataFrame()
         last_col_name = str(int(results.columns[-1][:4]) + 1)
@@ -657,7 +660,7 @@ def get_letter_grades(*args):
 	        WHERE CorporationID = :id
         """
     )
-# demographic_data.Year, demographic_data.StateGrade, demographic_data.FederalRating
+
     return run_query(q, params)
 
 
@@ -741,7 +744,7 @@ def get_ilearn_stns(*args):
     return results
 
 
-# combines the above two functions
+# combination the above two functions
 def get_school_stns(school):
 
     ilearn_stns = get_ilearn_stns(school)
@@ -797,7 +800,7 @@ def get_ahs_averages(*args):
 
 def get_attendance_data(school_id, school_type, year):
     params = dict(id=school_id)
-
+ 
     # NOTE: AHS attendance data is stored in the hs table. K12 attendance
     # data is the same in both k8 and hs tables (it isn't broken out)
     if school_type == "K8":
@@ -871,25 +874,6 @@ def get_attendance_data(school_id, school_type, year):
 
     return attendance_rate
 
-# TODO: Drop
-# Get k8 academic data for single school
-# def get_k8_school_academic_data(*args):
-#     keys = ["id"]
-#     params = dict(zip(keys, args))
-
-#     q = text(
-#         """
-#         SELECT *
-#             FROM academic_data_k8
-# 	        WHERE SchoolID = :id
-#         """
-#     )
-
-#     results = run_query(q, params)
-#     results = results.sort_values(by="Year", ascending=False)
-
-#     return results
-
 
 # Get k8 academic data for single school
 def get_proficiency_data(*args):
@@ -908,68 +892,6 @@ def get_proficiency_data(*args):
     results = results.sort_values(by="Year", ascending=False)
 
     return results
-
-
-# def get_selected_k8_school_academic_data(*args):
-#     keys = ["schools", "year"]
-#     params = dict(zip(keys, args))
-
-#     school_str = ", ".join([str(int(v)) for v in params["schools"]])
-
-#     q = text(
-#         """SELECT *
-#                 FROM academic_data_k8
-#                 WHERE Year = :year AND SchoolID IN ({})""".format(
-#             school_str
-#         )
-#     )
-
-#     results = run_query(q, params)
-
-#     return results
-
-
-# def get_k8_corporation_academic_data(*args):
-#     keys = ["id"]
-#     params = dict(zip(keys, args))
-
-#     q = text(
-#         """
-#         SELECT *
-# 	        FROM corporation_data_k8
-# 	        WHERE CorporationID = (
-# 		        SELECT GEOCorp
-# 			        FROM school_index
-# 			        WHERE SchoolID = :id)
-#         """
-#     )
-
-#     results = run_query(q, params)
-#     results = results.sort_values(by="Year", ascending=False)
-
-#     return results
-
-
-# def get_hs_corporation_academic_data(*args):
-#     keys = ["id"]
-#     params = dict(zip(keys, args))
-
-#     q = text(
-#         """
-#         SELECT *
-# 	        FROM corporation_data_hs
-# 	        WHERE CorporationID = (
-# 		        SELECT GEOCorp
-# 			        FROM school_index
-# 			        WHERE SchoolID = :id)
-#         """
-#     )
-
-#     results = run_query(q, params)
-
-#     results = results.sort_values(by="Year")
-
-#     return results
 
 
 def get_corporation_academic_data(*args):
@@ -998,41 +920,6 @@ def get_corporation_academic_data(*args):
     return results
 
 
-# def get_high_school_academic_data(*args):
-#     keys = ["id"]
-#     params = dict(zip(keys, args))
-
-#     q = text(
-#         """
-#         SELECT *
-#             FROM academic_data_hs
-# 	        WHERE SchoolID = :id
-#         """
-#     )
-
-#     return run_query(q, params)
-
-
-# get hs academic data for a list of schools
-# def get_selected_hs_school_academic_data(*args):
-#     keys = ["schools", "year"]
-#     params = dict(zip(keys, args))
-
-#     school_str = ", ".join([str(int(v)) for v in params["schools"]])
-
-#     q = text(
-#         """SELECT *
-#                 FROM academic_data_hs
-#                 WHERE Year = :year AND SchoolID IN ({})""".format(
-#             school_str
-#         )
-#     )
-
-#     results = run_query(q, params)
-
-#     return results
-
-
 def get_growth_data(*args):
     keys = ["id"]
     params = dict(zip(keys, args))
@@ -1047,7 +934,8 @@ def get_growth_data(*args):
     return run_query(q, params)
 
 
-# "SchoolTotal|ELATotalTested" is a proxy for school size for k8 schools.
+# NOTE: "SchoolTotal|ELATotalTested" is a proxy for school
+# size for k8 schools.
 def get_school_coordinates(*args):
     keys = ["year", "type"]
     params = dict(zip(keys, args))
@@ -1080,48 +968,6 @@ def get_school_coordinates(*args):
     return run_query(q, params)
 
 
-# def get_comparable_schools(*args):
-#     keys = ["schools", "year", "type"]
-#     params = dict(zip(keys, args))
-
-#     school_str = ", ".join([str(int(v)) for v in params["schools"]])
-
-#     if params["type"] == "HS":
-#         query_string = """
-#             SELECT *
-#                 FROM academic_data_hs
-#                 WHERE Year = :year AND SchoolID IN ({})""".format(
-#             school_str
-#         )
-
-#     elif params["type"] == "AHS":
-#         query_string = """
-#             SELECT *
-#                 FROM academic_data_hs
-#                 WHERE Year = :year AND SchoolType = "AHS" AND SchoolID IN ({})""".format(
-#             school_str
-#         )
-#     else:  # K8
-#         if params["year"] == "All":
-#             query_string = """
-#                 SELECT *
-#                     FROM academic_data_k8
-#                     WHERE SchoolID IN ({})""".format(
-#                 school_str
-#             )
-#         else:
-#             query_string = """
-#                 SELECT *
-#                     FROM academic_data_k8
-#                     WHERE Year = :year AND SchoolID IN ({})""".format(
-#                 school_str
-#             )
-
-#     q = text(query_string)
-
-#     return run_query(q, params)
-
-
 # Where all the magic happens
 # Gets all the academic data and formats it for display
 def get_academic_data(*args):
@@ -1134,9 +980,12 @@ def get_academic_data(*args):
     # of schools (academic_analysis), otherwise one school (academic_info and
     # academic_metric)
     if len(params["schools"]) > 1:
+
         school_id = params["schools"][0]
         school_str = ", ".join([str(int(v)) for v in params["schools"]])
+    
     else:
+
         school_id = params["schools"][0]
         school_str = params["schools"][0]
 
@@ -1293,19 +1142,8 @@ def get_academic_data(*args):
 
     else:
 
-        # # TODO: Test
-        # filename88 = (
-        #     "k8_multi_analysis_orig.csv"
-        # )
-        # year_over_year_k8_data.to_csv(filename88, index=False)            
-
-        # filename18 = (
-        #     "k8_multi_analysis_orig_all.csv"
-        # )
-        # all_school_info.to_csv(filename18, index=False)
-        # # TODO: Test
-                        
-        ## data for academic_analysis_single_page ## # TODO add multipage analysis data?
+        ## data for academic_analysis_single_page
+        ## TODO eventually add multipage analysis data
         if params["page"] == "analysis":
 
             if params["type"] == "HS" or params["type"] == "AHS":
@@ -1386,8 +1224,6 @@ def get_academic_data(*args):
         ## data for academic_information and academic_metrics pages
         elif params["page"] == "info" or params["page"] == "metrics":
 
-            from .process_data import transpose_data
-            
             corp_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]].copy()
             school_data = processed_data[processed_data["School ID"] == school_id].copy()
 
@@ -1401,8 +1237,6 @@ def get_academic_data(*args):
             
             elif params["type"] == "HS":
 
-                from .process_data import transpose_data
-                
                 corp_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]].copy()
                 school_data = processed_data[processed_data["School ID"] == school_id].copy()
 
@@ -1487,8 +1321,6 @@ def get_academic_data(*args):
 
             else:
 
-                from .process_data import transpose_data
-
                 school_info_data = processed_data[processed_data["School ID"] == school_id]
                 final_school_data = transpose_data(school_info_data,params)
 
@@ -1496,14 +1328,16 @@ def get_academic_data(*args):
                 if params["page"] == "info":
                     return final_school_data
 
-                # TODO: THis belongs right before final data (in chart?)
+                # TODO: Where does this belong? In the chart? or in academic_info.py
+                # TODO: right before the information is sent to the chart? or in
+                # TODO: the layout? 
                 # result, no_data = check_for_no_data(result)
                 # print(no_data)
                 # insuf_string = check_for_insufficient_n_size(result)
                 # print(insuf_string)
-                # TODO: ADD BACK - WHERE?
-                            
-                else:   # K8 academic_metrics data
+
+                # K8 academic_metrics data    
+                else:
 
                     corp_info_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]]
 
@@ -1515,9 +1349,11 @@ def get_academic_data(*args):
                     metric_data = pd.concat([final_school_data, final_corp_data[corp_proficiency_cols]], axis=1)
 
                     return metric_data
-# TODO: Catch-all?
+
+# TODO: Do we need a default on error?
     # return data
 
+# TODO: Eventually merge into get_academic_data()
 def get_year_over_year_data(*args):
     keys = ["school_id", "comp_list", "category", "year", "flag"]
     params = dict(zip(keys, args))

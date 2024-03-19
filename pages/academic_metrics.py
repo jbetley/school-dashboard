@@ -18,31 +18,21 @@ from .globals import (
 )
 from .load_data import (
     get_school_index,
-    # get_k8_school_academic_data,
-    # get_high_school_academic_data,
-    # get_hs_corporation_academic_data,
-    # get_k8_corporation_academic_data,
-    # get_excluded_years,
     get_academic_data
 )
-# from .process_data import (
-#     process_k8_info_data,
-#     # process_high_school_academic_data,
-#     # merge_high_school_data,
-#     # filter_high_school_academic_data,
-#     # process_k8_corp_academic_data
-# )
+
 from .tables import (
     no_data_page,
     no_data_table,
     create_metric_table,
     create_proficiency_key
 )
+
 from .layouts import set_table_layout
+
 from .string_helpers import convert_to_svg_circle
+
 from .calculate_metrics import (
-    # calculate_k8_yearly_metrics,
-    # calculate_k8_comparison_metrics,
     calculate_high_school_metrics,
     calculate_adult_high_school_metrics,
     calculate_attendance_metrics,
@@ -88,8 +78,6 @@ def update_academic_metrics(school: str, year: str):
     selected_year_string = "2019" if string_year == "2020" else string_year
     selected_year_numeric = int(selected_year_string)
 
-    # excluded_years = get_excluded_years(year)
-
     # default values (only empty container displayed)
     table_container_11ab = []
     table_container_11cd = []
@@ -129,13 +117,6 @@ def update_academic_metrics(school: str, year: str):
             school_type = selected_school_type
         
         metric_data = get_academic_data(list_of_schools, school_type, selected_year_numeric, "metrics")
-        
-        # selected_raw_k8_school_data = get_k8_school_academic_data(school)
-
-        # if excluded_years:
-        #     selected_raw_k8_school_data = selected_raw_k8_school_data[
-        #         ~selected_raw_k8_school_data["Year"].isin(excluded_years)
-        #     ]
 
         if len(metric_data.index) > 0:
 
@@ -143,31 +124,15 @@ def update_academic_metrics(school: str, year: str):
                 {"^": "***"}
             )
 
-            # clean_school_data = process_k8_info_data(selected_raw_k8_school_data)
-
-            # if not clean_school_data.empty:
             k8_metrics_container = {"display": "block"}
             main_container = {"display": "block"}
             empty_container = {"display": "none"}
 
-# TODO: Test for empty here
+# TODO: Do we need to Test for empty here?
             k8_year_values, k8_comparison_values = calculate_values(metric_data,selected_year_string)
 
             # Get Year over Year and Combined Metrics
             combined_years, combined_delta = calculate_metrics(k8_year_values, k8_comparison_values)
-
-            # Get Year over Year metrics
-            # combined_years = calculate_k8_yearly_metrics(clean_school_data)
-
-            # raw_corp_data = get_k8_corporation_academic_data(school)
-
-            # clean_corp_data = process_k8_corp_academic_data(
-            #     raw_corp_data, clean_school_data
-            # )
-
-            # combined_delta = calculate_k8_comparison_metrics(
-            #     clean_school_data, clean_corp_data, selected_year_string
-            # )
 
             category = ethnicity + subgroup
 
@@ -264,7 +229,7 @@ def update_academic_metrics(school: str, year: str):
                 table_14ef, table_14ef, metric_14ef_data.columns
             )
 
-            # iread_data -combined_delta has all IREAD data, but we
+            # iread_data - combined_delta has all IREAD data, but we
             # currently only use Total
             iread_data = combined_delta[
                 combined_delta["Category"] == "Total|IREAD"
@@ -388,7 +353,6 @@ def update_academic_metrics(school: str, year: str):
         or selected_school_type == "K12"
         or (selected_school_id == 5874 and selected_year_numeric < 2021)
     ):
-        # selected_raw_hs_school_data = get_high_school_academic_data(school)
 
         if selected_school_type == "K12":
             selected_school_type = "HS"
@@ -396,7 +360,6 @@ def update_academic_metrics(school: str, year: str):
         list_of_schools = [school]
         raw_metric_data = get_academic_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
 
-        # if len(selected_raw_hs_school_data.index) > 0:
         if len(raw_metric_data.index) > 0:
 
         # TODO: At some point need to add the State AHS Calculation
@@ -445,17 +408,7 @@ def update_academic_metrics(school: str, year: str):
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                # raw_hs_school_data = filter_high_school_academic_data(
-                #     selected_raw_hs_school_data
-                # )
-
-                # raw_ahs_metrics = raw_hs_school_data[
-                #     ["Year", "AHS|CCR", "AHS|Grad All"]
-                # ]
-
-                ahs_metric_data_113 = calculate_adult_high_school_metrics(
-                    school, raw_metric_data
-                )
+                ahs_metric_data_113 = calculate_adult_high_school_metrics(raw_metric_data)
 
                 ahs_metric_data_113["Category"] = (
                     ahs_metric_data_113["Metric"]
@@ -514,52 +467,14 @@ def update_academic_metrics(school: str, year: str):
                 )
 
             else:
-                # NOTE: We do not currently use hs_year_over_year_values for
-                # hs metrics
+                # NOTE: We do not currently use hs_year_over_year_values
+                # for hs metrics
                 hs_year_over_year_values, hs_comparison_values = calculate_values(raw_metric_data,selected_year_string)
 
                 if not hs_comparison_values.empty:
                     hs_metrics_container = {"display": "block"}
                     main_container = {"display": "block"}
                     empty_container = {"display": "none"}
-
-                    # raw_hs_corp_data = get_hs_corporation_academic_data(school)
-
-                    # for col in raw_hs_corp_data.columns:
-                    #     raw_hs_corp_data[col] = pd.to_numeric(
-                    #         raw_hs_corp_data[col], errors="coerce"
-                    #     )
-
-                    # # NOTE: hs_data columns are a subset of school_data columns, but we still need to ensure hs_data
-                    # # only includes columns that are in school_data (after being cleaned/filtered above). So we find
-                    # # the intersection of the two sets and use it to filtered hs_data
-                    # common_cols = [
-                    #     col
-                    #     for col in set(raw_hs_school_data.columns).intersection(
-                    #         raw_hs_corp_data.columns
-                    #     )
-                    # ]
-                    # raw_hs_corp_data = raw_hs_corp_data[common_cols]
-
-                    # clean_hs_school_data = process_high_school_academic_data(
-                    #     raw_hs_school_data, school
-                    # )
-                    # clean_hs_corp_data = process_high_school_academic_data(
-                    #     raw_hs_corp_data, school
-                    # )
-
-                    # if not clean_hs_school_data.empty:
-                    #     hs_metrics_container = {"display": "block"}
-                    #     main_container = {"display": "block"}
-                    #     empty_container = {"display": "none"}
-
-                    #     hs_merged_data = merge_high_school_data(
-                    #         clean_hs_school_data, clean_hs_corp_data
-                    #     )
-
-                        # combined_grad_metrics_data = calculate_high_school_metrics(
-                        #     hs_merged_data
-                        # )
 
                     hs_metric_data = calculate_high_school_metrics(hs_comparison_values)
 

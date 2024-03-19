@@ -9,11 +9,9 @@
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
-from typing import Tuple #, Any
+from typing import Tuple
 import scipy.spatial as spatial
 
-# # for typing purposes
-# result: Any = [float | None | str]
 
 def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     """
@@ -241,13 +239,12 @@ def recalculate_total_proficiency(
     revised_data = data.copy()
     revised_totals = pd.DataFrame()
 
-# TODO: Not sure what's going on here - test
-# TODO: ADD CHANGE ONCE REFACTOR IS COMPLETE (OLD is shorter one)
-    # TODO: FIX THIS BUGGIN THIS SHIT OUT OF ME
-    if "School Name" not in revised_data:
-        revised_data["School Name"] = "TEMP"
+    # TODO: I put this in here temporarily for some reason - I think the commented out line is the
+    # TODO: correct one, but need to test to be sure.
+    if "School Name" not in revised_data:       # remove
+        revised_data["School Name"] = "TEMP"    # remove
     #revised_totals["School ID"] = revised_data["School ID"]
-    revised_totals[["Year","School ID","School Name"]] = revised_data[["Year", "School ID","School Name"]]
+    revised_totals[["Year","School ID","School Name"]] = revised_data[["Year", "School ID","School Name"]] # remove
 
     numeric_columns = [
         c

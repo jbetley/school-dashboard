@@ -183,7 +183,6 @@ def empty_table(text: str) -> dash_table.DataTable:
         dash datatable (dash_table.DataTable): a dash DataTable
     """
 
-    # default table text
     if text == "":
         text = "No Data to Display."
 
@@ -221,7 +220,7 @@ def no_data_table(
         table_layout (list): a dash html.Label object and html.Div object enclosing a dash DataTable
     """
 
-    if width == "none":
+    if width == "none" or width == "":
         table_layout = [
             html.Label(label, className="label__header"),
             html.Div(empty_table(text), className="empty-table"),
@@ -1251,7 +1250,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
                 css=[{"selector": ".dash-table-tooltip", "rule": "font-size: 12px"}],
             ),
         ]
-
+# TODO: Align this with line_fig_layout (two empty figs instead of fig/table)
     else:
         table_layout = [
             html.Div(
@@ -1832,8 +1831,6 @@ def create_comparison_table(
     # locate school index by School ID and then drop School ID column
     school_name_idx = data.index[data["School ID"] == school_id].tolist()[0]
     
-    # school_name_idx = data.index[data["School ID"] == np.int64(school_id)].tolist()[0]
-    
     data = data.drop("School ID", axis=1)
 
     # strip gradespan data and whitespace for merge key
@@ -1914,14 +1911,6 @@ def create_comparison_table(
             "fontWeight": "bold",
             "border": "none",
         },
-        # style_header_conditional=[
-        #     {
-        #         "if": {
-        #             "header_index": 0
-        #         },
-        #         "text-decoration": "underline",
-        #     },
-        # ],
         style_cell=table_cell,
         style_cell_conditional=[
             {
@@ -2034,7 +2023,6 @@ def create_financial_analysis_table(data: pd.DataFrame, categories: list) -> lis
                 "fontSize": "11px",
                 "fontFamily": "Inter, sans-serif",
             },
-            # style_data=table_style,
             style_data_conditional=[
                 {
                     "if": {
