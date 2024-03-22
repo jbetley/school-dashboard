@@ -352,7 +352,6 @@ def get_school_dropdown_list():
 
     return schools
 
-
 def get_graduation_data():
     params = dict(id="")
 
@@ -778,11 +777,10 @@ def get_ilearn_student_data(*args):
     return results
 
 
-# Calculates AHS average for all categories for all years
-def get_ahs_averages(*args):
-    keys = ["id","type"]
-    params = dict(zip(keys, args))
-
+# Calculates AHS State Graduation Average for all Years as
+# a substitute for corp_data
+def get_ahs_averages():
+    params = dict(id="")
     q = text (
         """
         SELECT *
@@ -793,9 +791,30 @@ def get_ahs_averages(*args):
 
     results = run_query(q, params)
 
-    results = results.sort_values(by="Year")
+    drop_cols = ["School Name", "School Type", "Lat", "Lon"]
+    results = results.drop(drop_cols, axis=1)
 
-    return results
+    non_sum_cols = ["Year", "School ID", "Corporation ID", "Corporation Name", "Low Grade", "High Grade"]
+    sum_cols = [c for c in results.columns if c not in non_sum_cols]
+
+    for col in sum_cols:
+        results[col] = pd.to_numeric(results[col], errors="coerce")
+
+    # create a dict for agg()
+    column_map = {col: "first" for col in non_sum_cols}
+    column_map2 = {col: "sum" for col in sum_cols}
+    column_map3 = {"Attendance Rate": "mean"}
+    group_cols = {**column_map, **column_map2, **column_map3}
+
+    final_results = results.groupby(['Year'], as_index=False).agg(group_cols)
+    
+    final_results["Corporation Name"] = "AHS State Average"
+    final_results["Corporation ID"] = 9999
+    final_results["School ID"] = 9999
+
+    final_results = final_results.sort_values(by="Year")
+
+    return final_results
 
 
 def get_attendance_data(school_id, school_type, year):
@@ -968,6 +987,9 @@ def get_school_coordinates(*args):
     return run_query(q, params)
 
 
+# filename99 = ("analysis-data.csv")
+# analysis_data.to_csv(filename99, index=False)
+    
 # Where all the magic happens
 # Gets all the academic data and formats it for display
 def get_academic_data(*args):
@@ -1021,7 +1043,11 @@ def get_academic_data(*args):
 
     # get corp data (for academic_metrics and academic_analysis_single_year)
     # and add to dataframe
-    corp_data = get_corporation_academic_data(params["schools"][0], params["type"])
+    print(params["type"])
+    if params["type"] == "AHS":
+        corp_data = get_ahs_averages()
+    else:
+        corp_data = get_corporation_academic_data(params["schools"][0], params["type"])
 
     # add columns not in corp database
     corp_data["School ID"] = corp_data["Corporation ID"]
@@ -1113,7 +1139,7 @@ def get_academic_data(*args):
 
             if {"AHS|CCR", "AHS|Grad All"}.issubset(processed_data.columns):
                 processed_data["CCR Percentage"] = processed_data["AHS|CCR"] / processed_data["AHS|Grad All"]
-
+        
     # process K8 data
     elif params["type"] == "K8": 
 
@@ -1145,9 +1171,11 @@ def get_academic_data(*args):
 
         # this is school, school corporation, and comparable school data
         processed_data = processed_data.reset_index()
-        
+
     # if all columns in data other than the 1st (Year) are null
     # then return empty df
+
+#TODO: Check this test - make better
     if processed_data.iloc[:, 1:].isna().all().all():
         
         return pd.DataFrame()
@@ -1170,7 +1198,7 @@ def get_academic_data(*args):
                 analysis_data = analysis_data.drop(list(analysis_data.filter(regex="EBRW and Math")), axis=1)
 
                 hs_cols = [c for c in analysis_data.columns if c not in ["School Name", "Corporation Name"]]
-        
+
                 # get index of rows where school_id matches selected school
                 school_idx = analysis_data.index[analysis_data["School ID"] == school_id].tolist()[0]
 
@@ -1360,9 +1388,6 @@ def get_academic_data(*args):
                     
                     # School Proficiency and N-Size and Corp Profiency
                     metric_data = pd.concat([final_school_data, final_corp_data[corp_proficiency_cols]], axis=1)
-
-                    filename97 = ("Testing.csv")
-                    metric_data.to_csv(filename97, index=False)
 
                     return metric_data
 
@@ -1593,7 +1618,7 @@ def get_student_level_ilearn(school, subject):
 
         school_all_student_data = school_all_student_data[["Test Year",
             "STN","Tested Grade","Status","Exemption Status","ILEARN Tested Grade", category]]
-        print(school_all_student_data)
+
         all_student_data_nopass = school_all_student_data[school_all_student_data["Status"] == "Did Not Pass"]
         all_student_data_pass = school_all_student_data[school_all_student_data["Status"] == "Pass"]
         

@@ -20,6 +20,7 @@ from .globals import (
 from .load_data import (
     get_school_index,
     get_school_coordinates,
+    get_ahs_averages,
     get_academic_data
 )
 
@@ -74,21 +75,21 @@ def set_dropdown_options(
         existing_comparison_schools_list = []
 
     selected_school = get_school_index(school_id)
-    school_type = selected_school["School Type"].values[0]
+    selected_school_type = selected_school["School Type"].values[0]
 
     # Get School ID, School Name, Lat & Lon for all schools in the
     # set for selected year. SQL query depends on school type
-    if school_type == "K12":
+    if selected_school_type == "K12":
         if analysis_type_value == "hs":
-            school_type = "HS"
+            selected_school_type = "HS"
         else:
-            school_type = "K8"
+            selected_school_type = "K8"
 
-    schools_by_distance = get_school_coordinates(numeric_year, school_type)
+    schools_by_distance = get_school_coordinates(numeric_year, selected_school_type)
 
     # Drop any school not testing at least 20 students (k8 only- probably
     # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
-    if school_type == "K8":
+    if selected_school_type == "K8":
         schools_by_distance["Total|ELA Total Tested"] = \
             pd.to_numeric(schools_by_distance["Total|ELA Total Tested"], errors="coerce")
         schools_by_distance = schools_by_distance[
@@ -107,7 +108,7 @@ def set_dropdown_options(
         # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
 
         # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
-        if school_type != "AHS":
+        if selected_school_type != "AHS":
             schools_by_distance = check_for_gradespan_overlap(
                 school_id, schools_by_distance
             )
@@ -278,7 +279,7 @@ def update_academic_analysis_single_year(
     numeric_year = int(string_year)
 
     selected_school = get_school_index(school_id)
-    school_type = selected_school["School Type"].values[0]
+    selected_school_type = selected_school["School Type"].values[0]
     school_name = selected_school["School Name"].values[0]
     school_name = school_name.strip()
 
@@ -335,9 +336,9 @@ def update_academic_analysis_single_year(
     academic_analysis_notes_string = ""
 
     if (
-        school_type == "HS"
-        or school_type == "AHS"
-        or (school_type == "K12" and analysis_type_value == "hs")
+        selected_school_type == "HS"
+        or selected_school_type == "AHS"
+        or (selected_school_type == "K12" and analysis_type_value == "hs")
     ):
         k8_analysis_empty_container = {"display": "none"}
 
@@ -346,11 +347,17 @@ def update_academic_analysis_single_year(
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
             the selected school. Up to eight (8) schools may be displayed at once."
 
+        if selected_school_type == "K12":
+            school_type = "HS"
+        else:
+            school_type = selected_school_type
+
         list_of_schools = [school_id] + comparison_school_list
-        raw_hs_analysis_data = get_academic_data(list_of_schools, "HS", numeric_year, "analysis")
+        raw_hs_analysis_data = get_academic_data(list_of_schools, school_type, numeric_year, "analysis")
+        
         hs_analysis_data = raw_hs_analysis_data.loc[
                 raw_hs_analysis_data["Year"] == numeric_year
-            ]
+            ].copy()
 
         if hs_analysis_data.empty:
 
@@ -391,6 +398,13 @@ def update_academic_analysis_single_year(
 
                 # Graduation Comparison Sets
                 grad_overview_categories = ["Total", "Non Waiver"]
+
+                print("HEEER")
+                ahs_grad_average = get_ahs_averages()
+                print(ahs_grad_average)
+
+                # print('AS ADDDEDED')
+                # print(hs_analysis_data.T)
 
                 grad_overview = create_hs_analysis_layout(
                     "Graduation Rate",
@@ -522,10 +536,10 @@ def update_academic_analysis_single_year(
                     else:
                         sat_subgroup_container = {"display": "none"}
 
-    if school_type == "K8" or school_type == "K12":
+    if selected_school_type == "K8" or selected_school_type == "K12":
 
         # If school is K12 and highschool tab is selected, skip k8 data
-        if school_type == "K12" and analysis_type_value == "hs":
+        if selected_school_type == "K12" and analysis_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
 
         else:
