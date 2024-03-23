@@ -1225,10 +1225,11 @@ def get_academic_data(*args):
                 analysis_data = analysis_data.sort_values("Year").reset_index(drop=True)
                 
                 analysis_data = analysis_data[analysis_data.columns[~analysis_data.columns.str.contains(r"Female|Male")]]
-                
-                # Drop columns for all categories where the values are NaN
-                school_idx = analysis_data.index[analysis_data["School ID"] == school_id].tolist()[0]
-                analysis_data = analysis_data.loc[:, ~analysis_data.iloc[school_idx].isna()]
+
+                # filename77 = ("analysis_data1.csv")
+                # analysis_data.to_csv(filename77, index=False)
+                # filename77 = ("analysis_data2.csv")
+                # analysis_data.to_csv(filename77, index=False)
 
                 # We don't want to get rid of "***" yet, but we also don't
                 # want to pass through a dataframe that that is all "***" - so

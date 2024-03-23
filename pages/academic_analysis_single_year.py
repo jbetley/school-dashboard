@@ -560,6 +560,12 @@ def update_academic_analysis_single_year(
             k8_analysis_data = raw_k8_analysis_data.loc[
                     raw_k8_analysis_data["Year"] == numeric_year
                 ].copy()
+            k8_analysis_data = k8_analysis_data.reset_index(drop=True)
+
+            # Drop columns for all categories where the values are NaN for
+            # the school
+            # school_idx = k8_analysis_data.index[k8_analysis_data["School ID"] == school_id].tolist()[0]
+            # k8_analysis_data = k8_analysis_data.loc[:, ~k8_analysis_data.iloc[school_idx].isna()]
 
             # Force '***' to NaN for numeric columns
             numeric_columns = [

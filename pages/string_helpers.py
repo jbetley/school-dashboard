@@ -18,13 +18,13 @@ from .globals import (
 )
 
 
+# function to provide natural sorting
+# https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
+
 # helper function for natural_keys
 def atoi(text):
     return int(text) if text.isdigit() else text
 
-
-# function to provide natural sorting
-# https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
 def natural_keys(text):
     '''
     alist.sort(key=natural_keys) sorts in human order
@@ -316,6 +316,7 @@ def identify_missing_categories(
         for c in tested_categories
         if c not in ["School Name", "Low Grade", "High Grade"]
     ]
+
     school_columns = [i for i in subject_categories if i in raw_data.columns]
     school_categories = [ele for ele in school_columns if ele not in info_categories]
 
@@ -345,6 +346,12 @@ def identify_missing_categories(
     missing_categories = [s.split("|")[0] for s in missing_categories]
 
     category_string = ", ".join(missing_categories)
+
+    if category_string:
+        # proper punctuation is very important
+        category_string = category_string + "."
+    else:
+        category_string = "None"
 
     # get index and columns where there are null values (each are a numpy array)
     idx, idy = np.where(pd.isnull(check_data))
@@ -391,12 +398,9 @@ def identify_missing_categories(
 
         school_string = ", ".join(all_schools_with_missing)
 
+        school_string = school_string + "."
+
     else:
         school_string = "None"
-        category_string = "None"
-
-    # proper punctuation is very important
-    school_string = school_string + "."
-    category_string = category_string + "."
-
+    
     return final_data, category_string, school_string

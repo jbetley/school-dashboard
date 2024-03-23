@@ -84,7 +84,7 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
         y += 3
         z += 3
 
-    attendance_metrics.insert(loc=0, column="Category",  value=["1.1.a. Attendance Rate", "Chronic Absenteeism %"])
+    attendance_metrics.insert(loc=0, column="Category",  value=["1.1.a. Attendance Rate", "(Chronic Absenteeism %)"])
 
     # drop corp rates
     attendance_metrics = attendance_metrics.loc[
@@ -92,10 +92,6 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
     ]
 
     attendance_limits = [0, -0.01]
-
-    # NOTE: Currently, chronic absenteeism is not officially in the
-    # accountability system so it doesn't have a specific threshold- we are
-    # using the attendance threshold for both.
 
     # Calculates and adds an accountability rating ("MS", "DNMS", "N/A", etc)
     # as a new column for each measured value using a reverse loop:
@@ -133,6 +129,13 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
         for i in range(attendance_metrics.shape[1], 1, -2)
     ]
 
+    # NOTE: Currently, chronic absenteeism is not officially in the
+    # accountability system- we are calculating it above (using the
+    # attendance threshold) but removing the rate for now. comment out 
+    # or remove the next two lines to add rating back
+    rate_cols = [col for col in attendance_metrics.columns if "Rate" in col]
+    attendance_metrics.loc[attendance_metrics["Category"] == "(Chronic Absenteeism %)", rate_cols] = 'NA'
+    
     return attendance_metrics
 
 

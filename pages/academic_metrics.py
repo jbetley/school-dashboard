@@ -537,7 +537,7 @@ def update_academic_metrics(school: str, year: str):
 
     # Attendance Data & Teacher Retention Rate (all schools have this data)
     metric_11ab_label = [
-        "Student Attendance Rate (1.1.a), Chronic Absenteeism, and Teacher Retention Rate (1.1.b) compared with traditional school corporation."
+        "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation."
     ]
 
     # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
