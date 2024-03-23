@@ -1829,6 +1829,11 @@ def create_comparison_table(
     data = data.reset_index(drop=True)
     data.columns = data.columns.astype(str)
 
+# TODO: 'nother type error (float)
+    print(data["School ID"][0])
+    print(type(data["School ID"][0]))
+    print(school_id)
+    print(type(school_id))
     # locate school index by School ID and then drop School ID column
     school_name_idx = data.index[data["School ID"].astype(str) == str(school_id)].tolist()[0]
     

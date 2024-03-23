@@ -411,11 +411,18 @@ def update_about_page(year: str, school: str):
     
     else:
 
-        # bit of a hack - ensure empty containers are identical
+        # bit of a hack - ensures empty containers look the same
         attendance_table = no_data_fig_label()
         attendance_fig = no_data_fig_label()
 
-    attendance_layout = create_line_fig_layout(attendance_table, attendance_fig, "Attendance and Chronic Absenteeism")
+    # do not display Chronic Absenteeism for AHS - it isn't
+    # an accurate representation for the model.
+    if selected_school_type == "AHS":
+        attendance_title = "Attendance Rate"
+    else:
+        attendance_title = "Attendance Rate and Chronic Absenteeism"
+
+    attendance_layout = create_line_fig_layout(attendance_table, attendance_fig, attendance_title)
 
     return (
         update_table,

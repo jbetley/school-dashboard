@@ -516,7 +516,7 @@ def create_year_over_year_layout(school_id: str, data: pd.DataFrame, school_id_l
         # Use Low/High grade columns to modify School Name and then drop.
         table_data["School Name"] = create_school_label(table_data)
         table_data = table_data.drop(["Low Grade", "High Grade"], axis=1)
-
+        
         table = create_comparison_table(table_data, fig_trace_colors, school_id)
         category_string = ""
         school_string = ""

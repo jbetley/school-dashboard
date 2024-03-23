@@ -857,8 +857,10 @@ def get_attendance_data(school_id, school_type, year):
     # replace empty strings with NaN
     attendance_data = attendance_data.replace(r'^\s*$', np.nan, regex=True)
 
-    attendance_data["Chronic Absenteeism %"] = \
-        calculate_percentage(attendance_data["Students Chronically Absent"], attendance_data["Total Student Count"])
+    # Chronic Absenteeism isn't used for AHS
+    if school_type != "corp_AHS" and school_type != "AHS":
+        attendance_data["Chronic Absenteeism %"] = \
+            calculate_percentage(attendance_data["Students Chronically Absent"], attendance_data["Total Student Count"])
 
     attendance_data = attendance_data.drop(["Students Chronically Absent","Total Student Count"], axis=1)
 
@@ -1503,6 +1505,9 @@ def get_year_over_year_data(*args):
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]
 
+# TODO AFTER THIS SOMEWHERE IS THE FLOATAGE
+    print('SCH DAA')
+    print(school_data)
     if len(school_data.columns) == 0:
         result = school_data
 
