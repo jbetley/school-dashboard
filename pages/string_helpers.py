@@ -26,12 +26,12 @@ def atoi(text):
     return int(text) if text.isdigit() else text
 
 def natural_keys(text):
-    '''
+    """
     alist.sort(key=natural_keys) sorts in human order
     http://nedbatchelder.com/blog/200712/human_sorting.html
     (See Toothy's implementation in the comments)
-    '''
-    return [ atoi(c) for c in re.split(r'(\d+)', text) ]
+    """
+    return [ atoi(c) for c in re.split(r"(\d+)", text) ]
 
 
 def customwrap(s: str, width: int = 16) -> str:
@@ -253,7 +253,9 @@ def create_school_label(data: pd.DataFrame) -> pd.Series:
 
     label = label.replace("\(-\)", "", regex=True)
 
-    # escape "." because want to replace literal ".0" and not anychar + "0"
+    # NOTE: shouldnt need this but keeping in case any floats sneak
+    # through. we escape "." because want to replace literal ".0"
+    # and not anychar + "0"
     label = label.replace("\.0", "", regex=True)
 
     label = label.drop(["Low Grade", "High Grade"], axis=1)

@@ -231,7 +231,7 @@ def get_financial_dropdown_years(school_id, page):
     """
     gets a list of all available years of financial data - returns
     # a list of Year column names for each year for which ADM Average
-    # for that year is greater than '0'
+    # for that year is greater than 0
 
     Args:
         school_id (string): a 4 digit number in string format
@@ -299,7 +299,7 @@ def get_adm(corp_id):
 
     results = run_query(q, params)
 
-    # NOTE: From 2016 - 2019  'SpringADM' & 'FallADM'; beginning with
+    # NOTE: From 2016 - 2019  "SpringADM" & "FallADM"; beginning with
     # 2019-20SY: "2019Fall Non Virtual ADM" & "2020Spring Non Virtual ADM"
 
     # drop "Virtual ADM"
@@ -414,7 +414,7 @@ def get_gradespan(school_id, selected_year, all_years):
 
     result = run_query(q, params)
 
-    # change '***' to nan
+    # change "***" to nan
     for col in result.columns:
         result[col] = pd.to_numeric(result[col], errors="coerce")
 
@@ -806,7 +806,7 @@ def get_ahs_averages():
     column_map3 = {"Attendance Rate": "mean"}
     group_cols = {**column_map, **column_map2, **column_map3}
 
-    final_results = results.groupby(['Year'], as_index=False).agg(group_cols)
+    final_results = results.groupby(["Year"], as_index=False).agg(group_cols)
     
     final_results["Corporation Name"] = "AHS State Average"
     final_results["Corporation ID"] = 9999
@@ -855,7 +855,7 @@ def get_attendance_data(school_id, school_type, year):
     attendance_data = results[results["Attendance Rate"].notnull()]
 
     # replace empty strings with NaN
-    attendance_data = attendance_data.replace(r'^\s*$', np.nan, regex=True)
+    attendance_data = attendance_data.replace(r"^\s*$", np.nan, regex=True)
 
     # Chronic Absenteeism isn't used for AHS
     if school_type != "corp_AHS" and school_type != "AHS":
@@ -1045,7 +1045,6 @@ def get_academic_data(*args):
 
     # get corp data (for academic_metrics and academic_analysis_single_year)
     # and add to dataframe
-    print(params["type"])
     if params["type"] == "AHS":
         corp_data = get_ahs_averages()
     else:
@@ -1077,8 +1076,8 @@ def get_academic_data(*args):
     data = raw_merged_data.copy()
 
     # convert from float to str while dropping the decimal
-    data["School ID"] = data["School ID"].astype('Int64').astype('str')
-    data["Corporation ID"] = data["Corporation ID"].astype('Int64').astype('str')
+    data["School ID"] = data["School ID"].astype("Int64").astype("str")
+    data["Corporation ID"] = data["Corporation ID"].astype("Int64").astype("str")
 
     if params["type"] == "K8":
         tested_cols = [col for col in data.columns.to_list() if "Total Tested" in col or "Test N" in col]
@@ -1204,7 +1203,7 @@ def get_academic_data(*args):
                 # get index of rows where school_id matches selected school
                 school_idx = analysis_data.index[analysis_data["School ID"] == school_id].tolist()[0]
 
-                # force all to numeric (this removes '***' strings) - we
+                # force all to numeric (this removes "***" strings) - we
                 # later use NaN as a proxy
                 for col in hs_cols:
                     analysis_data[col] = pd.to_numeric(
@@ -1320,6 +1319,7 @@ def get_academic_data(*args):
                     if "Total|Graduation Rate" not in school_metrics_data["Category"].values:
 
                         school_metrics_data.loc[len(school_metrics_data)] = np.nan
+                        
                         school_metrics_data.loc[
                             school_metrics_data.index[-1], "Category"
                         ] = "Total|Graduation Rate"
@@ -1330,10 +1330,18 @@ def get_academic_data(*args):
 
                     duplicate_row["Category"] = "State Graduation Average"
 
-                    school_metrics_data = pd.concat(
-                        [school_metrics_data, duplicate_row], axis=0, ignore_index=True
-                    )
-
+                    # NOTE: Need to declare an explicit type here because there is a
+                    # bug in "pandas-stubs" that causes mypy to mark code as 
+                    # "unreachable" following a pd.concat with Iterable[None]. See:
+                    # https://stackoverflow.com/questions/78156640/why-is-visual-studio-code-saying-my-code-in-unreachable-after-using-the-pandas-c
+                    # NOTE: trying and failing to suppress this warning by adding 
+                    # 'disable_error_code = "annotation-unchecked"' to mypy.ini. but kept
+                    # getting errors. So here it stays
+                    # https://stackoverflow.com/questions/74578185/suppress-mypy-notes
+                    merged_dataframes:list[pd.DataFrame] = [school_metrics_data, duplicate_row]
+                    
+                    school_metrics_data = pd.concat(merged_dataframes, axis=0, ignore_index=True)
+                    
                     # Corp -State Grad Rate should equal State Grad Rate
                     # Corp - Total Grad Rate and Nonwaiver Grad Rate should equal corp totals
                     # School - Both State and Total Grad Rate should equal school total grad rate
@@ -1344,6 +1352,7 @@ def get_academic_data(*args):
                     #       = School (NonW) - Corp 
 
                     # add corp data to df
+                    
                     corp_proficiency_cols = [col for col in corp_metrics_data.columns.to_list() if "Corp" in col]
                     merged_data = pd.concat([school_metrics_data, corp_metrics_data[corp_proficiency_cols]], axis=1)
 
@@ -1356,10 +1365,11 @@ def get_academic_data(*args):
                         "Non Waiver|Graduation Rate": "Non Waiver Graduation Rate"}, regex=False)
 
                     hs_categories =["Total Graduation Rate","Non Waiver Graduation Rate","State Graduation Average"]
-                    metric_data = merged_data[merged_data["Category"].str.contains('|'.join(hs_categories))]
+                    metric_data = merged_data[merged_data["Category"].str.contains("|".join(hs_categories))]
 
                     metric_data = metric_data.reset_index(drop=True)
 
+                    print(metric_data)
                     return metric_data
 
             else:
@@ -1505,9 +1515,6 @@ def get_year_over_year_data(*args):
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]
 
-# TODO AFTER THIS SOMEWHERE IS THE FLOATAGE
-    print('SCH DAA')
-    print(school_data)
     if len(school_data.columns) == 0:
         result = school_data
 

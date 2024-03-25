@@ -1714,7 +1714,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 if id[0] in metric_strings:
                     for s in range(0, len(metric_strings[id[0]])):
                         if metric_strings[id[0]][s]:
-                            # use id and 'im-very-special' class to ensure metrics with only three
+                            # use id and "im-very-special" class to ensure metrics with only three
                             # ratings have the third rating colored red rather than orange
                             if id[0] == "1.1.a" and s == 3:
                                 rows.append(
@@ -1829,11 +1829,6 @@ def create_comparison_table(
     data = data.reset_index(drop=True)
     data.columns = data.columns.astype(str)
 
-# TODO: 'nother type error (float)
-    print(data["School ID"][0])
-    print(type(data["School ID"][0]))
-    print(school_id)
-    print(type(school_id))
     # locate school index by School ID and then drop School ID column
     school_name_idx = data.index[data["School ID"].astype(str) == str(school_id)].tolist()[0]
     
@@ -1947,7 +1942,7 @@ def create_comparison_table(
     table_layout = [html.Div([html.Div(table)])]
 
     # NOTE: below code adds a label if one is passed (used for same row chart/
-    # table layout). If using this, need to re-add 'label' variable to fn.
+    # table layout). If using this, need to re-add "label" variable to fn.
 
     # bar-chart tables (Math, ELA, & IREAD) should have a label multi-bar chart tables
     # (by Subgroup, by Ethnicity) should not have a label this is for formatting reasons.

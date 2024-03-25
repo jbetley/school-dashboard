@@ -79,7 +79,7 @@ def set_dropdown_options(
         # the variable "overlap" is one less than the the number of grades that we want as a
         # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
 
-        # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
+        # Skip this step for AHS (don't have a gradespan in the technical sense)
         if school_type != "AHS":
             schools_by_distance = check_for_gradespan_overlap(
                 school_id, schools_by_distance

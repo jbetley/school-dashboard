@@ -18,6 +18,7 @@ from .globals import (
 )
 
 from .load_data import (
+    current_academic_year,
     get_school_index,
     get_school_coordinates,
     get_ahs_averages,
@@ -64,6 +65,10 @@ dash.register_page(
 def set_dropdown_options(
     school_id: str, year: str, existing_comparison_schools_list: list, analysis_type_value=str
 ):
+
+    if not year:
+        year = current_academic_year
+
     string_year = year
     numeric_year = int(string_year)
 
@@ -398,13 +403,6 @@ def update_academic_analysis_single_year(
 
                 # Graduation Comparison Sets
                 grad_overview_categories = ["Total", "Non Waiver"]
-
-                print("HEEER")
-                ahs_grad_average = get_ahs_averages()
-                print(ahs_grad_average)
-
-                # print('AS ADDDEDED')
-                # print(hs_analysis_data.T)
 
                 grad_overview = create_hs_analysis_layout(
                     "Graduation Rate",

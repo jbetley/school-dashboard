@@ -507,14 +507,24 @@ def create_year_over_year_layout(school_id: str, data: pd.DataFrame, school_id_l
             .rename_axis(None, axis=1)
             .reset_index()
         )
+
         table_data = pd.merge(
             table_data, school_id_list, on=["School Name"], how="left"
         )
+        
+        # type fun - merge casts the entire School ID, Low Grade, and High Grade
+        # columns to float because a school corporation does not have these values
+        # and are therefore set to NaN during the merge. To fix, we temporarily convert
+        # NaN to 0, convert the columns to int and then replace the 0 (this seems so messy)
+        table_data[["School ID","Low Grade","High Grade"]] = table_data[["School ID","Low Grade","High Grade"]].fillna(0)
+        table_data[["School ID", "High Grade"]] = table_data[["School ID", "High Grade"]].astype(int)
+        table_data[["School ID","Low Grade","High Grade"]] = table_data[["School ID","Low Grade","High Grade"]].replace(0, "")
 
         fig_trace_colors, fig = make_multi_line_chart(data, label)
 
         # Use Low/High grade columns to modify School Name and then drop.
         table_data["School Name"] = create_school_label(table_data)
+
         table_data = table_data.drop(["Low Grade", "High Grade"], axis=1)
         
         table = create_comparison_table(table_data, fig_trace_colors, school_id)

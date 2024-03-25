@@ -333,7 +333,8 @@ def set_year_dropdown_options(
 
     # input_state saves (in a dcc.store) the values for previous and
     # current year and page. think of previous as the state of the variable
-    # and current as the value
+    # and current as the value. if input_state is None, there is no previous
+    # history (e.g., the browser history has been deleted).
     if input_state:
 
         # input_state can exist with a None previousyear, so need to
@@ -365,13 +366,19 @@ def set_year_dropdown_options(
         input_state["previouspage"] = input_state["currentpage"]
         input_state["currentpage"] = current_page
 
-    else:
+        previous_page = input_state["previouspage"]
+
+    else: # set input state defaults
         input_state = {}
+        input_state["currentyear"] = year_value
+        input_state["previousyear"] = input_state["currentyear"]
+        input_state["currentpage"] = current_page
+        input_state["previouspage"] = input_state["currentpage"]
 
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
-    previous_page = input_state["previouspage"]
+    # previous_page = input_state["previouspage"]
 
     # for K12 schools, we need to use "HS" data when analysis_type is "hs". We also
     # want to make sure that we reset the type if the user switches to a k8 school
@@ -416,7 +423,7 @@ def set_year_dropdown_options(
 
     latest_year = dropdown_years[0]
     oldest_year = dropdown_years[-1]
-   
+ 
     # year_value for the dropdown is determined as follows:
     # 1) initial load: "latest_year"
     # 2) if selected year is earlier than the school's oldest year: "oldest_year"
