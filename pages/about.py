@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     03/25/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -19,6 +19,7 @@ from .globals import (
 )
 from .load_data import (
     current_academic_year,
+    get_excluded_years,
     get_school_index,
     get_financial_data,
     get_corp_demographic_data,
@@ -85,13 +86,7 @@ def update_about_page(year: str, school: str):
     # see full color list in charts.py
     linecolor = ["#df8f2d"]
 
-    # Using both school and corp demographic data files because some charter schools
-    # share Corp IDs:
-    #   Christel House Watanabe Manual High School (school id: 9709) and
-    #   Christel House Academy South (school id: 5874) share corp_id: 9380
-
     # Get data for enrollment table, and subgroup/ethnicity demographic figs (single year)
-    # demographic_data = get_corp_demographic_data(school_corp_id)
     demographic_data = get_school_demographic_data(selected_school_id)
 
     demographic_data = demographic_data.loc[
@@ -109,7 +104,7 @@ def update_about_page(year: str, school: str):
             "02.10.24",
             "02.11.24",
             "02.14.24",
-            "02.20.24"
+            "03.25.24"
         ],
         "Update": [
             "Added 2023 IREAD data to Information page.",
@@ -269,19 +264,14 @@ def update_about_page(year: str, school: str):
             subgroup_fig = make_demographics_bar_chart(subgroup_merged_data)
 
     # ADM Values
-    # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is
-    # known for the year. So we check the first data column and if ADM Avg
-    # has data we use it. If there is no financial_data, we use IDOE's
-    # adm file instead. It usually lags behind the adm average in the financial
-    # data table.
-
+    # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is known
+    # for the year. So we check the first data column and if ADM Avg has data we
+    # use it. If there is no financial_data, we use IDOE's adm- get_adm()- file which 
+    # lags behind, and is typically very accurate for past years, but not as
+    # accurate for current years.
     financial_data = get_financial_data(school)
 
     if financial_data.empty:
-        # NOTE: This is a backstop for when there is no financial data or where there are no
-        # adm values in financial data ("guest" schools for example). This pulls data from a
-        # separate 'adm' table which is typically very accurate for past years, but not as
-        # accurate for current years.
 
         adm_values = get_adm(int(selected_school["Corporation ID"].values[0]))
 
@@ -321,7 +311,6 @@ def update_about_page(year: str, school: str):
 
             adm_values = adm_values[adm_values.columns[::-1]]
 
-    # file exists, but there is no adm data
     if int(adm_values.sum(axis=1).values[0]) == 0:
         adm_fig = no_data_fig_label("Average Daily Membership History", 400)
         main_container = {"display": "block"}
@@ -345,13 +334,7 @@ def update_about_page(year: str, school: str):
         # "excluded years" is a list of YYYY strings (all years more
         # recent than selected year) that can be used to filter data
         # that should not be displayed
-        excluded_academic_years = current_academic_year - selected_year_numeric
-
-        excluded_years = []
-
-        for i in range(excluded_academic_years):
-            excluded_year = current_academic_year - i
-            excluded_years.append(str(excluded_year))
+        excluded_years = get_excluded_years(selected_year_string)
 
         # if the display year is less than current year
         # drop columns where year matches any years in "excluded years" list
