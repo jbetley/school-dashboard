@@ -150,7 +150,6 @@ def update_about_page(year: str, school: str):
             + ["Total Enrollment"]
         ]
 
-        print(enrollment_filter)
         # drop columns with no data
         enrollment_filter = enrollment_filter.loc[:, (~enrollment_filter.isin([np.nan, 0, "0"])).all()]
 
@@ -158,7 +157,6 @@ def update_about_page(year: str, school: str):
         enrollment.rename(columns={enrollment.columns[0]: "Enrollment"}, inplace=True)
         enrollment.rename(index={"Total Enrollment": "Total"}, inplace=True)
 
-        print(enrollment)
         # if selected_school_type == "AHS":
         #     # sum = enrollment["Enrollment"].astype(int).sum()
         #     school_enrollment = pd.DataFrame(columns=["index", "Enrollment"])

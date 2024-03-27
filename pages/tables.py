@@ -486,7 +486,7 @@ def create_iread_ilearn_table(school: str, subject: str, excluded_years: list) -
                 else:
                     table_data.iat[i, x] = "{:,.0f}".format(table_data.iat[i, x])
 
-        # replace Nan with "-"
+        # replace Nan with "-"# replace NaN with em dash (—)
         table_data = table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
         iread_ilearn_table = create_single_header_table(
@@ -906,6 +906,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
 
         # rename all n_size columns before getting n col list
         data.columns = data.columns.str.replace("N-Size|SN-Size", "(N)", regex=True)
+        data = data.fillna(value="\u2014")
 
         if "SAT" in label:
             data.columns = data.columns.str.replace(
@@ -1147,7 +1148,10 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
         data = data[data.columns[~data.columns.str.contains(r"N-Size")]]
 
         data.columns = data.columns.str.replace("School", "", regex=True)
-        data = data.replace("No Data", "\u2014", regex=True)
+
+        data = data.fillna(value="\u2014")
+        data = data.replace("No Data", "\u2014", regex=True) # test to see if necessary
+        
         school_headers = [y for y in data.columns if "Category" not in y]
 
         all_cols = data.columns.tolist()
@@ -1326,7 +1330,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # column width. Leaving old code commented out in the event we want to go
         # back to Rating
         # data.columns = data.columns.str.replace("Rate", "Rating", regex=True)
-        data.columns = data.columns.str.replace("Diff", "Difference", regex=True)
+        # data.columns = data.columns.str.replace("Diff", "Difference", regex=True)
 
         # different column headers for AHS
         if data["Category"].str.contains("1.1|1.2.a").any() == True:
@@ -1339,7 +1343,8 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         nsize_headers = [y for y in data.columns.tolist() if "N" in y]
         rating_headers = [y for y in data.columns.tolist() if "Rate" in y]
         # rating_headers = [y for y in data.columns.tolist() if "Rating" in y]
-        diff_headers = [y for y in data.columns.tolist() if "Difference" in y]
+        diff_headers = [y for y in data.columns.tolist() if "Diff" in y]        
+        # diff_headers = [y for y in data.columns.tolist() if "Difference" in y]
 
         # get new col list after renaming N-Size
         all_cols = data.columns.tolist()

@@ -1368,7 +1368,6 @@ def get_academic_data(*args):
 
                     metric_data = metric_data.reset_index(drop=True)
 
-                    print(metric_data)
                     return metric_data
 
             else:
@@ -1394,7 +1393,9 @@ def get_academic_data(*args):
                     corp_info_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]]
 
                     final_corp_data = transpose_data(corp_info_data,params)        
-
+                    
+                    filename99 = ("final_corp_data.csv")
+                    final_corp_data.to_csv(filename99, index=False)
 
                     corp_proficiency_cols = [col for col in final_corp_data.columns.to_list() if "Corp" in col]
                     

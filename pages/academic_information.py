@@ -3,7 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     03/25/24
 
 # TODO: Break down into three pages: ILEARN; IREAD; WIDA
 
@@ -172,6 +172,14 @@ def update_academic_information_page(
     
     no_display_data = no_data_page("No Data to Display.", "Academic Information")
 
+    academic_information_notes_string = "ILEARN was administered for the first time during the 2018-19 SY, \
+        representing an entirely new type and mode of assessment (adaptive and online-only). No State assessment \
+        was administered in 2020 due to the Covid-19 pandemic. The students included in the tested cohort for purposes \
+        of calculating the proficiency percentage has not been consistent- in 2019, the cohort included only students \
+        who attended the testing school for 162 days, the 2021 and 2022 calculations included all tested students, regardless \
+        of the length of time that the student attended the testing school, and the 2023 calculation included students in the \
+        cohort of the school in which the student spent the majority of time enrolled."
+    
     # category selection determines which divs are displayed by default
     if radio_category == "grade":
         proficiency_ela_grades_container = {"display": "block"}
@@ -275,6 +283,7 @@ def update_academic_information_page(
         proficiency_math_ethnicity_container = {"display": "block"}
         proficiency_ela_subgroup_container = {"display": "block"}
         proficiency_math_subgroup_container = {"display": "block"}
+        academic_information_notes_string_container = {"display": "block"}
         k8_table_container = {"display": "block"}
         
         k12_sat_table_container = {"display": "none"}
@@ -963,16 +972,6 @@ def update_academic_information_page(
                 )
             else:
                 math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
-
-            academic_information_notes_string = "ILEARN was administered for the first time during the 2018-19 SY, \
-                representing an entirely new type and mode of assessment (adaptive and online-only). No State assessment \
-                was administered in 2020 due to the Covid-19 pandemic. The students included in the tested cohort for purposes \
-                of calculating the proficiency percentage has not been consistent- in 2019, the cohort included only students \
-                who attended the testing school for 162 days, the 2021 and 2022 calculations included all tested students, regardless \
-                of the length of time that the student attended the testing school, and the 2023 calculation included students in the \
-                cohort of the school in which the student spent the majority of time enrolled."
-            
-            academic_information_notes_string_container = {"display": "block"}
 
     # End K-8 ILEARN block
                 
@@ -1983,11 +1982,11 @@ def layout():
                                                 },
                                             ),
                                         ],
-                                        className="pretty-container__key ten columns",
                                         id="academic-information-notes-string-container",
+                                        className="pretty-container__key ten columns"
                                     ),
                                 ],
-                                className="bare-container--flex--center twelve columns",
+                                className="bare-container--flex--center twelve columns"
                             ),
                         ],
                     ),

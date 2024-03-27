@@ -3,7 +3,7 @@
 #####################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     03/25/24
 
 import dash
 from dash import html, Input, Output, callback
@@ -16,6 +16,7 @@ from .globals import (
     subgroup,
     grades_all
 )
+
 from .load_data import (
     get_school_index,
     get_academic_data
@@ -40,6 +41,7 @@ from .calculate_metrics import (
     calculate_values,
     calculate_metrics
 )
+
 from .calculations import conditional_fillna
 
 dash.register_page(__name__, path="/academic_metrics", top_nav=True, order=9)
@@ -85,7 +87,7 @@ def update_academic_metrics(school: str, year: str):
     table_container_14cd = []
     table_container_14ef = []
     table_container_14g = []
-    # table_container_15abcd = []   # Growth
+    # table_container_15abcd = []   # growth data (not yet implemented)
     table_container_16ab = []
     table_container_16cd = []
     attendance_container = {"display": "none"}
@@ -128,9 +130,11 @@ def update_academic_metrics(school: str, year: str):
             main_container = {"display": "block"}
             empty_container = {"display": "none"}
 
-# TODO: Do we need to Test for empty here?
+
             k8_year_values, k8_comparison_values = calculate_values(metric_data,selected_year_string)
 
+# TODO: Do we need to Test for empty here?
+            
             # Get Year over Year and Combined Metrics
             combined_years, combined_delta = calculate_metrics(k8_year_values, k8_comparison_values)
 
@@ -229,6 +233,7 @@ def update_academic_metrics(school: str, year: str):
                 table_14ef, table_14ef, metric_14ef_data.columns
             )
 
+# TODO: IREAD NOT SHOWING 2019-2021 for 21sty C
             # iread_data - combined_delta has all IREAD data, but we
             # currently only use Total
             iread_data = combined_delta[
@@ -285,6 +290,10 @@ def update_academic_metrics(school: str, year: str):
             # metric_15abcd_data = convert_to_svg_circle(metric_15abcd_data)
             # table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
             # table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
+            
+            print(combined_delta)
+            filename99 = ("combined_delta.csv")
+            combined_delta.to_csv(filename99, index=False)
 
             metric_16a_data = combined_delta[
                 (combined_delta["Category"].str.contains("|".join(category)))
@@ -311,6 +320,7 @@ def update_academic_metrics(school: str, year: str):
                 "subgroup compared with traditional school corporation.",
             ]
             metric_16b_data = convert_to_svg_circle(metric_16b_data)
+            print(metric_16b_data)
             table_16b = create_metric_table(metric_16b_label, metric_16b_data)
 
             table_container_16ab = set_table_layout(
@@ -497,7 +507,7 @@ def update_academic_metrics(school: str, year: str):
                     simple_cols = [
                         x
                         for x in all_cols
-                        if (not x.endswith("+/-") and not x.endswith("Difference"))
+                        if (not x.endswith("+/-") and not x.endswith("Diff")) # Difference
                     ]
 
                     grad_metrics_empty = pd.DataFrame(columns=simple_cols)

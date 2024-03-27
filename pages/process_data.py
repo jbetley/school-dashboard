@@ -236,7 +236,7 @@ def process_growth_data(
         data_162, how="left", on=["Test Year", category, "Subject"], suffixes=("", "_y")
     )
 
-    data["Difference"] = data["162 Days"] - data["Majority Enrolled"]
+    data["Diff"] = data["162 Days"] - data["Majority Enrolled"] # "Difference"
 
     # step 4: get into proper format for display as multi-header DataTable
 
@@ -245,7 +245,7 @@ def process_growth_data(
 
     # filter unneeded columns
     final_data = data.filter(
-        regex=r"Test Year|Category|Majority Enrolled|162 Days|Difference",
+        regex=r"Test Year|Category|Majority Enrolled|162 Days|Diff", #"Difference"
         axis=1,
     )
 
@@ -272,7 +272,7 @@ def process_growth_data(
 
     # create fig data
     fig_data = final_data.copy()
-    fig_data = fig_data.drop("Difference", axis=1)
+    fig_data = fig_data.drop("Diff", axis=1)  # "Difference"
     fig_data = fig_data.pivot(index=["Test Year"], columns="Category")
     fig_data.columns = fig_data.columns.map(lambda x: "_".join(map(str, x)))
 
@@ -286,7 +286,7 @@ def process_growth_data(
     for y in yrs:
         cols.append(str(y) + "162 Days")
         cols.append(str(y) + "Majority Enrolled")
-        cols.append(str(y) + "Difference")
+        cols.append(str(y) + "Diff")  # "Difference"
 
     # pivot df from wide to long" add years to each column name; move year to
     # front of column name; sort and reset_index
