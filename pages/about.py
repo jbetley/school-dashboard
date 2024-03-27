@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     03/25/24
+# date:     03/31/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -18,7 +18,6 @@ from .globals import (
     max_display_years
 )
 from .load_data import (
-    current_academic_year,
     get_excluded_years,
     get_school_index,
     get_financial_data,
@@ -338,6 +337,9 @@ def update_about_page(year: str, school: str):
 
         # if the display year is less than current year
         # drop columns where year matches any years in "excluded years" list
+        # because we are checking against column names this time, we first
+        # need to convert the list to strings
+        excluded_years = [str(y) for y in excluded_years]
         if excluded_years:
             adm_values = adm_values.loc[
                 :, ~adm_values.columns.str.contains("|".join(excluded_years))
@@ -391,7 +393,7 @@ def update_about_page(year: str, school: str):
         )
 
         attendance_fig = make_line_chart(attendance_fig_data)
-    
+
     else:
 
         # bit of a hack - ensures empty containers look the same

@@ -325,6 +325,7 @@ def set_year_dropdown_options(
     current_page = current_page.rsplit("/", 1)[-1]
 
     # on initial login or history clear, this will be Nonetype
+    # so set initial default
     if not year_value:
         year_value = str(current_academic_year)
 

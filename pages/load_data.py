@@ -92,7 +92,6 @@ def get_current_year():
 
 current_academic_year = get_current_year()
 
-
 def get_network_count():
     """
     Helper function to dynamically count the number of network logins present

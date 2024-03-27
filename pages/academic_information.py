@@ -126,7 +126,7 @@ def update_academic_information_page(
     is_guest = True if selected_school["Guest"].values[0] == "Y" else False
 
     excluded_years = get_excluded_years(selected_year_string)
-    
+
     if not radio_type:
         radio_type = "k8"
 
