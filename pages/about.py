@@ -150,6 +150,7 @@ def update_about_page(year: str, school: str):
             + ["Total Enrollment"]
         ]
 
+        print(enrollment_filter)
         # drop columns with no data
         enrollment_filter = enrollment_filter.loc[:, (~enrollment_filter.isin([np.nan, 0, "0"])).all()]
 
@@ -157,14 +158,15 @@ def update_about_page(year: str, school: str):
         enrollment.rename(columns={enrollment.columns[0]: "Enrollment"}, inplace=True)
         enrollment.rename(index={"Total Enrollment": "Total"}, inplace=True)
 
-        if selected_school_type == "AHS":
-            sum = enrollment["Enrollment"].astype(int).sum()
-            school_enrollment = pd.DataFrame(columns=["index", "Enrollment"])
-            school_enrollment.loc[0] = ["Adults", sum]
-            school_enrollment.loc[1] = ["Total", sum]
+        print(enrollment)
+        # if selected_school_type == "AHS":
+        #     # sum = enrollment["Enrollment"].astype(int).sum()
+        #     school_enrollment = pd.DataFrame(columns=["index", "Enrollment"])
+        #     school_enrollment.loc[0] = ["Adults", sum]
+        #     school_enrollment.loc[1] = ["Total", sum]
 
-        else:
-            school_enrollment = enrollment.reset_index()
+        # else:
+        school_enrollment = enrollment.reset_index()
 
         enroll_table = [
             dash_table.DataTable(
@@ -204,7 +206,7 @@ def update_about_page(year: str, school: str):
                     "color": "#6783a9",
                 },
             )
-        ]    
+        ]
 
         # Enrollment by ethnicity fig
         ethnicity_school = demographic_data.loc[
@@ -265,7 +267,7 @@ def update_about_page(year: str, school: str):
     # ADM Values
     # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is known
     # for the year. So we check the first data column and if ADM Avg has data we
-    # use it. If there is no financial_data, we use IDOE's adm- get_adm()- file which 
+    # use it. If there is no financial_data, we use IDOE's adm- get_adm()- file which
     # lags behind, and is typically very accurate for past years, but not as
     # accurate for current years.
     financial_data = get_financial_data(school)
@@ -451,6 +453,21 @@ def layout():
                                                 className="label__header",
                                             ),
                                             html.Div(id="enroll-table"),
+                                            html.P(""),
+                                            html.P("Demographic data is measured at a separate point and time than \
+                                                ADM, with ADM counted in September and February and demographic data counted \
+                                                with the October PE. The totals will not generally align.",
+                                                style = {
+                                                    "color": "#6783a9",
+                                                    "fontSize": 10,
+                                                    "textAlign": "left",
+                                                    "marginLeft": "10px",
+                                                    "marginRight": "10px",
+                                                    "marginTop": "20px",
+                                                    "paddingTop": "5px",
+                                                    "borderTop": ".5px solid #c9d3e0",
+                                                }
+                                            ),
                                         ],
                                         className="pretty-container six columns",
                                     ),
