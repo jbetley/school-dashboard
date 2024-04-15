@@ -412,6 +412,13 @@ hr {
   display: flex;
 }
 
+.bare-container--center {
+  margin: 0 0 0 0;
+  padding: 0 0 0 0;
+  justify-content: center;
+  text-align: center;
+}
+
 .bare-container--flex--center_subnav {
   margin: 0 0 0 0;
   padding: 0 0 0 0;

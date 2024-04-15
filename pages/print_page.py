@@ -9,90 +9,102 @@ from dash import html, dash_table, Input, Output, callback, dcc
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 from dash.exceptions import PreventUpdate
-import json
 import pandas as pd
 import numpy as np
 
-dash.register_page(__name__, path="/print_page", top_nav=True, order=11)
+dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
 
 ## Callback ##
+
+
 @callback(
-    Output('ptable-financial-information', 'children'),
-    Output('ptable-financial-metrics', 'children'),
-    Output('ptable-financial-indicators', 'children'),
-    Output('ptable-container-11ab', 'children'),
-    Output('pdisplay-attendance', 'style'),
-    Output('ptable-container-11cd', 'children'),
-    Output('ptable-container-14ab', 'children'),
-    Output('ptable-container-14cd', 'children'),
-    Output('ptable-container-14ef', 'children'),
-    Output('ptable-container-14g', 'children'),
-    Output('ptable-container-15abcd', 'children'),
-    Output('ptable-container-16ab', 'children'),
-    Output('ptable-container-16cd', 'children'),
-    Output('pdisplay-k8-metrics', 'style'),
-    Output('ptable-container-17ab', 'children'),
-    Output('ptable-container-17cd', 'children'),
-    Output('pdisplay-hs-metrics', 'style'),
-    Output('ptable-container-ahs-113', 'children'),
-    Output('ptable-container-ahs-1214', 'children'),    
-    Output('pdisplay-ahs-metrics', 'style'),
-    Output('ptable-container-empty', 'children'),
-    Output('pdisplay-empty-table', 'style'),
-    Output('ptable-org-compliance', 'children'),
-    Input('charter-dropdown', 'value'),
-    Input('year-dropdown', 'value'),
-    Input('dash-session', 'data')
+    Output("selected-value", "value"),
+    Input("go-print", "n_clicks"),
+    Input("school-checklist", "value"),
 )
-def print_page(school, year, data):
-    if not school:
+def print_page(click, checklist):
+    if click is None:
         raise PreventUpdate
+    selected = "ALL"
+    print(click)
+    if click:
+        selected = checklist
+
+    return selected
+
 
 label_style = {
-    'height': 'auto',
-    'lineHeight': '1.5em',
-    'backgroundColor': '#6783a9',
-    'fontSize': '12px',
-    'fontFamily': 'Roboto, sans-serif',
-    'color': '#ffffff',
-    'textAlign': 'center',
-    'fontWeight': 'bold',
-    'paddingBottom': '5px',
-    'paddingTop': '5px'
+    "height": "auto",
+    "lineHeight": "1.5em",
+    "backgroundColor": "#6783a9",
+    "fontSize": "12px",
+    "fontFamily": "Roboto, sans-serif",
+    "color": "#ffffff",
+    "textAlign": "center",
+    "fontWeight": "bold",
+    "paddingBottom": "5px",
+    "paddingTop": "5px",
+    "paddingRight": "10px",
+    "paddingLeft": "5px",
 }
-
+# TODO: Get rid of all subnav buttons when loading print page
 layout = html.Div(
+    [
+        html.Div(
             [
                 html.Div(
                     [
                         html.Div(
                             [
-                                html.Label("Select Pages to Print:", style=label_style),
-                                html.Div(
-                                    dcc.Checklist(
-                                        options=[
-                                            {'label': 'About', 'value': 'AB'},
-                                            {'label': 'Financial Information', 'value': 'FI'},
-                                            {'label': 'Financial Metrics', 'value': 'FM'},
-                                            {'label': 'Financial Analysis', 'value': 'FA'},
-                                            {'label': 'Organizational Compliance', 'value': 'OC'},
-                                            {'label': 'Academic Information', 'value': 'AI'},
-                                            {'label': 'Academic Metrics', 'value': 'AM'},
-                                            {'label': 'All', 'value': 'ALL'},                                            
-                                        ],
-                                        value=['ALL']
-                                        ),
+                                html.Label(
+                                    "Select Pages to Print:",
+                                    style=label_style,
                                 ),
+                                html.Button("Print", id="go-print", n_clicks=0),
                             ],
-                            className = 'pretty_container twelve columns',
+                            # className="bare-container--center four columns row",
                         ),
                     ],
-                    className = 'bare_container twelve columns',
+                    className="bare-container--center twelve columns",
                 ),
-        ],
-        id='mainContainer',
-        style={
-            'display': 'flex',
-            'flexDirection': 'column'
-        }
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                dcc.Checklist(
+                                    options=[
+                                        {"label": "About", "value": "AB"},
+                                        {
+                                            "label": "Financial Information",
+                                            "value": "FI",
+                                        },
+                                        {"label": "Financial Metrics", "value": "FM"},
+                                        {"label": "Financial Analysis", "value": "FA"},
+                                        {
+                                            "label": "Organizational Compliance",
+                                            "value": "OC",
+                                        },
+                                        {
+                                            "label": "Academic Information",
+                                            "value": "AI",
+                                        },
+                                        {"label": "Academic Metrics", "value": "AM"},
+                                        {"label": "All", "value": "ALL"},
+                                    ],
+                                    inline=True,
+                                    value=["ALL"],
+                                    id="school-checklist",
+                                ),
+                            ],
+                            className="bare-container--center four columns row",
+                        ),
+                        html.Div(id="selected-value"),
+                    ],
+                    className="bare-container--center twelve columns",
+                ),
+            ],
+
+        ),
+    ],
+    id="main-container",
 )

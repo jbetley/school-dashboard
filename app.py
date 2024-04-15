@@ -1087,6 +1087,41 @@ def navigation(
     # [School][Network] subnavigation - those are currently part of the individual
     # pages)
     # TODO: Move Financial Tab [School][Network] subnavigation here
+    
+    # hide all subnavigation
+    elif "print_page" in current_page:
+
+        info_nav_container = {"display": "none"}
+        info_subnav_container = {"display": "none"}
+        info_type_container = {"display": "none"}
+        info_category_container = {"display": "none"}
+
+        info_type_options = []
+        info_type_value = ""
+
+        info_category_options = []
+        info_category_value = ""
+
+        # analysis multi
+        analysis_multi_hs_group_options = []
+        analysis_multi_hs_group_value = ""
+        analysis_multi_hs_group_container = {"display": "none"}
+
+        analysis_multi_subject_options = []
+        analysis_multi_subject_value = ""
+        analysis_multi_subject_container = {"display": "none"}
+
+        analysis_multi_category_options = []
+        analysis_multi_category_value = ""
+        analysis_multi_category_container = {"display": "none"}
+
+        analysis_multi_subcategory_options = []
+        analysis_multi_subcategory_value = ""
+        analysis_multi_subcategory_container = {"display": "none"}
+
+        analysis_nav_container = {"display": "none"}
+        analysis_subnav_container = {"display": "none"}
+
     else:
         # analysis both
         analysis_type_value = "k8"
@@ -1486,7 +1521,6 @@ def layout():
                         id="analysis-navigation-container",
                         className="no-print",
                     ),
-                    # dash page content
                     dash.page_container,
                 ],
             ),
