@@ -13,9 +13,7 @@ import json
 import pandas as pd
 import numpy as np
 
-# from app import app
-# np.warnings.filterwarnings('ignore')
-# dash.register_page(__name__, top_nav=True, order=8)
+dash.register_page(__name__, path="/print_page", top_nav=True, order=11)
 
 ## Callback ##
 @callback(

@@ -1306,6 +1306,12 @@ def layout():
                                                         className="tab",
                                                         active="exact",
                                                     ),
+                                                    dbc.NavLink(
+                                                        "Print Pages",
+                                                        href="/print_page",
+                                                        className="tab",
+                                                        active="exact",
+                                                    ),                                                    
                                                     #     dbc.NavLink(
                                                     #         page["name"],
                                                     #         href=page["path"],
