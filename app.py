@@ -1196,10 +1196,10 @@ def layout():
                             html.Div(
                                 [
                                     html.Div(
-                                        [  # cannot get htmlFor to work here
+                                        [
                                             html.Label(
                                                 "Select School:"
-                                            ),  # htmlFor = "charter-dropdown"),
+                                            ),
                                         ],
                                         className="dash-label",
                                         id="charter-dropdown-label",
@@ -1234,13 +1234,13 @@ def layout():
                                         className="year-dropdown-control",
                                     ),
                                 ],
-                                className="bare-container--slim two columns no-print",
+                                className="bare-container--slim two columns",
                             ),
                         ],
-                        className="row--fixed--top no-print",
+                        className="row--fixed--top  no-print",
                     ),
                 ],
-                className="bare-container--flex twelve columns no-print",
+                className="bare-container--flex twelve columns",
             ),
             html.Div(
                 [

@@ -1,40 +1,29 @@
+# LOCAL: data files
+data/
+ignore
+*.csv
+*.log
+.DS_Store
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+vv
+
+# IDE
+.idea/*
+.vscode/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+.mypy_cache/
 
 # Unit test / coverage reports
 htmlcov/
@@ -46,14 +35,58 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-*.py,cover
 .hypothesis/
 .pytest_cache/
-cover/
 
-# Translations
-*.mo
-*.pot
+# Distribution / packaging
+.Python
+build/
+dash/deps/
+dash/html/*
+!dash/html/.gitkeep
+dash/dcc/*
+!dash/dcc/.gitkeep
+dash/dash_table/*
+!dash/dash_table/.gitkeep
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+node_modules/
+.npm
+npm-debug*
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+dash_generator_test_component_standard/
+dash_generator_test_component_nested/
+dash_test_components/
+dash_generator_test_component_typescript/
+inst/
+man/
+R/
+.Rbuildignore
+.Rdata
+.Rhistory
+DESCRIPTION
+NAMESPACE
+digest.json
+VERSION.txt
 
 # Django stuff:
 *.log
@@ -77,6 +110,8 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+*.ipynb_notebooks
+*.ipynb
 
 # IPython
 profile_default/
@@ -119,16 +154,6 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-virtualenvs/
-
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -153,19 +178,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Vscode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-
-# Local History for Visual Studio Code
-.history/
-
-# Built Visual Studio Code Extensions
-*.vsix
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

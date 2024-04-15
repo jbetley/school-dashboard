@@ -441,7 +441,7 @@ def layout():
                     html.Div(
                         [
                             html.Div(""),
-                            html.Div(id="update-table", children=[]),
+                            html.Div(id="update-table", children=[], className="no-print"),
                             html.Div(
                                 [
                                     html.Div(
@@ -452,9 +452,10 @@ def layout():
                                             ),
                                             html.Div(id="enroll-table"),
                                             html.P(""),
-                                            html.P("Demographic data is measured at a separate point and time than \
-                                                ADM, with ADM counted in September and February and demographic data counted \
-                                                with the October PE. The totals will not generally align.",
+                                            html.P("Demographic data comes from the DOE-PE (Pupil Enrollment), DOE-LM (Language Minority and Immigrant Students), \
+                                                   and DOE-SE (Special Education) reports submitted by schools in October and December. ADM is collected from the \
+                                                   DOE-ME (Membership) report, which is now submitted in October (historically September) and February. Due to the \
+                                                   differing reporting periods, demographic data and ADM data does not always perfectly align.",
                                                 style = {
                                                     "color": "#6783a9",
                                                     "fontSize": 10,
@@ -493,6 +494,7 @@ def layout():
                                         children=[],
                                     ),
                                 ],
+                                className = "pagebreak-after",
                             ),
                             html.Div(
                                 [

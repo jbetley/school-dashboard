@@ -19,7 +19,7 @@ color = [
     "#83941f",
     "#f0c33b",
     "#bc986a",
-    "#96b8db",
+    "#96b8db"
 ]
 
 subject = ["Math", "ELA"]

@@ -3,7 +3,7 @@
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     03/25/24
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -21,7 +21,6 @@ from .load_data import (
     current_academic_year,
     get_school_index,
     get_school_coordinates,
-    get_ahs_averages,
     get_academic_data
 )
 
@@ -559,11 +558,6 @@ def update_academic_analysis_single_year(
                     raw_k8_analysis_data["Year"] == numeric_year
                 ].copy()
             k8_analysis_data = k8_analysis_data.reset_index(drop=True)
-
-            # Drop columns for all categories where the values are NaN for
-            # the school
-            # school_idx = k8_analysis_data.index[k8_analysis_data["School ID"] == school_id].tolist()[0]
-            # k8_analysis_data = k8_analysis_data.loc[:, ~k8_analysis_data.iloc[school_idx].isna()]
 
             # Force '***' to NaN for numeric columns
             numeric_columns = [

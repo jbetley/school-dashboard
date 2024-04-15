@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     03/25/24
 
 import pandas as pd
 import numpy as np
@@ -84,8 +84,12 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
         y += 3
         z += 3
 
-    attendance_metrics.insert(loc=0, column="Category",  value=["1.1.a. Attendance Rate", "(Chronic Absenteeism %)"])
-
+    # Chronic Absenteeism is not measured for AHS
+    if school_type == "AHS":
+        attendance_metrics.insert(loc=0, column="Category",  value=["1.1.a. Attendance Rate"])
+    else:
+        attendance_metrics.insert(loc=0, column="Category",  value=["1.1.a. Attendance Rate", "(Chronic Absenteeism %)"])
+    
     # drop corp rates
     attendance_metrics = attendance_metrics.loc[
         :, ~attendance_metrics.columns.str.contains("Corp")
@@ -273,9 +277,6 @@ def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Da
     comparison_data = merged_comparison_data.merge(comparison_result, on="Category", how="left")
 
     comparison_data = comparison_data[final_cols]
-
-    # TODO: Test removal of this
-    # comparison_data = conditional_fillna(comparison_data)
 
     return year_over_year_data, comparison_data
 

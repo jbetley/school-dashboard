@@ -739,7 +739,12 @@ def layout():
             ),
             html.Div(
                 [
-                    html.Div(id="financial-metrics-table", children=[]),
+                html.Div(
+                    [                    
+                        html.Div(id="financial-metrics-table", children=[]),
+                    ],
+                    className="pagebreak-after",
+                    ),                    
                     html.Div(
                         [
                             html.Div(id="financial-indicators-table", children=[]),

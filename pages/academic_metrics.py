@@ -233,11 +233,10 @@ def update_academic_metrics(school: str, year: str):
                 table_14ef, table_14ef, metric_14ef_data.columns
             )
 
-# TODO: IREAD NOT SHOWING 2019-2021 for 21sty C
             # iread_data - combined_delta has all IREAD data, but we
             # currently only use Total
             iread_data = combined_delta[
-                combined_delta["Category"] == "Total|IREAD"
+                combined_delta["Category"] == "Total|IREAD Proficient %"
             ].copy()
 
             if len(iread_data.index) > 0:
@@ -246,7 +245,6 @@ def update_academic_metrics(school: str, year: str):
                 ] = "IREAD Proficient %"
 
                 iread_data = iread_data.reset_index(drop=True)
-
                 iread_data = calculate_iread_metrics(iread_data)
 
                 metric_14g_label = [
@@ -291,10 +289,6 @@ def update_academic_metrics(school: str, year: str):
             # table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
             # table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
             
-            print(combined_delta)
-            filename99 = ("combined_delta.csv")
-            combined_delta.to_csv(filename99, index=False)
-
             metric_16a_data = combined_delta[
                 (combined_delta["Category"].str.contains("|".join(category)))
                 & (combined_delta["Category"].str.contains("ELA"))
@@ -320,7 +314,7 @@ def update_academic_metrics(school: str, year: str):
                 "subgroup compared with traditional school corporation.",
             ]
             metric_16b_data = convert_to_svg_circle(metric_16b_data)
-            print(metric_16b_data)
+
             table_16b = create_metric_table(metric_16b_label, metric_16b_data)
 
             table_container_16ab = set_table_layout(
@@ -680,7 +674,7 @@ def layout():
                     ),
                     html.Div(
                         [
-                            html.Div(id="table-container-11cd", children=[]),
+                            html.Div(id="table-container-11cd", children=[], className ="pagebreak-after"),
                             html.Div(id="table-container-14ab", children=[]),
                             html.Div(id="table-container-14cd", children=[]),
                             html.Div(id="table-container-14ef", children=[]),

@@ -373,7 +373,7 @@ def layout():
                 className="row",
             ),
             html.Div(""),
-            html.Div(id="org-compliance-table"),
+            html.Div(id="org-compliance-table", className = "pagebreak-after"),
             html.Div(
                 [
                     html.Div(
