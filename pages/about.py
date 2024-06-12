@@ -262,7 +262,8 @@ def update_about_page(year: str, school: str):
 
             subgroup_fig = make_demographics_bar_chart(subgroup_merged_data)
 
-    # ADM Values
+    ## ADM Values ##
+    
     # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is known
     # for the year. So we check the first data column and if ADM Avg has data we
     # use it. If there is no financial_data, we use IDOE's adm- get_adm()- file which

@@ -132,7 +132,7 @@ def no_data_fig_label(
                                 [
                                     html.Label(label, className="label__header"),
                                     dcc.Graph(
-                                        figure=fig, 
+                                        figure=fig,
                                         config={
                                             "displayModeBar": False,
                                             "showAxisDragHandles": False,
@@ -157,7 +157,7 @@ def no_data_fig_label(
                 [
                     html.Label(label, className="label__header"),
                     dcc.Graph(
-                        figure=fig, 
+                        figure=fig,
                         config={
                             "displayModeBar": False,
                             "showAxisDragHandles": False,
@@ -186,6 +186,10 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
 
     raw_data = df.copy()
 
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None) 
+
+    print(raw_data)
     bar_colors = ["#74a2d7", "#df8f2d"]
 
     total_enrollment = raw_data["Total Enrollment"].tolist()
@@ -193,31 +197,23 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
     raw_data.drop("Total Enrollment", axis=1, inplace=True)
 
     cols = [i for i in raw_data.columns if i not in ["Corporation Name"]]
-    
+
     for col in cols:
         raw_data[col] = pd.to_numeric(raw_data[col], errors="coerce")
 
     data = raw_data.set_index("Corporation Name").T
-
+    print(data)
     # Calculate Percentage
     for i in range(0, 2):
-        data.iloc[:, i] = (data.iloc[:, i] / total_enrollment[i])
+        data.iloc[:, i] = data.iloc[:, i] / total_enrollment[i]
 
     missing_categories = data[
-        (
-            (data.iloc[:, 0] < 0.005)
-            | (pd.isnull(data.iloc[:, 0]))
-        )
+        ((data.iloc[:, 0] < 0.005) | (pd.isnull(data.iloc[:, 0])))
     ]
 
     # Drop rows that meet the above condition
     data = data.drop(
-        data[
-            (
-                (data.iloc[:, 0] < 0.005)
-                | (pd.isnull(data.iloc[:, 0]))
-            )
-        ].index
+        data[((data.iloc[:, 0] < 0.005) | (pd.isnull(data.iloc[:, 0])))].index
     )
 
     data = data.fillna(0)
@@ -244,18 +240,8 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
 
     fig.update_layout(
         margin=dict(l=10, r=40, t=60, b=70, pad=0),
-        font=dict(
-            family="Inter, sans-serif",
-            color="#6783a9",
-            size=11
-        ),
-        legend=dict(
-            yanchor="top",
-            xanchor="center",
-            orientation="h",
-            x=0.4,
-            y=1.2
-        ),
+        font=dict(family="Inter, sans-serif", color="#6783a9", size=11),
+        legend=dict(yanchor="top", xanchor="center", orientation="h", x=0.4, y=1.2),
         bargap=0.15,
         bargroupgap=0,
         height=400,
@@ -263,7 +249,7 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         uniformtext_minsize=9,
-        uniformtext_mode="hide"
+        uniformtext_mode="hide",
     )
 
     # add text traces
@@ -278,9 +264,13 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
     # is not NaN; and 2) place the text outside the bar unless the value of x is > .9
     fig.for_each_trace(
         lambda t: t.update(
-            textfont_color=np.where(np.isnan(t.x), "#ffffff", np.where((t.x > .9), "#ffffff", t.marker.color)),
-            textposition=np.where(t.x > .9, "inside", "outside"),
-            textfont_size=10
+            textfont_color=np.where(
+                np.isnan(t.x),
+                "#ffffff",
+                np.where((t.x > 0.9), "#ffffff", t.marker.color),
+            ),
+            textposition=np.where(t.x > 0.9, "inside", "outside"),
+            textfont_size=10,
         )
     )
 
@@ -294,10 +284,7 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
     )
 
     fig.update_yaxes(
-        ticks="outside",
-        tickcolor="#a9a9a9",
-        title="",
-        tickfont = dict(size=11)
+        ticks="outside", tickcolor="#a9a9a9", title="", tickfont=dict(size=11)
     )
 
     # Uncomment to add hover
@@ -308,9 +295,7 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
         anno_txt = ", ".join(missing_categories.index.values.astype(str))
 
         fig.add_annotation(
-            text=(
-                f"Less than .05% of student population: " + anno_txt + "."
-            ),
+            text=(f"Less than .05% of student population: " + anno_txt + "."),
             showarrow=False,
             x=-0.1,
             y=-0.25,
@@ -327,7 +312,9 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
     return fig
 
 
-def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame) -> list:
+def make_stacked_bar(
+    values: pd.DataFrame, label: str, annotations: pd.DataFrame
+) -> list:
     """
     Create a layout with a 100% stacked bar chart showing proficiency percentages for
     all academic categories
@@ -341,7 +328,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
         list: a plotly dash html layout in the form of a list containing a string and a stacked bar
         chart figure (px.bar)
     """
-   
+
     data = values.copy()
     stacked_color = ["#df8f2d", "#ebbb81", "#96b8db", "#74a2d7"]
 
@@ -399,8 +386,9 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
         uniformtext_mode="hide",
     )
 
-    # TODO: remove hover 'title' (currently the subcategory) and, if possible, replace with: 'Total Tested: {z}'
-    # https://stackoverflow.com/questions/59057881/how-to-customize-hover-template-on-with-what-information-to-show
+    # TODO: remove hover 'title' (currently the subcategory) and, if possible,
+    # TODO: replace with: 'Total Tested: {z}'. Not currently possible
+    # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/21
     # fig.update_layout(hovermode='x unified')
 
     fig.update_traces(
@@ -420,7 +408,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
 
     # add annotations as a Span element to layout if they exist
     if not annotations.empty:
-
         annotations = annotations.reset_index(drop=True)
 
         # create string from annotations df (yeah, yeah, its not vectorized,
@@ -460,9 +447,7 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
                                 "Insufficient n-size for Total Proficiency:",
                                 className="category-string__label",
                             ),
-                            html.Span(
-                                annotation_string, className="category-string"
-                            ),
+                            html.Span(annotation_string, className="category-string"),
                         ],
                         style={"marginTop": -10, "marginBottom": -10},
                     ),
@@ -471,7 +456,6 @@ def make_stacked_bar(values: pd.DataFrame, label: str, annotations: pd.DataFrame
         ]
 
     else:
-
         fig_layout = [
             html.Div(
                 [
@@ -510,7 +494,7 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
     data = values.copy()
 
     school_cols = [i for i in data.columns if i not in ["Year"]]
- 
+
     if (len(school_cols)) > 0 and len(data.index) > 0:
         data, no_data_string = check_for_no_data(data)
 
@@ -786,7 +770,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
     if (len(cols)) > 0:
-
         # NOTE: the "insufficient n-size" and "no data" information is usually displayed
         # below the fig in the layout. However, given the size of the figs, it makes them
         # way too cluttered. So it is currently removed. Would prefer to somehow add this
@@ -799,7 +782,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
         # first check, if dataframe has more than one column, but not data
         # to display ("",NaN, or "***"), we catch it here
         if not data.empty:
-
             for col in cols:
                 data[col] = pd.to_numeric(data[col], errors="coerce")
 
@@ -820,7 +802,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             # If data_max is > 1 then it is WIDA data (all other data are decimals)
             if data_max > 1:
-
                 # make sure Year is a str and replace all negative numbers with 0
                 # data[data < 0] = 0
                 data["Year"] = data["Year"].astype(str)
@@ -858,10 +839,9 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             # WIDA is only data where the max will be > 1
             elif data_max > 1:
-
                 # set lower bound based on min value in df
                 minx = data.astype(float).min().min()
-                range_vals = [minx - .5, 5]
+                range_vals = [minx - 0.5, 5]
                 tick_format = ".1f"
                 y_value = -0.3
                 d_tick = 1
@@ -1013,6 +993,7 @@ def make_growth_chart(
     data_me.columns = data_me.columns.map(lambda x: x.split("|")[0])
     data_162.columns = data_162.columns.map(lambda x: x.split("|")[0])
 
+    # TODO: convert to use regular px.line rather than subplots
     fig = make_subplots()
 
     if "Growth" in label:
@@ -1225,8 +1206,8 @@ def make_bar_chart(
                 font_color="steelblue",
                 font_size=11,
                 font_family="Inter, sans-serif",
-                align="left"
-            )
+                align="left",
+            ),
         )
 
         fig.update_traces(
@@ -1370,7 +1351,7 @@ def make_group_bar_chart(
             align="left",
         ),
         uniformtext_minsize=9,
-        uniformtext_mode="hide"
+        uniformtext_mode="hide",
     )
 
     fig.update_traces(
@@ -1383,16 +1364,18 @@ def make_group_bar_chart(
                 ]
             ]
         ),
-        insidetextanchor="end"
+        insidetextanchor="end",
     )
 
     # switch text position and color based on size of bar (under 5%).
     # color "0" values black
     fig.for_each_trace(
         lambda t: t.update(
-            textposition=np.where(t.y <= .05, "outside", "inside"),
-            textfont_color=np.where(t.y == 0, "#999999", np.where(t.y <= .05, "#6783a9", "#ffffff")),
-            textfont_size=10
+            textposition=np.where(t.y <= 0.05, "outside", "inside"),
+            textfont_color=np.where(
+                t.y == 0, "#999999", np.where(t.y <= 0.05, "#6783a9", "#ffffff")
+            ),
+            textfont_size=10,
         )
     )
 

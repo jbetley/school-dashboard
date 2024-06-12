@@ -915,6 +915,12 @@ button:not(:disabled) {
   cursor: pointer;
 }
 
+input[type=checkbox] {
+  vertical-align: middle;
+  position: relative;
+  bottom: 1px;
+}
+
 .input-group .btn {
   position: relative;
   z-index: 2;
@@ -922,6 +928,13 @@ button:not(:disabled) {
 
 .input-group .btn:focus {
   z-index: 5;
+}
+
+#school-checklist-list, #school-checklist-all {
+  font-family: 'Inter', sans-serif;
+  color: steelblue;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .btn {
@@ -1053,6 +1066,11 @@ button:not(:disabled) {
   display: flex;
   flex-direction: column;
 } */
+
+#print-button {
+  width: 50% !important;
+  margin-top: 10px;
+}
 
 /** Nav and SubNav Links **/
 /* TODO: Not working consistently across pages - doesn't stay active when selected */
@@ -1203,6 +1221,7 @@ legend {
 }
 
 label>#text {
+
   padding-bottom: 12px;
 }
 

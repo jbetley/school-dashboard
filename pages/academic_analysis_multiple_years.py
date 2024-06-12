@@ -202,7 +202,7 @@ def update_academic_analysis_multiple_years(
         or (school_type == "K12" and analysis_type_value == "hs")
     ):
         k8_analysis_multi_empty_container = {"display": "none"}
-        year_over_year_grade = []  # type:list
+        year_over_year_grade = []  # type: list
 
         analysis__multi_notes_label = "Comparison Data - High School"
         analysis__multi_notes_string = "Use this page to view SAT and Graduation Rate comparison data for all ethnicities, \

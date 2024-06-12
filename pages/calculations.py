@@ -35,9 +35,7 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     ]
 
     # \u2014 is an em dash (—)
-    data[fill_with_dash] = data[fill_with_dash].fillna(
-        value="\u2014"
-    )  
+    data[fill_with_dash] = data[fill_with_dash].fillna(value="\u2014")
 
     fill_with_no_data = [
         i
@@ -129,7 +127,7 @@ def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
     for cohort in cohorts:
         if cohort in data.columns:
             cat_sub = cohort.split("|Cohort Count")[0]
-            data[cat_sub + "|Graduation Rate"] = calculate_percentage(            
+            data[cat_sub + "|Graduation Rate"] = calculate_percentage(
                 data[cat_sub + "|Graduates"], data[cohort]
             )
 
@@ -153,7 +151,6 @@ def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
 
     for test in tested:
         if test in data.columns:
-
             # get Category + Subject string
             cat_sub = test.split(" Total Tested")[0]
             data[cat_sub + " Benchmark %"] = calculate_percentage(
@@ -177,7 +174,7 @@ def calculate_proficiency(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: the same dataframe with "Proficient %" column added.
     """
     data = df.copy()
-    
+
     # Get a list of all "Total Tested" columns except those for ELA & Math
     tested_categories = data[
         data.columns[data.columns.str.contains(r"Total Tested|IREAD Test N")]
@@ -210,7 +207,6 @@ def calculate_proficiency(df: pd.DataFrame) -> pd.DataFrame:
             ):
                 data = data.drop([tested, total_proficient], axis=1)
             else:
-
                 data[proficiency] = calculate_percentage(
                     data[total_proficient], data[tested]
                 )
@@ -241,10 +237,12 @@ def recalculate_total_proficiency(
 
     # TODO: I put this in here temporarily for some reason - I think the commented out line is the
     # TODO: correct one, but need to test to be sure.
-    if "School Name" not in revised_data:       # remove
-        revised_data["School Name"] = "TEMP"    # remove
-    #revised_totals["School ID"] = revised_data["School ID"]
-    revised_totals[["Year","School ID","School Name"]] = revised_data[["Year", "School ID","School Name"]] # remove
+    if "School Name" not in revised_data:  # remove
+        revised_data["School Name"] = "TEMP"  # remove
+    # revised_totals["School ID"] = revised_data["School ID"]
+    revised_totals[["Year", "School ID", "School Name"]] = revised_data[
+        ["Year", "School ID", "School Name"]
+    ]  # remove
 
     numeric_columns = [
         c
@@ -273,7 +271,7 @@ def recalculate_total_proficiency(
     ela_proficiency_sum = adj_corp_ela_prof.sum(axis=1)
     ela_test_sum = adj_corp_ela_test.sum(axis=1)
 
-    revised_totals["Total|ELA Proficient %"] = ela_proficiency_sum/ela_test_sum
+    revised_totals["Total|ELA Proficient %"] = ela_proficiency_sum / ela_test_sum
 
     adj_corp_math_prof = revised_data[revised_data.columns.intersection(math_prof)]
     adj_corp_math_test = revised_data[revised_data.columns.intersection(math_test)]
@@ -281,12 +279,14 @@ def recalculate_total_proficiency(
     math_proficiency_sum = adj_corp_math_prof.sum(axis=1)
     math_test_sum = adj_corp_math_test.sum(axis=1)
 
-    revised_totals["Total|Math Proficient %"] = math_proficiency_sum/math_test_sum
+    revised_totals["Total|Math Proficient %"] = math_proficiency_sum / math_test_sum
 
     return revised_totals
 
 
-def calculate_year_over_year(current_year: pd.Series, previous_year: pd.Series) -> npt.NDArray:
+def calculate_year_over_year(
+    current_year: pd.Series, previous_year: pd.Series
+) -> npt.NDArray:
     """
     Calculates year_over_year differences, accounting for string representation ("***")
     of insufficent n-size (there is available data, but not enough of it to show under privacy laws).
@@ -469,6 +469,7 @@ def round_percentages(percentages: list) -> list:
     # of the numbers should bet at or near (1). To be safe we test
     # to see if sum is less than 2. If it is, we multiply all of
     # the numbers in the list by 100 (e.g., 57, 90)
+    print(percentages)
 
     if sum(percentages) < 2:
         percentages = [x * 100 for x in percentages]
@@ -554,7 +555,7 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
     to "***"(insufficient n-size), and turns the results into a single string,
     grouped by year, where duplicates have one or more years in parenthesis.
     E.g., "White (2021, 2022); Hispanic, Multiracial (2019)"
-    
+
     NOTE: This turned out to be more complicated that I thought. The below solution
     seems overly convoluted, but works. Felt cute, may refactor later.
 

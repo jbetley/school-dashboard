@@ -99,7 +99,7 @@ server.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
 )
 server.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 server.config.update(SECRET_KEY=os.getenv("SECRET_KEY"))
-#server.config['SECRET_KEY'] = "291a47103f3cd8fc26d05ffc7b31e33f73ca3d459d6259bd"
+# server.config['SECRET_KEY'] = "291a47103f3cd8fc26d05ffc7b31e33f73ca3d459d6259bd"
 
 bcrypt = Bcrypt()
 
@@ -108,6 +108,7 @@ db = SQLAlchemy(server)
 login_manager = LoginManager()
 login_manager.init_app(server)
 login_manager.login_view = "/login"
+
 
 # each table in the user database needs a class to be created for it
 # using the db.Model, all db columns must be identified by name
@@ -230,6 +231,7 @@ app = dash.Dash(
 
 # Top Level Navigation #
 
+
 # Selected School Dropdown - shows a single school if a 'school' login is used, an associated
 # group of schools if a 'network' login is used, and all schools if 'admin' login is used.
 @callback(
@@ -303,6 +305,7 @@ def set_dropdown_value(charter_options):
 # All other pages use 'financial_info_dropdown_years' which is the same as
 # 'financial_analysis_dropdown_years' except the quarterly data string (Q#) is removed.
 
+
 # "url" and "hidden" are used to track the currently selected url
 @callback(
     Output("year-dropdown", "options"),
@@ -314,14 +317,18 @@ def set_dropdown_value(charter_options):
     Input("analysis-type-radio", "value"),
     Input("year-dropdown", "value"),
     State("year-dropdown", "value"),
-    Input("input-state", "data")
+    Input("input-state", "data"),
 )
 def set_year_dropdown_options(
-    school_id: str, current_page: str, analysis_type_value: str,
-    year_value: str, year_state: str, input_state: dict 
+    school_id: str,
+    current_page: str,
+    analysis_type_value: str,
+    year_value: str,
+    year_state: str,
+    input_state: dict,
 ):
     max_dropdown_years = 5
-    
+
     current_page = current_page.rsplit("/", 1)[-1]
 
     # on initial login or history clear, this will be Nonetype
@@ -334,12 +341,11 @@ def set_year_dropdown_options(
     # and current as the value. if input_state is None, there is no previous
     # history (e.g., the browser history has been deleted).
     if input_state:
-
         # input_state can exist with a None previousyear, so need to
         # make sure it has a value for the initial test below
         if not input_state["previousyear"]:
             input_state["previousyear"] = input_state["currentyear"]
-        
+
         # there are two pages (financial_analysis and academic_growth) that
         # will almost always lag behind all other data in the respective
         # category (financial or academic) by at least a year. the year
@@ -353,10 +359,11 @@ def set_year_dropdown_options(
         # previous page and previous year and switches back to previous year
         # in that instance.
 
-        if (input_state["currentpage"] == "financial_analysis" or \
-            input_state["currentpage"] == "academic_information_growth") and \
-            int(input_state["currentyear"]) < int(input_state["previousyear"]):
-                input_state["currentyear"] = input_state["previousyear"]
+        if (
+            input_state["currentpage"] == "financial_analysis"
+            or input_state["currentpage"] == "academic_information_growth"
+        ) and int(input_state["currentyear"]) < int(input_state["previousyear"]):
+            input_state["currentyear"] = input_state["previousyear"]
         else:
             input_state["currentyear"] = year_value
             input_state["previousyear"] = input_state["currentyear"]
@@ -366,7 +373,7 @@ def set_year_dropdown_options(
 
         previous_page = input_state["previouspage"]
 
-    else: # set input state defaults
+    else:  # set input state defaults
         input_state = {}
         input_state["currentyear"] = year_value
         input_state["previousyear"] = input_state["currentyear"]
@@ -386,13 +393,15 @@ def set_year_dropdown_options(
 
     # guest schools use academic_dropdown_years
     if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
-        if "academic_information_growth" in current_page and \
-                selected_school["Guest"].values[0] != "Y":
+        if (
+            "academic_information_growth" in current_page
+            and selected_school["Guest"].values[0] != "Y"
+        ):
             years = get_academic_growth_dropdown_years(school_id)
         else:
             years = get_academic_dropdown_years(school_id, school_type)
     else:
-        years = get_financial_dropdown_years(school_id, input_state["currentpage"])  
+        years = get_financial_dropdown_years(school_id, input_state["currentpage"])
 
     # set year_value and year_options
     number_of_years_to_display = (
@@ -403,7 +412,7 @@ def set_year_dropdown_options(
 
     latest_year = dropdown_years[0]
     oldest_year = dropdown_years[-1]
- 
+
     # year_value for the dropdown is determined as follows:
     # 1) initial load: "latest_year"
     # 2) if selected year is earlier than the school's oldest year: "oldest_year"
@@ -428,16 +437,17 @@ def set_year_dropdown_options(
     elif "academic" in current_page and "academic" not in previous_page:
         year_value = str(latest_year)
 
-    elif "academic" not in current_page and "academic" in previous_page:        
+    elif "academic" not in current_page and "academic" in previous_page:
         year_value = str(latest_year)
 
-    elif previous_page == "financial_analysis" and \
-        ("financial" in current_page or "about" in current_page
-         or "organizational" in current_page):
+    elif previous_page == "financial_analysis" and (
+        "financial" in current_page
+        or "about" in current_page
+        or "organizational" in current_page
+    ):
         year_value = input_state["currentyear"]
 
-    elif previous_page == "academic_information_growth" and \
-        "academic" in current_page:
+    elif previous_page == "academic_information_growth" and "academic" in current_page:
         year_value = input_state["currentyear"]
 
     else:
@@ -554,7 +564,7 @@ def get_school_type(school_id: str, analysis_type_value: str):
     Input("analysis-multi-category-radio", "value"),
     Input("analysis-multi-subcategory-radio", "value"),
     Input("analysis-type-radio", "value"),
-    Input("analysis-multi-subject-radio", "value"),    
+    Input("analysis-multi-subject-radio", "value"),
     State("academic-information-category-radio", "options"),
     State("academic-information-category-radio", "value"),
     State("analysis-multi-subject-radio", "value"),
@@ -572,10 +582,10 @@ def navigation(
     analysis_multi_category_value: str,
     analysis_multi_subcategory_value: str,
     analysis_type_value: str,
-    analysis_multi_subject_value: str,   # Testing this
+    analysis_multi_subject_value: str,  # Testing this
     info_category_options_state: list,
     info_category_value_state: str,
-    analysis_multi_subject_state: str
+    analysis_multi_subject_state: str,
 ):
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
@@ -584,12 +594,11 @@ def navigation(
 
     type_options_default = [
         {"label": "K8", "value": "k8"},
-        {"label": "High School", "value": "hs"}
+        {"label": "High School", "value": "hs"},
     ]
 
     # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
-
         # hide academic analysis navigation
         analysis_type_value = "k8"
 
@@ -621,14 +630,14 @@ def navigation(
             {"label": "By Ethnicity", "value": "ethnicity"},
             {"label": "By Subgroup", "value": "subgroup"},
             {"label": "IREAD", "value": "iread"},
-            {"label": "WIDA", "value": "wida"}
+            {"label": "WIDA", "value": "wida"},
         ]
 
         category_options_growth = [
             {"label": "All Data", "value": "all"},
             {"label": "By Grade", "value": "grade"},
             {"label": "By Ethnicity", "value": "ethnicity"},
-            {"label": "By Subgroup", "value": "subgroup"}
+            {"label": "By Subgroup", "value": "subgroup"},
         ]
 
         # hide subnavigation if HS/AHS is selected
@@ -657,8 +666,10 @@ def navigation(
             # growth tab (while IREAD/WIDA is selected)
             if current_page == "academic_information_growth":
                 if info_category_value_state:
-                    if info_category_value_state == "wida" or \
-                        info_category_value_state == "iread":
+                    if (
+                        info_category_value_state == "wida"
+                        or info_category_value_state == "iread"
+                    ):
                         info_category_value = "all"
                     else:
                         info_category_value = info_category_value_state
@@ -671,11 +682,11 @@ def navigation(
                     if info_category_options_state == category_options_default:
                         info_category_options = category_options_growth
                     else:
-                      info_category_options = info_category_options_state
+                        info_category_options = info_category_options_state
                 else:
                     info_category_options = category_options_growth
-            
-            else:    # academic_information.py          
+
+            else:  # academic_information.py
                 if info_category_value_state:
                     info_category_value = info_category_value_state
                 else:
@@ -686,10 +697,10 @@ def navigation(
                     # switches to info page, change options to default
                     if info_category_options_state == category_options_growth:
                         info_category_options = category_options_default
-                    else: 
+                    else:
                         info_category_options = info_category_options_state
                 else:
-                    info_category_options = category_options_default 
+                    info_category_options = category_options_default
 
             info_category_container = {"display": "block"}
 
@@ -716,8 +727,10 @@ def navigation(
             # see above growth/info value/otions comment
             if current_page == "academic_information_growth":
                 if info_category_value_state:
-                    if info_category_value_state == "wida" or \
-                        info_category_value_state == "iread":
+                    if (
+                        info_category_value_state == "wida"
+                        or info_category_value_state == "iread"
+                    ):
                         info_category_value = "all"
                     else:
                         info_category_value = info_category_value_state
@@ -728,26 +741,24 @@ def navigation(
                     if info_category_options_state == category_options_default:
                         info_category_options = category_options_growth
                     else:
-                      info_category_options = info_category_options_state
+                        info_category_options = info_category_options_state
                 else:
                     info_category_options = category_options_growth
-            
-            else:    
-            
+
+            else:
                 if info_category_value_state:
                     info_category_value = info_category_value_state
                 else:
                     info_category_value = "all"
 
                 if info_category_options_state:
-
                     if info_category_options_state == category_options_growth:
                         info_category_options = category_options_default
-                    else: 
+                    else:
                         info_category_options = info_category_options_state
                 else:
-                    info_category_options = category_options_default 
- 
+                    info_category_options = category_options_default
+
             info_category_container = {"display": "block"}
 
         # there is also no subnavigation for a K12 school that
@@ -770,7 +781,6 @@ def navigation(
 
     # analysis_single_year.py and analysis_multiple_years.py
     elif "academic_analysis" in current_page:
-        
         # hide academic information navigation and subnavigation
         info_nav_container = {"display": "none"}
         info_subnav_container = {"display": "none"}
@@ -789,7 +799,6 @@ def navigation(
 
         # analysis_multiple_years.py
         if "analysis_multiple" in current_page:
-            
             # options and values for for HS/AHS/K12 (hs type)
             if (
                 school_type == "HS"
@@ -819,7 +828,6 @@ def navigation(
                 or school_type == "AHS"
                 or (school_type == "K12" and analysis_type_value == "hs")
             ):
-
                 if (
                     analysis_multi_hs_group_value == "Graduation Rate"
                     or analysis_multi_hs_group_value == ""
@@ -849,7 +857,6 @@ def navigation(
                         analysis_multi_category_value = "Total"
 
                 elif analysis_multi_hs_group_value == "SAT":
-                    
                     # change subject values to SAT specific descriptions
                     analysis_multi_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
@@ -885,17 +892,15 @@ def navigation(
                         analysis_multi_category_value = "Total"
 
             else:
-
                 # subject and categories for K8 and K12 (k8 type)
                 if school_type == "K8" or (
                     school_type == "K12" and analysis_type_value == "k8"
                 ):
-                    
                     # subject for both K8 and K12 schools (k8 type)
                     analysis_multi_subject_options = [
                         {"label": "ELA", "value": "ELA"},
                         {"label": "Math", "value": "Math"},
-                        {"label": "IREAD", "value": "IREAD"}
+                        {"label": "IREAD", "value": "IREAD"},
                     ]
 
                     analysis_multi_subject_container = {"display": "block"}
@@ -909,14 +914,15 @@ def navigation(
                     analysis_multi_category_container = {"display": "block"}
 
                     # ELA/Math and IREAD have different options
-                    if analysis_multi_subject_value == "IREAD" or \
-                        analysis_multi_subject_state == "IREAD":
-
+                    if (
+                        analysis_multi_subject_value == "IREAD"
+                        or analysis_multi_subject_state == "IREAD"
+                    ):
                         # IREAD Categories (substitute Total for Grade)
                         analysis_multi_category_options = [
                             {"label": "Total", "value": "Total"},
                             {"label": "Subgroup", "value": "Subgroup"},
-                            {"label": "Race/Ethnicity", "value": "Race/Ethnicity"}
+                            {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                         ]
 
                         # use existing value or set default subject value to "Total"
@@ -925,16 +931,18 @@ def navigation(
                             "Subgroup",
                             "Race/Ethnicity",
                         ]:
-                            analysis_multi_category_value = analysis_multi_category_value
+                            analysis_multi_category_value = (
+                                analysis_multi_category_value
+                            )
                         else:
                             analysis_multi_category_value = "Total"
-                    
+
                     else:
                         # ILEARN Categories (substitute Grade for Total)
                         analysis_multi_category_options = [
                             {"label": "Grade", "value": "Grade"},
                             {"label": "Subgroup", "value": "Subgroup"},
-                            {"label": "Race/Ethnicity", "value": "Race/Ethnicity"}
+                            {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                         ]
 
                         # use existing value or set default subject value to "Grade"
@@ -943,7 +951,9 @@ def navigation(
                             "Subgroup",
                             "Race/Ethnicity",
                         ]:
-                            analysis_multi_category_value = analysis_multi_category_value
+                            analysis_multi_category_value = (
+                                analysis_multi_category_value
+                            )
                         else:
                             analysis_multi_category_value = "Grade"
 
@@ -998,16 +1008,15 @@ def navigation(
                     analysis_multi_subcategory_container = {"display": "block"}
 
             elif analysis_multi_category_value == "Race/Ethnicity":
-
                 ethnicity = get_ethnicity(
                     school_id,
                     analysis_type_value,
                     analysis_multi_hs_group_value,
-                    analysis_multi_subject_value,           
+                    analysis_multi_subject_value,
                     year_value,
-                    years
+                    years,
                 )
-                
+
                 analysis_multi_subcategory_options = [
                     {"label": e, "value": e} for e in ethnicity
                 ]
@@ -1035,7 +1044,7 @@ def navigation(
                     analysis_multi_hs_group_value,
                     analysis_multi_subject_value,
                     year_value,
-                    years
+                    years,
                 )
                 subgroup.sort()
 
@@ -1087,10 +1096,9 @@ def navigation(
     # [School][Network] subnavigation - those are currently part of the individual
     # pages)
     # TODO: Move Financial Tab [School][Network] subnavigation here
-    
+
     # hide all subnavigation
     elif "print_page" in current_page:
-
         info_nav_container = {"display": "none"}
         info_subnav_container = {"display": "none"}
         info_type_container = {"display": "none"}
@@ -1213,7 +1221,7 @@ def layout():
         [
             dcc.Location(id="url", refresh="callback-nav"),
             html.Div(id="hidden", style={"display": "none"}),
-            dcc.Store(id="input-state", storage_type="local"), #"session"),
+            dcc.Store(id="input-state", storage_type="local"),  # "session"),
             html.Div(
                 [
                     html.Div(
@@ -1232,9 +1240,7 @@ def layout():
                                 [
                                     html.Div(
                                         [
-                                            html.Label(
-                                                "Select School:"
-                                            ),
+                                            html.Label("Select School:"),
                                         ],
                                         className="dash-label",
                                         id="charter-dropdown-label",
@@ -1346,7 +1352,7 @@ def layout():
                                                         href="/print_page",
                                                         className="tab",
                                                         active="exact",
-                                                    ),                                                    
+                                                    ),
                                                     #     dbc.NavLink(
                                                     #         page["name"],
                                                     #         href=page["path"],

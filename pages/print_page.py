@@ -4,8 +4,10 @@
 # author:   jbetley
 # rev:     10.31.22
 
+# TODO: https://community.plotly.com/t/exporting-multi-page-dash-app-to-pdf-with-entire-layout/37953/21
+
 import dash
-from dash import html, dash_table, Input, Output, callback, dcc
+from dash import html, dash_table, Input, Output, State, callback, ctx, dcc
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 from dash.exceptions import PreventUpdate
@@ -14,96 +16,82 @@ import numpy as np
 
 dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
 
-## Callback ##
+# TODO: SUBNAV still loading briefly
 
 
 @callback(
-    Output("selected-value", "value"),
-    Input("go-print", "n_clicks"),
-    Input("school-checklist", "value"),
+    Output("checklist-list", "value"),
+    Input("print-button", "n_clicks"),
+    [Input("checklist-all", "value")],
+    [State("checklist-list", "value")],
+    [State("checklist-list", "options")],
 )
-def print_page(click, checklist):
-    if click is None:
-        raise PreventUpdate
-    selected = "ALL"
-    print(click)
-    if click:
-        selected = checklist
+def select_all(print_button, select_all_value, select_list_value, select_list_options):
+    # TODO: why is triggered triggering print?
+    if ctx.triggered_id == "checklist-all":
+        print_button == 0  # need to reset button or it will trigger when All is selected
 
-    return selected
+        if select_all_value:
+            checked = [option["value"] for option in select_list_options]
+        else:
+            checked = []
+    else:
+        print(print_button)
+        checked = select_list_value
+
+    if print_button > 0:
+        if checked:
+            print("Printing:")
+            print(checked)
+
+    return checked
 
 
-label_style = {
-    "height": "auto",
-    "lineHeight": "1.5em",
-    "backgroundColor": "#6783a9",
-    "fontSize": "12px",
-    "fontFamily": "Roboto, sans-serif",
-    "color": "#ffffff",
-    "textAlign": "center",
-    "fontWeight": "bold",
-    "paddingBottom": "5px",
-    "paddingTop": "5px",
-    "paddingRight": "10px",
-    "paddingLeft": "5px",
-}
-# TODO: Get rid of all subnav buttons when loading print page
 layout = html.Div(
     [
         html.Div(
             [
                 html.Div(
                     [
-                        html.Div(
-                            [
-                                html.Label(
-                                    "Select Pages to Print:",
-                                    style=label_style,
-                                ),
-                                html.Button("Print", id="go-print", n_clicks=0),
+                        html.Label("Select Pages to Print:", className="label__header"),
+                        dcc.Checklist(
+                            id="checklist-all",
+                            options=[{"label": "All", "value": "ALL"}],
+                            value=[],
+                        ),
+                        dcc.Checklist(
+                            options=[
+                                {"label": "About", "value": "AB"},
+                                {
+                                    "label": "Financial Information",
+                                    "value": "FI",
+                                },
+                                {"label": "Financial Metrics", "value": "FM"},
+                                {"label": "Financial Analysis", "value": "FA"},
+                                {
+                                    "label": "Organizational Compliance",
+                                    "value": "OC",
+                                },
+                                {
+                                    "label": "Academic Information",
+                                    "value": "AI",
+                                },
+                                {"label": "Academic Metrics", "value": "AM"},
                             ],
-                            # className="bare-container--center four columns row",
+                            inline=True,
+                            value=[],
+                            id="checklist-list",
+                        ),
+                        html.Div(
+                            html.Button(
+                                "Print", id="print-button", n_clicks=0, className="btn"
+                            ),
                         ),
                     ],
-                    className="bare-container--center twelve columns",
-                ),
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                dcc.Checklist(
-                                    options=[
-                                        {"label": "About", "value": "AB"},
-                                        {
-                                            "label": "Financial Information",
-                                            "value": "FI",
-                                        },
-                                        {"label": "Financial Metrics", "value": "FM"},
-                                        {"label": "Financial Analysis", "value": "FA"},
-                                        {
-                                            "label": "Organizational Compliance",
-                                            "value": "OC",
-                                        },
-                                        {
-                                            "label": "Academic Information",
-                                            "value": "AI",
-                                        },
-                                        {"label": "Academic Metrics", "value": "AM"},
-                                        {"label": "All", "value": "ALL"},
-                                    ],
-                                    inline=True,
-                                    value=["ALL"],
-                                    id="school-checklist",
-                                ),
-                            ],
-                            className="bare-container--center four columns row",
-                        ),
-                        html.Div(id="selected-value"),
-                    ],
-                    className="bare-container--center twelve columns",
+                    className="pretty-container four columns",
                 ),
             ],
-
+            className="bare-container--flex--center twelve columns",
         ),
     ],
     id="main-container",

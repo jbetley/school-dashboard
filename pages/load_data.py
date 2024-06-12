@@ -22,9 +22,13 @@ import re
 from sqlalchemy import create_engine, text
 
 from .calculations import (
-    calculate_percentage, conditional_fillna, calculate_proficiency,
-    recalculate_total_proficiency, conditional_fillna, calculate_graduation_rate,
-    calculate_sat_rate
+    calculate_percentage,
+    conditional_fillna,
+    calculate_proficiency,
+    recalculate_total_proficiency,
+    conditional_fillna,
+    calculate_graduation_rate,
+    calculate_sat_rate,
 )
 
 from .process_data import transpose_data
@@ -44,7 +48,7 @@ def run_query(q, *args):
     If no data matches the query, an empty df is returned
 
     Args:
-        q (string): a sqlalchemy "text" query 
+        q (string): a sqlalchemy "text" query
         args (dict): a dict of query parameters
     Returns:
         pd.DataFrame: pandas dataframe of the query results
@@ -65,7 +69,9 @@ def run_query(q, *args):
         df.columns = df.columns.str.replace(
             r"([WADTO])([CATPB&])", r"\1 \2", regex=True
         )
-        df.columns = df.columns.str.replace("EBRWand", "EBRW and") # better way to do this?    
+        df.columns = df.columns.str.replace(
+            "EBRWand", "EBRW and"
+        )  # better way to do this?
         df.columns = df.columns.str.replace(r"([A])([a])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([1-9])([(])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace("or ", " or ")
@@ -81,7 +87,7 @@ def get_current_year():
 
     Returns:
         int: an int representing the most recent year
-    """    
+    """
     db = engine.raw_connection()
     cur = db.cursor()
     cur.execute(""" SELECT MAX(Year) FROM academic_data_k8 """)
@@ -90,17 +96,19 @@ def get_current_year():
 
     return year
 
+
 current_academic_year = get_current_year()
+
 
 def get_network_count():
     """
     Helper function to dynamically count the number of network logins present
     in the users database (identified with a negative group_id values). used to
-    determine the offset for creation of the charter dropdown in app.py. 
+    determine the offset for creation of the charter dropdown in app.py.
 
     Returns:
         int: the number of network logins
-    """    
+    """
     db = users.raw_connection()
     cur = db.cursor()
     cur.execute(""" SELECT COUNT(groupid) FROM users WHERE groupid < 0 """)
@@ -109,6 +117,7 @@ def get_network_count():
     db.close()
 
     return count
+
 
 network_count = get_network_count()
 
@@ -145,7 +154,7 @@ def get_school_index(school_id):
 
     Returns:
         pd.DataFrame: df of basic school information
-    """    
+    """
     params = dict(id=school_id)
 
     q = text(
@@ -168,7 +177,7 @@ def get_academic_dropdown_years(*args):
         school_type(string): K8, HS, AHS, or K12
     Returns:
         list: a list of integers representing years
-    """     
+    """
     keys = ["id", "type"]
     params = dict(zip(keys, args))
 
@@ -206,7 +215,7 @@ def get_academic_growth_dropdown_years(*args):
 
     Returns:
         list: a list of integers representing years
-    """      
+    """
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -238,7 +247,7 @@ def get_financial_dropdown_years(school_id, page):
         is being made
     Returns:
         list: a list of integers representing years
-    """       
+    """
     params = dict(id=school_id)
     q = text(
         """
@@ -351,6 +360,7 @@ def get_school_dropdown_list():
 
     return schools
 
+
 def get_graduation_data():
     params = dict(id="")
 
@@ -365,9 +375,9 @@ def get_graduation_data():
             Year
         """
     )
-    
+
     results = run_query(q, params)
-    
+
     results = results.loc[::-1].reset_index(drop=True)
 
     # merge state_grad_average with corp_data
@@ -380,11 +390,7 @@ def get_graduation_data():
 
     # rename columns and add state_grad average to corp df
     results = results.rename(
-        columns={
-            c: str(c) + "Corp"
-            for c in results.columns
-            if c not in ["Category"]
-        }
+        columns={c: str(c) + "Corp" for c in results.columns if c not in ["Category"]}
     )
 
     return results
@@ -439,7 +445,9 @@ def get_gradespan(school_id, selected_year, all_years):
     return result
 
 
-def get_ethnicity(school_id, school_type, hs_category, subject_value, selected_year, all_years):
+def get_ethnicity(
+    school_id, school_type, hs_category, subject_value, selected_year, all_years
+):
     # returns a list of ethnicities for which a school has numbers for both Tested
     # and Proficient students for the selected year (and all earlier years)
 
@@ -486,7 +494,6 @@ def get_ethnicity(school_id, school_type, hs_category, subject_value, selected_y
                 )
             )
         else:
-
             q = text(
                 """
                 SELECT "AmericanIndian|ELATotalTested", "Asian|ELATotalTested", "Black|ELATotalTested", "Hispanic|ELATotalTested", "Multiracial|ELATotalTested","NativeHawaiianorOtherPacificIslander|ELATotalTested", "White|ELATotalTested",
@@ -515,7 +522,9 @@ def get_ethnicity(school_id, school_type, hs_category, subject_value, selected_y
     return result
 
 
-def get_subgroup(school_id, school_type, hs_category, subject_value, selected_year, all_years):
+def get_subgroup(
+    school_id, school_type, hs_category, subject_value, selected_year, all_years
+):
     # returns a list of subgroups for which a school has numbers for both Tested
     # and Proficient students for the selected year (and all earlier years)
 
@@ -549,10 +558,8 @@ def get_subgroup(school_id, school_type, hs_category, subject_value, selected_ye
                 )
             )
 
-    else:   # k8
-
+    else:  # k8
         if subject_value == "IREAD":
-
             q = text(
                 """
                 SELECT "PaidMeals|IREADTestN", "FreeorReducedPriceMeals|IREADTestN", "GeneralEducation|IREADTestN", "SpecialEducation|IREADTestN", "EnglishLanguageLearners|IREADTestN","NonEnglishLanguageLearners|IREADTestN",
@@ -564,7 +571,6 @@ def get_subgroup(school_id, school_type, hs_category, subject_value, selected_ye
             )
 
         else:
-
             q = text(
                 """
                 SELECT "PaidMeals|ELATotalTested", "FreeorReducedPriceMeals|ELATotalTested", "GeneralEducation|ELATotalTested", "SpecialEducation|ELATotalTested", "EnglishLanguageLearners|ELATotalTested","NonEnglishLanguageLearners|ELATotalTested",
@@ -663,12 +669,11 @@ def get_letter_grades(*args):
 
 
 def get_wida_student_data(stns):
-
     params = dict(id="")
 
     # when looking for a string value in a column, we need to wrap each
     # value in '', otherwise it will be interpreted as a column name
-    stn_str ="'" + "', '".join([str(v) for v in stns]) + "'"
+    stn_str = "'" + "', '".join([str(v) for v in stns]) + "'"
 
     q = text(
         """
@@ -704,7 +709,7 @@ def get_iread_student_data(*args):
 
     results["STN"] = results["STN"].astype(str)
     results["Year"] = results["Year"].astype(str)
-    
+
     return results
 
 
@@ -744,7 +749,6 @@ def get_ilearn_stns(*args):
 
 # combination the above two functions
 def get_school_stns(school):
-
     ilearn_stns = get_ilearn_stns(school)
     ilearn_stns["STN"] = ilearn_stns["STN"].astype(str)
 
@@ -752,9 +756,7 @@ def get_school_stns(school):
     iread_stns = get_iread_stns(school)
     iread_stns["STN"] = iread_stns["STN"].astype(str)
 
-    school_stns = pd.concat(
-        [ilearn_stns, iread_stns], axis=0, ignore_index=True
-    )
+    school_stns = pd.concat([ilearn_stns, iread_stns], axis=0, ignore_index=True)
 
     return school_stns
 
@@ -780,7 +782,7 @@ def get_ilearn_student_data(*args):
 # a substitute for corp_data
 def get_ahs_averages():
     params = dict(id="")
-    q = text (
+    q = text(
         """
         SELECT *
             FROM academic_data_hs
@@ -793,7 +795,14 @@ def get_ahs_averages():
     drop_cols = ["School Name", "School Type", "Lat", "Lon"]
     results = results.drop(drop_cols, axis=1)
 
-    non_sum_cols = ["Year", "School ID", "Corporation ID", "Corporation Name", "Low Grade", "High Grade"]
+    non_sum_cols = [
+        "Year",
+        "School ID",
+        "Corporation ID",
+        "Corporation Name",
+        "Low Grade",
+        "High Grade",
+    ]
     sum_cols = [c for c in results.columns if c not in non_sum_cols]
 
     for col in sum_cols:
@@ -806,7 +815,7 @@ def get_ahs_averages():
     group_cols = {**column_map, **column_map2, **column_map3}
 
     final_results = results.groupby(["Year"], as_index=False).agg(group_cols)
-    
+
     final_results["Corporation Name"] = "AHS State Average"
     final_results["Corporation ID"] = 9999
     final_results["School ID"] = 9999
@@ -818,27 +827,29 @@ def get_ahs_averages():
 
 def get_attendance_data(school_id, school_type, year):
     params = dict(id=school_id)
- 
+
     # NOTE: AHS attendance data is stored in the hs table. K12 attendance
     # data is the same in both k8 and hs tables (it isn't broken out)
     if school_type == "K8":
         table = "academic_data_k8"
         id_type = "SchoolID"
-    elif school_type == "HS" or school_type == "AHS" or \
-        school_type == "K12":
+    elif school_type == "HS" or school_type == "AHS" or school_type == "K12":
         table = "academic_data_hs"
         id_type = "SchoolID"
     elif school_type == "corp_K8":
         table = "corporation_data_k8"
         id_type = "CorporationID"
-    elif school_type == "corp_HS" or school_type == "corp_AHS" or \
-        school_type == "corp_K12":
+    elif (
+        school_type == "corp_HS"
+        or school_type == "corp_AHS"
+        or school_type == "corp_K12"
+    ):
         table = "corporation_data_hs"
-        id_type = "CorporationID"      
+        id_type = "CorporationID"
     elif school_type == "K12":
         return
-    
-    query_string  = """
+
+    query_string = """
         SELECT Year, AttendanceRate, StudentsChronicallyAbsent, TotalStudentCount
             FROM {}
 	        WHERE {} = :id
@@ -847,7 +858,7 @@ def get_attendance_data(school_id, school_type, year):
     )
 
     q = text(query_string)
-  
+
     results = run_query(q, params)
     results = results.sort_values(by="Year", ascending=False)
 
@@ -858,15 +869,19 @@ def get_attendance_data(school_id, school_type, year):
 
     # Chronic Absenteeism isn't used for AHS
     if school_type != "corp_AHS" and school_type != "AHS":
-        attendance_data["Chronic Absenteeism %"] = \
-            calculate_percentage(attendance_data["Students Chronically Absent"], attendance_data["Total Student Count"])
+        attendance_data["Chronic Absenteeism %"] = calculate_percentage(
+            attendance_data["Students Chronically Absent"],
+            attendance_data["Total Student Count"],
+        )
 
-    attendance_data = attendance_data.drop(["Students Chronically Absent","Total Student Count"], axis=1)
+    attendance_data = attendance_data.drop(
+        ["Students Chronically Absent", "Total Student Count"], axis=1
+    )
 
     excluded_years = get_excluded_years(year)
     if excluded_years:
         attendance_data = attendance_data[~attendance_data["Year"].isin(excluded_years)]
-    
+
     attendance_rate = (
         attendance_data.set_index("Year")
         .T.rename_axis("Category")
@@ -915,7 +930,7 @@ def get_proficiency_data(*args):
 
 
 def get_corporation_academic_data(*args):
-    keys = ["id","type"]
+    keys = ["id", "type"]
     params = dict(zip(keys, args))
 
     if params["type"] == "HS" or params["type"] == "AHS":
@@ -930,7 +945,9 @@ def get_corporation_academic_data(*args):
             WHERE CorporationID = (
                 SELECT GEOCorp
                     FROM school_index
-                    WHERE SchoolID = :id)""".format(table)
+                    WHERE SchoolID = :id)""".format(
+            table
+        )
     )
 
     results = run_query(q, params)
@@ -990,7 +1007,8 @@ def get_school_coordinates(*args):
 
 # filename99 = ("analysis-data.csv")
 # analysis_data.to_csv(filename99, index=False)
-    
+
+
 # Where all the magic happens
 # Gets all the academic data and formats it for display
 def get_academic_data(*args):
@@ -1015,12 +1033,10 @@ def get_academic_data(*args):
     # of schools (academic_analysis), otherwise one school (academic_info and
     # academic_metric)
     if len(params["schools"]) > 1:
-
         school_id = params["schools"][0]
         school_str = ", ".join([str(int(v)) for v in params["schools"]])
-    
-    else:
 
+    else:
         school_id = params["schools"][0]
         school_str = params["schools"][0]
 
@@ -1039,7 +1055,7 @@ def get_academic_data(*args):
     )
 
     q = text(query_string)
-    
+
     school_data = run_query(q, params)
 
     # get corp data (for academic_metrics and academic_analysis_single_year)
@@ -1055,17 +1071,17 @@ def get_academic_data(*args):
 
     # merge - result includes school, school corp, and comparable schools if
     # multiple school ids in the schools variable
-    raw_merged_data = pd.concat([school_data,corp_data],axis=0)
+    raw_merged_data = pd.concat([school_data, corp_data], axis=0)
 
     # Drop years of data that have been excluded by the
     # selected year (are later than)
     excluded_years = get_excluded_years(params["year"])
-    
+
     if excluded_years:
         raw_merged_data = raw_merged_data[~raw_merged_data["Year"].isin(excluded_years)]
- 
+
     raw_merged_data = raw_merged_data.sort_values(by="Year", ascending=False)
-    
+
     raw_merged_data = raw_merged_data.reset_index(drop=True)
 
     # Drop all columns for a Category if the value of "Total Tested" for
@@ -1079,17 +1095,26 @@ def get_academic_data(*args):
     data["Corporation ID"] = data["Corporation ID"].astype("Int64").astype("str")
 
     if params["type"] == "K8":
-        tested_cols = [col for col in data.columns.to_list() if "Total Tested" in col or "Test N" in col]
+        tested_cols = [
+            col
+            for col in data.columns.to_list()
+            if "Total Tested" in col or "Test N" in col
+        ]
     else:
-        tested_cols = [col for col in data.columns.to_list() if "Total Tested" in col or "Cohort Count" in col]
+        tested_cols = [
+            col
+            for col in data.columns.to_list()
+            if "Total Tested" in col or "Cohort Count" in col
+        ]
 
     for col in tested_cols:
-
-        if ( 
-            pd.to_numeric(data[data["School ID"] == school_id][col], errors="coerce").sum() == 0
+        if (
+            pd.to_numeric(
+                data[data["School ID"] == school_id][col], errors="coerce"
+            ).sum()
+            == 0
             or data[data["School ID"] == school_id][col].isnull().all()
         ):
-
             if "Total Tested" in col:
                 match_string = " Total Tested"
             else:
@@ -1116,7 +1141,9 @@ def get_academic_data(*args):
         processed_data = data.copy()
 
         # remove "EBRW and Math" columns
-        processed_data = processed_data.drop(list(processed_data.filter(regex="EBRW and Math")), axis=1)
+        processed_data = processed_data.drop(
+            list(processed_data.filter(regex="EBRW and Math")), axis=1
+        )
 
         # Calculate Grad Rate
         if "Total|Cohort Count" in processed_data.columns:
@@ -1128,9 +1155,10 @@ def get_academic_data(*args):
 
         # process additional AHS only data
         if params["type"] == "AHS":
-            
             if "AHS|CCR" in processed_data.columns:
-                processed_data["AHS|CCR"] = pd.to_numeric(processed_data["AHS|CCR"], errors="coerce")
+                processed_data["AHS|CCR"] = pd.to_numeric(
+                    processed_data["AHS|CCR"], errors="coerce"
+                )
 
             if "AHS|Grad All" in processed_data.columns:
                 processed_data["AHS|Grad All"] = pd.to_numeric(
@@ -1138,15 +1166,18 @@ def get_academic_data(*args):
                 )
 
             if {"AHS|CCR", "AHS|Grad All"}.issubset(processed_data.columns):
-                processed_data["CCR Percentage"] = processed_data["AHS|CCR"] / processed_data["AHS|Grad All"]
-        
-    # process K8 data
-    elif params["type"] == "K8": 
+                processed_data["CCR Percentage"] = (
+                    processed_data["AHS|CCR"] / processed_data["AHS|Grad All"]
+                )
 
+    # process K8 data
+    elif params["type"] == "K8":
         processed_data = data.copy()
 
         # remove "ELA and Math" columns
-        processed_data = processed_data.drop(list(processed_data.filter(regex="ELA and Math")), axis=1)
+        processed_data = processed_data.drop(
+            list(processed_data.filter(regex="ELA and Math")), axis=1
+        )
 
         processed_data = calculate_proficiency(processed_data)
 
@@ -1162,12 +1193,10 @@ def get_academic_data(*args):
             processed_data["School ID"] == school_id
         ].copy()
 
-        revised_totals = recalculate_total_proficiency(
-            comparison_data, school_data
-        )
+        revised_totals = recalculate_total_proficiency(comparison_data, school_data)
 
-        processed_data = processed_data.set_index(["School ID","Year"])
-        processed_data.update(revised_totals.set_index(["School ID","Year"]))
+        processed_data = processed_data.set_index(["School ID", "Year"])
+        processed_data.update(revised_totals.set_index(["School ID", "Year"]))
 
         # this is school, school corporation, and comparable school data
         processed_data = processed_data.reset_index()
@@ -1175,19 +1204,15 @@ def get_academic_data(*args):
     # if all columns in data other than the 1st (Year) are null
     # then return empty df
 
-#TODO: Check this test - make better
+    # TODO: Check this test - make better
     if processed_data.iloc[:, 1:].isna().all().all():
-        
         return pd.DataFrame()
 
     else:
-
         ## data for academic_analysis_single_page
         ## TODO eventually add multipage analysis data
         if params["page"] == "analysis":
-
             if params["type"] == "HS" or params["type"] == "AHS":
-
                 hs_data = processed_data.copy()
 
                 analysis_data = hs_data.filter(
@@ -1195,12 +1220,20 @@ def get_academic_data(*args):
                     axis=1,
                 ).copy()
 
-                analysis_data = analysis_data.drop(list(analysis_data.filter(regex="EBRW and Math")), axis=1)
+                analysis_data = analysis_data.drop(
+                    list(analysis_data.filter(regex="EBRW and Math")), axis=1
+                )
 
-                hs_cols = [c for c in analysis_data.columns if c not in ["School Name", "Corporation Name"]]
+                hs_cols = [
+                    c
+                    for c in analysis_data.columns
+                    if c not in ["School Name", "Corporation Name"]
+                ]
 
                 # get index of rows where school_id matches selected school
-                school_idx = analysis_data.index[analysis_data["School ID"] == school_id].tolist()[0]
+                school_idx = analysis_data.index[
+                    analysis_data["School ID"] == school_id
+                ].tolist()[0]
 
                 # force all to numeric (this removes "***" strings) - we
                 # later use NaN as a proxy
@@ -1210,21 +1243,24 @@ def get_academic_data(*args):
                     )
 
                 # drop all columns where the row at school_name_idx has a NaN value
-                analysis_data = analysis_data.loc[:, ~hs_data.iloc[school_idx].isna()]                
+                analysis_data = analysis_data.loc[:, ~hs_data.iloc[school_idx].isna()]
 
                 return analysis_data
-            
-            else:
 
+            else:
                 k8_data = processed_data.copy()
-                
+
                 analysis_data = k8_data.filter(
                     regex=r"\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$|Low|High|School Name|School ID|Corporation ID",
                     axis=1,
                 )
                 analysis_data = analysis_data.sort_values("Year").reset_index(drop=True)
-                
-                analysis_data = analysis_data[analysis_data.columns[~analysis_data.columns.str.contains(r"Female|Male")]]
+
+                analysis_data = analysis_data[
+                    analysis_data.columns[
+                        ~analysis_data.columns.str.contains(r"Female|Male")
+                    ]
+                ]
 
                 # filename77 = ("analysis_data1.csv")
                 # analysis_data.to_csv(filename77, index=False)
@@ -1253,44 +1289,49 @@ def get_academic_data(*args):
                     (params["type"] == "K8" or params["type"] == "K12")
                     and len(analysis_data.index) > 0
                 ) and check_for_unchartable_data.isnull().all().all() == True:
-                    
                     analysis_data = pd.DataFrame()
 
                     return analysis_data
-                
-                else:
 
-                     return analysis_data
+                else:
+                    return analysis_data
 
         ## data for academic_information and academic_metrics pages
         elif params["page"] == "info" or params["page"] == "metrics":
-
-            corp_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]].copy()
-            school_data = processed_data[processed_data["School ID"] == school_id].copy()
+            corp_data = processed_data[
+                processed_data["School ID"] == processed_data["Corporation ID"]
+            ].copy()
+            school_data = processed_data[
+                processed_data["School ID"] == school_id
+            ].copy()
 
             # No corp_data is used and school_data limited to single metric (CCR)
             if params["type"] == "AHS" and params["page"] == "metrics":
-                    
                 # AHS metric data is extremely limited atm
-                school_metric_data = school_data[["Year","AHS|CCR", "AHS|Grad All"]]
+                school_metric_data = school_data[["Year", "AHS|CCR", "AHS|Grad All"]]
 
                 return school_metric_data
-            
+
             elif params["type"] == "HS":
+                corp_data = processed_data[
+                    processed_data["School ID"] == processed_data["Corporation ID"]
+                ].copy()
+                school_data = processed_data[
+                    processed_data["School ID"] == school_id
+                ].copy()
 
-                corp_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]].copy()
-                school_data = processed_data[processed_data["School ID"] == school_id].copy()
-
-                school_metrics_data = transpose_data(school_data,params)
-                corp_metrics_data = transpose_data(corp_data,params)
+                school_metrics_data = transpose_data(school_data, params)
+                corp_metrics_data = transpose_data(corp_data, params)
 
                 # Remove N-Size columns from corp dataframe
-                corp_metrics_data = corp_metrics_data.filter(regex=r"Category|Corp", axis=1)
+                corp_metrics_data = corp_metrics_data.filter(
+                    regex=r"Category|Corp", axis=1
+                )
 
                 ## HS data for academic_information
                 if params["page"] == "info":
                     return school_metrics_data
-                
+
                 else:
                     # add state graduation average to corp df
                     state_grad_average = get_graduation_data()
@@ -1315,10 +1356,12 @@ def get_academic_data(*args):
                     # for this to work, we need to make sure the school has a "Total
                     # Graduation Rate" Category- if is missing, we add a new row filled
                     # with nan (by enlargement)
-                    if "Total|Graduation Rate" not in school_metrics_data["Category"].values:
-
+                    if (
+                        "Total|Graduation Rate"
+                        not in school_metrics_data["Category"].values
+                    ):
                         school_metrics_data.loc[len(school_metrics_data)] = np.nan
-                        
+
                         school_metrics_data.loc[
                             school_metrics_data.index[-1], "Category"
                         ] = "Total|Graduation Rate"
@@ -1330,17 +1373,22 @@ def get_academic_data(*args):
                     duplicate_row["Category"] = "State Graduation Average"
 
                     # NOTE: Need to declare an explicit type here because there is a
-                    # bug in "pandas-stubs" that causes mypy to mark code as 
+                    # bug in "pandas-stubs" that causes mypy to mark code as
                     # "unreachable" following a pd.concat with Iterable[None]. See:
                     # https://stackoverflow.com/questions/78156640/why-is-visual-studio-code-saying-my-code-in-unreachable-after-using-the-pandas-c
-                    # NOTE: trying and failing to suppress this warning by adding 
+                    # NOTE: trying and failing to suppress this warning by adding
                     # 'disable_error_code = "annotation-unchecked"' to mypy.ini. but kept
                     # getting errors. So here it stays
                     # https://stackoverflow.com/questions/74578185/suppress-mypy-notes
-                    merged_dataframes:list[pd.DataFrame] = [school_metrics_data, duplicate_row]
-                    
-                    school_metrics_data = pd.concat(merged_dataframes, axis=0, ignore_index=True)
-                    
+                    merged_dataframes: list[pd.DataFrame] = [
+                        school_metrics_data,
+                        duplicate_row,
+                    ]
+
+                    school_metrics_data = pd.concat(
+                        merged_dataframes, axis=0, ignore_index=True
+                    )
+
                     # Corp -State Grad Rate should equal State Grad Rate
                     # Corp - Total Grad Rate and Nonwaiver Grad Rate should equal corp totals
                     # School - Both State and Total Grad Rate should equal school total grad rate
@@ -1348,32 +1396,50 @@ def get_academic_data(*args):
 
                     # calcs = School (Grad) - Corp (State) = State Grad Avg diff
                     #       = School (Grad) - Corp (Total) = Corp Grad Avg diff
-                    #       = School (NonW) - Corp 
+                    #       = School (NonW) - Corp
 
                     # add corp data to df
-                    
-                    corp_proficiency_cols = [col for col in corp_metrics_data.columns.to_list() if "Corp" in col]
-                    merged_data = pd.concat([school_metrics_data, corp_metrics_data[corp_proficiency_cols]], axis=1)
+
+                    corp_proficiency_cols = [
+                        col
+                        for col in corp_metrics_data.columns.to_list()
+                        if "Corp" in col
+                    ]
+                    merged_data = pd.concat(
+                        [school_metrics_data, corp_metrics_data[corp_proficiency_cols]],
+                        axis=1,
+                    )
 
                     # NOTE: at the moment HS metrics only include Total Graduation Rate,
                     # Non Waiver Graduation Rate, and State Graduation Average
 
                     # clean up and filter
-                    merged_data = merged_data.replace({
-                        "Total|Graduation Rate": "Total Graduation Rate",
-                        "Non Waiver|Graduation Rate": "Non Waiver Graduation Rate"}, regex=False)
+                    merged_data = merged_data.replace(
+                        {
+                            "Total|Graduation Rate": "Total Graduation Rate",
+                            "Non Waiver|Graduation Rate": "Non Waiver Graduation Rate",
+                        },
+                        regex=False,
+                    )
 
-                    hs_categories =["Total Graduation Rate","Non Waiver Graduation Rate","State Graduation Average"]
-                    metric_data = merged_data[merged_data["Category"].str.contains("|".join(hs_categories))]
+                    hs_categories = [
+                        "Total Graduation Rate",
+                        "Non Waiver Graduation Rate",
+                        "State Graduation Average",
+                    ]
+                    metric_data = merged_data[
+                        merged_data["Category"].str.contains("|".join(hs_categories))
+                    ]
 
                     metric_data = metric_data.reset_index(drop=True)
 
                     return metric_data
 
             else:
-
-                school_info_data = processed_data[processed_data["School ID"] == school_id]
-                final_school_data = transpose_data(school_info_data,params)
+                school_info_data = processed_data[
+                    processed_data["School ID"] == school_id
+                ]
+                final_school_data = transpose_data(school_info_data, params)
 
                 # K8 information data
                 if params["page"] == "info":
@@ -1381,31 +1447,41 @@ def get_academic_data(*args):
 
                 # TODO: Where does this belong? In the chart? or in academic_info.py
                 # TODO: right before the information is sent to the chart? or in
-                # TODO: the layout? 
+                # TODO: the layout?
                 # result, no_data = check_for_no_data(result)
                 # print(no_data)
                 # insuf_string = check_for_insufficient_n_size(result)
                 # print(insuf_string)
 
-                # K8 academic_metrics data    
+                # K8 academic_metrics data
                 else:
+                    corp_info_data = processed_data[
+                        processed_data["School ID"] == processed_data["Corporation ID"]
+                    ]
 
-                    corp_info_data = processed_data[processed_data["School ID"] == processed_data["Corporation ID"]]
+                    final_corp_data = transpose_data(corp_info_data, params)
 
-                    final_corp_data = transpose_data(corp_info_data,params)        
-                    
                     # filename99 = ("final_corp_data.csv")
                     # final_corp_data.to_csv(filename99, index=False)
 
-                    corp_proficiency_cols = [col for col in final_corp_data.columns.to_list() if "Corp" in col]
-                    
+                    corp_proficiency_cols = [
+                        col
+                        for col in final_corp_data.columns.to_list()
+                        if "Corp" in col
+                    ]
+
                     # School Proficiency and N-Size and Corp Profiency
-                    metric_data = pd.concat([final_school_data, final_corp_data[corp_proficiency_cols]], axis=1)
+                    metric_data = pd.concat(
+                        [final_school_data, final_corp_data[corp_proficiency_cols]],
+                        axis=1,
+                    )
 
                     return metric_data
 
+
 # TODO: Do we need a default on error?
-    # return data
+# return data
+
 
 # TODO: Eventually merge into get_academic_data()
 def get_year_over_year_data(*args):
@@ -1417,7 +1493,7 @@ def get_year_over_year_data(*args):
     if params["flag"] == "sat":
         school_table = "academic_data_hs"
         corp_table = "corporation_data_hs"
-        
+
         tested = params["category"] + " Total Tested"
         passed = params["category"] + " At Benchmark"
         result = params["category"] + " % At Benchmark"
@@ -1430,8 +1506,8 @@ def get_year_over_year_data(*args):
 
     elif params["flag"] == "grad":
         school_table = "academic_data_hs"
-        corp_table = "corporation_data_hs"        
-        
+        corp_table = "corporation_data_hs"
+
         tested = params["category"] + "Cohort Count"
         passed = params["category"] + "Graduates"
         result = params["category"] + "Graduation Rate"
@@ -1600,12 +1676,10 @@ def get_year_over_year_data(*args):
 
 
 def get_student_level_ilearn(school, subject):
-
     ilearn_student_all = get_ilearn_student_data(school)
 
     # will also be empty for guest schools
     if not ilearn_student_all.empty:
-
         iread_student_data = get_iread_student_data(school)
 
         ilearn_filtered = ilearn_student_all.filter(
@@ -1618,9 +1692,7 @@ def get_student_level_ilearn(school, subject):
                 "Tested Grade": "ILEARN Tested Grade",
             }
         )
-        iread_student_data = iread_student_data.rename(
-            columns={"Year": "Test Year"}
-        )        
+        iread_student_data = iread_student_data.rename(columns={"Year": "Test Year"})
         ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
 
         school_all_student_data = pd.merge(
@@ -1629,48 +1701,85 @@ def get_student_level_ilearn(school, subject):
 
         category = subject + " Proficiency"
 
-        school_all_student_data = school_all_student_data[["Test Year",
-            "STN","Tested Grade","Status","Exemption Status","ILEARN Tested Grade", category]]
+        school_all_student_data = school_all_student_data[
+            [
+                "Test Year",
+                "STN",
+                "Tested Grade",
+                "Status",
+                "Exemption Status",
+                "ILEARN Tested Grade",
+                category,
+            ]
+        ]
 
-        all_student_data_nopass = school_all_student_data[school_all_student_data["Status"] == "Did Not Pass"]
-        all_student_data_pass = school_all_student_data[school_all_student_data["Status"] == "Pass"]
-        
+        all_student_data_nopass = school_all_student_data[
+            school_all_student_data["Status"] == "Did Not Pass"
+        ]
+        all_student_data_pass = school_all_student_data[
+            school_all_student_data["Status"] == "Pass"
+        ]
+
         def find_prof(series):
             # get the count of students At or Above proficiency and divide by the total #
             # of students in the series (essentially calculating proficiency)
             return (
-                ((series == "At Proficiency").sum() + (series == "Above Proficiency").sum()) / 
-                series.value_counts().sum()
-            )
-        
-        pass_proficiency = all_student_data_pass.groupby(by="Test Year")[category].apply(find_prof).reset_index(name="Proficiency")
-        nopass_proficiency = all_student_data_nopass.groupby(by="Test Year")[category].apply(find_prof).reset_index(name="Proficiency")
+                (series == "At Proficiency").sum()
+                + (series == "Above Proficiency").sum()
+            ) / series.value_counts().sum()
 
-        nopass_nsize = all_student_data_nopass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
-        pass_nsize = all_student_data_pass["Test Year"].value_counts().reset_index(name="N-Size").rename(columns={"index": "Test Year"})
+        pass_proficiency = (
+            all_student_data_pass.groupby(by="Test Year")[category]
+            .apply(find_prof)
+            .reset_index(name="Proficiency")
+        )
+        nopass_proficiency = (
+            all_student_data_nopass.groupby(by="Test Year")[category]
+            .apply(find_prof)
+            .reset_index(name="Proficiency")
+        )
 
-        iread_ilearn_pass_final = pd.merge(pass_proficiency,pass_nsize, on="Test Year")
-        iread_ilearn_nopass_final = pd.merge(nopass_proficiency,nopass_nsize, on="Test Year")
+        nopass_nsize = (
+            all_student_data_nopass["Test Year"]
+            .value_counts()
+            .reset_index(name="N-Size")
+            .rename(columns={"index": "Test Year"})
+        )
+        pass_nsize = (
+            all_student_data_pass["Test Year"]
+            .value_counts()
+            .reset_index(name="N-Size")
+            .rename(columns={"index": "Test Year"})
+        )
+
+        iread_ilearn_pass_final = pd.merge(pass_proficiency, pass_nsize, on="Test Year")
+        iread_ilearn_nopass_final = pd.merge(
+            nopass_proficiency, nopass_nsize, on="Test Year"
+        )
 
         pass_column_name = "Avg. " + subject + " Proficiency - Students Passing IREAD"
         iread_ilearn_pass_final = iread_ilearn_pass_final.rename(
             columns={
-                "Proficiency": pass_column_name, 
+                "Proficiency": pass_column_name,
                 "Test Year": "Year",
-                "N-Size": "N-Size (Pass IREAD)"                
+                "N-Size": "N-Size (Pass IREAD)",
             }
         )
 
-        nopass_column_name = "Avg. " + subject + " Proficiency - Students not Passing IREAD"
+        nopass_column_name = (
+            "Avg. " + subject + " Proficiency - Students not Passing IREAD"
+        )
         iread_ilearn_nopass_final = iread_ilearn_nopass_final.rename(
             columns={
                 "Proficiency": nopass_column_name,
                 "Test Year": "Year",
-                "N-Size": "N-Size (Did Not Pass IREAD)"
+                "N-Size": "N-Size (Did Not Pass IREAD)",
             }
         )
 
-        iread_ilearn_pass_final["Year"] = iread_ilearn_pass_final["Year"].astype(str)        
-        iread_ilearn_nopass_final["Year"] = iread_ilearn_nopass_final["Year"].astype(str)
+        iread_ilearn_pass_final["Year"] = iread_ilearn_pass_final["Year"].astype(str)
+        iread_ilearn_nopass_final["Year"] = iread_ilearn_nopass_final["Year"].astype(
+            str
+        )
 
     return iread_ilearn_pass_final, iread_ilearn_nopass_final
