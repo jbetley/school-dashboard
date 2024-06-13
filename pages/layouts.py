@@ -358,7 +358,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
             "textAlign": "left",
             "marginLeft": "10px",
             "marginRight": "10px",
-            "marginTop": "20px",
+            "marginTop": "50px",
             "paddingTop": "5px",
             "borderTop": ".5px solid #c9d3e0",
         }
@@ -480,10 +480,7 @@ def create_year_over_year_layout(school_id: str, data: pd.DataFrame, school_id_l
     Returns:
         layout: a list of a layout html.Div object
     """
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None) 
-    print(data)
-    data.to_csv("tmp.csv")
+
     data = data.dropna(axis=1, how="all")
 
     if not msg:

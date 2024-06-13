@@ -186,10 +186,6 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
 
     raw_data = df.copy()
 
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None) 
-
-    print(raw_data)
     bar_colors = ["#74a2d7", "#df8f2d"]
 
     total_enrollment = raw_data["Total Enrollment"].tolist()
@@ -202,7 +198,7 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
         raw_data[col] = pd.to_numeric(raw_data[col], errors="coerce")
 
     data = raw_data.set_index("Corporation Name").T
-    print(data)
+
     # Calculate Percentage
     for i in range(0, 2):
         data.iloc[:, i] = data.iloc[:, i] / total_enrollment[i]
@@ -1130,7 +1126,7 @@ def make_growth_chart(
 
 
 def make_bar_chart(
-    values: pd.DataFrame, category: str, school_name: str, label: str
+    values: pd.DataFrame, category: str, school_id: str, label: str
 ) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label and a simple bar chart (px.bar)
@@ -1147,6 +1143,9 @@ def make_bar_chart(
     """
 
     data = values.copy()
+    
+    selected_school = get_school_index(str(school_id))
+    school_name = selected_school["School Name"].values[0]
 
     # dataframe should always have at least 4 columns ('School Name',
     # 'Low Grade', 'High Grade' & one data column)
@@ -1160,7 +1159,7 @@ def make_bar_chart(
         # use specific color for selected school
         for key, value in trace_color.items():
             if key == school_name:
-                trace_color[key] = "#7b6888"
+                trace_color[key] = "#0a66c2"
 
         # Uncomment this and the other 'customdata' lines below to display
         # the distance of each comparable school from the selected school
@@ -1248,6 +1247,10 @@ def make_group_bar_chart(
     """
     data = values.copy()
 
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_rows', None) 
+    print("RAW DATA")
+    print(data)
     selected_school = get_school_index(str(school_id))
     school_name = selected_school["School Name"].values[0]
 
