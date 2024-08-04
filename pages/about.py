@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     03/31/24
+# date:     07/30/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -12,11 +12,7 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-from .globals import (
-    ethnicity,
-    subgroup,
-    max_display_years
-)
+from .globals import ethnicity, subgroup, max_display_years
 from .load_data import (
     get_excluded_years,
     get_school_index,
@@ -24,14 +20,25 @@ from .load_data import (
     get_corp_demographic_data,
     get_school_demographic_data,
     get_adm,
-    get_attendance_data
+    get_attendance_data,
 )
-from .charts import loading_fig, no_data_fig_label, make_line_chart, make_demographics_bar_chart
-from .tables import no_data_table, no_data_page, create_key_table, create_single_header_table
+from .charts import (
+    loading_fig,
+    no_data_fig_label,
+    make_line_chart,
+    make_demographics_bar_chart,
+)
+from .tables import (
+    no_data_table,
+    no_data_page,
+    create_key_table,
+    create_single_header_table,
+)
 from .layouts import create_line_fig_layout
 
 
 dash.register_page(__name__, path="/about", order=0, top_nav=True)
+
 
 @callback(
     Output("update-table", "children"),
@@ -69,7 +76,7 @@ def update_about_page(year: str, school: str):
 
     update_table = []
     enroll_table = []
-    attendance_layout= []
+    attendance_layout = []
 
     # NOTE: first load of any plotly object is very slow
     adm_fig = px.line()
@@ -95,25 +102,10 @@ def update_about_page(year: str, school: str):
     # Updates Table - Right Now hardcoded - may want to add to DB
     update_table_label = ""
     update_table_dict = {
-        "Date": [
-            "01.26.24",
-            "01.31.24",
-            "02.03.24",
-            "02.05.24",
-            "02.10.24",
-            "02.11.24",
-            "02.14.24",
-            "03.25.24"
-        ],
+        "Date": ["07.28.24", "07.30.24"],
         "Update": [
-            "Added 2023 IREAD data to Information page.",
-            "Added historical Chronic Absenteeism and Attendance data.",
-            "Added IREAD breakdowns to Information and Analysis pages.",
-            "Added 2023 graduation rate data.",
-            "Added student level WIDA and IREAD data to Information page.",
-            "Added WIDA to IREAD and IREAD to ILEARN analysis to Information page.",
-            "Updated financial data to include 2023 audits when available.",
-            "Release version 1.15"
+            "Added 2024 ILEARN to Information and Analysis pages.",
+            "Added 2024 SAT to Information and Analysis pages.",
         ],
     }
 
@@ -151,7 +143,9 @@ def update_about_page(year: str, school: str):
         ]
 
         # drop columns with no data
-        enrollment_filter = enrollment_filter.loc[:, (~enrollment_filter.isin([np.nan, 0, "0"])).all()]
+        enrollment_filter = enrollment_filter.loc[
+            :, (~enrollment_filter.isin([np.nan, 0, "0"])).all()
+        ]
 
         enrollment = enrollment_filter.T
         enrollment.rename(columns={enrollment.columns[0]: "Enrollment"}, inplace=True)
@@ -255,7 +249,7 @@ def update_about_page(year: str, school: str):
                     corp_demographics.columns.isin(
                         ["Corporation Name", "Total Enrollment"]
                     )
-                )
+                ),
             ]
 
             subgroup_merged_data = pd.concat([subgroup_school, subgroup_corp])
@@ -263,7 +257,7 @@ def update_about_page(year: str, school: str):
             subgroup_fig = make_demographics_bar_chart(subgroup_merged_data)
 
     ## ADM Values ##
-    
+
     # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is known
     # for the year. So we check the first data column and if ADM Avg has data we
     # use it. If there is no financial_data, we use IDOE's adm- get_adm()- file which
@@ -272,7 +266,6 @@ def update_about_page(year: str, school: str):
     financial_data = get_financial_data(school)
 
     if financial_data.empty:
-
         adm_values = get_adm(int(selected_school["Corporation ID"].values[0]))
 
     else:
@@ -381,7 +374,6 @@ def update_about_page(year: str, school: str):
     )
 
     if len(attendance_rate_data.index) > 0 and len(attendance_rate_data.columns) > 1:
-
         attendance_table = create_single_header_table(
             attendance_rate_data, "Attendance"
         )
@@ -396,7 +388,6 @@ def update_about_page(year: str, school: str):
         attendance_fig = make_line_chart(attendance_fig_data)
 
     else:
-
         # bit of a hack - ensures empty containers look the same
         attendance_table = no_data_fig_label()
         attendance_fig = no_data_fig_label()
@@ -408,7 +399,9 @@ def update_about_page(year: str, school: str):
     else:
         attendance_title = "Attendance Rate and Chronic Absenteeism"
 
-    attendance_layout = create_line_fig_layout(attendance_table, attendance_fig, attendance_title)
+    attendance_layout = create_line_fig_layout(
+        attendance_table, attendance_fig, attendance_title
+    )
 
     return (
         update_table,
@@ -442,7 +435,9 @@ def layout():
                     html.Div(
                         [
                             html.Div(""),
-                            html.Div(id="update-table", children=[], className="no-print"),
+                            html.Div(
+                                id="update-table", children=[], className="no-print"
+                            ),
                             html.Div(
                                 [
                                     html.Div(
@@ -453,11 +448,12 @@ def layout():
                                             ),
                                             html.Div(id="enroll-table"),
                                             html.P(""),
-                                            html.P("Demographic data comes from the DOE-PE (Pupil Enrollment), DOE-LM (Language Minority and Immigrant Students), \
+                                            html.P(
+                                                "Demographic data comes from the DOE-PE (Pupil Enrollment), DOE-LM (Language Minority and Immigrant Students), \
                                                    and DOE-SE (Special Education) reports submitted by schools in October and December. ADM is collected from the \
                                                    DOE-ME (Membership) report, which is now submitted in October (historically September) and February. Due to the \
                                                    differing reporting periods, demographic data and ADM data does not always perfectly align.",
-                                                style = {
+                                                style={
                                                     "color": "#6783a9",
                                                     "fontSize": 10,
                                                     "textAlign": "left",
@@ -466,7 +462,7 @@ def layout():
                                                     "marginTop": "20px",
                                                     "paddingTop": "5px",
                                                     "borderTop": ".5px solid #c9d3e0",
-                                                }
+                                                },
                                             ),
                                         ],
                                         className="pretty-container six columns",
@@ -495,7 +491,7 @@ def layout():
                                         children=[],
                                     ),
                                 ],
-                                className = "pagebreak-after",
+                                className="pagebreak-after",
                             ),
                             html.Div(
                                 [

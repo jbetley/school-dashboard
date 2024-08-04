@@ -1247,10 +1247,6 @@ def make_group_bar_chart(
     """
     data = values.copy()
 
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None) 
-    print("RAW DATA")
-    print(data)
     selected_school = get_school_index(str(school_id))
     school_name = selected_school["School Name"].values[0]
 

@@ -3,18 +3,18 @@
 ##############################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     07/29/24
 
 # NOTE: No K8 academic data exists for 2020
 
 # Current data:
-# ILEARN - 2023
+# ILEARN - 2024
 # IREAD - 2023
-# SAT - 2023
+# SAT - 2024
 # ADM - 2023
-# Demographics - 2024
-# Financial - 2022 (Audited) / 2023 (Q4)
-# Graduation Rate - 2022
+# Demographics - 2024 (except SPED/ELL)
+# Financial - 2023 (Audited) / 2024 (Q4 due mid august)
+# Graduation Rate - 2023
 
 import pandas as pd
 import numpy as np
@@ -35,7 +35,6 @@ from .process_data import transpose_data
 
 # NOTE: Consider moving engine instantiation to app.py
 engine = create_engine("sqlite:///data/indiana_schools.db")
-
 users = create_engine("sqlite:///users.db")
 
 print("Database Engine Created . . .")

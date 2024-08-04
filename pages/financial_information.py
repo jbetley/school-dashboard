@@ -93,8 +93,10 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             financial_data = pd.DataFrame()
 
         table_title = (
-            selected_year_string + " Financial Information ("
-                + financial_data["School Name"][0] + ")"
+            selected_year_string
+            + " Financial Information ("
+            + financial_data["School Name"][0]
+            + ")"
         )
 
     else:
@@ -108,12 +110,15 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         # don't display the school name in table title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
             if selected_school["Guest"].values[0] == "Y":
-                table_title = selected_year_string + " Financial Information (SAMPLE DATA)"
+                table_title = (
+                    selected_year_string + " Financial Information (SAMPLE DATA)"
+                )
             else:
                 table_title = selected_year_string + " Financial Information"
         else:
             table_title = (
-                selected_year_string + " Financial Information ("
+                selected_year_string
+                + " Financial Information ("
                 + financial_data["School Name"][0]
                 + ")"
             )
@@ -225,11 +230,44 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             ]
 
             financial_data = financial_data.dropna(axis=1, how="all")
-            financial_data = financial_data.reset_index(drop=True)
+            financial_data = financial_data.set_index("Category")
+
+            row_order = [
+                "Revenue",
+                "State Grants",
+                "Federal Grants",
+                "Total Grants",
+                "Contributions and Donations",
+                "Student Fees",
+                "Other Income",
+                "Financial Position",
+                "Total Assets",
+                "Current Assets",
+                "Total Liabilities",
+                "Current Liabilities",
+                "Net Asset Position",
+                "Financial Activities",
+                "Operating Revenues",
+                "Operating Expenses",
+                "Change in Net Assets",
+                "Supplemental Information",
+                "Unrestricted Net Assets",
+                "Unrestricted Cash",
+                "Principal Payments",
+                "Interest Expense",
+                "Lease/Mortgage Payments",
+                "Depreciation/Amortization",
+                "Enrollment Information",
+                "September ADM",
+                "February ADM",
+                "ADM Average",
+            ]
+
+            financial_data = financial_data.reindex(index=row_order)
+            financial_data = financial_data.reset_index()
 
             # Force correct format for display of df in datatable (accounting, no decimals, no "$")
             for year in string_years:
-
                 financial_data[year] = pd.Series(
                     ["{:,.0f}".format(val) for val in financial_data[year]],
                     index=financial_data.index,
@@ -377,6 +415,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
         empty_container,
         no_data_to_display,
     )
+
 
 def layout():
     return html.Div(
