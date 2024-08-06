@@ -1106,6 +1106,10 @@ def get_academic_data(*args):
             if "Total Tested" in col or "Cohort Count" in col
         ]
 
+    # remove any decimals in N-Size cols
+    for col in tested_cols:
+            data[col] = data[col].astype(str).replace('\.0', '', regex=True)
+
     for col in tested_cols:
         if (
             pd.to_numeric(
@@ -1127,6 +1131,7 @@ def get_academic_data(*args):
             ]
 
             drop_columns.append(matching_cols.tolist())
+
 
     drop_all = [i for sub_list in drop_columns for i in sub_list]
 
@@ -1260,11 +1265,6 @@ def get_academic_data(*args):
                         ~analysis_data.columns.str.contains(r"Female|Male")
                     ]
                 ]
-
-                # filename77 = ("analysis_data1.csv")
-                # analysis_data.to_csv(filename77, index=False)
-                # filename77 = ("analysis_data2.csv")
-                # analysis_data.to_csv(filename77, index=False)
 
                 # We don't want to get rid of "***" yet, but we also don't
                 # want to pass through a dataframe that that is all "***" - so

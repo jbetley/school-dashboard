@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     03/25/24
+# date:     08/05/24
 
 import dash
 from dash import dcc, html, dash_table, Input, State, Output, callback
@@ -557,7 +557,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             ):
                 # drop unused columns, transpose and rename
                 financial_ratios_data = financial_ratios_data.drop(
-                    columns=["Corporation Name", "Corporation ID"]
+                    columns=["Corporation Name", "Corporation ID", "School ID"]
                 )
                 financial_ratios_data = (
                     financial_ratios_data.set_index("Year")

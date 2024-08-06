@@ -37,14 +37,20 @@ def update_organizational_compliance(school, year):
 
     if len(financial_data.columns) <= 1 or financial_data.empty:
         org_compliance_table = no_data_table(
-            "No Data to Display.", selected_year_string +" Organizational and Operational Accountability"
+            "No Data to Display.",
+            selected_year_string + " Organizational and Operational Accountability",
         )
 
     else:
         if selected_school["Guest"].values[0] == "Y":
-            table_title = selected_year_string +" Organizational and Operational Accountability (SAMPLE DATA)"
+            table_title = (
+                selected_year_string
+                + " Organizational and Operational Accountability (SAMPLE DATA)"
+            )
         else:
-            table_title = selected_year_string +" Organizational and Operational Accountability"
+            table_title = (
+                selected_year_string + " Organizational and Operational Accountability"
+            )
 
         financial_data = financial_data.drop(["School ID", "School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
@@ -352,6 +358,7 @@ def update_organizational_compliance(school, year):
 
     return org_compliance_table, org_compliance_definitions_table
 
+
 def layout():
     return html.Div(
         [
@@ -373,7 +380,7 @@ def layout():
                 className="row",
             ),
             html.Div(""),
-            html.Div(id="org-compliance-table", className = "pagebreak-after"),
+            html.Div(id="org-compliance-table", className="pagebreak-after"),
             html.Div(
                 [
                     html.Div(

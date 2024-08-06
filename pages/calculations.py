@@ -469,7 +469,6 @@ def round_percentages(percentages: list) -> list:
     # of the numbers should bet at or near (1). To be safe we test
     # to see if sum is less than 2. If it is, we multiply all of
     # the numbers in the list by 100 (e.g., 57, 90)
-    print(percentages)
 
     if sum(percentages) < 2:
         percentages = [x * 100 for x in percentages]
@@ -696,10 +695,22 @@ def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.Dat
     # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
     overlap = 1
 
-    schools = schools.replace({"Low Grade": {"PK": 0, "KG": 1}})
+    #TODO: Figure out why some schools don't have a grade
+    schools = schools.replace({"Low Grade": {"PK": 0, "KG": 1, "": 0}})
+    schools = schools.replace({"High Grade": {"": 0}})
+    
+    # clean up Grade columns (blanks, decimal)
+    schools["Low Grade"] = (
+        schools["Low Grade"].astype(str).replace("\.0", "", regex=True)
+    )
 
     schools["Low Grade"] = schools["Low Grade"].astype(int)
+
+    schools["High Grade"] = (
+        schools["High Grade"].astype(str).replace("\.0", "", regex=True)
+    )
     schools["High Grade"] = schools["High Grade"].astype(int)
+
     school_grade_span = (
         schools.loc[schools["School ID"] == int(school_id)][["Low Grade", "High Grade"]]
         .values[0]
