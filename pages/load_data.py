@@ -13,7 +13,7 @@
 # SAT - 2024
 # ADM - 2023
 # Demographics - 2024 (except SPED/ELL)
-# Financial - 2023 (Audited) / 2024 (Q4 due mid august)
+# Financial - 2023 (Audited) / 2024(Q3) (Q4 due mid august)
 # Graduation Rate - 2023
 
 import pandas as pd
@@ -1477,12 +1477,7 @@ def get_academic_data(*args):
 
                     return metric_data
 
-
-# TODO: Do we need a default on error?
-# return data
-
-
-# TODO: Eventually merge into get_academic_data()
+# TODO: Is this being used? If not, merge into get_academic_data()
 def get_year_over_year_data(*args):
     keys = ["school_id", "comp_list", "category", "year", "flag"]
     params = dict(zip(keys, args))

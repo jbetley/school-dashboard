@@ -53,7 +53,7 @@ layout = html.Div(
             [
                 html.Div(
                     [
-                        html.Label("Select Pages to Print:", className="label__header"),
+                        html.Label("Select Pages to Print (NOT YET FUNCTIONAL):", className="label__header"),
                         dcc.Checklist(
                             id="checklist-all",
                             options=[{"label": "All", "value": "ALL"}],

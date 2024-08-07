@@ -3,9 +3,8 @@
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     08/05/24
 
-# NOTE: having mypy typing issues with numpy.
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
@@ -197,7 +196,6 @@ def calculate_proficiency(df: pd.DataFrame) -> pd.DataFrame:
             # ("Tested" > 0 and "Total Proficient" is NaN. A "Total Proficient"
             # value of NaN means it was a "***" before being converted to numeric
             # we use sum/all because there could be one or many columns
-
             if (
                 pd.to_numeric(data[tested], errors="coerce").sum() == 0
                 or pd.isna(data[tested]).all()
@@ -235,11 +233,6 @@ def recalculate_total_proficiency(
     revised_data = data.copy()
     revised_totals = pd.DataFrame()
 
-    # TODO: I put this in here temporarily for some reason - I think the commented out line is the
-    # TODO: correct one, but need to test to be sure.
-    if "School Name" not in revised_data:  # remove
-        revised_data["School Name"] = "TEMP"  # remove
-    # revised_totals["School ID"] = revised_data["School ID"]
     revised_totals[["Year", "School ID", "School Name"]] = revised_data[
         ["Year", "School ID", "School Name"]
     ]  # remove
@@ -695,7 +688,6 @@ def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.Dat
     # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
     overlap = 1
 
-    #TODO: Figure out why some schools don't have a grade
     schools = schools.replace({"Low Grade": {"PK": 0, "KG": 1, "": 0}})
     schools = schools.replace({"High Grade": {"": 0}})
     
@@ -703,7 +695,6 @@ def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.Dat
     schools["Low Grade"] = (
         schools["Low Grade"].astype(str).replace("\.0", "", regex=True)
     )
-
     schools["Low Grade"] = schools["Low Grade"].astype(int)
 
     schools["High Grade"] = (
@@ -740,7 +731,6 @@ def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.Dat
     #   d) a school with grades 3-4     [No match]: low grade is lower than selected school's
     #       low grade, but high grade (4) minus the selected school's low grade (5) is not greater
     #       (-1) than the overlap (1).
-
     schools = schools.loc[
         (
             (schools["Low Grade"] <= school_low)
