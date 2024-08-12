@@ -19,7 +19,7 @@ color = [
     "#83941f",
     "#f0c33b",
     "#bc986a",
-    "#96b8db"
+    "#96b8db",
 ]
 
 subject = ["Math", "ELA"]
@@ -51,6 +51,38 @@ grades_all = ["Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", 
 
 grades_ordinal = ["3rd", "4th", "5th", "6th", "7th", "8th"]
 
+# discipline
+# base is numerator, base + suffix "UniqueStudents" is denominator
+# "Total" matches with "Overall" for each group
+discipline_categories = [
+    "In School Suspension",
+    "Out of School Suspension",
+    "Expulsion",
+    "Attendance Incidents",
+    "Arrests",
+    "Law Enforcement Incidents",
+]
+
+discipline_groups = [
+    "Overall",
+    "Male",
+    "Female",
+    "American Indian",
+    "Asian",
+    "Black",
+    "Hispanic",
+    "Multiracial",
+    "Native Hawaiian or Other Pacific Islander",
+    "White",
+    "Paid Meals",
+    "Free and Reduced Price Meals",
+    "General Education",
+    "Special Education",
+    "English Language Learner",
+    "Non English Language Learner",
+    "Not Homeless",
+    "Homeless",
+]
 # default table styles
 table_style = {"border": "none", "fontFamily": "Inter, sans-serif"}
 

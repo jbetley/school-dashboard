@@ -68,9 +68,10 @@ def run_query(q, *args):
         df.columns = df.columns.str.replace(
             r"([WADTO])([CATPB&])", r"\1 \2", regex=True
         )
-        df.columns = df.columns.str.replace(
-            "EBRWand", "EBRW and"
-        )  # better way to do this?
+        # better way to do these?
+        df.columns = df.columns.str.replace("EBRWand", "EBRW and")
+        df.columns = df.columns.str.replace("Freeand", "Free and")
+        df.columns = df.columns.str.replace("Outof", "Out of")
         df.columns = df.columns.str.replace(r"([A])([a])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([1-9])([(])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace("or ", " or ")
@@ -712,6 +713,27 @@ def get_iread_student_data(*args):
     return results
 
 
+def get_discipline_data(*args):
+    keys = ["id"]
+    params = dict(zip(keys, args))
+
+    q = text(
+        """
+        SELECT *
+            FROM discipline
+	        WHERE SchoolID = :id
+        """
+    )
+
+    results = run_query(q, params)
+    results = results.sort_values(by="Year", ascending=False)
+
+    results = results.rename(columns={"Test Year": "Year"})
+    results["Year"] = results["Year"].astype(str)
+
+    return results
+
+
 def get_iread_stns(*args):
     keys = ["id"]
     params = dict(zip(keys, args))
@@ -1108,7 +1130,7 @@ def get_academic_data(*args):
 
     # remove any decimals in N-Size cols
     for col in tested_cols:
-            data[col] = data[col].astype(str).replace('\.0', '', regex=True)
+        data[col] = data[col].astype(str).replace("\.0", "", regex=True)
 
     for col in tested_cols:
         if (
@@ -1132,7 +1154,7 @@ def get_academic_data(*args):
 
             drop_columns.append(matching_cols.tolist())
 
-
+    # TODO: WTF is sublist
     drop_all = [i for sub_list in drop_columns for i in sub_list]
 
     data = data.drop(drop_all, axis=1).copy()
@@ -1476,6 +1498,7 @@ def get_academic_data(*args):
                     )
 
                     return metric_data
+
 
 # TODO: Is this being used? If not, merge into get_academic_data()
 def get_year_over_year_data(*args):

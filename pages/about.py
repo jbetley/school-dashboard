@@ -21,7 +21,11 @@ from .load_data import (
     get_school_demographic_data,
     get_adm,
     get_attendance_data,
+    get_discipline_data,
 )
+
+from .process_data import process_discipline_data
+
 from .charts import (
     loading_fig,
     no_data_fig_label,
@@ -115,6 +119,15 @@ def update_about_page(year: str, school: str):
     update_table = create_key_table(
         update_table_df, update_table_label, first_column_width
     )
+
+    # TODO: Testing Discipline
+
+    test_discipline = get_discipline_data(selected_school_id)
+
+    zoot = process_discipline_data(test_discipline, selected_year_string, selected_school_id)
+    print(test_discipline)
+    print(zoot)
+    # TODO: Testing Discipline
 
     if len(demographic_data.index) == 0:
         enroll_table = no_data_table("No Data to Display", enroll_title, "six")

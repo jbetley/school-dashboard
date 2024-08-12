@@ -16,15 +16,18 @@ from .globals import (
     grades,
     ethnicity,
     subgroup,
+    discipline_categories,
+    discipline_groups,
 )
+
+from .calculations import calculate_percentage
 
 # filters tested (nsize) cols and proficiency calculations into
 # separate dataframes, performs some cleanup, including a transposition,
 # moving years to column headers and listing categories in their own
 # columns and then cross-merging the two. variables change depending on
 # whether we are analyzing a school or a corporation
-def transpose_data(df,params):
-
+def transpose_data(df, params):
     # First, determine whether df contains data for the charter school or
     # the  geo school corporation. A school corporation will always have the
     # same School and Corporation Name and School and Corporation ID.
@@ -35,10 +38,11 @@ def transpose_data(df,params):
     # Name. So we check whether the two sets of columns are equivalent and if
     # both are, the data must belong to a school corporation.
     df = df.reset_index(drop=True)
-    
-    if ((df["School ID"][0] == df["Corporation ID"][0]) +
-        (df["School Name"][0] == df["Corporation Name"][0])) == 2:
 
+    if (
+        (df["School ID"][0] == df["Corporation ID"][0])
+        + (df["School Name"][0] == df["Corporation Name"][0])
+    ) == 2:
         # NOTE: currently keeping record of N-Size data for both school and corp
         # although we do not currently use corp n-size
         nsize_id = "CN-Size"
@@ -51,10 +55,10 @@ def transpose_data(df,params):
     if params["type"] == "HS" or params["type"] == "AHS":
         tested_cols = "Total Tested|Cohort Count|Year"
         filter_cols = r"^Category|Graduation Rate$|AHS|Pass Rate$|Benchmark %|Below|Approaching|At|^Year$"
-        substring_dict = {" Total Tested": "", "\|Cohort Count": "|Graduation"} 
-    
+        substring_dict = {" Total Tested": "", "\|Cohort Count": "|Graduation"}
+
     else:
-        tested_cols = "Total Tested|Test N|Year"        
+        tested_cols = "Total Tested|Test N|Year"
         filter_cols = r"School ID|Corporation ID|Corporation Name|Low Grade|High Grade|\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$"
         substring_dict = {" Total Tested": "", " Test N": ""}
 
@@ -73,7 +77,7 @@ def transpose_data(df,params):
 
     tested_data = tested_data.rename(
         columns={
-            c: str(c) + nsize_id #"N-Size"
+            c: str(c) + nsize_id  # "N-Size"
             for c in tested_data.columns
             if c not in ["Category"]
         }
@@ -132,10 +136,7 @@ def transpose_data(df,params):
 
     # keep only those rows where substring is in Category
     merged_data = merged_data[
-        [
-            a in b
-            for a, b in zip(merged_data["Substring"], merged_data["Category"])
-        ]
+        [a in b for a, b in zip(merged_data["Substring"], merged_data["Category"])]
     ]
 
     merged_data = merged_data.replace(
@@ -148,7 +149,7 @@ def transpose_data(df,params):
 
     merged_data = merged_data.drop("Substring", axis=1)
     merged_data = merged_data.reset_index(drop=True)
-    
+
     # reorder columns for display
     school_cols = [e for e in merged_data.columns if name_id in e]
     nsize_cols = [e for e in merged_data.columns if nsize_id in e]
@@ -168,8 +169,9 @@ def transpose_data(df,params):
             [final_data.reset_index(drop=True), other_rows.reset_index(drop=True)],
             axis=0,
         ).reset_index(drop=True)
-        
+
     return final_data
+
 
 def process_growth_data(
     data: pd.DataFrame, category: str
@@ -187,7 +189,7 @@ def process_growth_data(
     Returns:
         table_data (pd.DataFrame): processed dataframe used to create table
         fig_data (pd.DataFrame): processed dataframe used to create fig
-    """    
+    """
     # step 1: find the percentage of students with Adequate growth using
     # "Majority Enrolled" students (all available data) and the percentage
     # of students with Adequate growth using the set of students enrolled for
@@ -236,7 +238,7 @@ def process_growth_data(
         data_162, how="left", on=["Test Year", category, "Subject"], suffixes=("", "_y")
     )
 
-    data["Diff"] = data["162 Days"] - data["Majority Enrolled"] # "Difference"
+    data["Diff"] = data["162 Days"] - data["Majority Enrolled"]  # "Difference"
 
     # step 4: get into proper format for display as multi-header DataTable
 
@@ -245,7 +247,7 @@ def process_growth_data(
 
     # filter unneeded columns
     final_data = data.filter(
-        regex=r"Test Year|Category|Majority Enrolled|162 Days|Diff", #"Difference"
+        regex=r"Test Year|Category|Majority Enrolled|162 Days|Diff",  # "Difference"
         axis=1,
     )
 
@@ -298,3 +300,118 @@ def process_growth_data(
     table_data = table_data.reset_index()
 
     return fig_data, table_data
+
+
+def process_discipline_data(raw_data, year, school_id):
+    # Drop years of data that have been excluded by the
+    # selected year (are later than)
+    # excluded_years = get_excluded_years(year)
+    excluded_years = []
+
+    excluded_academic_years = int(2024) - int(year)
+
+    for i in range(excluded_academic_years):
+        excluded_year = int(2024) - i
+        excluded_years.append(excluded_year)
+
+    if excluded_years:
+        raw_data = raw_data[~raw_data["Year"].isin(excluded_years)]
+
+    raw_data = raw_data.sort_values(by="Year", ascending=False)
+
+    raw_data = raw_data.reset_index(drop=True)
+
+    # Drop all columns for a Category if the value of "Total Tested" for
+    # the Category for the school is null or 0 for the "school"
+    drop_columns = []
+
+    data = raw_data.copy()
+
+    # convert from float to str while dropping the decimal
+    data["School ID"] = data["School ID"].astype("Int64").astype("str")
+    data["Corporation ID"] = data["Corporation ID"].astype("Int64").astype("str")
+
+    # "Total Unique Students" is the number of unique students in the school
+    #  for each category
+    tested_cols = [
+        col for col in data.columns.to_list() if "Students" in col
+        and "Total Unique Students" not in col
+                   ]
+
+    # remove any decimals in N-Size cols
+    for col in tested_cols:
+        data[col] = data[col].astype(str).replace("\.0", "", regex=True)
+
+    # for col in tested_cols:
+    #     if (
+    #         pd.to_numeric(data[col], errors="coerce").sum() != 0
+    #         or ~data[col].isnull().all()
+    #     ):
+            
+    #         category_col = tested_col.replace(" Unique Students", "")
+    #         data = data.drop([col, category_col], axis=1)       
+    #         matching_cols = data.columns[
+    #             pd.Series(data.columns).str.startswith(col.split("Students")[0])
+    #         ]
+
+    #         drop_columns.append(matching_cols.tolist())
+
+    # drop_all = [i for sub_list in drop_columns for i in sub_list]
+
+    # print('DROPPED COLS')
+    # print(drop_all)
+    # data = data.drop(drop_all, axis=1).copy()
+
+    # # k8 or hs data with excluded years and non-tested categories dropped
+    # data = data.reset_index(drop=True)
+
+    # Get a list of category columns
+    # category_substrings = [x.replace(" Unique Students", "") for x in tested_cols]
+
+    # drop the entire category if ("Tested" == 0 or NaN) or if
+    # ("Tested" > 0 and "Total Proficient" is NaN. A "Total Proficient"
+    # value of NaN means it was a "***" before being converted to numeric
+    # we use sum/all because there could be one or many columns
+
+    cols_to_drop = []
+
+    for group in discipline_groups:
+        
+        group_total = "Total Unique Students|" + group
+        
+        for category in discipline_categories:
+
+            unique_in_category = category + " Unique Students|" + group
+            all_in_category = category + "|" + group
+
+            all_result = all_in_category + " Percentage"
+            unique_result = unique_in_category + " Percentage"
+
+            data[all_result] = calculate_percentage(
+                data[all_in_category], data[group_total]
+            )
+            
+            data[unique_result] = calculate_percentage(
+                data[unique_in_category], data[group_total]
+            )
+
+            # cols_to_drop.extend(all_in_category, unique_in_category)
+
+        # if (
+        #     pd.to_numeric(data[tested_col], errors="coerce").sum() == 0
+        #     or pd.isna(data[tested_col]).all()
+        # ) | (
+        #     pd.to_numeric(data[tested_col], errors="coerce").sum() > 0
+        #     and pd.isna(data[category_col]).all()
+        # ):
+        #     data = data.drop([tested_col, category_col], axis=1)
+
+        # else:
+        #     data[result_col] = calculate_percentage(
+        #         data[category_col], data[tested_col]
+        #     )
+
+    print(data)
+    filename99 = ("DISC_data.csv")
+    data.to_csv(filename99, index=False)
+    return data

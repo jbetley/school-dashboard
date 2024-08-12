@@ -14,14 +14,14 @@ import pandas as pd
 from .globals import (
     ethnicity,
     subgroup,
-    ethnicity,
+    ethnicity
 )
 
 from .load_data import (
-    current_academic_year,
     get_school_index,
     get_school_coordinates,
-    get_academic_data
+    get_academic_data,
+    current_academic_year
 )
 
 from .calculations import (
