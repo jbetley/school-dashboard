@@ -53,14 +53,15 @@ grades_ordinal = ["3rd", "4th", "5th", "6th", "7th", "8th"]
 
 # discipline
 # base is numerator, base + suffix "UniqueStudents" is denominator
-# "Total" matches with "Overall" for each group
+# "Total" matches with "Overall" for each group - currently treat
+# Arrest and Law Enforcement differently (see process_data.py)
 discipline_categories = [
     "In School Suspension",
     "Out of School Suspension",
     "Expulsion",
     "Attendance Incidents",
-    "Arrests",
-    "Law Enforcement Incidents",
+    # "Arrests",
+    # "Law Enforcement Incidents",
 ]
 
 discipline_groups = [

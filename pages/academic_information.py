@@ -524,7 +524,6 @@ def update_academic_information_page(
         k8_info_data = get_academic_data(
             list_of_schools, school_type, selected_year_numeric, "info"
         )
-        # print(k8_info_data)
 
         k8_info_data["Category"] = (
             k8_info_data["Category"].str.replace(" Proficient %", "").str.strip()

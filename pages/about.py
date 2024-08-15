@@ -121,11 +121,10 @@ def update_about_page(year: str, school: str):
     )
 
     # TODO: Testing Discipline
-
     test_discipline = get_discipline_data(selected_school_id)
 
     zoot = process_discipline_data(test_discipline, selected_year_string, selected_school_id)
-    print(test_discipline)
+    print("DISC Result")
     print(zoot)
     # TODO: Testing Discipline
 

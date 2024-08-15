@@ -1696,7 +1696,9 @@ def get_student_level_ilearn(school, subject):
     ilearn_student_all = get_ilearn_student_data(school)
 
     # will also be empty for guest schools
-    if not ilearn_student_all.empty:
+    if ilearn_student_all.empty:
+        return pd.DataFrame(), pd.DataFrame() # iread_ilearn_pass_final, iread_ilearn_nopass_final
+    else:
         iread_student_data = get_iread_student_data(school)
 
         ilearn_filtered = ilearn_student_all.filter(
@@ -1799,4 +1801,4 @@ def get_student_level_ilearn(school, subject):
             str
         )
 
-    return iread_ilearn_pass_final, iread_ilearn_nopass_final
+        return iread_ilearn_pass_final, iread_ilearn_nopass_final

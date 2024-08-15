@@ -22,6 +22,7 @@ from .globals import (
 
 from .calculations import calculate_percentage
 
+
 # filters tested (nsize) cols and proficiency calculations into
 # separate dataframes, performs some cleanup, including a transposition,
 # moving years to column headers and listing categories in their own
@@ -305,7 +306,6 @@ def process_growth_data(
 def process_discipline_data(raw_data, year, school_id):
     # Drop years of data that have been excluded by the
     # selected year (are later than)
-    # excluded_years = get_excluded_years(year)
     excluded_years = []
 
     excluded_academic_years = int(2024) - int(year)
@@ -321,9 +321,27 @@ def process_discipline_data(raw_data, year, school_id):
 
     raw_data = raw_data.reset_index(drop=True)
 
-    # Drop all columns for a Category if the value of "Total Tested" for
-    # the Category for the school is null or 0 for the "school"
-    drop_columns = []
+    # keep Arrest and Law Enforcement "Overall" data and drop rest
+    # for those Categories (#s are too low to measure)
+    drop_cols = [
+        col
+        for col in raw_data.columns.to_list()
+        if ("Arrest" in col or "Law Enforcement" in col) and "Overall" not in col
+    ]
+    raw_data = raw_data.drop(drop_cols, axis=1)
+
+    law_data = raw_data[
+        ["Year", "Arrests|Overall", "Law Enforcement Incidents|Overall"]
+    ]
+    raw_data = raw_data.drop(
+        [
+            "Arrests|Overall",
+            "Arrests Unique Students|Overall",
+            "Law Enforcement Incidents|Overall",
+            "Law Enforcement Incidents Unique Students|Overall",
+        ],
+        axis=1,
+    )
 
     data = raw_data.copy()
 
@@ -334,84 +352,59 @@ def process_discipline_data(raw_data, year, school_id):
     # "Total Unique Students" is the number of unique students in the school
     #  for each category
     tested_cols = [
-        col for col in data.columns.to_list() if "Students" in col
-        and "Total Unique Students" not in col
-                   ]
+        col
+        for col in data.columns.to_list()
+        if "Students" in col and "Total Unique Students" not in col
+    ]
 
     # remove any decimals in N-Size cols
     for col in tested_cols:
         data[col] = data[col].astype(str).replace("\.0", "", regex=True)
-
-    # for col in tested_cols:
-    #     if (
-    #         pd.to_numeric(data[col], errors="coerce").sum() != 0
-    #         or ~data[col].isnull().all()
-    #     ):
-            
-    #         category_col = tested_col.replace(" Unique Students", "")
-    #         data = data.drop([col, category_col], axis=1)       
-    #         matching_cols = data.columns[
-    #             pd.Series(data.columns).str.startswith(col.split("Students")[0])
-    #         ]
-
-    #         drop_columns.append(matching_cols.tolist())
-
-    # drop_all = [i for sub_list in drop_columns for i in sub_list]
-
-    # print('DROPPED COLS')
-    # print(drop_all)
-    # data = data.drop(drop_all, axis=1).copy()
-
-    # # k8 or hs data with excluded years and non-tested categories dropped
-    # data = data.reset_index(drop=True)
-
-    # Get a list of category columns
-    # category_substrings = [x.replace(" Unique Students", "") for x in tested_cols]
 
     # drop the entire category if ("Tested" == 0 or NaN) or if
     # ("Tested" > 0 and "Total Proficient" is NaN. A "Total Proficient"
     # value of NaN means it was a "***" before being converted to numeric
     # we use sum/all because there could be one or many columns
 
-    cols_to_drop = []
-
+    data_all = pd.DataFrame()
+    data_unique = pd.DataFrame()
+    # TODO: Check Homeless Numbers
     for group in discipline_groups:
         
+        # denominators
+        # Use group to find discipline rate as a % of all students in the group
         group_total = "Total Unique Students|" + group
-        
-        for category in discipline_categories:
 
+        # Use "Overall" to find discipline rate as a % of all students in the school
+        overall_total = "Total Unique Students|Overall"
+
+        for category in discipline_categories:
             unique_in_category = category + " Unique Students|" + group
             all_in_category = category + "|" + group
 
-            all_result = all_in_category + " Percentage"
-            unique_result = unique_in_category + " Percentage"
+            all_result = all_in_category + " as Percentage of Group"
+            unique_result = unique_in_category + " as Percentage of Group Unique"
+            overall_result_all = all_in_category + " as Percentage of All"
+            overall_result_unique = unique_in_category + " as Percentage of All Unique"
 
-            data[all_result] = calculate_percentage(
+            data_all[all_result] = calculate_percentage(
                 data[all_in_category], data[group_total]
             )
-            
-            data[unique_result] = calculate_percentage(
+
+            data_unique[unique_result] = calculate_percentage(
                 data[unique_in_category], data[group_total]
             )
 
-            # cols_to_drop.extend(all_in_category, unique_in_category)
+            data_all[overall_result_all] = calculate_percentage(
+                data[all_in_category], data[overall_total]
+            )
 
-        # if (
-        #     pd.to_numeric(data[tested_col], errors="coerce").sum() == 0
-        #     or pd.isna(data[tested_col]).all()
-        # ) | (
-        #     pd.to_numeric(data[tested_col], errors="coerce").sum() > 0
-        #     and pd.isna(data[category_col]).all()
-        # ):
-        #     data = data.drop([tested_col, category_col], axis=1)
+            data_unique[overall_result_unique] = calculate_percentage(
+                data[unique_in_category], data[overall_total]
+            )
 
-        # else:
-        #     data[result_col] = calculate_percentage(
-        #         data[category_col], data[tested_col]
-        #     )
-
-    print(data)
-    filename99 = ("DISC_data.csv")
-    data.to_csv(filename99, index=False)
-    return data
+    final_data = pd.concat([data_all, data_unique, law_data], axis = 1)
+    print(final_data)
+    filename99 = "DISC_data.csv"
+    final_data.to_csv(filename99, index=False)
+    return final_data
