@@ -96,20 +96,14 @@ def update_about_page(year: str, school: str):
     # see full color list in charts.py
     linecolor = ["#df8f2d"]
 
-    # Get data for enrollment table, and subgroup/ethnicity demographic figs (single year)
-    demographic_data = get_school_demographic_data(selected_school_id)
-
-    demographic_data = demographic_data.loc[
-        demographic_data["Year"] == selected_year_numeric
-    ]
-
     # Updates Table - Right Now hardcoded - may want to add to DB
     update_table_label = ""
     update_table_dict = {
-        "Date": ["07.28.24", "07.30.24"],
+        "Date": ["07.28.24", "07.30.24", "08.16.24"],
         "Update": [
             "Added 2024 ILEARN to Information and Analysis pages.",
             "Added 2024 SAT to Information and Analysis pages.",
+            "Added 2024 IREAD to Information and Analysis pages.",
         ],
     }
 
@@ -120,12 +114,26 @@ def update_about_page(year: str, school: str):
         update_table_df, update_table_label, first_column_width
     )
 
-    # TODO: Testing Discipline
-    test_discipline = get_discipline_data(selected_school_id)
+    # Get data for enrollment table, and subgroup/ethnicity demographic figs (single year)
+    demographic_data = get_school_demographic_data(selected_school_id)
 
-    zoot = process_discipline_data(test_discipline, selected_year_string, selected_school_id)
-    print("DISC Result")
-    print(zoot)
+    demographic_data = demographic_data.loc[
+        demographic_data["Year"] == selected_year_numeric
+    ]
+
+    # TODO: Testing Discipline
+    # test_discipline = get_discipline_data(selected_school_id)
+
+    # zoot = process_discipline_data(test_discipline, selected_year_string, selected_school_id)
+    # print("DISC Result")
+    # # print(zoot)
+
+    # overall_discipline_data = zoot.loc[:, zoot.columns.str.contains("Overall")]
+
+    # print(overall_discipline_data)
+
+    # filename99 = "DISC_data.csv"
+    # overall_discipline_data.to_csv(filename99, index=False)
     # TODO: Testing Discipline
 
     if len(demographic_data.index) == 0:

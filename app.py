@@ -383,8 +383,6 @@ def set_year_dropdown_options(
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
-    # previous_page = input_state["previouspage"]
-
     # for K12 schools, we need to use "HS" data when analysis_type is "hs". We also
     # want to make sure that we reset the type if the user switches to a k8 school
     # from a AHS/HS/K12 where the analysis_type was "hs"
@@ -530,9 +528,8 @@ def get_school_type(school_id: str, analysis_type_value: str):
 
 
 # Subnavigation - Dropdown #
-# NOTE: There are no doubt better ways to structure this; however, given how complicated
-# it is and how the values are interlinked and in order to avoid circular callbacks, we are
-# using a single callback
+# Given how the values are interlinked and in order to avoid circular
+# callbacks, we use a single callback for almost all subnavigation
 @callback(
     Output("academic-information-type-radio", "options"),
     Output("academic-information-type-radio", "value"),
@@ -582,7 +579,7 @@ def navigation(
     analysis_multi_category_value: str,
     analysis_multi_subcategory_value: str,
     analysis_type_value: str,
-    analysis_multi_subject_value: str,  # Testing this
+    analysis_multi_subject_value: str,
     info_category_options_state: list,
     info_category_value_state: str,
     analysis_multi_subject_state: str,
@@ -1215,7 +1212,6 @@ def redirect_hs(school: str, current_page: str):
 
 # app.layout = html.Div(
 # NOTE: Test to see effect of layout as function vs. variable
-#   No difference?
 def layout():
     return html.Div(
         [

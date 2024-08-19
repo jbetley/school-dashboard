@@ -368,9 +368,8 @@ def process_discipline_data(raw_data, year, school_id):
 
     data_all = pd.DataFrame()
     data_unique = pd.DataFrame()
-    # TODO: Check Homeless Numbers
+
     for group in discipline_groups:
-        
         # denominators
         # Use group to find discipline rate as a % of all students in the group
         group_total = "Total Unique Students|" + group
@@ -403,8 +402,6 @@ def process_discipline_data(raw_data, year, school_id):
                 data[unique_in_category], data[overall_total]
             )
 
-    final_data = pd.concat([data_all, data_unique, law_data], axis = 1)
-    print(final_data)
-    filename99 = "DISC_data.csv"
-    final_data.to_csv(filename99, index=False)
+    final_data = pd.concat([data, data_all, data_unique, law_data], axis=1)
+
     return final_data

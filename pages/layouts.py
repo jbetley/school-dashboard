@@ -406,6 +406,45 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     return layout
 
 
+def create_two_fig_layout(fig1: list, fig2: list, label: str) -> list:
+    """
+    Creates a layout combining two figs.
+    Args:
+        fig1 (list): a ploty fig
+        fig2 (list): a ploty fig
+
+    Returns:
+        layout (list): a dash html.Div layout
+    """
+
+    layout = [
+        html.Div(
+            [
+                html.Label(label, className="label__header", style={"marginTop": "10px"}),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(fig1),
+                            ],
+                            className="pretty-container six columns",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(fig2),
+                            ],
+                            className="pretty-container six columns",
+                        ),                        
+                    ],
+                    className="bare-container--flex--center twelve columns",
+                ),
+            ],
+            className="bare-container--relative twelve columns",
+        ),
+    ]
+
+    return layout
+
 def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelve") -> html.Div:
     """
     Creates a layout for a group of radio buttons (used by app.py)
