@@ -108,7 +108,6 @@ def create_hs_analysis_layout(
 
 
 def create_simple_iread_layout(data):
-
     # Simple table and chart
     data = data.rename(
         columns={
@@ -133,13 +132,9 @@ def create_simple_iread_layout(data):
 
     table_data = table_data.reset_index()
 
-    table = create_single_header_table(
-        table_data, "IREAD School Level Proficiency"
-    )
+    table = create_single_header_table(table_data, "IREAD School Level Proficiency")
 
-    layout = create_line_fig_layout(
-        table, fig, "IREAD"
-    )
+    layout = create_line_fig_layout(table, fig, "IREAD")
 
     return layout
 
@@ -270,7 +265,7 @@ def create_barchart_layout(
                         className="pretty-container--close eleven columns",
                     ),
                 ],
-                className="row bar-chart-print"
+                className="row bar-chart-print",
             ),
             html.Div(
                 [
@@ -279,8 +274,8 @@ def create_barchart_layout(
                         className="container__close eleven columns",
                     ),
                 ],
-                className="row bar-chart-print"
-            )
+                className="row bar-chart-print",
+            ),
         ]
     else:
         layout = [
@@ -350,7 +345,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     if type(fig[0]) is type(table[0]):
         endnote = ""
         endnote_style = {}
-        
+
     else:
         endnote_style = {
             "color": "#6783a9",
@@ -378,14 +373,16 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     layout = [
         html.Div(
             [
-                html.Label(label, className="label__header", style={"marginTop": "10px"}),
+                html.Label(
+                    label, className="label__header", style={"marginTop": "10px"}
+                ),
                 html.Div(
                     [
                         html.Div(
                             [
                                 html.Div(table, style={"marginTop": "10px"}),
                                 html.P(""),
-                                html.P(endnote, style = endnote_style),
+                                html.P(endnote, style=endnote_style),
                             ],
                             className="pretty-container six columns",
                         ),
@@ -402,6 +399,9 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
             className="bare-container--relative twelve columns",
         ),
     ]
+
+    print("Final layout")
+    print(layout)
 
     return layout
 
@@ -420,7 +420,9 @@ def create_two_fig_layout(fig1: list, fig2: list, label: str) -> list:
     layout = [
         html.Div(
             [
-                html.Label(label, className="label__header", style={"marginTop": "10px"}),
+                html.Label(
+                    label, className="label__header", style={"marginTop": "10px"}
+                ),
                 html.Div(
                     [
                         html.Div(
@@ -434,7 +436,7 @@ def create_two_fig_layout(fig1: list, fig2: list, label: str) -> list:
                                 html.Div(fig2),
                             ],
                             className="pretty-container six columns",
-                        ),                        
+                        ),
                     ],
                     className="bare-container--flex--center twelve columns",
                 ),
@@ -445,7 +447,10 @@ def create_two_fig_layout(fig1: list, fig2: list, label: str) -> list:
 
     return layout
 
-def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelve") -> html.Div:
+
+def create_radio_layout(
+    page: str, group_catagory: str = "", width: str = "twelve"
+) -> html.Div:
     """
     Creates a layout for a group of radio buttons (used by app.py)
 
@@ -504,8 +509,9 @@ def create_radio_layout(page: str, group_catagory: str = "", width: str = "twelv
     return radio_button_group
 
 
-def create_year_over_year_layout(school_id: str, data: pd.DataFrame, school_id_list: list,
-                                 label: str, msg: str) -> list:
+def create_year_over_year_layout(
+    school_id: str, data: pd.DataFrame, school_id_list: list, label: str, msg: str
+) -> list:
     """
     Creates a layout for a year over year chart and table grouping
 
@@ -550,14 +556,20 @@ def create_year_over_year_layout(school_id: str, data: pd.DataFrame, school_id_l
         table_data = pd.merge(
             table_data, school_id_list, on=["School Name"], how="left"
         )
-        
+
         # type fun - merge casts the entire School ID, Low Grade, and High Grade
         # columns to float because a school corporation does not have these values
         # and are therefore set to NaN during the merge. To fix, we temporarily convert
         # NaN to 0, convert the columns to int and then replace the 0 (this seems so messy)
-        table_data[["School ID","Low Grade","High Grade"]] = table_data[["School ID","Low Grade","High Grade"]].fillna(0)
-        table_data[["School ID", "High Grade"]] = table_data[["School ID", "High Grade"]].astype(int)
-        table_data[["School ID","Low Grade","High Grade"]] = table_data[["School ID","Low Grade","High Grade"]].replace(0, "")
+        table_data[["School ID", "Low Grade", "High Grade"]] = table_data[
+            ["School ID", "Low Grade", "High Grade"]
+        ].fillna(0)
+        table_data[["School ID", "High Grade"]] = table_data[
+            ["School ID", "High Grade"]
+        ].astype(int)
+        table_data[["School ID", "Low Grade", "High Grade"]] = table_data[
+            ["School ID", "Low Grade", "High Grade"]
+        ].replace(0, "")
 
         fig_trace_colors, fig = make_multi_line_chart(data, label)
 
@@ -565,12 +577,10 @@ def create_year_over_year_layout(school_id: str, data: pd.DataFrame, school_id_l
         table_data["School Name"] = create_school_label(table_data)
 
         table_data = table_data.drop(["Low Grade", "High Grade"], axis=1)
-        
+
         table = create_comparison_table(table_data, fig_trace_colors, school_id)
         category_string = ""
         school_string = ""
-        layout = create_barchart_layout(
-            fig, table, category_string, school_string
-        )
+        layout = create_barchart_layout(fig, table, category_string, school_string)
 
     return layout

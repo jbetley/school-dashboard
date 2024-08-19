@@ -519,16 +519,16 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
         if data.empty:
             fig = no_data_fig_blank()
             fig_layout = [
+                # html.Div(
+                #     [
                 html.Div(
                     [
-                        html.Div(
-                            [
-                                html.Label(label, className="label__header"),
-                                dcc.Graph(figure=fig, config={"displayModeBar": False}),
-                            ],
-                        ),
-                    ]
-                )
+                        html.Label(label, className="label__header"),
+                        dcc.Graph(figure=fig, config={"displayModeBar": False}),
+                    ],
+                ),
+                #     ]
+                # )
             ]
 
         else:
@@ -590,128 +590,122 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
 
             if nsize_string and no_data_string:
                 fig_layout = [
+                    # html.Div(
+                    #     [
+                    html.Div(
+                        [
+                            html.Label(label, className="label__header"),
+                            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+                        ],
+                    ),
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    html.Label(label, className="label__header"),
-                                    dcc.Graph(
-                                        figure=fig, config={"displayModeBar": False}
-                                    ),
-                                ],
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.P(
-                                                children=[
-                                                    html.Span(
-                                                        "Years with insufficient or no data:",
-                                                        className="msg-string__label",
-                                                    ),
-                                                    html.Span(
-                                                        no_data_string,
-                                                        className="nodata-string",
-                                                    ),
-                                                ],
+                                    html.P(
+                                        children=[
+                                            html.Span(
+                                                "Years with insufficient or no data:",
+                                                className="msg-string__label",
                                             ),
-                                            html.P(
-                                                children=[
-                                                    html.Span(
-                                                        "Insufficient n-size:",
-                                                        className="msg-string__label",
-                                                    ),
-                                                    html.Span(
-                                                        nsize_string,
-                                                        className="nsize-string",
-                                                    ),
-                                                ],
+                                            html.Span(
+                                                no_data_string,
+                                                className="nodata-string",
                                             ),
                                         ],
-                                        className="container--close--noborder twelve columns",
-                                    )
+                                    ),
+                                    html.P(
+                                        children=[
+                                            html.Span(
+                                                "Insufficient n-size:",
+                                                className="msg-string__label",
+                                            ),
+                                            html.Span(
+                                                nsize_string,
+                                                className="nsize-string",
+                                            ),
+                                        ],
+                                    ),
                                 ],
-                                className="row",
-                            ),
-                        ]
+                                className="container--close--noborder twelve columns",
+                            )
+                        ],
+                        className="row",
                     )
+                    #     ]
+                    # )
                 ]
 
             elif nsize_string and not no_data_string:
                 fig_layout = [
+                    # html.Div(
+                    #     [
+                    html.Div(
+                        [
+                            html.Label(label, className="label__header"),
+                            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+                        ],
+                    ),
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    html.Label(label, className="label__header"),
-                                    dcc.Graph(
-                                        figure=fig, config={"displayModeBar": False}
-                                    ),
-                                ],
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.P(
-                                                children=[
-                                                    html.Span(
-                                                        "Insufficient n-size:",
-                                                        className="msg-string__label",
-                                                    ),
-                                                    html.Span(
-                                                        nsize_string,
-                                                        className="nsize-string",
-                                                    ),
-                                                ],
+                                    html.P(
+                                        children=[
+                                            html.Span(
+                                                "Insufficient n-size:",
+                                                className="msg-string__label",
+                                            ),
+                                            html.Span(
+                                                nsize_string,
+                                                className="nsize-string",
                                             ),
                                         ],
-                                        className="container--close--noborder twelve columns",
-                                    )
+                                    ),
                                 ],
-                                className="row",
-                            ),
-                        ]
-                    )
+                                className="container--close--noborder twelve columns",
+                            )
+                        ],
+                        className="row",
+                    ),
+                    #     ]
+                    # )
                 ]
 
             elif no_data_string and not nsize_string:
                 fig_layout = [
+                    # html.Div(
+                    #     [
+                    html.Div(
+                        [
+                            html.Label(label, className="label__header"),
+                            dcc.Graph(figure=fig, config={"displayModeBar": False}),
+                        ],
+                    ),
                     html.Div(
                         [
                             html.Div(
                                 [
-                                    html.Label(label, className="label__header"),
-                                    dcc.Graph(
-                                        figure=fig, config={"displayModeBar": False}
-                                    ),
-                                ],
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.P(
-                                                children=[
-                                                    html.Span(
-                                                        "Years with insufficient or no data:",
-                                                        className="msg-string__label",
-                                                    ),
-                                                    html.Span(
-                                                        no_data_string,
-                                                        className="nodata-string",
-                                                    ),
-                                                ],
+                                    html.P(
+                                        children=[
+                                            html.Span(
+                                                "Years with insufficient or no data:",
+                                                className="msg-string__label",
+                                            ),
+                                            html.Span(
+                                                no_data_string,
+                                                className="nodata-string",
                                             ),
                                         ],
-                                        className="container--close--noborder twelve columns",
-                                    )
+                                    ),
                                 ],
-                                className="row",
-                            ),
-                        ]
+                                className="container--close--noborder twelve columns",
+                            )
+                        ],
+                        className="row",
                     )
+                    #     ]
+                    # )
                 ]
 
             else:
@@ -727,16 +721,16 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
         fig = no_data_fig_blank()
 
         fig_layout = [
+            # html.Div(
+            #     [
             html.Div(
                 [
-                    html.Div(
-                        [
-                            html.Label(label, className="label__header"),
-                            dcc.Graph(figure=fig, config={"displayModeBar": False}),
-                        ],
-                    ),
-                ]
+                    html.Label(label, className="label__header"),
+                    dcc.Graph(figure=fig, config={"displayModeBar": False}),
+                ],
             )
+            #     ]
+            # )
         ]
 
     return trace_color, fig_layout
@@ -922,8 +916,8 @@ def make_line_chart(values: pd.DataFrame) -> list:
                                     )
                                 ],
                             ),
-                            html.Div(
-                                [
+                            # html.Div(
+                            #     [
                                     html.Div(
                                         [
                                             html.P(
@@ -942,16 +936,18 @@ def make_line_chart(values: pd.DataFrame) -> list:
                                         className="container--close--noborder twelve columns",
                                     )
                                 ],
-                                className="row",
-                            ),
-                        ]
+                                className="row"
+                        #     ),
+                        # ]
                     )
                 ]
 
             else:
                 fig_layout = [
                     html.Div(
-                        [dcc.Graph(figure=fig, config={"displayModeBar": False})],
+                        [
+                            dcc.Graph(figure=fig, config={"displayModeBar": False})
+                        ],
                     )
                 ]
     else:
@@ -960,9 +956,11 @@ def make_line_chart(values: pd.DataFrame) -> list:
         fig_layout = [
             html.Div(
                 [
-                    html.Div(
-                        [dcc.Graph(figure=fig, config={"displayModeBar": False})],
-                    ),
+                    # html.Div(
+                    #     [
+                            dcc.Graph(figure=fig, config={"displayModeBar": False})
+                    #     ],
+                    # ),
                 ]
             )
         ]
@@ -1143,7 +1141,7 @@ def make_bar_chart(
     """
 
     data = values.copy()
-    
+
     selected_school = get_school_index(str(school_id))
     school_name = selected_school["School Name"].values[0]
 

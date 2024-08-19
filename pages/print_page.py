@@ -8,14 +8,23 @@
 
 import dash
 from dash import html, dash_table, Input, Output, State, callback, ctx, dcc
-from dash.dash_table import FormatTemplate
-from dash.dash_table.Format import Format, Scheme, Sign
-from dash.exceptions import PreventUpdate
-import pandas as pd
-import numpy as np
+
+# from dash.dash_table import FormatTemplate
+# from dash.dash_table.Format import Format, Scheme, Sign
+# from dash.exceptions import PreventUpdate
+# import pandas as pd
+# import numpy as np
 
 from .charts import loading_fig
-from .print_layout import create_print_layout
+from .print_layout import (
+    create_about_layout,
+    create_fininfo_layout,
+    create_finmetrics_layout,
+    create_finanalysis_layout,
+    create_orgcompliance_layout,
+    create_academicinfo_layout,
+    create_academicmetrics_layout,
+)
 
 dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
 
@@ -23,7 +32,11 @@ dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
 # TODO: SUBNAV still loading briefly
 @callback(
     Output("checklist-list", "value"),
-    Output("print-layout", "children"),
+    Output("about-layout", "children"),
+    Output("fininfo-layout", "children"),
+    Output("finmetrics-layout", "children"),
+    Output("finanalysis-layout", "children"),    
+    Output("orgcompliance-layout", "children"),
     # Output("empty-layout", "children"),
     Input("year-dropdown", "value"),
     Input("charter-dropdown", "value"),
@@ -40,7 +53,20 @@ def print_page(
     select_list_value,
     select_list_options,
 ):
-    print_layout = []
+    about_layout = []
+    fininfo_layout = []
+    finmetrics_layout = []
+    finanalysis_layout = []    
+    orgcompliance_layout = []
+    # all_container = {"display": "none"}
+    # about_container = {"display": "none"}
+    # fininfo_container = {"display": "none"}
+    # finmetrics_container = {"display": "none"}
+    # finanalysis_container = {"display": "none"}
+    # orgcompliance_container = {"display": "none"}
+    # academicinfo_container = {"display": "none"}
+    # academicmetrics_container = {"display": "none"}
+    # # empty_container = {"display": "block"}
 
     # TODO: why is triggered triggering print?
     if ctx.triggered_id == "checklist-all":
@@ -56,9 +82,48 @@ def print_page(
     if print_button > 0:
         if selected:
             print(selected)
-            print_layout = create_print_layout(year, school_id, selected)
 
-    return selected, print_layout #, empty_layout
+            if "all" in selected:
+                about_layout = create_about_layout(year, school_id)
+                fininfo_layout = create_fininfo_layout(year, school_id)
+                finmetrics_layout = create_finmetrics_layout(year, school_id)
+                finanalysis_layout = create_finanalysis_layout(year, school_id)
+                orgcompliance_layout = create_orgcompliance_layout(year, school_id)
+                academicinfo_layout = create_academicinfo_layout(year, school_id)
+                academicmetrics_layout = create_academicmetrics_layout(year, school_id)
+
+            else:
+                if "about" in selected:
+                    about_layout = create_about_layout(year, school_id)
+
+                if "fininfo" in selected:
+                    fininfo_layout = create_fininfo_layout(year, school_id)
+
+                if "finmetrics" in selected:
+                    finmetrics_layout = create_finmetrics_layout(year, school_id)
+
+                if "finanalysis" in selected:
+                    finanalysis_layout = create_finanalysis_layout(year, school_id)
+
+                if "orgcompliance" in selected:
+                    orgcompliance_layout = create_orgcompliance_layout(year, school_id)
+
+                if "academicinfo" in selected:
+                    academicinfo_layout = create_academicinfo_layout(year, school_id)
+
+                if "academicmetrics" in selected:
+                    academicmetrics_layout = create_academicmetrics_layout(
+                        year, school_id
+                    )
+
+    return (
+        selected,
+        about_layout,
+        fininfo_layout,
+        finmetrics_layout,
+        finanalysis_layout,
+        orgcompliance_layout,  # , empty_layout
+    )
 
 
 layout = html.Div(
@@ -115,7 +180,11 @@ layout = html.Div(
         ),
         html.Div(
             [
-                html.Div(id="print-layout", children=[]),
+                html.Div(id="about-layout", children=[]),
+                html.Div(id="fininfo-layout", children=[]),
+                html.Div(id="finmetrics-layout", children=[]),
+                html.Div(id="finanalysis-layout", children=[]),
+                html.Div(id="orgcompliance-layout", children=[]),
             ],
             className="bare-container--relative twelve columns",
         ),
