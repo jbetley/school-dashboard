@@ -33,9 +33,10 @@ dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
 @callback(
     Output("checklist-list", "value"),
     Output("about-layout", "children"),
+    Output("academicinfo-layout", "children"),
     Output("fininfo-layout", "children"),
     Output("finmetrics-layout", "children"),
-    Output("finanalysis-layout", "children"),    
+    Output("finanalysis-layout", "children"),
     Output("orgcompliance-layout", "children"),
     # Output("empty-layout", "children"),
     Input("year-dropdown", "value"),
@@ -54,9 +55,10 @@ def print_page(
     select_list_options,
 ):
     about_layout = []
+    academicinfo_layout = []
     fininfo_layout = []
     finmetrics_layout = []
-    finanalysis_layout = []    
+    finanalysis_layout = []
     orgcompliance_layout = []
     # all_container = {"display": "none"}
     # about_container = {"display": "none"}
@@ -119,13 +121,14 @@ def print_page(
     return (
         selected,
         about_layout,
+        academicinfo_layout,
         fininfo_layout,
         finmetrics_layout,
         finanalysis_layout,
         orgcompliance_layout,  # , empty_layout
     )
 
-
+# TODO: Fix layout error
 layout = html.Div(
     [
         html.Div(
@@ -133,7 +136,7 @@ layout = html.Div(
                 html.Div(
                     [
                         html.Label(
-                            "Select Pages to Print (NOT YET FUNCTIONAL):",
+                            "Select Page(s) to Print:",
                             className="label__header",
                         ),
                         dcc.Checklist(
@@ -181,6 +184,7 @@ layout = html.Div(
         html.Div(
             [
                 html.Div(id="about-layout", children=[]),
+                html.Div(id="academicinfo-layout", children=[]),
                 html.Div(id="fininfo-layout", children=[]),
                 html.Div(id="finmetrics-layout", children=[]),
                 html.Div(id="finanalysis-layout", children=[]),

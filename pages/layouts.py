@@ -400,9 +400,6 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
         ),
     ]
 
-    print("Final layout")
-    print(layout)
-
     return layout
 
 
