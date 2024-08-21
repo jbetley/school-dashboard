@@ -5,15 +5,10 @@
 # rev:     08.18.24
 
 import dash
-from dash import html, Input, Output, State, callback, ctx, dcc
+from dash import html, Input, Output, State, callback, clientside_callback, ctx, dcc
+import dash_mantine_components as dmc
 
-# from dash.dash_table import FormatTemplate
-# from dash.dash_table.Format import Format, Scheme, Sign
-# from dash.exceptions import PreventUpdate
-# import pandas as pd
-# import numpy as np
 
-from .charts import loading_fig
 from .print_layout import (
     create_about_layout,
     create_fininfo_layout,
@@ -26,8 +21,23 @@ from .print_layout import (
 
 dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
 
+# https://dash.plotly.com/advanced-callbacks (for: dash 2.16)
 
-# TODO: SUBNAV still loading briefly
+# https://www.dash-mantine-components.com/components/button
+clientside_callback(
+    """
+    function updateLoadingState(n_clicks) {
+        return true
+    }
+    """,
+    Output("print-button", "loading", allow_duplicate=True),
+    Input("print-button", "n_clicks"),
+    prevent_initial_call=True,
+)
+
+# TODO: Fix type of button to remove "spinner" component.
+# TODO: Change button text on click instead?
+
 @callback(
     Output("checklist-list", "value"),
     Output("about-layout", "children"),
@@ -36,18 +46,19 @@ dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
     Output("finmetrics-layout", "children"),
     Output("finanalysis-layout", "children"),
     Output("orgcompliance-layout", "children"),
-    # Output("empty-layout", "children"),
+    Output("print-button", "loading"),
+    Input("print-button", "n_clicks"),
     Input("year-dropdown", "value"),
     Input("charter-dropdown", "value"),
-    Input("print-button", "n_clicks"),
     [Input("checklist-all", "value")],
     [State("checklist-list", "value")],
     [State("checklist-list", "options")],
+    prevent_initial_call=True,
 )
-def print_page(
+def generate_print_page(
+    print_button,
     year,
     school_id,
-    print_button,
     select_all_value,
     select_list_value,
     select_list_options,
@@ -59,9 +70,8 @@ def print_page(
     finanalysis_layout = []
     orgcompliance_layout = []
 
-    # TODO: why is triggered triggering print?
     if ctx.triggered_id == "checklist-all":
-        print_button == 0  # need to reset button or it will trigger when All is selected
+        print_button = 0  # need to reset button or it will trigger when All is selected
 
         if select_all_value:
             selected = [option["value"] for option in select_list_options]
@@ -114,10 +124,11 @@ def print_page(
         fininfo_layout,
         finmetrics_layout,
         finanalysis_layout,
-        orgcompliance_layout
+        orgcompliance_layout,
+        False,                  # for print-button
     )
 
-# TODO: Fix layout error
+
 layout = html.Div(
     [
         html.Div(
@@ -160,9 +171,15 @@ layout = html.Div(
                             id="checklist-list",
                         ),
                         html.Div(
-                            html.Button(
-                                "Generate Layout", id="print-button", n_clicks=0, className="btn"
+                            dmc.Button(
+                                "Generate Layout",
+                                id="print-button",
+                                n_clicks=0,
+                                className="btn",
                             ),
+                            # html.Button(
+                            #     "Generate Layout", id="print-button", n_clicks=0, className="btn"
+                            # ),
                         ),
                     ],
                     className="pretty-container four columns",
@@ -172,28 +189,28 @@ layout = html.Div(
         ),
         html.Div(
             [
-html.Div(
-                [
-                    dcc.Loading(
-                        id="loading",
-                        type="circle",
-                        fullscreen=True,
-                        style={
-                            "position": "absolute",
-                            "alignSelf": "center",
-                            "backgroundColor": "#F2F2F2",
-                        },
-                        children=[                
-                html.Div(id="about-layout", children=[]),
-                html.Div(id="academicinfo-layout", children=[]),
-                html.Div(id="fininfo-layout", children=[]),
-                html.Div(id="finmetrics-layout", children=[]),
-                html.Div(id="finanalysis-layout", children=[]),
-                html.Div(id="orgcompliance-layout", children=[]),
-                        ]
-                    )
-                ]
-)
+                html.Div(
+                    [
+                        dcc.Loading(
+                            id="loading",
+                            type="circle",
+                            fullscreen=True,
+                            style={
+                                "position": "absolute",
+                                "alignSelf": "center",
+                                "backgroundColor": "#F2F2F2",
+                            },
+                        children=[
+                        html.Div(id="about-layout", children=[]),
+                        html.Div(id="academicinfo-layout", children=[]),
+                        html.Div(id="fininfo-layout", children=[]),
+                        html.Div(id="finmetrics-layout", children=[]),
+                        html.Div(id="finanalysis-layout", children=[]),
+                        html.Div(id="orgcompliance-layout", children=[]),
+                            ],
+                        )
+                    ]
+                )
             ],
             className="bare-container--relative twelve columns",
         ),
