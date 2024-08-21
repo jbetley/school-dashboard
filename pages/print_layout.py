@@ -5,9 +5,11 @@
 # version:  1.15
 # date:     08/18/24
 
-import dash
-from dash import dcc, html, dash_table, Input, State, Output, callback
-from dash.exceptions import PreventUpdate
+# NOTE: lots of duplicative code here. eventually want to replace the
+# layouts in all of the other pages with calls to these functions, but
+# would need to make sure all functionality is included
+
+from dash import dcc, html, dash_table
 import dash_bootstrap_components as dbc
 from dash.dash_table import FormatTemplate
 import plotly.express as px
@@ -36,25 +38,24 @@ from .load_data import (
     get_attendance_data,
     get_discipline_data,
     get_academic_data,
-    get_school_stns,
-    get_iread_student_data,
-    get_wida_student_data,
+    # get_school_stns,
+    # get_iread_student_data,
+    # get_wida_student_data,
     get_proficiency_data,
 )
 
 from .calculations import round_nearest, round_percentages
-from .process_data import process_discipline_data
+
+# from .process_data import process_discipline_data
 from .calculate_metrics import calculate_financial_metrics
 from .string_helpers import convert_to_svg_circle, natural_keys
 
 from .tables import (
-    no_data_page,
     create_multi_header_table_with_container,
-    create_key_table,
+    # create_key_table,
     create_single_header_table,
     create_multi_header_table,
-    create_iread_ilearn_table,
-    no_data_table,
+    # create_iread_ilearn_table,
     create_financial_analysis_table,
 )
 
@@ -68,62 +69,23 @@ from .charts import (
     make_line_chart,
 )
 from .tables import (
-    no_data_table,
-    no_data_page,
-    create_key_table,
+    # no_data_table,
+    # no_data_page,
+    # create_key_table,
     create_single_header_table,
 )
 from .layouts import create_line_fig_layout, set_table_layout
 
 
-# def create_print_layout(year: str, school_id: str, options: list) -> list:
-#     print("Selected")
-#     print(options)
-#     about_layout = []
-#     fininfo_layout = []
-#     # all_container = {"display": "none"}
-#     # about_container = {"display": "none"}
-#     # fininfo_container = {"display": "none"}
-#     # finmetrics_container = {"display": "none"}
-#     # finanalysis_container = {"display": "none"}
-#     # orgcompliance_container = {"display": "none"}
-#     # academicinfo_container = {"display": "none"}
-#     # academicmetrics_container = {"display": "none"}
-#     # empty_container = {"display": "block"}
-
-#     if "all" in options:
-#         about_layout = create_about_layout(year, school_id)
-#         fininfo_layout = create_fininfo_layout(year, school_id)
-#         finmetrics_layout = create_finmetrics_layout(year, school_id)
-#         finanalysis_layout = create_finanalysis_layout(year, school_id)
-#         orgcompliance_layout = create_orgcompliance_layout(year, school_id)
-#         academicinfo_layout = create_academicinfo_layout(year, school_id)
-#         academicmetrics_layout = create_academicmetrics_layout(year, school_id)
-
-#     else:
-#         if "about" in options:
-#             about_layout = create_about_layout(year, school_id)
-
-#         if "fininfo" in options:
-#             fininfo_layout = create_fininfo_layout(year, school_id)
-
-#         if "finmetrics" in options:
-#             finmetrics_layout = create_finmetrics_layout(year, school_id)
-
-#         if "finanalysis" in options:
-#             finanalysis_layout = create_finanalysis_layout(year, school_id)
-
-#         if "orgcompliance" in options:
-#             orgcompliance_layout = create_orgcompliance_layout(year, school_id)
-
-#         if "academicinfo" in options:
-#             academicinfo_layout = create_academicinfo_layout(year, school_id)
-
-#         if "academicmetrics" in options:
-#             academicmetrics_layout = create_academicmetrics_layout(year, school_id)
-
-
-#     return about_layout
+# all_container = {"display": "none"}
+# about_container = {"display": "none"}
+# fininfo_container = {"display": "none"}
+# finmetrics_container = {"display": "none"}
+# finanalysis_container = {"display": "none"}
+# orgcompliance_container = {"display": "none"}
+# academicinfo_container = {"display": "none"}
+# academicmetrics_container = {"display": "none"}
+# empty_container = {"display": "block"}
 
 
 def create_about_layout(year: str, school_id: str) -> list:
@@ -232,71 +194,74 @@ def create_about_layout(year: str, school_id: str) -> list:
 
     about_layout = [
         html.Div(
-            [
-                html.Label(
-                    attendance_title,
-                    className="label__header",
-                    style={"marginTop": "10px"},
+            [        
+                html.Div(
+                    [
+                        html.Label(
+                            attendance_title,
+                            className="label__header",
+                            style={"marginTop": "10px"},
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(attendance_table, style={"marginTop": "10px"}),
+                                    ],
+                                    className="pretty-container six columns",
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(attendance_fig),
+                                    ],
+                                    className="pretty-container six columns",
+                                ),
+                            ],
+                            className="bare-container--flex--center twelve columns",
+                        ),
+                    ],
+                    className="bare-container--relative twelve columns",
                 ),
                 html.Div(
                     [
-                        html.Div(
-                            [
-                                html.Div(attendance_table, style={"marginTop": "10px"}),
-                            ],
-                            className="pretty-container six columns",
+                        html.Label(
+                            demographics_title,
+                            className="label__header",
+                            style={"marginTop": "10px"},
                         ),
                         html.Div(
                             [
-                                html.Div(attendance_fig),
-                            ],
-                            className="pretty-container six columns",
-                        ),
-                    ],
-                    className="bare-container--flex--center twelve columns",
-                ),
-            ],
-            className="bare-container--relative twelve columns",
-        ),
-        html.Div(
-            [
-                html.Label(
-                    demographics_title,
-                    className="label__header",
-                    style={"marginTop": "10px"},
-                ),
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                dcc.Graph(
-                                    figure=subgroup_fig,
-                                    config={"displayModeBar": False},
+                                html.Div(
+                                    [
+                                        dcc.Graph(
+                                            figure=subgroup_fig,
+                                            config={"displayModeBar": False},
+                                        ),
+                                    ],
+                                    className="pretty-container six columns",
+                                ),
+                                html.Div(
+                                    [
+                                        dcc.Graph(
+                                            figure=ethnicity_fig,
+                                            config={"displayModeBar": False},
+                                        ),
+                                    ],
+                                    className="pretty-container six columns",
                                 ),
                             ],
-                            className="pretty-container six columns",
-                        ),
-                        html.Div(
-                            [
-                                dcc.Graph(
-                                    figure=ethnicity_fig,
-                                    config={"displayModeBar": False},
-                                ),
-                            ],
-                            className="pretty-container six columns",
+                            className="bare-container--flex--center twelve columns",
                         ),
                     ],
-                    className="bare-container--flex--center twelve columns",
-                ),
-            ],
-            className="bare-container--relative twelve columns",
-        ),
+                    className="bare-container--relative twelve columns"
+                )
+            ]
+        )                
     ]
 
     return about_layout
 
 
-# c. Academic Information
 def create_academicinfo_layout(year: str, school_id: str) -> list:
     year_string = year
     year_numeric = int(year_string)
@@ -305,7 +270,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
     school_type = selected_school["School Type"].values[0]
     school_name = selected_school["School Name"].values[0]
 
-    excluded_years = get_excluded_years(year_string)
+    # excluded_years = get_excluded_years(year_string)
 
     k12_grad_overview_table = []  # type: list
     k12_grad_ethnicity_table = []  # type: list
@@ -314,15 +279,15 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
     k12_sat_overview_table = []  # type: list
     k12_sat_ethnicity_table = []  # type: list
     k12_sat_subgroup_table = []  # type: list
-    k12_sat_cut_scores_table = []  # type: list
+    # k12_sat_cut_scores_table = []  # type: list
 
     iread_school_level_layout = []  # type: list
-    iread_school_details = []  # type: list
-    iread_ilearn_ela_table = []  # type: list
-    iread_ilearn_math_table = []  # type: list
+    # iread_school_details = []  # type: list
+    # iread_ilearn_ela_table = []  # type: list
+    # iread_ilearn_math_table = []  # type: list
 
-    wida_breakdown = []  # type: list
-    wida_iread_details_table = []  # type: list
+    # wida_breakdown = []  # type: list
+    # wida_iread_details_table = []  # type: list
 
     proficiency_grades_ela = []  # type: list
     ela_grade_bar_fig = []  # type: list
@@ -337,21 +302,22 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
     proficiency_subgroup_math = []  # type: list
     math_subgroup_bar_fig = []  # type: list
 
-    # High School Data
+    # HS
     if (
         school_type == "HS"
+        or school_type == "K12"
         or school_type == "AHS"
         or (school_id == 5874 and year_numeric < 2021)
     ):
         if school_type == "K12":
-            school_type = "HS"
+            scoped_type = "HS"
         else:
-            school_type = school_type
+            scoped_type = school_type
 
         list_of_schools = [school_id]
 
         hs_info_data = get_academic_data(
-            list_of_schools, school_type, year_numeric, "info"
+            list_of_schools, scoped_type, year_numeric, "info"
         )
 
         # TODO: Add figs for SAT and Grad Rates
@@ -432,12 +398,10 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                     grad_subgroup.columns,
                 )
 
-            # SAT Benchmark Table
             k12_sat_table_data = hs_info_data[
                 hs_info_data["Category"].str.contains("Benchmark %")
             ].copy()
 
-            # remove NaN/blank cols
             k12_sat_table_data = k12_sat_table_data.loc[
                 :,
                 ~k12_sat_table_data.where(k12_sat_table_data.astype(bool))
@@ -503,18 +467,18 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                     k12_sat_subgroup.columns,
                 )
 
-    # End HS block
-    # Begin K8 block
-    elif school_type == "K8" or (school_id == 5874 and year_numeric >= 2021):
-        if school_type == "K12":
-            school_type = "K8"
-        else:
-            school_type = school_type
+    # K8
+    if (
+        school_type == "K8"
+        or school_type == "K12"
+        or (school_id == 5874 and year_numeric >= 2021)
+    ):
+        scoped_type = "K8"
 
         list_of_schools = [school_id]
 
         k8_info_data = get_academic_data(
-            list_of_schools, school_type, year_numeric, "info"
+            list_of_schools, scoped_type, year_numeric, "info"
         )
 
         k8_info_data["Category"] = (
@@ -540,7 +504,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             )
             ilearn_fig_data["School Name"] = school_name
 
-            ## ILEARN Charts and Tables
+            ## ILEARN
             categories_ela_subgroup = []
             categories_math_subgroup = []
             for s in subgroup:
@@ -553,7 +517,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 categories_ela_ethnicity.append(e + "|" + "ELA")
                 categories_math_ethnicity.append(e + "|" + "Math")
 
-            # ELA by Grade table
             years_by_grade_ela = ilearn_table_data[
                 (
                     ilearn_table_data["Category"].str.contains("|".join(grades_all))
@@ -563,7 +526,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
             ela_grade_table = create_multi_header_table(years_by_grade_ela)
 
-            # ELA by Grade fig
             ela_grade_fig_data = ilearn_fig_data.filter(
                 regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
             )
@@ -574,7 +536,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 ela_grade_table, ela_grade_line_fig, "ELA By Grade"
             )
 
-            # ELA by Subgroup table
             years_by_subgroup_ela = ilearn_table_data[
                 (
                     ilearn_table_data["Category"].str.contains("|".join(subgroup))
@@ -584,7 +545,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
             ela_subgroup_table = create_multi_header_table(years_by_subgroup_ela)
 
-            # ELA by Subgroup fig
             ela_subgroup_fig_data = ilearn_fig_data.loc[
                 :,
                 (ilearn_fig_data.columns.isin(categories_ela_subgroup))
@@ -596,7 +556,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 ela_subgroup_table, ela_subgroup_line_fig, "ELA By Subgroup"
             )
 
-            # ELA by Ethnicity table
             years_by_ethnicity_ela = ilearn_table_data[
                 (
                     ilearn_table_data["Category"].str.contains("|".join(ethnicity))
@@ -606,7 +565,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
             ela_ethnicity_table = create_multi_header_table(years_by_ethnicity_ela)
 
-            # ELA by Ethnicity fig
             ela_ethnicity_fig_data = ilearn_fig_data.loc[
                 :,
                 (ilearn_fig_data.columns.isin(categories_ela_ethnicity))
@@ -618,7 +576,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 ela_ethnicity_table, ela_ethnicity_line_fig, "ELA By Ethnicity"
             )
 
-            # Math by Grade table
             years_by_grade_math = ilearn_table_data[
                 (
                     ilearn_table_data["Category"].str.contains("|".join(grades_all))
@@ -628,7 +585,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
             math_grade_table = create_multi_header_table(years_by_grade_math)
 
-            # Math by Grade fig
             math_grade_fig_data = ilearn_fig_data.filter(
                 regex=r"^Grade \d\|Math|^School Name$|^Year$", axis=1
             )
@@ -638,7 +594,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 math_grade_table, math_grade_line_fig, "Math By Grade"
             )
 
-            # Math by Subgroup Table
             years_by_subgroup_math = ilearn_table_data[
                 (
                     ilearn_table_data["Category"].str.contains("|".join(subgroup))
@@ -648,7 +603,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
             math_subgroup_table = create_multi_header_table(years_by_subgroup_math)
 
-            # Math by Subgroup fig
             math_subgroup_fig_data = ilearn_fig_data.loc[
                 :,
                 (ilearn_fig_data.columns.isin(categories_math_subgroup))
@@ -660,7 +614,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 math_subgroup_table, math_subgroup_line_fig, "Math By Subgroup"
             )
 
-            # Math by Ethnicity table
             years_by_ethnicity_math = ilearn_table_data[
                 (
                     ilearn_table_data["Category"].str.contains("|".join(ethnicity))
@@ -670,7 +623,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
             math_ethnicity_table = create_multi_header_table(years_by_ethnicity_math)
 
-            # Math by Ethnicity fig
             math_ethnicity_fig_data = ilearn_fig_data.loc[
                 :,
                 (ilearn_fig_data.columns.isin(categories_math_ethnicity))
@@ -682,7 +634,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 math_ethnicity_table, math_ethnicity_line_fig, "Math By Ethnicity"
             )
 
-            ## ILEARN proficiency breakdown stacked bar charts
+            # ILEARN Breakdown
             raw_k8_info_data = get_proficiency_data(school_id)
 
             ilearn_proficency_data = raw_k8_info_data.loc[
@@ -807,7 +759,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
             bar_fig_title = "Proficiency Breakdown (" + year_string + ")"
 
-            # Proficiency Breakdown - ELA by Grade - Current Year
             grade_pattern = "|".join(grades)
 
             grade_ela_annotations = annotations.loc[
@@ -827,7 +778,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             else:
                 ela_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            # Proficiency Breakdown - Math by Grade - Current Year
             grade_math_annotations = annotations.loc[
                 annotations["Category"].str.contains(grade_pattern)
                 & annotations["Category"].str.contains("Math")
@@ -845,7 +795,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             else:
                 math_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            # Proficiency Breakdown - ELA by Ethnicity - Current Year
             eth_pattern = "|".join(ethnicity)
 
             ethnicity_ela_annotations = annotations.loc[
@@ -865,7 +814,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             else:
                 ela_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            # Proficiency Breakdown - Math by Ethnicity - Current Year
             ethnicity_math_annotations = annotations.loc[
                 annotations["Category"].str.contains(eth_pattern)
                 & annotations["Category"].str.contains("Math")
@@ -883,7 +831,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             else:
                 math_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            # Proficiency Breakdown - ELA by Subgroup - Current Year
             sub_pattern = "|".join(subgroup)
 
             subgroup_ela_annotations = annotations.loc[
@@ -903,7 +850,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             else:
                 ela_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            # Proficiency Breakdown - Math by Subgroup - Current Year
             math_subgroup_annotations = annotations.loc[
                 annotations["Category"].str.contains(sub_pattern)
                 & annotations["Category"].str.contains("Math")
@@ -921,9 +867,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             else:
                 math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-        # End K-8 ILEARN block
-
-        # IREAD - School Level Totals, Ethnicity, & Status
+        # IREAD
         both = ethnicity + subgroup + ["Total"]
         categories_iread_all = []
 
@@ -963,14 +907,8 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 public_iread_school_table, public_iread_school_fig, "IREAD Breakdown"
             )
 
-    # Layout
-
-    # TODO: K8 or HS or K12 (combined)
+    # layouts
     academicinfo_layout = [
-        # html.Div(
-        #     [
-        #         html.Div(
-        #             [
         html.Div(
             [
                 html.Div(
@@ -1035,8 +973,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                             className="bare-container--flex--center twelve columns",
                         ),
                     ],
-                    # id="proficiency-ela-grades-container",
-                    # className="pagebreak-after",
                 ),
                 html.Div(
                     [
@@ -1051,8 +987,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                             className="bare-container--flex--center twelve columns",
                         ),
                     ],
-                    # id="proficiency-ela-ethnicity-container",
-                    # className="pagebreak-after",
                 ),
                 html.Div(
                     [
@@ -1069,8 +1003,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                             className="bare-container--flex--center twelve columns",
                         ),
                     ],
-                    # id="proficiency-ela-subgroup-container",
-                    # className="pagebreak-after",
                 ),
                 html.Div(
                     [
@@ -1087,8 +1019,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                             className="bare-container--flex--center twelve columns",
                         ),
                     ],
-                    # id="proficiency-math-grades-container",
-                    # className="pagebreak-after",
                 ),
                 html.Div(
                     [
@@ -1105,8 +1035,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                             className="bare-container--flex--center twelve columns",
                         ),
                     ],
-                    # id="proficiency-math-ethnicity-container",
-                    # className="pagebreak-after",
                 ),
                 html.Div(
                     [
@@ -1121,14 +1049,13 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                                 ),
                             ],
                             className="bare-container--flex--center twelve columns",
-                        ),
-                    ],
-                    # id="proficiency-math-subgroup-container",
-                ),
-            ],
-            id="k8-table-container",
+                        )
+                    ]
+                )
+            ]
         )
     ]
+
 
     academicinfo_hs_layout = [
         html.Div(
@@ -1149,7 +1076,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                         html.Div(k12_grad_ethnicity_table),
                         html.Div(k12_grad_subgroup_table),
                     ],
-                    # id="k12-grad-table-container",
                 ),
                 html.Div(
                     [
@@ -1166,11 +1092,9 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                         html.Div(k12_sat_overview_table),
                         html.Div(k12_sat_ethnicity_table),
                         html.Div(k12_sat_subgroup_table),
-                    ],
-                    # id="k12-sat-table-container",
-                ),
-            ],
-            className="bare-container--flex--center twelve columns",
+                    ]
+                )
+            ]
         )
     ]
 
@@ -1950,7 +1874,16 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
     # End WIDA to IREAD Table
     # End WIDA Breakdown (School Level) block
 
-    return academicinfo_layout
+    if school_type == "HS" or school_type == "AHS":
+        return academicinfo_hs_layout
+
+    elif school_type == "K8":
+        return academicinfo_layout
+
+    else:  # K12
+        merged_layout = academicinfo_layout + academicinfo_hs_layout
+
+        return merged_layout
 
 
 # TODO: Add Metrics
@@ -1969,7 +1902,7 @@ def create_fininfo_layout(year: str, school_id: str) -> list:
 
     # If the selected school is a guest school, load dummy data (Schooly McSchoolface).
     if selected_school["Guest"].values[0] == "Y":
-        school = "9999"
+        school_id = "9999"
 
     financial_data = get_financial_data(school_id)
 
@@ -2206,7 +2139,7 @@ def create_fininfo_layout(year: str, school_id: str) -> list:
                             className=class_name,
                         ),
                     ],
-                    className="bare-container--flex--center twelve columns",
+                    className="bare-container--flex--center twelve columns"
                 )
             ]
 
@@ -2216,7 +2149,6 @@ def create_fininfo_layout(year: str, school_id: str) -> list:
 def create_finmetrics_layout(year: str, school_id: str) -> list:
     year_string = year
     year_numeric = int(year_string)
-    selected_school = get_school_index(school_id)
 
     finmetrics_layout = []
     financial_indicators_table = []
@@ -2470,7 +2402,7 @@ def create_finmetrics_layout(year: str, school_id: str) -> list:
                                 className=class_name,
                             ),
                         ],
-                        className="bare-container--flex--center twelve columns",
+                        className="bare-container--flex--center twelve columns"
                     )
                 ]
 
@@ -3187,19 +3119,19 @@ def create_finanalysis_layout(year: str, school_id: str) -> list:
                             className="pretty-container six columns",
                         ),
                     ],
-                    className="bare-container--flex twelve columns",
-                ),
-            ],
-        ),
+                    className="bare-container--flex twelve columns"
+                )
+            ]
+        )
     ]
 
     return finanalysis_layout
 
 
 def create_orgcompliance_layout(year: str, school_id: str) -> list:
+    
     selected_school = get_school_index(school_id)
     year_numeric = int(year)
-    year_string = str(year_numeric)
 
     orgcompliance_layout = []
 
@@ -3235,6 +3167,7 @@ def create_orgcompliance_layout(year: str, school_id: str) -> list:
         available_years = financial_data.columns.difference(
             ["Category"], sort=False
         ).tolist()
+
         available_years = [int(c[:4]) for c in available_years]
         most_recent_finance_year = max(available_years)
 
@@ -3365,8 +3298,8 @@ def create_orgcompliance_layout(year: str, school_id: str) -> list:
                             className="pretty-container ten columns",
                         ),
                     ],
-                    className="bare-container--flex--center twelve columns",
-                ),
+                    className="bare-container--flex--center twelve columns"
+                )
             ]
 
     return orgcompliance_layout

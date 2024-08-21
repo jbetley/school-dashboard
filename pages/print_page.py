@@ -4,10 +4,8 @@
 # author:   jbetley
 # rev:     08.18.24
 
-# TODO: https://community.plotly.com/t/exporting-multi-page-dash-app-to-pdf-with-entire-layout/37953/21
-
 import dash
-from dash import html, dash_table, Input, Output, State, callback, ctx, dcc
+from dash import html, Input, Output, State, callback, ctx, dcc
 
 # from dash.dash_table import FormatTemplate
 # from dash.dash_table.Format import Format, Scheme, Sign
@@ -60,15 +58,6 @@ def print_page(
     finmetrics_layout = []
     finanalysis_layout = []
     orgcompliance_layout = []
-    # all_container = {"display": "none"}
-    # about_container = {"display": "none"}
-    # fininfo_container = {"display": "none"}
-    # finmetrics_container = {"display": "none"}
-    # finanalysis_container = {"display": "none"}
-    # orgcompliance_container = {"display": "none"}
-    # academicinfo_container = {"display": "none"}
-    # academicmetrics_container = {"display": "none"}
-    # # empty_container = {"display": "block"}
 
     # TODO: why is triggered triggering print?
     if ctx.triggered_id == "checklist-all":
@@ -125,7 +114,7 @@ def print_page(
         fininfo_layout,
         finmetrics_layout,
         finanalysis_layout,
-        orgcompliance_layout,  # , empty_layout
+        orgcompliance_layout
     )
 
 # TODO: Fix layout error
@@ -172,7 +161,7 @@ layout = html.Div(
                         ),
                         html.Div(
                             html.Button(
-                                "Print", id="print-button", n_clicks=0, className="btn"
+                                "Generate Layout", id="print-button", n_clicks=0, className="btn"
                             ),
                         ),
                     ],
@@ -183,21 +172,31 @@ layout = html.Div(
         ),
         html.Div(
             [
+html.Div(
+                [
+                    dcc.Loading(
+                        id="loading",
+                        type="circle",
+                        fullscreen=True,
+                        style={
+                            "position": "absolute",
+                            "alignSelf": "center",
+                            "backgroundColor": "#F2F2F2",
+                        },
+                        children=[                
                 html.Div(id="about-layout", children=[]),
                 html.Div(id="academicinfo-layout", children=[]),
                 html.Div(id="fininfo-layout", children=[]),
                 html.Div(id="finmetrics-layout", children=[]),
                 html.Div(id="finanalysis-layout", children=[]),
                 html.Div(id="orgcompliance-layout", children=[]),
+                        ]
+                    )
+                ]
+)
             ],
             className="bare-container--relative twelve columns",
         ),
-        # html.Div(
-        #     [
-        #         html.Div(id="empty-layout", children=[]),
-        #     ],
-        #     className="bare-container--relative twelve columns",
-        # ),
     ],
     id="main-container",
 )
