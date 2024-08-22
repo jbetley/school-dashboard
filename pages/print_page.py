@@ -5,9 +5,13 @@
 # rev:     08.18.24
 
 import dash
-from dash import html, Input, Output, State, callback, clientside_callback, ctx, dcc
-import dash_mantine_components as dmc
 
+from dash import (
+    html, Input, Output, State, callback, clientside_callback, ctx, dcc
+)
+
+import dash_bootstrap_components as dbc
+import json
 
 from .print_layout import (
     create_about_layout,
@@ -23,20 +27,17 @@ dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
 
 # https://dash.plotly.com/advanced-callbacks (for: dash 2.16)
 
-# https://www.dash-mantine-components.com/components/button
+# https://community.plotly.com/t/show-spinner-in-dbc-button-via-client-side-callback/81048
 clientside_callback(
     """
     function updateLoadingState(n_clicks) {
-        return true
+        return [""" + json.dumps(dbc.Spinner(size='sm').to_plotly_json()) + """, " Generating Layout"] 
     }
     """,
-    Output("print-button", "loading", allow_duplicate=True),
+    Output("print-button", "children", allow_duplicate=True),
     Input("print-button", "n_clicks"),
     prevent_initial_call=True,
 )
-
-# TODO: Fix type of button to remove "spinner" component.
-# TODO: Change button text on click instead?
 
 @callback(
     Output("checklist-list", "value"),
@@ -46,7 +47,7 @@ clientside_callback(
     Output("finmetrics-layout", "children"),
     Output("finanalysis-layout", "children"),
     Output("orgcompliance-layout", "children"),
-    Output("print-button", "loading"),
+    Output("print-button", "children"),
     Input("print-button", "n_clicks"),
     Input("year-dropdown", "value"),
     Input("charter-dropdown", "value"),
@@ -125,7 +126,7 @@ def generate_print_page(
         finmetrics_layout,
         finanalysis_layout,
         orgcompliance_layout,
-        False,                  # for print-button
+        "Generate Layout"
     )
 
 
@@ -171,15 +172,12 @@ layout = html.Div(
                             id="checklist-list",
                         ),
                         html.Div(
-                            dmc.Button(
-                                "Generate Layout",
+                            dbc.Button(
+                                children=["Generate Layout"],
                                 id="print-button",
                                 n_clicks=0,
                                 className="btn",
                             ),
-                            # html.Button(
-                            #     "Generate Layout", id="print-button", n_clicks=0, className="btn"
-                            # ),
                         ),
                     ],
                     className="pretty-container four columns",
@@ -194,19 +192,20 @@ layout = html.Div(
                         dcc.Loading(
                             id="loading",
                             type="circle",
-                            fullscreen=True,
+                            fullscreen=False, #True,
                             style={
-                                "position": "absolute",
-                                "alignSelf": "center",
+                                "position": "static", #"absolute",
+                                "top": "20px",
+                                "alignSelf": "start", #"center",
                                 "backgroundColor": "#F2F2F2",
                             },
-                        children=[
-                        html.Div(id="about-layout", children=[]),
-                        html.Div(id="academicinfo-layout", children=[]),
-                        html.Div(id="fininfo-layout", children=[]),
-                        html.Div(id="finmetrics-layout", children=[]),
-                        html.Div(id="finanalysis-layout", children=[]),
-                        html.Div(id="orgcompliance-layout", children=[]),
+                            children=[
+                                html.Div(id="about-layout", children=[]),
+                                html.Div(id="academicinfo-layout", children=[]),
+                                html.Div(id="fininfo-layout", children=[]),
+                                html.Div(id="finmetrics-layout", children=[]),
+                                html.Div(id="finanalysis-layout", children=[]),
+                                html.Div(id="orgcompliance-layout", children=[]),
                             ],
                         )
                     ]
