@@ -63,10 +63,11 @@ def set_dropdown_options(
     # Drop any school not testing at least 20 students. "Total|ELATotalTested" is a proxy
     # for school size here (probably only impacts ~20 schools)
     # the second condition ensures that the school is retained if it exists
+
     if school_type == "K8":
         schools_by_distance = schools_by_distance[
-            (schools_by_distance["Total|ELA Total Tested"] >= 20)
-            | (schools_by_distance["School ID"] == int(school_id))
+            (schools_by_distance["Total|ELA Total Tested"].astype(int) >= 20)
+            | (schools_by_distance["School ID"].astype(int) == int(school_id))
         ]
 
     # If school doesn't exist
@@ -84,8 +85,10 @@ def set_dropdown_options(
             schools_by_distance = check_for_gradespan_overlap(
                 school_id, schools_by_distance
             )
- 
-        comparison_list = calculate_comparison_school_list(school_id, schools_by_distance, 20)
+
+        comparison_list = calculate_comparison_school_list(
+            school_id, schools_by_distance, 20
+        )
 
         # Set default display selections to all schools in the list
         default_options = [
@@ -217,7 +220,6 @@ def update_academic_analysis_multiple_years(
         ):
             if hs_group_radio_value == "SAT":
                 if subcategory_radio_value:
-                    
                     category = subcategory_radio_value + "|" + subject_radio_value
 
                 else:
@@ -232,7 +234,6 @@ def update_academic_analysis_multiple_years(
 
             elif hs_group_radio_value == "Graduation Rate" or not hs_group_radio_value:
                 if subcategory_radio_value:
-                   
                     category = subcategory_radio_value + "|"
                 else:
                     category = "Total|"
@@ -270,7 +271,7 @@ def update_academic_analysis_multiple_years(
             analysis_multi_dropdown_container = {"display": "block"}
 
             ## Create Year Over Year HS (SAT and Graduation Rate) Chart
-            
+
             year_over_year_hs = create_year_over_year_layout(
                 school, year_over_year_hs_data, all_school_info, label, msg
             )
@@ -286,7 +287,6 @@ def update_academic_analysis_multiple_years(
 
         ## K8 Year Over Year Chart
         if subject_radio_value == "IREAD":
-
             if (
                 subcategory_radio_value != "No Subgroup Data"
                 and subcategory_radio_value != "No Race/Ethnicity Data"
@@ -307,7 +307,10 @@ def update_academic_analysis_multiple_years(
             else:
                 year_over_year_k8_data = pd.DataFrame()
 
-                if subcategory_radio_value == "No Data" or subcategory_radio_value == "":
+                if (
+                    subcategory_radio_value == "No Data"
+                    or subcategory_radio_value == ""
+                ):
                     label = (
                         "Year over Year Comparison ("
                         + subcategory_radio_value
@@ -349,7 +352,6 @@ def update_academic_analysis_multiple_years(
                 )
 
         else:
-
             if (
                 subcategory_radio_value != "No Subgroup Data"
                 and subcategory_radio_value != "No Race/Ethnicity Data"
@@ -366,11 +368,18 @@ def update_academic_analysis_multiple_years(
                 year_over_year_k8_data, all_school_info = get_year_over_year_data(
                     school, comparison_school_list, category, string_year, "k8"
                 )
+                print("YOYDATA")
+                pd.set_option('display.max_columns', None)
+                pd.set_option('display.max_rows', None) 
+                print(year_over_year_k8_data)
 
             else:
                 year_over_year_k8_data = pd.DataFrame()
 
-                if subcategory_radio_value == "No Data" or subcategory_radio_value == "":
+                if (
+                    subcategory_radio_value == "No Data"
+                    or subcategory_radio_value == ""
+                ):
                     label = (
                         "Year over Year Comparison ("
                         + subcategory_radio_value

@@ -11,23 +11,16 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from .globals import (
-    ethnicity,
-    subgroup,
-    ethnicity
-)
+from .globals import ethnicity, subgroup, ethnicity
 
 from .load_data import (
     get_school_index,
     get_school_coordinates,
     get_academic_data,
-    current_academic_year
+    current_academic_year,
 )
 
-from .calculations import (
-    check_for_gradespan_overlap,
-    calculate_comparison_school_list
-)
+from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
 from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
 from .tables import create_comparison_table, no_data_page, no_data_table
 
@@ -51,6 +44,7 @@ dash.register_page(
     order=10,
 )
 
+
 # Set dropdown options for comparison schools
 @callback(
     Output("analysis-single-comparison-dropdown", "options"),
@@ -62,7 +56,10 @@ dash.register_page(
     Input("analysis-type-radio", "value"),
 )
 def set_dropdown_options(
-    school_id: str, year: str, existing_comparison_schools_list: list, analysis_type_value=str
+    school_id: str,
+    year: str,
+    existing_comparison_schools_list: list,
+    analysis_type_value=str,
 ):
 
     if not year:
@@ -93,9 +90,11 @@ def set_dropdown_options(
 
     # Drop any school not testing at least 20 students (k8 only- probably
     # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
+
     if selected_school_type == "K8":
-        schools_by_distance["Total|ELA Total Tested"] = \
-            pd.to_numeric(schools_by_distance["Total|ELA Total Tested"], errors="coerce")
+        schools_by_distance["Total|ELA Total Tested"] = pd.to_numeric(
+            schools_by_distance["Total|ELA Total Tested"], errors="coerce"
+        )
         schools_by_distance = schools_by_distance[
             schools_by_distance["Total|ELA Total Tested"] >= 20
         ]
@@ -169,22 +168,33 @@ def set_dropdown_options(
             for sch in new_comparison_schools_list:
                 overlap += existing_comparison_schools_list.count(sch)
 
-        if not existing_comparison_schools_list or existing_comparison_schools_list and (
-           
-            # isdisjoint returns True if there are no common items between the sets
-            # there is an existing list, but there is no overlap (e.g., K8 to HS)
-            set(existing_comparison_schools_list).isdisjoint(new_comparison_schools_list) == True or
-
-            # there is an existing list, and there is overlap, but the number of overlapping
-            # schools is less than the length of all of the existing schools
-           (
-            set(existing_comparison_schools_list).isdisjoint(new_comparison_schools_list) == False and
-                overlap < len(existing_comparison_schools_list)
+        if (
+            not existing_comparison_schools_list
+            or existing_comparison_schools_list
+            and (
+                # isdisjoint returns True if there are no common items between the sets
+                # there is an existing list, but there is no overlap (e.g., K8 to HS)
+                set(existing_comparison_schools_list).isdisjoint(
+                    new_comparison_schools_list
                 )
-            ):
+                == True
+                or
+                # there is an existing list, and there is overlap, but the number of overlapping
+                # schools is less than the length of all of the existing schools
+                (
+                    set(existing_comparison_schools_list).isdisjoint(
+                        new_comparison_schools_list
+                    )
+                    == False
+                    and overlap < len(existing_comparison_schools_list)
+                )
+            )
+        ):
 
             # If any of these are true, we reset options and values
-            comparison_schools = [d["value"] for d in new_comparison_schools[:default_num_to_display]]
+            comparison_schools = [
+                d["value"] for d in new_comparison_schools[:default_num_to_display]
+            ]
             school_options = new_comparison_schools
 
         else:
@@ -357,11 +367,13 @@ def update_academic_analysis_single_year(
             school_type = selected_school_type
 
         list_of_schools = [school_id] + comparison_school_list
-        raw_hs_analysis_data = get_academic_data(list_of_schools, school_type, numeric_year, "analysis")
-        
+        raw_hs_analysis_data = get_academic_data(
+            list_of_schools, school_type, numeric_year, "analysis"
+        )
+
         hs_analysis_data = raw_hs_analysis_data.loc[
-                raw_hs_analysis_data["Year"] == numeric_year
-            ].copy()
+            raw_hs_analysis_data["Year"] == numeric_year
+        ].copy()
 
         if hs_analysis_data.empty:
 
@@ -370,7 +382,9 @@ def update_academic_analysis_single_year(
 
         else:
 
-            hs_school_name = hs_analysis_data[hs_analysis_data["School ID"] == int(school_id)]["School Name"].values[0]
+            hs_school_name = hs_analysis_data[
+                hs_analysis_data["School ID"] == int(school_id)
+            ]["School Name"].values[0]
             hs_school_name = hs_school_name.strip()
 
             hs_cols = [c for c in hs_analysis_data if c != "School Name"]
@@ -540,9 +554,9 @@ def update_academic_analysis_single_year(
             k8_analysis_main_container = {"display": "none"}
 
         else:
-            
+
             # set K12 school type to K8
-            school_type = "K8"  
+            school_type = "K8"
 
             academic_analysis_notes_label = "Comparison Data - K-8"
             academic_analysis_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
@@ -552,11 +566,13 @@ def update_academic_analysis_single_year(
             # add school_id first
             list_of_schools = [school_id] + comparison_school_list
 
-            raw_k8_analysis_data = get_academic_data(list_of_schools, school_type, numeric_year, "analysis")
+            raw_k8_analysis_data = get_academic_data(
+                list_of_schools, school_type, numeric_year, "analysis"
+            )
 
             k8_analysis_data = raw_k8_analysis_data.loc[
-                    raw_k8_analysis_data["Year"] == numeric_year
-                ].copy()
+                raw_k8_analysis_data["Year"] == numeric_year
+            ].copy()
             k8_analysis_data = k8_analysis_data.reset_index(drop=True)
 
             # Force '***' to NaN for numeric columns
@@ -584,7 +600,7 @@ def update_academic_analysis_single_year(
             ].copy()
 
             combined_selected_data = combined_selected_data.reset_index(drop=True)
-            
+
             if len(k8_analysis_data.index) > 0:
 
                 k8_analysis_main_container = {"display": "block"}
@@ -628,9 +644,7 @@ def update_academic_analysis_single_year(
                     fig14c_table_data = fig14c_table_data.reset_index(drop=True)
 
                     fig14c_table = create_comparison_table(
-                        fig14c_table_data,
-                        fig14c_trace_color,
-                        school_id
+                        fig14c_table_data, fig14c_trace_color, school_id
                     )
                 else:
                     # NOTE: This should never ever happen. So yeah.
@@ -641,7 +655,7 @@ def update_academic_analysis_single_year(
                         "No Data to Display.", "ELA Proficiency", "none"
                     )
 
-                fig14c = create_barchart_layout(fig14c_chart, fig14c_table,"","")
+                fig14c = create_barchart_layout(fig14c_chart, fig14c_table, "", "")
 
                 #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
                 category = "Total|Math Proficient %"
@@ -672,9 +686,7 @@ def update_academic_analysis_single_year(
                     fig14d_table_data = fig14d_table_data.reset_index(drop=True)
 
                     fig14d_table = create_comparison_table(
-                        fig14d_table_data,
-                        fig14d_trace_color,
-                        school_id
+                        fig14d_table_data, fig14d_trace_color, school_id
                     )
 
                 else:
@@ -685,7 +697,7 @@ def update_academic_analysis_single_year(
                         "No Data to Display.", "Math Proficiency", "none"
                     )
 
-                fig14d = create_barchart_layout(fig14d_chart, fig14d_table,"","")
+                fig14d = create_barchart_layout(fig14d_chart, fig14d_table, "", "")
 
                 #### Current Year IREAD Proficiency Compared to Similar Schools #
                 category = "Total|IREAD Proficient %"
@@ -718,12 +730,12 @@ def update_academic_analysis_single_year(
                     fig_iread_table_data = fig_iread_table_data.reset_index(drop=True)
 
                     fig_iread_table = create_comparison_table(
-                        fig_iread_table_data,
-                        fig_iread_trace_color,
-                        school_id
+                        fig_iread_table_data, fig_iread_trace_color, school_id
                     )
 
-                    fig_iread = create_barchart_layout(fig_iread_chart, fig_iread_table, "", "")
+                    fig_iread = create_barchart_layout(
+                        fig_iread_chart, fig_iread_table, "", ""
+                    )
 
                 else:
                     # NOTE: Better to display empty chart or no chart?
@@ -756,7 +768,8 @@ def update_academic_analysis_single_year(
                         fig16a1_final_data
                     )
                     fig16a1_table = create_comparison_table(
-                        fig16a1_table_data, fig16a1_trace_color, school_id)
+                        fig16a1_table_data, fig16a1_trace_color, school_id
+                    )
 
                     fig16a1 = create_barchart_layout(
                         fig16a1_chart,
@@ -801,7 +814,8 @@ def update_academic_analysis_single_year(
                     )
 
                     fig16b1_table = create_comparison_table(
-                        fig16b1_table_data, fig16b1_trace_color, school_id)
+                        fig16b1_table_data, fig16b1_trace_color, school_id
+                    )
 
                     fig16b1 = create_barchart_layout(
                         fig16b1_chart,
@@ -845,7 +859,8 @@ def update_academic_analysis_single_year(
                         fig16c1_final_data
                     )
                     fig16c1_table = create_comparison_table(
-                        fig16c1_table_data, fig16c1_trace_color, school_id)
+                        fig16c1_table_data, fig16c1_trace_color, school_id
+                    )
 
                     fig16c1 = create_barchart_layout(
                         fig16c1_chart,
@@ -891,7 +906,8 @@ def update_academic_analysis_single_year(
                     )
 
                     fig16a2_table = create_comparison_table(
-                        fig16a2_table_data, fig16a2_trace_color, school_id)
+                        fig16a2_table_data, fig16a2_trace_color, school_id
+                    )
 
                     fig16a2 = create_barchart_layout(
                         fig16a2_chart,
@@ -935,7 +951,8 @@ def update_academic_analysis_single_year(
                     )
 
                     fig16b2_table = create_comparison_table(
-                        fig16b2_table_data, fig16b2_trace_color, school_id)
+                        fig16b2_table_data, fig16b2_trace_color, school_id
+                    )
 
                     fig16b2 = create_barchart_layout(
                         fig16b2_chart,
@@ -978,7 +995,8 @@ def update_academic_analysis_single_year(
                         fig16c2_final_data
                     )
                     fig16c2_table = create_comparison_table(
-                        fig16c2_table_data, fig16c2_trace_color, school_id)
+                        fig16c2_table_data, fig16c2_trace_color, school_id
+                    )
 
                     fig16c2 = create_barchart_layout(
                         fig16c2_chart,
@@ -1058,7 +1076,7 @@ def update_academic_analysis_single_year(
         hs_analysis_main_container,
         hs_analysis_empty_container,
         hs_analysis_no_data,
-        academic_analysis_notes
+        academic_analysis_notes,
     )
 
 

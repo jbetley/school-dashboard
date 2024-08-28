@@ -690,7 +690,7 @@ def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.Dat
 
     schools = schools.replace({"Low Grade": {"PK": 0, "KG": 1, "": 0}})
     schools = schools.replace({"High Grade": {"": 0}})
-    
+
     # clean up Grade columns (blanks, decimal)
     schools["Low Grade"] = (
         schools["Low Grade"].astype(str).replace("\.0", "", regex=True)

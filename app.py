@@ -336,6 +336,7 @@ def set_year_dropdown_options(
     if not year_value:
         year_value = str(current_academic_year)
 
+    print(year_value)
     # input_state saves (in a dcc.store) the values for previous and
     # current year and page. think of previous as the state of the variable
     # and current as the value. if input_state is None, there is no previous
@@ -400,6 +401,11 @@ def set_year_dropdown_options(
             years = get_academic_dropdown_years(school_id, school_type)
     else:
         years = get_financial_dropdown_years(school_id, input_state["currentpage"])
+
+    # very rare case for a schools that has no data other than
+    # pre-opening year (eg., no ADM) - will return an empty list
+    if not years:   
+        years = [int(year_value)]
 
     # set year_value and year_options
     number_of_years_to_display = (
@@ -1011,7 +1017,7 @@ def navigation(
                     analysis_multi_hs_group_value,
                     analysis_multi_subject_value,
                     year_value,
-                    years,
+                    years
                 )
 
                 analysis_multi_subcategory_options = [

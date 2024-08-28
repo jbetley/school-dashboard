@@ -512,6 +512,8 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
         data = data.reset_index(drop=True)
 
         # assign colors for each comparison school
+        # print(school_cols)
+        # TODO: fix at comp school level
         trace_color = {school_cols[i]: color[i] for i in range(len(school_cols))}
 
         # If the initial df has data, but after dropping all no data rows is then
@@ -519,16 +521,12 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
         if data.empty:
             fig = no_data_fig_blank()
             fig_layout = [
-                # html.Div(
-                #     [
                 html.Div(
                     [
                         html.Label(label, className="label__header"),
                         dcc.Graph(figure=fig, config={"displayModeBar": False}),
                     ],
                 ),
-                #     ]
-                # )
             ]
 
         else:
@@ -590,8 +588,6 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
 
             if nsize_string and no_data_string:
                 fig_layout = [
-                    # html.Div(
-                    #     [
                     html.Div(
                         [
                             html.Label(label, className="label__header"),
@@ -631,15 +627,11 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
                             )
                         ],
                         className="row",
-                    )
-                    #     ]
-                    # )
+                    ),
                 ]
 
             elif nsize_string and not no_data_string:
                 fig_layout = [
-                    # html.Div(
-                    #     [
                     html.Div(
                         [
                             html.Label(label, className="label__header"),
@@ -668,14 +660,10 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
                         ],
                         className="row",
                     ),
-                    #     ]
-                    # )
                 ]
 
             elif no_data_string and not nsize_string:
                 fig_layout = [
-                    # html.Div(
-                    #     [
                     html.Div(
                         [
                             html.Label(label, className="label__header"),
@@ -703,9 +691,7 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
                             )
                         ],
                         className="row",
-                    )
-                    #     ]
-                    # )
+                    ),
                 ]
 
             else:
@@ -721,16 +707,12 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
         fig = no_data_fig_blank()
 
         fig_layout = [
-            # html.Div(
-            #     [
             html.Div(
                 [
                     html.Label(label, className="label__header"),
                     dcc.Graph(figure=fig, config={"displayModeBar": False}),
                 ],
             )
-            #     ]
-            # )
         ]
 
     return trace_color, fig_layout
@@ -916,53 +898,39 @@ def make_line_chart(values: pd.DataFrame) -> list:
                                     )
                                 ],
                             ),
-                            # html.Div(
-                            #     [
-                                    html.Div(
-                                        [
-                                            html.P(
-                                                children=[
-                                                    html.Span(
-                                                        "Years with insufficient or no data:",
-                                                        className="msg-string__label",
-                                                    ),
-                                                    html.Span(
-                                                        no_data_string,
-                                                        className="nodata-string",
-                                                    ),
-                                                ],
+                            html.Div(
+                                [
+                                    html.P(
+                                        children=[
+                                            html.Span(
+                                                "Years with insufficient or no data:",
+                                                className="msg-string__label",
+                                            ),
+                                            html.Span(
+                                                no_data_string,
+                                                className="nodata-string",
                                             ),
                                         ],
-                                        className="container--close--noborder twelve columns",
-                                    )
+                                    ),
                                 ],
-                                className="row"
-                        #     ),
-                        # ]
+                                className="container--close--noborder twelve columns",
+                            ),
+                        ],
+                        className="row",
                     )
                 ]
 
             else:
                 fig_layout = [
                     html.Div(
-                        [
-                            dcc.Graph(figure=fig, config={"displayModeBar": False})
-                        ],
+                        [dcc.Graph(figure=fig, config={"displayModeBar": False})],
                     )
                 ]
     else:
         fig = no_data_fig_blank()
 
         fig_layout = [
-            html.Div(
-                [
-                    # html.Div(
-                    #     [
-                            dcc.Graph(figure=fig, config={"displayModeBar": False})
-                    #     ],
-                    # ),
-                ]
-            )
+            html.Div([dcc.Graph(figure=fig, config={"displayModeBar": False})])
         ]
 
     return fig_layout
@@ -1009,11 +977,11 @@ def make_growth_chart(
                 mode="markers+lines",
                 marker=dict(color=color[i], symbol="square"),
                 line={"dash": "solid"},
-                customdata=[
-                    f"{i:.2%}" if not np.isnan(i) else "None" for i in data_162[col]
-                ]
-                if "Growth" in label
-                else [f"{i:.1f}" for i in data_162[col]],
+                customdata=(
+                    [f"{i:.2%}" if not np.isnan(i) else "None" for i in data_162[col]]
+                    if "Growth" in label
+                    else [f"{i:.1f}" for i in data_162[col]]
+                ),
                 text=[f"{i}" for i in data_me.columns],
                 # NOTE: the legendgroup variable separates each dataframe into a separate
                 # legend group, which is great because it allows you to turn on and off each

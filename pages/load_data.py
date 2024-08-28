@@ -259,35 +259,54 @@ def get_financial_dropdown_years(school_id, page):
 
     results = run_query(q, params)
 
-    if len(results.columns) > 3:
-        adm_index = results.index[results["Category"] == "ADM Average"].values[0]
+    # TODO: Testing using "years with data" instead of "years with ADM"
+    # TODO: which captures year 0 data as well.
+    results = results.dropna(axis=1, how="all")
+    year_list = results.columns.tolist()
+    year_list = [
+        e for e in year_list if e not in ("School ID", "Category", "School Name")
+    ]
 
-        # for the financial analysis page, we skip years with
-        # quarterly data (Q#) entirely (the "$" skips years with
-        # a suffix).
+    if len(results) > 0:
         if page == "financial_analysis":
-            results = results.filter(regex="^\d{4}$")
+            # drop any years with quarterly reporting
+            year_list = [int(e) for e in year_list if "(Q" not in e]
         else:
-            # for all other pages, we want to display the quarterly
-            # data, so we keep the year and just trim the Q# suffix
-            # below
-            results = results.filter(regex="^\d{4}")
-
-        for col in results.columns:
-            results[col] = pd.to_numeric(results[col], errors="coerce")
-
-        mask = results.iloc[adm_index] > 0
-
-        results = results.loc[:, mask]
-
-        if page == "financial_analysis":
-            years = [int(x) for x in results.columns.to_list()]
-        else:
-            years = [int(x[:4]) for x in results.columns.to_list()]
+            year_list = [int(e[:4]) for e in year_list]
     else:
-        years = []
+        year_list = []
 
-    return years
+    # NOTE: This is the original code (which doesn't handle schools with
+    # only one year of pre-opening financial data (e.g., no ADM))
+    # if len(results.columns) > 2:
+    #     adm_index = results.index[results["Category"] == "ADM Average"].values[0]
+
+    #     # for the financial analysis page, we skip years with
+    #     # quarterly data (Q#) entirely (the "$" skips years with
+    #     # a suffix).
+    #     if page == "financial_analysis":
+    #         results = results.filter(regex="^\d{4}$")
+    #     else:
+    #         # for all other pages, we want to display the quarterly
+    #         # data, so we keep the year and just trim the Q# suffix
+    #         # below
+    #         results = results.filter(regex="^\d{4}")
+
+    #     for col in results.columns:
+    #         results[col] = pd.to_numeric(results[col], errors="coerce")
+
+    #     mask = results.iloc[adm_index] > 0
+
+    #     results = results.loc[:, mask]
+
+    #     if page == "financial_analysis":
+    #         years = [int(x) for x in results.columns.to_list()]
+    #     else:
+    #         years = [int(x[:4]) for x in results.columns.to_list()]
+    # else:
+    #     years = []
+
+    return year_list
 
 
 def get_adm(corp_id):
@@ -1505,7 +1524,10 @@ def get_year_over_year_data(*args):
     keys = ["school_id", "comp_list", "category", "year", "flag"]
     params = dict(zip(keys, args))
 
-    school_str = ", ".join([str(int(v)) for v in params["comp_list"]])
+    if len(params["comp_list"]) > 1:
+        school_str = ", ".join([str(int(v)) for v in params["comp_list"]])
+    else:
+        school_str = params["school_id"]
 
     if params["flag"] == "sat":
         school_table = "academic_data_hs"
@@ -1583,6 +1605,18 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+    print("RAW SCHOOL")
+    print(school_data)
+
+    # TODO: Currently, the chart defaults to whatever category has data
+    # TODO: if a year is selected where the category that is selected
+    # TODO: has no data. Need to change this to show empty chart if
+    # TODO: a category is selected with no data for a particular year.
+    
+    # TODO: I suspect this is in the navigation logic [[DOH]]
+
     # get school type and then drop column (this just gets the string
     # value with the highest frequency - avoids situations where a
     # specific year may not have a value)
@@ -1607,6 +1641,8 @@ def get_year_over_year_data(*args):
     # drop rows (years) where the school has no data
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]
+
+
 
     if len(school_data.columns) == 0:
         result = school_data
@@ -1652,6 +1688,19 @@ def get_year_over_year_data(*args):
             comparable_schools_data[passed], errors="coerce"
         ) / pd.to_numeric(comparable_schools_data[tested], errors="coerce")
 
+        # NOTE: IPS keeps changing school names slightly. Which is irritating
+        # when building chart traces. To ensure name consistency, we take
+        # the school names from the most recent year and ensure that all other
+        # School Name's same (matching on School ID)
+        name_check = comparable_schools_data[
+            comparable_schools_data["Year"] == int(params["year"])
+        ][["School ID", "School Name"]]
+        name_check = name_check.set_index("School ID")
+
+        comparable_schools_data["School Name"] = comparable_schools_data[
+            "School ID"
+        ].map(name_check["School Name"])
+
         # Store information about each school in separate df
         comparable_schools_info = comparable_schools_data[
             ["School Name", "School ID", "Low Grade", "High Grade"]
@@ -1671,6 +1720,10 @@ def get_year_over_year_data(*args):
         comparable_schools_data = comparable_schools_data.reset_index()
         comparable_schools_data = comparable_schools_data.sort_values("Year")
 
+        print("COMP SHOOCLS")
+
+        # print(comparable_schools_data)
+
         if len(comparable_schools_data.columns) == 0:
             result = pd.merge(school_data, corp_data, on="Year")
         else:
@@ -1685,9 +1738,13 @@ def get_year_over_year_data(*args):
                 )
 
         # account for changes in the year
+
         excluded_years = get_excluded_years(params["year"])
+
+        print(excluded_years)
         if excluded_years:
             result = result[~result["Year"].isin(excluded_years)]
+        print(result)
 
     return result, all_school_info
 
