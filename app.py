@@ -336,7 +336,6 @@ def set_year_dropdown_options(
     if not year_value:
         year_value = str(current_academic_year)
 
-    print(year_value)
     # input_state saves (in a dcc.store) the values for previous and
     # current year and page. think of previous as the state of the variable
     # and current as the value. if input_state is None, there is no previous
@@ -364,6 +363,7 @@ def set_year_dropdown_options(
             input_state["currentpage"] == "financial_analysis"
             or input_state["currentpage"] == "academic_information_growth"
         ) and int(input_state["currentyear"]) < int(input_state["previousyear"]):
+
             input_state["currentyear"] = input_state["previousyear"]
         else:
             input_state["currentyear"] = year_value
@@ -486,6 +486,12 @@ def set_year_dropdown_options(
         )  # except i saw it once
 
     year_options = [{"label": str(y), "value": str(y)} for y in dropdown_years]
+
+    # TODO: This ensures that the displayed dropdown year is never higher
+    # TODO: than the highest year of available data.
+    # TODO: TEST whether this would this take care of all cases
+    if int(year_value) > years[0]:
+        year_value = str(years[0])
 
     return year_options, year_value, current_page, input_state
 

@@ -1605,16 +1605,16 @@ def get_year_over_year_data(*args):
 
     school_data = run_query(q1, params)
 
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
-    print("RAW SCHOOL")
-    print(school_data)
+    # pd.set_option("display.max_columns", None)
+    # pd.set_option("display.max_rows", None)
+    # print("RAW SCHOOL")
+    # print(school_data)
 
     # TODO: Currently, the chart defaults to whatever category has data
     # TODO: if a year is selected where the category that is selected
     # TODO: has no data. Need to change this to show empty chart if
     # TODO: a category is selected with no data for a particular year.
-    
+
     # TODO: I suspect this is in the navigation logic [[DOH]]
 
     # get school type and then drop column (this just gets the string
@@ -1641,8 +1641,6 @@ def get_year_over_year_data(*args):
     # drop rows (years) where the school has no data
     # if dataframe is empty after, just return empty df
     school_data = school_data[school_data[school_name].notna()]
-
-
 
     if len(school_data.columns) == 0:
         result = school_data

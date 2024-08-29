@@ -97,7 +97,9 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
-    no_data_to_display = no_data_page("No Data to Display.", selected_year_string + " Financial Analysis")
+    no_data_to_display = no_data_page(
+        "No Data to Display.", selected_year_string + " Financial Analysis"
+    )
 
     selected_school = get_school_index(school)
 
@@ -119,9 +121,17 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         else:
             financial_data = {}
 
-        RandE_title = selected_year_string + " Revenue and Expenses (" + financial_data["School Name"][0] + ")"
+        RandE_title = (
+            selected_year_string
+            + " Revenue and Expenses ("
+            + financial_data["School Name"][0]
+            + ")"
+        )
         AandL_title = (
-            selected_year_string + " Assets and Liabilities (" + financial_data["School Name"][0] + ")"
+            selected_year_string
+            + " Assets and Liabilities ("
+            + financial_data["School Name"][0]
+            + ")"
         )
 
         FP_title = (
@@ -145,10 +155,16 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             FA_title = "2-Year Financial Activities"
         else:
             RandE_title = (
-                selected_year_string + " Revenue and Expenses (" + financial_data["School Name"][0] + ")"
+                selected_year_string
+                + " Revenue and Expenses ("
+                + financial_data["School Name"][0]
+                + ")"
             )
             AandL_title = (
-                selected_year_string + " Assets and Liabilities (" + financial_data["School Name"][0] + ")"
+                selected_year_string
+                + " Assets and Liabilities ("
+                + financial_data["School Name"][0]
+                + ")"
             )
 
             FP_title = (
@@ -158,6 +174,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 "2-Year Financial Activities (" + financial_data["School Name"][0] + ")"
             )
 
+    # NOTE: First check- no data in the raw file
     if len(financial_data.columns) <= 1 or financial_data.empty:
         financial_position_table = []  # type: list
         financial_activities_table = []  # type: list
@@ -179,21 +196,35 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         if "Q" in financial_data.columns[1]:
             financial_data = financial_data.drop(financial_data.columns[[1]], axis=1)
 
-        available_years = financial_data.columns.difference(
-            ["Category"], sort=False
-        ).tolist()
-        available_years = [int(c[:4]) for c in available_years]
-        most_recent_finance_year = max(available_years)
+        # only check to see if there are years to exclude if there
+        # are years in the first place
+        if len(financial_data.columns) > 1:
+            available_years = financial_data.columns.difference(
+                ["Category"], sort=False
+            ).tolist()
+            available_years = [int(c[:4]) for c in available_years]
+            most_recent_finance_year = max(available_years)
 
-        years_to_exclude = most_recent_finance_year - selected_year_numeric
+            years_to_exclude = most_recent_finance_year - selected_year_numeric
 
-        if selected_year_numeric < most_recent_finance_year:
-            financial_data.drop(
-                financial_data.columns[1 : (years_to_exclude + 1)], axis=1, inplace=True
-            )
+            if selected_year_numeric < most_recent_finance_year:
+                financial_data.drop(
+                    financial_data.columns[1 : (years_to_exclude + 1)],
+                    axis=1,
+                    inplace=True,
+                )
 
-        # if there are no columns or only one column ("Category"), then all tables and figs are empty
-        if len(financial_data.columns) <= 1:
+        # NOTE: Second & third check- no data left after dropping (Q) columns and excluded
+        # years, or schools with pre-opening financial data only- e.g., they have financial
+        # data for a year, but State Grants == 0
+        # TODO: Make this more robust
+        if (
+            len(financial_data.columns) <= 1
+            or float(financial_data[financial_data["Category"] == "State Grants"]
+            .iloc[:, 1]
+            .values[0])
+            == 0
+        ):
             financial_position_table = []
             financial_activities_table = []
             financial_ratios_table = []
@@ -682,7 +713,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                                     },
                                     "borderRight": ".5px solid #6783a9",
                                     "fontWeight": "600",
-                                    "fontSize": "11px"                                    
+                                    "fontSize": "11px",
                                 },
                                 {
                                     "if": {
@@ -772,7 +803,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         main_container,
         empty_container,
         no_data_to_display,
-        financial_analysis_notes_string
+        financial_analysis_notes_string,
     )
 
 
@@ -792,7 +823,7 @@ def layout():
                                         labelClassName="btn btn-outline-primary",
                                         labelCheckedClassName="active",
                                         value=[],
-                                        persistence=False
+                                        persistence=False,
                                     ),
                                 ],
                                 className="radio-group-finance",
@@ -812,7 +843,7 @@ def layout():
                         style={
                             "position": "absolute",
                             "alignSelf": "center",
-                            "backgroundColor": "#F2F2F2"
+                            "backgroundColor": "#F2F2F2",
                         },
                         children=[
                             html.Div(
