@@ -1173,7 +1173,6 @@ def get_academic_data(*args):
 
             drop_columns.append(matching_cols.tolist())
 
-    # TODO: WTF is sublist
     drop_all = [i for sub_list in drop_columns for i in sub_list]
 
     data = data.drop(drop_all, axis=1).copy()
@@ -1361,6 +1360,11 @@ def get_academic_data(*args):
                 ].copy()
 
                 school_metrics_data = transpose_data(school_data, params)
+
+                # break early if data is empty
+                if school_metrics_data.empty:
+                    return school_metrics_data
+
                 corp_metrics_data = transpose_data(corp_data, params)
 
                 # Remove N-Size columns from corp dataframe

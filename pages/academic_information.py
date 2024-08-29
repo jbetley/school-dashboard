@@ -302,7 +302,9 @@ def update_academic_information_page(
         proficiency_math_subgroup_container = {"display": "none"}
         k8_table_container = {"display": "none"}
 
-        if selected_school_type == "K12":
+        if selected_school_type == "K12" or (
+            selected_school_id == 5874 and selected_year_numeric < 2021
+        ):
             school_type = "HS"
         else:
             school_type = selected_school_type
@@ -314,7 +316,9 @@ def update_academic_information_page(
         )
 
         # TODO: Add figs for SAT and Grad Rates
-        if len(hs_info_data.index) < 0:
+        if len(hs_info_data.index) < 1 or hs_info_data.empty:
+            empty_container = {"display": "block"}
+            academic_information_notes_string_container = {"display": "none"}
             k12_grad_table_container = {"display": "none"}
             k12_sat_table_container = {"display": "none"}
             no_display_data = no_data_page(
@@ -529,7 +533,7 @@ def update_academic_information_page(
             k8_info_data["Category"].str.replace(" Proficient %", "").str.strip()
         )
 
-        if len(k8_info_data.index) < 0:
+        if len(k8_info_data.index) < 1 or k8_info_data.empty:
             k8_table_container = {"display": "none"}
             no_display_data = no_data_page(
                 "No Data to Display.", "Academic Proficiency"

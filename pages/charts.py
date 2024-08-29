@@ -472,7 +472,6 @@ def make_stacked_bar(
     return fig_layout
 
 
-# TODO: add this logic to make_single_line_chart and remove that function
 def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
@@ -512,8 +511,6 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
         data = data.reset_index(drop=True)
 
         # assign colors for each comparison school
-        # print(school_cols)
-        # TODO: fix at comp school level
         trace_color = {school_cols[i]: color[i] for i in range(len(school_cols))}
 
         # If the initial df has data, but after dropping all no data rows is then
@@ -854,7 +851,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                     tick0=0,
                     dtick=1,
                     tickvals=data["Year"],
-                    tickformat=".4",  # "%Y",
+                    tickformat=".4",
                     mirror=True,
                     showline=True,
                     linecolor="#b0c4de",

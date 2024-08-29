@@ -87,6 +87,10 @@ def transpose_data(df, params):
     tested_data = tested_data.fillna(value=np.nan)
     tested_data = tested_data.replace(0, np.nan)
 
+    # NOTE: At this point, it is possible to have an empty df
+    if tested_data.empty:
+        return tested_data
+
     # add new column with substring values and drop the original
     # Category column
     tested_data["Substring"] = tested_data["Category"].replace(

@@ -314,17 +314,19 @@ def set_dropdown_value(charter_options):
     Output("input-state", "data"),
     Input("charter-dropdown", "value"),
     Input("url", "href"),
-    Input("analysis-type-radio", "value"),
+    # Input("analysis-type-radio", "value"),
     Input("year-dropdown", "value"),
     State("year-dropdown", "value"),
+    State("analysis-type-radio", "value"),
     Input("input-state", "data"),
 )
 def set_year_dropdown_options(
     school_id: str,
     current_page: str,
-    analysis_type_value: str,
+    # analysis_type_value: str,
     year_value: str,
     year_state: str,
+    analysis_type_value: str,  # state
     input_state: dict,
 ):
     max_dropdown_years = 5
@@ -363,7 +365,6 @@ def set_year_dropdown_options(
             input_state["currentpage"] == "financial_analysis"
             or input_state["currentpage"] == "academic_information_growth"
         ) and int(input_state["currentyear"]) < int(input_state["previousyear"]):
-
             input_state["currentyear"] = input_state["previousyear"]
         else:
             input_state["currentyear"] = year_value
@@ -404,7 +405,7 @@ def set_year_dropdown_options(
 
     # very rare case for a schools that has no data other than
     # pre-opening year (eg., no ADM) - will return an empty list
-    if not years:   
+    if not years:
         years = [int(year_value)]
 
     # set year_value and year_options
@@ -474,7 +475,13 @@ def set_year_dropdown_options(
         )
         and (
             (school_type == "K8")
-            or (school_type == "K12" and analysis_type_value == "k8")
+            or (
+                (
+                    school_type == "K12"
+                    or (int(school_id) == 5874 and int(year_value) < 2021)
+                )
+                and analysis_type_value == "k8"
+            )
         )
         and year_state == "2020"
     ):
@@ -503,9 +510,14 @@ def set_year_dropdown_options(
     Output("analysis-type-radio-container", "style"),
     Input("charter-dropdown", "value"),
     Input("analysis-type-radio", "value"),
+    Input("year-dropdown", "value"),
 )
-def get_school_type(school_id: str, analysis_type_value: str):
+def get_school_type(school_id: str, analysis_type_value: str, selected_year: str):
+    if not selected_year:
+        selected_year = str(current_academic_year)
+
     selected_school = get_school_index(school_id)
+
     school_type = selected_school["School Type"].values[0]
 
     type_options_default = [
@@ -521,7 +533,8 @@ def get_school_type(school_id: str, analysis_type_value: str):
 
     # analysis-type: used for both pages - is the only subnavigation
     # for analysis_single_year.py
-    if school_type == "K12":
+    if school_type == "K12" or (int(school_id) == 5874 and int(selected_year) < 2021):
+        print("triggering analysis container?")
         analysis_type_options = type_options_default
 
         if analysis_type_value in ["k8", "hs"]:
@@ -536,9 +549,12 @@ def get_school_type(school_id: str, analysis_type_value: str):
         analysis_type_options = []
         analysis_type_container = {"display": "none"}
 
+    # TODO: BUTTONS NOT SHOWING FOR CHS PRE 2021 Check info_subnav_container?
+    print(analysis_type_container)
     return analysis_type_options, analysis_type_value, analysis_type_container
 
 
+# TODO: FInd a more elegant way to handle CHS pre and post 2021
 # Subnavigation - Dropdown #
 # Given how the values are interlinked and in order to avoid circular
 # callbacks, we use a single callback for almost all subnavigation
@@ -715,7 +731,9 @@ def navigation(
 
         # categories for K12 schools who have selected the "k8" type
         # note that academic_information_growth.py does not have a type radio button
-        elif school_type == "K12" and (info_type_value == "k8" or not info_type_value):
+        elif (
+            school_type == "K12" or int(school_id) == 5874 and int(year_value) < 2021
+        ) and (info_type_value == "k8" or not info_type_value):
             info_subnav_container = {"display": "block"}
 
             if current_page == "academic_information_growth":
@@ -772,7 +790,9 @@ def navigation(
 
         # there is also no subnavigation for a K12 school that
         # has the "hs" type selected
-        elif school_type == "K12" and info_type_value == "hs":
+        elif (
+            school_type == "K12" or int(school_id) == 5874 and int(year_value) < 2021
+        ) and info_type_value == "hs":
             info_subnav_container = {"display": "none"}
 
             info_type_options = type_options_default
@@ -812,7 +832,14 @@ def navigation(
             if (
                 school_type == "HS"
                 or school_type == "AHS"
-                or (school_type == "K12" and analysis_type_value == "hs")
+                or (
+                    (
+                        school_type == "K12"
+                        or int(school_id) == 5874
+                        and int(year_value) < 2021
+                    )
+                    and analysis_type_value == "hs"
+                )
             ):
                 analysis_multi_hs_group_options = [
                     {"label": "Graduation Rate", "value": "Graduation Rate"},
@@ -835,7 +862,14 @@ def navigation(
             if (
                 school_type == "HS"
                 or school_type == "AHS"
-                or (school_type == "K12" and analysis_type_value == "hs")
+                or (
+                    (
+                        school_type == "K12"
+                        or int(school_id) == 5874
+                        and int(year_value) < 2021
+                    )
+                    and analysis_type_value == "hs"
+                )
             ):
                 if (
                     analysis_multi_hs_group_value == "Graduation Rate"
@@ -903,7 +937,12 @@ def navigation(
             else:
                 # subject and categories for K8 and K12 (k8 type)
                 if school_type == "K8" or (
-                    school_type == "K12" and analysis_type_value == "k8"
+                    (
+                        school_type == "K12"
+                        or int(school_id) == 5874
+                        and int(year_value) < 2021
+                    )
+                    and analysis_type_value == "k8"
                 ):
                     # subject for both K8 and K12 schools (k8 type)
                     analysis_multi_subject_options = [
@@ -1023,7 +1062,7 @@ def navigation(
                     analysis_multi_hs_group_value,
                     analysis_multi_subject_value,
                     year_value,
-                    years
+                    years,
                 )
 
                 analysis_multi_subcategory_options = [
@@ -1175,6 +1214,9 @@ def navigation(
         info_category_options = []
         info_category_value = ""
 
+    print(info_subnav_container)
+    print(info_type_options)
+    print(info_type_container)
     return (
         info_type_options,
         info_type_value,
