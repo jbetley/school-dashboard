@@ -323,10 +323,9 @@ def set_dropdown_value(charter_options):
 def set_year_dropdown_options(
     school_id: str,
     current_page: str,
-    # analysis_type_value: str,
     year_value: str,
     year_state: str,
-    analysis_type_value: str,  # state
+    analysis_type_state: str,
     input_state: dict,
 ):
     max_dropdown_years = 5
@@ -388,8 +387,8 @@ def set_year_dropdown_options(
     # for K12 schools, we need to use "HS" data when analysis_type is "hs". We also
     # want to make sure that we reset the type if the user switches to a k8 school
     # from a AHS/HS/K12 where the analysis_type was "hs"
-    if school_type == "K8" and analysis_type_value == "hs":
-        analysis_type_value = "k8"
+    if school_type == "K8" and analysis_type_state == "hs":
+        analysis_type_state = "k8"
 
     # guest schools use academic_dropdown_years
     if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
@@ -480,7 +479,7 @@ def set_year_dropdown_options(
                     school_type == "K12"
                     or (int(school_id) == 5874 and int(year_value) < 2021)
                 )
-                and analysis_type_value == "k8"
+                and analysis_type_state == "k8"
             )
         )
         and year_state == "2020"
@@ -494,8 +493,8 @@ def set_year_dropdown_options(
 
     year_options = [{"label": str(y), "value": str(y)} for y in dropdown_years]
 
-    # TODO: This ensures that the displayed dropdown year is never higher
-    # TODO: than the highest year of available data.
+    # NOTE: This ensures that the displayed dropdown year is never higher
+    # than the highest year of available data.
     # TODO: TEST whether this would this take care of all cases
     if int(year_value) > years[0]:
         year_value = str(years[0])
@@ -534,7 +533,7 @@ def get_school_type(school_id: str, analysis_type_value: str, selected_year: str
     # analysis-type: used for both pages - is the only subnavigation
     # for analysis_single_year.py
     if school_type == "K12" or (int(school_id) == 5874 and int(selected_year) < 2021):
-        print("triggering analysis container?")
+
         analysis_type_options = type_options_default
 
         if analysis_type_value in ["k8", "hs"]:
@@ -549,12 +548,11 @@ def get_school_type(school_id: str, analysis_type_value: str, selected_year: str
         analysis_type_options = []
         analysis_type_container = {"display": "none"}
 
-    # TODO: BUTTONS NOT SHOWING FOR CHS PRE 2021 Check info_subnav_container?
-    print(analysis_type_container)
     return analysis_type_options, analysis_type_value, analysis_type_container
 
 
 # TODO: FInd a more elegant way to handle CHS pre and post 2021
+# TODO: Pull is_split_K12 logic out
 # Subnavigation - Dropdown #
 # Given how the values are interlinked and in order to avoid circular
 # callbacks, we use a single callback for almost all subnavigation
@@ -622,9 +620,17 @@ def navigation(
         {"label": "High School", "value": "hs"},
     ]
 
+    # special logic for "split" K12 schools:
+    # CHS was K12 in 2019 and is K8 from 2020>
+    if int(school_id) == 5874 and int(year_value) < 2021:
+        school_type = "K12"
+    elif int(school_id) == 5874 and int(year_value) >= 2021:
+        school_type = "K8"
+
     # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
-        # hide academic analysis navigation
+
+        # default is to hide academic analysis navigation
         analysis_type_value = "k8"
 
         analysis_multi_hs_group_options = []
@@ -728,11 +734,11 @@ def navigation(
                     info_category_options = category_options_default
 
             info_category_container = {"display": "block"}
-
+#tODO
         # categories for K12 schools who have selected the "k8" type
         # note that academic_information_growth.py does not have a type radio button
         elif (
-            school_type == "K12" or int(school_id) == 5874 and int(year_value) < 2021
+            school_type == "K12" #or int(school_id) == 5874 and int(year_value) < 2021
         ) and (info_type_value == "k8" or not info_type_value):
             info_subnav_container = {"display": "block"}
 
@@ -791,7 +797,7 @@ def navigation(
         # there is also no subnavigation for a K12 school that
         # has the "hs" type selected
         elif (
-            school_type == "K12" or int(school_id) == 5874 and int(year_value) < 2021
+            school_type == "K12" #or int(school_id) == 5874 and int(year_value) < 2021
         ) and info_type_value == "hs":
             info_subnav_container = {"display": "none"}
 
@@ -810,6 +816,7 @@ def navigation(
 
     # analysis_single_year.py and analysis_multiple_years.py
     elif "academic_analysis" in current_page:
+
         # hide academic information navigation and subnavigation
         info_nav_container = {"display": "none"}
         info_subnav_container = {"display": "none"}
@@ -835,8 +842,8 @@ def navigation(
                 or (
                     (
                         school_type == "K12"
-                        or int(school_id) == 5874
-                        and int(year_value) < 2021
+                        # or int(school_id) == 5874
+                        # and int(year_value) < 2021
                     )
                     and analysis_type_value == "hs"
                 )
@@ -865,8 +872,8 @@ def navigation(
                 or (
                     (
                         school_type == "K12"
-                        or int(school_id) == 5874
-                        and int(year_value) < 2021
+                        # or int(school_id) == 5874
+                        # and int(year_value) < 2021
                     )
                     and analysis_type_value == "hs"
                 )
@@ -939,8 +946,8 @@ def navigation(
                 if school_type == "K8" or (
                     (
                         school_type == "K12"
-                        or int(school_id) == 5874
-                        and int(year_value) < 2021
+                        # or int(school_id) == 5874
+                        # and int(year_value) < 2021
                     )
                     and analysis_type_value == "k8"
                 ):

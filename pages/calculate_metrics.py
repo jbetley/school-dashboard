@@ -10,20 +10,19 @@ import numpy as np
 import itertools
 from typing import Tuple
 
-from .load_data import (
-    get_school_index,
-    get_attendance_data
-)
+from .load_data import get_school_index, get_attendance_data
 
 from .calculations import (
     calculate_year_over_year,
     set_academic_rating,
     conditional_fillna,
-    calculate_difference
+    calculate_difference,
 )
 
 
-def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd.DataFrame:
+def calculate_attendance_metrics(
+    school: str, school_type: str, year: str
+) -> pd.DataFrame:
     """
     Gets attendance data (df) for school and school corporation, calculates the
     year over year difference using calculate_year_over_year than adds a Rating
@@ -58,6 +57,12 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
     school_attendance_rate = school_attendance_rate.drop("Category", axis=1)
     corp_attendance_rate = corp_attendance_rate.drop("Category", axis=1)
 
+    # limit data to 5 years
+    if len(school_attendance_rate.columns) > 5:
+        n = len(school_attendance_rate.columns) - 5
+        school_attendance_rate = school_attendance_rate.iloc[:, n:]
+        corp_attendance_rate = corp_attendance_rate.iloc[:, n:]
+
     # concat the two df's and reorder so that the columns alternate
     attendance_metrics = pd.concat(
         [school_attendance_rate, corp_attendance_rate], axis=1
@@ -86,10 +91,16 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
 
     # Chronic Absenteeism is not measured for AHS
     if school_type == "AHS":
-        attendance_metrics.insert(loc=0, column="Category",  value=["1.1.a. Attendance Rate"])
+        attendance_metrics.insert(
+            loc=0, column="Category", value=["1.1.a. Attendance Rate"]
+        )
     else:
-        attendance_metrics.insert(loc=0, column="Category",  value=["1.1.a. Attendance Rate", "(Chronic Absenteeism %)"])
-    
+        attendance_metrics.insert(
+            loc=0,
+            column="Category",
+            value=["1.1.a. Attendance Rate", "(Chronic Absenteeism %)"],
+        )
+
     # drop corp rates
     attendance_metrics = attendance_metrics.loc[
         :, ~attendance_metrics.columns.str.contains("Corp")
@@ -133,17 +144,22 @@ def calculate_attendance_metrics(school: str, school_type: str, year: str) -> pd
         for i in range(attendance_metrics.shape[1], 1, -2)
     ]
 
+# TODO: Remove red color/negative association with Absenteeism calc
     # NOTE: Currently, chronic absenteeism is not officially in the
     # accountability system- we are calculating it above (using the
-    # attendance threshold) but removing the rate for now. comment out 
+    # attendance threshold) but removing the rate for now. comment out
     # or remove the next two lines to add rating back
     rate_cols = [col for col in attendance_metrics.columns if "Rate" in col]
-    attendance_metrics.loc[attendance_metrics["Category"] == "(Chronic Absenteeism %)", rate_cols] = 'NA'
-    
+    attendance_metrics.loc[
+        attendance_metrics["Category"] == "(Chronic Absenteeism %)", rate_cols
+    ] = "NA"
+
     return attendance_metrics
 
 
-def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def calculate_values(
+    data: pd.DataFrame, year: str
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Takes a dataframe of school academic data and calculates the proficiency difference
     between successive years and the assigns an academic rating to each year.
@@ -170,7 +186,7 @@ def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Da
 
     # school data for year over year dataframe
     year_over_year_data = data.filter(regex="School|N-Size", axis=1).copy()
-    
+
     # Calculate Year over Year Values #
 
     # Two columns for each year - [School, N-Size]; years are ascending. We want calculate
@@ -198,12 +214,20 @@ def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Da
     end = len_cols - 2  # begin at second to last column
 
     for y in range(0, num_pairs):
-        values = calculate_year_over_year(year_over_year_data.iloc[:, end], year_over_year_data.iloc[:, end - 2])
-        year_over_year_data.insert(loc=end + 2, column=year_over_year_data.columns[end][0:4] + "Diff", value=values)
+        values = calculate_year_over_year(
+            year_over_year_data.iloc[:, end], year_over_year_data.iloc[:, end - 2]
+        )
+        year_over_year_data.insert(
+            loc=end + 2,
+            column=year_over_year_data.columns[end][0:4] + "Diff",
+            value=values,
+        )
         end -= 2
 
     year_over_year_data.insert(loc=0, column="Category", value=category_column)
-    year_over_year_data["Category"] = year_over_year_data["Category"].str.replace(" Proficient %", "").str.strip()
+    year_over_year_data["Category"] = (
+        year_over_year_data["Category"].str.replace(" Proficient %", "").str.strip()
+    )
 
     # Calculate Comparison Values #
 
@@ -228,7 +252,9 @@ def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Da
     merged_cols.insert(0, "Category")
 
     # merge school and corp data
-    merged_comparison_data = school_comparison_data.merge(corp_comparison_data, on="Category", how="left")
+    merged_comparison_data = school_comparison_data.merge(
+        corp_comparison_data, on="Category", how="left"
+    )
     merged_comparison_data = merged_comparison_data[merged_cols]
 
     # check to see if data is HS or K8
@@ -243,27 +269,25 @@ def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Da
 
     corp_comparison_data = corp_comparison_data.drop("Category", axis=1)
     # corp_comparison_data = corp_comparison_data.fillna(value=np.nan)
-    
+
     # calculate difference between two dataframes (using a for loop
     # is not ideal, but we need to use row-wise calculations)
     comparison_result = pd.DataFrame()
 
     # slightly different difference calculation for HS vs K8
     if is_high_school:
-
         for c in year_cols:
             comparison_result[c + "Diff"] = calculate_difference(
                 school_comparison_data[c + "School"], corp_comparison_data[c + "Corp"]
             )
-            
-    else:
 
+    else:
         for c in school_comparison_data.columns:
             c = c[0:4]
             comparison_result[c + "Diff"] = calculate_difference(
                 school_comparison_data[c + "School"], corp_comparison_data[c + "Corp"]
             )
- 
+
     # Create final column order
     final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
     final_cols.insert(0, "Category")
@@ -272,16 +296,20 @@ def calculate_values(data: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Da
 
     # category_column = category_column.reset_index(drop=True)
     comparison_result.insert(loc=0, column="Category", value=category_column)
-    
+
     # merge and reorder cols
-    comparison_data = merged_comparison_data.merge(comparison_result, on="Category", how="left")
+    comparison_data = merged_comparison_data.merge(
+        comparison_result, on="Category", how="left"
+    )
 
     comparison_data = comparison_data[final_cols]
 
     return year_over_year_data, comparison_data
 
 
-def calculate_metrics(year_over_year_data: pd.DataFrame, comparison_data: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def calculate_metrics(
+    year_over_year_data: pd.DataFrame, comparison_data: pd.DataFrame
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Takes a dataframe of school academic data and calculates the proficiency difference
     between successive years and the assigns an academic rating to each year.
@@ -292,9 +320,9 @@ def calculate_metrics(year_over_year_data: pd.DataFrame, comparison_data: pd.Dat
     Returns:
         pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
     """
-    
+
     # Calculate Year over Year Values and Metrics
-    
+
     year_over_year_cols = list(year_over_year_data.columns[1:])
 
     # thresholds for academic rating
@@ -306,7 +334,9 @@ def calculate_metrics(year_over_year_data: pd.DataFrame, comparison_data: pd.Dat
             i + 1,
             str(year_over_year_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
             year_over_year_data.apply(
-                lambda x: set_academic_rating(x[year_over_year_data.columns[i]], year_over_year_limits, 1),
+                lambda x: set_academic_rating(
+                    x[year_over_year_data.columns[i]], year_over_year_limits, 1
+                ),
                 axis=1,
             ),
         )
@@ -341,10 +371,12 @@ def calculate_metrics(year_over_year_data: pd.DataFrame, comparison_data: pd.Dat
     # change the second value in pair to DNMS
     if col_pair:
         for k, v in col_pair:
-            year_over_year_data[v] = np.where(year_over_year_data[k] == 0, "DNMS", year_over_year_data[v])
+            year_over_year_data[v] = np.where(
+                year_over_year_data[k] == 0, "DNMS", year_over_year_data[v]
+            )
 
     # Calculate Comparison Metrics
-    
+
     # delta limits for ilearn
     comparison_limits = [0.1, 0.02, 0]
 
@@ -515,7 +547,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         # and set Rate to "".
         ahs_data_cols = ahs_data.columns.tolist()
 
-        state_grades = pd.DataFrame(columns=ahs_data_cols,index=range(1)) 
+        state_grades = pd.DataFrame(columns=ahs_data_cols, index=range(1))
 
         for col in state_grades.columns:
             if "Category" in col:
@@ -523,7 +555,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
             if "School" in col:
                 state_grades[col] = "No Data"
             if "Rate" in col:
-                state_grades[col] = ""      
+                state_grades[col] = ""
 
         # NOTE: former letter grade code just in case
         # # Letter grades are  stored in demographics table
@@ -893,7 +925,6 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         # for the first test, we stop the loop when i == 1 (the second to last item in the
         # loop)
         for i in range(len(metric_grid["Cash Flow"]) - 1, 1, -1):
-            
             # get current year value
             current_year_cash = metric_grid.loc[i, "Cash Flow"]
 

@@ -1189,7 +1189,61 @@ def get_academic_data(*args):
             list(processed_data.filter(regex="EBRW and Math")), axis=1
         )
 
-        # Calculate Grad Rate
+        ## Graduation Calculation (AHS Accountability)
+        # NOTE: a school must have at least ten (10) students graduate in the school
+        # year being assessed. If school has fewer than ten (10) graduates for a year
+        # based calculation on the current graduates aggregated with each immediately
+        # preceding year's graduates until a cohort of at least ten (10) graduates is reached
+
+        # Graduation to Enrollment Percentage (weighted 90%- max 100)
+        # denominator: school's within-year-average number of students
+        # numerator: total number of graduates for the assessed year
+        # multiply quotient by 4 
+        # NOTE: Currently using (Total|Graduates/Total|Cohort) * 4
+        grad_by_enrollment = processed_data[processed_data["School ID"] == school_id][["Total|Cohort Count","Total|Graduates","Year"]]
+        
+        for col in grad_by_enrollment.columns:
+            grad_by_enrollment[col] = pd.to_numeric(
+                grad_by_enrollment[col], errors="coerce"
+            )
+        
+        grad_by_enrollment["Graduation by Enrollment %"] = \
+            (grad_by_enrollment["Total|Graduates"] / grad_by_enrollment["Total|Cohort Count"]) * 4
+
+        # Graduation Rate (weighted 10%)
+        # (1) Calculate 5-Year grad rate (IC 20-26-13-10.2) for the cohort immediately
+        # prior to the assessed year cohort.
+        #   Formula: (Total|Graduates + PY Total|Graduates) / Total|Cohort
+        #TODO: Calc this
+        # (2) Calculate 4-Year grad rate for the cohort immediately preceding the prior
+        # year cohort
+        #   Formula: Total|Graduates/Total|Cohort
+        grad_by_enrollment["4YR PY Cohort"] = \
+                    (grad_by_enrollment["Total|Graduates"] / grad_by_enrollment["Total|Cohort Count"])
+
+        # (3) Subtract the four 4-Year graduation rate from the 4-Year graduation rate
+        # for the previous year.
+        # (4) Add the sum of (3) to the 4-Year graduation rate of the assessed year cohort
+
+        # Final Graduation Calculation
+        # (1) Calculate graduation qualifying examination passing rate
+        #   equals 1 if rate is at least 90% else use actual % passing
+        # (2) Multiply GQE passing rate by the sum of Graduation to Enrollent + Graduation Weights
+
+
+        ## CCR Score
+        # (1) calculate the college and career achievement rate;
+        # (2) the college and career readiness factor (100/.8); and
+        # (3) one hundred (100).
+
+        ### Final Calculation
+        # First Year weighting: graduation calculation (20%) and ccr score (80%)
+        # All Other Years: graduation calculation (40%) / ccr score (60%)
+
+        # TODO: Need: GQE passing rate; ccr achievement rate
+
+        # Calculate In Cohort Grad Rate
+        # TODO: Add N-size to In Cohort Grad rate
         if "Total|Cohort Count" in processed_data.columns:
             processed_data = calculate_graduation_rate(processed_data)
 
@@ -1743,10 +1797,8 @@ def get_year_over_year_data(*args):
 
         excluded_years = get_excluded_years(params["year"])
 
-        print(excluded_years)
         if excluded_years:
             result = result[~result["Year"].isin(excluded_years)]
-        print(result)
 
     return result, all_school_info
 

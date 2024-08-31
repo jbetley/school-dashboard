@@ -3,7 +3,7 @@
 #####################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     03/25/24
+# date:     08/30/24
 
 import dash
 from dash import html, Input, Output, callback
@@ -11,22 +11,15 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from .globals import (
-    ethnicity,
-    subgroup,
-    grades_all
-)
+from .globals import ethnicity, subgroup, grades_all
 
-from .load_data import (
-    get_school_index,
-    get_academic_data
-)
+from .load_data import get_school_index, get_academic_data
 
 from .tables import (
     no_data_page,
     no_data_table,
     create_metric_table,
-    create_proficiency_key
+    create_proficiency_key,
 )
 
 from .layouts import set_table_layout
@@ -39,7 +32,7 @@ from .calculate_metrics import (
     calculate_attendance_metrics,
     calculate_iread_metrics,
     calculate_values,
-    calculate_metrics
+    calculate_metrics,
 )
 
 from .calculations import conditional_fillna
@@ -110,6 +103,10 @@ def update_academic_metrics(school: str, year: str):
     selected_school_type = selected_school["School Type"].values[0]
     selected_school_id = int(selected_school["School ID"].values[0])
 
+    # split K12 school exception (CHS)
+    if selected_school_id == 5874 and selected_year_numeric < 2021:
+        selected_school_type = "K12"
+
     # K8 Academic Metrics (for K8 and K12 schools)
     if selected_school_type == "K8" or selected_school_type == "K12":
         list_of_schools = [school]
@@ -117,26 +114,28 @@ def update_academic_metrics(school: str, year: str):
             school_type = "K8"
         else:
             school_type = selected_school_type
-        
-        metric_data = get_academic_data(list_of_schools, school_type, selected_year_numeric, "metrics")
+
+        metric_data = get_academic_data(
+            list_of_schools, school_type, selected_year_numeric, "metrics"
+        )
 
         if len(metric_data.index) > 0:
-
-            metric_data = metric_data.replace(
-                {"^": "***"}
-            )
+            metric_data = metric_data.replace({"^": "***"})
 
             k8_metrics_container = {"display": "block"}
             main_container = {"display": "block"}
             empty_container = {"display": "none"}
 
+            k8_year_values, k8_comparison_values = calculate_values(
+                metric_data, selected_year_string
+            )
 
-            k8_year_values, k8_comparison_values = calculate_values(metric_data,selected_year_string)
+            # TODO: Do we need to Test for empty here?
 
-# TODO: Do we need to Test for empty here?
-            
             # Get Year over Year and Combined Metrics
-            combined_years, combined_delta = calculate_metrics(k8_year_values, k8_comparison_values)
+            combined_years, combined_delta = calculate_metrics(
+                k8_year_values, k8_comparison_values
+            )
 
             category = ethnicity + subgroup
 
@@ -261,7 +260,7 @@ def update_academic_metrics(school: str, year: str):
                 empty_table_14g = no_data_table(
                     "No Data to Display.",
                     "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.",
-                    "six"
+                    "six",
                 )
                 table_container_14g = set_table_layout(
                     empty_table_14g, empty_table_14g, [""]
@@ -288,7 +287,7 @@ def update_academic_metrics(school: str, year: str):
             # metric_15abcd_data = convert_to_svg_circle(metric_15abcd_data)
             # table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
             # table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
-            
+
             metric_16a_data = combined_delta[
                 (combined_delta["Category"].str.contains("|".join(category)))
                 & (combined_delta["Category"].str.contains("ELA"))
@@ -355,64 +354,25 @@ def update_academic_metrics(school: str, year: str):
         selected_school_type == "HS"
         or selected_school_type == "AHS"
         or selected_school_type == "K12"
-        or (selected_school_id == 5874 and selected_year_numeric < 2021)
     ):
-
         if selected_school_type == "K12":
             selected_school_type = "HS"
 
         list_of_schools = [school]
-        raw_metric_data = get_academic_data(list_of_schools, selected_school_type, selected_year_numeric, "metrics")
+        raw_metric_data = get_academic_data(
+            list_of_schools, selected_school_type, selected_year_numeric, "metrics"
+        )
 
         if len(raw_metric_data.index) > 0:
-
-        # TODO: At some point need to add the State AHS Calculation
-        # weighted graduation calculation score (20%) and weighted ccr score (80%) - yr1
-        # other years grad (40%) / ccr (60%)
-        # GRAD Calc:
-        # (1) the graduation to enrollment percentage of the school year(90% - max 100);
-        #   denominator- the school's within-year-average number of students
-        #   numerator of which is - the number of students who graduated during the school year
-        #       multiplied by four (4)
-        # (2) the graduation rate (10%):
-        #   STEP ONE: Calculate the five (5) year graduation rate for the cohort
-        #   immediately preceding the prior year cohort.
-        #   STEP TWO: Subtract the four (4) year graduation rate for the cohort
-        #   immediately preceding the prior year cohort from the number determined
-        #   under STEP ONE.
-        #   STEP THREE: Add the number determined under STEP TWO to the four (4) year
-        #   graduation rate from the prior year cohort.
-
-        # final grad calc score:
-
-        # (1) the sum of the weighted percentages for graduation to enrollment and graduation rate;
-        # multiplied by
-        # (2) the graduation qualifying examination passing rate:
-        #   equal either to 1 if the graduation qualifying examination passing rate is at
-        #   least 90% or the actual percent passing if below 90%.
-
-        # CCR
-        # (1) the college and career achievement rate;
-        #   the percentage of all graduates in the school year being
-        #   assessed who accomplished any of the following:
-        #       (1) Passed an AP exam with a score of 3, 4, or 5.
-        #       (2) Passed an IB exam with a score of 4, 5, 6, or 7.
-        #       (3) Earned three (3) college credits, defined as credits awarded by a
-        #       regionally accredited postsecondary institution in a department approved
-        #       liberal arts or career or technical education dual credit course verifiable
-        #       by a transcript.
-        #       (4) Obtained an industry certification.
-        #       (5) Any other benchmarks approved by the board.
-        # (2) the college and career readiness factor (100/.8); and
-        # (3) one hundred (100).
-
             # Adult High School Metrics
             if selected_school_type == "AHS":
                 ahs_metrics_container = {"display": "block"}
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                ahs_metric_data_113 = calculate_adult_high_school_metrics(raw_metric_data)
+                ahs_metric_data_113 = calculate_adult_high_school_metrics(
+                    raw_metric_data
+                )
 
                 ahs_metric_data_113["Category"] = (
                     ahs_metric_data_113["Metric"]
@@ -459,9 +419,7 @@ def update_academic_metrics(school: str, year: str):
                 for col in empty_year_cols:
                     ahs_metric_data_1214[col] = "No Data"
 
-                ahs_metric_label_1214 = [
-                    "Adult Accountability Metrics 1.2.a & 1.2.b"
-                ]
+                ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a & 1.2.b"]
                 ahs_metric_data_1214 = convert_to_svg_circle(ahs_metric_data_1214)
                 ahs_table_1214 = create_metric_table(
                     ahs_metric_label_1214, ahs_metric_data_1214
@@ -473,7 +431,9 @@ def update_academic_metrics(school: str, year: str):
             else:
                 # NOTE: We do not currently use hs_year_over_year_values
                 # for hs metrics
-                hs_year_over_year_values, hs_comparison_values = calculate_values(raw_metric_data,selected_year_string)
+                hs_year_over_year_values, hs_comparison_values = calculate_values(
+                    raw_metric_data, selected_year_string
+                )
 
                 if not hs_comparison_values.empty:
                     hs_metrics_container = {"display": "block"}
@@ -485,12 +445,8 @@ def update_academic_metrics(school: str, year: str):
                     metric_17ab_label = [
                         "High School Accountability Metrics 1.7.a & 1.7.b"
                     ]
-                    hs_metric_data = convert_to_svg_circle(
-                        hs_metric_data
-                    )
-                    table_17ab = create_metric_table(
-                        metric_17ab_label, hs_metric_data
-                    )
+                    hs_metric_data = convert_to_svg_circle(hs_metric_data)
+                    table_17ab = create_metric_table(metric_17ab_label, hs_metric_data)
                     table_container_17ab = set_table_layout(
                         table_17ab, table_17ab, hs_metric_data.columns
                     )
@@ -501,7 +457,9 @@ def update_academic_metrics(school: str, year: str):
                     simple_cols = [
                         x
                         for x in all_cols
-                        if (not x.endswith("+/-") and not x.endswith("Diff")) # Difference
+                        if (
+                            not x.endswith("+/-") and not x.endswith("Diff")
+                        )  # Difference
                     ]
 
                     grad_metrics_empty = pd.DataFrame(columns=simple_cols)
@@ -549,7 +507,9 @@ def update_academic_metrics(school: str, year: str):
         "End of Year to Beginning of Year (1.1.c) and Year over Year (1.1.d) Student Re-Enrollment Rate."
     ]
 
-    attendance_data = calculate_attendance_metrics(school, selected_school_type, selected_year_string)
+    attendance_data = calculate_attendance_metrics(
+        school, selected_school_type, selected_year_string
+    )
 
     if len(attendance_data.index) > 0:
         attendance_container = {"display": "block"}
@@ -602,7 +562,7 @@ def update_academic_metrics(school: str, year: str):
         empty_table_11ab = no_data_table(
             "No Data to Display.",
             "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation.",
-            "six"
+            "six",
         )
 
         table_container_11ab = set_table_layout(
@@ -639,7 +599,7 @@ def update_academic_metrics(school: str, year: str):
         ahs_metrics_container,
         main_container,
         empty_container,
-        no_data_to_display
+        no_data_to_display,
     )  # table_container_15abcd,
 
 
@@ -674,7 +634,11 @@ def layout():
                     ),
                     html.Div(
                         [
-                            html.Div(id="table-container-11cd", children=[], className ="pagebreak-after"),
+                            html.Div(
+                                id="table-container-11cd",
+                                children=[],
+                                className="pagebreak-after",
+                            ),
                             html.Div(id="table-container-14ab", children=[]),
                             html.Div(id="table-container-14cd", children=[]),
                             html.Div(id="table-container-14ef", children=[]),

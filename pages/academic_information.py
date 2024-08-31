@@ -286,8 +286,14 @@ def update_academic_information_page(
     if (
         selected_school_type == "HS"
         or selected_school_type == "AHS"
-        or (selected_school_id == 5874 and selected_year_numeric < 2021)
-        or (selected_school_type == "K12" and radio_type == "hs")
+        or (
+            (
+                selected_school_type
+                == "K12"
+                # or (selected_school_id == 5874 and selected_year_numeric < 2021)
+            )
+            and radio_type == "hs"
+        )
     ):
         iread_school_level_layout_container = {"display": "none"}
         iread_school_details_container = {"display": "none"}
@@ -302,9 +308,10 @@ def update_academic_information_page(
         proficiency_math_subgroup_container = {"display": "none"}
         k8_table_container = {"display": "none"}
 
-        if selected_school_type == "K12" or (
-            selected_school_id == 5874 and selected_year_numeric < 2021
-        ):
+        if selected_school_type == "K12":
+            #     or (
+            #     selected_school_id == 5874 and selected_year_numeric < 2021
+            # ):
             school_type = "HS"
         else:
             school_type = selected_school_type
@@ -332,6 +339,8 @@ def update_academic_information_page(
             grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
             # TODO: Add AHS CCR Data to new table
+            # print("AHSss")
+            # print(hs_info_data)
             if selected_school_type == "AHS":
                 grad_overview_categories.append("CCR Percentage")
 
@@ -512,10 +521,13 @@ def update_academic_information_page(
     # End HS block
 
     # Begin K8 block
-    elif (
-        selected_school_type == "K8"
-        or (selected_school_type == "K12" and radio_type == "k8")
-        or (selected_school_id == 5874 and selected_year_numeric >= 2021)
+    elif selected_school_type == "K8" or (
+        (
+            selected_school_type
+            == "K12"
+            # or (selected_school_id == 5874 and selected_year_numeric < 2021)
+        )
+        and radio_type == "k8"
     ):
         if selected_school_type == "K12":
             school_type = "K8"
