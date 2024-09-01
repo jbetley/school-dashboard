@@ -1539,6 +1539,16 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 for col in format_cols
             ]
             + [
+                {   # special case: change color to blue regardless of value
+                    "if": {
+                        "filter_query": "{Category} = '[Chronic Absenteeism %]'",
+                        "column_id": col,
+                    },
+                    "color": "#6783a9",
+                }
+                for col in format_cols
+            ]
+            + [
                 {
                     "if": {
                         "column_id": first_year,

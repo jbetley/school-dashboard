@@ -98,7 +98,7 @@ def calculate_attendance_metrics(
         attendance_metrics.insert(
             loc=0,
             column="Category",
-            value=["1.1.a. Attendance Rate", "(Chronic Absenteeism %)"],
+            value=["1.1.a. Attendance Rate", "[Chronic Absenteeism %]"],
         )
 
     # drop corp rates
@@ -144,14 +144,14 @@ def calculate_attendance_metrics(
         for i in range(attendance_metrics.shape[1], 1, -2)
     ]
 
-# TODO: Remove red color/negative association with Absenteeism calc
+    # TODO: Remove red color/negative association with Absenteeism calc
     # NOTE: Currently, chronic absenteeism is not officially in the
     # accountability system- we are calculating it above (using the
     # attendance threshold) but removing the rate for now. comment out
     # or remove the next two lines to add rating back
     rate_cols = [col for col in attendance_metrics.columns if "Rate" in col]
     attendance_metrics.loc[
-        attendance_metrics["Category"] == "(Chronic Absenteeism %)", rate_cols
+        attendance_metrics["Category"] == "[Chronic Absenteeism %]", rate_cols
     ] = "NA"
 
     return attendance_metrics

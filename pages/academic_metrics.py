@@ -359,10 +359,11 @@ def update_academic_metrics(school: str, year: str):
             selected_school_type = "HS"
 
         list_of_schools = [school]
+
         raw_metric_data = get_academic_data(
             list_of_schools, selected_school_type, selected_year_numeric, "metrics"
         )
-
+        
         if len(raw_metric_data.index) > 0:
             # Adult High School Metrics
             if selected_school_type == "AHS":
