@@ -1045,10 +1045,6 @@ def get_school_coordinates(*args):
     return run_query(q, params)
 
 
-# filename99 = ("analysis-data.csv")
-# analysis_data.to_csv(filename99, index=False)
-
-
 # Where all the magic happens
 # Gets all the academic data and formats it for display
 def get_academic_data(*args):
@@ -1098,10 +1094,6 @@ def get_academic_data(*args):
 
     school_data = run_query(q, params)
 
-    # TODO: School data for 2019 exists here
-    filename99 = ("school_data.csv")
-    school_data.to_csv(filename99, index=False)
-
     # get corp data (for academic_metrics and academic_analysis_single_year)
     # and add to dataframe
     if params["type"] == "AHS":
@@ -1117,21 +1109,15 @@ def get_academic_data(*args):
     # multiple school ids in the schools variable
     raw_merged_data = pd.concat([school_data, corp_data], axis=0)
 
-    # TODO: But not here
-    filename98 = ("merged_data.csv")
-    raw_merged_data.to_csv(filename98, index=False)
-
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
-    print("METRICS")
-    print(raw_merged_data)
-
     # Drop years of data that have been excluded by the
     # selected year (are later than)
     excluded_years = get_excluded_years(params["year"])
 
     if excluded_years:
         raw_merged_data = raw_merged_data[~raw_merged_data["Year"].isin(excluded_years)]
+
+    if len(raw_merged_data.index) < 1 or raw_merged_data.empty:
+        return pd.DataFrame()
 
     raw_merged_data = raw_merged_data.sort_values(by="Year", ascending=False)
 
@@ -1142,11 +1128,6 @@ def get_academic_data(*args):
     drop_columns = []
 
     data = raw_merged_data.copy()
-
-# TODO: Steel City Metrics - Year 2019 : Keyerror 0
-# AT THIS POINT THERE IS NO SCHOOL DATA
-
-
 
     # convert from float to str while dropping the decimal
     data["School ID"] = data["School ID"].astype("Int64").astype("str")
@@ -1217,28 +1198,34 @@ def get_academic_data(*args):
             # Graduation to Enrollment Percentage (weighted 90%- max 100)
             # denominator: school's within-year-average number of students
             # numerator: total number of graduates for the assessed year
-            # multiply quotient by 4 
+            # multiply quotient by 4
             # NOTE: Currently using (Total|Graduates/Total|Cohort) * 4
-            grad_by_enrollment = processed_data[processed_data["School ID"] == school_id][["Total|Cohort Count","Total|Graduates","Year"]]
-            
+            grad_by_enrollment = processed_data[
+                processed_data["School ID"] == school_id
+            ][["Total|Cohort Count", "Total|Graduates", "Year"]]
+
             for col in grad_by_enrollment.columns:
                 grad_by_enrollment[col] = pd.to_numeric(
                     grad_by_enrollment[col], errors="coerce"
                 )
-            
-            grad_by_enrollment["Graduation by Enrollment %"] = \
-                (grad_by_enrollment["Total|Graduates"] / grad_by_enrollment["Total|Cohort Count"]) * 4
+
+            grad_by_enrollment["Graduation by Enrollment %"] = (
+                grad_by_enrollment["Total|Graduates"]
+                / grad_by_enrollment["Total|Cohort Count"]
+            ) * 4
 
             # Graduation Rate (weighted 10%)
             # (1) Calculate 5-Year grad rate (IC 20-26-13-10.2) for the cohort immediately
             # prior to the assessed year cohort.
             #   Formula: (Total|Graduates + PY Total|Graduates) / Total|Cohort
-            #TODO: Calc this
+            # TODO: Calc this
             # (2) Calculate 4-Year grad rate for the cohort immediately preceding the prior
             # year cohort
             #   Formula: Total|Graduates/Total|Cohort
-            grad_by_enrollment["4YR PY Cohort"] = \
-                        (grad_by_enrollment["Total|Graduates"] / grad_by_enrollment["Total|Cohort Count"])
+            grad_by_enrollment["4YR PY Cohort"] = (
+                grad_by_enrollment["Total|Graduates"]
+                / grad_by_enrollment["Total|Cohort Count"]
+            )
 
             # (3) Subtract the four 4-Year graduation rate from the 4-Year graduation rate
             # for the previous year.
@@ -1316,11 +1303,12 @@ def get_academic_data(*args):
         # this is school, school corporation, and comparable school data
         processed_data = processed_data.reset_index()
 
-    # if all columns in data other than the 1st (Year) are null
-    # then return empty df
-
-    # TODO: Check this test - make better
-    if processed_data.iloc[:, 1:].isna().all().all():
+    # Dataframe can be empty (if all columns other than 1st (Year) are null or
+    # if the dataframe has no school_id
+    if (
+        processed_data.iloc[:, 1:].isna().all().all()
+        or school_id not in processed_data["School ID"].values
+    ):
         return pd.DataFrame()
 
     else:

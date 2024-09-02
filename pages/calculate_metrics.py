@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     03/25/24
+# date:     09/01/24
 
 import pandas as pd
 import numpy as np
@@ -43,6 +43,11 @@ def calculate_attendance_metrics(
     school_attendance_rate = get_attendance_data(school, school_type, year)
 
     corp_attendance_rate = get_attendance_data(corp_id, corp_type, year)
+
+    # make sure df have identical columns (corp can have more years)
+    corp_attendance_rate = corp_attendance_rate[
+        corp_attendance_rate.columns.intersection(school_attendance_rate.columns)
+    ]
 
     corp_attendance_rate = (
         corp_attendance_rate.set_index(["Category"])
@@ -144,7 +149,6 @@ def calculate_attendance_metrics(
         for i in range(attendance_metrics.shape[1], 1, -2)
     ]
 
-    # TODO: Remove red color/negative association with Absenteeism calc
     # NOTE: Currently, chronic absenteeism is not officially in the
     # accountability system- we are calculating it above (using the
     # attendance threshold) but removing the rate for now. comment out
@@ -179,6 +183,20 @@ def calculate_values(
     # copies of school and corp data for comparison dataframe (school to corp)
     school_comparison_data = data.filter(regex="Category|School|N-Size", axis=1).copy()
     corp_comparison_data = data.filter(regex="Category|Corp", axis=1).copy()
+
+    school_cols = [c[:4] + "Corp" for c in school_comparison_data.columns if c.startswith("20")]
+    school_cols = list(set(school_cols))
+    school_cols.append("Category")
+
+    # TODO: Perform this intersection check every time we weave columns
+    # pd.set_option("display.max_columns", None)
+    # pd.set_option("display.max_rows", None)
+    # print(school_comparison_data)
+
+    # make sure df have identical columns (corp can have more years)
+    corp_comparison_data = corp_comparison_data[
+        corp_comparison_data.columns.intersection(school_cols)
+    ]
 
     # store and drop Category column temporarily for calculations
     category_column = data["Category"]
@@ -256,7 +274,7 @@ def calculate_values(
         corp_comparison_data, on="Category", how="left"
     )
     merged_comparison_data = merged_comparison_data[merged_cols]
-
+    
     # check to see if data is HS or K8
     if school_comparison_data["Category"].str.contains("Graduation").any():
         is_high_school = True
