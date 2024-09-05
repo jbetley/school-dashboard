@@ -414,7 +414,7 @@ def update_about_page(year: str, school: str):
 
     # do not display Chronic Absenteeism for AHS - it isn't
     # an accurate representation for the model.
-    if selected_school_type == "AHS":
+    if selected_school_type == "ahs":
         attendance_title = "Attendance Rate"
     else:
         attendance_title = "Attendance Rate and Chronic Absenteeism"

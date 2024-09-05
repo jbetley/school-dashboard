@@ -117,7 +117,7 @@ def create_about_layout(year: str, school_id: str) -> list:
         attendance_table = no_data_fig_label()
         attendance_fig = no_data_fig_label()
 
-    if school_type == "AHS":
+    if school_type == "ahs":
         attendance_title = "Attendance Rate"
     else:
         attendance_title = "Attendance Rate and Chronic Absenteeism"
@@ -272,14 +272,14 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
     # excluded_years = get_excluded_years(year_string)
 
-    k12_grad_overview_table = []  # type: list
-    k12_grad_ethnicity_table = []  # type: list
-    k12_grad_subgroup_table = []  # type: list
+    hs_grad_overview_table = []  # type: list
+    hs_grad_ethnicity_table = []  # type: list
+    hs_grad_subgroup_table = []  # type: list
 
-    k12_sat_overview_table = []  # type: list
-    k12_sat_ethnicity_table = []  # type: list
-    k12_sat_subgroup_table = []  # type: list
-    # k12_sat_cut_scores_table = []  # type: list
+    hs_sat_overview_table = []  # type: list
+    hs_sat_ethnicity_table = []  # type: list
+    hs_sat_subgroup_table = []  # type: list
+    # hs_sat_cut_scores_table = []  # type: list
 
     iread_school_level_layout = []  # type: list
     # iread_school_details = []  # type: list
@@ -304,13 +304,13 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
     # HS
     if (
-        school_type == "HS"
-        or school_type == "K12"
-        or school_type == "AHS"
+        school_type == "hs"
+        or school_type == "k12"
+        or school_type == "ahs"
         or (school_id == 5874 and year_numeric < 2021)
     ):
-        if school_type == "K12":
-            scoped_type = "HS"
+        if school_type == "k12":
+            scoped_type = "hs"
         else:
             scoped_type = school_type
 
@@ -325,7 +325,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
         if len(hs_info_data.index) > 0:
             grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
-            if school_type == "AHS":
+            if school_type == "ahs":
                 grad_overview_categories.append("CCR Percentage")
 
             hs_info_data.columns = hs_info_data.columns.astype(str)
@@ -357,13 +357,13 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 ]
                 grad_overview = grad_overview.dropna(axis=1, how="all")
 
-                k12_grad_overview_table = create_multi_header_table_with_container(
+                hs_grad_overview_table = create_multi_header_table_with_container(
                     grad_overview, "Graduation Rate Overview"
                 )
 
-                k12_grad_overview_table = set_table_layout(
-                    k12_grad_overview_table,
-                    k12_grad_overview_table,
+                hs_grad_overview_table = set_table_layout(
+                    hs_grad_overview_table,
+                    hs_grad_overview_table,
                     grad_overview.columns,
                 )
 
@@ -373,13 +373,13 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
                 grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
 
-                k12_grad_ethnicity_table = create_multi_header_table_with_container(
+                hs_grad_ethnicity_table = create_multi_header_table_with_container(
                     grad_ethnicity, "Graduation Rate by Ethnicity"
                 )
 
-                k12_grad_ethnicity_table = set_table_layout(
-                    k12_grad_ethnicity_table,
-                    k12_grad_ethnicity_table,
+                hs_grad_ethnicity_table = set_table_layout(
+                    hs_grad_ethnicity_table,
+                    hs_grad_ethnicity_table,
                     grad_ethnicity.columns,
                 )
 
@@ -389,91 +389,91 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
                 grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
 
-                k12_grad_subgroup_table = create_multi_header_table_with_container(
+                hs_grad_subgroup_table = create_multi_header_table_with_container(
                     grad_subgroup, "Graduation Rate by Subgroup"
                 )
-                k12_grad_subgroup_table = set_table_layout(
-                    k12_grad_subgroup_table,
-                    k12_grad_subgroup_table,
+                hs_grad_subgroup_table = set_table_layout(
+                    hs_grad_subgroup_table,
+                    hs_grad_subgroup_table,
                     grad_subgroup.columns,
                 )
 
-            k12_sat_table_data = hs_info_data[
+            hs_sat_table_data = hs_info_data[
                 hs_info_data["Category"].str.contains("Benchmark %")
             ].copy()
 
-            k12_sat_table_data = k12_sat_table_data.loc[
+            hs_sat_table_data = hs_sat_table_data.loc[
                 :,
-                ~k12_sat_table_data.where(k12_sat_table_data.astype(bool))
+                ~hs_sat_table_data.where(hs_sat_table_data.astype(bool))
                 .isna()
                 .all(axis=0),
             ]
 
             if (
-                len(k12_sat_table_data.columns) > 1
-                and len(k12_sat_table_data.index) > 0
+                len(hs_sat_table_data.columns) > 1
+                and len(hs_sat_table_data.index) > 0
             ):
-                k12_sat_table_data["Category"] = (
-                    k12_sat_table_data["Category"]
+                hs_sat_table_data["Category"] = (
+                    hs_sat_table_data["Category"]
                     .str.replace("Benchmark %", "")
                     .str.strip()
                 )
 
-                k12_sat_overview = k12_sat_table_data[
-                    k12_sat_table_data["Category"].str.contains("Total")
+                hs_sat_overview = hs_sat_table_data[
+                    hs_sat_table_data["Category"].str.contains("Total")
                 ]
 
-                k12_sat_overview = k12_sat_overview.dropna(axis=1, how="all")
+                hs_sat_overview = hs_sat_overview.dropna(axis=1, how="all")
 
-                k12_sat_overview_table = create_multi_header_table_with_container(
-                    k12_sat_overview, "SAT Overview"
+                hs_sat_overview_table = create_multi_header_table_with_container(
+                    hs_sat_overview, "SAT Overview"
                 )
 
-                k12_sat_overview_table = set_table_layout(
-                    k12_sat_overview_table,
-                    k12_sat_overview_table,
-                    k12_sat_overview.columns,
+                hs_sat_overview_table = set_table_layout(
+                    hs_sat_overview_table,
+                    hs_sat_overview_table,
+                    hs_sat_overview.columns,
                 )
 
-                k12_sat_ethnicity = k12_sat_table_data[
-                    k12_sat_table_data["Category"].str.contains("|".join(ethnicity))
+                hs_sat_ethnicity = hs_sat_table_data[
+                    hs_sat_table_data["Category"].str.contains("|".join(ethnicity))
                 ]
 
-                k12_sat_ethnicity = k12_sat_ethnicity.dropna(axis=1, how="all")
+                hs_sat_ethnicity = hs_sat_ethnicity.dropna(axis=1, how="all")
 
-                k12_sat_ethnicity_table = create_multi_header_table_with_container(
-                    k12_sat_ethnicity, "SAT Benchmarks by Ethnicity"
+                hs_sat_ethnicity_table = create_multi_header_table_with_container(
+                    hs_sat_ethnicity, "SAT Benchmarks by Ethnicity"
                 )
 
-                k12_sat_ethnicity_table = set_table_layout(
-                    k12_sat_ethnicity_table,
-                    k12_sat_ethnicity_table,
-                    k12_sat_ethnicity.columns,
+                hs_sat_ethnicity_table = set_table_layout(
+                    hs_sat_ethnicity_table,
+                    hs_sat_ethnicity_table,
+                    hs_sat_ethnicity.columns,
                 )
 
-                k12_sat_subgroup = k12_sat_table_data[
-                    k12_sat_table_data["Category"].str.contains("|".join(subgroup))
+                hs_sat_subgroup = hs_sat_table_data[
+                    hs_sat_table_data["Category"].str.contains("|".join(subgroup))
                 ]
 
-                k12_sat_subgroup = k12_sat_subgroup.dropna(axis=1, how="all")
+                hs_sat_subgroup = hs_sat_subgroup.dropna(axis=1, how="all")
 
-                k12_sat_subgroup_table = create_multi_header_table_with_container(
-                    k12_sat_subgroup, "SAT Benchmarks by Subgroup"
+                hs_sat_subgroup_table = create_multi_header_table_with_container(
+                    hs_sat_subgroup, "SAT Benchmarks by Subgroup"
                 )
 
-                k12_sat_subgroup_table = set_table_layout(
-                    k12_sat_subgroup_table,
-                    k12_sat_subgroup_table,
-                    k12_sat_subgroup.columns,
+                hs_sat_subgroup_table = set_table_layout(
+                    hs_sat_subgroup_table,
+                    hs_sat_subgroup_table,
+                    hs_sat_subgroup.columns,
                 )
 
     # K8
     if (
-        school_type == "K8"
-        or school_type == "K12"
+        school_type == "k8"
+        or school_type == "k12"
         or (school_id == 5874 and year_numeric >= 2021)
     ):
-        scoped_type = "K8"
+        scoped_type = "k8"
 
         list_of_schools = [school_id]
 
@@ -1072,9 +1072,9 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                             ],
                             className="bare-container--flex--center twelve columns",
                         ),
-                        html.Div(k12_grad_overview_table),
-                        html.Div(k12_grad_ethnicity_table),
-                        html.Div(k12_grad_subgroup_table),
+                        html.Div(hs_grad_overview_table),
+                        html.Div(hs_grad_ethnicity_table),
+                        html.Div(hs_grad_subgroup_table),
                     ],
                 ),
                 html.Div(
@@ -1089,9 +1089,9 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                             ],
                             className="bare-container--flex--center twelve columns",
                         ),
-                        html.Div(k12_sat_overview_table),
-                        html.Div(k12_sat_ethnicity_table),
-                        html.Div(k12_sat_subgroup_table),
+                        html.Div(hs_sat_overview_table),
+                        html.Div(hs_sat_ethnicity_table),
+                        html.Div(hs_sat_subgroup_table),
                     ]
                 )
             ]
@@ -1874,10 +1874,10 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
     # End WIDA to IREAD Table
     # End WIDA Breakdown (School Level) block
 
-    if school_type == "HS" or school_type == "AHS":
+    if school_type == "hs" or school_type == "ahs":
         return academicinfo_hs_layout
 
-    elif school_type == "K8":
+    elif school_type == "k8":
         return academicinfo_layout
 
     else:  # K12

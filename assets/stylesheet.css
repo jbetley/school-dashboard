@@ -1184,7 +1184,6 @@ a.nav-link:hover {
   padding-right: 10px;
 }
 
-/* TODO: Work with these lines */
 #analysis-multi-subject-radio-container::after {
   content: "";
   background: steelblue;

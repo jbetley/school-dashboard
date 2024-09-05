@@ -69,8 +69,8 @@ def update_academic_metrics(school: str, year: str):
         raise PreventUpdate
 
     # 2020 has no academic data
-    string_year = year
-    selected_year_string = "2019" if string_year == "2020" else string_year
+    selected_year_string = year
+    # selected_year_string = "2019" if string_year == "2020" else string_year
     selected_year_numeric = int(selected_year_string)
 
     # default values (only empty container displayed)
@@ -105,13 +105,13 @@ def update_academic_metrics(school: str, year: str):
 
     # split K12 school exception (CHS)
     if selected_school_id == 5874 and selected_year_numeric < 2021:
-        selected_school_type = "K12"
+        selected_school_type = "k12"
 
     # K8 Academic Metrics (for K8 and K12 schools)
-    if selected_school_type == "K8" or selected_school_type == "K12":
+    if selected_school_type == "k8" or selected_school_type == "k12":
         list_of_schools = [school]
-        if selected_school_type == "K12":
-            school_type = "K8"
+        if selected_school_type == "k12":
+            school_type = "k8"
         else:
             school_type = selected_school_type
 
@@ -129,8 +129,6 @@ def update_academic_metrics(school: str, year: str):
             k8_year_values, k8_comparison_values = calculate_values(
                 metric_data, selected_year_string
             )
-
-            # TODO: Do we need to Test for empty here?
 
             # Get Year over Year and Combined Metrics
             combined_years, combined_delta = calculate_metrics(
@@ -351,22 +349,22 @@ def update_academic_metrics(school: str, year: str):
             )
 
     if (
-        selected_school_type == "HS"
-        or selected_school_type == "AHS"
-        or selected_school_type == "K12"
+        selected_school_type == "hs"
+        or selected_school_type == "ahs"
+        or selected_school_type == "k12"
     ):
-        if selected_school_type == "K12":
-            selected_school_type = "HS"
+        if selected_school_type == "k12":
+            selected_school_type = "hs"
 
         list_of_schools = [school]
 
         raw_metric_data = get_academic_data(
             list_of_schools, selected_school_type, selected_year_numeric, "metrics"
         )
-        
+
         if len(raw_metric_data.index) > 0:
             # Adult High School Metrics
-            if selected_school_type == "AHS":
+            if selected_school_type == "ahs":
                 ahs_metrics_container = {"display": "block"}
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}

@@ -3,7 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     08/05/24
+# date:     09/03/24
 
 # TODO: Break down into three pages: ILEARN; IREAD; WIDA
 
@@ -83,15 +83,15 @@ dash.register_page(
     Output("math-subgroup-bar-fig", "children"),
     Output("proficiency-math-subgroup-container", "style"),
     Output("k8-table-container", "style"),
-    Output("k12-grad-overview-table", "children"),
-    Output("k12-grad-ethnicity-table", "children"),
-    Output("k12-grad-subgroup-table", "children"),
-    Output("k12-grad-table-container", "style"),
-    Output("k12-sat-cut-scores-table", "children"),
-    Output("k12-sat-overview-table", "children"),
-    Output("k12-sat-ethnicity-table", "children"),
-    Output("k12-sat-subgroup-table", "children"),
-    Output("k12-sat-table-container", "style"),
+    Output("hs-grad-overview-table", "children"),
+    Output("hs-grad-ethnicity-table", "children"),
+    Output("hs-grad-subgroup-table", "children"),
+    Output("hs-grad-table-container", "style"),
+    Output("hs-sat-cut-scores-table", "children"),
+    Output("hs-sat-overview-table", "children"),
+    Output("hs-sat-ethnicity-table", "children"),
+    Output("hs-sat-subgroup-table", "children"),
+    Output("hs-sat-table-container", "style"),
     Output("academic-information-main-container", "style"),
     Output("academic-information-empty-container", "style"),
     Output("academic-information-no-data", "children"),
@@ -99,7 +99,7 @@ dash.register_page(
     Output("academic-information-notes-string-container", "style"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("academic-information-type-radio", "value"),
+    Input("academic-type-radio", "value"),
     Input("academic-information-category-radio", "value"),
 )
 def update_academic_information_page(
@@ -113,7 +113,6 @@ def update_academic_information_page(
 
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
-    selected_school_id = int(selected_school["School ID"].values[0])
     selected_school_name = selected_school["School Name"].values[0]
 
     is_guest = True if selected_school["Guest"].values[0] == "Y" else False
@@ -126,14 +125,14 @@ def update_academic_information_page(
     if not radio_category:
         radio_category = "all"
 
-    k12_grad_overview_table = []  # type: list
-    k12_grad_ethnicity_table = []  # type: list
-    k12_grad_subgroup_table = []  # type: list
+    hs_grad_overview_table = []  # type: list
+    hs_grad_ethnicity_table = []  # type: list
+    hs_grad_subgroup_table = []  # type: list
 
-    k12_sat_overview_table = []  # type: list
-    k12_sat_ethnicity_table = []  # type: list
-    k12_sat_subgroup_table = []  # type: list
-    k12_sat_cut_scores_table = []  # type: list
+    hs_sat_overview_table = []  # type: list
+    hs_sat_ethnicity_table = []  # type: list
+    hs_sat_subgroup_table = []  # type: list
+    hs_sat_cut_scores_table = []  # type: list
 
     iread_school_level_layout = []  # type: list
     iread_school_details = []  # type: list
@@ -189,8 +188,8 @@ def update_academic_information_page(
         proficiency_math_subgroup_container = {"display": "none"}
         proficiency_ela_ethnicity_container = {"display": "none"}
         proficiency_math_ethnicity_container = {"display": "none"}
-        k12_sat_table_container = {"display": "none"}
-        k12_grad_table_container = {"display": "none"}
+        hs_sat_table_container = {"display": "none"}
+        hs_grad_table_container = {"display": "none"}
 
     elif radio_category == "ethnicity":
         proficiency_ela_ethnicity_container = {"display": "block"}
@@ -207,8 +206,8 @@ def update_academic_information_page(
         proficiency_math_subgroup_container = {"display": "none"}
         proficiency_ela_grades_container = {"display": "none"}
         proficiency_math_grades_container = {"display": "none"}
-        k12_sat_table_container = {"display": "none"}
-        k12_grad_table_container = {"display": "none"}
+        hs_sat_table_container = {"display": "none"}
+        hs_grad_table_container = {"display": "none"}
 
     elif radio_category == "subgroup":
         proficiency_ela_subgroup_container = {"display": "block"}
@@ -225,8 +224,8 @@ def update_academic_information_page(
         proficiency_math_ethnicity_container = {"display": "none"}
         proficiency_ela_grades_container = {"display": "none"}
         proficiency_math_grades_container = {"display": "none"}
-        k12_sat_table_container = {"display": "none"}
-        k12_grad_table_container = {"display": "none"}
+        hs_sat_table_container = {"display": "none"}
+        hs_grad_table_container = {"display": "none"}
 
     elif radio_category == "iread":
         iread_school_level_layout_container = {"display": "block"}
@@ -242,8 +241,8 @@ def update_academic_information_page(
         proficiency_math_grades_container = {"display": "none"}
         proficiency_math_ethnicity_container = {"display": "none"}
         proficiency_math_subgroup_container = {"display": "none"}
-        k12_sat_table_container = {"display": "none"}
-        k12_grad_table_container = {"display": "none"}
+        hs_sat_table_container = {"display": "none"}
+        hs_grad_table_container = {"display": "none"}
         academic_information_notes_string_container = {"display": "none"}
 
     elif radio_category == "wida":
@@ -260,8 +259,8 @@ def update_academic_information_page(
         proficiency_math_grades_container = {"display": "none"}
         proficiency_math_ethnicity_container = {"display": "none"}
         proficiency_math_subgroup_container = {"display": "none"}
-        k12_sat_table_container = {"display": "none"}
-        k12_grad_table_container = {"display": "none"}
+        hs_sat_table_container = {"display": "none"}
+        hs_grad_table_container = {"display": "none"}
         academic_information_notes_string_container = {"display": "none"}
 
     elif radio_category == "all":
@@ -279,17 +278,17 @@ def update_academic_information_page(
         academic_information_notes_string_container = {"display": "block"}
         k8_table_container = {"display": "block"}
 
-        k12_sat_table_container = {"display": "none"}
-        k12_grad_table_container = {"display": "none"}
+        hs_sat_table_container = {"display": "none"}
+        hs_grad_table_container = {"display": "none"}
 
     # High School Data
     if (
-        selected_school_type == "HS"
-        or selected_school_type == "AHS"
+        selected_school_type == "hs"
+        or selected_school_type == "ahs"
         or (
             (
                 selected_school_type
-                == "K12"
+                == "k12"
                 # or (selected_school_id == 5874 and selected_year_numeric < 2021)
             )
             and radio_type == "hs"
@@ -308,11 +307,8 @@ def update_academic_information_page(
         proficiency_math_subgroup_container = {"display": "none"}
         k8_table_container = {"display": "none"}
 
-        if selected_school_type == "K12":
-            #     or (
-            #     selected_school_id == 5874 and selected_year_numeric < 2021
-            # ):
-            school_type = "HS"
+        if selected_school_type == "k12":
+            school_type = "hs"
         else:
             school_type = selected_school_type
 
@@ -326,8 +322,8 @@ def update_academic_information_page(
         if len(hs_info_data.index) < 1 or hs_info_data.empty:
             empty_container = {"display": "block"}
             academic_information_notes_string_container = {"display": "none"}
-            k12_grad_table_container = {"display": "none"}
-            k12_sat_table_container = {"display": "none"}
+            hs_grad_table_container = {"display": "none"}
+            hs_sat_table_container = {"display": "none"}
             no_display_data = no_data_page(
                 "No Data to Display.", "High School Academic Data"
             )
@@ -339,9 +335,8 @@ def update_academic_information_page(
             grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
             # TODO: Add AHS CCR Data to new table
-            # print("AHSss")
-            # print(hs_info_data)
-            if selected_school_type == "AHS":
+
+            if selected_school_type == "ahs":
                 grad_overview_categories.append("CCR Percentage")
 
             hs_info_data.columns = hs_info_data.columns.astype(str)
@@ -364,7 +359,7 @@ def update_academic_information_page(
             ]
 
             if len(graduation_data.columns) > 1 and len(graduation_data.index) > 0:
-                k12_grad_table_container = {"display": "block"}
+                hs_grad_table_container = {"display": "block"}
 
                 # clean up grad rate category
                 graduation_data["Category"] = (
@@ -380,13 +375,13 @@ def update_academic_information_page(
                 ]
                 grad_overview = grad_overview.dropna(axis=1, how="all")
 
-                k12_grad_overview_table = create_multi_header_table_with_container(
+                hs_grad_overview_table = create_multi_header_table_with_container(
                     grad_overview, "Graduation Rate Overview"
                 )
 
-                k12_grad_overview_table = set_table_layout(
-                    k12_grad_overview_table,
-                    k12_grad_overview_table,
+                hs_grad_overview_table = set_table_layout(
+                    hs_grad_overview_table,
+                    hs_grad_overview_table,
                     grad_overview.columns,
                 )
 
@@ -396,13 +391,13 @@ def update_academic_information_page(
 
                 grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
 
-                k12_grad_ethnicity_table = create_multi_header_table_with_container(
+                hs_grad_ethnicity_table = create_multi_header_table_with_container(
                     grad_ethnicity, "Graduation Rate by Ethnicity"
                 )
 
-                k12_grad_ethnicity_table = set_table_layout(
-                    k12_grad_ethnicity_table,
-                    k12_grad_ethnicity_table,
+                hs_grad_ethnicity_table = set_table_layout(
+                    hs_grad_ethnicity_table,
+                    hs_grad_ethnicity_table,
                     grad_ethnicity.columns,
                 )
 
@@ -412,92 +407,89 @@ def update_academic_information_page(
 
                 grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
 
-                k12_grad_subgroup_table = create_multi_header_table_with_container(
+                hs_grad_subgroup_table = create_multi_header_table_with_container(
                     grad_subgroup, "Graduation Rate by Subgroup"
                 )
-                k12_grad_subgroup_table = set_table_layout(
-                    k12_grad_subgroup_table,
-                    k12_grad_subgroup_table,
+                hs_grad_subgroup_table = set_table_layout(
+                    hs_grad_subgroup_table,
+                    hs_grad_subgroup_table,
                     grad_subgroup.columns,
                 )
 
             # SAT Benchmark Table
-            k12_sat_table_data = hs_info_data[
+            hs_sat_table_data = hs_info_data[
                 hs_info_data["Category"].str.contains("Benchmark %")
             ].copy()
 
             # remove NaN/blank cols
-            k12_sat_table_data = k12_sat_table_data.loc[
+            hs_sat_table_data = hs_sat_table_data.loc[
                 :,
-                ~k12_sat_table_data.where(k12_sat_table_data.astype(bool))
+                ~hs_sat_table_data.where(hs_sat_table_data.astype(bool))
                 .isna()
                 .all(axis=0),
             ]
 
-            if (
-                len(k12_sat_table_data.columns) > 1
-                and len(k12_sat_table_data.index) > 0
-            ):
-                k12_sat_table_container = {"display": "block"}
+            if len(hs_sat_table_data.columns) > 1 and len(hs_sat_table_data.index) > 0:
+                hs_sat_table_container = {"display": "block"}
 
-                k12_sat_table_data["Category"] = (
-                    k12_sat_table_data["Category"]
+                hs_sat_table_data["Category"] = (
+                    hs_sat_table_data["Category"]
                     .str.replace("Benchmark %", "")
                     .str.strip()
                 )
 
-                k12_sat_overview = k12_sat_table_data[
-                    k12_sat_table_data["Category"].str.contains("Total")
+                hs_sat_overview = hs_sat_table_data[
+                    hs_sat_table_data["Category"].str.contains("Total")
                 ]
 
-                k12_sat_overview = k12_sat_overview.dropna(axis=1, how="all")
+                hs_sat_overview = hs_sat_overview.dropna(axis=1, how="all")
 
-                k12_sat_overview_table = create_multi_header_table_with_container(
-                    k12_sat_overview, "SAT Overview"
+                hs_sat_overview_table = create_multi_header_table_with_container(
+                    hs_sat_overview, "SAT Overview"
                 )
 
-                k12_sat_overview_table = set_table_layout(
-                    k12_sat_overview_table,
-                    k12_sat_overview_table,
-                    k12_sat_overview.columns,
+                hs_sat_overview_table = set_table_layout(
+                    hs_sat_overview_table,
+                    hs_sat_overview_table,
+                    hs_sat_overview.columns,
                 )
 
-                k12_sat_ethnicity = k12_sat_table_data[
-                    k12_sat_table_data["Category"].str.contains("|".join(ethnicity))
+                hs_sat_ethnicity = hs_sat_table_data[
+                    hs_sat_table_data["Category"].str.contains("|".join(ethnicity))
                 ]
 
-                k12_sat_ethnicity = k12_sat_ethnicity.dropna(axis=1, how="all")
+                hs_sat_ethnicity = hs_sat_ethnicity.dropna(axis=1, how="all")
 
-                k12_sat_ethnicity_table = create_multi_header_table_with_container(
-                    k12_sat_ethnicity, "SAT Benchmarks by Ethnicity"
+                hs_sat_ethnicity_table = create_multi_header_table_with_container(
+                    hs_sat_ethnicity, "SAT Benchmarks by Ethnicity"
                 )
 
-                k12_sat_ethnicity_table = set_table_layout(
-                    k12_sat_ethnicity_table,
-                    k12_sat_ethnicity_table,
-                    k12_sat_ethnicity.columns,
+                hs_sat_ethnicity_table = set_table_layout(
+                    hs_sat_ethnicity_table,
+                    hs_sat_ethnicity_table,
+                    hs_sat_ethnicity.columns,
                 )
 
-                k12_sat_subgroup = k12_sat_table_data[
-                    k12_sat_table_data["Category"].str.contains("|".join(subgroup))
+                hs_sat_subgroup = hs_sat_table_data[
+                    hs_sat_table_data["Category"].str.contains("|".join(subgroup))
                 ]
 
-                k12_sat_subgroup = k12_sat_subgroup.dropna(axis=1, how="all")
+                hs_sat_subgroup = hs_sat_subgroup.dropna(axis=1, how="all")
 
-                k12_sat_subgroup_table = create_multi_header_table_with_container(
-                    k12_sat_subgroup, "SAT Benchmarks by Subgroup"
+                hs_sat_subgroup_table = create_multi_header_table_with_container(
+                    hs_sat_subgroup, "SAT Benchmarks by Subgroup"
                 )
 
-                k12_sat_subgroup_table = set_table_layout(
-                    k12_sat_subgroup_table,
-                    k12_sat_subgroup_table,
-                    k12_sat_subgroup.columns,
+                hs_sat_subgroup_table = set_table_layout(
+                    hs_sat_subgroup_table,
+                    hs_sat_subgroup_table,
+                    hs_sat_subgroup.columns,
                 )
 
                 # SAT cut score key table
-                # https://www.in.gov/sboe/files/2021-2022-k12-sat-Standard-Setting-SBOE-Review.pdf
-                k12_sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
-                k12_sat_cut_scores_dict = {
+                # https://www.in.gov/sboe/files/2021-2022-hs-sat-Standard-Setting-SBOE-Review.pdf
+                hs_sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
+                hs_sat_cut_scores_dict = {
                     "Content Area": [
                         "Mathematics",
                         "Evidenced-Based Reading and Writing",
@@ -510,9 +502,9 @@ def update_academic_information_page(
                     "At College-Ready Benchmark": ["530 - 800", "480 - 800"],
                 }
 
-                k12_sat_cut_scores = pd.DataFrame(k12_sat_cut_scores_dict)
-                k12_sat_cut_scores_table = create_key_table(
-                    k12_sat_cut_scores, k12_sat_cut_scores_label
+                hs_sat_cut_scores = pd.DataFrame(hs_sat_cut_scores_dict)
+                hs_sat_cut_scores_table = create_key_table(
+                    hs_sat_cut_scores, hs_sat_cut_scores_label
                 )
 
             academic_information_notes_string = "Beginning with the 2021-22 SY, SAT replaced ISTEP+ as the state mandated HS assessment. \
@@ -521,16 +513,16 @@ def update_academic_information_page(
     # End HS block
 
     # Begin K8 block
-    elif selected_school_type == "K8" or (
+    elif selected_school_type == "k8" or (
         (
             selected_school_type
-            == "K12"
+            == "k12"
             # or (selected_school_id == 5874 and selected_year_numeric < 2021)
         )
         and radio_type == "k8"
     ):
-        if selected_school_type == "K12":
-            school_type = "K8"
+        if selected_school_type == "k12":
+            school_type = "k8"
         else:
             school_type = selected_school_type
 
@@ -1889,15 +1881,15 @@ def update_academic_information_page(
         math_subgroup_bar_fig,
         proficiency_math_subgroup_container,
         k8_table_container,
-        k12_grad_overview_table,
-        k12_grad_ethnicity_table,
-        k12_grad_subgroup_table,
-        k12_grad_table_container,
-        k12_sat_cut_scores_table,
-        k12_sat_overview_table,
-        k12_sat_ethnicity_table,
-        k12_sat_subgroup_table,
-        k12_sat_table_container,
+        hs_grad_overview_table,
+        hs_grad_ethnicity_table,
+        hs_grad_subgroup_table,
+        hs_grad_table_container,
+        hs_sat_cut_scores_table,
+        hs_sat_overview_table,
+        hs_sat_ethnicity_table,
+        hs_sat_subgroup_table,
+        hs_sat_table_container,
         main_container,
         empty_container,
         no_display_data,
@@ -2131,11 +2123,11 @@ def layout():
                                                 ],
                                                 className="bare-container--flex--center twelve columns",
                                             ),
-                                            html.Div(id="k12-grad-overview-table"),
-                                            html.Div(id="k12-grad-ethnicity-table"),
-                                            html.Div(id="k12-grad-subgroup-table"),
+                                            html.Div(id="hs-grad-overview-table"),
+                                            html.Div(id="hs-grad-ethnicity-table"),
+                                            html.Div(id="hs-grad-subgroup-table"),
                                         ],
-                                        id="k12-grad-table-container",
+                                        id="hs-grad-table-container",
                                     ),
                                     html.Div(
                                         [
@@ -2150,14 +2142,14 @@ def layout():
                                                 className="bare-container--flex--center twelve columns",
                                             ),
                                             html.Div(
-                                                id="k12-sat-cut-scores-table",
+                                                id="hs-sat-cut-scores-table",
                                                 children=[],
                                             ),
-                                            html.Div(id="k12-sat-overview-table"),
-                                            html.Div(id="k12-sat-ethnicity-table"),
-                                            html.Div(id="k12-sat-subgroup-table"),
+                                            html.Div(id="hs-sat-overview-table"),
+                                            html.Div(id="hs-sat-ethnicity-table"),
+                                            html.Div(id="hs-sat-subgroup-table"),
                                         ],
-                                        id="k12-sat-table-container",
+                                        id="hs-sat-table-container",
                                     ),
                                 ],
                                 id="academic-information-main-container",

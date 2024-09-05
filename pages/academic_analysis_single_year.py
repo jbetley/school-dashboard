@@ -53,15 +53,14 @@ dash.register_page(
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("analysis-single-comparison-dropdown", "value"),
-    Input("analysis-type-radio", "value"),
+    Input("academic-type-radio", "value"),
 )
 def set_dropdown_options(
     school_id: str,
     year: str,
     existing_comparison_schools_list: list,
-    analysis_type_value=str,
+    academic_type_value: str,
 ):
-
     if not year:
         year = current_academic_year
 
@@ -80,18 +79,18 @@ def set_dropdown_options(
 
     # Get School ID, School Name, Lat & Lon for all schools in the
     # set for selected year. SQL query depends on school type
-    if selected_school_type == "K12":
-        if analysis_type_value == "hs":
-            selected_school_type = "HS"
+    if selected_school_type == "k12":
+        if academic_type_value == "hs":
+            selected_school_type = "hs"
         else:
-            selected_school_type = "K8"
+            selected_school_type = "k8"
 
     schools_by_distance = get_school_coordinates(numeric_year, selected_school_type)
 
     # Drop any school not testing at least 20 students (k8 only- probably
     # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
 
-    if selected_school_type == "K8":
+    if selected_school_type == "k8":
         schools_by_distance["Total|ELA Total Tested"] = pd.to_numeric(
             schools_by_distance["Total|ELA Total Tested"], errors="coerce"
         )
@@ -111,7 +110,7 @@ def set_dropdown_options(
         # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
 
         # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
-        if selected_school_type != "AHS":
+        if selected_school_type != "ahs":
             schools_by_distance = check_for_gradespan_overlap(
                 school_id, schools_by_distance
             )
@@ -160,11 +159,9 @@ def set_dropdown_options(
         overlap = 0
 
         if not existing_comparison_schools_list:
-
             overlap = 0
 
         else:
-
             for sch in new_comparison_schools_list:
                 overlap += existing_comparison_schools_list.count(sch)
 
@@ -190,7 +187,6 @@ def set_dropdown_options(
                 )
             )
         ):
-
             # If any of these are true, we reset options and values
             comparison_schools = [
                 d["value"] for d in new_comparison_schools[:default_num_to_display]
@@ -198,12 +194,10 @@ def set_dropdown_options(
             school_options = new_comparison_schools
 
         else:
-
             # if none of the above cases apply, we first test the length of the existing
             # list to make sure it hasn't exceeded max display
 
             if len(existing_comparison_schools_list) > max_num_to_display:
-
                 # if it does, we throw a warning, keep the selected values the same
                 # and disable all of the options
                 input_warning = html.P(
@@ -280,11 +274,11 @@ def set_dropdown_options(
     Output("single-year-analysis-notes", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("analysis-type-radio", "value"),
+    Input("academic-type-radio", "value"),
     [Input("analysis-single-comparison-dropdown", "value")],
 )
 def update_academic_analysis_single_year(
-    school_id: str, year: str, analysis_type_value: str, comparison_school_list: list
+    school_id: str, year: str, academic_type_value: str, comparison_school_list: list
 ):
     if not school_id:
         raise PreventUpdate
@@ -298,8 +292,8 @@ def update_academic_analysis_single_year(
     school_name = school_name.strip()
 
     # Radio buttons don't play nice
-    if not analysis_type_value:
-        analysis_type_value = "k8"
+    if not academic_type_value:
+        academic_type_value = "k8"
 
     # default values (only empty container displayed)
     hs_analysis_main_container = {"display": "none"}
@@ -350,9 +344,9 @@ def update_academic_analysis_single_year(
     academic_analysis_notes_string = ""
 
     if (
-        selected_school_type == "HS"
-        or selected_school_type == "AHS"
-        or (selected_school_type == "K12" and analysis_type_value == "hs")
+        selected_school_type == "hs"
+        or selected_school_type == "ahs"
+        or (selected_school_type == "k12" and academic_type_value == "hs")
     ):
         k8_analysis_empty_container = {"display": "none"}
 
@@ -361,8 +355,8 @@ def update_academic_analysis_single_year(
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
             the selected school. Up to eight (8) schools may be displayed at once."
 
-        if selected_school_type == "K12":
-            school_type = "HS"
+        if selected_school_type == "k12":
+            school_type = "hs"
         else:
             school_type = selected_school_type
 
@@ -376,12 +370,10 @@ def update_academic_analysis_single_year(
         ].copy()
 
         if hs_analysis_data.empty:
-
             analysis_single_dropdown_container = {"display": "none"}
             hs_analysis_empty_container = {"display": "block"}
 
         else:
-
             hs_school_name = hs_analysis_data[
                 hs_analysis_data["School ID"] == int(school_id)
             ]["School Name"].values[0]
@@ -547,16 +539,15 @@ def update_academic_analysis_single_year(
                     else:
                         sat_subgroup_container = {"display": "none"}
 
-    if selected_school_type == "K8" or selected_school_type == "K12":
-
+    if selected_school_type == "k8" or selected_school_type == "k12":
+        
         # If school is K12 and highschool tab is selected, skip k8 data
-        if selected_school_type == "K12" and analysis_type_value == "hs":
+        if selected_school_type == "k12" and academic_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
 
         else:
-
             # set K12 school type to K8
-            school_type = "K8"
+            school_type = "k8"
 
             academic_analysis_notes_label = "Comparison Data - K-8"
             academic_analysis_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
@@ -602,7 +593,6 @@ def update_academic_analysis_single_year(
             combined_selected_data = combined_selected_data.reset_index(drop=True)
 
             if len(k8_analysis_data.index) > 0:
-
                 k8_analysis_main_container = {"display": "block"}
                 k8_analysis_empty_container = {"display": "none"}
                 analysis_single_dropdown_container = {"display": "block"}

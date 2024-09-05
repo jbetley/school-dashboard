@@ -95,7 +95,7 @@ def calculate_attendance_metrics(
         z += 3
 
     # Chronic Absenteeism is not measured for AHS
-    if school_type == "AHS":
+    if school_type == "ahs":
         attendance_metrics.insert(
             loc=0, column="Category", value=["1.1.a. Attendance Rate"]
         )

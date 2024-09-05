@@ -33,10 +33,10 @@ dash.register_page(
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("analysis-multi-comparison-dropdown", "value"),
-    Input("analysis-type-radio", "value"),
+    Input("academic-type-radio", "value"),
 )
 def set_dropdown_options(
-    school_id: str, year: str, comparison_schools: list, analysis_type_value: str
+    school_id: str, year: str, comparison_schools: list, academic_type_value: str
 ):
     string_year = year
     numeric_year = int(string_year)
@@ -52,11 +52,11 @@ def set_dropdown_options(
 
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
     # SQL query depends on school type
-    if school_type == "K12":
-        if analysis_type_value == "hs":
-            school_type = "HS"
+    if school_type == "k12":
+        if academic_type_value == "hs":
+            school_type = "hs"
         else:
-            school_type = "K8"
+            school_type = "k8"
 
     schools_by_distance = get_school_coordinates(numeric_year, school_type)
 
@@ -64,7 +64,7 @@ def set_dropdown_options(
     # for school size here (probably only impacts ~20 schools)
     # the second condition ensures that the school is retained if it exists
 
-    if school_type == "K8":
+    if school_type == "k8":
         schools_by_distance = schools_by_distance[
             (schools_by_distance["Total|ELA Total Tested"].astype(int) >= 20)
             | (schools_by_distance["School ID"].astype(int) == int(school_id))
@@ -81,7 +81,7 @@ def set_dropdown_options(
         # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
 
         # Skip this step for AHS (don't have a gradespan in the technical sense)
-        if school_type != "AHS":
+        if school_type != "ahs":
             schools_by_distance = check_for_gradespan_overlap(
                 school_id, schools_by_distance
             )
@@ -153,7 +153,7 @@ def set_dropdown_options(
     Output("multi-year-analysis-notes", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("analysis-type-radio", "value"),
+    Input("academic-type-radio", "value"),
     Input("analysis-multi-subject-radio", "value"),
     Input("analysis-multi-hs-group-radio", "value"),
     [Input("analysis-multi-comparison-dropdown", "value")],
@@ -162,7 +162,7 @@ def set_dropdown_options(
 def update_academic_analysis_multiple_years(
     school: str,
     year: str,
-    analysis_type_value: str,
+    academic_type_value: str,
     subject_radio_value: str,
     hs_group_radio_value: str,
     comparison_school_list: list,
@@ -179,8 +179,8 @@ def update_academic_analysis_multiple_years(
     school_name = school_name.strip()
 
     # this radio button doesn't always play nice for some reason
-    if not analysis_type_value:
-        analysis_type_value = "k8"
+    if not academic_type_value:
+        academic_type_value = "k8"
 
     # default values (only empty container displayed)
     hs_analysis_multi_main_container = {"display": "none"}
@@ -200,9 +200,9 @@ def update_academic_analysis_multiple_years(
     analysis__multi_notes_string = ""
 
     if (
-        school_type == "HS"
-        or school_type == "AHS"
-        or (school_type == "K12" and analysis_type_value == "hs")
+        school_type == "hs"
+        or school_type == "ahs"
+        or (school_type == "k12" and academic_type_value == "hs")
     ):
         k8_analysis_multi_empty_container = {"display": "none"}
         year_over_year_grade = []  # type: list
@@ -276,7 +276,7 @@ def update_academic_analysis_multiple_years(
                 school, year_over_year_hs_data, all_school_info, label, msg
             )
 
-    elif school_type == "K8" or (school_type == "K12" and analysis_type_value == "k8"):
+    elif school_type == "k8" or (school_type == "k12" and academic_type_value == "k8"):
         hs_analysis_multi_main_container = {"display": "none"}
         year_over_year_hs = []
 
@@ -368,10 +368,6 @@ def update_academic_analysis_multiple_years(
                 year_over_year_k8_data, all_school_info = get_year_over_year_data(
                     school, comparison_school_list, category, string_year, "k8"
                 )
-                print("YOYDATA")
-                pd.set_option('display.max_columns', None)
-                pd.set_option('display.max_rows', None) 
-                print(year_over_year_k8_data)
 
             else:
                 year_over_year_k8_data = pd.DataFrame()

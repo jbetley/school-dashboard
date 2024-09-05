@@ -181,7 +181,7 @@ def get_academic_dropdown_years(*args):
     keys = ["id", "type"]
     params = dict(zip(keys, args))
 
-    if params["type"] == "K8" or params["type"] == "K12":
+    if params["type"] == "k8" or params["type"] == "k12":
         q = text(
             """ 
             SELECT DISTINCT	Year
@@ -870,23 +870,23 @@ def get_attendance_data(school_id, school_type, year):
 
     # NOTE: AHS attendance data is stored in the hs table. K12 attendance
     # data is the same in both k8 and hs tables (it isn't broken out)
-    if school_type == "K8":
+    if school_type == "k8":
         table = "academic_data_k8"
         id_type = "SchoolID"
-    elif school_type == "HS" or school_type == "AHS" or school_type == "K12":
+    elif school_type == "hs" or school_type == "ahs" or school_type == "k12":
         table = "academic_data_hs"
         id_type = "SchoolID"
-    elif school_type == "corp_K8":
+    elif school_type == "corp_k8":
         table = "corporation_data_k8"
         id_type = "CorporationID"
     elif (
-        school_type == "corp_HS"
-        or school_type == "corp_AHS"
-        or school_type == "corp_K12"
+        school_type == "corp_hs"
+        or school_type == "corp_ahs"
+        or school_type == "corp_k12"
     ):
         table = "corporation_data_hs"
         id_type = "CorporationID"
-    elif school_type == "K12":
+    elif school_type == "k12":
         return
 
     query_string = """
@@ -908,7 +908,7 @@ def get_attendance_data(school_id, school_type, year):
     attendance_data = attendance_data.replace(r"^\s*$", np.nan, regex=True)
 
     # Chronic Absenteeism isn't used for AHS
-    if school_type != "corp_AHS" and school_type != "AHS":
+    if school_type != "corp_ahs" and school_type != "ahs":
         attendance_data["Chronic Absenteeism %"] = calculate_percentage(
             attendance_data["Students Chronically Absent"],
             attendance_data["Total Student Count"],
@@ -973,7 +973,7 @@ def get_corporation_academic_data(*args):
     keys = ["id", "type"]
     params = dict(zip(keys, args))
 
-    if params["type"] == "HS" or params["type"] == "AHS":
+    if params["type"] == "hs" or params["type"] == "ahs":
         table = "corporation_data_hs"
     else:
         table = "corporation_data_k8"
@@ -1017,7 +1017,7 @@ def get_school_coordinates(*args):
     keys = ["year", "type"]
     params = dict(zip(keys, args))
 
-    if params["type"] == "HS":
+    if params["type"] == "hs":
         q = text(
             """
             SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade
@@ -1025,7 +1025,7 @@ def get_school_coordinates(*args):
                 WHERE Year = :year
         """
         )
-    elif params["type"] == "AHS":
+    elif params["type"] == "ahs":
         q = text(
             """
             SELECT Lat, Lon, SchoolID, SchoolName, HighGrade, LowGrade
@@ -1054,7 +1054,7 @@ def get_academic_data(*args):
 
     Args:
     schools (list): list of school IDs
-    type (str): school type ("K8","K12","HS","AHS")
+    type (str): school type ("k8","k12","hs","ahs")
     year (str): selected year
     page (str): page from which data is requested
 
@@ -1078,7 +1078,7 @@ def get_academic_data(*args):
 
     # Get data for academic_information and academic_metrics
     # all data / all years for school(s) and school corporation
-    if params["type"] == "K8":
+    if params["type"] == "k8":
         school_table = "academic_data_k8"
     else:
         school_table = "academic_data_hs"
@@ -1096,7 +1096,7 @@ def get_academic_data(*args):
 
     # get corp data (for academic_metrics and academic_analysis_single_year)
     # and add to dataframe
-    if params["type"] == "AHS":
+    if params["type"] == "ahs":
         corp_data = get_ahs_averages()
     else:
         corp_data = get_corporation_academic_data(params["schools"][0], params["type"])
@@ -1123,6 +1123,10 @@ def get_academic_data(*args):
 
     raw_merged_data = raw_merged_data.reset_index(drop=True)
 
+    # pd.set_option("display.max_columns", None)
+    # pd.set_option("display.max_rows", None)
+    # print(raw_merged_data)
+
     # Drop all columns for a Category if the value of "Total Tested" for
     # the Category for the school is null or 0 for the "school"
     drop_columns = []
@@ -1133,7 +1137,7 @@ def get_academic_data(*args):
     data["School ID"] = data["School ID"].astype("Int64").astype("str")
     data["Corporation ID"] = data["Corporation ID"].astype("Int64").astype("str")
 
-    if params["type"] == "K8":
+    if params["type"] == "k8":
         tested_cols = [
             col
             for col in data.columns.to_list()
@@ -1161,7 +1165,7 @@ def get_academic_data(*args):
             if "Total Tested" in col:
                 match_string = " Total Tested"
             else:
-                if params["type"] == "K8":
+                if params["type"] == "k8":
                     match_string = " Test N"
                 else:
                     match_string = "|Cohort Count"
@@ -1180,7 +1184,7 @@ def get_academic_data(*args):
     data = data.reset_index(drop=True)
 
     # process HS data
-    if params["type"] == "HS" or params["type"] == "AHS":
+    if params["type"] == "hs" or params["type"] == "ahs":
         processed_data = data.copy()
 
         # remove "EBRW and Math" columns
@@ -1188,7 +1192,7 @@ def get_academic_data(*args):
             list(processed_data.filter(regex="EBRW and Math")), axis=1
         )
 
-        if params["type"] == "AHS":
+        if params["type"] == "ahs":
             ## Graduation Calculation (AHS Accountability)
             # NOTE: a school must have at least ten (10) students graduate in the school
             # year being assessed. If school has fewer than ten (10) graduates for a year
@@ -1200,6 +1204,9 @@ def get_academic_data(*args):
             # numerator: total number of graduates for the assessed year
             # multiply quotient by 4
             # NOTE: Currently using (Total|Graduates/Total|Cohort) * 4
+
+            # print(processed_data)
+
             grad_by_enrollment = processed_data[
                 processed_data["School ID"] == school_id
             ][["Total|Cohort Count", "Total|Graduates", "Year"]]
@@ -1218,7 +1225,7 @@ def get_academic_data(*args):
             # (1) Calculate 5-Year grad rate (IC 20-26-13-10.2) for the cohort immediately
             # prior to the assessed year cohort.
             #   Formula: (Total|Graduates + PY Total|Graduates) / Total|Cohort
-            # TODO: Calc this
+
             # (2) Calculate 4-Year grad rate for the cohort immediately preceding the prior
             # year cohort
             #   Formula: Total|Graduates/Total|Cohort
@@ -1256,7 +1263,7 @@ def get_academic_data(*args):
             processed_data = calculate_sat_rate(processed_data)
 
         # process additional AHS only data
-        if params["type"] == "AHS":
+        if params["type"] == "ahs":
             if "AHS|CCR" in processed_data.columns:
                 processed_data["AHS|CCR"] = pd.to_numeric(
                     processed_data["AHS|CCR"], errors="coerce"
@@ -1273,7 +1280,7 @@ def get_academic_data(*args):
                 )
 
     # process K8 data
-    elif params["type"] == "K8":
+    elif params["type"] == "k8":
         processed_data = data.copy()
 
         # remove "ELA and Math" columns
@@ -1315,7 +1322,7 @@ def get_academic_data(*args):
         ## data for academic_analysis_single_page
         ## TODO eventually add multipage analysis data
         if params["page"] == "analysis":
-            if params["type"] == "HS" or params["type"] == "AHS":
+            if params["type"] == "hs" or params["type"] == "ahs":
                 hs_data = processed_data.copy()
 
                 analysis_data = hs_data.filter(
@@ -1384,7 +1391,7 @@ def get_academic_data(*args):
 
                 # one last check
                 if (
-                    (params["type"] == "K8" or params["type"] == "K12")
+                    (params["type"] == "k8" or params["type"] == "k12")
                     and len(analysis_data.index) > 0
                 ) and check_for_unchartable_data.isnull().all().all() == True:
                     analysis_data = pd.DataFrame()
@@ -1404,13 +1411,13 @@ def get_academic_data(*args):
             ].copy()
 
             # No corp_data is used and school_data limited to single metric (CCR)
-            if params["type"] == "AHS" and params["page"] == "metrics":
+            if params["type"] == "ahs" and params["page"] == "metrics":
                 # AHS metric data is extremely limited atm
                 school_metric_data = school_data[["Year", "AHS|CCR", "AHS|Grad All"]]
 
                 return school_metric_data
 
-            elif params["type"] == "HS":
+            elif params["type"] == "hs":
                 corp_data = processed_data[
                     processed_data["School ID"] == processed_data["Corporation ID"]
                 ].copy()
@@ -1579,7 +1586,8 @@ def get_academic_data(*args):
                     return metric_data
 
 
-# TODO: Is this being used? If not, merge into get_academic_data()
+# TODO: merge into get_academic_data()
+# TODO: Currently only used in multi-year academic data
 def get_year_over_year_data(*args):
     keys = ["school_id", "comp_list", "category", "year", "flag"]
     params = dict(zip(keys, args))
@@ -1664,11 +1672,6 @@ def get_year_over_year_data(*args):
     q1 = text(query_string1)
 
     school_data = run_query(q1, params)
-
-    # pd.set_option("display.max_columns", None)
-    # pd.set_option("display.max_rows", None)
-    # print("RAW SCHOOL")
-    # print(school_data)
 
     # TODO: Currently, the chart defaults to whatever category has data
     # TODO: if a year is selected where the category that is selected
@@ -1786,7 +1789,7 @@ def get_year_over_year_data(*args):
             result = pd.merge(school_data, corp_data, on="Year")
         else:
             # do not merge school corp data with adult high school set
-            if school_type == "AHS":
+            if school_type == "ahs":
                 result = pd.merge(school_data, comparable_schools_data, on="Year")
             else:
                 result = pd.merge(

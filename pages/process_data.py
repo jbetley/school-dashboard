@@ -3,7 +3,7 @@
 #########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     09/01/24
 
 # TODO: Explore serverside disk caching for data loading
 
@@ -53,7 +53,7 @@ def transpose_data(df, params):
         name_id = "School"
 
     # create dataframes with N-Size data for info/analysis pages
-    if params["type"] == "HS" or params["type"] == "AHS":
+    if params["type"] == "hs" or params["type"] == "ahs":
         tested_cols = "Total Tested|Cohort Count|Year"
         filter_cols = r"^Category|Graduation Rate$|AHS|Pass Rate$|Benchmark %|Below|Approaching|At|^Year$"
         substring_dict = {" Total Tested": "", "\|Cohort Count": "|Graduation"}
@@ -117,7 +117,7 @@ def transpose_data(df, params):
     proficiency_data = proficiency_data.reset_index(drop=True)
 
     # temporarily store Low/High grade cols for K8
-    if params["type"] == "K8":
+    if params["type"] == "k8":
         other_rows = proficiency_data[
             proficiency_data["Category"].str.contains(r"Low|High")
         ]
@@ -169,7 +169,7 @@ def transpose_data(df, params):
 
     # Add Low and High Grade rows back to k8 data and
     # create df for information figs
-    if params["type"] == "K8":
+    if params["type"] == "k8":
         final_data = pd.concat(
             [final_data.reset_index(drop=True), other_rows.reset_index(drop=True)],
             axis=0,

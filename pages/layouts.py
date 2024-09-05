@@ -466,7 +466,7 @@ def create_radio_layout(
     group = page + "-" + group_catagory + "-radio"
     container = group + "-container"
 
-    # NOTE: the default width is twelve, used to a single line of buttons. If a width is
+    # NOTE: the default width is twelve, used for a single line of buttons. If a width is
     # provided, it indicates a group of buttons on the same row as another group.
     if width == "twelve":
         layout = "bare-container--flex--center " + width + " columns"
