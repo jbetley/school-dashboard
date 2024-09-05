@@ -1123,10 +1123,6 @@ def get_academic_data(*args):
 
     raw_merged_data = raw_merged_data.reset_index(drop=True)
 
-    # pd.set_option("display.max_columns", None)
-    # pd.set_option("display.max_rows", None)
-    # print(raw_merged_data)
-
     # Drop all columns for a Category if the value of "Total Tested" for
     # the Category for the school is null or 0 for the "school"
     drop_columns = []
@@ -1204,8 +1200,6 @@ def get_academic_data(*args):
             # numerator: total number of graduates for the assessed year
             # multiply quotient by 4
             # NOTE: Currently using (Total|Graduates/Total|Cohort) * 4
-
-            # print(processed_data)
 
             grad_by_enrollment = processed_data[
                 processed_data["School ID"] == school_id
@@ -1780,10 +1774,6 @@ def get_year_over_year_data(*args):
         )
         comparable_schools_data = comparable_schools_data.reset_index()
         comparable_schools_data = comparable_schools_data.sort_values("Year")
-
-        print("COMP SHOOCLS")
-
-        # print(comparable_schools_data)
 
         if len(comparable_schools_data.columns) == 0:
             result = pd.merge(school_data, corp_data, on="Year")
