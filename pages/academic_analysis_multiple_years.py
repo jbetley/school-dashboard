@@ -50,6 +50,10 @@ def set_dropdown_options(
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
+    # CHS Exception
+    if int(school_id) == 5874 and numeric_year < 2021:
+        school_type = "k12"
+
     # Get School ID, School Name, Lat & Lon for all schools in the set for selected year
     # SQL query depends on school type
     if school_type == "k12":
@@ -175,6 +179,11 @@ def update_academic_analysis_multiple_years(
 
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
+
+    # CHS Exception
+    if int(school) == 5874 and int(year) < 2021:
+        school_type = "k12"
+
     school_name = selected_school["School Name"].values[0]
     school_name = school_name.strip()
 

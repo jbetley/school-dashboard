@@ -290,6 +290,11 @@ def update_academic_analysis_single_year(
 
     selected_school = get_school_index(school_id)
     selected_school_type = selected_school["School Type"].values[0]
+
+    # CHS Exception
+    if int(school_id) == 5874 and numeric_year < 2021:
+        selected_school_type = "k12"
+
     school_name = selected_school["School Name"].values[0]
     school_name = school_name.strip()
 

@@ -112,6 +112,11 @@ def update_academic_information_page(
 
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
+
+    # CHS Exception
+    if int(school) == 5874 and selected_year_numeric < 2021:
+        selected_school_type = "k12"
+
     selected_school_name = selected_school["School Name"].values[0]
 
     is_guest = True if selected_school["Guest"].values[0] == "Y" else False
@@ -281,6 +286,10 @@ def update_academic_information_page(
         hs_grad_table_container = {"display": "none"}
 
     # High School Data
+    print("selected_school_type")
+    print(selected_school_type)
+    print("radio_type")
+    print(radio_type)
     if (
         selected_school_type == "hs"
         or selected_school_type == "ahs"

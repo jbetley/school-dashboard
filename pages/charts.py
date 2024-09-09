@@ -488,6 +488,12 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
 
     data = values.copy()
 
+    # NOTE: you can sometimes have a selected school disappear from
+    # the school selection list if the school didn't exist or didn't
+    # have the requisite grade levels at the time. This results in
+    # a "NaN" column name. We filter them out here.
+    data = data.loc[:, data.columns.notna()]
+    
     school_cols = [i for i in data.columns if i not in ["Year"]]
 
     if (len(school_cols)) > 0 and len(data.index) > 0:
