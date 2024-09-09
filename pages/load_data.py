@@ -74,6 +74,9 @@ def run_query(q, *args):
         df.columns = df.columns.str.replace("EBRWand", "EBRW and")
         df.columns = df.columns.str.replace("Freeand", "Free and")
         df.columns = df.columns.str.replace("Outof", "Out of")
+
+        # the above is adding a space to NonWaiver- so we need to remove it
+        df.columns = df.columns.str.replace("Non Waiver", "NonWaiver")
         df.columns = df.columns.str.replace(r"([A])([a])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([1-9])([(])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace("or ", " or ")
@@ -1674,7 +1677,6 @@ def get_year_over_year_data(*args):
     # TODO: if a year is selected where the category that is selected
     # TODO: has no data. Need to change this to show empty chart if
     # TODO: a category is selected with no data for a particular year.
-
     # TODO: I suspect this is in the navigation logic [[DOH]]
 
     # get school type and then drop column (this just gets the string
@@ -1688,6 +1690,10 @@ def get_year_over_year_data(*args):
     school_info = school_data[["School Name", "School ID", "Low Grade", "High Grade"]]
 
     school_name = school_data["School Name"][0]
+
+    # TODO: Pretty sure is not necessary. Leave for testing.
+    # school_data[tested] = school_data[tested].fillna(0)
+    # school_data = school_data.drop(school_data[school_data[tested] == 0].index)
 
     school_data[school_name] = pd.to_numeric(
         school_data[passed], errors="coerce"

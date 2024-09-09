@@ -647,7 +647,6 @@ def navigation(
 
     # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
-
         # begin academic_info navigation
         category_options_default = [
             {"label": "All Data", "value": "all"},
@@ -675,7 +674,6 @@ def navigation(
             academic_type_container = {"display": "block"}
 
             if current_page == "academic_information_growth":
-
                 if info_category_value_state:
                     if (
                         info_category_value_state == "wida"
@@ -714,7 +712,6 @@ def navigation(
         # there is also no subnavigation for a K12 school that
         # has the "hs" type selected
         elif school_type == "k12" and academic_type_value == "hs":
-
             school_type = "hs"
             academic_type_container = {"display": "block"}
 
@@ -770,7 +767,6 @@ def navigation(
 
     # analysis_single_year.py and analysis_multiple_years.py
     elif "academic_analysis" in current_page:
-
         # begin analysis subnavigation
         analysis_subnav_container = {"display": "block"}
 
@@ -801,12 +797,12 @@ def navigation(
                     analysis_multi_hs_group_value == "Graduation Rate"
                     or analysis_multi_hs_group_value == ""
                 ):
-
                     # analysis_multi_subject_value = ""
 
                     # show graduation rate categories
                     analysis_multi_category_options = [
                         {"label": "Total", "value": "Total"},
+                        {"label": "NonWaiver", "value": "NonWaiver"},
                         {"label": "Subgroup", "value": "Subgroup"},
                         {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                     ]
@@ -814,11 +810,12 @@ def navigation(
                     # use existing value or set default value to "Total"
                     if analysis_multi_category_value not in [
                         "Total",
+                        "NonWaiver",
                         "Subgroup",
                         "Race/Ethnicity",
                     ]:
-                    #     analysis_multi_category_value = analysis_multi_category_value
-                    # else:
+                        #     analysis_multi_category_value = analysis_multi_category_value
+                        # else:
                         analysis_multi_category_value = "Total"
 
                     analysis_multi_category_container = {"display": "block"}
@@ -832,8 +829,8 @@ def navigation(
 
                     # use existing value or set default subject value to "EBRW"
                     if analysis_multi_subject_state not in ["EBRW", "Math"]:
-                    #     analysis_multi_subject_value = analysis_multi_subject_state
-                    # else:
+                        #     analysis_multi_subject_value = analysis_multi_subject_state
+                        # else:
                         analysis_multi_subject_value = "EBRW"
 
                     analysis_multi_subject_container = {"display": "block"}
@@ -852,8 +849,8 @@ def navigation(
                         "Subgroup",
                         "Race/Ethnicity",
                     ]:
-                    #     analysis_multi_category_value = analysis_multi_category_value
-                    # else:
+                        #     analysis_multi_category_value = analysis_multi_category_value
+                        # else:
                         analysis_multi_category_value = "Total"
 
                     analysis_multi_category_container = {"display": "block"}
@@ -862,7 +859,6 @@ def navigation(
                 if school_type == "k8" or (
                     school_type == "k12" and academic_type_value == "k8"
                 ):
-
                     # subject for both K8 and K12 schools (k8 type)
                     analysis_multi_subject_options = [
                         {"label": "ELA", "value": "ELA"},
@@ -874,8 +870,8 @@ def navigation(
 
                     # default subject ("ELA")
                     if analysis_multi_subject_state not in ["ELA", "Math", "IREAD"]:
-                    #     analysis_multi_subject_value = analysis_multi_subject_state
-                    # else:
+                        #     analysis_multi_subject_value = analysis_multi_subject_state
+                        # else:
                         analysis_multi_subject_value = "ELA"
 
                     analysis_multi_category_container = {"display": "block"}
@@ -916,8 +912,8 @@ def navigation(
                             "Subgroup",
                             "Race/Ethnicity",
                         ]:
-                        #     analysis_multi_category_value = analysis_multi_category_value
-                        # else:
+                            #     analysis_multi_category_value = analysis_multi_category_value
+                            # else:
                             analysis_multi_category_value = "Grade"
 
             # get years for subcategories
@@ -929,7 +925,8 @@ def navigation(
             if (
                 "academic" in current_page
                 or "analysis_single" in current_page  # TODO: Test whether dupes needed
-                or "analysis_multiple" in current_page  # TODO: Test whether dupes needed
+                or "analysis_multiple"
+                in current_page  # TODO: Test whether dupes needed
                 or selected_school["Guest"].values[0] == "Y"
             ):
                 if (
@@ -957,8 +954,8 @@ def navigation(
                     grade_strings = ["Grade " + g for g in grades]
 
                     if analysis_multi_subcategory_value not in grade_strings:
-                    #     analysis_multi_subcategory_value = analysis_multi_subcategory_value
-                    # else:
+                        #     analysis_multi_subcategory_value = analysis_multi_subcategory_value
+                        # else:
                         analysis_multi_subcategory_value = "Total"
 
                     analysis_multi_subcategory_container = {"display": "block"}
@@ -985,8 +982,8 @@ def navigation(
 
                 if ethnicity:
                     if analysis_multi_subcategory_value not in ethnicity:
-                    #     analysis_multi_subcategory_value = analysis_multi_subcategory_value
-                    # else:
+                        #     analysis_multi_subcategory_value = analysis_multi_subcategory_value
+                        # else:
                         analysis_multi_subcategory_value = ethnicity[0]
 
                     analysis_multi_subcategory_container = {"display": "block"}
@@ -1013,8 +1010,8 @@ def navigation(
                     ]
 
                     if analysis_multi_subcategory_value not in subgroup:
-                    #     analysis_multi_subcategory_value = analysis_multi_subcategory_value
-                    # else:
+                        #     analysis_multi_subcategory_value = analysis_multi_subcategory_value
+                        # else:
                         analysis_multi_subcategory_value = subgroup[0]
 
                     analysis_multi_subcategory_container = {"display": "block"}
@@ -1023,6 +1020,12 @@ def navigation(
                     analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = "No Subgroup Data"
                     analysis_multi_subcategory_container = {"display": "block"}
+
+            # grad rate only
+            elif analysis_multi_category_value == "NonWaiver":
+                analysis_multi_subcategory_value = "NonWaiver"
+                analysis_multi_subcategory_options = []
+                analysis_multi_subcategory_container = {"display": "none"}
 
             # for SAT ('School Total') and Grad Rate ('Total) set single value,
             # with no options
@@ -1034,7 +1037,6 @@ def navigation(
         else:  # analysis_single_year page has no radio buttons other than 'type'
             if school_type == "k12":
                 academic_type_container = {"display": "block"}
-
 
     # TODO: Move Financial Tab [School][Network] subnavigation here
     # all other pages have no sub_navigation (other than Financal Tabs
