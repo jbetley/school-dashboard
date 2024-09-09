@@ -3,8 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/03/24
-
+# date:     09/06/24
 # TODO: Break down into three pages: ILEARN; IREAD; WIDA
 
 import dash
@@ -286,11 +285,7 @@ def update_academic_information_page(
         selected_school_type == "hs"
         or selected_school_type == "ahs"
         or (
-            (
-                selected_school_type
-                == "k12"
-                # or (selected_school_id == 5874 and selected_year_numeric < 2021)
-            )
+            selected_school_type == "k12"
             and radio_type == "hs"
         )
     ):
@@ -334,8 +329,7 @@ def update_academic_information_page(
             # Graduation Rate Tables
             grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
-            # TODO: Add AHS CCR Data to new table
-
+            # TODO: Add AHS CCR Data
             if selected_school_type == "ahs":
                 grad_overview_categories.append("CCR Percentage")
 
@@ -514,11 +508,7 @@ def update_academic_information_page(
 
     # Begin K8 block
     elif selected_school_type == "k8" or (
-        (
-            selected_school_type
-            == "k12"
-            # or (selected_school_id == 5874 and selected_year_numeric < 2021)
-        )
+        selected_school_type == "k12"
         and radio_type == "k8"
     ):
         if selected_school_type == "k12":
@@ -528,7 +518,7 @@ def update_academic_information_page(
 
         list_of_schools = [school]
 
-        # NOTE: there is no ilearn/iread data available for 2020
+        # NOTE: no ilearn/iread data available for 2020
         k8_info_data = get_academic_data(
             list_of_schools, school_type, selected_year_numeric, "info"
         )
@@ -756,10 +746,10 @@ def update_academic_information_page(
                     ]
                     total_tested = category_subject + " " + "Total Tested"
 
-                    # We do not want categories that do not appear in the dataframe to appear
-                    # in a chart. However, we also do not want to lose sight of critical data
-                    # because of the way that IDOE determines insufficient N-Size. There are
-                    # three possible data configurations for each column:
+                    # We do not want categories that do not appear in the dataframe to
+                    # appear in a chart. However, we also do not want to lose sight of
+                    # critical data because of the way that IDOE determines insufficient
+                    # N-Size. There are three possible data configurations for each column:
                     # 1) Total Tested > 0 and the sum of proficiency_rating(s) is > 0: the school
                     #    has tested category and there is publicly available data [display]
                     # 2) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
@@ -991,8 +981,6 @@ def update_academic_information_page(
 
         # End K-8 ILEARN block
 
-        # NOTE: Do we want to add classification for "MS" and "ES" ?
-
         # IREAD - School Level Totals, Ethnicity, & Status
         both = ethnicity + subgroup + ["Total"]
         categories_iread_all = []
@@ -1199,7 +1187,7 @@ def update_academic_information_page(
                     iread_details_table_cols
                 ]
 
-                # Create dataframes for other IREAD data points
+                # Other IREAD data
                 if iread_details_table_data.empty:
                     iread_school_details = []
 
@@ -1834,7 +1822,7 @@ def update_academic_information_page(
         # End WIDA Breakdown (School Level) block
 
     # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
-    # TODO: but still need Test Year column in ILEARN data
+    # TODO: but need Test Year column in student ILEARN data (not currently there)
     # Get total # of students for each grade for each year
     # Calculate Proficiency for each year for each grade ->
     #   # students / # At or Above

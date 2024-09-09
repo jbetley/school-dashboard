@@ -3,7 +3,7 @@
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     08/05/24
+# date:     09/06/24
 
 import pandas as pd
 import numpy as np
@@ -150,6 +150,7 @@ def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
 
     for test in tested:
         if test in data.columns:
+
             # get Category + Subject string
             cat_sub = test.split(" Total Tested")[0]
             data[cat_sub + " Benchmark %"] = calculate_percentage(
@@ -235,7 +236,7 @@ def recalculate_total_proficiency(
 
     revised_totals[["Year", "School ID", "School Name"]] = revised_data[
         ["Year", "School ID", "School Name"]
-    ]  # remove
+    ]  # remove (?)
 
     numeric_columns = [
         c
@@ -341,7 +342,7 @@ def set_academic_rating(data: str | float | None, threshold: list, flag: int) ->
         str: metric rating
     """
 
-    # NOTE: The order of operations matter
+    # NOTE: The order of the following operations matter
     if data == "***" or data == "No Grade" or data == "No Data":
         indicator = "NA"
         return indicator

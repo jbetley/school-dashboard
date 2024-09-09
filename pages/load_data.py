@@ -3,7 +3,7 @@
 ##############################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     07/29/24
+# date:     09/06/24
 
 # NOTE: No K8 academic data exists for 2020
 
@@ -12,6 +12,7 @@
 # IREAD - 2024
 # SAT - 2024
 # ADM - 2024
+# Chronic Absenteeism - 2024
 # Demographics - 2024 (except SPED/ELL)
 # Financial - 2023 (Audited) / 2024(Q3) (Q4 due mid august)
 # Graduation Rate - 2023
@@ -33,7 +34,7 @@ from .calculations import (
 
 from .process_data import transpose_data
 
-# NOTE: Consider moving engine instantiation to app.py
+# NOTE: Considering moving engine instantiation to app.py
 engine = create_engine("sqlite:///data/indiana_schools.db")
 users = create_engine("sqlite:///users.db")
 
@@ -60,9 +61,10 @@ def run_query(q, *args):
 
         df = pd.read_sql_query(q, conn, params=conditions)
 
-        # sqlite column headers do not have spaces between words. But we need to display the column names,
-        # so we have to do a bunch of str.replace to account for all conditions. May be a better way, but
-        # this is pretty fast. Adding a space between any lowercase character and any uppercase/number
+        # sqlite column headers do not have spaces between words. But we need to
+        # display the column names, so we have to do a bunch of str.replace to
+        # account for all conditions. May be a better way, but this is pretty fast.
+        # Adding a space between any lowercase character and any uppercase/number
         # character takes care of most of it. The other replace functions catch edge cases.
         df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(
@@ -259,8 +261,9 @@ def get_financial_dropdown_years(school_id, page):
 
     results = run_query(q, params)
 
-    # TODO: Testing using "years with data" instead of "years with ADM"
-    # TODO: which captures year 0 data as well.
+    # NOTE: Testing using "years with data" instead of "years
+    # with ADM" which captures pre-opening years with "0"
+    # State Grant data.
     results = results.dropna(axis=1, how="all")
     year_list = results.columns.tolist()
     year_list = [

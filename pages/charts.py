@@ -933,6 +933,8 @@ def make_line_chart(values: pd.DataFrame) -> list:
     return fig_layout
 
 
+# TODO: convert to use regular px.line rather than subplots so we can adjust
+# TODO:  the ticks the same way we do in make_line_chart (edge to edge)
 def make_growth_chart(
     data_me: pd.DataFrame, data_162: pd.DataFrame, label: str
 ) -> list:
@@ -952,7 +954,6 @@ def make_growth_chart(
     data_me.columns = data_me.columns.map(lambda x: x.split("|")[0])
     data_162.columns = data_162.columns.map(lambda x: x.split("|")[0])
 
-    # TODO: convert to use regular px.line rather than subplots
     fig = make_subplots()
 
     if "Growth" in label:
@@ -1008,8 +1009,6 @@ def make_growth_chart(
         #     secondary_y=False,
         # )
 
-    # TODO: Rework this to use a regular px.line so that we can adjust the ticks
-    # TODO: the same way we do in make_line_chart (edge to edge)
     xaxis_data = pd.DataFrame()
     xaxis_data["Year"] = data_me.index.astype(str)
 

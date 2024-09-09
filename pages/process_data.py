@@ -3,8 +3,7 @@
 #########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/01/24
-
+# date:     09/06/24
 # TODO: Explore serverside disk caching for data loading
 
 from typing import Tuple
@@ -22,12 +21,13 @@ from .globals import (
 
 from .calculations import calculate_percentage
 
-
 # filters tested (nsize) cols and proficiency calculations into
 # separate dataframes, performs some cleanup, including a transposition,
 # moving years to column headers and listing categories in their own
 # columns and then cross-merging the two. variables change depending on
 # whether we are analyzing a school or a corporation
+
+
 def transpose_data(df, params):
     # First, determine whether df contains data for the charter school or
     # the  geo school corporation. A school corporation will always have the
@@ -87,7 +87,6 @@ def transpose_data(df, params):
     tested_data = tested_data.fillna(value=np.nan)
     tested_data = tested_data.replace(0, np.nan)
 
-    # NOTE: At this point, it is possible to have an empty df
     if tested_data.empty:
         return tested_data
 
@@ -125,6 +124,7 @@ def transpose_data(df, params):
     proficiency_data = proficiency_data.fillna(value=np.nan)
 
     # Merge Total Tested DF with Proficiency DF based on substring match
+
     # NOTE: the cross-merge and substring match process takes about .3s,
     # is there a faster way?
     merged_data = proficiency_data.merge(tested_data, how="cross")
@@ -216,12 +216,13 @@ def process_growth_data(
         .reset_index(name="162 Days")
     )
 
-    # If the frequency of "Not Adequate Growth" == 1.0: then all ME and Day 162 values for that
-    # category and subject were Not Adequate (e.g., 100% of the students in that category
-    # were Not Adequate), meaning that 0% of students had adequate growth. So wherever
-    # "Not Adequate Growth" == 1.0, we change "ILEARNGrowth Level" to "Adequate Growth"
-    # and Majority Enrolled (or Day 162) to 0 (otherwise these values would disappear when
-    # we get rid of the "ILEARNGrowth Level" column)
+    # If the frequency of "Not Adequate Growth" == 1.0: then all ME and Day 162
+    # values for that category and subject were Not Adequate (e.g., 100% of the
+    # students in that category were Not Adequate), meaning that 0% of students
+    # had adequate growth. So wherever "Not Adequate Growth" == 1.0, we change
+    # "ILEARNGrowth Level" to "Adequate Growth" and Majority Enrolled (or Day
+    # 162) to 0 (otherwise these values would disappear when we get rid of the
+    # "ILEARNGrowth Level" column)
 
     mask = data["Majority Enrolled"] == 1.0
     data.loc[mask, "ILEARNGrowth Level"] = "Adequate Growth"
@@ -256,11 +257,11 @@ def process_growth_data(
         axis=1,
     )
 
-    # NOTE: Occasionally, the data will have an "Unknown" Category. No idea why, but
-    # we need to get rid of it - easiest way would be to just drop any Categories
-    # matching Unknown, but that won"t stop other random Categories from getting
-    # through. So instead, we drop any Categories that don"t match categories in
-    # the respective list
+    # NOTE: Occasionally, the data will have an "Unknown" Category. No idea
+    # why, but we need to get rid of it - easiest way would be to just drop
+    # any Categories matching "Unknown", but that won't stop other random
+    # Categories from getting through. So instead, we drop any Categories
+    # that don't match categories in the respective list
 
     if category == "Grade Level":
         final_data = final_data[final_data["Category"].str.contains("|".join(grades))]

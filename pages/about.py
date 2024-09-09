@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     07/30/24
+# date:     09/06/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
@@ -99,11 +99,12 @@ def update_about_page(year: str, school: str):
     # Updates Table - Right Now hardcoded - may want to add to DB
     update_table_label = ""
     update_table_dict = {
-        "Date": ["07.28.24", "07.30.24", "08.16.24"],
+        "Date": ["07.28.24", "07.30.24", "08.16.24", "08.25.24"],
         "Update": [
             "Added 2024 ILEARN to Information and Analysis pages.",
             "Added 2024 SAT to Information and Analysis pages.",
             "Added 2024 IREAD to Information and Analysis pages.",
+            "Added 2024 Chronic Absenteeism.",
         ],
     }
 

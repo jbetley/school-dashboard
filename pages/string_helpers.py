@@ -13,9 +13,8 @@ from typing import Tuple
 
 from .globals import ethnicity, subgroup, info_categories
 
-# function to provide natural sorting
+# natural keys is a function to provide natural sorting
 # https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
-
 
 # helper function for natural_keys
 def atoi(text):
@@ -63,7 +62,7 @@ def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     """
     result = val.copy()
 
-    # NOTE: Using font-awesome circle icon to replace string ratings.
+    # Using font-awesome circle icon to replace string ratings.
     result = result.replace(
         ["^DNMS$", "Does Not Meet Expectations"],
         "<span style='font-size: 1em; color: #ea5545;'><i class='fa fa-circle center-icon'></i></span>",
@@ -135,6 +134,7 @@ def create_chart_label(data: pd.DataFrame) -> str:
                 label = ""
 
         elif data.columns.str.contains("Proficient").any() == True:
+            
             # pull subject from the first "subject" column using regex
             subject_columns = [
                 c
@@ -249,7 +249,7 @@ def create_school_label(data: pd.DataFrame) -> pd.Series:
 
     label = label.replace("\(-\)", "", regex=True)
 
-    # NOTE: shouldnt need this but keeping in case any floats sneak
+    # shouldnt need this but keeping in case any floats sneak
     # through. we escape "." because want to replace literal ".0"
     # and not anychar + "0"
     label = label.replace("\.0", "", regex=True)
@@ -331,7 +331,6 @@ def identify_missing_categories(
     # Get the names and categories of schools that have data for some categories and not others.
     # In the end we want  a list of schools that is made up of schools that are missing all data
     # + schools that are missing some data + what data they are missing
-
     check_data = raw_data.copy()
 
     if check_data.columns.isin(["Low Grade", "High Grade"]).any():

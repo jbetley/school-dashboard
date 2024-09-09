@@ -467,7 +467,7 @@ def create_iread_ilearn_table(school: str, subject: str, excluded_years: list) -
                 else:
                     table_data.iat[i, x] = "{:,.0f}".format(table_data.iat[i, x])
 
-        # replace Nan with "-"# replace NaN with em dash (—)
+        # replace NaN with em dash (—)
         table_data = table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
         iread_ilearn_table = create_single_header_table(
@@ -491,8 +491,8 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
-    # NOTE: The key_table is currently only used for the dashboard_update table
-    # in about.py page and the SAT cut score table on academic_information.py page.
+    # key_table is currently only used for the dashboard_update table in the 
+    # about.py page and the SAT cut score table on academic_information.py page.
 
     table_size = len(data.columns)
 
@@ -1361,15 +1361,18 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
                 name_cols.append([item[:4], item[4:]])
 
-        # NOTE: Can't think of any non-stupid way to do this. We need some way to determine which
-        # column is the "first" year of data, such that no rating is calculated and then mark it
-        # with "Initial Year." The problem is in the variety of dataframes. We can't just check one
-        # index to make a determination. I'm sure there is a more elegant way, but right now, we
-        # check the 2nd, 3rd, and 4th cols looking for the pattern "%, (N), %", which (trust me),
-        # is a way to tell when we need to add str "Initial Year" to idx 1 & 2.
+        # NOTE: Can't think of any non-stupid way to do this. We need some way
+        # to determine which column is the "first" year of data, such that no
+        # rating is calculated and then mark it with "Initial Year." The problem
+        # is in the variety of dataframes. We can't just check one index to make
+        # a determination. I'm sure there is a more elegant way, but right now, we
+        # check the 2nd, 3rd, and 4th cols looking for the pattern "%, (N), %",
+        # which (trust me), is a way to tell when we need to add str "Initial
+        # Year" to idx 1 & 2.
 
-        # we also want to save the name of the second column header (in format YYYY(N)), so
-        # we can apply a right hand border to that column when styling the table
+        # we also want to save the name of the second column header (in format
+        # YYYY(N)), so we can apply a right hand border to that column when
+        # styling the table
         first_year = None
 
         if any("Rate" in s for s in all_cols):
@@ -1443,9 +1446,9 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 for nsize in nsize_headers
             ]
             + [
-                # Use "all_cols[-1]" and "borderRight" for each subheader to have full border
-                # Use "all_cols[1]" and "borderLeft" to leave first and last columns open on
-                # right and left
+                # Use "all_cols[-1]" and "borderRight" for each subheader to have
+                # full border. Use "all_cols[1]" and "borderLeft" to leave first
+                # and last columns open on right and left
                 {
                     "if": {
                         "column_id": all_cols[-1],
@@ -1457,10 +1460,12 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             ]
         )
 
-        # NOTE: A wee kludge here. Typically, we want a border on the right side of every Rating
-        # column to signify the right edge of a year. However, for IREAD, we actually want the
-        # border on the right side of the Difference column and not on the Rating column. So we
-        # simply swap rating headers for diff headers for formatting purposes for IREAD data.
+        # NOTE: A wee kludge here. Typically, we want a border on the right
+        # side of every Rating column to signify the right edge of a year.
+        # However, for IREAD, we actually want the border on the right side
+        # of the Difference column and not on the Rating column. So we simply
+        # swap rating headers for diff headers for formatting purposes for
+        # IREAD data.
         if "IREAD-3" in label[0]:
             rating_headers = diff_headers
 
@@ -1582,20 +1587,17 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
             for (idx, col) in enumerate(name_cols)
         ]
 
-        # Create custom tooltip with metric/rating definitions- because the default tooltip is limited,
-        # we use two dash-mantine-components: a dmc.Table inside of a dmc.HoverCard
+        # Create custom tooltip with metric/rating definitions- because the default
+        # tooltip is limited, we use two dash-mantine-components: a dmc.Table inside
+        # of a dmc.HoverCard
 
-        # Metric definitions are stored in a dictionary keyed to the metric number in load_data.py.
+        # Metric definitions are stored in a dictionary keyed to the metric number
+        # in load_data.py.
         metric_id = re.findall(r"[\d\.]+[a-z]{1}|[\d\.]+", label[0])
 
         def create_tooltip(id: list) -> Tuple[list, list]:
-            # TODO: AHS - Eventually need to split out 1.1, 1.3 (AHS), 1.2.a (AHS) and 1.2.b (AHS)
-            # NOTE: There is a known bug in HoverCard that can cause the browser to hang if the pop
-            # up opens in a space where there is no room for it (e.g., if it is set to position "top"
-            # and it is triggered by something at the top of the browser window. One workaround is to
-            # set the position of the Card to bottom, where it is less likely to have no space. This
-            # was fixed in the current alpha (0.13) but is not released yet
-            # https://community.plotly.com/t/dash-mantine-datepicker/75251/2
+            # TODO: AHS - Eventually need to split out 1.1, 1.3 (AHS), 1.2.a (AHS)
+            # TODO: and 1.2.b (AHS)
 
             if not id:
                 header = []

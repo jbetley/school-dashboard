@@ -45,7 +45,8 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
         radio_input_container = {"display": "block"}
 
     if finance_value_state:
-        # when changing dropdown from a school with network to one without, we need to reset state
+        # need to reset state when changing dropdown from a school with
+        # network to one without 
         if (
             finance_value_state == "network-finance"
             and selected_school["Network"].values[0] == "None"
@@ -101,7 +102,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
     else:
         # school financial data
-        # NOTE: If the selected school is a guest school, load dummy data (Schooly McSchoolface).
+        # If the selected school is a guest school, load dummy data (Schooly McSchoolface).
         if selected_school["Guest"].values[0] == "Y":
             school = "9999"
 
@@ -305,7 +306,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             data_width = 100 - category_width
             year_width = data_width / (table_size - 1)
 
-            # NOTE: Adds conditional padding to right size of value cells. Could be more precise with
+            # Adds conditional padding to right size of value cells. Could be more precise with
             # a dash-extensions EventListener (re: size of Div), but that is for another day.
             pad_right = str(year_width / 3) + "%"
 

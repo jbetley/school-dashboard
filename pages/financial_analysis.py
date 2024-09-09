@@ -142,7 +142,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         )
 
     else:
-        # NOTE: If the selected school is a guest school, load dummy data.
+        # If the selected school is a guest school, load dummy data.
         if selected_school["Guest"].values[0] == "Y":
             school = "9999"
 
@@ -174,7 +174,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 "2-Year Financial Activities (" + financial_data["School Name"][0] + ")"
             )
 
-    # NOTE: First check- no data in the raw file
+    # First check- no data in the raw file
     if len(financial_data.columns) <= 1 or financial_data.empty:
         financial_position_table = []  # type: list
         financial_activities_table = []  # type: list
@@ -190,8 +190,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         financial_data = financial_data.drop(["School ID", "School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
-        # NOTE: drop partial year data (financial data with a "Q#" in column header).
-        # may eventually want to implement for Q4 data, but the display quickly gets
+        # drop partial year data (financial data with a "Q#" in column header). may
+        # eventually want to implement for Q4 data, but the display quickly gets
         # too confusing with incomplete data.
         if "Q" in financial_data.columns[1]:
             financial_data = financial_data.drop(financial_data.columns[[1]], axis=1)
@@ -214,15 +214,17 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     inplace=True,
                 )
 
-        # NOTE: Second & third check- no data left after dropping (Q) columns and excluded
-        # years, or schools with pre-opening financial data only- e.g., they have financial
-        # data for a year, but State Grants == 0
-        # TODO: Make this more robust
+        # Second & third check- no data left after dropping (Q) columns and excluded
+        # years, or schools with pre-opening financial data only- e.g., they have
+        # financial data for a year, but State Grants == 0
+
         if (
             len(financial_data.columns) <= 1
-            or float(financial_data[financial_data["Category"] == "State Grants"]
-            .iloc[:, 1]
-            .values[0])
+            or float(
+                financial_data[financial_data["Category"] == "State Grants"]
+                .iloc[:, 1]
+                .values[0]
+            )
             == 0
         ):
             financial_position_table = []
@@ -264,8 +266,8 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
             financial_data = financial_data.iloc[:, : (max_display_years + 1)]
 
-            # tables display missing years as blank, figs do not display them at all so we need
-            # a copy of the df at this point for figs.
+            # tables display missing years as blank, figs do not display them at all
+            # so we need a copy of the df at this point for figs.
             financial_data_fig = financial_data.copy()
 
             # Network financial data typically lags behind school data by at
@@ -607,9 +609,9 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                         financial_ratios_data[col], errors="coerce"
                     )
 
-                # Create an empty df in the shape and order that we want (e.g., Category, YYYY, YYYY-1), use
-                # combine_first to update all null elements in the empty df with a value in the same location
-                # in the existing df and then merge
+                # Create an empty df in the shape and order that we want (e.g., Category, YYYY,
+                # YYYY-1), use combine_first to update all null elements in the empty df with a
+                # value in the same location in the existing df and then merge
                 # https://stackoverflow.com/questions/56842140/pandas-merge-dataframes-with-shared-column-fillna-in-left-with-right
 
                 default_df = pd.DataFrame(columns=default_headers)

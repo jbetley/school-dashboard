@@ -3,7 +3,7 @@
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     03/25/24
+# date:     09/06/24
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -89,7 +89,6 @@ def set_dropdown_options(
 
     # Drop any school not testing at least 20 students (k8 only- probably
     # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
-
     if selected_school_type == "k8":
         schools_by_distance["Total|ELA Total Tested"] = pd.to_numeric(
             schools_by_distance["Total|ELA Total Tested"], errors="coerce"
@@ -98,16 +97,18 @@ def set_dropdown_options(
             schools_by_distance["Total|ELA Total Tested"] >= 20
         ]
 
-    # NOTE: There is some time cost for running the dropdown selection function (typically
-    # ~0.8 - 1.2s), so we want to exit out as early as possible if we know it isn't necessary
+    # NOTE: There is some time cost for running the dropdown selection function
+    # (typically ~0.8 - 1.2s), so we want to exit out as early as possible if we
+    # know it isn't necessary
     if int(school_id) not in schools_by_distance["School ID"].values:
         return [], [], []
 
     else:
-        # NOTE: Before we do the distance check, we reduce the size of the df by removing
-        # schools where there is no, or only a one grade overlap between the comparison schools.
-        # the variable "overlap" is one less than the the number of grades that we want as a
-        # minimum (a value of "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
+        # NOTE: Before we do the distance check, we reduce the size of the df by
+        # removing schools where there is no, or only a one grade overlap between
+        # the comparison schools. The variable "overlap" is one less than the the
+        # number of grades that we want as a minimum (a value of "1" means a 2
+        # grade overlap, "2" means 3 grade overlap, etc.).
 
         # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
         if selected_school_type != "ahs":
@@ -137,21 +138,22 @@ def set_dropdown_options(
 
         # options and values (comparison_schools) logic
         # there are three occasions when we want to reset the list: 1) there are
-        # no values (existing_comparison_schools_list = []); 2) there are values, but none
-        # of the existing values overlap with the new values; 3) there are values, and there
-        # is an overlap, but the number of overlapping schools is less than the total
-        # number of existing schools.
-        # (3) should only occur when we have a K12 school selected and are switching between
-        # "K8" and "HS" types where there is another K12 school in the comparable school list.
-        # Because the K12 school is in both lists- when the user switches, it is the only school
-        # that will be displayed. We don't want this, so we reset.
-        # NOTE: Probably easier to just reset K12 display every time the type changes, but I'm not
-        # quite sure how to track that (value vs. state?)
+        # no values (existing_comparison_schools_list = []); 2) there are values,
+        # but none of the existing values overlap with the new values; 3) there
+        # are values, and there is an overlap, but the number of overlapping
+        # schools is less than the total number of existing schools.
+        # (3) should only occur when we have a K12 school selected and are switching
+        # between "K8" and "HS" types where there is another K12 school in the
+        # comparable school list. Because the K12 school is in both lists- when
+        # the user switches, it is the only school that will be displayed. We don't
+        # want this, so we reset. NOTE: Probably easier to just reset K12 display
+        # every time the type changes, but I'm not quite sure how to track that
+        # (value vs. state?)
 
-        # at this point "existing_comparison_schools_list" is either [] (for no schools selected)
-        # or a list of currently selected schools. "new_comparison_schools_list" is
-        # a list of all of the schools matching the current selection (which is
-        # triggered by a change in type from K8 to HS)
+        # at this point "existing_comparison_schools_list" is either [] (for no
+        # schools selected) or a list of currently selected schools. 
+        # "new_comparison_schools_list" is a list of all of the schools matching
+        # the current selection (which is triggered by a change in type from K8 to HS)
 
         new_comparison_schools_list = [d["value"] for d in new_comparison_schools]
 
@@ -291,7 +293,6 @@ def update_academic_analysis_single_year(
     school_name = selected_school["School Name"].values[0]
     school_name = school_name.strip()
 
-    # Radio buttons don't play nice
     if not academic_type_value:
         academic_type_value = "k8"
 
@@ -728,7 +729,6 @@ def update_academic_analysis_single_year(
                     )
 
                 else:
-                    # NOTE: Better to display empty chart or no chart?
                     fig_iread_chart = []
                     fig_iread_table = []
 

@@ -46,7 +46,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
         radio_input_container = {"display": "block"}
 
     if finance_value_state:
-        # when changing dropdown from a school with network to one without, we need to reset state
+        # reset state when changing dropdown from a school with network to one without
         if (
             finance_value_state == "network-finance"
             and selected_school["Network"].values[0] == "None"
@@ -83,7 +83,9 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
     financial_indicators_container = {"display": "block"}
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
-    no_data_to_display = no_data_page("No Data to Display.", selected_year_string + " Financial Metrics")
+    no_data_to_display = no_data_page(
+        "No Data to Display.", selected_year_string + " Financial Metrics"
+    )
 
     if radio_value == "network-finance":
         network_id = selected_school["Network"].values[0]
@@ -94,13 +96,14 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
             financial_data = {}
 
         table_title = (
-            selected_year_string + " Financial Accountability Metrics ("
+            selected_year_string
+            + " Financial Accountability Metrics ("
             + financial_data["School Name"][0]
             + ")"
         )
 
     else:
-        # NOTE: If the selected school is a guest school, load dummy data (Schooly McSchoolface).
+        # If the selected school is a guest school, load dummy data (Schooly McSchoolface).
         if selected_school["Guest"].values[0] == "Y":
             school = "9999"
 
@@ -109,12 +112,15 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
         # don't display school name in title if the school isn't part of a network
         if selected_school["Network"].values[0] == "None":
             if selected_school["Guest"].values[0] == "Y":
-                table_title = selected_year_string + " Financial Accountability (SAMPLE DATA)"
+                table_title = (
+                    selected_year_string + " Financial Accountability (SAMPLE DATA)"
+                )
             else:
                 table_title = selected_year_string + " Financial Accountability Metrics"
         else:
             table_title = (
-                selected_year_string + " Financial Accountability Metrics ("
+                selected_year_string
+                + " Financial Accountability Metrics ("
                 + financial_data["School Name"][0]
                 + ")"
             )
@@ -230,9 +236,8 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
                 : (financial_data["Category"] == "Audit Information").idxmax() - 1
             ]
 
-            # Release The Hounds!
-            # NOTE: We use all years of data to calculate metrics because several metrics (e.g. ATYM and MYCF)
-            # require multiple prior years of data to properly calculate.
+            # Use all years of data to calculate metrics because several metrics (e.g.
+            # ATYM and MYCF) require multiple prior years of data to properly calculate.
             financial_metrics = calculate_financial_metrics(financial_values)
 
             # Catches edge case where school has empty df _after_ the metric calculation
@@ -689,7 +694,7 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
         financial_metrics_definitions_table,
         main_container,
         empty_container,
-        no_data_to_display
+        no_data_to_display,
     )
 
 
@@ -739,12 +744,12 @@ def layout():
             ),
             html.Div(
                 [
-                html.Div(
-                    [                    
-                        html.Div(id="financial-metrics-table", children=[]),
-                    ],
-                    className="pagebreak-after",
-                    ),                    
+                    html.Div(
+                        [
+                            html.Div(id="financial-metrics-table", children=[]),
+                        ],
+                        className="pagebreak-after",
+                    ),
                     html.Div(
                         [
                             html.Div(id="financial-indicators-table", children=[]),

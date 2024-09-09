@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/01/24
+# date:     09/06/24
 
 import pandas as pd
 import numpy as np
@@ -78,8 +78,9 @@ def calculate_attendance_metrics(
 
     attendance_metrics = attendance_metrics[reordered_cols]
 
-    # loops over dataframe calculating difference between a pair of columns, inserts the result in
-    # the following column, and then skips over the calculated columns to the next pair
+    # loops over dataframe calculating difference between a pair of columns,
+    # inserts the result in the following column, and then skips over the
+    # calculated columns to the next pair.
     y = 0
     z = 2
     end = int(len(attendance_metrics.columns) / 2)
@@ -188,11 +189,6 @@ def calculate_values(
     school_cols = list(set(school_cols))
     school_cols.append("Category")
 
-    # TODO: Perform this intersection check every time we weave columns
-    # pd.set_option("display.max_columns", None)
-    # pd.set_option("display.max_rows", None)
-    # print(school_comparison_data)
-
     # make sure df have identical columns (corp can have more years)
     corp_comparison_data = corp_comparison_data[
         corp_comparison_data.columns.intersection(school_cols)
@@ -207,21 +203,24 @@ def calculate_values(
 
     # Calculate Year over Year Values #
 
-    # Two columns for each year - [School, N-Size]; years are ascending. We want calculate
-    # the difference between the second to last column (the school column for the most recent Year) and
-    # the fourth from last column (the school column for the most recent previous year) and continue doing
-    # so as long as we have a two-year pair. That is, given a dataframe with cols: ['2019School', '2019N-Size',
-    # '2021School', '2021N-Size', '2022School', '2022N-Size', '2023School', '2023N-Size'], we want 3 loops:
-    # 2023School - 2022School; 2022School - 2021School; & 2021School - 2019School. As 2019School does not have
-    # a previous year, we stop at that point. We calculate the # of loops by: length of the columns minus 2 (for
+    # Two columns for each year - [School, N-Size]; years are ascending. We want
+    # to calculate the difference between the second to last column (the school
+    # column for the most recent Year) and the fourth from last column (the school
+    # column for the most recent previous year) and continue doing so as long as we
+    # have a two-year pair. That is, given a dataframe with cols: ['2019School',
+    # '2019N-Size', '2021School', '2021N-Size', '2022School', '2022N-Size', '2023School',
+    # '2023N-Size'], we want 3 loops: 2023School - 2022School; 2022School - 2021School; &
+    # 2021School - 2019School. As 2019School does not have a previous year, we stop at
+    # that point. We calculate the # of loops by: length of the columns minus 2 (for
     # the initial School, N-Size pair) divided by 2.
 
-    # The following loops over the dataframe from back to front, calculating the difference between col (Year)
-    # and col - 2 (Previous Year) and inserting the result at the last position col[-1] and then every 3rd index
-    # position prior.
+    # The following loops over the dataframe from back to front, calculating the
+    # difference between col (Year) and col - 2 (Previous Year) and inserting the
+    # result at the last position col[-1] and then every 3rd index position prior.
 
     # NOTE: Vectorize using shift() and then insert result at proper index?
-    # Could do, but would require reworking calculate_year_over_year() - so leave in loop for now
+    # Could do, but would require reworking calculate_year_over_year() - so leave in
+    # loop for now:
     # shifted_data = data.shift(2, axis=1)
     # result_data = calculate_year_over_year(data,shifted_data)
     # len 8: Want 7-5; 5-3; 3-1 -> insert result at 8,5,3
@@ -283,10 +282,7 @@ def calculate_values(
 
     # tmp drop Category Column to calculate difference
     school_comparison_data = school_comparison_data.drop("Category", axis=1)
-    # school_comparison_data = school_comparison_data.fillna(value=np.nan)
-
     corp_comparison_data = corp_comparison_data.drop("Category", axis=1)
-    # corp_comparison_data = corp_comparison_data.fillna(value=np.nan)
 
     # calculate difference between two dataframes (using a for loop
     # is not ideal, but we need to use row-wise calculations)
@@ -311,8 +307,6 @@ def calculate_values(
     final_cols.insert(0, "Category")
 
     comparison_result = comparison_result.set_axis(result_cols, axis=1)
-
-    # category_column = category_column.reset_index(drop=True)
     comparison_result.insert(loc=0, column="Category", value=category_column)
 
     # merge and reorder cols
@@ -559,7 +553,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
             for i in range(ahs_data.shape[1], 1, -1)
         ]
 
-        # NOTE: State Letter Grades are no longer used. so
+        # NOTE: State Letter Grades are not currently used. so
         # we create a 1 row dataframe using ahs_data cols,
         # set category to "State Grade", set value to "No Data",
         # and set Rate to "".
@@ -655,13 +649,14 @@ def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
     """
     iread_limits = [0.9, 0.8, 0.7, 0.7]
 
-    # IREAD data has already been run through the comparison_metric() function (in order to calculate
-    # the difference from school corporation). However, the IREAD rating is calculated on the School's
-    # proficiency and not on the difference, so we need to recalculate the metrics in order to get
+    # IREAD data has already been run through the comparison_metric() function
+    # (in order to calculate the difference from school corporation). However,
+    # the IREAD rating is calculated on the School's proficiency and not on the
+    # difference, so we need to recalculate the metrics in order to get
     # accurate ratings.
     data = data[data.columns.drop(list(data.filter(regex="Rate")))]
 
-    # another slight variation left as an exercise for the reader
+    # same as above but slightly different
     [
         data.insert(
             i - 1,
@@ -689,7 +684,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     truncated in body of financial_metrics.py to display a maximum of 5 years)
     NOTE: This was refactored (03.01.23) to use vectorized operations. Not sure
     that the refactored version is easier to comprehend than the previous
-    loop version. it is also longer.
+    version which used a loop. it is also longer.
 
     Args:
         data (pd.DataFrame): a DataFrame object with a Category column and a variable
@@ -729,8 +724,9 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
             .reset_index()
         )
 
-        # NOTE: After transposition, row data is in descending order, from earliest year at row_index 0
-        # to latest row at row_index -1. All subsequent operations reflect this order.
+        # NOTE: After transposition, row data is in descending order, from earliest
+        # year at row_index 0 to latest row at row_index -1. All subsequent operations
+        # reflect this order.
 
         # The vectorized way to run calculations between different rows of the
         # same column is to shift a copy of the column either up or down using
@@ -739,6 +735,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         # If the columns are in ascending order, use a shift value of -1
         # NOTE: if switch to ascending order, uncomment the next block AND flip the
         # arithmetic operation of any modified (e.g., -1 becomes +1)
+
         # shift_value = -1  # ascending
         shift_value = 1  # descending
 
@@ -833,11 +830,12 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
             > metric_grid["Aggregated Three-Year Margin"].shift(shift_value + 1)
         )
 
-        # A school meets standard if: Aggregated Three-Year Margin is positive and the most
-        # recent year Change in Net Assets Margin is positive; or Aggregated Three-Year Margin
-        # is greater than -1.5%, the trend is positive for the last two years, and Change in Net
-        # Assets Margin for the most recent year is positive. For schools in their first and
-        # second year of operation, the cumulative Change in Net Assets Margin must be positive.
+        # A school meets standard if: Aggregated Three-Year Margin is positive
+        # and the most recent year Change in Net Assets Margin is positive; or
+        # Aggregated Three-Year Margin is greater than -1.5%, the trend is positive
+        # for the last two years, and Change in Net Assets Margin for the most recent
+        # year is positive. For schools in their first and second year of operation,
+        # the cumulative Change in Net Assets Margin must be positive.
         def asset_margin_calc(chcur, agcur, diff):
             return (
                 "MS"
@@ -872,9 +870,9 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
             "Aggregated Three-Year Margin Metric",
         ] = "N/A"
 
-        # Remember, each row is a year, with earliest years at the top (lower row index). In YR 1 and Y2
-        # CHNM Metric is 'MS' if the cumulative value of CHNM is > 0 (positive). We use shift_value -1
-        # to account for zero-based indexing to get first year value
+        # In YR 1 and Y2 CHNM Metric is 'MS' if the cumulative value of CHNM is 
+        # > 0 (positive). We use shift_value -1 to account for zero-based indexing
+        # to get first year value
 
         if (
             metric_grid.loc[
@@ -938,10 +936,9 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
         # Cash Flow (for purposes of calculating Cash Flow, the school's Year 0 balance is
         # assumed to be zero).
 
-        # NOTE: Once again, remember that the current year is at the highest index (end) of
-        # the df - so we loop from back to front - because we need at least 3 years of data
-        # for the first test, we stop the loop when i == 1 (the second to last item in the
-        # loop)
+        # because we need at least 3 years of data, we loop from back to front. for the
+        # first test, we stop the loop when i == 1 (the second to last item in the loop)
+        
         for i in range(len(metric_grid["Cash Flow"]) - 1, 1, -1):
             # get current year value
             current_year_cash = metric_grid.loc[i, "Cash Flow"]
@@ -990,7 +987,8 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
                     metric_grid.index[shift_value], "Cash Flow Metric"
                 ] = "DNMS"
 
-        # if Multi-Year Cash Flow is NaN (no calculation is possible), Multi-Year Cash Flow Metric should be N/A
+        # if Multi-Year Cash Flow is NaN (no calculation is possible), Multi-Year Cash
+        # Flow Metric should be N/A
         metric_grid.loc[
             metric_grid["Multi-Year Cash Flow"].isnull(), "Multi-Year Cash Flow Metric"
         ] = "N/A"

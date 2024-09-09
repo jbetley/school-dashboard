@@ -3,7 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     09/06/24
 
 import dash
 from dash import dcc, ctx, html, Input, Output, State, callback
@@ -212,7 +212,8 @@ def update_academic_analysis_multiple_years(
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
             the selected school. Up to eight (8) schools may be displayed at once."
 
-        # get data for school (these labels are used to generate the message on the empty tables)
+        # get data for school (these labels are used to generate the message
+        # on the empty tables)
         if (
             subcategory_radio_value != "No Subgroup Data"
             and subcategory_radio_value != "No Race/Ethnicity Data"

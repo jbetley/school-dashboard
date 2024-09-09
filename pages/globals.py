@@ -84,6 +84,7 @@ discipline_groups = [
     "Not Homeless",
     "Homeless",
 ]
+
 # default table styles
 table_style = {"border": "none", "fontFamily": "Inter, sans-serif"}
 

@@ -3,7 +3,7 @@
 #####################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     08/30/24
+# date:     09/06/24
 
 import dash
 from dash import html, Input, Output, callback
@@ -48,7 +48,7 @@ dash.register_page(__name__, path="/academic_metrics", top_nav=True, order=9)
     Output("table-container-14cd", "children"),
     Output("table-container-14ef", "children"),
     Output("table-container-14g", "children"),
-    # Output("table-container-15abcd", "children"),
+    # Output("table-container-15abcd", "children"),    # growth data (not yet implemented)
     Output("table-container-16ab", "children"),
     Output("table-container-16cd", "children"),
     Output("k8-metrics-container", "style"),
@@ -68,9 +68,7 @@ def update_academic_metrics(school: str, year: str):
     if not school:
         raise PreventUpdate
 
-    # 2020 has no academic data
     selected_year_string = year
-    # selected_year_string = "2019" if string_year == "2020" else string_year
     selected_year_numeric = int(selected_year_string)
 
     # default values (only empty container displayed)
@@ -80,7 +78,7 @@ def update_academic_metrics(school: str, year: str):
     table_container_14cd = []
     table_container_14ef = []
     table_container_14g = []
-    # table_container_15abcd = []   # growth data (not yet implemented)
+    # table_container_15abcd = []
     table_container_16ab = []
     table_container_16cd = []
     attendance_container = {"display": "none"}
@@ -363,6 +361,7 @@ def update_academic_metrics(school: str, year: str):
         )
 
         if len(raw_metric_data.index) > 0:
+            
             # Adult High School Metrics
             if selected_school_type == "ahs":
                 ahs_metrics_container = {"display": "block"}

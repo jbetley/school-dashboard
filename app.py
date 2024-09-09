@@ -395,14 +395,14 @@ def set_year_dropdown_options(
 
     # academic_type: general rule
     if not academic_type_value:
-        if school_type == "hs" or school_type == "ahs":
-            academic_type_value = "hs"
-        else:
-            academic_type_value = "k8"
-
-    # academic_type: shift type if select k8 school when type is "hs"
-    if school_type == "k8" and academic_type_value == "hs":
+        # if school_type == "hs" or school_type == "ahs":
+        #     academic_type_value = "hs"
+        # else:
         academic_type_value = "k8"
+
+    # k8 cannot have type "hs"
+    # if school_type == "k8" and academic_type_value == "hs":
+    #     academic_type_value = "k8"
 
     # guest schools use academic_dropdown_years
     if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
@@ -426,7 +426,7 @@ def set_year_dropdown_options(
         years = get_financial_dropdown_years(school_id, input_state["currentpage"])
 
     # very rare case for a schools that has no data other than
-    # pre-opening year (eg., no ADM) - will return an empty list
+    # pre-opening year (eg., no ADM) - would otherwise return empty list
     if not years:
         years = [int(year_value)]
 
@@ -485,15 +485,16 @@ def set_year_dropdown_options(
     if input_state["currentyear"] != year_value:
         input_state["currentyear"] = year_value
 
-    # K8 schools do not have data for 2020 - so that year should never appear in the dropdown.
-    # HS, AHS, and K12 schools with the "HS" academic_type_radio button selected can have
-    # 2020 data- school_type generally takes care of this for K8, HS, and AHS schools, but not K12
+    # K8 schools do not have data for 2020 - so that year should never appear in the
+    # dropdown. HS, AHS, and K12 schools with the "HS" academic_type_radio button
+    # selected can have 2020 data- school_type generally takes care of this for K8,
+    # HS, and AHS schools, but not K12.
 
     if (
         (
             "academic" in current_page
-            or "academic_analysis_single" in current_page
-            or "academic_analysis_multiple" in current_page
+            # or "academic_analysis_single" in current_page
+            # or "academic_analysis_multiple" in current_page
             or selected_school["Guest"].values[0] == "Y"
         )
         and (
@@ -595,27 +596,70 @@ def navigation(
     elif int(school_id) == 5874 and int(year_value) >= 2021:
         school_type = "k8"
 
+    # baseline is to display nothing
+    # values are only set to "" if they don't already exist
+    academic_type_container = {"display": "none"}
+    
+    analysis_subnav_container = {"display": "none"}
+    analysis_multi_hs_group_options = []
+
+    try:
+        analysis_multi_hs_group_value
+    except NameError:
+        analysis_multi_hs_group_value = ""
+
+    # analysis_multi_hs_group_value = ""
+    
+    analysis_multi_hs_group_container = {"display": "none"}
+    analysis_multi_subject_options = []
+
+    try:
+        analysis_multi_subject_value
+    except NameError:
+        analysis_multi_subject_value = ""
+    
+    # analysis_multi_subject_value = ""
+
+    analysis_multi_subject_container = {"display": "none"}
+    analysis_multi_category_options = []
+
+    try:
+        analysis_multi_category_value
+    except NameError:
+        analysis_multi_category_value = ""
+    
+    # analysis_multi_category_value = ""
+
+    analysis_multi_category_container = {"display": "none"}
+    analysis_multi_subcategory_options = []
+
+    try:
+        analysis_multi_subcategory_value
+    except NameError:
+        analysis_multi_subcategory_value = ""
+    
+    # analysis_multi_subcategory_value = ""
+
+    analysis_multi_subcategory_container = {"display": "none"}
+
+    info_subnav_container = {"display": "none"}
+    info_category_container = {"display": "none"}
+    info_category_options = []
+
+    try:
+        info_category_value
+    except NameError:
+        info_category_value = ""
+    
+    # info_category_value = ""
+
     # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
-        # default is to hide academic analysis navigation
-        analysis_multi_hs_group_options = []
-        analysis_multi_hs_group_value = ""
-        analysis_multi_hs_group_container = {"display": "none"}
+        # analysis_multi_hs_group_value = ""
+        # analysis_multi_subject_value = ""
+        # analysis_multi_category_value = ""
+        # analysis_multi_subcategory_value = ""
 
-        analysis_multi_subject_options = []  # type: list
-        analysis_multi_subject_value = ""
-        analysis_multi_subject_container = {"display": "none"}
-
-        analysis_multi_category_options = []
-        analysis_multi_category_value = ""
-        analysis_multi_category_container = {"display": "none"}
-
-        analysis_multi_subcategory_options = []  # type: list
-        analysis_multi_subcategory_value = ""
-        analysis_multi_subcategory_container = {"display": "none"}
-
-        analysis_subnav_container = {"display": "none"}
-        academic_type_container = {"display": "none"}
 
         # begin academic_info navigation
         category_options_default = [
@@ -635,80 +679,32 @@ def navigation(
         ]
 
         # hide subnavigation if HS/AHS is selected
-        if school_type == "hs" or school_type == "ahs":
-            info_subnav_container = {"display": "none"}
+        # if school_type == "hs" or school_type == "ahs": # TODO>=??
+            # info_subnav_container = {"display": "none"}
+            # academic_type_container = {"display": "none"}
 
-            academic_type_container = {"display": "none"}
-
-            info_category_options = []
-            info_category_value = ""
-            info_category_container = {"display": "none"}
-
-        # categories of K8 schools
-        elif school_type == "k8":
-            info_subnav_container = {"display": "block"}
-
-            academic_type_container = {"display": "none"}
-
-            # growth page does not have IREAD/WIDA buttons - so we check
-            # value_state to make sure those values and options are
-            # changed to growth_defaults if the user selects the academic
-            # growth tab (while IREAD/WIDA is selected)
-            if current_page == "academic_information_growth":
-                if info_category_value_state:
-                    if (
-                        info_category_value_state == "wida"
-                        or info_category_value_state == "iread"
-                    ):
-                        info_category_value = "all"
-                    else:
-                        info_category_value = info_category_value_state
-                else:
-                    info_category_value = "all"
-
-                # if on growth page and the current options_state is the default (non-growth)
-                # value, switch options_value to growth, else use state
-                if info_category_options_state:
-                    if info_category_options_state == category_options_default:
-                        info_category_options = category_options_growth
-                    else:
-                        info_category_options = info_category_options_state
-                else:
-                    info_category_options = category_options_growth
-
-            else:  # academic_information.py
-                if info_category_value_state:
-                    info_category_value = info_category_value_state
-                else:
-                    info_category_value = "all"
-
-                if info_category_options_state:
-                    # similarly, if options_state is using growth and the user
-                    # switches to info page, change options to default
-                    if info_category_options_state == category_options_growth:
-                        info_category_options = category_options_default
-                    else:
-                        info_category_options = info_category_options_state
-                else:
-                    info_category_options = category_options_default
-
-            info_category_container = {"display": "block"}
+            # info_category_options = []
+            # info_category_value = ""
+            # info_category_container = {"display": "none"}
 
         # categories for K12 schools who have selected the "k8" type
         # note that academic_information_growth.py does not have a type radio button
-        elif (school_type == "k12") and (
+        if school_type == "k12" and (
             academic_type_value == "k8" or not academic_type_value
         ):
+            school_type = "k8"
             info_subnav_container = {"display": "block"}
 
-            if current_page == "academic_information_growth":
-                academic_type_container = {"display": "none"}
-
-            else:
-                academic_type_container = {"display": "block"}
+            # if current_page == "academic_information_growth":
+            #     print("NO YOU GROWTH")
+            #     # academic_type_container = {"display": "none"}
+            # else:
+            academic_type_container = {"display": "block"}
 
             # see above growth/info value/otions comment
             if current_page == "academic_information_growth":
+                # academic_type_container = {"display": "none"}
+
                 if info_category_value_state:
                     if (
                         info_category_value_state == "wida"
@@ -746,67 +742,124 @@ def navigation(
 
         # there is also no subnavigation for a K12 school that
         # has the "hs" type selected
-        elif (school_type == "k12") and academic_type_value == "hs":
-            info_subnav_container = {"display": "none"}
+        elif school_type == "k12" and academic_type_value == "hs":
+            # info_subnav_container = {"display": "none"}
+            
+            school_type = "hs"
             academic_type_container = {"display": "block"}
 
-            info_category_options = []
-            info_category_value = ""
-            info_category_container = {"display": "none"}
+            # info_category_value = ""
+
+        elif school_type == "k8":
+            info_subnav_container = {"display": "block"}
+            # academic_type_container = {"display": "none"}
+
+            # growth page does not have IREAD/WIDA buttons - so we check
+            # value_state to make sure those values and options are
+            # changed to growth_defaults if the user selects the academic
+            # growth tab (while IREAD/WIDA is selected)
+            if current_page == "academic_information_growth":
+                if info_category_value_state:
+                    if (
+                        info_category_value_state == "wida"
+                        or info_category_value_state == "iread"
+                    ):
+                        info_category_value = "all"
+                    else:
+                        info_category_value = info_category_value_state
+                else:
+                    info_category_value = "all"
+
+                # if on growth page and the current options_state is the default
+                # (non-growth) value, switch options_value to growth, else use state
+                if info_category_options_state:
+                    if info_category_options_state == category_options_default:
+                        info_category_options = category_options_growth
+                    else:
+                        info_category_options = info_category_options_state
+                else:
+                    info_category_options = category_options_growth
+
+            else:  # academic_information.py
+                if info_category_value_state:
+                    info_category_value = info_category_value_state
+                else:
+                    info_category_value = "all"
+
+                if info_category_options_state:
+                    # similarly, if options_state is using growth and the user
+                    # switches to info page, change options to default
+                    if info_category_options_state == category_options_growth:
+                        info_category_options = category_options_default
+                    else:
+                        info_category_options = info_category_options_state
+                else:
+                    info_category_options = category_options_default
+
+            info_category_container = {"display": "block"}
+
+        # NOTE: No "if" statement is needed for hs or ahs as they have
+        # no categories or subcategories atm
 
     # analysis_single_year.py and analysis_multiple_years.py
     elif "academic_analysis" in current_page:
         # hide academic information navigation and subnavigation
-        # info_nav_container = {"display": "none"}
-        info_subnav_container = {"display": "none"}
-        academic_type_container = {"display": "none"}
-        info_category_container = {"display": "none"}
 
-        info_category_options = []
-        info_category_value = ""
+        # info_subnav_container = {"display": "none"}
+        # academic_type_container = {"display": "none"}
+        # info_category_container = {"display": "none"}
+
+        # info_category_value = ""
 
         # begin analysis subnavigation
         analysis_subnav_container = {"display": "block"}
 
+# TODO: HS data not working for CHS at 2019 on either analysis page
+
         # analysis_multiple_years.py
         if "analysis_multiple" in current_page:
+
+            if school_type == "k12":
+                academic_type_container = {"display": "block"}
+
             # options and values for for HS/AHS/K12 (hs type)
             if (
                 school_type == "hs"
                 or school_type == "ahs"
                 or (school_type == "k12" and academic_type_value == "hs")
             ):
+
                 analysis_multi_hs_group_options = [
                     {"label": "Graduation Rate", "value": "Graduation Rate"},
                     {"label": "SAT", "value": "SAT"},
                 ]
-
-                analysis_multi_hs_group_container = {"display": "block"}
 
                 if analysis_hs_group_value:
                     analysis_multi_hs_group_value = analysis_hs_group_value
                 else:
                     analysis_multi_hs_group_value = "Graduation Rate"
 
-            else:
-                analysis_multi_hs_group_options = []
-                analysis_multi_hs_group_value = ""
-                analysis_multi_hs_group_container = {"display": "none"}
+                analysis_multi_hs_group_container = {"display": "block"}
+
+            # else:
+            #     analysis_multi_hs_group_options = []
+                # analysis_multi_hs_group_value = ""
+            #     analysis_multi_hs_group_container = {"display": "none"}
 
             # categories for HS/AHS/K12 (hs type)
-            if (
-                school_type == "hs"
-                or school_type == "ahs"
-                or (school_type == "k12" and academic_type_value == "hs")
-            ):
+            # if (
+            #     school_type == "hs"
+            #     or school_type == "ahs"
+            #     or (school_type == "k12" and academic_type_value == "hs")
+            # ):
                 if (
                     analysis_multi_hs_group_value == "Graduation Rate"
                     or analysis_multi_hs_group_value == ""
                 ):
                     # hide subject and subcategory
                     analysis_multi_subject_value = ""
-                    analysis_multi_subject_options = []
-                    analysis_multi_subject_container = {"display": "none"}
+                    # analysis_multi_subject_options = []
+                    # analysis_multi_subject_container = {"display": "none"}
 
                     # show graduation rate categories
                     analysis_multi_category_options = [
@@ -814,8 +867,6 @@ def navigation(
                         {"label": "Subgroup", "value": "Subgroup"},
                         {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                     ]
-
-                    analysis_multi_category_container = {"display": "block"}
 
                     # use existing value or set default value to "Total"
                     if analysis_multi_category_value in [
@@ -827,20 +878,23 @@ def navigation(
                     else:
                         analysis_multi_category_value = "Total"
 
+                    analysis_multi_category_container = {"display": "block"}
+
                 elif analysis_multi_hs_group_value == "SAT":
+                    
                     # change subject values to SAT specific descriptions
                     analysis_multi_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
                         {"label": "Math", "value": "Math"},
                     ]
 
-                    analysis_multi_subject_container = {"display": "block"}
-
                     # use existing value or set default subject value to "EBRW"
                     if analysis_multi_subject_state in ["EBRW", "Math"]:
                         analysis_multi_subject_value = analysis_multi_subject_state
                     else:
                         analysis_multi_subject_value = "EBRW"
+
+                    analysis_multi_subject_container = {"display": "block"}
 
                     # SAT subject and categories (SAT has different subject values
                     # than ELA & Math)
@@ -849,8 +903,6 @@ def navigation(
                         {"label": "Subgroup", "value": "Subgroup"},
                         {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                     ]
-
-                    analysis_multi_category_container = {"display": "block"}
 
                     # use existing value or set default subject value to "Total"
                     if analysis_multi_category_value in [
@@ -862,11 +914,14 @@ def navigation(
                     else:
                         analysis_multi_category_value = "Total"
 
-            else:
-                # subject and categories for K8 and K12 (k8 type)
+                    analysis_multi_category_container = {"display": "block"}
+
+            else: # subject and categories for K8 and K12 (k8 type)
                 if school_type == "k8" or (
                     school_type == "k12" and academic_type_value == "k8"
                 ):
+                    # analysis_multi_hs_group_value = ""
+
                     # subject for both K8 and K12 schools (k8 type)
                     analysis_multi_subject_options = [
                         {"label": "ELA", "value": "ELA"},
@@ -897,15 +952,13 @@ def navigation(
                         ]
 
                         # use existing value or set default subject value to "Total"
-                        if analysis_multi_category_value in [
+                        if analysis_multi_category_value not in [
                             "Total",
                             "Subgroup",
                             "Race/Ethnicity",
                         ]:
-                            analysis_multi_category_value = (
-                                analysis_multi_category_value
-                            )
-                        else:
+                        #     analysis_multi_category_value = analysis_multi_category_value
+                        # else:
                             analysis_multi_category_value = "Total"
 
                     else:
@@ -928,7 +981,7 @@ def navigation(
                         else:
                             analysis_multi_category_value = "Grade"
 
-            # get years for subcategoires
+            # get years for subcategories
             if school_type == "k8" and academic_type_value == "hs":
                 academic_type_value = "k8"
 
@@ -936,7 +989,7 @@ def navigation(
             # them here.
             if (
                 "academic" in current_page
-                or "analysis_single" in current_page
+                or "analysis_single" in current_page    # TODO: Test whether needed
                 or "analysis_multiple" in current_page
                 or selected_school["Guest"].values[0] == "Y"
             ):
@@ -973,7 +1026,7 @@ def navigation(
 
                     analysis_multi_subcategory_container = {"display": "block"}
 
-                else:
+                else: #TODO: What is this doing?
                     analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = "No Data"
                     analysis_multi_subcategory_container = {"display": "block"}
@@ -1003,7 +1056,7 @@ def navigation(
 
                     analysis_multi_subcategory_container = {"display": "block"}
 
-                else:
+                else: #TODO: What is this doing?
                     analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = "No Race/Ethnicity Data"
                     analysis_multi_subcategory_container = {"display": "block"}
@@ -1034,7 +1087,7 @@ def navigation(
 
                     analysis_multi_subcategory_container = {"display": "block"}
 
-                else:
+                else: #TODO: What is this doing?
                     analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = "No Subgroup Data"
                     analysis_multi_subcategory_container = {"display": "block"}
@@ -1047,21 +1100,14 @@ def navigation(
                 analysis_multi_subcategory_container = {"display": "none"}
 
         else:  # analysis_single_year page has no radio buttons other than 'type'
-            analysis_multi_subcategory_options = []
-            analysis_multi_subcategory_value = ""
-            analysis_multi_subcategory_container = {"display": "none"}
 
-            analysis_multi_hs_group_options = []
-            analysis_multi_hs_group_value = ""
-            analysis_multi_hs_group_container = {"display": "none"}
+            if school_type == "k12":
+                academic_type_container = {"display": "block"}
 
-            analysis_multi_subject_options = []
-            analysis_multi_subject_value = ""
-            analysis_multi_subject_container = {"display": "none"}
-
-            analysis_multi_category_options = []
-            analysis_multi_category_value = ""
-            analysis_multi_category_container = {"display": "none"}
+            # analysis_multi_subcategory_value = ""
+            # analysis_multi_hs_group_value = ""
+            # analysis_multi_subject_value = ""
+            # analysis_multi_category_value = ""
 
     # all other pages have no sub_navigation (other than Financal Tabs
     # [School][Network] subnavigation - those are currently part of the individual
@@ -1069,63 +1115,22 @@ def navigation(
     # TODO: Move Financial Tab [School][Network] subnavigation here
 
     # hide all subnavigation
-    elif "print_page" in current_page:
-        info_subnav_container = {"display": "none"}
-        academic_type_container = {"display": "none"}
-        info_category_container = {"display": "none"}
-
-        info_category_options = []
-        info_category_value = ""
-
-        # analysis multi
-        analysis_multi_hs_group_options = []
-        analysis_multi_hs_group_value = ""
-        analysis_multi_hs_group_container = {"display": "none"}
-
-        analysis_multi_subject_options = []
-        analysis_multi_subject_value = ""
-        analysis_multi_subject_container = {"display": "none"}
-
-        analysis_multi_category_options = []
-        analysis_multi_category_value = ""
-        analysis_multi_category_container = {"display": "none"}
-
-        analysis_multi_subcategory_options = []
-        analysis_multi_subcategory_value = ""
-        analysis_multi_subcategory_container = {"display": "none"}
-
-        analysis_subnav_container = {"display": "none"}
+    # elif "print_page" in current_page:
+        # info_category_value = ""
+        # analysis_multi_hs_group_value = ""
+        # analysis_multi_subject_value = ""
+        # analysis_multi_category_value = ""
+        # analysis_multi_subcategory_value = ""
 
     else:
         # analysis both
         academic_type_value = "k8"
 
-        # analysis multi
-        analysis_subnav_container = {"display": "none"}
-
-        analysis_multi_hs_group_options = []
-        analysis_multi_hs_group_value = ""
-        analysis_multi_hs_group_container = {"display": "none"}
-
-        analysis_multi_subject_options = []
-        analysis_multi_subject_value = ""
-        analysis_multi_subject_container = {"display": "none"}
-
-        analysis_multi_category_options = []
-        analysis_multi_category_value = ""
-        analysis_multi_category_container = {"display": "none"}
-
-        analysis_multi_subcategory_options = []
-        analysis_multi_subcategory_value = ""
-        analysis_multi_subcategory_container = {"display": "none"}
-
-        # academic info
-        info_subnav_container = {"display": "none"}
-        academic_type_container = {"display": "none"}
-        info_category_container = {"display": "none"}
-
-        info_category_options = []
-        info_category_value = ""
+        # analysis_multi_hs_group_value = ""
+        # analysis_multi_subject_value = ""
+        # analysis_multi_category_value = ""
+        # analysis_multi_subcategory_value = ""
+        # info_category_value = ""
 
     return (
         academic_type_container,
