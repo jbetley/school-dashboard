@@ -491,7 +491,7 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
         table_layout (list): dash DataTable wrapped in dash html components
     """
 
-    # key_table is currently only used for the dashboard_update table in the 
+    # key_table is currently only used for the dashboard_update table in the
     # about.py page and the SAT cut score table on academic_information.py page.
 
     table_size = len(data.columns)
@@ -1544,7 +1544,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
                 for col in format_cols
             ]
             + [
-                {   # special case: change color to blue regardless of value
+                {  # special case: change color to blue regardless of value
                     "if": {
                         "filter_query": "{Category} = '[Chronic Absenteeism %]'",
                         "column_id": col,
@@ -1767,7 +1767,10 @@ def create_comparison_table(
     icon_col = data.pop("Icon")
     data.insert(0, "Icon", icon_col)
 
-    if data.columns.str.contains("Total").any() == True:
+    if data.columns.str.contains("Graduation").any() == True:
+        data.columns = data.columns.str.replace("\|Graduation Rate", "")
+
+    elif data.columns.str.contains("Total").any() == True:
         # keep everything between | and "Benchmark %"
         data.columns = data.columns.str.replace("Benchmark %", "")
         data.columns = data.columns.str.replace("Total\|", "", regex=True)

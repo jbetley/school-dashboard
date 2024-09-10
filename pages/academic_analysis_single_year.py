@@ -413,7 +413,7 @@ def update_academic_analysis_single_year(
                 hs_analysis_empty_container = {"display": "none"}
 
                 # Graduation Comparison Sets
-                grad_overview_categories = ["Total", "Non Waiver"]
+                grad_overview_categories = ["Total", "NonWaiver"]
 
                 grad_overview = create_hs_analysis_layout(
                     "Graduation Rate",

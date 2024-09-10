@@ -23,6 +23,7 @@ from .tables import create_comparison_table, no_data_page, create_single_header_
 def create_hs_analysis_layout(
     data_type: str, data: pd.DataFrame, categories: list, school_id: str
 ) -> list:
+    
     tested_categories = []
 
     if data_type == "Total":
@@ -42,6 +43,7 @@ def create_hs_analysis_layout(
 
         for c in categories:
             tested_categories.append(c + "|" + search_string)
+
     else:
         final_analysis_group = []  # type:list
 
@@ -95,6 +97,7 @@ def create_hs_analysis_layout(
             analysis_table = create_comparison_table(
                 analysis_table_data, analysis_trace_colors, school_id
             )
+
             final_analysis_group = create_barchart_layout(
                 analysis_chart, analysis_table, category_string, school_string
             )
