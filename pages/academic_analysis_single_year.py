@@ -89,17 +89,22 @@ def set_dropdown_options(
 
     # Drop any school not testing at least 20 students (k8 only- probably
     # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
+    # We want to include the selected school regardless of its n-size
+
     if selected_school_type == "k8":
         schools_by_distance["Total|ELA Total Tested"] = pd.to_numeric(
             schools_by_distance["Total|ELA Total Tested"], errors="coerce"
         )
         schools_by_distance = schools_by_distance[
-            schools_by_distance["Total|ELA Total Tested"] >= 20
+            (schools_by_distance["Total|ELA Total Tested"] >= 20) |
+            (schools_by_distance["School ID"] == int(school_id))
         ]
 
     # NOTE: There is some time cost for running the dropdown selection function
     # (typically ~0.8 - 1.2s), so we want to exit out as early as possible if we
-    # know it isn't necessary
+    # know it isn't necessary because the selected school didn't exist
+    # TODO: Why would the year even be selectable if there is no data
+
     if int(school_id) not in schools_by_distance["School ID"].values:
         return [], [], []
 
@@ -598,7 +603,14 @@ def update_academic_analysis_single_year(
 
             combined_selected_data = combined_selected_data.reset_index(drop=True)
 
-            if len(k8_analysis_data.index) > 0:
+            # there are 6 "info" columns- having 6 or fewer means no
+            # academic data
+            if len(combined_selected_data.columns) <= 6:
+                k8_analysis_main_container = {"display": "none"}
+                k8_analysis_empty_container = {"display": "block"}
+
+            # if len(k8_analysis_data.index) > 0:
+            else:
                 k8_analysis_main_container = {"display": "block"}
                 k8_analysis_empty_container = {"display": "none"}
                 analysis_single_dropdown_container = {"display": "block"}
@@ -1112,7 +1124,7 @@ def layout():
                         ],
                         id="analysis-single-dropdown-container",
                         style={"display": "none"},
-                        className="no-print",
+                        # className="no-print",
                     ),
                     html.Div(
                         [

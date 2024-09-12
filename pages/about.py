@@ -457,7 +457,7 @@ def layout():
                         [
                             html.Div(""),
                             html.Div(
-                                id="update-table", children=[], className="no-print"
+                                id="update-table", children=[] #, className="no-print"
                             ),
                             html.Div(
                                 [

@@ -31,7 +31,16 @@
   float: left;
 }
 
+
+/** Media Queries **/
 /* TODO: Adapt and Test media queries */
+/*
+Note: The best way to structure the use of media queries is to create the queries
+near the relevant code. For example, if you wanted to change the styles for buttons
+on small devices, paste the mobile query code up in the buttons section and style it
+there.
+*/
+
 /* For devices larger than 400px */
 @media (min-width: 400px) {
   .container {
@@ -40,7 +49,7 @@
   }
 }
 
-/* For devices larger than 550px (default) */
+/* Larger than tablet (also point when grid becomes active) */
 @media (min-width: 550px) {
   .container {
     width: 80%;
@@ -68,17 +77,33 @@
     width: 33%;
   }
 
+  /* .four.columns {
+    width: calc(100% / 3);
+  } */
+
   .five.columns {
     width: 39.3333333333%;
   }
+
+  /* .five.columns {
+    width: calc(100% * 5 / 12);
+  } */
 
   .six.columns {
     width: 49.75%;
   }
 
+  /* .six.columns {
+    width: 49.75%;
+  } */
+
   .seven.columns {
     width: 56.6666666667%;
   }
+
+  /* .seven.columns {
+    width: calc(100% * 7 / 12);
+  } */
 
   .eight.columns {
     width: 66.5%;
@@ -113,99 +138,27 @@
     width: 48%;
   }
 
-  /* Offsets */
-  .offset-by-one.column,
-  .offset-by-one.columns {
-    margin-left: 8.66666666667%;
-  }
-
-  .offset-by-two.column,
-  .offset-by-two.columns {
-    margin-left: 17.3333333333%;
-  }
-
-  .offset-by-three.column,
-  .offset-by-three.columns {
-    margin-left: 26%;
-  }
-
-  .offset-by-four.column,
-  .offset-by-four.columns {
-    margin-left: 34.6666666667%;
-  }
-
-  .offset-by-five.column,
-  .offset-by-five.columns {
-    margin-left: 43.3333333333%;
-  }
-
-  .offset-by-six.column,
-  .offset-by-six.columns {
-    margin-left: 52%;
-  }
-
-  .offset-by-seven.column,
-  .offset-by-seven.columns {
-    margin-left: 60.6666666667%;
-  }
-
-  .offset-by-eight.column,
-  .offset-by-eight.columns {
-    margin-left: 69.3333333333%;
-  }
-
-  .offset-by-nine.column,
-  .offset-by-nine.columns {
-    margin-left: 78.0%;
-  }
-
-  .offset-by-ten.column,
-  .offset-by-ten.columns {
-    margin-left: 86.6666666667%;
-  }
-
-  .offset-by-eleven.column,
-  .offset-by-eleven.columns {
-    margin-left: 95.3333333333%;
-  }
-
-  .offset-by-one-third.column,
-  .offset-by-one-third.columns {
-    margin-left: 34.6666666667%;
-  }
-
-  .offset-by-two-thirds.column,
-  .offset-by-two-thirds.columns {
-    margin-left: 69.3333333333%;
-  }
-
-  .offset-by-one-half.column,
-  .offset-by-one-half.columns {
-    margin-left: 52%;
-  }
-
 }
 
-/* TODO: This is a fucking mess */
-/** Print Styles **/
-/* Primarily used by Academic Analysis Single Year */
-@media print {
+/* Larger than desktop */
+@media (min-width: 1000px) {}
 
-  /* all */
+/* Larger than Desktop HD */
+@media (min-width: 1200px) {}
+
+/** Print Styles **/
+/* @media print {
   .no-print {
     display: none !important;
   }
-
   .nine.columns {
     margin: 2em auto 2em !important;
     width: 90% !important;
   }
-
   .three.columns {
     margin: 0em auto 2em;
     width: 60% !important;
   }
-
   .bar-chart-print {
     clear: both !important;
     display: block !important;
@@ -213,45 +166,32 @@
     font-size: 10px;
     font-family: Arial, Helvetica, sans-serif;
   }
-
-  /* hides the dash debug menu icon when printing in debug mode */
   .dash-debug-menu,
   .dash-debug-menu__outer {
     display: none !important;
   }
-
   .pagebreak {
     page-break-before: always;
   }
-
   .pagebreak-after {
     page-break-after: always;
   }
-
-  /* charts */
   div {
     float: none !important;
   }
-
   div.user-select-none.svg-container {
     width: 50% !important;
   }
-
-  /* tables */
   .dash-cell {
     font-size: 1.5rem !important;
   }
-
-  /* comment out for charts */
   tr {
     line-height: 2.25 !important;
   }
-
   .pretty-container {
     width: 100% !important;
   }
-
-}
+} */
 
 /** Base Styles **/
 /* html is set to 62.5% so that all the REM measurements
@@ -454,22 +394,6 @@ hr {
   position: relative;
 }
 
-/* .container__nodata {
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
-  background-color: #ffffff;
-  margin-top: 10px;
-  padding-top: 15px;
-  padding-right: 15px;
-  padding-left: 15px;
-  padding-bottom: 0px;
-  position: relative;
-  box-shadow: 2px 2px 2px lightgrey;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-} */
-
 /** Other Navigation **/
 
 .dash-label {
@@ -571,8 +495,6 @@ hr {
 /* TODO: Centers n-size text - need it because I cant otherwise figure out how to center markdown */
 /* TODO: Try to remove markdown from n-size so I can use table styling to center */
 .cell-markdown>p
-
-/*:has(i.fa.fa-circle.center-icon) */
   {
   display: flex;
   height: 100%;
@@ -618,17 +540,6 @@ hr {
   border-bottom: 1px solid #b2bdd4;
   text-align: center;
 }
-
-/* [class*="mantine"] thead tr:first-of-type th:first-child
-{
-  text-decoration: underline;
-  text-decoration-color: #b2bdd4;
-  color: #b2bdd4;
-  font-size: 10px;
-  font-weight: 700;
-  text-align: left;
-  border-bottom: none;
-} */
 
 [class*="mantine"] tbody tr td {
   line-height: 1.25;
@@ -951,7 +862,6 @@ input[type=checkbox] {
   border: 1px solid rgba(192, 193, 199, .5);
   border-radius: .5rem;
   padding: 6px;
-  /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
   box-sizing: border-box;
@@ -976,7 +886,6 @@ input[type=checkbox] {
   border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
   padding: 6px;
-  /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
   box-sizing: border-box;
@@ -995,7 +904,6 @@ input[type=checkbox] {
   border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
   padding: 6px;
-  /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
   box-sizing: border-box;
@@ -1025,27 +933,7 @@ input[type=checkbox] {
   z-index: 99;
   margin: 0;
   padding: 0;
-  /* float: left;
-  position: relative; */
 }
-
-/* Use this to merge buttons together into one line stylistically*/
-/* .btn-group > .btn-group:not(:first-child),
-.btn-group > :not(.btn-check:first-child) + .btn {
-  margin-left: -1px;
-}
-.btn-group > .btn-group:not(:last-child) > .btn,
-.btn-group > .btn.dropdown-toggle-split:first-child,
-.btn-group > .btn:not(:last-child):not(.dropdown-toggle) {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-} */
-/* .btn-group > .btn-group:not(:first-child) > .btn,
-.btn-group > .btn:nth-child(n + 3),
-.btn-group > :not(.btn-check) + .btn {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-} */
 
 .btn-check {
   position: absolute;
@@ -1059,14 +947,6 @@ input[type=checkbox] {
   filter: none;
   opacity: 0.65;
 }
-
-/* #header {
-  align-items: center;
-} */
-/* #rightCol {
-  display: flex;
-  flex-direction: column;
-} */
 
 #print-button {
   width: 50% !important;
@@ -1087,7 +967,6 @@ a:link {
 }
 
 a.nav-link:hover {
-  /* line-height: 1; */
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
   color: white;
@@ -1099,7 +978,6 @@ a.nav-link:hover {
   border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
   padding: 6px;
-  /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
   box-sizing: border-box;
@@ -1117,7 +995,6 @@ a.nav-link:hover {
   border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
   padding: 6px;
-  /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
   box-sizing: border-box;
@@ -1135,7 +1012,6 @@ a.nav-link:hover {
   border: 1px solid rgba(192, 193, 199, .5);
   border-radius: .5rem;
   padding: 6px;
-  /* transition: background-color,color 200ms; */
   width: 100%;
   text-align: center;
   box-sizing: border-box;
@@ -1147,7 +1023,6 @@ a.nav-link:hover {
   padding: 0;
   float: left;
   position: relative;
-  /* line-height: 1.3; */
 }
 
 .sub-tabs {
@@ -1202,6 +1077,15 @@ a.nav-link:hover {
   padding-left: 10px;
 }
 
+/* distance between chart and table on Academic Analysis Single Year page */
+#fig14c > div:nth-child(1) > div > div, #fig14d > div:nth-child(1) > div > div,
+#fig-iread > div:nth-child(1) > div > div, #fig16a1 > div:nth-child(1) > div > div,
+#fig16a2 > div:nth-child(1) > div > div, #fig16b1 > div:nth-child(1) > div > div,
+#fig16b2 > div:nth-child(1) > div > div, #fig16c1 > div:nth-child(1) > div > div,
+#fig16c2 > div:nth-child(1) > div > div {
+  margin-bottom: -20px;
+}
+
 .nav-container {
   justify-content: center;
   text-align: center;
@@ -1221,7 +1105,6 @@ legend {
 }
 
 label>#text {
-
   padding-bottom: 12px;
 }
 
@@ -1404,24 +1287,6 @@ a.logout-button:hover {
   position: relative;
 }
 
-/** Tables **/
-/* table {
-    border-collapse: collapse;
-}
-
-#update-table {
-  margin-top: -10px;
-}
-
-th:first-child,
-td:first-child {
-  padding-left: 0;
-}
-th:last-child,
-td:last-child {
-  padding-right: 0;
-} */
-
 /** Self Clearing **/
 .container:after,
 .row:after,
@@ -1430,55 +1295,3 @@ td:last-child {
   display: table;
   clear: both;
 }
-
-/** Media Queries **/
-/* TODO: Fix Media Queries */
-/*
-Note: The best way to structure the use of media queries is to create the queries
-near the relevant code. For example, if you wanted to change the styles for buttons
-on small devices, paste the mobile query code up in the buttons section and style it
-there.
-*/
-
-/* Larger than mobile */
-@media (min-width: 400px) {}
-
-/* Larger than tablet (also point when grid becomes active) */
-@media (min-width: 550px) {
-
-  .one.column,
-  .one.columns {
-    width: 8%;
-  }
-
-  .two.columns {
-    width: 16.25%;
-  }
-
-  .three.columns {
-    width: 22%;
-  }
-
-  .four.columns {
-    width: calc(100% / 3);
-  }
-
-  .five.columns {
-    width: calc(100% * 5 / 12);
-  }
-
-  .six.columns {
-    width: 49.75%;
-  }
-
-  .seven.columns {
-    width: calc(100% * 7 / 12);
-  }
-
-}
-
-/* Larger than desktop */
-@media (min-width: 1000px) {}
-
-/* Larger than Desktop HD */
-@media (min-width: 1200px) {}

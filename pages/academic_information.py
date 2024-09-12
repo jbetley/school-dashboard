@@ -286,10 +286,6 @@ def update_academic_information_page(
         hs_grad_table_container = {"display": "none"}
 
     # High School Data
-    print("selected_school_type")
-    print(selected_school_type)
-    print("radio_type")
-    print(radio_type)
     if (
         selected_school_type == "hs"
         or selected_school_type == "ahs"

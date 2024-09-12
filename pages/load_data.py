@@ -1752,6 +1752,14 @@ def get_year_over_year_data(*args):
             comparable_schools_data[passed], errors="coerce"
         ) / pd.to_numeric(comparable_schools_data[tested], errors="coerce")
 
+        # drop excluded years
+        excluded_years = get_excluded_years(params["year"])
+
+        if excluded_years:
+            comparable_schools_data = comparable_schools_data[
+                ~comparable_schools_data["Year"].isin(excluded_years)
+            ]
+
         # NOTE: IPS keeps changing school names slightly. Which is irritating
         # when building chart traces. To ensure name consistency, we take
         # the school names from the most recent year and ensure that all other
@@ -1759,6 +1767,7 @@ def get_year_over_year_data(*args):
         name_check = comparable_schools_data[
             comparable_schools_data["Year"] == int(params["year"])
         ][["School ID", "School Name"]]
+
         name_check = name_check.set_index("School ID")
 
         comparable_schools_data["School Name"] = comparable_schools_data[
@@ -1797,12 +1806,9 @@ def get_year_over_year_data(*args):
                     on="Year",
                 )
 
-        # account for changes in the year
-
-        excluded_years = get_excluded_years(params["year"])
-
-        if excluded_years:
-            result = result[~result["Year"].isin(excluded_years)]
+        # excluded_years = get_excluded_years(params["year"])
+        # if excluded_years:
+        #     result = result[~result["Year"].isin(excluded_years)]
 
     return result, all_school_info
 

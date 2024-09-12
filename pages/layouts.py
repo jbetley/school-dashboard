@@ -23,7 +23,6 @@ from .tables import create_comparison_table, no_data_page, create_single_header_
 def create_hs_analysis_layout(
     data_type: str, data: pd.DataFrame, categories: list, school_id: str
 ) -> list:
-    
     tested_categories = []
 
     if data_type == "Total":
@@ -265,11 +264,11 @@ def create_barchart_layout(
             html.Div(
                 [
                     html.Div(
-                        [html.Div(fig, style={"marginBottom": "-20px"})],
+                        [html.Div(fig)], # , style={"marginBottom": "-20px"}
                         className="pretty-container--close eleven columns",
                     ),
                 ],
-                className="row bar-chart-print",
+                className="row", #bar-chart-print",
             ),
             html.Div(
                 [
@@ -278,7 +277,7 @@ def create_barchart_layout(
                         className="container__close eleven columns",
                     ),
                 ],
-                className="row bar-chart-print",
+                className="row", #bar-chart-print",
             ),
         ]
     else:
@@ -286,7 +285,7 @@ def create_barchart_layout(
             html.Div(
                 [
                     html.Div(
-                        [html.Div(fig, style={"marginBottom": "-20px"})],
+                        [html.Div(fig)], # , style={"marginBottom": "-20px"}
                         className="pretty-container--close twelve columns",
                     ),
                 ],

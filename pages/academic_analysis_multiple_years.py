@@ -243,7 +243,6 @@ def update_academic_analysis_multiple_years(
                 )
 
             elif hs_group_radio_value == "Graduation Rate" or not hs_group_radio_value:
-                
                 if subcategory_radio_value:
                     category = subcategory_radio_value + "|"
                 else:
