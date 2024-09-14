@@ -150,7 +150,6 @@ def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
 
     for test in tested:
         if test in data.columns:
-
             # get Category + Subject string
             cat_sub = test.split(" Total Tested")[0]
             data[cat_sub + " Benchmark %"] = calculate_percentage(
@@ -754,6 +753,13 @@ def calculate_comparison_school_list(
     schools: pd.DataFrame,
     max: int,
 ) -> pd.DataFrame:
+    
+    # before doing anything else, we need to remove all rows where Lat
+    # or Lon are blank or NaN because it chokes the spatial func
+    schools[["Lat", "Lon"]] = schools[["Lat", "Lon"]].replace("", np.nan)
+    schools = schools.dropna(subset=["Lat", "Lon"])
+    schools = schools.reset_index(drop=True)
+
     school_idx = schools[schools["School ID"] == int(school_id)].index
 
     # NOTE: This should never ever happen because we've already determined

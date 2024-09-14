@@ -141,6 +141,13 @@ def set_dropdown_options(
                     for option in default_options
                 ]
 
+        # find schools in current list that aren't in the recently regenerated
+        # comparison_schools list (catches schools that do not exist for a year)
+        remove_schools = [
+            x for x in comparison_schools if x not in current_comparison_schools
+        ]
+        comparison_schools = [x for x in comparison_schools if x not in remove_schools]
+
         return options, input_warning, comparison_schools
 
 

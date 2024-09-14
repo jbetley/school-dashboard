@@ -1592,7 +1592,7 @@ def get_year_over_year_data(*args):
     keys = ["school_id", "comp_list", "category", "year", "flag"]
     params = dict(zip(keys, args))
 
-    if len(params["comp_list"]) > 1:
+    if len(params["comp_list"]) >= 1:
         school_str = ", ".join([str(int(v)) for v in params["comp_list"]])
     else:
         school_str = params["school_id"]
