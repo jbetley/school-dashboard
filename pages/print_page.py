@@ -6,9 +6,7 @@
 
 import dash
 
-from dash import (
-    html, Input, Output, State, callback, clientside_callback, ctx, dcc
-)
+from dash import html, Input, Output, State, callback, clientside_callback, ctx, dcc
 
 import dash_bootstrap_components as dbc
 import json
@@ -31,7 +29,9 @@ dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
 clientside_callback(
     """
     function updateLoadingState(n_clicks) {
-        return [""" + json.dumps(dbc.Spinner(size='sm').to_plotly_json()) + """, " Generating Layout"] 
+        return ["""
+    + json.dumps(dbc.Spinner(size="sm").to_plotly_json())
+    + """, " Generating Layout"] 
     }
     """,
     Output("print-button", "children", allow_duplicate=True),
@@ -39,11 +39,12 @@ clientside_callback(
     prevent_initial_call=True,
 )
 
+
 @callback(
     Output("checklist-list", "value"),
     Output("about-layout", "children"),
     Output("academicinfo-layout", "children"),
-    Output("academicmetrics-layout", "children"),    
+    Output("academicmetrics-layout", "children"),
     Output("fininfo-layout", "children"),
     Output("finmetrics-layout", "children"),
     Output("finanalysis-layout", "children"),
@@ -85,7 +86,6 @@ def generate_print_page(
 
     if print_button > 0:
         if selected:
-
             if "all" in selected:
                 about_layout = create_about_layout(year, school_id)
                 academicinfo_layout = create_academicinfo_layout(year, school_id)
@@ -128,7 +128,7 @@ def generate_print_page(
         finmetrics_layout,
         finanalysis_layout,
         orgcompliance_layout,
-        "Generate Layout"
+        "Generate Layout",
     )
 
 
@@ -151,22 +151,19 @@ layout = html.Div(
                             options=[
                                 {"label": "About", "value": "about"},
                                 {
-                                    "label": "Financial Information",
-                                    "value": "fininfo",
-                                },
-                                {"label": "Financial Metrics", "value": "finmetrics"},
-                                {"label": "Financial Analysis", "value": "finanalysis"},
-                                {
-                                    "label": "Organizational Compliance",
-                                    "value": "orgcompliance",
+                                    "label": "Academic Metrics",
+                                    "value": "academicmetrics",
                                 },
                                 {
                                     "label": "Academic Information",
                                     "value": "academicinfo",
                                 },
+                                {"label": "Financial Metrics", "value": "finmetrics"},
+                                {"label": "Financial Information", "value": "fininfo"},
+                                {"label": "Financial Analysis", "value": "finanalysis"},
                                 {
-                                    "label": "Academic Metrics",
-                                    "value": "academicmetrics",
+                                    "label": "Organizational Compliance",
+                                    "value": "orgcompliance",
                                 },
                             ],
                             inline=True,
@@ -182,7 +179,7 @@ layout = html.Div(
                             ),
                         ),
                     ],
-                    className="pretty-container four columns",
+                    className="pretty-container four columns no-print",
                 ),
             ],
             className="bare-container--flex--center twelve columns",
@@ -194,19 +191,19 @@ layout = html.Div(
                         dcc.Loading(
                             id="loading",
                             type="circle",
-                            fullscreen=False, #True,
+                            fullscreen=False,  # True,
                             style={
-                                "position": "static", #"absolute",
+                                "position": "static",  # "absolute",
                                 "top": "20px",
-                                "alignSelf": "start", #"center",
+                                "alignSelf": "start",  # "center",
                                 "backgroundColor": "#F2F2F2",
                             },
                             children=[
                                 html.Div(id="about-layout", children=[]),
+                                html.Div(id="academicmetrics-layout", children=[]),
                                 html.Div(id="academicinfo-layout", children=[]),
-                                html.Div(id="academicinfo-layout", children=[]),
-                                html.Div(id="fininfo-layout", children=[]),
                                 html.Div(id="finmetrics-layout", children=[]),
+                                html.Div(id="fininfo-layout", children=[]),
                                 html.Div(id="finanalysis-layout", children=[]),
                                 html.Div(id="orgcompliance-layout", children=[]),
                             ],

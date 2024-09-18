@@ -147,7 +147,7 @@ there.
 @media (min-width: 1200px) {}
 
 /** Print Styles **/
-/* @media print {
+@media print {
   .no-print {
     display: none !important;
   }
@@ -191,7 +191,10 @@ there.
   .pretty-container {
     width: 100% !important;
   }
-} */
+  .pretty-container-print {
+    display: none !important;
+  }
+}
 
 /** Base Styles **/
 /* html is set to 62.5% so that all the REM measurements
