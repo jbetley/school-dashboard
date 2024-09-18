@@ -305,6 +305,8 @@ def set_dropdown_value(charter_options):
 # All other pages use 'financial_info_dropdown_years' which is the same as
 # 'financial_analysis_dropdown_years' except the quarterly data string (Q#) is removed.
 
+
+# TODO: hs multi select (Grad/SAT) should trigger year change
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
@@ -789,7 +791,6 @@ def navigation(
                     analysis_multi_hs_group_value == "Graduation Rate"
                     or analysis_multi_hs_group_value == ""
                 ):
-
                     # show graduation rate categories
                     analysis_multi_category_options = [
                         {"label": "Total", "value": "Total"},
@@ -810,7 +811,6 @@ def navigation(
                     analysis_multi_category_container = {"display": "block"}
 
                 elif analysis_multi_hs_group_value == "SAT":
-
                     # change subject values to SAT specific descriptions
                     analysis_multi_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
@@ -1343,6 +1343,7 @@ def layout():
             ),
         ],
     )
+
 
 # testing layout as a function - not sure its faster
 app.layout = layout

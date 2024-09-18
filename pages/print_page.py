@@ -43,6 +43,7 @@ clientside_callback(
     Output("checklist-list", "value"),
     Output("about-layout", "children"),
     Output("academicinfo-layout", "children"),
+    Output("academicmetrics-layout", "children"),    
     Output("fininfo-layout", "children"),
     Output("finmetrics-layout", "children"),
     Output("finanalysis-layout", "children"),
@@ -66,6 +67,7 @@ def generate_print_page(
 ):
     about_layout = []
     academicinfo_layout = []
+    academicmetrics_layout = []
     fininfo_layout = []
     finmetrics_layout = []
     finanalysis_layout = []
@@ -83,20 +85,27 @@ def generate_print_page(
 
     if print_button > 0:
         if selected:
-            print(selected)
 
             if "all" in selected:
                 about_layout = create_about_layout(year, school_id)
+                academicinfo_layout = create_academicinfo_layout(year, school_id)
+                academicmetrics_layout = create_academicmetrics_layout(year, school_id)
                 fininfo_layout = create_fininfo_layout(year, school_id)
                 finmetrics_layout = create_finmetrics_layout(year, school_id)
                 finanalysis_layout = create_finanalysis_layout(year, school_id)
                 orgcompliance_layout = create_orgcompliance_layout(year, school_id)
-                academicinfo_layout = create_academicinfo_layout(year, school_id)
-                academicmetrics_layout = create_academicmetrics_layout(year, school_id)
 
             else:
                 if "about" in selected:
                     about_layout = create_about_layout(year, school_id)
+
+                if "academicinfo" in selected:
+                    academicinfo_layout = create_academicinfo_layout(year, school_id)
+
+                if "academicmetrics" in selected:
+                    academicmetrics_layout = create_academicmetrics_layout(
+                        year, school_id
+                    )
 
                 if "fininfo" in selected:
                     fininfo_layout = create_fininfo_layout(year, school_id)
@@ -110,18 +119,11 @@ def generate_print_page(
                 if "orgcompliance" in selected:
                     orgcompliance_layout = create_orgcompliance_layout(year, school_id)
 
-                if "academicinfo" in selected:
-                    academicinfo_layout = create_academicinfo_layout(year, school_id)
-
-                if "academicmetrics" in selected:
-                    academicmetrics_layout = create_academicmetrics_layout(
-                        year, school_id
-                    )
-
     return (
         selected,
         about_layout,
         academicinfo_layout,
+        academicmetrics_layout,
         fininfo_layout,
         finmetrics_layout,
         finanalysis_layout,
@@ -201,6 +203,7 @@ layout = html.Div(
                             },
                             children=[
                                 html.Div(id="about-layout", children=[]),
+                                html.Div(id="academicinfo-layout", children=[]),
                                 html.Div(id="academicinfo-layout", children=[]),
                                 html.Div(id="fininfo-layout", children=[]),
                                 html.Div(id="finmetrics-layout", children=[]),
