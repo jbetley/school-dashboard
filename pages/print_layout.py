@@ -57,10 +57,9 @@ from .calculate_metrics import (
     calculate_metrics,
 )
 
-from .string_helpers import convert_to_svg_circle, natural_keys
+from .string_helpers import convert_to_svg_circle
 
 from .tables import (
-    no_data_page,
     no_data_table,
     create_metric_table,
     create_proficiency_key,
@@ -88,17 +87,6 @@ from .tables import (
     create_single_header_table,
 )
 from .layouts import create_line_fig_layout, set_table_layout
-
-
-# all_container = {"display": "none"}
-# about_container = {"display": "none"}
-# fininfo_container = {"display": "none"}
-# finmetrics_container = {"display": "none"}
-# finanalysis_container = {"display": "none"}
-# orgcompliance_container = {"display": "none"}
-# academicinfo_container = {"display": "none"}
-# academicmetrics_container = {"display": "none"}
-# empty_container = {"display": "block"}
 
 
 def create_about_layout(year: str, school_id: str) -> list:
@@ -269,7 +257,7 @@ def create_about_layout(year: str, school_id: str) -> list:
                             className="bare-container--flex--center twelve columns",
                         ),
                     ],
-                    className="bare-container--relative twelve columns",
+                    className="bare-container--relative twelve columns pagebreak",
                 ),
             ]
         )
@@ -890,7 +878,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             .all(axis=0),
         ]
 
-        if ~public_iread_school_data.empty:
+        if not public_iread_school_data.empty:
             public_iread_school_table = create_multi_header_table(
                 public_iread_school_data
             )
@@ -933,6 +921,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                         #     className="bare-container--flex--center twelve columns",
                         # ),
                     ],
+                    className="pagebreak",
                 ),
                 html.Div(
                     [
@@ -1082,21 +1071,14 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
     table_container_14g = []
     table_container_16ab = []
     table_container_16cd = []
-    # attendance_container = {"display": "none"}
-    # k8_metrics_container = {"display": "none"}
 
     table_container_17ab = []
     table_container_17cd = []
-    # hs_metrics_container = {"display": "none"}
 
     ahs_table_container_113 = []
     ahs_table_container_1214 = []
-    # ahs_metrics_container = {"display": "none"}
 
-    # main_container = {"display": "none"}
-    # empty_container = {"display": "block"}
-
-    no_data_to_display = no_data_page("No Data to Display.", "Academic Metrics")
+    # no_data_to_display = no_data_page("No Data to Display.", "Academic Metrics")
 
     selected_school = get_school_index(school_id)
     selected_school_type = selected_school["School Type"].values[0]
@@ -1554,13 +1536,9 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
             empty_table_11cd, empty_table_11cd, [""]
         )
 
-        # attendance_container = {"display": "none"}
-
     academicmetrics_layout = [
         html.Div(
             [
-                # html.Div(
-                #     [
                 html.Div(
                     [
                         html.Div(
@@ -1571,21 +1549,16 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
                             className="pretty-container six columns",
                         ),
                     ],
-                    className="bare-container--flex--center twelve columns",
+                    className="bare-container--flex--center twelve columns pagebreak",
                 ),
                 html.Div(
                     [
                         html.Div(table_container_11ab),
                     ],
-                    # id="attendance-container",
                 ),
                 html.Div(
                     [
                         html.Div(table_container_11cd),
-                        #     id="table-container-11cd",
-                        #     children=[],
-                        #     className="pagebreak-after",
-                        # ),
                         html.Div(table_container_14ab),
                         html.Div(table_container_14cd),
                         html.Div(table_container_14ef),
@@ -1593,14 +1566,12 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
                         html.Div(table_container_16cd),
                         html.Div(table_container_16ab),
                     ],
-                    # id="k8-metrics-container",
                 ),
                 html.Div(
                     [
                         html.Div(table_container_17ab),
                         html.Div(table_container_17cd),
                     ],
-                    # id="hs-metrics-container",
                 ),
                 html.Div(
                     [
@@ -1608,15 +1579,6 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
                         html.Div(ahs_table_container_1214),
                     ],
                 ),
-                #     ],
-                #     id="academic-metrics-main-container",
-                # ),
-                # html.Div(
-                #     [
-                #         html.Div(id="academic-metrics-no-data"),
-                #     ],
-                #     id="academic-metrics-empty-container",
-                # ),
             ],
         )
     ]
@@ -1888,7 +1850,7 @@ def create_finmetrics_layout(year: str, school_id: str) -> list:
     financial_data = get_financial_data(school_id)
 
     # Financial Metrics
-    if len(financial_data.columns) > 1 or ~financial_data.empty:
+    if len(financial_data.columns) > 1 or not financial_data.empty:
         financial_data = financial_data.drop(["School ID", "School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
@@ -2136,7 +2098,7 @@ def create_finmetrics_layout(year: str, school_id: str) -> list:
                 ]
 
             # Financial Indicators
-            if len(financial_indicators.columns) > 1 or ~financial_indicators.empty:
+            if len(financial_indicators.columns) > 1 or not financial_indicators.empty:
                 financial_indicators = financial_indicators.set_index(["Category"])
 
                 indicator_display_years = max_display_years
@@ -2300,7 +2262,7 @@ def create_finanalysis_layout(year: str, school_id: str) -> list:
 
     financial_data = get_financial_data(school_id)
 
-    if len(financial_data.columns) > 1 or ~financial_data.empty:
+    if len(financial_data.columns) > 1 or not financial_data.empty:
         financial_data = financial_data.drop(["School ID", "School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
@@ -2865,7 +2827,7 @@ def create_orgcompliance_layout(year: str, school_id: str) -> list:
 
     financial_data = get_financial_data(school_id)
 
-    if len(financial_data.columns) > 1 or ~financial_data.empty:
+    if len(financial_data.columns) > 1 or not financial_data.empty:
         if selected_school["Guest"].values[0] == "Y":
             table_title = "Organizational and Operational Accountability (SAMPLE DATA)"
         else:

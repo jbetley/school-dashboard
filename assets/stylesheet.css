@@ -188,12 +188,19 @@ there.
   tr {
     line-height: 2.25 !important;
   }
+
+  /* container doesn't print correctly, so on print
+    we blend in with background */
   .pretty-container {
     width: 100% !important;
+    border-radius: 5px;
+    background-color: #F2F2F2;
+    margin: 10px;
+    padding: 15px;
+    position: relative;
+    box-shadow: 0px 0px 0px #F2F2F2;
   }
-  .pretty-container-print {
-    display: none !important;
-  }
+
 }
 
 /** Base Styles **/
@@ -1130,6 +1137,26 @@ label>.label-body {
   padding-top: 5px;
   width: 80%;
   border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.school-name-label__header {
+  height: auto;
+  /* background-color: #6783a9; */
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: #6783a9;
+  text-align: center;
+  margin: auto;
+  font-weight: 700;
+  padding-bottom: 5px;
+  padding-top: 5px;
+  width: 80%;
+  border: 1rem solid #6783a9;
+  /* border-color: black; */
+  border-radius: 5px;
+  border-width: thin;
+  margin-top: 20px;
   margin-bottom: 10px;
 }
 

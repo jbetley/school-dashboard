@@ -356,7 +356,7 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
             "textAlign": "left",
             "marginLeft": "10px",
             "marginRight": "10px",
-            "marginTop": "50px",
+            "marginTop": "40px",
             "paddingTop": "5px",
             "borderTop": ".5px solid #c9d3e0",
         }

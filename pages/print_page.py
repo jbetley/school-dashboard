@@ -11,6 +11,8 @@ from dash import html, Input, Output, State, callback, clientside_callback, ctx,
 import dash_bootstrap_components as dbc
 import json
 
+from .load_data import get_school_index
+
 from .print_layout import (
     create_about_layout,
     create_fininfo_layout,
@@ -47,9 +49,10 @@ clientside_callback(
     Output("academicmetrics-layout", "children"),
     Output("fininfo-layout", "children"),
     Output("finmetrics-layout", "children"),
-    Output("finanalysis-layout", "children"),
+    # Output("finanalysis-layout", "children"),
     Output("orgcompliance-layout", "children"),
     Output("print-button", "children"),
+    Output("schoolname-layout", "children"),
     Input("print-button", "n_clicks"),
     Input("year-dropdown", "value"),
     Input("charter-dropdown", "value"),
@@ -71,8 +74,12 @@ def generate_print_page(
     academicmetrics_layout = []
     fininfo_layout = []
     finmetrics_layout = []
-    finanalysis_layout = []
+    # finanalysis_layout = []
     orgcompliance_layout = []
+    schoolname_layout = []
+
+    selected_school = get_school_index(school_id)
+    school_name = selected_school["School Name"].values[0]
 
     if ctx.triggered_id == "checklist-all":
         print_button = 0  # need to reset button or it will trigger when All is selected
@@ -86,13 +93,22 @@ def generate_print_page(
 
     if print_button > 0:
         if selected:
+            school_name = "ICSB Academic Dashboard for " + school_name
+            schoolname_layout = [
+                html.Label(
+                    school_name,
+                    className="school-name-label__header",
+                    # style={"marginTop": "10px"},
+                ),
+            ]
+
             if "all" in selected:
                 about_layout = create_about_layout(year, school_id)
                 academicinfo_layout = create_academicinfo_layout(year, school_id)
                 academicmetrics_layout = create_academicmetrics_layout(year, school_id)
                 fininfo_layout = create_fininfo_layout(year, school_id)
                 finmetrics_layout = create_finmetrics_layout(year, school_id)
-                finanalysis_layout = create_finanalysis_layout(year, school_id)
+                # finanalysis_layout = create_finanalysis_layout(year, school_id)
                 orgcompliance_layout = create_orgcompliance_layout(year, school_id)
 
             else:
@@ -113,8 +129,8 @@ def generate_print_page(
                 if "finmetrics" in selected:
                     finmetrics_layout = create_finmetrics_layout(year, school_id)
 
-                if "finanalysis" in selected:
-                    finanalysis_layout = create_finanalysis_layout(year, school_id)
+                # if "finanalysis" in selected:
+                #     finanalysis_layout = create_finanalysis_layout(year, school_id)
 
                 if "orgcompliance" in selected:
                     orgcompliance_layout = create_orgcompliance_layout(year, school_id)
@@ -126,9 +142,10 @@ def generate_print_page(
         academicmetrics_layout,
         fininfo_layout,
         finmetrics_layout,
-        finanalysis_layout,
+        # finanalysis_layout,
         orgcompliance_layout,
         "Generate Layout",
+        schoolname_layout,
     )
 
 
@@ -160,7 +177,7 @@ layout = html.Div(
                                 },
                                 {"label": "Financial Metrics", "value": "finmetrics"},
                                 {"label": "Financial Information", "value": "fininfo"},
-                                {"label": "Financial Analysis", "value": "finanalysis"},
+                                # {"label": "Financial Analysis", "value": "finanalysis"},
                                 {
                                     "label": "Organizational Compliance",
                                     "value": "orgcompliance",
@@ -199,12 +216,18 @@ layout = html.Div(
                                 "backgroundColor": "#F2F2F2",
                             },
                             children=[
+                                html.Div(id="schoolname-layout", children=[]),
                                 html.Div(id="about-layout", children=[]),
                                 html.Div(id="academicmetrics-layout", children=[]),
-                                html.Div(id="academicinfo-layout", children=[]),
+                                html.Div (
+                                    [
+                                        html.Div(id="academicinfo-layout", children=[]),
+                                    ],
+                                    className="pagebreak",
+                                ),
                                 html.Div(id="finmetrics-layout", children=[]),
                                 html.Div(id="fininfo-layout", children=[]),
-                                html.Div(id="finanalysis-layout", children=[]),
+                                # html.Div(id="finanalysis-layout", children=[]),
                                 html.Div(id="orgcompliance-layout", children=[]),
                             ],
                         )
