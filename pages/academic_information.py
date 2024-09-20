@@ -334,9 +334,10 @@ def update_academic_information_page(
             # Graduation Rate Tables
             grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
-            # TODO: Add AHS CCR Data
+
             if selected_school_type == "ahs":
-                grad_overview_categories.append("CCR Percentage")
+                grad_overview_categories = ["Total", "CCR Percentage", "Annual Graduation Rate"]
+                # grad_overview_categories.append("CCR Percentage")
 
             hs_info_data.columns = hs_info_data.columns.astype(str)
 
@@ -344,7 +345,11 @@ def update_academic_information_page(
             graduation_data = hs_info_data[
                 hs_info_data["Category"].str.contains("Graduation")
             ].copy()
-
+            
+            pd.set_option("display.max_columns", None)
+            pd.set_option("display.max_rows", None)
+            print(hs_info_data)
+            print(graduation_data)
             # SAT releases prior to grad rate, so it is possible to have SAT
             # data but no grad data - so we drop Cols that are all NaN or blank
             graduation_data = graduation_data.loc[
@@ -378,42 +383,46 @@ def update_academic_information_page(
                     grad_overview, "Graduation Rate Overview"
                 )
 
+                print(grad_overview)
+
                 hs_grad_overview_table = set_table_layout(
                     hs_grad_overview_table,
                     hs_grad_overview_table,
                     grad_overview.columns,
                 )
 
-                grad_ethnicity = graduation_data[
-                    graduation_data["Category"].str.contains("|".join(ethnicity))
-                ]
+                if selected_school_type != "ahs":
 
-                grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
+                    grad_ethnicity = graduation_data[
+                        graduation_data["Category"].str.contains("|".join(ethnicity))
+                    ]
 
-                hs_grad_ethnicity_table = create_multi_header_table_with_container(
-                    grad_ethnicity, "Graduation Rate by Ethnicity"
-                )
+                    grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
 
-                hs_grad_ethnicity_table = set_table_layout(
-                    hs_grad_ethnicity_table,
-                    hs_grad_ethnicity_table,
-                    grad_ethnicity.columns,
-                )
+                    hs_grad_ethnicity_table = create_multi_header_table_with_container(
+                        grad_ethnicity, "Graduation Rate by Ethnicity"
+                    )
 
-                grad_subgroup = graduation_data[
-                    graduation_data["Category"].str.contains("|".join(subgroup))
-                ]
+                    hs_grad_ethnicity_table = set_table_layout(
+                        hs_grad_ethnicity_table,
+                        hs_grad_ethnicity_table,
+                        grad_ethnicity.columns,
+                    )
 
-                grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
+                    grad_subgroup = graduation_data[
+                        graduation_data["Category"].str.contains("|".join(subgroup))
+                    ]
 
-                hs_grad_subgroup_table = create_multi_header_table_with_container(
-                    grad_subgroup, "Graduation Rate by Subgroup"
-                )
-                hs_grad_subgroup_table = set_table_layout(
-                    hs_grad_subgroup_table,
-                    hs_grad_subgroup_table,
-                    grad_subgroup.columns,
-                )
+                    grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
+
+                    hs_grad_subgroup_table = create_multi_header_table_with_container(
+                        grad_subgroup, "Graduation Rate by Subgroup"
+                    )
+                    hs_grad_subgroup_table = set_table_layout(
+                        hs_grad_subgroup_table,
+                        hs_grad_subgroup_table,
+                        grad_subgroup.columns,
+                    )
 
             # SAT Benchmark Table
             hs_sat_table_data = hs_info_data[

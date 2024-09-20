@@ -185,7 +185,9 @@ def calculate_values(
     school_comparison_data = data.filter(regex="Category|School|N-Size", axis=1).copy()
     corp_comparison_data = data.filter(regex="Category|Corp", axis=1).copy()
 
-    school_cols = [c[:4] + "Corp" for c in school_comparison_data.columns if c.startswith("20")]
+    school_cols = [
+        c[:4] + "Corp" for c in school_comparison_data.columns if c.startswith("20")
+    ]
     school_cols = list(set(school_cols))
     school_cols.append("Category")
 
@@ -273,7 +275,7 @@ def calculate_values(
         corp_comparison_data, on="Category", how="left"
     )
     merged_comparison_data = merged_comparison_data[merged_cols]
-    
+
     # check to see if data is HS or K8
     if school_comparison_data["Category"].str.contains("Graduation").any():
         is_high_school = True
@@ -511,16 +513,10 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
     """
     # AHS metrics is such a small subset of all metrics, instead of pulling in the
     # entire HS DF, we just pull the three datapoints we need directly from the DB.
-    data = values.copy()
+    ahs_data = values.copy()
 
-    if len(data.index) > 0:
-        data.columns = data.columns.astype(str)
-
-        data["CCR Percentage"] = pd.to_numeric(data["AHS|CCR"]) / pd.to_numeric(
-            data["AHS|Grad All"]
-        )
-
-        ahs_data = data[["Year", "CCR Percentage"]]
+    if len(ahs_data.index) > 0:
+        ahs_data.columns = ahs_data.columns.astype(str)
 
         # transpose dataframe and clean headers
         ahs_data = (
@@ -537,29 +533,99 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         ahs_data = ahs_data.set_index(["Category"]).add_suffix("School").reset_index()
 
-        # see calculate_year_over_year() for a description.
-        ccr_limits = [0.5, 0.499, 0.234]
+        grad_limits_cohort = [0.75, 0.599, 0.45]
+
+        #   1) the loop ("for i in range(data_metrics.shape[1], 1, -2)")
+        #   counts backwards by 2 (-2), from a number equal to the length of the columns
+        #   (data_metrics.shape[1]) to 1. These are indexes, so the
+        #   loop stops at the third column (which has an index of 2);
+        #   2) for each step, the code inserts a new column, at index "i". The column
+        #   header is a string that is equal to "the year (YYYY) part of the column
+        #   string  + "Rate" + "i" (the value of "i" doesn"t matter other than to
+        #   differentiate the columns) + the accountability value, which is a string
+        #   returned by the set_academic_rating() function. Note that we have to subtract
+        #   1 from the column to be tested (to account for 0 based indexing)
+        #   3) the set_academic_rating() function calculates an "accountability rating"
+        #   ("MS", "DNMS", "N/A", etc) taking as args:
+        #       i) the "value" to be rated. this will be from the "School" column, if
+        #       the value itself is rated (e.g., iread performance), or the difference
+        #       ("Diff") column, if there is an additional calculation required (e.g.,
+        #       year over year or compared to corp);
+        #       ii) a list of the threshold "limits" to be used in the calculation; and
+        #       iii) an integer "flag" which tells the function which calculation to use.
+
+        cohort_grad_metric = ahs_data[
+            ahs_data["Category"].isin(["Total|Graduation Rate"])
+        ]
+
         [
-            ahs_data.insert(
-                i,
-                str(ahs_data.columns[i - 1][:4]) + "Rate" + str(i),
-                ahs_data.apply(
+            cohort_grad_metric.insert(
+                i + 1,
+                str(cohort_grad_metric.columns[i])[: 7 - 3] + "Rate" + str(i),
+                cohort_grad_metric.apply(
                     lambda x: set_academic_rating(
-                        x[ahs_data.columns[i - 1]], ccr_limits, 2
+                        x[cohort_grad_metric.columns[i]], grad_limits_cohort, 2
                     ),
                     axis=1,
                 ),
             )
-            for i in range(ahs_data.shape[1], 1, -1)
+            for i in range(cohort_grad_metric.shape[1] - 1, 1, -1)
         ]
+
+        grad_limits_all = [0.85, 0.699, 0.499]
+
+        all_grad_metric = ahs_data[
+            ahs_data["Category"].isin(["Annual Graduation Rate"])
+        ]
+
+        [
+            all_grad_metric.insert(
+                i + 1,
+                str(all_grad_metric.columns[i])[: 7 - 3] + "Rate" + str(i),
+                all_grad_metric.apply(
+                    lambda x: set_academic_rating(
+                        x[all_grad_metric.columns[i]], grad_limits_all, 2
+                    ),
+                    axis=1,
+                ),
+            )
+            for i in range(all_grad_metric.shape[1] - 1, 1, -1)  # [1] - 1
+        ]
+
+        ccr_limits = [0.5, 0.499, 0.234]
+
+        ccr_metric = ahs_data[ahs_data["Category"].isin(["CCR Percentage"])]
+
+        [
+            ccr_metric.insert(
+                i + 1,
+                str(ccr_metric.columns[i][:4]) + "Rate" + str(i),
+                ccr_metric.apply(
+                    lambda x: set_academic_rating(
+                        x[ccr_metric.columns[i]], ccr_limits, 2
+                    ),
+                    axis=1,
+                ),
+            )
+            for i in range(ccr_metric.shape[1] - 1, 1, -1)
+        ]
+
+        # combine dataframes and rename categories
+        combined_ahs_metrics = pd.concat(
+            [cohort_grad_metric, all_grad_metric, ccr_metric], ignore_index=True
+        )
+
+        # TODO: HERE
+        print("CACLCING")
+        print(combined_ahs_metrics)
 
         # NOTE: State Letter Grades are not currently used. so
         # we create a 1 row dataframe using ahs_data cols,
         # set category to "State Grade", set value to "No Data",
         # and set Rate to "".
-        ahs_data_cols = ahs_data.columns.tolist()
+        combined_ahs_metrics = combined_ahs_metrics.columns.tolist()
 
-        state_grades = pd.DataFrame(columns=ahs_data_cols, index=range(1))
+        state_grades = pd.DataFrame(columns=combined_ahs_metrics, index=range(1))
 
         for col in state_grades.columns:
             if "Category" in col:
@@ -623,17 +689,17 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         # ]
 
         # concatenate and add metric column
-        ahs_data = pd.concat([state_grades, ahs_data])
-        ahs_data = ahs_data.reset_index(drop=True)
+        ahs_data = pd.concat([state_grades, combined_ahs_metrics])
+        combined_ahs_metrics = combined_ahs_metrics.reset_index(drop=True)
         ahs_metric_nums = ["1.1.", "1.3."]
-        ahs_data.insert(loc=0, column="Metric", value=ahs_metric_nums)
+        combined_ahs_metrics.insert(loc=0, column="Metric", value=ahs_metric_nums)
 
-        ahs_data = ahs_data.fillna("No Data")
+        combined_ahs_metrics = combined_ahs_metrics.fillna("No Data")
 
     else:
-        ahs_data = pd.DataFrame()
+        combined_ahs_metrics = pd.DataFrame()
 
-    return ahs_data
+    return combined_ahs_metrics
 
 
 def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
@@ -870,7 +936,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
             "Aggregated Three-Year Margin Metric",
         ] = "N/A"
 
-        # In YR 1 and Y2 CHNM Metric is 'MS' if the cumulative value of CHNM is 
+        # In YR 1 and Y2 CHNM Metric is 'MS' if the cumulative value of CHNM is
         # > 0 (positive). We use shift_value -1 to account for zero-based indexing
         # to get first year value
 
@@ -938,7 +1004,7 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
 
         # because we need at least 3 years of data, we loop from back to front. for the
         # first test, we stop the loop when i == 1 (the second to last item in the loop)
-        
+
         for i in range(len(metric_grid["Cash Flow"]) - 1, 1, -1):
             # get current year value
             current_year_cash = metric_grid.loc[i, "Cash Flow"]

@@ -1768,7 +1768,7 @@ def create_comparison_table(
     data.insert(0, "Icon", icon_col)
 
     if data.columns.str.contains("Graduation").any() == True:
-        data.columns = data.columns.str.replace("\|Graduation Rate", "")
+        data.columns = data.columns.str.replace("\|Graduation Rate", "", regex=True)
 
     elif data.columns.str.contains("Total").any() == True:
         # keep everything between | and "Benchmark %"

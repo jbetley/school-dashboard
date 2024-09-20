@@ -1185,7 +1185,7 @@ def get_academic_data(*args):
     # k8 or hs data with excluded years and non-tested categories dropped
     data = data.reset_index(drop=True)
 
-    # process HS data
+    # HS/AHS data
     if params["type"] == "hs" or params["type"] == "ahs":
         processed_data = data.copy()
 
@@ -1194,92 +1194,113 @@ def get_academic_data(*args):
             list(processed_data.filter(regex="EBRW and Math")), axis=1
         )
 
-        if params["type"] == "ahs":
-            ## Graduation Calculation (AHS Accountability)
-            # NOTE: a school must have at least ten (10) students graduate in the school
-            # year being assessed. If school has fewer than ten (10) graduates for a year
-            # based calculation on the current graduates aggregated with each immediately
-            # preceding year's graduates until a cohort of at least ten (10) graduates is reached
-
-            # Graduation to Enrollment Percentage (weighted 90%- max 100)
-            # denominator: school's within-year-average number of students
-            # numerator: total number of graduates for the assessed year
-            # multiply quotient by 4
-            # NOTE: Currently using (Total|Graduates/Total|Cohort) * 4
-
-            grad_by_enrollment = processed_data[
-                processed_data["School ID"] == school_id
-            ][["Total|Cohort Count", "Total|Graduates", "Year"]]
-
-            for col in grad_by_enrollment.columns:
-                grad_by_enrollment[col] = pd.to_numeric(
-                    grad_by_enrollment[col], errors="coerce"
-                )
-
-            grad_by_enrollment["Graduation by Enrollment %"] = (
-                grad_by_enrollment["Total|Graduates"]
-                / grad_by_enrollment["Total|Cohort Count"]
-            ) * 4
-
-            # Graduation Rate (weighted 10%)
-            # (1) Calculate 5-Year grad rate (IC 20-26-13-10.2) for the cohort immediately
-            # prior to the assessed year cohort.
-            #   Formula: (Total|Graduates + PY Total|Graduates) / Total|Cohort
-
-            # (2) Calculate 4-Year grad rate for the cohort immediately preceding the prior
-            # year cohort
-            #   Formula: Total|Graduates/Total|Cohort
-            grad_by_enrollment["4YR PY Cohort"] = (
-                grad_by_enrollment["Total|Graduates"]
-                / grad_by_enrollment["Total|Cohort Count"]
-            )
-
-            # (3) Subtract the four 4-Year graduation rate from the 4-Year graduation rate
-            # for the previous year.
-            # (4) Add the sum of (3) to the 4-Year graduation rate of the assessed year cohort
-
-            # Final Graduation Calculation
-            # (1) Calculate graduation qualifying examination passing rate
-            #   equals 1 if rate is at least 90% else use actual % passing
-            # (2) Multiply GQE passing rate by the sum of Graduation to Enrollent + Graduation Weights
-
-            ## CCR Score
-            # (1) calculate the college and career achievement rate;
-            # (2) the college and career readiness factor (100/.8); and
-            # (3) one hundred (100).
-
-            ### Final Calculation
-            # First Year weighting: graduation calculation (20%) and ccr score (80%)
-            # All Other Years: graduation calculation (40%) / ccr score (60%)
-            # TODO: Need: GQE passing rate; ccr achievement rate
-
-        # Calculate In Cohort Grad Rate (AHS and HS)
+        # In Cohort Grad Rate
         # TODO: Add N-size to In Cohort Grad rate
         if "Total|Cohort Count" in processed_data.columns:
             processed_data = calculate_graduation_rate(processed_data)
 
-        # Calculate SAT Rates #
+        # SAT Benchmark proficiency
         if "Total|EBRW Total Tested" in processed_data.columns:
             processed_data = calculate_sat_rate(processed_data)
 
-        # process additional AHS only data
+        # AHS only data
         if params["type"] == "ahs":
+
+            # Total Grad rate satisfies Accountability Metric 1.2.a -
+            #  4-year cohort graduation rate
+
             if "AHS|CCR" in processed_data.columns:
                 processed_data["AHS|CCR"] = pd.to_numeric(
                     processed_data["AHS|CCR"], errors="coerce"
                 )
 
-            if "AHS|Grad All" in processed_data.columns:
-                processed_data["AHS|Grad All"] = pd.to_numeric(
-                    processed_data["AHS|Grad All"], errors="coerce"
+            if "AHS|Actual Graduates" in processed_data.columns:
+                processed_data["AHS|Actual Graduates"] = pd.to_numeric(
+                    processed_data["AHS|Actual Graduates"], errors="coerce"
                 )
 
-            if {"AHS|CCR", "AHS|Grad All"}.issubset(processed_data.columns):
+            if "AHS|Actual Enrollment" in processed_data.columns:
+                processed_data["AHS|Actual Enrollment"] = pd.to_numeric(
+                    processed_data["AHS|Actual Enrollment"], errors="coerce"
+                )
+
+            # Student performance, dual-credit accumulation and/or industry
+            # certification reflects college and career readiness, based on
+            # the percentage of non-duplicated graduating students in the
+            # current school year
+            if {"AHS|CCR", "AHS|Actual Graduates"}.issubset(processed_data.columns):
                 processed_data["CCR Percentage"] = (
-                    processed_data["AHS|CCR"] / processed_data["AHS|Grad All"]
+                    processed_data["AHS|CCR"] / processed_data["AHS|Actual Graduates"]
                 )
 
-    # process K8 data
+            # Students enrolled in grade 12 graduate within the school year being assessed.
+            if {"AHS|Actual Enrollment", "AHS|Actual Graduates"}.issubset(
+                processed_data.columns
+            ):
+                processed_data["Annual Graduation Rate"] = (
+                    processed_data["AHS|Actual Graduates"]
+                    / processed_data["AHS|Actual Enrollment"]
+                )
+
+            # ## Graduation Calculation (AHS Accountability)
+            # # NOTE: a school must have at least ten (10) students graduate in the school
+            # # year being assessed. If school has fewer than ten (10) graduates for a year
+            # # based calculation on the current graduates aggregated with each immediately
+            # # preceding year's graduates until a cohort of at least ten (10) graduates is reached
+
+            # # Graduation to Enrollment Percentage (weighted 90%- max 100)
+            # # denominator: school's within-year-average number of students
+            # # numerator: total number of graduates for the assessed year
+            # # multiply quotient by 4
+            # # NOTE: Currently using (Total|Graduates/Total|Cohort) * 4
+
+            # grad_by_enrollment = processed_data[
+            #     processed_data["School ID"] == school_id
+            # ][["Total|Cohort Count", "Total|Graduates", "Year"]]
+
+            # for col in grad_by_enrollment.columns:
+            #     grad_by_enrollment[col] = pd.to_numeric(
+            #         grad_by_enrollment[col], errors="coerce"
+            #     )
+
+            # grad_by_enrollment["Graduation by Enrollment %"] = (
+            #     grad_by_enrollment["Total|Graduates"]
+            #     / grad_by_enrollment["Total|Cohort Count"]
+            # ) * 4
+
+            # # Graduation Rate (weighted 10%)
+            # # (1) Calculate 5-Year grad rate (IC 20-26-13-10.2) for the cohort immediately
+            # # prior to the assessed year cohort.
+            # #   Formula: (Total|Graduates + PY Total|Graduates) / Total|Cohort
+
+            # # (2) Calculate 4-Year grad rate for the cohort immediately preceding the prior
+            # # year cohort
+            # #   Formula: Total|Graduates/Total|Cohort
+
+            # grad_by_enrollment["4YR PY Cohort"] = (
+            #     grad_by_enrollment["Total|Graduates"]
+            #     / grad_by_enrollment["Total|Cohort Count"]
+            # )
+
+            # # (3) Subtract the four 4-Year graduation rate from the 4-Year graduation rate
+            # # for the previous year.
+            # # (4) Add the sum of (3) to the 4-Year graduation rate of the assessed year cohort
+
+            # # Final Graduation Calculation
+            # # (1) Calculate graduation qualifying examination passing rate
+            # #   equals 1 if rate is at least 90% else use actual % passing
+            # # (2) Multiply GQE passing rate by the sum of Graduation to Enrollent + Graduation Weights
+
+            # ## CCR Score
+            # # (1) calculate the college and career achievement rate;
+            # # (2) the college and career readiness factor (100/.8); and
+            # # (3) one hundred (100).
+
+            # ### Final Calculation
+            # # First Year weighting: graduation calculation (20%) and ccr score (80%)
+            # # All Other Years: graduation calculation (40%) / ccr score (60%)
+
+    # K8 data
     elif params["type"] == "k8":
         processed_data = data.copy()
 
@@ -1310,7 +1331,13 @@ def get_academic_data(*args):
         # this is school, school corporation, and comparable school data
         processed_data = processed_data.reset_index()
 
-    # Dataframe can be empty (if all columns other than 1st (Year) are null or
+    # Additional page specific processing
+
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+    # print("RAW DATA")
+    # print(processed_data)
+    # dataframe can be empty (if all columns other than 1st (Year) are null or
     # if the dataframe has no school_id
     if (
         processed_data.iloc[:, 1:].isna().all().all()
@@ -1319,16 +1346,25 @@ def get_academic_data(*args):
         return pd.DataFrame()
 
     else:
-        ## data for academic_analysis_single_page
-        ## TODO eventually add multipage analysis data
+        ## academic_analysis_single_page
+        ## TODO add multipage analysis data
         if params["page"] == "analysis":
             if params["type"] == "hs" or params["type"] == "ahs":
                 hs_data = processed_data.copy()
 
-                analysis_data = hs_data.filter(
-                    regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name|Graduation Rate$|Benchmark \%|^Year$",
-                    axis=1,
-                ).copy()
+                # NOTE: Cohorts data (not currently kept): Actual Graduates,
+                #   Actual Enrollment, CCR
+                if params["type"] == "ahs":
+                    analysis_data = hs_data.filter(
+                        regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name \
+                        |CCR Percentage|Annual Graduation Rate|Total\|Graduation Rate|Benchmark \%|^Year$",
+                        axis=1,
+                    ).copy()
+                else:
+                    analysis_data = hs_data.filter(
+                        regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name|Graduation Rate$|Benchmark \%|^Year$",
+                        axis=1,
+                    ).copy()
 
                 analysis_data = analysis_data.drop(
                     list(analysis_data.filter(regex="EBRW and Math")), axis=1
@@ -1412,9 +1448,12 @@ def get_academic_data(*args):
 
             # No corp_data is used and school_data limited to single metric (CCR)
             if params["type"] == "ahs" and params["page"] == "metrics":
-                # AHS metric data is extremely limited atm
-                school_metric_data = school_data[["Year", "AHS|CCR", "AHS|Grad All"]]
-
+                
+                # AHS metric data is limited atm
+                school_metric_data = school_data[
+                    ["Year", "CCR Percentage", "Annual Graduation Rate", "Total|Graduation Rate"]
+                ]
+                
                 return school_metric_data
 
             elif params["type"] == "hs":
