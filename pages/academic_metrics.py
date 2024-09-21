@@ -55,8 +55,8 @@ dash.register_page(__name__, path="/academic_metrics", top_nav=True, order=9)
     Output("table-container-17ab", "children"),
     Output("table-container-17cd", "children"),
     Output("hs-metrics-container", "style"),
-    Output("table-container-ahs-113", "children"),
-    Output("table-container-ahs-1214", "children"),
+    Output("table-container-ahs", "children"),
+    # Output("table-container-ahs-1214", "children"),
     Output("ahs-metrics-container", "style"),
     Output("academic-metrics-main-container", "style"),
     Output("academic-metrics-empty-container", "style"),
@@ -88,8 +88,8 @@ def update_academic_metrics(school: str, year: str):
     table_container_17cd = []
     hs_metrics_container = {"display": "none"}
 
-    ahs_table_container_113 = []
-    ahs_table_container_1214 = []
+    ahs_table_container = []
+    # ahs_table_container_1214 = []
     ahs_metrics_container = {"display": "none"}
 
     main_container = {"display": "none"}
@@ -362,68 +362,36 @@ def update_academic_metrics(school: str, year: str):
 
         if len(raw_metric_data.index) > 0:
             
-            # Adult High School Metrics
+            # Adult High School Metrics (in single table atm)
+            # NOTE: Create additional tables as needed
             if selected_school_type == "ahs":
                 ahs_metrics_container = {"display": "block"}
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                ahs_metric_data_113 = calculate_adult_high_school_metrics(
+                ahs_metric_data = calculate_adult_high_school_metrics(
                     raw_metric_data
                 )
 
-                ahs_metric_data_113["Category"] = (
-                    ahs_metric_data_113["Metric"]
+                ahs_metric_data["Category"] = (
+                    ahs_metric_data["Metric"]
                     + " "
-                    + ahs_metric_data_113["Category"]
+                    + ahs_metric_data["Category"]
                 )
 
-                ahs_metric_data_113 = ahs_metric_data_113.drop("Metric", axis=1)
+                ahs_metric_data = ahs_metric_data.drop("Metric", axis=1)
 
-                ahs_metric_label_113 = [
-                    "Adult High School Accountability Metrics 1.1 & 1.3"
+                ahs_metric_label = [
+                    "Adult High School Accountability Metrics"
                 ]
-                ahs_metric_data_113 = convert_to_svg_circle(ahs_metric_data_113)
-                ahs_table_113 = create_metric_table(
-                    ahs_metric_label_113, ahs_metric_data_113
-                )
-                ahs_table_container_113 = set_table_layout(
-                    ahs_table_113, ahs_table_113, ahs_metric_data_113.columns
+                ahs_metric_data = convert_to_svg_circle(ahs_metric_data)
+                
+                ahs_table = create_metric_table(
+                    ahs_metric_label, ahs_metric_data
                 )
 
-                # Create placeholders (Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b)
-                all_cols = ahs_metric_data_113.columns.tolist()
-                simple_cols = [x for x in all_cols if not x.endswith("+/-")]
-
-                ahs_nocalc_empty = pd.DataFrame(columns=simple_cols)
-
-                ahs_nocalc_dict = {
-                    "Category": [
-                        "1.2.a Students graduate from high school in 4 years.",
-                        "1.2.b Students enrolled in grade 12 graduate within the school year being assessed.",
-                    ]
-                }
-                ahs_no_calc = pd.DataFrame(ahs_nocalc_dict)
-
-                ahs_metric_data_1214 = pd.concat(
-                    [ahs_nocalc_empty, ahs_no_calc], ignore_index=True
-                )
-                ahs_metric_data_1214.reset_index()
-
-                # fill only value columns with "No Data" (until we actually HAVE the data)
-                empty_year_cols = [
-                    col for col in ahs_metric_data_1214.columns if "Value" in col
-                ]
-                for col in empty_year_cols:
-                    ahs_metric_data_1214[col] = "No Data"
-
-                ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a & 1.2.b"]
-                ahs_metric_data_1214 = convert_to_svg_circle(ahs_metric_data_1214)
-                ahs_table_1214 = create_metric_table(
-                    ahs_metric_label_1214, ahs_metric_data_1214
-                )
-                ahs_table_container_1214 = set_table_layout(
-                    ahs_table_1214, ahs_table_1214, ahs_metric_data_1214.columns
+                ahs_table_container = set_table_layout(
+                    ahs_table, ahs_table, ahs_metric_data.columns
                 )
 
             else:
@@ -465,7 +433,7 @@ def update_academic_metrics(school: str, year: str):
                     grad_metrics_dict = {
                         "Category": [
                             "1.7.c The percentage of students entering Grade 12 at beginning of year who graduated",
-                            # "1.7.d. The percentage of graduating students planning to pursue college or career."
+                            "1.7.d. The percentage of graduating students planning to pursue college or career."
                         ]
                     }
                     grad_metrics = pd.DataFrame(grad_metrics_dict)
@@ -592,8 +560,8 @@ def update_academic_metrics(school: str, year: str):
         table_container_17ab,
         table_container_17cd,
         hs_metrics_container,
-        ahs_table_container_113,
-        ahs_table_container_1214,
+        ahs_table_container,
+        # ahs_table_container_1214,
         ahs_metrics_container,
         main_container,
         empty_container,
@@ -656,8 +624,8 @@ def layout():
                     ),
                     html.Div(
                         [
-                            html.Div(id="table-container-ahs-113", children=[]),
-                            html.Div(id="table-container-ahs-1214", children=[]),
+                            html.Div(id="table-container-ahs", children=[]),
+                            # html.Div(id="table-container-ahs-1214", children=[]),
                         ],
                         id="ahs-metrics-container",
                     ),

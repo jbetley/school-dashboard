@@ -331,25 +331,30 @@ def update_academic_information_page(
         else:
             main_container = {"display": "block"}
 
+            hs_info_data.columns = hs_info_data.columns.astype(str)
+
             # Graduation Rate Tables
             grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
+            pd.set_option("display.max_columns", None)
+            pd.set_option("display.max_rows", None)
+            print(hs_info_data)
 
             if selected_school_type == "ahs":
-                grad_overview_categories = ["Total", "CCR Percentage", "Annual Graduation Rate"]
-                # grad_overview_categories.append("CCR Percentage")
+                grad_overview_categories = ["Cohort Graduation Rate", "Annual Graduation Rate", "Graduation to Enrollment", "CCR Percentage"]
+                graduation_data = hs_info_data[
+                    hs_info_data["Category"].isin(grad_overview_categories) #.str.contains("Graduation")
+                ].copy()
 
-            hs_info_data.columns = hs_info_data.columns.astype(str)
+                print("AHS GRAD DATA")
+                print(graduation_data)
 
+# TODO: HERE - Need to rebuild AHS Grad Table
             # Graduation Rate Tables
             graduation_data = hs_info_data[
                 hs_info_data["Category"].str.contains("Graduation")
             ].copy()
             
-            pd.set_option("display.max_columns", None)
-            pd.set_option("display.max_rows", None)
-            print(hs_info_data)
-            print(graduation_data)
             # SAT releases prior to grad rate, so it is possible to have SAT
             # data but no grad data - so we drop Cols that are all NaN or blank
             graduation_data = graduation_data.loc[
@@ -382,8 +387,6 @@ def update_academic_information_page(
                 hs_grad_overview_table = create_multi_header_table_with_container(
                     grad_overview, "Graduation Rate Overview"
                 )
-
-                print(grad_overview)
 
                 hs_grad_overview_table = set_table_layout(
                     hs_grad_overview_table,

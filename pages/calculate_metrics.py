@@ -511,12 +511,14 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: dataframe with School and Rate columns for each year
     """
-    # AHS metrics is such a small subset of all metrics, instead of pulling in the
-    # entire HS DF, we just pull the three datapoints we need directly from the DB.
+    # AHS metrics is a small subset of all metrics, instead of pulling in the
+    # entire HS DF, we just pull the datapoints we need directly from the DB.
     ahs_data = values.copy()
 
     if len(ahs_data.index) > 0:
         ahs_data.columns = ahs_data.columns.astype(str)
+
+        ahs_data.rename(columns={"Total|Graduation Rate":"Cohort Graduation Rate"}, inplace=True)
 
         # transpose dataframe and clean headers
         ahs_data = (
@@ -529,16 +531,16 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         # reorder year columns and apply to df headers
         data_columns = list(ahs_data.columns[:0:-1])
         data_columns.sort()
-        ahs_data.columns = ["Category"] + data_columns
+        reordered_columns = ["Category"] + data_columns
+
+        ahs_data = ahs_data[reordered_columns]
 
         ahs_data = ahs_data.set_index(["Category"]).add_suffix("School").reset_index()
 
-        grad_limits_cohort = [0.75, 0.599, 0.45]
-
-        #   1) the loop ("for i in range(data_metrics.shape[1], 1, -2)")
-        #   counts backwards by 2 (-2), from a number equal to the length of the columns
-        #   (data_metrics.shape[1]) to 1. These are indexes, so the
-        #   loop stops at the third column (which has an index of 2);
+        #   1) the loop ("for i in range(data_metrics.shape[1], 0, -1)")
+        #   counts backwards by 1 (-1), from a number equal to the length of the columns
+        #   (data_metrics.shape[1]) to 0. These are indexes, so the
+        #   loop stops at the second column (which has an index of 1);
         #   2) for each step, the code inserts a new column, at index "i". The column
         #   header is a string that is equal to "the year (YYYY) part of the column
         #   string  + "Rate" + "i" (the value of "i" doesn"t matter other than to
@@ -552,10 +554,13 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         #       ("Diff") column, if there is an additional calculation required (e.g.,
         #       year over year or compared to corp);
         #       ii) a list of the threshold "limits" to be used in the calculation; and
-        #       iii) an integer "flag" which tells the function which calculation to use.
+        #       iii) an integer "flag" which tells the function which calculation to use (see
+        #            set_academic_rating() for types).
+
+        grad_limits_cohort = [0.75, 0.599, 0.45]
 
         cohort_grad_metric = ahs_data[
-            ahs_data["Category"].isin(["Total|Graduation Rate"])
+            ahs_data["Category"].isin(["Cohort Graduation Rate"])
         ]
 
         [
@@ -569,7 +574,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
                     axis=1,
                 ),
             )
-            for i in range(cohort_grad_metric.shape[1] - 1, 1, -1)
+            for i in range(cohort_grad_metric.shape[1] - 1, 0, -1)
         ]
 
         grad_limits_all = [0.85, 0.699, 0.499]
@@ -589,7 +594,28 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
                     axis=1,
                 ),
             )
-            for i in range(all_grad_metric.shape[1] - 1, 1, -1)  # [1] - 1
+            for i in range(all_grad_metric.shape[1] - 1, 0, -1)  # [1] - 1
+        ]
+
+        # TODO: Adjust per Accountability System adjustment
+        grad_limits_enrollment = [0.75, 0.499, 0.20]
+
+        grad_limits_metric = ahs_data[
+            ahs_data["Category"].isin(["Graduation by Enrollment"])
+        ]
+
+        [
+            grad_limits_metric.insert(
+                i + 1,
+                str(grad_limits_metric.columns[i])[: 7 - 3] + "Rate" + str(i),
+                grad_limits_metric.apply(
+                    lambda x: set_academic_rating(
+                        x[grad_limits_metric.columns[i]], grad_limits_enrollment, 2
+                    ),
+                    axis=1,
+                ),
+            )
+            for i in range(grad_limits_metric.shape[1] - 1, 0, -1)  # [1] - 1
         ]
 
         ccr_limits = [0.5, 0.499, 0.234]
@@ -607,25 +633,22 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
                     axis=1,
                 ),
             )
-            for i in range(ccr_metric.shape[1] - 1, 1, -1)
+            for i in range(ccr_metric.shape[1] - 1, 0, -1)
         ]
 
         # combine dataframes and rename categories
         combined_ahs_metrics = pd.concat(
-            [cohort_grad_metric, all_grad_metric, ccr_metric], ignore_index=True
+            [cohort_grad_metric, all_grad_metric, grad_limits_metric, ccr_metric],
+            ignore_index=True,
         )
-
-        # TODO: HERE
-        print("CACLCING")
-        print(combined_ahs_metrics)
 
         # NOTE: State Letter Grades are not currently used. so
         # we create a 1 row dataframe using ahs_data cols,
         # set category to "State Grade", set value to "No Data",
         # and set Rate to "".
-        combined_ahs_metrics = combined_ahs_metrics.columns.tolist()
+        combined_ahs_metrics_cols = combined_ahs_metrics.columns.tolist()
 
-        state_grades = pd.DataFrame(columns=combined_ahs_metrics, index=range(1))
+        state_grades = pd.DataFrame(columns=combined_ahs_metrics_cols, index=range(1))
 
         for col in state_grades.columns:
             if "Category" in col:
@@ -690,16 +713,22 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         # concatenate and add metric column
         ahs_data = pd.concat([state_grades, combined_ahs_metrics])
-        combined_ahs_metrics = combined_ahs_metrics.reset_index(drop=True)
-        ahs_metric_nums = ["1.1.", "1.3."]
-        combined_ahs_metrics.insert(loc=0, column="Metric", value=ahs_metric_nums)
+        ahs_data = ahs_data.reset_index(drop=True)
+        ahs_metric_nums = [
+            "1.1.",
+            "1.2.a.",
+            "1.2.b.",
+            "1.2.c.",
+            "1.3.",
+        ]
+        ahs_data.insert(loc=0, column="Metric", value=ahs_metric_nums)
 
-        combined_ahs_metrics = combined_ahs_metrics.fillna("No Data")
+        ahs_data = ahs_data.fillna("No Data")
 
     else:
-        combined_ahs_metrics = pd.DataFrame()
+        ahs_data = pd.DataFrame()
 
-    return combined_ahs_metrics
+    return ahs_data
 
 
 def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:

@@ -322,10 +322,11 @@ def get_adm(corp_id):
 
     params = dict(id=corp_id)
 
+    # TODO: Test switch from adm_all to icsb_school_adm
     q = text(
         """
         SELECT * 
-        FROM adm_all 
+        FROM icsb_school_adm
         WHERE CorporationID = :id
     """
     )
@@ -339,7 +340,8 @@ def get_adm(corp_id):
     results = results.drop(
         list(
             results.filter(
-                regex="Fall Virtual ADM|Spring Virtual ADM|Corporation ID|Name"
+                regex="Fall Virtual ADM|Spring Virtual ADM|School ID|Corporation ID|Corporation Name|School Name"
+                # regex="Fall Virtual ADM|Spring Virtual ADM|Corporation ID|Name"
             )
         ),
         axis=1,
@@ -349,12 +351,14 @@ def get_adm(corp_id):
     # odd number of columns after the above drop, that means that the last
     # column is a Fall without a Spring, so we store that column, drop it,
     # and add it back later
+    last_col = pd.DataFrame()
+
     if (len(results.columns) % 2) != 0:
-        last_col = pd.DataFrame()
         last_col_name = str(int(results.columns[-1][:4]) + 1)
         last_col[last_col_name] = results[results.columns[-1]]
         results = results.drop(results.columns[-1], axis=1)
 
+    # get years with data
     adm_columns = [c[:4] for c in results.columns if "Spring" in c]
 
     # make numbers
@@ -1205,41 +1209,41 @@ def get_academic_data(*args):
 
         # AHS only data
         if params["type"] == "ahs":
-
             # Total Grad rate satisfies Accountability Metric 1.2.a -
             #  4-year cohort graduation rate
 
-            if "AHS|CCR" in processed_data.columns:
-                processed_data["AHS|CCR"] = pd.to_numeric(
-                    processed_data["AHS|CCR"], errors="coerce"
+            ahs_data = processed_data.copy()
+            if "AHS|CCR" in ahs_data.columns:
+                ahs_data["AHS|CCR"] = pd.to_numeric(
+                    ahs_data["AHS|CCR"], errors="coerce"
                 )
 
-            if "AHS|Actual Graduates" in processed_data.columns:
-                processed_data["AHS|Actual Graduates"] = pd.to_numeric(
-                    processed_data["AHS|Actual Graduates"], errors="coerce"
+            if "AHS|Actual Graduates" in ahs_data.columns:
+                ahs_data["AHS|Actual Graduates"] = pd.to_numeric(
+                    ahs_data["AHS|Actual Graduates"], errors="coerce"
                 )
 
-            if "AHS|Actual Enrollment" in processed_data.columns:
-                processed_data["AHS|Actual Enrollment"] = pd.to_numeric(
-                    processed_data["AHS|Actual Enrollment"], errors="coerce"
+            if "AHS|Actual Enrollment" in ahs_data.columns:
+                ahs_data["AHS|Actual Enrollment"] = pd.to_numeric(
+                    ahs_data["AHS|Actual Enrollment"], errors="coerce"
                 )
 
             # Student performance, dual-credit accumulation and/or industry
             # certification reflects college and career readiness, based on
             # the percentage of non-duplicated graduating students in the
             # current school year
-            if {"AHS|CCR", "AHS|Actual Graduates"}.issubset(processed_data.columns):
-                processed_data["CCR Percentage"] = (
-                    processed_data["AHS|CCR"] / processed_data["AHS|Actual Graduates"]
+            if {"AHS|CCR", "AHS|Actual Graduates"}.issubset(ahs_data.columns):
+                ahs_data["CCR Percentage"] = (
+                    ahs_data["AHS|CCR"] / ahs_data["AHS|Actual Graduates"]
                 )
 
             # Students enrolled in grade 12 graduate within the school year being assessed.
             if {"AHS|Actual Enrollment", "AHS|Actual Graduates"}.issubset(
-                processed_data.columns
+                ahs_data.columns
             ):
-                processed_data["Annual Graduation Rate"] = (
-                    processed_data["AHS|Actual Graduates"]
-                    / processed_data["AHS|Actual Enrollment"]
+                ahs_data["Annual Graduation Rate"] = (
+                    ahs_data["AHS|Actual Graduates"]
+                    / ahs_data["AHS|Actual Enrollment"]
                 )
 
             # ## Graduation Calculation (AHS Accountability)
@@ -1248,25 +1252,43 @@ def get_academic_data(*args):
             # # based calculation on the current graduates aggregated with each immediately
             # # preceding year's graduates until a cohort of at least ten (10) graduates is reached
 
+            selected_school = get_school_index(school_id)
+            corp_id = int(selected_school["Corporation ID"].values[0])
+
+            # get adm average and add to dataframe matching on school_id and Year
+            adm_average = get_adm(corp_id)
+            school_adm = adm_average.T.rename_axis("Year").reset_index()
+            school_adm = school_adm.rename(columns={0: "ADM Average"})
+            school_adm["School ID"] = school_id
+
+
+            for col in school_adm.columns:
+                school_adm[col] = pd.to_numeric(
+                    school_adm[col], errors="coerce"
+                )
+
+            ahs_data["School ID"] = ahs_data["School ID"].astype(int)
+
+            processed_data = pd.merge(ahs_data, school_adm, how="left", on=["Year", "School ID"], suffixes=("", "_y")
+            )
+
+            # need to convert back to str or else we get a numpy error around line 1360 (data check)
+            # see: https://stackoverflow.com/questions/40659212/futurewarning-elementwise-comparison-failed-returning-scalar-but-in-the-futur
+            processed_data["School ID"] = ahs_data["School ID"].astype(str)
+
+            processed_data["Graduation by Enrollment"] = (
+                processed_data["AHS|Actual Graduates"]
+                / processed_data["ADM Average"]
+            ) * 4
+
+            # NOTE: This is the Indiana Adult Accountability System Calculation
+            # still trying to figure it out.
+
             # # Graduation to Enrollment Percentage (weighted 90%- max 100)
             # # denominator: school's within-year-average number of students
             # # numerator: total number of graduates for the assessed year
             # # multiply quotient by 4
             # # NOTE: Currently using (Total|Graduates/Total|Cohort) * 4
-
-            # grad_by_enrollment = processed_data[
-            #     processed_data["School ID"] == school_id
-            # ][["Total|Cohort Count", "Total|Graduates", "Year"]]
-
-            # for col in grad_by_enrollment.columns:
-            #     grad_by_enrollment[col] = pd.to_numeric(
-            #         grad_by_enrollment[col], errors="coerce"
-            #     )
-
-            # grad_by_enrollment["Graduation by Enrollment %"] = (
-            #     grad_by_enrollment["Total|Graduates"]
-            #     / grad_by_enrollment["Total|Cohort Count"]
-            # ) * 4
 
             # # Graduation Rate (weighted 10%)
             # # (1) Calculate 5-Year grad rate (IC 20-26-13-10.2) for the cohort immediately
@@ -1333,10 +1355,6 @@ def get_academic_data(*args):
 
     # Additional page specific processing
 
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
-    # print("RAW DATA")
-    # print(processed_data)
     # dataframe can be empty (if all columns other than 1st (Year) are null or
     # if the dataframe has no school_id
     if (
@@ -1346,6 +1364,7 @@ def get_academic_data(*args):
         return pd.DataFrame()
 
     else:
+
         ## academic_analysis_single_page
         ## TODO add multipage analysis data
         if params["page"] == "analysis":
@@ -1362,7 +1381,7 @@ def get_academic_data(*args):
                     ).copy()
                 else:
                     analysis_data = hs_data.filter(
-                        regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name|Graduation Rate$|Benchmark \%|^Year$",
+                        regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name|Graduation Rate$|Graduation by Enrollment|Benchmark \%|^Year$",
                         axis=1,
                     ).copy()
 
@@ -1448,12 +1467,22 @@ def get_academic_data(*args):
 
             # No corp_data is used and school_data limited to single metric (CCR)
             if params["type"] == "ahs" and params["page"] == "metrics":
-                
                 # AHS metric data is limited atm
                 school_metric_data = school_data[
-                    ["Year", "CCR Percentage", "Annual Graduation Rate", "Total|Graduation Rate"]
+                    [
+                        "Year",
+                        "CCR Percentage",
+                        "Annual Graduation Rate",
+                        "Cohort Graduation Rate",
+                        "Graduation by Enrollment",
+                    ]
                 ]
-                
+
+                pd.set_option("display.max_columns", None)
+                pd.set_option("display.max_rows", None)
+                print('INFOOOOO')
+                print(school_metric_data)
+
                 return school_metric_data
 
             elif params["type"] == "hs":
@@ -1589,7 +1618,11 @@ def get_academic_data(*args):
                     processed_data["School ID"] == school_id
                 ]
                 final_school_data = transpose_data(school_info_data, params)
-
+# TODO: DOESNT INCLUDE METRIC AHS SPECIFIC
+                print("AHS INFO DATA")
+                pd.set_option("display.max_columns", None)
+                pd.set_option("display.max_rows", None)
+                print(final_school_data)
                 # K8 information data
                 if params["page"] == "info":
                     return final_school_data
