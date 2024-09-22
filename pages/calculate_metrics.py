@@ -518,7 +518,14 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
     if len(ahs_data.index) > 0:
         ahs_data.columns = ahs_data.columns.astype(str)
 
-        ahs_data.rename(columns={"Total|Graduation Rate":"Cohort Graduation Rate"}, inplace=True)
+        ahs_data.rename(
+            columns={
+                "Total|Graduation Rate": "In Cohort",
+                "Annual|Graduation Rate": "Annual",
+                "By Enrollment|Graduation Rate": "By Enrollment",
+            },
+            inplace=True,
+        )
 
         # transpose dataframe and clean headers
         ahs_data = (
@@ -559,9 +566,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         grad_limits_cohort = [0.75, 0.599, 0.45]
 
-        cohort_grad_metric = ahs_data[
-            ahs_data["Category"].isin(["Cohort Graduation Rate"])
-        ]
+        cohort_grad_metric = ahs_data[ahs_data["Category"].isin(["In Cohort"])]
 
         [
             cohort_grad_metric.insert(
@@ -579,9 +584,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         grad_limits_all = [0.85, 0.699, 0.499]
 
-        all_grad_metric = ahs_data[
-            ahs_data["Category"].isin(["Annual Graduation Rate"])
-        ]
+        all_grad_metric = ahs_data[ahs_data["Category"].isin(["Annual"])]
 
         [
             all_grad_metric.insert(
@@ -597,12 +600,10 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
             for i in range(all_grad_metric.shape[1] - 1, 0, -1)  # [1] - 1
         ]
 
-        # TODO: Adjust per Accountability System adjustment
+        # TODO: Adjust threshold per Accountability System adjustment
         grad_limits_enrollment = [0.75, 0.499, 0.20]
 
-        grad_limits_metric = ahs_data[
-            ahs_data["Category"].isin(["Graduation by Enrollment"])
-        ]
+        grad_limits_metric = ahs_data[ahs_data["Category"].isin(["By Enrollment"])]
 
         [
             grad_limits_metric.insert(

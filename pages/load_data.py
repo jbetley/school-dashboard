@@ -1199,7 +1199,6 @@ def get_academic_data(*args):
         )
 
         # In Cohort Grad Rate
-        # TODO: Add N-size to In Cohort Grad rate
         if "Total|Cohort Count" in processed_data.columns:
             processed_data = calculate_graduation_rate(processed_data)
 
@@ -1223,27 +1222,37 @@ def get_academic_data(*args):
                     ahs_data["AHS|Actual Graduates"], errors="coerce"
                 )
 
-            if "AHS|Actual Enrollment" in ahs_data.columns:
-                ahs_data["AHS|Actual Enrollment"] = pd.to_numeric(
-                    ahs_data["AHS|Actual Enrollment"], errors="coerce"
-                )
-
             # Student performance, dual-credit accumulation and/or industry
             # certification reflects college and career readiness, based on
             # the percentage of non-duplicated graduating students in the
             # current school year
+            # TODO: Is Actual Graduates the right thing to use here?
             if {"AHS|CCR", "AHS|Actual Graduates"}.issubset(ahs_data.columns):
                 ahs_data["CCR Percentage"] = (
                     ahs_data["AHS|CCR"] / ahs_data["AHS|Actual Graduates"]
                 )
 
+            # AHS|Actual Graduates is used in three calculations where we want to track N-Size,
+            # "Graduation by Enrollment", "Annual Graduation", and "CCR Percentage"
+            ahs_data["By Enrollment|Cohort Count"] = ahs_data["AHS|Actual Graduates"]
+            ahs_data["CCR Percentage|Count"] = ahs_data["AHS|Actual Graduates"]
+
+            ahs_data = ahs_data.rename(
+                columns={"AHS|Actual Graduates": "Annual|Cohort Count"}
+            )
+
+            if "AHS|Actual Enrollment" in ahs_data.columns:
+                ahs_data["AHS|Actual Enrollment"] = pd.to_numeric(
+                    ahs_data["AHS|Actual Enrollment"], errors="coerce"
+                )
+
             # Students enrolled in grade 12 graduate within the school year being assessed.
-            if {"AHS|Actual Enrollment", "AHS|Actual Graduates"}.issubset(
-                ahs_data.columns
-            ):
-                ahs_data["Annual Graduation Rate"] = (
-                    ahs_data["AHS|Actual Graduates"]
-                    / ahs_data["AHS|Actual Enrollment"]
+            if {
+                "AHS|Actual Enrollment",
+                "Annual|Cohort Count",
+            }.issubset(ahs_data.columns):
+                ahs_data["Annual|Graduation Rate"] = (
+                    ahs_data["Annual|Cohort Count"] / ahs_data["AHS|Actual Enrollment"]
                 )
 
             # ## Graduation Calculation (AHS Accountability)
@@ -1261,23 +1270,26 @@ def get_academic_data(*args):
             school_adm = school_adm.rename(columns={0: "ADM Average"})
             school_adm["School ID"] = school_id
 
-
             for col in school_adm.columns:
-                school_adm[col] = pd.to_numeric(
-                    school_adm[col], errors="coerce"
-                )
+                school_adm[col] = pd.to_numeric(school_adm[col], errors="coerce")
 
             ahs_data["School ID"] = ahs_data["School ID"].astype(int)
 
-            processed_data = pd.merge(ahs_data, school_adm, how="left", on=["Year", "School ID"], suffixes=("", "_y")
+            processed_data = pd.merge(
+                ahs_data,
+                school_adm,
+                how="left",
+                on=["Year", "School ID"],
+                suffixes=("", "_y"),
             )
 
             # need to convert back to str or else we get a numpy error around line 1360 (data check)
-            # see: https://stackoverflow.com/questions/40659212/futurewarning-elementwise-comparison-failed-returning-scalar-but-in-the-futur
+            # see: https://stackoverflow.com/questions/40659212/futurewarning-elementwise-comparison
+            # -failed-returning-scalar-but-in-the-futur
             processed_data["School ID"] = ahs_data["School ID"].astype(str)
 
-            processed_data["Graduation by Enrollment"] = (
-                processed_data["AHS|Actual Graduates"]
+            processed_data["By Enrollment|Graduation Rate"] = (
+                processed_data["By Enrollment|Cohort Count"]
                 / processed_data["ADM Average"]
             ) * 4
 
@@ -1364,9 +1376,7 @@ def get_academic_data(*args):
         return pd.DataFrame()
 
     else:
-
-        ## academic_analysis_single_page
-        ## TODO add multipage analysis data
+        ## academic_analysis_single_page #TODO add multipage analysis data
         if params["page"] == "analysis":
             if params["type"] == "hs" or params["type"] == "ahs":
                 hs_data = processed_data.copy()
@@ -1376,12 +1386,12 @@ def get_academic_data(*args):
                 if params["type"] == "ahs":
                     analysis_data = hs_data.filter(
                         regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name \
-                        |CCR Percentage|Annual Graduation Rate|Total\|Graduation Rate|Benchmark \%|^Year$",
+                        |CCR Percentage|Annual|Total|By Enrollment|Benchmark \%|^Year$",
                         axis=1,
                     ).copy()
                 else:
                     analysis_data = hs_data.filter(
-                        regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name|Graduation Rate$|Graduation by Enrollment|Benchmark \%|^Year$",
+                        regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name|Graduation Rate$|Benchmark \%|^Year$",
                         axis=1,
                     ).copy()
 
@@ -1472,16 +1482,11 @@ def get_academic_data(*args):
                     [
                         "Year",
                         "CCR Percentage",
-                        "Annual Graduation Rate",
-                        "Cohort Graduation Rate",
-                        "Graduation by Enrollment",
+                        "Total|Graduation Rate",
+                        "Annual|Graduation Rate",
+                        "By Enrollment|Graduation Rate",
                     ]
                 ]
-
-                pd.set_option("display.max_columns", None)
-                pd.set_option("display.max_rows", None)
-                print('INFOOOOO')
-                print(school_metric_data)
 
                 return school_metric_data
 
@@ -1613,16 +1618,13 @@ def get_academic_data(*args):
 
                     return metric_data
 
-            else:
+            else:  # info data for k8 and ahs?
                 school_info_data = processed_data[
                     processed_data["School ID"] == school_id
                 ]
+
                 final_school_data = transpose_data(school_info_data, params)
-# TODO: DOESNT INCLUDE METRIC AHS SPECIFIC
-                print("AHS INFO DATA")
-                pd.set_option("display.max_columns", None)
-                pd.set_option("display.max_rows", None)
-                print(final_school_data)
+
                 # K8 information data
                 if params["page"] == "info":
                     return final_school_data

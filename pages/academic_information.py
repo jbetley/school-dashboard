@@ -289,10 +289,7 @@ def update_academic_information_page(
     if (
         selected_school_type == "hs"
         or selected_school_type == "ahs"
-        or (
-            selected_school_type == "k12"
-            and radio_type == "hs"
-        )
+        or (selected_school_type == "k12" and radio_type == "hs")
     ):
         iread_school_level_layout_container = {"display": "none"}
         iread_school_details_container = {"display": "none"}
@@ -336,25 +333,25 @@ def update_academic_information_page(
             # Graduation Rate Tables
             grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
-            pd.set_option("display.max_columns", None)
-            pd.set_option("display.max_rows", None)
-            print(hs_info_data)
-
             if selected_school_type == "ahs":
-                grad_overview_categories = ["Cohort Graduation Rate", "Annual Graduation Rate", "Graduation to Enrollment", "CCR Percentage"]
+                grad_overview_categories = [
+                    "Total|Graduation Rate",
+                    "Annual|Graduation Rate",
+                    "By Enrollment|Graduation Rate",
+                    "CCR Percentage",
+                ]
                 graduation_data = hs_info_data[
-                    hs_info_data["Category"].isin(grad_overview_categories) #.str.contains("Graduation")
+                    hs_info_data["Category"].isin(
+                        grad_overview_categories
+                    )  # .str.contains("Graduation")
                 ].copy()
 
-                print("AHS GRAD DATA")
-                print(graduation_data)
+            else:
+                # hs Graduation Rate data
+                graduation_data = hs_info_data[
+                    hs_info_data["Category"].str.contains("Graduation")
+                ].copy()
 
-# TODO: HERE - Need to rebuild AHS Grad Table
-            # Graduation Rate Tables
-            graduation_data = hs_info_data[
-                hs_info_data["Category"].str.contains("Graduation")
-            ].copy()
-            
             # SAT releases prior to grad rate, so it is possible to have SAT
             # data but no grad data - so we drop Cols that are all NaN or blank
             graduation_data = graduation_data.loc[
@@ -385,7 +382,7 @@ def update_academic_information_page(
                 grad_overview = grad_overview.dropna(axis=1, how="all")
 
                 hs_grad_overview_table = create_multi_header_table_with_container(
-                    grad_overview, "Graduation Rate Overview"
+                    grad_overview, "Graduation Data"
                 )
 
                 hs_grad_overview_table = set_table_layout(
@@ -395,7 +392,6 @@ def update_academic_information_page(
                 )
 
                 if selected_school_type != "ahs":
-
                     grad_ethnicity = graduation_data[
                         graduation_data["Category"].str.contains("|".join(ethnicity))
                     ]
@@ -525,8 +521,7 @@ def update_academic_information_page(
 
     # Begin K8 block
     elif selected_school_type == "k8" or (
-        selected_school_type == "k12"
-        and radio_type == "k8"
+        selected_school_type == "k12" and radio_type == "k8"
     ):
         if selected_school_type == "k12":
             school_type = "k8"

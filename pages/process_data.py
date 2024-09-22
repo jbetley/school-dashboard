@@ -53,7 +53,22 @@ def transpose_data(df, params):
         name_id = "School"
 
     # create dataframes with N-Size data for info/analysis pages
-    if params["type"] == "hs" or params["type"] == "ahs":
+    if params["type"] == "ahs":
+        # Three Graduation Rate measurements for AHS:
+        #   By Enrollment =  AHS|Actual Graduates/ADM Average
+        #   Annual = AHS|Actual Graduates/AHS|Actual Enrollment
+        #   Total (Cohort) = Total|Graduates/Total|Cohort Count
+
+        # NOTE: CCR Percentage uses "|Count", grad rates use "|Cohort Count", SAT uses "Total Tested"
+        tested_cols = "Total Tested|Cohort Count|Count|Year"
+        filter_cols = r"^Category|CCR Percentage|Annual\|Graduation Rate|Total\|Graduation Rate|ADM Average|By Enrollment\|Graduation Rate|Benchmark \%|Below|Approaching|At|^Year$"
+        substring_dict = {
+            " Total Tested": "",
+            "\|Cohort Count": "|Graduation",
+            "\|Count": ""
+            }
+
+    elif params["type"] == "hs":
         tested_cols = "Total Tested|Cohort Count|Year"
         filter_cols = r"^Category|Graduation Rate$|AHS|Pass Rate$|Benchmark %|Below|Approaching|At|^Year$"
         substring_dict = {" Total Tested": "", "\|Cohort Count": "|Graduation"}
@@ -63,7 +78,11 @@ def transpose_data(df, params):
         filter_cols = r"School ID|Corporation ID|Corporation Name|Low Grade|High Grade|\|ELA Proficient %$|\|Math Proficient %$|IREAD Proficient %|^Year$"
         substring_dict = {" Total Tested": "", " Test N": ""}
 
-    # Get Proficiency and Tested (N-Size) data by id in separate dataframe.
+    # We get proficiency and cohort/tested (N-Size) data in separate dataframes,
+    # convert the n-size category names into a substring of the data category
+    # names and then merge the two dataframes based on a substring match
+    # e.g., use the substring dict to convert "By Enrollment|Cohort Count" to
+    # the substring "By Enrollment|Graduation" which matches "By Enrollment|Graduation Rate" 
     df.columns = df.columns.astype(str)
 
     tested_data = df.filter(regex=tested_cols, axis=1).copy()
@@ -78,9 +97,7 @@ def transpose_data(df, params):
 
     tested_data = tested_data.rename(
         columns={
-            c: str(c) + nsize_id  # "N-Size"
-            for c in tested_data.columns
-            if c not in ["Category"]
+            c: str(c) + nsize_id for c in tested_data.columns if c not in ["Category"]
         }
     )
 
@@ -124,7 +141,6 @@ def transpose_data(df, params):
     proficiency_data = proficiency_data.fillna(value=np.nan)
 
     # Merge Total Tested DF with Proficiency DF based on substring match
-
     # NOTE: the cross-merge and substring match process takes about .3s,
     # is there a faster way?
     merged_data = proficiency_data.merge(tested_data, how="cross")
@@ -139,7 +155,6 @@ def transpose_data(df, params):
         regex=True,
     )
 
-    # keep only those rows where substring is in Category
     merged_data = merged_data[
         [a in b for a, b in zip(merged_data["Substring"], merged_data["Category"])]
     ]
