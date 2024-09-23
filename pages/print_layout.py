@@ -277,25 +277,21 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
     hs_grad_overview_table = []  # type: list
     hs_grad_ethnicity_table = []  # type: list
     hs_grad_subgroup_table = []  # type: list
-
+    grad_label = []
+    
     hs_sat_overview_table = []  # type: list
     hs_sat_ethnicity_table = []  # type: list
     hs_sat_subgroup_table = []  # type: list
+    sat_label = []
 
     iread_school_level_layout = []  # type: list
 
     proficiency_grades_ela = []  # type: list
-    ela_grade_bar_fig = []  # type: list
     proficiency_ethnicity_ela = []  # type: list
-    ela_ethnicity_bar_fig = []  # type: list
     proficiency_subgroup_ela = []  # type: list
-    ela_subgroup_bar_fig = []  # type: list
     proficiency_grades_math = []  # type: list
-    math_grade_bar_fig = []  # type: list
     proficiency_ethnicity_math = []  # type: list
-    math_ethnicity_bar_fig = []  # type: list
     proficiency_subgroup_math = []  # type: list
-    math_subgroup_bar_fig = []  # type: list
 
     # HS
     if (
@@ -316,18 +312,29 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
         )
 
         # TODO: Add figs for SAT and Grad Rates
-        # TODO: Add AHS CCR Data to new table
-        if len(hs_info_data.index) > 0:
+        if len(hs_info_data.index) > 1 and not hs_info_data.empty:
+            
+            hs_info_data.columns = hs_info_data.columns.astype(str)
+
             grad_overview_categories = ["Total", "Non Waiver", "State Average"]
 
             if school_type == "ahs":
-                grad_overview_categories.append("CCR Percentage")
+                grad_overview_categories = [
+                    "Total|Graduation Rate",
+                    "Annual|Graduation Rate",
+                    "By Enrollment|Graduation Rate",
+                    "CCR Percentage",
+                ]
 
-            hs_info_data.columns = hs_info_data.columns.astype(str)
+                graduation_data = hs_info_data[
+                    hs_info_data["Category"].isin(grad_overview_categories)
+                ].copy()
 
-            graduation_data = hs_info_data[
-                hs_info_data["Category"].str.contains("Graduation")
-            ].copy()
+            else:
+                # hs Graduation Rate data
+                graduation_data = hs_info_data[
+                    hs_info_data["Category"].str.contains("Graduation")
+                ].copy()
 
             graduation_data = graduation_data.loc[
                 :,
@@ -353,7 +360,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 grad_overview = grad_overview.dropna(axis=1, how="all")
 
                 hs_grad_overview_table = create_multi_header_table_with_container(
-                    grad_overview, "Graduation Rate Overview"
+                    grad_overview, "Graduation Data"
                 )
 
                 hs_grad_overview_table = set_table_layout(
@@ -362,36 +369,50 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                     grad_overview.columns,
                 )
 
-                grad_ethnicity = graduation_data[
-                    graduation_data["Category"].str.contains("|".join(ethnicity))
+                grad_label = [
+                    html.Div(
+                        [
+                            html.Label(
+                                "Graduation Rate",
+                                className="label__header",
+                                style={"marginTop": "20px"},
+                            ),
+                        ],
+                        className="bare-container--flex--center twelve columns",
+                    )
                 ]
+                
+                if school_type != "ahs":
+                    grad_ethnicity = graduation_data[
+                        graduation_data["Category"].str.contains("|".join(ethnicity))
+                    ]
 
-                grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
+                    grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
 
-                hs_grad_ethnicity_table = create_multi_header_table_with_container(
-                    grad_ethnicity, "Graduation Rate by Ethnicity"
-                )
+                    hs_grad_ethnicity_table = create_multi_header_table_with_container(
+                        grad_ethnicity, "Graduation Rate by Ethnicity"
+                    )
 
-                hs_grad_ethnicity_table = set_table_layout(
-                    hs_grad_ethnicity_table,
-                    hs_grad_ethnicity_table,
-                    grad_ethnicity.columns,
-                )
+                    hs_grad_ethnicity_table = set_table_layout(
+                        hs_grad_ethnicity_table,
+                        hs_grad_ethnicity_table,
+                        grad_ethnicity.columns,
+                    )
 
-                grad_subgroup = graduation_data[
-                    graduation_data["Category"].str.contains("|".join(subgroup))
-                ]
+                    grad_subgroup = graduation_data[
+                        graduation_data["Category"].str.contains("|".join(subgroup))
+                    ]
 
-                grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
+                    grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
 
-                hs_grad_subgroup_table = create_multi_header_table_with_container(
-                    grad_subgroup, "Graduation Rate by Subgroup"
-                )
-                hs_grad_subgroup_table = set_table_layout(
-                    hs_grad_subgroup_table,
-                    hs_grad_subgroup_table,
-                    grad_subgroup.columns,
-                )
+                    hs_grad_subgroup_table = create_multi_header_table_with_container(
+                        grad_subgroup, "Graduation Rate by Subgroup"
+                    )
+                    hs_grad_subgroup_table = set_table_layout(
+                        hs_grad_subgroup_table,
+                        hs_grad_subgroup_table,
+                        grad_subgroup.columns,
+                    )
 
             hs_sat_table_data = hs_info_data[
                 hs_info_data["Category"].str.contains("Benchmark %")
@@ -458,6 +479,19 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                     hs_sat_subgroup_table,
                     hs_sat_subgroup.columns,
                 )
+
+                sat_label = [
+                    html.Div(
+                        [
+                            html.Label(
+                                "SAT",
+                                className="label__header",
+                                style={"marginTop": "20px"},
+                            ),
+                        ],
+                        className="bare-container--flex--center twelve columns",
+                    )
+                ]
 
     # K8
     if (
@@ -626,238 +660,238 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 math_ethnicity_table, math_ethnicity_line_fig, "Math By Ethnicity"
             )
 
-            # ILEARN Breakdown
-            raw_k8_info_data = get_proficiency_data(school_id)
+            # # ILEARN Breakdown
+            # raw_k8_info_data = get_proficiency_data(school_id)
 
-            ilearn_proficency_data = raw_k8_info_data.loc[
-                raw_k8_info_data["Year"] == year_numeric
-            ].copy()
+            # ilearn_proficency_data = raw_k8_info_data.loc[
+            #     raw_k8_info_data["Year"] == year_numeric
+            # ].copy()
 
-            ilearn_proficency_data = ilearn_proficency_data.dropna(axis=1)
-            ilearn_proficency_data = ilearn_proficency_data.reset_index()
+            # ilearn_proficency_data = ilearn_proficency_data.dropna(axis=1)
+            # ilearn_proficency_data = ilearn_proficency_data.reset_index()
 
-            for col in ilearn_proficency_data.columns:
-                ilearn_proficency_data[col] = pd.to_numeric(
-                    ilearn_proficency_data[col], errors="coerce"
-                )
+            # for col in ilearn_proficency_data.columns:
+            #     ilearn_proficency_data[col] = pd.to_numeric(
+            #         ilearn_proficency_data[col], errors="coerce"
+            #     )
 
-            ilearn_proficency_data = ilearn_proficency_data.filter(
-                regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
-                axis=1,
-            )
+            # ilearn_proficency_data = ilearn_proficency_data.filter(
+            #     regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
+            #     axis=1,
+            # )
 
-            proficiency_rating = [
-                "Below Proficiency",
-                "Approaching Proficiency",
-                "At Proficiency",
-                "Above Proficiency",
-            ]
+            # proficiency_rating = [
+            #     "Below Proficiency",
+            #     "Approaching Proficiency",
+            #     "At Proficiency",
+            #     "Above Proficiency",
+            # ]
 
-            annotations = pd.DataFrame(columns=["Category", "Total Tested"])
+            # annotations = pd.DataFrame(columns=["Category", "Total Tested"])
 
-            categories = grades_all + ethnicity + subgroup
+            # categories = grades_all + ethnicity + subgroup
 
-            for c in categories:
-                for s in subject:
-                    category_subject = c + "|" + s
-                    proficiency_columns = [
-                        category_subject + " " + x for x in proficiency_rating
-                    ]
-                    total_tested = category_subject + " " + "Total Tested"
+            # for c in categories:
+            #     for s in subject:
+            #         category_subject = c + "|" + s
+            #         proficiency_columns = [
+            #             category_subject + " " + x for x in proficiency_rating
+            #         ]
+            #         total_tested = category_subject + " " + "Total Tested"
 
-                    if total_tested in ilearn_proficency_data.columns:
-                        if (
-                            ilearn_proficency_data[proficiency_columns]
-                            .isna()
-                            .sum()
-                            .sum()
-                            > 0
-                        ) or (
-                            ilearn_proficency_data[proficiency_columns].iloc[0].sum()
-                            == 0
-                        ):
-                            annotation_category = proficiency_columns[0].split("|")[0]
-                            annotations.loc[len(annotations.index)] = [
-                                annotation_category + "|" + s,
-                                ilearn_proficency_data[total_tested].values[0],
-                            ]
+            #         if total_tested in ilearn_proficency_data.columns:
+            #             if (
+            #                 ilearn_proficency_data[proficiency_columns]
+            #                 .isna()
+            #                 .sum()
+            #                 .sum()
+            #                 > 0
+            #             ) or (
+            #                 ilearn_proficency_data[proficiency_columns].iloc[0].sum()
+            #                 == 0
+            #             ):
+            #                 annotation_category = proficiency_columns[0].split("|")[0]
+            #                 annotations.loc[len(annotations.index)] = [
+            #                     annotation_category + "|" + s,
+            #                     ilearn_proficency_data[total_tested].values[0],
+            #                 ]
 
-                            annotations["Total Tested"] = annotations[
-                                "Total Tested"
-                            ].fillna(0)
-                            annotations["Total Tested"] = annotations[
-                                "Total Tested"
-                            ].astype(int)
+            #                 annotations["Total Tested"] = annotations[
+            #                     "Total Tested"
+            #                 ].fillna(0)
+            #                 annotations["Total Tested"] = annotations[
+            #                     "Total Tested"
+            #                 ].astype(int)
 
-                            all_proficiency_columns = proficiency_columns + [
-                                total_tested
-                            ]
+            #                 all_proficiency_columns = proficiency_columns + [
+            #                     total_tested
+            #                 ]
 
-                            ilearn_proficency_data = ilearn_proficency_data.drop(
-                                all_proficiency_columns, axis=1
-                            )
+            #                 ilearn_proficency_data = ilearn_proficency_data.drop(
+            #                     all_proficiency_columns, axis=1
+            #                 )
 
-                        else:
-                            ilearn_proficency_data[
-                                proficiency_columns
-                            ] = ilearn_proficency_data[proficiency_columns].divide(
-                                ilearn_proficency_data[total_tested], axis="index"
-                            )
+            #             else:
+            #                 ilearn_proficency_data[
+            #                     proficiency_columns
+            #                 ] = ilearn_proficency_data[proficiency_columns].divide(
+            #                     ilearn_proficency_data[total_tested], axis="index"
+            #                 )
 
-                            row_list = ilearn_proficency_data[
-                                proficiency_columns
-                            ].values.tolist()
+            #                 row_list = ilearn_proficency_data[
+            #                     proficiency_columns
+            #                 ].values.tolist()
 
-                            rounded = round_percentages(row_list[0])
+            #                 rounded = round_percentages(row_list[0])
 
-                            rounded_percentages = pd.DataFrame([rounded])
-                            rounded_percentages_cols = list(rounded_percentages.columns)
-                            ilearn_proficency_data[
-                                proficiency_columns
-                            ] = rounded_percentages[rounded_percentages_cols]
+            #                 rounded_percentages = pd.DataFrame([rounded])
+            #                 rounded_percentages_cols = list(rounded_percentages.columns)
+            #                 ilearn_proficency_data[
+            #                     proficiency_columns
+            #                 ] = rounded_percentages[rounded_percentages_cols]
 
-            ilearn_proficency_data.drop(
-                list(
-                    ilearn_proficency_data.filter(regex="Total Proficient|ELA and Math")
-                ),
-                axis=1,
-                inplace=True,
-            )
+            # ilearn_proficency_data.drop(
+            #     list(
+            #         ilearn_proficency_data.filter(regex="Total Proficient|ELA and Math")
+            #     ),
+            #     axis=1,
+            #     inplace=True,
+            # )
 
-            ilearn_proficency_data = ilearn_proficency_data.rename(
-                columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
-            )
+            # ilearn_proficency_data = ilearn_proficency_data.rename(
+            #     columns=lambda x: re.sub("(Grade )(\d)", "\\2th", x)
+            # )
 
-            ilearn_proficency_data.columns = [
-                x.replace("3th", "3rd")
-                for x in ilearn_proficency_data.columns.to_list()
-            ]
+            # ilearn_proficency_data.columns = [
+            #     x.replace("3th", "3rd")
+            #     for x in ilearn_proficency_data.columns.to_list()
+            # ]
 
-            ilearn_proficency_data = (
-                ilearn_proficency_data.T.rename_axis("Category")
-                .rename_axis(None, axis=1)
-                .reset_index()
-            )
+            # ilearn_proficency_data = (
+            #     ilearn_proficency_data.T.rename_axis("Category")
+            #     .rename_axis(None, axis=1)
+            #     .reset_index()
+            # )
 
-            ilearn_proficency_data[
-                ["Category", "Proficiency"]
-            ] = ilearn_proficency_data["Category"].str.split("|", expand=True)
+            # ilearn_proficency_data[
+            #     ["Category", "Proficiency"]
+            # ] = ilearn_proficency_data["Category"].str.split("|", expand=True)
 
-            ilearn_proficency_data.rename(columns={0: "Percentage"}, inplace=True)
+            # ilearn_proficency_data.rename(columns={0: "Percentage"}, inplace=True)
 
-            ilearn_proficency_data = ilearn_proficency_data[
-                ilearn_proficency_data["Category"] != "index"
-            ]
+            # ilearn_proficency_data = ilearn_proficency_data[
+            #     ilearn_proficency_data["Category"] != "index"
+            # ]
 
-            bar_fig_title = "Proficiency Breakdown (" + year_string + ")"
+            # bar_fig_title = "Proficiency Breakdown (" + year_string + ")"
 
-            grade_pattern = "|".join(grades)
+            # grade_pattern = "|".join(grades)
 
-            grade_ela_annotations = annotations.loc[
-                annotations["Category"].str.contains(grade_pattern)
-                & annotations["Category"].str.contains("ELA")
-            ]
+            # grade_ela_annotations = annotations.loc[
+            #     annotations["Category"].str.contains(grade_pattern)
+            #     & annotations["Category"].str.contains("ELA")
+            # ]
 
-            grade_ela_fig_data = ilearn_proficency_data[
-                ilearn_proficency_data["Category"].isin(grades_ordinal)
-                & ilearn_proficency_data["Proficiency"].str.contains("ELA")
-            ]
+            # grade_ela_fig_data = ilearn_proficency_data[
+            #     ilearn_proficency_data["Category"].isin(grades_ordinal)
+            #     & ilearn_proficency_data["Proficiency"].str.contains("ELA")
+            # ]
 
-            if not grade_ela_fig_data.empty:
-                ela_grade_bar_fig = make_stacked_bar(
-                    grade_ela_fig_data, bar_fig_title, grade_ela_annotations
-                )
-            else:
-                ela_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
+            # if not grade_ela_fig_data.empty:
+            #     ela_grade_bar_fig = make_stacked_bar(
+            #         grade_ela_fig_data, bar_fig_title, grade_ela_annotations
+            #     )
+            # else:
+            #     ela_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            grade_math_annotations = annotations.loc[
-                annotations["Category"].str.contains(grade_pattern)
-                & annotations["Category"].str.contains("Math")
-            ]
+            # grade_math_annotations = annotations.loc[
+            #     annotations["Category"].str.contains(grade_pattern)
+            #     & annotations["Category"].str.contains("Math")
+            # ]
 
-            grade_math_fig_data = ilearn_proficency_data[
-                ilearn_proficency_data["Category"].isin(grades_ordinal)
-                & ilearn_proficency_data["Proficiency"].str.contains("Math")
-            ]
+            # grade_math_fig_data = ilearn_proficency_data[
+            #     ilearn_proficency_data["Category"].isin(grades_ordinal)
+            #     & ilearn_proficency_data["Proficiency"].str.contains("Math")
+            # ]
 
-            if not grade_math_fig_data.empty:
-                math_grade_bar_fig = make_stacked_bar(
-                    grade_math_fig_data, bar_fig_title, grade_math_annotations
-                )
-            else:
-                math_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
+            # if not grade_math_fig_data.empty:
+            #     math_grade_bar_fig = make_stacked_bar(
+            #         grade_math_fig_data, bar_fig_title, grade_math_annotations
+            #     )
+            # else:
+            #     math_grade_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            eth_pattern = "|".join(ethnicity)
+            # eth_pattern = "|".join(ethnicity)
 
-            ethnicity_ela_annotations = annotations.loc[
-                annotations["Category"].str.contains(eth_pattern)
-                & annotations["Category"].str.contains("ELA")
-            ]
+            # ethnicity_ela_annotations = annotations.loc[
+            #     annotations["Category"].str.contains(eth_pattern)
+            #     & annotations["Category"].str.contains("ELA")
+            # ]
 
-            ethnicity_ela_fig_data = ilearn_proficency_data[
-                ilearn_proficency_data["Category"].isin(ethnicity)
-                & ilearn_proficency_data["Proficiency"].str.contains("ELA")
-            ]
+            # ethnicity_ela_fig_data = ilearn_proficency_data[
+            #     ilearn_proficency_data["Category"].isin(ethnicity)
+            #     & ilearn_proficency_data["Proficiency"].str.contains("ELA")
+            # ]
 
-            if not ethnicity_ela_fig_data.empty:
-                ela_ethnicity_bar_fig = make_stacked_bar(
-                    ethnicity_ela_fig_data, bar_fig_title, ethnicity_ela_annotations
-                )
-            else:
-                ela_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
+            # if not ethnicity_ela_fig_data.empty:
+            #     ela_ethnicity_bar_fig = make_stacked_bar(
+            #         ethnicity_ela_fig_data, bar_fig_title, ethnicity_ela_annotations
+            #     )
+            # else:
+            #     ela_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            ethnicity_math_annotations = annotations.loc[
-                annotations["Category"].str.contains(eth_pattern)
-                & annotations["Category"].str.contains("Math")
-            ]
+            # ethnicity_math_annotations = annotations.loc[
+            #     annotations["Category"].str.contains(eth_pattern)
+            #     & annotations["Category"].str.contains("Math")
+            # ]
 
-            ethnicity_math_fig_data = ilearn_proficency_data[
-                ilearn_proficency_data["Category"].isin(ethnicity)
-                & ilearn_proficency_data["Proficiency"].str.contains("Math")
-            ]
+            # ethnicity_math_fig_data = ilearn_proficency_data[
+            #     ilearn_proficency_data["Category"].isin(ethnicity)
+            #     & ilearn_proficency_data["Proficiency"].str.contains("Math")
+            # ]
 
-            if not ethnicity_math_fig_data.empty:
-                math_ethnicity_bar_fig = make_stacked_bar(
-                    ethnicity_math_fig_data, bar_fig_title, ethnicity_math_annotations
-                )
-            else:
-                math_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
+            # if not ethnicity_math_fig_data.empty:
+            #     math_ethnicity_bar_fig = make_stacked_bar(
+            #         ethnicity_math_fig_data, bar_fig_title, ethnicity_math_annotations
+            #     )
+            # else:
+            #     math_ethnicity_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            sub_pattern = "|".join(subgroup)
+            # sub_pattern = "|".join(subgroup)
 
-            subgroup_ela_annotations = annotations.loc[
-                annotations["Category"].str.contains(sub_pattern)
-                & annotations["Category"].str.contains("ELA")
-            ]
+            # subgroup_ela_annotations = annotations.loc[
+            #     annotations["Category"].str.contains(sub_pattern)
+            #     & annotations["Category"].str.contains("ELA")
+            # ]
 
-            subgroup_ela_fig_data = ilearn_proficency_data[
-                ilearn_proficency_data["Category"].isin(subgroup)
-                & ilearn_proficency_data["Proficiency"].str.contains("ELA")
-            ]
+            # subgroup_ela_fig_data = ilearn_proficency_data[
+            #     ilearn_proficency_data["Category"].isin(subgroup)
+            #     & ilearn_proficency_data["Proficiency"].str.contains("ELA")
+            # ]
 
-            if not subgroup_ela_fig_data.empty:
-                ela_subgroup_bar_fig = make_stacked_bar(
-                    subgroup_ela_fig_data, bar_fig_title, subgroup_ela_annotations
-                )
-            else:
-                ela_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
+            # if not subgroup_ela_fig_data.empty:
+            #     ela_subgroup_bar_fig = make_stacked_bar(
+            #         subgroup_ela_fig_data, bar_fig_title, subgroup_ela_annotations
+            #     )
+            # else:
+            #     ela_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
-            math_subgroup_annotations = annotations.loc[
-                annotations["Category"].str.contains(sub_pattern)
-                & annotations["Category"].str.contains("Math")
-            ]
+            # math_subgroup_annotations = annotations.loc[
+            #     annotations["Category"].str.contains(sub_pattern)
+            #     & annotations["Category"].str.contains("Math")
+            # ]
 
-            subgroup_math_fig_data = ilearn_proficency_data[
-                ilearn_proficency_data["Category"].isin(subgroup)
-                & ilearn_proficency_data["Proficiency"].str.contains("Math")
-            ]
+            # subgroup_math_fig_data = ilearn_proficency_data[
+            #     ilearn_proficency_data["Category"].isin(subgroup)
+            #     & ilearn_proficency_data["Proficiency"].str.contains("Math")
+            # ]
 
-            if not subgroup_math_fig_data.empty:
-                math_subgroup_bar_fig = make_stacked_bar(
-                    subgroup_math_fig_data, bar_fig_title, math_subgroup_annotations
-                )
-            else:
-                math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
+            # if not subgroup_math_fig_data.empty:
+            #     math_subgroup_bar_fig = make_stacked_bar(
+            #         subgroup_math_fig_data, bar_fig_title, math_subgroup_annotations
+            #     )
+            # else:
+            #     math_subgroup_bar_fig = no_data_fig_label(bar_fig_title, 100)
 
         # IREAD
         both = ethnicity + subgroup + ["Total"]
@@ -911,94 +945,32 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 html.Div(
                     [
                         html.Div(proficiency_grades_ela),
-                        # html.Div(
-                        #     [
-                        #         html.Div(
-                        #             [html.Div(ela_grade_bar_fig)],
-                        #             className="pretty-container--close--top six columns",
-                        #         ),
-                        #     ],
-                        #     className="bare-container--flex--center twelve columns",
-                        # ),
                     ],
                     className="pagebreak",
                 ),
                 html.Div(
                     [
                         html.Div(proficiency_ethnicity_ela),
-                        # html.Div(
-                        #     [
-                        #         html.Div(
-                        #             [html.Div(ela_ethnicity_bar_fig)],
-                        #             className="pretty-container--close--top six columns",
-                        #         ),
-                        #     ],
-                        #     className="bare-container--flex--center twelve columns",
-                        # ),
                     ],
                 ),
                 html.Div(
                     [
                         html.Div(proficiency_subgroup_ela),
-                        # html.Div(
-                        #     [
-                        #         html.Div(
-                        #             [
-                        #                 html.Div(ela_subgroup_bar_fig),
-                        #             ],
-                        #             className="pretty-container--close--top six columns",
-                        #         ),
-                        #     ],
-                        #     className="bare-container--flex--center twelve columns",
-                        # ),
                     ],
                 ),
                 html.Div(
                     [
                         html.Div(proficiency_grades_math),
-                        # html.Div(
-                        #     [
-                        #         html.Div(
-                        #             [
-                        #                 html.Div(math_grade_bar_fig),
-                        #             ],
-                        #             className="pretty-container--close--top six columns",
-                        #         ),
-                        #     ],
-                        #     className="bare-container--flex--center twelve columns",
-                        # ),
                     ],
                 ),
                 html.Div(
                     [
                         html.Div(proficiency_ethnicity_math),
-                        # html.Div(
-                        #     [
-                        #         html.Div(
-                        #             [
-                        #                 html.Div(math_ethnicity_bar_fig),
-                        #             ],
-                        #             className="pretty-container--close--top six columns",
-                        #         ),
-                        #     ],
-                        #     className="bare-container--flex--center twelve columns",
-                        # ),
                     ],
                 ),
                 html.Div(
                     [
                         html.Div(proficiency_subgroup_math),
-                        # html.Div(
-                        #     [
-                        #         html.Div(
-                        #             [
-                        #                 html.Div(math_subgroup_bar_fig),
-                        #             ],
-                        #             className="pretty-container--close--top six columns",
-                        #         ),
-                        #     ],
-                        #     className="bare-container--flex--center twelve columns",
-                        # )
                     ]
                 ),
             ]
@@ -1010,16 +982,17 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             [
                 html.Div(
                     [
-                        html.Div(
-                            [
-                                html.Label(
-                                    "Graduation Rate",
-                                    className="label__header",
-                                    style={"marginTop": "20px"},
-                                ),
-                            ],
-                            className="bare-container--flex--center twelve columns",
-                        ),
+                        # html.Div(
+                        #     [
+                        #         html.Label(
+                        #             "Graduation Rate",
+                        #             className="label__header",
+                        #             style={"marginTop": "20px"},
+                        #         ),
+                        #     ],
+                        #     className="bare-container--flex--center twelve columns",
+                        # ),
+                        html.Div(grad_label),
                         html.Div(hs_grad_overview_table),
                         html.Div(hs_grad_ethnicity_table),
                         html.Div(hs_grad_subgroup_table),
@@ -1027,16 +1000,17 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 ),
                 html.Div(
                     [
-                        html.Div(
-                            [
-                                html.Label(
-                                    "SAT",
-                                    className="label__header",
-                                    style={"marginTop": "20px"},
-                                ),
-                            ],
-                            className="bare-container--flex--center twelve columns",
-                        ),
+                        # html.Div(
+                        #     [
+                        #         html.Label(
+                        #             "SAT",
+                        #             className="label__header",
+                        #             style={"marginTop": "20px"},
+                        #         ),
+                        #     ],
+                        #     className="bare-container--flex--center twelve columns",
+                        # ),
+                        html.Div(sat_label),
                         html.Div(hs_sat_overview_table),
                         html.Div(hs_sat_ethnicity_table),
                         html.Div(hs_sat_subgroup_table),
@@ -1102,10 +1076,6 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
 
         if len(metric_data.index) > 0:
             metric_data = metric_data.replace({"^": "***"})
-
-            # k8_metrics_container = {"display": "block"}
-            # main_container = {"display": "block"}
-            # empty_container = {"display": "none"}
 
             k8_year_values, k8_comparison_values = calculate_values(
                 metric_data, selected_year_string
@@ -1324,9 +1294,6 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
         if len(raw_metric_data.index) > 0:
             # Adult High School Metrics
             if selected_school_type == "ahs":
-                # ahs_metrics_container = {"display": "block"}
-                # main_container = {"display": "block"}
-                # empty_container = {"display": "none"}
 
                 ahs_metric_data_113 = calculate_adult_high_school_metrics(
                     raw_metric_data
@@ -1341,7 +1308,7 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
                 ahs_metric_data_113 = ahs_metric_data_113.drop("Metric", axis=1)
 
                 ahs_metric_label_113 = [
-                    "Adult High School Accountability Metrics 1.1 & 1.3"
+                    "Adult High School Accountability Metrics"
                 ]
                 ahs_metric_data_113 = convert_to_svg_circle(ahs_metric_data_113)
                 ahs_table_113 = create_metric_table(
@@ -1351,40 +1318,40 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
                     ahs_table_113, ahs_table_113, ahs_metric_data_113.columns
                 )
 
-                # Create placeholders (Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b)
-                all_cols = ahs_metric_data_113.columns.tolist()
-                simple_cols = [x for x in all_cols if not x.endswith("+/-")]
+                # # Create placeholders (Adult Accountability Metrics 1.2.a, 1.2.b, 1.4.a, & 1.4.b)
+                # all_cols = ahs_metric_data_113.columns.tolist()
+                # simple_cols = [x for x in all_cols if not x.endswith("+/-")]
 
-                ahs_nocalc_empty = pd.DataFrame(columns=simple_cols)
+                # ahs_nocalc_empty = pd.DataFrame(columns=simple_cols)
 
-                ahs_nocalc_dict = {
-                    "Category": [
-                        "1.2.a Students graduate from high school in 4 years.",
-                        "1.2.b Students enrolled in grade 12 graduate within the school year being assessed.",
-                    ]
-                }
-                ahs_no_calc = pd.DataFrame(ahs_nocalc_dict)
+                # ahs_nocalc_dict = {
+                #     "Category": [
+                #         "1.2.a Students graduate from high school in 4 years.",
+                #         "1.2.b Students enrolled in grade 12 graduate within the school year being assessed.",
+                #     ]
+                # }
+                # ahs_no_calc = pd.DataFrame(ahs_nocalc_dict)
 
-                ahs_metric_data_1214 = pd.concat(
-                    [ahs_nocalc_empty, ahs_no_calc], ignore_index=True
-                )
-                ahs_metric_data_1214.reset_index()
+                # ahs_metric_data_1214 = pd.concat(
+                #     [ahs_nocalc_empty, ahs_no_calc], ignore_index=True
+                # )
+                # ahs_metric_data_1214.reset_index()
 
-                # fill only value columns with "No Data" (until we actually HAVE the data)
-                empty_year_cols = [
-                    col for col in ahs_metric_data_1214.columns if "Value" in col
-                ]
-                for col in empty_year_cols:
-                    ahs_metric_data_1214[col] = "No Data"
+                # # fill only value columns with "No Data" (until we actually HAVE the data)
+                # empty_year_cols = [
+                #     col for col in ahs_metric_data_1214.columns if "Value" in col
+                # ]
+                # for col in empty_year_cols:
+                #     ahs_metric_data_1214[col] = "No Data"
 
-                ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a & 1.2.b"]
-                ahs_metric_data_1214 = convert_to_svg_circle(ahs_metric_data_1214)
-                ahs_table_1214 = create_metric_table(
-                    ahs_metric_label_1214, ahs_metric_data_1214
-                )
-                ahs_table_container_1214 = set_table_layout(
-                    ahs_table_1214, ahs_table_1214, ahs_metric_data_1214.columns
-                )
+                # ahs_metric_label_1214 = ["Adult Accountability Metrics 1.2.a & 1.2.b"]
+                # ahs_metric_data_1214 = convert_to_svg_circle(ahs_metric_data_1214)
+                # ahs_table_1214 = create_metric_table(
+                #     ahs_metric_label_1214, ahs_metric_data_1214
+                # )
+                # ahs_table_container_1214 = set_table_layout(
+                #     ahs_table_1214, ahs_table_1214, ahs_metric_data_1214.columns
+                # )
 
             else:
                 # NOTE: We do not currently use hs_year_over_year_values
@@ -1394,9 +1361,6 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
                 )
 
                 if not hs_comparison_values.empty:
-                    # hs_metrics_container = {"display": "block"}
-                    # main_container = {"display": "block"}
-                    # empty_container = {"display": "none"}
 
                     hs_metric_data = calculate_high_school_metrics(hs_comparison_values)
 

@@ -17,7 +17,7 @@ from .print_layout import (
     create_about_layout,
     create_fininfo_layout,
     create_finmetrics_layout,
-    create_finanalysis_layout,
+    # create_finanalysis_layout,
     create_orgcompliance_layout,
     create_academicinfo_layout,
     create_academicmetrics_layout,
@@ -49,7 +49,6 @@ clientside_callback(
     Output("academicmetrics-layout", "children"),
     Output("fininfo-layout", "children"),
     Output("finmetrics-layout", "children"),
-    # Output("finanalysis-layout", "children"),
     Output("orgcompliance-layout", "children"),
     Output("print-button", "children"),
     Output("schoolname-layout", "children"),
@@ -74,7 +73,6 @@ def generate_print_page(
     academicmetrics_layout = []
     fininfo_layout = []
     finmetrics_layout = []
-    # finanalysis_layout = []
     orgcompliance_layout = []
     schoolname_layout = []
 
@@ -108,7 +106,6 @@ def generate_print_page(
                 academicmetrics_layout = create_academicmetrics_layout(year, school_id)
                 fininfo_layout = create_fininfo_layout(year, school_id)
                 finmetrics_layout = create_finmetrics_layout(year, school_id)
-                # finanalysis_layout = create_finanalysis_layout(year, school_id)
                 orgcompliance_layout = create_orgcompliance_layout(year, school_id)
 
             else:
@@ -129,9 +126,6 @@ def generate_print_page(
                 if "finmetrics" in selected:
                     finmetrics_layout = create_finmetrics_layout(year, school_id)
 
-                # if "finanalysis" in selected:
-                #     finanalysis_layout = create_finanalysis_layout(year, school_id)
-
                 if "orgcompliance" in selected:
                     orgcompliance_layout = create_orgcompliance_layout(year, school_id)
 
@@ -142,7 +136,6 @@ def generate_print_page(
         academicmetrics_layout,
         fininfo_layout,
         finmetrics_layout,
-        # finanalysis_layout,
         orgcompliance_layout,
         "Generate Layout",
         schoolname_layout,
@@ -177,7 +170,6 @@ layout = html.Div(
                                 },
                                 {"label": "Financial Metrics", "value": "finmetrics"},
                                 {"label": "Financial Information", "value": "fininfo"},
-                                # {"label": "Financial Analysis", "value": "finanalysis"},
                                 {
                                     "label": "Organizational Compliance",
                                     "value": "orgcompliance",
@@ -227,7 +219,6 @@ layout = html.Div(
                                 ),
                                 html.Div(id="finmetrics-layout", children=[]),
                                 html.Div(id="fininfo-layout", children=[]),
-                                # html.Div(id="finanalysis-layout", children=[]),
                                 html.Div(id="orgcompliance-layout", children=[]),
                             ],
                         )

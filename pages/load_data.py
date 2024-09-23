@@ -1376,6 +1376,12 @@ def get_academic_data(*args):
         return pd.DataFrame()
 
     else:
+        ## Keep five years of data at most
+        years = processed_data["Year"].unique().tolist()
+        if len(years) > 5:
+            keep_years = years[:5]
+            processed_data = processed_data[processed_data["Year"].isin(keep_years)]
+
         ## academic_analysis_single_page #TODO add multipage analysis data
         if params["page"] == "analysis":
             if params["type"] == "hs" or params["type"] == "ahs":
