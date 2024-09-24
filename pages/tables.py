@@ -1351,20 +1351,39 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
                 name_cols.append([item[:4], item[4:]])
 
-        # NOTE: Can't think of any non-stupid way to do this. We need some way
-        # to determine which column is the "first" year of data, such that no
-        # rating is calculated and then mark it with "Initial Year." The problem
-        # is in the variety of dataframes. We can't just check one index to make
-        # a determination. I'm sure there is a more elegant way, but right now, we
-        # check the 2nd, 3rd, and 4th cols looking for the pattern "%, (N), %",
-        # which (trust me), is a way to tell when we need to add str "Initial
-        # Year" to idx 1 & 2.
+
+        # Identify and Tag "Initial Year"- applies only to the year over year
+        # calculation. For a df with only one year of data, the string "Diff"
+        # will not appear in the column names. Search the label for "previous
+        # school year" to distinguish year over year tables from comparison tables
+        # For a df with multiple years of data, the column pattern ending in:
+        # "%, (N), %" indicates a year where no difference was calculated.
+        # There may be a more elegant way to check the second case, but 
+        # checking the 2nd, 3rd, and 4th cols looking for the pattern:
+        # "%, (N), %", seems a reliable way to tell when we need to add str
+        # "Initial Year" to idx 1 & 2.
 
         # we also want to save the name of the second column header (in format
         # YYYY(N)), so we can apply a right hand border to that column when
         # styling the table
         first_year = None
 
+        check_string = '\t'.join(all_cols)
+
+        # Single Year
+        if "Diff" not in check_string:
+            if len(all_cols) <= 3:
+
+                # typically, turning a list into a string and checking with
+                # "in" is faster than using any(), but can't do it here
+                # because it is possible to have markup code (e.g., Br(None))
+                # instead of a string, which chokes the join()
+                if any("previous school year" in word for word in label):
+                    name_cols[1][0] = name_cols[1][0] + " (Initial Year)"
+                    first_year = name_cols[2][0] + name_cols[2][1]
+                    name_cols[2][0] = name_cols[2][0] + " (Initial Year)"
+
+        # Multiple Years
         if any("Rate" in s for s in all_cols):
             if (
                 name_cols[1][1] == "%"

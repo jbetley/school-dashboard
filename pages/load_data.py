@@ -105,26 +105,26 @@ def get_current_year():
 current_academic_year = get_current_year()
 
 
-def get_network_count():
-    """
-    Helper function to dynamically count the number of network logins present
-    in the users database (identified with a negative group_id values). used to
-    determine the offset for creation of the charter dropdown in app.py.
+# def get_network_count():
+#     """
+#     Helper function to dynamically count the number of network logins present
+#     in the users database (identified with a negative group_id values). used to
+#     determine the offset for creation of the charter dropdown in app.py.
 
-    Returns:
-        int: the number of network logins
-    """
-    db = users.raw_connection()
-    cur = db.cursor()
-    cur.execute(""" SELECT COUNT(groupid) FROM users WHERE groupid < 0 """)
-    count = cur.fetchone()[0]
-    count = count + 1
-    db.close()
+#     Returns:
+#         int: the number of network logins
+#     """
+#     db = users.raw_connection()
+#     cur = db.cursor()
+#     cur.execute(""" SELECT COUNT(groupid) FROM users WHERE groupid < 0 """)
+#     count = cur.fetchone()[0]
+#     count = count + 1
+#     db.close()
 
-    return count
+#     return count
 
 
-network_count = get_network_count()
+# network_count = get_network_count()
 
 
 def get_excluded_years(year: str) -> list:
@@ -1233,12 +1233,14 @@ def get_academic_data(*args):
                 )
 
             # AHS|Actual Graduates is used in three calculations where we want to track N-Size,
-            # "Graduation by Enrollment", "Annual Graduation", and "CCR Percentage"
-            ahs_data["By Enrollment|Cohort Count"] = ahs_data["AHS|Actual Graduates"]
+            # "Graduation Graduation to Enrollment", "Grade 12 Graduation", and "CCR Percentage"
+            ahs_data["Graduation to Enrollment|Cohort Count"] = ahs_data[
+                "AHS|Actual Graduates"
+            ]
             ahs_data["CCR Percentage|Count"] = ahs_data["AHS|Actual Graduates"]
 
             ahs_data = ahs_data.rename(
-                columns={"AHS|Actual Graduates": "Annual|Cohort Count"}
+                columns={"AHS|Actual Graduates": "Grade 12|Cohort Count"}
             )
 
             if "AHS|Actual Enrollment" in ahs_data.columns:
@@ -1249,10 +1251,11 @@ def get_academic_data(*args):
             # Students enrolled in grade 12 graduate within the school year being assessed.
             if {
                 "AHS|Actual Enrollment",
-                "Annual|Cohort Count",
+                "Grade 12|Cohort Count",
             }.issubset(ahs_data.columns):
-                ahs_data["Annual|Graduation Rate"] = (
-                    ahs_data["Annual|Cohort Count"] / ahs_data["AHS|Actual Enrollment"]
+                ahs_data["Grade 12|Graduation Rate"] = (
+                    ahs_data["Grade 12|Cohort Count"]
+                    / ahs_data["AHS|Actual Enrollment"]
                 )
 
             # ## Graduation Calculation (AHS Accountability)
@@ -1288,8 +1291,8 @@ def get_academic_data(*args):
             # -failed-returning-scalar-but-in-the-futur
             processed_data["School ID"] = ahs_data["School ID"].astype(str)
 
-            processed_data["By Enrollment|Graduation Rate"] = (
-                processed_data["By Enrollment|Cohort Count"]
+            processed_data["Graduation to Enrollment|Graduation Rate"] = (
+                processed_data["Graduation to Enrollment|Cohort Count"]
                 / processed_data["ADM Average"]
             ) * 4
 
@@ -1392,7 +1395,7 @@ def get_academic_data(*args):
                 if params["type"] == "ahs":
                     analysis_data = hs_data.filter(
                         regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name \
-                        |CCR Percentage|Annual|Total|By Enrollment|Benchmark \%|^Year$",
+                        |CCR Percentage|Grade 12|Total|Graduation to Enrollment|Benchmark \%|^Year$",
                         axis=1,
                     ).copy()
                 else:
@@ -1484,13 +1487,14 @@ def get_academic_data(*args):
             # No corp_data is used and school_data limited to single metric (CCR)
             if params["type"] == "ahs" and params["page"] == "metrics":
                 # AHS metric data is limited atm
+
                 school_metric_data = school_data[
                     [
                         "Year",
                         "CCR Percentage",
                         "Total|Graduation Rate",
-                        "Annual|Graduation Rate",
-                        "By Enrollment|Graduation Rate",
+                        "Grade 12|Graduation Rate",
+                        "Graduation to Enrollment|Graduation Rate",
                     ]
                 ]
 
@@ -1624,14 +1628,14 @@ def get_academic_data(*args):
 
                     return metric_data
 
-            else:  # info data for k8 and ahs?
+            else:  # info data for k8 and ahs
                 school_info_data = processed_data[
                     processed_data["School ID"] == school_id
                 ]
 
                 final_school_data = transpose_data(school_info_data, params)
 
-                # K8 information data
+                # information data
                 if params["page"] == "info":
                     return final_school_data
 
@@ -1643,7 +1647,7 @@ def get_academic_data(*args):
                 # insuf_string = check_for_insufficient_n_size(result)
                 # print(insuf_string)
 
-                # K8 academic_metrics data
+                # academic_metrics data
                 else:
                     corp_info_data = processed_data[
                         processed_data["School ID"] == processed_data["Corporation ID"]

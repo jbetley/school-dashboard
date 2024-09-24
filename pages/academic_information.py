@@ -336,14 +336,12 @@ def update_academic_information_page(
             if selected_school_type == "ahs":
                 grad_overview_categories = [
                     "Total|Graduation Rate",
-                    "Annual|Graduation Rate",
-                    "By Enrollment|Graduation Rate",
+                    "Grade 12|Graduation Rate",
+                    "Graduation to Enrollment|Graduation Rate",
                     "CCR Percentage",
                 ]
                 graduation_data = hs_info_data[
-                    hs_info_data["Category"].isin(
-                        grad_overview_categories
-                    )  # .str.contains("Graduation")
+                    hs_info_data["Category"].isin(grad_overview_categories)
                 ].copy()
 
             else:

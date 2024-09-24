@@ -55,18 +55,18 @@ def transpose_data(df, params):
     # create dataframes with N-Size data for info/analysis pages
     if params["type"] == "ahs":
         # Three Graduation Rate measurements for AHS:
-        #   By Enrollment =  AHS|Actual Graduates/ADM Average
-        #   Annual = AHS|Actual Graduates/AHS|Actual Enrollment
+        #   Graduation to Enrollment =  AHS|Actual Graduates/ADM Average
+        #   Grade 12 = AHS|Actual Graduates/AHS|Actual Enrollment
         #   Total (Cohort) = Total|Graduates/Total|Cohort Count
 
         # NOTE: CCR Percentage uses "|Count", grad rates use "|Cohort Count", SAT uses "Total Tested"
         tested_cols = "Total Tested|Cohort Count|Count|Year"
-        filter_cols = r"^Category|CCR Percentage|Annual\|Graduation Rate|Total\|Graduation Rate|ADM Average|By Enrollment\|Graduation Rate|Benchmark \%|Below|Approaching|At|^Year$"
+        filter_cols = r"^Category|CCR Percentage|Grade 12\|Graduation Rate|Total\|Graduation Rate|ADM Average|Graduation to Enrollment\|Graduation Rate|Benchmark \%|Below|Approaching|At|^Year$"
         substring_dict = {
             " Total Tested": "",
             "\|Cohort Count": "|Graduation",
-            "\|Count": ""
-            }
+            "\|Count": "",
+        }
 
     elif params["type"] == "hs":
         tested_cols = "Total Tested|Cohort Count|Year"
@@ -81,8 +81,8 @@ def transpose_data(df, params):
     # We get proficiency and cohort/tested (N-Size) data in separate dataframes,
     # convert the n-size category names into a substring of the data category
     # names and then merge the two dataframes based on a substring match
-    # e.g., use the substring dict to convert "By Enrollment|Cohort Count" to
-    # the substring "By Enrollment|Graduation" which matches "By Enrollment|Graduation Rate" 
+    # e.g., use the substring dict to convert "Graduation to Enrollment|Cohort Count" to
+    # the substring "Graduation to Enrollment|Graduation" which matches "Graduation to Enrollment|Graduation Rate"
     df.columns = df.columns.astype(str)
 
     tested_data = df.filter(regex=tested_cols, axis=1).copy()

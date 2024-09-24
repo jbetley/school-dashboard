@@ -521,8 +521,8 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         ahs_data.rename(
             columns={
                 "Total|Graduation Rate": "In Cohort",
-                "Annual|Graduation Rate": "Annual",
-                "By Enrollment|Graduation Rate": "By Enrollment",
+                "Grade 12|Graduation Rate": "Grade 12",
+                "Graduation to Enrollment|Graduation Rate": "Graduation to Enrollment",
             },
             inplace=True,
         )
@@ -584,7 +584,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         grad_limits_all = [0.85, 0.699, 0.499]
 
-        all_grad_metric = ahs_data[ahs_data["Category"].isin(["Annual"])]
+        all_grad_metric = ahs_data[ahs_data["Category"].isin(["Grade 12"])]
 
         [
             all_grad_metric.insert(
@@ -603,7 +603,9 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         # TODO: Adjust threshold per Accountability System adjustment
         grad_limits_enrollment = [0.75, 0.499, 0.20]
 
-        grad_limits_metric = ahs_data[ahs_data["Category"].isin(["By Enrollment"])]
+        grad_limits_metric = ahs_data[
+            ahs_data["Category"].isin(["Graduation to Enrollment"])
+        ]
 
         [
             grad_limits_metric.insert(
@@ -716,11 +718,11 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         ahs_data = pd.concat([state_grades, combined_ahs_metrics])
         ahs_data = ahs_data.reset_index(drop=True)
         ahs_metric_nums = [
-            "1.1.",
-            "1.2.a.",
-            "1.2.b.",
-            "1.2.c.",
-            "1.3.",
+            "1.1. ",
+            "1.2.a. ",
+            "1.2.b. ",
+            "(New) ",
+            "1.3. ",
         ]
         ahs_data.insert(loc=0, column="Metric", value=ahs_metric_nums)
 

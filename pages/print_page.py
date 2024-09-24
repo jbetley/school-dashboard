@@ -217,7 +217,12 @@ layout = html.Div(
                                     ],
                                     className="pagebreak",
                                 ),
-                                html.Div(id="finmetrics-layout", children=[]),
+                                html.Div (
+                                    [                                
+                                        html.Div(id="finmetrics-layout", children=[]),
+                                    ],
+                                    className="pagebreak",
+                                ),                                
                                 html.Div(id="fininfo-layout", children=[]),
                                 html.Div(id="orgcompliance-layout", children=[]),
                             ],

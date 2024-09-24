@@ -63,7 +63,6 @@ import dash_bootstrap_components as dbc
 
 from pages.load_data import (
     current_academic_year,
-    network_count,
     get_school_index,
     get_academic_dropdown_years,
     get_academic_growth_dropdown_years,
@@ -120,6 +119,7 @@ class User(UserMixin, db.Model):  # type: ignore
     username = db.Column(db.Text, unique=True)
     password = db.Column(db.Text, unique=True)
     groupid = db.Column(db.Integer, unique=False)
+    schoolid = db.Column(db.Integer, unique=False)
     displayname = db.Column(db.Text, unique=True)
 
     # these properties allow us to access additional fields in the user
@@ -134,7 +134,10 @@ class User(UserMixin, db.Model):  # type: ignore
     def full_name(self):
         return self.displayname
 
-
+    @property
+    def school_id(self):
+        return self.schoolid
+    
 # load_user is used by login_user, passes the user_id
 # and gets the User object that matches that id
 @login_manager.user_loader
@@ -249,6 +252,7 @@ def set_dropdown_options(app_state):
     # Groups: CHA (-1); Excel (-2); GEI (-3); PLA (-4); Paramount (-5); Purdue (-6); EdOne (-7)
     authorized_user = current_user._get_current_object()
     group_id = current_user.group_id
+    school_id = authorized_user.school_id
 
     # this gets the list of available charters from 'school_index' which is a separate
     # table from users_db- this is because users_db includes admin + network users
@@ -267,16 +271,9 @@ def set_dropdown_options(app_state):
             ]
 
         else:
-            # select only the authorized school using the id field of the authorized_user
+            # select only the authorized school using the school_id field of the authorized_user
             # object.
-
-            # network_count is a global variable that queries the users
-            # table and returns a count of network + admin logins. Need
-            # this value to know how far to offset the id to get the
-            # correct result (e.g., there are 51 schools, 8 of which are
-            # network or admin logins, so we need to subtract 8 from
-            # 51 to match the actual id)
-            charters = available_charters.iloc[[(authorized_user.id - network_count)]]
+            charters = available_charters[available_charters["SchoolID"] == str(school_id)]
 
     dropdown_dict = dict(zip(charters["SchoolName"], charters["SchoolID"]))
     dropdown_list = dict(sorted(dropdown_dict.items()))

@@ -361,7 +361,6 @@ def update_academic_metrics(school: str, year: str):
         )
 
         if len(raw_metric_data.index) > 0:
-            
             # Adult High School Metrics (in single table atm)
             # NOTE: Create additional tables as needed
             if selected_school_type == "ahs":
@@ -369,26 +368,18 @@ def update_academic_metrics(school: str, year: str):
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                ahs_metric_data = calculate_adult_high_school_metrics(
-                    raw_metric_data
-                )
+                ahs_metric_data = calculate_adult_high_school_metrics(raw_metric_data)
 
                 ahs_metric_data["Category"] = (
-                    ahs_metric_data["Metric"]
-                    + " "
-                    + ahs_metric_data["Category"]
+                    ahs_metric_data["Metric"] + " " + ahs_metric_data["Category"]
                 )
 
                 ahs_metric_data = ahs_metric_data.drop("Metric", axis=1)
 
-                ahs_metric_label = [
-                    "Adult High School Accountability Metrics"
-                ]
+                ahs_metric_label = ["Adult High School Accountability Metrics"]
                 ahs_metric_data = convert_to_svg_circle(ahs_metric_data)
-                
-                ahs_table = create_metric_table(
-                    ahs_metric_label, ahs_metric_data
-                )
+
+                ahs_table = create_metric_table(ahs_metric_label, ahs_metric_data)
 
                 ahs_table_container = set_table_layout(
                     ahs_table, ahs_table, ahs_metric_data.columns
@@ -433,7 +424,7 @@ def update_academic_metrics(school: str, year: str):
                     grad_metrics_dict = {
                         "Category": [
                             "1.7.c The percentage of students entering Grade 12 at beginning of year who graduated",
-                            "1.7.d. The percentage of graduating students planning to pursue college or career."
+                            "1.7.d. The percentage of graduating students planning to pursue college or career.",
                         ]
                     }
                     grad_metrics = pd.DataFrame(grad_metrics_dict)

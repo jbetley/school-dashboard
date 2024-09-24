@@ -3,50 +3,40 @@
 ##################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     08/18/24
+# date:     09/23/24
 
 # NOTE: lots of duplicative code here. eventually want to replace the
 # layouts in all of the other pages with calls to these functions, but
 # would need to make sure all functionality is included
 
 from dash import dcc, html, dash_table
-import dash_bootstrap_components as dbc
 from dash.dash_table import FormatTemplate
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
-import re
 
 from .globals import (
     ethnicity,
     subgroup,
-    subject,
     grades_all,
-    grades,
-    grades_ordinal,
     max_display_years,
 )
 
 from .load_data import (
-    get_excluded_years,
     get_school_index,
     get_financial_data,
     get_financial_ratios,
     get_corp_demographic_data,
     get_school_demographic_data,
     get_attendance_data,
-    get_discipline_data,
     get_academic_data,
-    # get_school_stns,
-    # get_iread_student_data,
-    # get_wida_student_data,
-    get_proficiency_data,
 )
 
-from .calculations import round_nearest, round_percentages, conditional_fillna
+from .calculations import round_nearest, conditional_fillna
 
 # from .process_data import process_discipline_data
+
 from .calculate_metrics import (
     calculate_financial_metrics,
     calculate_high_school_metrics,
@@ -64,28 +54,18 @@ from .tables import (
     create_metric_table,
     create_proficiency_key,
     create_multi_header_table_with_container,
-    # create_key_table,
     create_single_header_table,
     create_multi_header_table,
-    # create_iread_ilearn_table,
     create_financial_analysis_table,
 )
 
-
 from .charts import (
-    loading_fig,
     no_data_fig_label,
     make_line_chart,
     make_demographics_bar_chart,
-    make_stacked_bar,
     make_line_chart,
 )
-from .tables import (
-    # no_data_table,
-    # no_data_page,
-    # create_key_table,
-    create_single_header_table,
-)
+
 from .layouts import create_line_fig_layout, set_table_layout
 
 
@@ -278,7 +258,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
     hs_grad_ethnicity_table = []  # type: list
     hs_grad_subgroup_table = []  # type: list
     grad_label = []
-    
+
     hs_sat_overview_table = []  # type: list
     hs_sat_ethnicity_table = []  # type: list
     hs_sat_subgroup_table = []  # type: list
@@ -313,7 +293,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
         # TODO: Add figs for SAT and Grad Rates
         if len(hs_info_data.index) > 1 and not hs_info_data.empty:
-            
             hs_info_data.columns = hs_info_data.columns.astype(str)
 
             grad_overview_categories = ["Total", "Non Waiver", "State Average"]
@@ -321,8 +300,8 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             if school_type == "ahs":
                 grad_overview_categories = [
                     "Total|Graduation Rate",
-                    "Annual|Graduation Rate",
-                    "By Enrollment|Graduation Rate",
+                    "Grade 12|Graduation Rate",
+                    "Graduation to Enrollment|Graduation Rate",
                     "CCR Percentage",
                 ]
 
@@ -381,7 +360,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                         className="bare-container--flex--center twelve columns",
                     )
                 ]
-                
+
                 if school_type != "ahs":
                     grad_ethnicity = graduation_data[
                         graduation_data["Category"].str.contains("|".join(ethnicity))
@@ -1294,7 +1273,6 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
         if len(raw_metric_data.index) > 0:
             # Adult High School Metrics
             if selected_school_type == "ahs":
-
                 ahs_metric_data_113 = calculate_adult_high_school_metrics(
                     raw_metric_data
                 )
@@ -1307,9 +1285,7 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
 
                 ahs_metric_data_113 = ahs_metric_data_113.drop("Metric", axis=1)
 
-                ahs_metric_label_113 = [
-                    "Adult High School Accountability Metrics"
-                ]
+                ahs_metric_label_113 = ["Adult High School Accountability Metrics"]
                 ahs_metric_data_113 = convert_to_svg_circle(ahs_metric_data_113)
                 ahs_table_113 = create_metric_table(
                     ahs_metric_label_113, ahs_metric_data_113
@@ -1361,7 +1337,6 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
                 )
 
                 if not hs_comparison_values.empty:
-
                     hs_metric_data = calculate_high_school_metrics(hs_comparison_values)
 
                     metric_17ab_label = [
