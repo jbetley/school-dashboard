@@ -14,7 +14,7 @@ import pandas as pd
 from .load_data import get_school_index, get_growth_data, get_excluded_years
 from .process_data import process_growth_data
 from .tables import no_data_page, create_growth_table
-from .charts import make_growth_chart
+from .charts import make_line_chart # make_growth_chart, 
 from .layouts import create_growth_layout
 
 dash.register_page(
@@ -89,7 +89,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     excluded_years = get_excluded_years(selected_year_string)
 
     if excluded_years:
-        growth_data = growth_data[~growth_data["Test Year"].isin(excluded_years)]
+        growth_data = growth_data[~growth_data["Year"].isin(excluded_years)]
 
     if len(growth_data.index) == 0 or selected_school["Guest"].values[0] == "Y":
         main_growth_container = {"display": "none"}
@@ -108,12 +108,15 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         fig_data_ethnicity_growth, table_data_ethnicity_growth = process_growth_data(
             growth_data, "Ethnicity"
         )
+
         fig_data_ses_growth, table_data_ses_growth = process_growth_data(
             growth_data, "Socioeconomic Status"
         )
+
         fig_data_el_growth, table_data_el_growth = process_growth_data(
             growth_data, "English Learner Status"
         )
+
         fig_data_sped_growth, table_data_sped_growth = process_growth_data(
             growth_data, "Special Education Status"
         )
@@ -126,25 +129,23 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
             [fig_data_ses_growth, fig_data_el_growth, fig_data_sped_growth], axis=1
         )
 
+        # NOTE: df currently also includes data for 162-Day Students which is
+        # used in table tooltips, but not in chart. See version of this file
+        # prior to 09/25/24 for alternative charts which use both
+
         ## By Grade
 
         # grades growth ela table/fig #1
         table_data_grades_growth_ela = table_data_grades_growth[
             (table_data_grades_growth["Category"].str.contains("ELA"))
         ]
-        growth_data_162_grades_ela = fig_data_grades_growth.loc[
-            :,
-            (fig_data_grades_growth.columns.str.contains("162"))
-            & (fig_data_grades_growth.columns.str.contains("ELA")),
-        ]
-        growth_data_162_grades_ela.columns = (
-            growth_data_162_grades_ela.columns.str.split("_").str[1]
-        )
+
         growth_data_me_grades_ela = fig_data_grades_growth.loc[
             :,
             (fig_data_grades_growth.columns.str.contains("Majority Enrolled"))
             & (fig_data_grades_growth.columns.str.contains("ELA")),
         ]
+
         growth_data_me_grades_ela.columns = growth_data_me_grades_ela.columns.str.split(
             "_"
         ).str[1]
@@ -152,14 +153,13 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         label_grades_growth_ela = (
             "Percentage of Students with Adequate Growth - by Grade (ELA)"
         )
+
         table_grades_growth_ela = create_growth_table(
             table_data_grades_growth_ela, label_grades_growth_ela
         )
-        fig_grades_growth_ela = make_growth_chart(
-            growth_data_me_grades_ela,
-            growth_data_162_grades_ela,
-            label_grades_growth_ela,
-        )
+
+        growth_data_me_grades_ela = growth_data_me_grades_ela.reset_index()
+        fig_grades_growth_ela = make_line_chart(growth_data_me_grades_ela)
 
         growth_grades_ela = create_growth_layout(
             table_grades_growth_ela, fig_grades_growth_ela, label_grades_growth_ela
@@ -169,19 +169,13 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         table_data_grades_growth_math = table_data_grades_growth[
             (table_data_grades_growth["Category"].str.contains("Math"))
         ]
-        growth_data_162_grades_math = fig_data_grades_growth.loc[
-            :,
-            (fig_data_grades_growth.columns.str.contains("162"))
-            & (fig_data_grades_growth.columns.str.contains("Math")),
-        ]
+
         growth_data_me_grades_math = fig_data_grades_growth.loc[
             :,
             (fig_data_grades_growth.columns.str.contains("Majority Enrolled"))
             & (fig_data_grades_growth.columns.str.contains("Math")),
         ]
-        growth_data_162_grades_math.columns = (
-            growth_data_162_grades_math.columns.str.split("_").str[1]
-        )
+
         growth_data_me_grades_math.columns = (
             growth_data_me_grades_math.columns.str.split("_").str[1]
         )
@@ -192,11 +186,9 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         table_grades_growth_math = create_growth_table(
             table_data_grades_growth_math, label_grades_growth_math
         )
-        fig_grades_growth_math = make_growth_chart(
-            growth_data_me_grades_math,
-            growth_data_162_grades_math,
-            label_grades_growth_math,
-        )
+
+        growth_data_me_grades_math = growth_data_me_grades_math.reset_index()
+        fig_grades_growth_math = make_line_chart(growth_data_me_grades_math)
 
         growth_grades_math = create_growth_layout(
             table_grades_growth_math, fig_grades_growth_math, label_grades_growth_math
@@ -208,14 +200,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         table_data_ethnicity_growth_ela = table_data_ethnicity_growth[
             (table_data_ethnicity_growth["Category"].str.contains("ELA"))
         ]
-        growth_data_162_ethnicity_ela = fig_data_ethnicity_growth.loc[
-            :,
-            (fig_data_ethnicity_growth.columns.str.contains("162"))
-            & (fig_data_ethnicity_growth.columns.str.contains("ELA")),
-        ]
-        growth_data_162_ethnicity_ela.columns = (
-            growth_data_162_ethnicity_ela.columns.str.split("_").str[1]
-        )
+
         growth_data_me_ethnicity_ela = fig_data_ethnicity_growth.loc[
             :,
             (fig_data_ethnicity_growth.columns.str.contains("Majority Enrolled"))
@@ -228,14 +213,13 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         label_ethnicity_growth_ela = (
             "Percentage of Students with Adequate Growth - by Ethnicity (ELA)"
         )
+
         table_ethnicity_growth_ela = create_growth_table(
             table_data_ethnicity_growth_ela, label_ethnicity_growth_ela
         )
-        fig_ethnicity_growth_ela = make_growth_chart(
-            growth_data_me_ethnicity_ela,
-            growth_data_162_ethnicity_ela,
-            label_ethnicity_growth_ela,
-        )
+
+        growth_data_me_ethnicity_ela = growth_data_me_ethnicity_ela.reset_index()
+        fig_ethnicity_growth_ela = make_line_chart(growth_data_me_ethnicity_ela)
 
         growth_ethnicity_ela = create_growth_layout(
             table_ethnicity_growth_ela,
@@ -247,14 +231,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         table_data_ethnicity_growth_math = table_data_ethnicity_growth[
             (table_data_ethnicity_growth["Category"].str.contains("Math"))
         ]
-        growth_data_162_ethnicity_math = fig_data_ethnicity_growth.loc[
-            :,
-            (fig_data_ethnicity_growth.columns.str.contains("162"))
-            & (fig_data_ethnicity_growth.columns.str.contains("Math")),
-        ]
-        growth_data_162_ethnicity_math.columns = (
-            growth_data_162_ethnicity_math.columns.str.split("_").str[1]
-        )
+
         growth_data_me_ethnicity_math = fig_data_ethnicity_growth.loc[
             :,
             (fig_data_ethnicity_growth.columns.str.contains("Majority Enrolled"))
@@ -270,11 +247,9 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         table_ethnicity_growth_math = create_growth_table(
             table_data_ethnicity_growth_math, label_ethnicity_growth_math
         )
-        fig_ethnicity_growth_math = make_growth_chart(
-            growth_data_me_ethnicity_math,
-            growth_data_162_ethnicity_math,
-            label_ethnicity_growth_math,
-        )
+
+        growth_data_me_ethnicity_math = growth_data_me_ethnicity_math.reset_index()
+        fig_ethnicity_growth_math = make_line_chart(growth_data_me_ethnicity_math)
 
         growth_ethnicity_math = create_growth_layout(
             table_ethnicity_growth_math,
@@ -288,14 +263,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         table_data_subgroup_growth_ela = table_data_subgroup_growth[
             (table_data_subgroup_growth["Category"].str.contains("ELA"))
         ]
-        growth_data_162_subgroup_ela = fig_data_subgroup_growth.loc[
-            :,
-            (fig_data_subgroup_growth.columns.str.contains("162"))
-            & (fig_data_subgroup_growth.columns.str.contains("ELA")),
-        ]
-        growth_data_162_subgroup_ela.columns = (
-            growth_data_162_subgroup_ela.columns.str.split("_").str[1]
-        )
+
         growth_data_me_subgroup_ela = fig_data_subgroup_growth.loc[
             :,
             (fig_data_subgroup_growth.columns.str.contains("Majority Enrolled"))
@@ -311,11 +279,9 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         table_subgroup_growth_ela = create_growth_table(
             table_data_subgroup_growth_ela, label_subgroup_growth_ela
         )
-        fig_subgroup_growth_ela = make_growth_chart(
-            growth_data_me_subgroup_ela,
-            growth_data_162_subgroup_ela,
-            label_subgroup_growth_ela,
-        )
+
+        growth_data_me_subgroup_ela = growth_data_me_subgroup_ela.reset_index()
+        fig_subgroup_growth_ela = make_line_chart(growth_data_me_subgroup_ela)
 
         growth_subgroup_ela = create_growth_layout(
             table_subgroup_growth_ela,
@@ -327,14 +293,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         table_data_subgroup_growth_math = table_data_subgroup_growth[
             (table_data_subgroup_growth["Category"].str.contains("Math"))
         ]
-        growth_data_162_subgroup_math = fig_data_subgroup_growth.loc[
-            :,
-            (fig_data_subgroup_growth.columns.str.contains("162"))
-            & (fig_data_subgroup_growth.columns.str.contains("Math")),
-        ]
-        growth_data_162_subgroup_math.columns = (
-            growth_data_162_subgroup_math.columns.str.split("_").str[1]
-        )
+
         growth_data_me_subgroup_math = fig_data_subgroup_growth.loc[
             :,
             (fig_data_subgroup_growth.columns.str.contains("Majority Enrolled"))
@@ -350,11 +309,9 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         table_subgroup_growth_math = create_growth_table(
             table_data_subgroup_growth_math, label_subgroup_growth_math
         )
-        fig_subgroup_growth_math = make_growth_chart(
-            growth_data_me_subgroup_math,
-            growth_data_162_subgroup_math,
-            label_subgroup_growth_math,
-        )
+
+        growth_data_me_subgroup_math = growth_data_me_subgroup_math.reset_index()
+        fig_subgroup_growth_math = make_line_chart(growth_data_me_subgroup_math)
 
         growth_subgroup_math = create_growth_layout(
             table_subgroup_growth_math,
@@ -406,8 +363,9 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         main_growth_container,
         empty_growth_container,
         no_growth_data,
-        academic_growth_notes_string
+        academic_growth_notes_string,
     )
+
 
 # this needs to be a function in order for it to be called correctly
 #  by subnav_academic_information()
@@ -466,12 +424,12 @@ def layout():
                                         className="pretty-container__key ten columns",
                                     ),
                                 ],
-                                className="bare-container--flex--center twelve columns"
-                            )
-                        ]
+                                className="bare-container--flex--center twelve columns",
+                            ),
+                        ],
                     )
                 ]
             )
         ],
-        id="main-container"
+        id="main-container",
     )

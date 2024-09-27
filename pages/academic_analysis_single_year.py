@@ -103,8 +103,6 @@ def set_dropdown_options(
     # NOTE: There is some time cost for running the dropdown selection function
     # (typically ~0.8 - 1.2s), so we want to exit out as early as possible if we
     # know it isn't necessary because the selected school didn't exist
-    # TODO: Why would the year even be selectable if there is no data
-
     if int(school_id) not in schools_by_distance["School ID"].values:
         return [], [], []
 

@@ -493,7 +493,7 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
     # have the requisite grade levels at the time. This results in
     # a "NaN" column name. We filter them out here.
     data = data.loc[:, data.columns.notna()]
-    
+
     school_cols = [i for i in data.columns if i not in ["Year"]]
 
     if (len(school_cols)) > 0 and len(data.index) > 0:
@@ -775,11 +775,13 @@ def make_line_chart(values: pd.DataFrame) -> list:
             data_max = data.drop("Year", axis=1).copy()
             data_max = data_max.max(numeric_only=True).max()
 
-            # If data_max is > 1 then it is WIDA data (all other data are decimals)
-            if data_max > 1:
-                # make sure Year is a str and replace all negative numbers with 0
-                # data[data < 0] = 0
-                data["Year"] = data["Year"].astype(str)
+            data["Year"] = data["Year"].astype(str)
+
+            # # If data_max is > 1 then it is WIDA data (all other data are decimals)
+            # if data_max > 1:
+            #     # make sure Year is a str and replace all negative numbers with 0
+            #     # data[data < 0] = 0
+            #     data["Year"] = data["Year"].astype(str)
 
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
@@ -804,12 +806,10 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 color_discrete_sequence=color,
             )
 
-            # Set the range based on data_max (highest single value). IREAD is set to 100% regardless.
-            # At higher ranges, the values compress together and are hard to read.
+            # There are some exceptions for certain data sets
             if "Total|IREAD" in data.columns:
                 range_vals = [0, 1]  # type: list[float]
                 tick_format = ",.0%"
-                y_value = -0.4
                 d_tick = 0.2
 
             # WIDA is only data where the max will be > 1
@@ -818,23 +818,30 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 minx = data.astype(float).min().min()
                 range_vals = [minx - 0.5, 5]
                 tick_format = ".1f"
-                y_value = -0.3
                 d_tick = 1
 
             else:
-                # legend shenanigans - adjust location based on columns
-                if data.columns.str.contains("Grade").any():
-                    y_value = -0.5
-                elif data.columns.str.contains("Black").any():
-                    y_value = -0.4
-                elif data.columns.str.contains("Free").any():
-                    y_value = -0.7
-                else:
-                    y_value = -0.4
-
                 range_vals = [0, data_max + 0.05]
                 tick_format = ",.0%"
                 d_tick = 0.2
+
+            # Set legend position based on total character length of all
+            # legend items and the number of legend items (each item adds
+            # approximately 8 characters worth of space for spacing and
+            # the icon)
+
+            legend_items = len(cols)
+            legend_string = "".join(cols)
+            legend_string_length = len(legend_string)
+            legend_length = legend_string_length + (legend_items * 8)
+
+            # adjust legend location location based on columns
+            if legend_length < 70:
+                y_value = -0.2
+            elif legend_length >= 80 or legend_length <= 100:
+                y_value = -0.3
+            else:
+                y_value = -0.4
 
             # use this template and change the hovermode to "x unified" if want to use
             # x-unified hovermode
@@ -847,7 +854,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 ),
                 margin=dict(l=40, r=40, t=40, b=0),
                 title_x=0.5,
-                font=dict(family="Inter, sans-serif", color="steelblue", size=12),
+                font=dict(family="Inter, sans-serif", color="steelblue", size=10),
                 plot_bgcolor="white",
                 xaxis=dict(
                     title="",
@@ -857,7 +864,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                     tick0=0,
                     dtick=1,
                     tickvals=data["Year"],
-                    tickformat=".4",
+                    tickformat=".4",  # "%Y"
                     mirror=True,
                     showline=True,
                     linecolor="#b0c4de",
@@ -938,159 +945,157 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
     return fig_layout
 
+# NOTE: Using make_line_chart instead
+# def make_growth_chart(
+#     data_me: pd.DataFrame, data_162: pd.DataFrame, label: str
+# ) -> list:
+#     """
+#     Creates a dash html.Div layout with a label, and a multi-line (scatter) plot (px.line) representing
+#     two discrete dataframes in solid and dotted lines
 
-# TODO: convert to use regular px.line rather than subplots so we can adjust
-# TODO:  the ticks the same way we do in make_line_chart (edge to edge)
-def make_growth_chart(
-    data_me: pd.DataFrame, data_162: pd.DataFrame, label: str
-) -> list:
-    """
-    Creates a dash html.Div layout with a label, and a multi-line (scatter) plot (px.line) representing
-    two discrete dataframes in solid and dotted lines
+#     Args:
+#         data_162 (pd.DataFrame): growth data representing students enrolled at a school for at least 162 days
+#         data_me (pd.DataFrame): growth data for students enrolled at a school for a majority of days
+#         label (str): title of the figure
 
-    Args:
-        data_162 (pd.DataFrame): growth data representing students enrolled at a school for at least 162 days
-        data_me (pd.DataFrame): growth data for students enrolled at a school for a majority of days
-        label (str): title of the figure
+#     Returns:
+#         fig_layout (list): a plotly dash html layout in the form of a list containing a label and a px.line figure
+#     """
 
-    Returns:
-        fig_layout (list): a plotly dash html layout in the form of a list containing a label and a px.line figure
-    """
+#     data_me.columns = data_me.columns.map(lambda x: x.split("|")[0])
+#     data_162.columns = data_162.columns.map(lambda x: x.split("|")[0])
 
-    data_me.columns = data_me.columns.map(lambda x: x.split("|")[0])
-    data_162.columns = data_162.columns.map(lambda x: x.split("|")[0])
+#     fig = make_subplots()
 
-    fig = make_subplots()
+#     if "Growth" in label:
+#         ytick = ".0%"
+#         ytitle = "Adequate Growth %"
+#         hover = ".2%"
+#     elif "SGP" in label:
+#         ytick = ".1f"
+#         ytitle = "Median SGP"
+#         hover = ".1f"
 
-    if "Growth" in label:
-        ytick = ".0%"
-        ytitle = "Adequate Growth %"
-        hover = ".2%"
-    elif "SGP" in label:
-        ytick = ".1f"
-        ytitle = "Median SGP"
-        hover = ".1f"
+#     for i, col in enumerate(data_me.columns):
+#         fig.add_trace(
+#             go.Scatter(
+#                 x=data_me.index,
+#                 y=data_me[col],
+#                 name=col,
+#                 meta=[col],
+#                 mode="markers+lines",
+#                 marker=dict(color=color[i], symbol="square"),
+#                 line={"dash": "solid"},
+#                 customdata=(
+#                     [f"{i:.2%}" if not np.isnan(i) else "None" for i in data_162[col]]
+#                     if "Growth" in label
+#                     else [f"{i:.1f}" for i in data_162[col]]
+#                 ),
+#                 text=[f"{i}" for i in data_me.columns],
+#                 # NOTE: the legendgroup variable separates each dataframe into a separate
+#                 # legend group, which is great because it allows you to turn on and off each
+#                 # group. However, it looks bad because it does not currently allow you to display
+#                 # the legends horizontally. It is a matter of preference. Uncomment to use
+#                 # legendgroup.
+#                 # legendgroup = '1',
+#                 # legendgrouptitle_text="Majority Enrolled"
+#             ),
+#             secondary_y=False,
+#         )
 
-    for i, col in enumerate(data_me.columns):
-        fig.add_trace(
-            go.Scatter(
-                x=data_me.index,
-                y=data_me[col],
-                name=col,
-                meta=[col],
-                mode="markers+lines",
-                marker=dict(color=color[i], symbol="square"),
-                line={"dash": "solid"},
-                customdata=(
-                    [f"{i:.2%}" if not np.isnan(i) else "None" for i in data_162[col]]
-                    if "Growth" in label
-                    else [f"{i:.1f}" for i in data_162[col]]
-                ),
-                text=[f"{i}" for i in data_me.columns],
-                # NOTE: the legendgroup variable separates each dataframe into a separate
-                # legend group, which is great because it allows you to turn on and off each
-                # group. However, it looks bad because it does not currently allow you to display
-                # the legends horizontally. It is a matter of preference. Uncomment to use
-                # legendgroup.
-                # legendgroup = '1',
-                # legendgrouptitle_text="Majority Enrolled"
-            ),
-            secondary_y=False,
-        )
+#         # NOTE: right now only displaying ME data with 162-day data in the hover, because
+#         # having both sets of traces looks too cluttered. uncomment this and the annotation
+#         # below to add scatter traces and a legend for 162-Day data
+#         # fig.add_trace(
+#         #     go.Scatter(
+#         #         x=data_162.index,
+#         #         y=data_162[col],
+#         #         mode='markers+lines',
+#         #         line={'dash': 'dash'},
+#         #         marker=dict(color=color[i], symbol = 'diamond'),
+#         #         name=col,
+#         #         legendgroup = '2',
+#         #         legendgrouptitle_text="162 Days"
+#         #     ),
+#         #     secondary_y=False,
+#         # )
 
-        # NOTE: right now only displaying ME data with 162-day data in the hover, because
-        # having both sets of traces looks too cluttered. uncomment this and the annotation
-        # below to add scatter traces and a legend for 162-Day data
-        # fig.add_trace(
-        #     go.Scatter(
-        #         x=data_162.index,
-        #         y=data_162[col],
-        #         mode='markers+lines',
-        #         line={'dash': 'dash'},
-        #         marker=dict(color=color[i], symbol = 'diamond'),
-        #         name=col,
-        #         legendgroup = '2',
-        #         legendgrouptitle_text="162 Days"
-        #     ),
-        #     secondary_y=False,
-        # )
+#     xaxis_data = pd.DataFrame()
+#     xaxis_data["Year"] = data_me.index.astype(str)
 
-    xaxis_data = pd.DataFrame()
-    xaxis_data["Year"] = data_me.index.astype(str)
+#     # Add figure title
+#     fig.update_layout(
+#         margin=dict(l=40, r=40, t=40, b=0),
+#         title_x=0.5,
+#         font=dict(family="Inter, sans-serif", color="steelblue", size=10),
+#         plot_bgcolor="white",
+#         xaxis=dict(
+#             title="",
+#             type="date",
+#             tickvals=data_me.index,
+#             tickformat="%Y",
+#             mirror=True,  #
+#             showline=True,
+#             linecolor="#b0c4de",
+#             linewidth=0.5,
+#             gridwidth=0.5,
+#             showgrid=True,
+#             gridcolor="#b0c4de",
+#             zeroline=False,
+#         ),
+#         yaxis=dict(
+#             title="",
+#             tickformat=ytick,
+#             showline=True,
+#             linecolor="#b0c4de",
+#             linewidth=0.5,
+#             gridwidth=0.5,
+#             showgrid=True,
+#             gridcolor="#b0c4de",
+#             zeroline=False,
+#             hoverformat=hover,
+#         ),
+#         legend=dict(orientation="h"),
+#         hovermode="x unified",
+#         height=300,
+#     )
+#     fig.update_traces(
+#         hovertemplate="<br>".join(
+#             [
+#                 s.replace(" ", "&nbsp;")
+#                 for s in [
+#                     "%{meta} (Majority Enrolled): <b>%{y}</b> (162 Days: %{customdata})<br><extra></extra>",
+#                 ]
+#             ]
+#         )
+#     )
 
-    # Add figure title
-    fig.update_layout(
-        margin=dict(l=40, r=40, t=40, b=0),
-        title_x=0.5,
-        font=dict(family="Inter, sans-serif", color="steelblue", size=10),
-        plot_bgcolor="white",
-        xaxis=dict(
-            title="",
-            type="date",
-            tickvals=data_me.index,
-            tickformat="%Y",
-            mirror=True,  #
-            showline=True,
-            linecolor="#b0c4de",
-            linewidth=0.5,
-            gridwidth=0.5,
-            showgrid=True,
-            gridcolor="#b0c4de",
-            zeroline=False,
-        ),
-        yaxis=dict(
-            title="",
-            tickformat=ytick,
-            showline=True,
-            linecolor="#b0c4de",
-            linewidth=0.5,
-            gridwidth=0.5,
-            showgrid=True,
-            gridcolor="#b0c4de",
-            zeroline=False,
-            hoverformat=hover,
-        ),
-        legend=dict(orientation="h"),
-        hovermode="x unified",
-        height=300,
-    )
-    fig.update_traces(
-        hovertemplate="<br>".join(
-            [
-                s.replace(" ", "&nbsp;")
-                for s in [
-                    "%{meta} (Majority Enrolled): <b>%{y}</b> (162 Days: %{customdata})<br><extra></extra>",
-                ]
-            ]
-        )
-    )
+#     # NOTE: this creates an annotation used to identify the difference
+#     # between 162-day vs 162-ME scatter lines (if lines are displayed)
+#     # diamond - &#9670;	&#x25C6;
+#     # square - &#9632;	&#x25A0;
+#     # fig.add_annotation(
+#     #     text="Students Enrolled For: <b>&#9670;: 162 Days &#9632;: Majority Enrolled</b>",
+#     #     align="left",
+#     #     showarrow=False,
+#     #     xref="paper",
+#     #     yref="paper",
+#     #     font=dict(color="steelblue", size = 11),
+#     #     bgcolor="rgba(0,0,0,0)",
+#     #     y=1.15,
+#     #     x=.5,
+#     #     xanchor="center",
+#     # )
 
-    # NOTE: this creates an annotation used to identify the difference
-    # between 162-day vs 162-ME scatter lines (if lines are displayed)
-    # diamond - &#9670;	&#x25C6;
-    # square - &#9632;	&#x25A0;
-    # fig.add_annotation(
-    #     text="Students Enrolled For: <b>&#9670;: 162 Days &#9632;: Majority Enrolled</b>",
-    #     align="left",
-    #     showarrow=False,
-    #     xref="paper",
-    #     yref="paper",
-    #     font=dict(color="steelblue", size = 11),
-    #     bgcolor="rgba(0,0,0,0)",
-    #     y=1.15,
-    #     x=.5,
-    #     xanchor="center",
-    # )
+#     fig.update_yaxes(title_text=ytitle, secondary_y=False)
 
-    fig.update_yaxes(title_text=ytitle, secondary_y=False)
+#     fig_layout = [
+#         html.Div(
+#             [dcc.Graph(figure=fig, config={"displayModeBar": False})],
+#         )
+#     ]
 
-    fig_layout = [
-        html.Div(
-            [dcc.Graph(figure=fig, config={"displayModeBar": False})],
-        )
-    ]
-
-    return fig_layout
+#     return fig_layout
 
 
 def make_bar_chart(

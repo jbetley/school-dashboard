@@ -3,7 +3,7 @@
 ##############################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/06/24
+# date:     09/24/24
 
 # NOTE: No K8 academic data exists for 2020
 
@@ -14,7 +14,7 @@
 # ADM - 2024
 # Chronic Absenteeism - 2024
 # Demographics - 2024 (except SPED/ELL)
-# Financial - 2023 (Audited) / 2024(Q3) (Q4 due mid august)
+# Financial - 2023 (Audited) / 2024(Q4)
 # Graduation Rate - 2023
 
 import pandas as pd
@@ -322,7 +322,6 @@ def get_adm(corp_id):
 
     params = dict(id=corp_id)
 
-    # TODO: Test switch from adm_all to icsb_school_adm
     q = text(
         """
         SELECT * 
@@ -912,10 +911,8 @@ def get_attendance_data(school_id, school_type, year):
     results = run_query(q, params)
     results = results.sort_values(by="Year", ascending=False)
 
-    attendance_data = results[results["Attendance Rate"].notnull()]
-
     # replace empty strings with NaN
-    attendance_data = attendance_data.replace(r"^\s*$", np.nan, regex=True)
+    attendance_data = results.replace(r"^\s*$", np.nan, regex=True)
 
     # Chronic Absenteeism isn't used for AHS
     if school_type != "corp_ahs" and school_type != "ahs":
@@ -1018,7 +1015,14 @@ def get_growth_data(*args):
 	        WHERE MajorityEnrolledSchoolID = :id
         """
     )
-    return run_query(q, params)
+
+    results = run_query(q, params)
+
+    results = results.rename(columns={"Test Year": "Year"})
+
+    return results
+
+    # return run_query(q, params)
 
 
 # NOTE: "SchoolTotal|ELATotalTested" is a proxy for school
@@ -1226,7 +1230,6 @@ def get_academic_data(*args):
             # certification reflects college and career readiness, based on
             # the percentage of non-duplicated graduating students in the
             # current school year
-            # TODO: Is Actual Graduates the right thing to use here?
             if {"AHS|CCR", "AHS|Actual Graduates"}.issubset(ahs_data.columns):
                 ahs_data["CCR Percentage"] = (
                     ahs_data["AHS|CCR"] / ahs_data["AHS|Actual Graduates"]
@@ -1639,9 +1642,9 @@ def get_academic_data(*args):
                 if params["page"] == "info":
                     return final_school_data
 
-                # TODO: Where does this belong? In the chart? or in academic_info.py
-                # TODO: right before the information is sent to the chart? or in
-                # TODO: the layout?
+                # TODO: Does this check belong here, in the chart, in the
+                # TODO: "calling" page (e.g., academic_info.py) before it is
+                # TODO: sent to the charting function, or in the layout.
                 # result, no_data = check_for_no_data(result)
                 # print(no_data)
                 # insuf_string = check_for_insufficient_n_size(result)
@@ -1774,10 +1777,6 @@ def get_year_over_year_data(*args):
     school_info = school_data[["School Name", "School ID", "Low Grade", "High Grade"]]
 
     school_name = school_data["School Name"][0]
-
-    # TODO: Pretty sure is not necessary. Leave for testing.
-    # school_data[tested] = school_data[tested].fillna(0)
-    # school_data = school_data.drop(school_data[school_data[tested] == 0].index)
 
     school_data[school_name] = pd.to_numeric(
         school_data[passed], errors="coerce"

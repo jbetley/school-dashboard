@@ -220,13 +220,13 @@ def process_growth_data(
     # grouby by relevant categories and count the values in the "ILEARNGrowth Level"
     # column (normalize gives us the relative frequencies (%) of the values)
     data = (
-        data.groupby(["Test Year", category, "Subject"])["ILEARNGrowth Level"]
+        data.groupby(["Year", category, "Subject"])["ILEARNGrowth Level"]
         .value_counts(normalize=True)
         .reset_index(name="Majority Enrolled")
     )
 
     data_162 = (
-        data_162.groupby(["Test Year", category, "Subject"])["ILEARNGrowth Level"]
+        data_162.groupby(["Year", category, "Subject"])["ILEARNGrowth Level"]
         .value_counts(normalize=True)
         .reset_index(name="162 Days")
     )
@@ -256,7 +256,7 @@ def process_growth_data(
     # step 3: Merge data_162["162 Days"] column into 'data'- cols will likely
     # be of different length, so we need to key on Year, Subject, Category
     data = data.merge(
-        data_162, how="left", on=["Test Year", category, "Subject"], suffixes=("", "_y")
+        data_162, how="left", on=["Year", category, "Subject"], suffixes=("", "_y")
     )
 
     data["Diff"] = data["162 Days"] - data["Majority Enrolled"]  # "Difference"
@@ -268,7 +268,7 @@ def process_growth_data(
 
     # filter unneeded columns
     final_data = data.filter(
-        regex=r"Test Year|Category|Majority Enrolled|162 Days|Diff",  # "Difference"
+        regex=r"Year|Category|Majority Enrolled|162 Days|Diff",  # "Difference"
         axis=1,
     )
 
@@ -296,15 +296,17 @@ def process_growth_data(
     # create fig data
     fig_data = final_data.copy()
     fig_data = fig_data.drop("Diff", axis=1)  # "Difference"
-    fig_data = fig_data.pivot(index=["Test Year"], columns="Category")
+    fig_data = fig_data.pivot(index=["Year"], columns="Category")
     fig_data.columns = fig_data.columns.map(lambda x: "_".join(map(str, x)))
+
+    # fig_data = fig_data.reset_index()
 
     # create table data
     table_data = final_data.copy()
 
     # Need specific column order. sort_index does not work
     cols = []
-    yrs = list(set(table_data["Test Year"].to_list()))
+    yrs = list(set(table_data["Year"].to_list()))
     yrs.sort(reverse=True)
     for y in yrs:
         cols.append(str(y) + "162 Days")
@@ -313,7 +315,7 @@ def process_growth_data(
 
     # pivot df from wide to long" add years to each column name; move year to
     # front of column name; sort and reset_index
-    table_data = table_data.pivot(index=["Category"], columns="Test Year")
+    table_data = table_data.pivot(index=["Category"], columns="Year")
 
     table_data.columns = table_data.columns.map(lambda x: "".join(map(str, x)))
     table_data.columns = table_data.columns.map(lambda x: x[-4:] + x[:-4])

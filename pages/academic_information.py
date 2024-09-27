@@ -21,6 +21,7 @@ from .globals import ethnicity, subgroup, subject, grades_all, grades, grades_or
 from .load_data import (
     get_school_stns,
     get_iread_student_data,
+    get_ilearn_student_data,
     get_wida_student_data,
     get_proficiency_data,
     get_school_index,
@@ -1557,7 +1558,7 @@ def update_academic_information_page(
 
                 wida_breakdown_table_data = wida_breakdown_table_data.replace(
                     {"nan": "\u2014", np.NaN: "\u2014"}, regex=True
-                )  # add dash
+                )
 
                 # merge nsize data into data to get into the format
                 # expected by multi_table function
@@ -1831,9 +1832,26 @@ def update_academic_information_page(
                 # End WIDA to IREAD Table
         # End WIDA Breakdown (School Level) block
 
+    # The percentage of students who have been enrolled for at least two (2)
+    # full school years achieving proficiency on the state assessment in English
+    # Language Arts.
+    # For each year:
+    #   Calculate % for all students where the STN appears in the previous year
+    #       demoninator is the total # of students
+    #       numerator: At or Above Proficiency
     # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
+    # Get
+    tst = get_ilearn_student_data(school)
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+    print(tst)
+
+    filename99 = ("ilearn-stud-data.csv")
+    tst.to_csv(filename99, index=False)
+
     # TODO: but need Test Year column in student ILEARN data (not currently there)
     # Get total # of students for each grade for each year
+
     # Calculate Proficiency for each year for each grade ->
     #   # students / # At or Above
     #   # students / # Approaching

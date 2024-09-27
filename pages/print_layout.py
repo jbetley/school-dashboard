@@ -291,7 +291,6 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
             list_of_schools, scoped_type, year_numeric, "info"
         )
 
-        # TODO: Add figs for SAT and Grad Rates
         if len(hs_info_data.index) > 1 and not hs_info_data.empty:
             hs_info_data.columns = hs_info_data.columns.astype(str)
 

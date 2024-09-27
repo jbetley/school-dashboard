@@ -137,7 +137,8 @@ class User(UserMixin, db.Model):  # type: ignore
     @property
     def school_id(self):
         return self.schoolid
-    
+
+
 # load_user is used by login_user, passes the user_id
 # and gets the User object that matches that id
 @login_manager.user_loader
@@ -273,7 +274,9 @@ def set_dropdown_options(app_state):
         else:
             # select only the authorized school using the school_id field of the authorized_user
             # object.
-            charters = available_charters[available_charters["SchoolID"] == str(school_id)]
+            charters = available_charters[
+                available_charters["SchoolID"] == str(school_id)
+            ]
 
     dropdown_dict = dict(zip(charters["SchoolName"], charters["SchoolID"]))
     dropdown_list = dict(sorted(dropdown_dict.items()))
@@ -558,10 +561,6 @@ def set_year_dropdown_options(
     State("academic-information-category-radio", "value"),
     State("analysis-multi-subject-radio", "value"),
 )
-# use values as Inputs when we use them to trigger changes in the
-# navigation. use them as States when we don't necessarily want
-# them to trigger changes, but we use their values in determining
-# what to display
 def navigation(
     current_page: str,
     school_id: str,
@@ -936,7 +935,7 @@ def navigation(
 
                     analysis_multi_subcategory_container = {"display": "block"}
 
-                else:  # TODO: Are these clauses doing anything?
+                else:
                     analysis_multi_subcategory_options = []
                     analysis_multi_subcategory_value = "No Data"
                     analysis_multi_subcategory_container = {"display": "block"}

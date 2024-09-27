@@ -3,7 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/06/24
+# date:     09/24/24
 
 import dash
 from dash import dcc, ctx, html, Input, Output, State, callback
@@ -42,9 +42,11 @@ def set_dropdown_options(
     numeric_year = int(string_year)
 
     # clear the list of comparison_schools when a new school is
-    # selected, otherwise comparison_schools will carry over
+    # selected (or when a K12 school switches from HS to K8 or
+    # vice versa) to prevent comparison_schools from carrying over
     input_trigger = ctx.triggered_id
-    if input_trigger == "charter-dropdown":
+
+    if input_trigger == "charter-dropdown" or input_trigger == "academic-type-radio":
         comparison_schools = []
 
     selected_school = get_school_index(school_id)

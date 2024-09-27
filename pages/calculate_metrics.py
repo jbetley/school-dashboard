@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/06/24
+# date:     09/24/24
 
 import pandas as pd
 import numpy as np
@@ -600,25 +600,24 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
             for i in range(all_grad_metric.shape[1] - 1, 0, -1)  # [1] - 1
         ]
 
-        # TODO: Adjust threshold per Accountability System adjustment
-        grad_limits_enrollment = [0.75, 0.499, 0.20]
+        grad_limits_enrollment = [0.7499, 0.50, 0.20]
 
-        grad_limits_metric = ahs_data[
+        enrollment_grad_metric = ahs_data[
             ahs_data["Category"].isin(["Graduation to Enrollment"])
         ]
 
         [
-            grad_limits_metric.insert(
+            enrollment_grad_metric.insert(
                 i + 1,
-                str(grad_limits_metric.columns[i])[: 7 - 3] + "Rate" + str(i),
-                grad_limits_metric.apply(
+                str(enrollment_grad_metric.columns[i])[: 7 - 3] + "Rate" + str(i),
+                enrollment_grad_metric.apply(
                     lambda x: set_academic_rating(
-                        x[grad_limits_metric.columns[i]], grad_limits_enrollment, 2
+                        x[enrollment_grad_metric.columns[i]], grad_limits_enrollment, 2
                     ),
                     axis=1,
                 ),
             )
-            for i in range(grad_limits_metric.shape[1] - 1, 0, -1)  # [1] - 1
+            for i in range(enrollment_grad_metric.shape[1] - 1, 0, -1)  # [1] - 1
         ]
 
         ccr_limits = [0.5, 0.499, 0.234]
@@ -641,7 +640,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         # combine dataframes and rename categories
         combined_ahs_metrics = pd.concat(
-            [cohort_grad_metric, all_grad_metric, grad_limits_metric, ccr_metric],
+            [cohort_grad_metric, all_grad_metric, enrollment_grad_metric, ccr_metric],
             ignore_index=True,
         )
 

@@ -135,7 +135,6 @@ def update_about_page(year: str, school: str):
 
     # filename99 = "DISC_data.csv"
     # overall_discipline_data.to_csv(filename99, index=False)
-    # TODO: Testing Discipline
 
     if len(demographic_data.index) == 0:
         enroll_table = no_data_table("No Data to Display", enroll_title, "six")
