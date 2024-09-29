@@ -1841,15 +1841,48 @@ def update_academic_information_page(
     #       numerator: At or Above Proficiency
     # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
     # Get
-    tst = get_ilearn_student_data(school)
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
-    print(tst)
+    ilearn_student_raw = get_ilearn_student_data(school)
 
-    filename99 = ("ilearn-stud-data.csv")
-    tst.to_csv(filename99, index=False)
+    ilearn_student_raw = ilearn_student_raw.sort_values(
+        ["STN", "Year"], ascending=[True, False]
+    )
 
-    # TODO: but need Test Year column in student ILEARN data (not currently there)
+    ilearn_student_raw["STN_shift"] = ilearn_student_raw["STN"].shift(-1)
+
+    # Raw df also includes scale scores- which we aren't using here
+    ilearn_2yr = ilearn_student_raw.filter(
+        regex=rf"Year|School ID|STN|STN_shift|ELA Proficiency|Math Proficiency"
+    )
+
+    ilearn_2y_final = ilearn_2yr[ilearn_2yr["STN"] == ilearn_2yr["STN_shift"]]
+
+
+    # TODO: This works - but is kludgy
+    blah = (ilearn_2y_final["Year"].values == 2024).sum()
+
+    bloo = ((ilearn_2y_final["Math Proficiency"].values == "At Proficiency") &
+     (ilearn_2y_final["Year"].values == 2024)).sum()
+    
+    print(bloo)
+    print(blah)
+    if blah != 0:
+        print (bloo / blah)
+
+    # TODO: Can do this with groupby and value counts?
+    # for each year, take # of total students / # of students At Proficiency
+
+    f=lambda x: x/x.sum()
+
+    tst = ilearn_2y_final.groupby("Year").agg(
+        {
+        "ELA Proficiency": "value_counts",
+        "Math Proficiency": "value_counts"
+        }
+    ).groupby(level=0).apply(f).sort_index()
+
+    filename98 = "tst.csv"
+    tst.to_csv(filename98, index=False)
+
     # Get total # of students for each grade for each year
 
     # Calculate Proficiency for each year for each grade ->
