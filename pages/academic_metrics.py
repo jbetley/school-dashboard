@@ -9,11 +9,17 @@ import dash
 from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
+import itertools
 
 # import local functions
 from .globals import ethnicity, subgroup, grades_all
 
-from .load_data import get_school_index, get_academic_data
+from .load_data import (
+    get_school_index,
+    get_academic_data,
+    get_ilearn_student_data,
+    get_excluded_years,
+)
 
 from .tables import (
     no_data_page,
@@ -35,7 +41,7 @@ from .calculate_metrics import (
     calculate_metrics,
 )
 
-from .calculations import conditional_fillna
+from .calculations import conditional_fillna, set_academic_rating
 
 dash.register_page(__name__, path="/academic_metrics", top_nav=True, order=9)
 
@@ -199,7 +205,176 @@ def update_academic_metrics(school: str, year: str):
                 table_14c, table_14d, combined_delta.columns
             )
 
-            # Accountability Metrics 1.4.e & 1.4.f (Placeholder)
+            ## Accountability Metrics 1.4.e & 1.4.f
+
+            # TODO: This needs to be a function or functions
+
+            # The percentage of students who have been enrolled for at least two (2)
+            # full school years achieving proficiency on the state assessment in English
+            # Language Arts & Math.
+            ilearn_student_raw = get_ilearn_student_data(school)
+
+            ilearn_student_raw = ilearn_student_raw[
+                (ilearn_student_raw["ELA Proficiency"] != "Did Not Test")
+                & (ilearn_student_raw["Math Proficiency"] != "Did Not Test")
+            ]
+
+            # sort by STN and Year and then shift STN up one - this shifts the
+            # previous year STN up - so any row with matching STN's is a row where
+            # the same student has been at the school for at least 2 years.
+            ilearn_student_raw = ilearn_student_raw.sort_values(
+                ["STN", "Year"], ascending=[True, False]
+            )
+
+            ilearn_student_raw["STN_shift"] = ilearn_student_raw["STN"].shift(-1)
+
+            # Raw df also includes scale scores- which we aren't using here
+            ilearn_2yr = ilearn_student_raw.filter(
+                regex=rf"Year|School ID|STN|STN_shift|ELA Proficiency|Math Proficiency"
+            ).copy()
+
+            ilearn_2yr_final = ilearn_2yr[ilearn_2yr["STN"] == ilearn_2yr["STN_shift"]]
+
+            # NOTE: Not currently breaking down by proficiency category, so we change
+            # "Above Proficiency" to "At Proficiency" to get final percentage
+            ilearn_2yr_final = ilearn_2yr_final.replace(
+                {"Above Proficiency": "At Proficiency"}, regex=True
+            )
+
+            #  Calculate N-Size and Proficiency Percentage
+            ilearn_2yr_ela = (
+                ilearn_2yr_final.groupby("Year")["ELA Proficiency"]
+                .value_counts()
+                .reset_index(name="SN-Size")
+            )
+            ela_prof = (
+                ilearn_2yr_final.groupby("Year")["ELA Proficiency"]
+                .value_counts(normalize=True)
+                .reset_index(name="School")
+            )
+            ilearn_2yr_ela["School"] = ela_prof["School"]
+
+            ilearn_2yr_ela = ilearn_2yr_ela[
+                (ilearn_2yr_ela["ELA Proficiency"] == "At Proficiency")
+            ]
+
+            ilearn_2yr_ela = ilearn_2yr_ela.replace(
+                {"At Proficiency": "ELA Proficiency"}, regex=True
+            )
+            ilearn_2yr_ela = ilearn_2yr_ela.rename(
+                columns={"ELA Proficiency": "Proficiency"}
+            )
+
+            ilearn_2yr_math = (
+                ilearn_2yr_final.groupby("Year")["Math Proficiency"]
+                .value_counts()
+                .reset_index(name="SN-Size")
+            )
+            math_prof = (
+                ilearn_2yr_final.groupby("Year")["Math Proficiency"]
+                .value_counts(normalize=True)
+                .reset_index(name="School")
+            )
+            ilearn_2yr_math["School"] = math_prof["School"]
+
+            ilearn_2yr_math = ilearn_2yr_math[
+                (ilearn_2yr_math["Math Proficiency"] == "At Proficiency")
+            ]
+
+            ilearn_2yr_math = ilearn_2yr_math.replace(
+                {"At Proficiency": "Math Proficiency"}, regex=True
+            )
+            ilearn_2yr_math = ilearn_2yr_math.rename(
+                columns={"Math Proficiency": "Proficiency"}
+            )
+
+            # merge
+            ilearn_2yr_all = pd.concat([ilearn_2yr_ela, ilearn_2yr_math], axis=0)
+
+            # drop excluded years
+            excluded_years = get_excluded_years(selected_year_string)
+
+            if excluded_years:
+                ilearn_2yr_all = ilearn_2yr_all[
+                    ~ilearn_2yr_all["Year"].isin(excluded_years)
+                ]
+
+            # reshape
+            ilearn_2yr_shape = ilearn_2yr_all.pivot(
+                index="Proficiency", columns="Year", values=["SN-Size", "School"]
+            )
+            ilearn_2yr_shape.columns = [
+                f"{x}{y}" for x, y in ilearn_2yr_shape.columns.to_flat_index()
+            ]
+            ilearn_2yr_shape = ilearn_2yr_shape.reset_index()
+            ilearn_2yr_shape = ilearn_2yr_shape.rename(
+                columns={"Proficiency": "Category"}
+            )
+
+            ilearn_2yr_shape.loc[
+                ilearn_2yr_shape["Category"] == "ELA Proficiency",
+                "Category",
+            ] = "1.4.e Two year student proficiency in ELA."
+
+            ilearn_2yr_shape.loc[
+                ilearn_2yr_shape["Category"] == "Math Proficiency",
+                "Category",
+            ] = "1.4.f Two year student proficiency in Math."
+
+            # reorder columns #TODO: Make function
+            school_cols = [e for e in ilearn_2yr_shape.columns if "School" in e]
+            nsize_cols = [e for e in ilearn_2yr_shape.columns if "SN-Size" in e]
+
+            school_cols.sort()
+            nsize_cols.sort()
+
+            final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+
+            final_cols.insert(0, "Category")
+            ilearn_2yr_final = ilearn_2yr_shape[final_cols]
+
+            # calculate metrics
+            ilearn_2yr_limits = [0.8, .69, .59]
+# TODO: Tweak until it works
+
+    #   1) the loop ("for i in range(attendance_data_metrics.shape[1], 1, -2)")
+    #   counts backwards by 2, from a number equal to the length of the columns
+    #   (attendance_data_metrics.shape[1]) to 1. These are indexes, so the
+    #   loop stops at the third column (which has an index of 2);
+    #   2) for each step, the code inserts a new column, at index "i". The column
+    #   header is a string that is equal to "the year (YYYY) part of the column
+    #   string  + "Rate" + "i" (the value of "i" doesn"t matter other than to
+    #   differentiate the columns) + the accountability value, which is a string
+    #   returned by the set_academic_rating() function. Note that we have to subtract
+    #   1 from the column to be tested (to account for 0 based indexing)
+    #   3) the set_academic_rating() function calculates an "accountability rating"
+    #   ("MS", "DNMS", "N/A", etc) taking as args:
+    #       i) the "value" to be rated. this will be from the "School" column, if
+    #       the value itself is rated (e.g., iread performance), or the difference
+    #       ("Diff") column, if there is an additional calculation required (e.g.,
+    #       year over year or compared to corp);
+    #       ii) a list of the threshold "limits" to be used in the calculation; and
+    #       iii) an integer "flag" which tells the function which calculation to use.
+            [
+                ilearn_2yr_final.insert(
+                    i + 1,
+                    str(ilearn_2yr_final.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
+                    ilearn_2yr_final.apply(
+                        lambda x: set_academic_rating(
+                            x[ilearn_2yr_final.columns[i]], ilearn_2yr_limits, 2
+                        ),
+                        axis=1,
+                    ),
+                )
+                for i in range(ilearn_2yr_final.shape[1] - 1, 1, -3)
+            ]
+
+            pd.set_option("display.max_columns", None)
+            pd.set_option("display.max_rows", None)
+
+            print(ilearn_2yr_final)
+
+            ## TODO: TMP [TO REMOVE]
             all_cols = combined_years.columns.tolist()
 
             simple_cols = [x for x in all_cols if "School" in x or "N-Size" in x]
@@ -227,6 +402,8 @@ def update_academic_metrics(school: str, year: str):
             table_container_14ef = set_table_layout(
                 table_14ef, table_14ef, metric_14ef_data.columns
             )
+
+            ## TODO: TMP
 
             # iread_data - combined_delta has all IREAD data, but we
             # currently only use Total

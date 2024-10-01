@@ -1835,14 +1835,16 @@ def update_academic_information_page(
     # The percentage of students who have been enrolled for at least two (2)
     # full school years achieving proficiency on the state assessment in English
     # Language Arts.
-    # For each year:
-    #   Calculate % for all students where the STN appears in the previous year
-    #       demoninator is the total # of students
-    #       numerator: At or Above Proficiency
-    # TODO: Add 2 year ILEARN comparisons (YoY comparing STN)
-    # Get
     ilearn_student_raw = get_ilearn_student_data(school)
 
+    ilearn_student_raw = ilearn_student_raw[
+        (ilearn_student_raw["ELA Proficiency"] != "Did Not Test")
+        & (ilearn_student_raw["Math Proficiency"] != "Did Not Test")
+    ]
+
+    # sort by STN and Year and then shift STN up one - this shifts the
+    # previous year STN up - so any row with matching STN's is a row where
+    # the same student has been at the school for at least 2 years.
     ilearn_student_raw = ilearn_student_raw.sort_values(
         ["STN", "Year"], ascending=[True, False]
     )
@@ -1852,36 +1854,59 @@ def update_academic_information_page(
     # Raw df also includes scale scores- which we aren't using here
     ilearn_2yr = ilearn_student_raw.filter(
         regex=rf"Year|School ID|STN|STN_shift|ELA Proficiency|Math Proficiency"
+    ).copy()
+
+    ilearn_2yr_final = ilearn_2yr[ilearn_2yr["STN"] == ilearn_2yr["STN_shift"]]
+
+    # NOTE: Not currently breaking down by proficiency category, so we change 
+    # "Above Proficiency" to "At Proficiency" to get final percentage
+    ilearn_2yr_final = ilearn_2yr_final.replace(
+        {"Above Proficiency": "At Proficiency"}, regex=True
+    )
+    
+    #  Calculate N-Size and Proficiency Percentage
+    ilearn_2yr_ela = (
+        ilearn_2yr_final.groupby("Year")["ELA Proficiency"]
+        .value_counts()
+        .reset_index(name="N-Size")
+    )
+    ela_prof = (
+        ilearn_2yr_final.groupby("Year")["Math Proficiency"]
+        .value_counts(normalize=True)
+        .reset_index(name="Percentage")
+    )
+    ilearn_2yr_ela["Percentage"] = ela_prof["Percentage"]
+
+    ilearn_2yr_math = (
+        ilearn_2yr_final.groupby("Year")["Math Proficiency"]
+        .value_counts()
+        .reset_index(name="N-Size")
+    )
+    math_prof = (
+        ilearn_2yr_final.groupby("Year")["Math Proficiency"]
+        .value_counts(normalize=True)
+        .reset_index(name="Percentage")
+    )
+    ilearn_2yr_math["Percentage"] = math_prof["Percentage"]
+
+    ela_year_counts = (
+        ilearn_2yr_ela.groupby("Year")["N-Size"]
+        .sum()
+        .reset_index(name="ELA N-Size")
     )
 
-    ilearn_2y_final = ilearn_2yr[ilearn_2yr["STN"] == ilearn_2yr["STN_shift"]]
+    ilearn_2yr_ela = ilearn_2yr_ela[
+        (ilearn_2yr_ela["ELA Proficiency"] == "At Proficiency")
+    ]
 
+    math_year_counts = (
+        ilearn_2yr_math.groupby("Year")["N-Size"]
+        .sum()
+        .reset_index(name="Math N-Size")
+    )
 
-    # TODO: This works - but is kludgy
-    blah = (ilearn_2y_final["Year"].values == 2024).sum()
-
-    bloo = ((ilearn_2y_final["Math Proficiency"].values == "At Proficiency") &
-     (ilearn_2y_final["Year"].values == 2024)).sum()
-    
-    print(bloo)
-    print(blah)
-    if blah != 0:
-        print (bloo / blah)
-
-    # TODO: Can do this with groupby and value counts?
-    # for each year, take # of total students / # of students At Proficiency
-
-    f=lambda x: x/x.sum()
-
-    tst = ilearn_2y_final.groupby("Year").agg(
-        {
-        "ELA Proficiency": "value_counts",
-        "Math Proficiency": "value_counts"
-        }
-    ).groupby(level=0).apply(f).sort_index()
-
-    filename98 = "tst.csv"
-    tst.to_csv(filename98, index=False)
+    # print(ilearn_2yr_ela)
+    # print(ilearn_2yr_math)
 
     # Get total # of students for each grade for each year
 

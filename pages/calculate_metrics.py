@@ -443,6 +443,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
     ]
 
     grad_limits_local = [0, -0.05, -0.10]
+
     local_grad_metric = data[
         data["Category"].isin(["Total Graduation Rate", "Non Waiver Graduation Rate"])
     ]
