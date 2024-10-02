@@ -207,7 +207,7 @@ def update_academic_metrics(school: str, year: str):
 
             ## Accountability Metrics 1.4.e & 1.4.f
 
-            # TODO: This needs to be a function or functions
+            # TODO: create function(s) for this
 
             # The percentage of students who have been enrolled for at least two (2)
             # full school years achieving proficiency on the state assessment in English
@@ -304,7 +304,7 @@ def update_academic_metrics(school: str, year: str):
                 index="Proficiency", columns="Year", values=["SN-Size", "School"]
             )
             ilearn_2yr_shape.columns = [
-                f"{x}{y}" for x, y in ilearn_2yr_shape.columns.to_flat_index()
+                f"{y}{x}" for x, y in ilearn_2yr_shape.columns.to_flat_index()
             ]
             ilearn_2yr_shape = ilearn_2yr_shape.reset_index()
             ilearn_2yr_shape = ilearn_2yr_shape.rename(
@@ -321,7 +321,7 @@ def update_academic_metrics(school: str, year: str):
                 "Category",
             ] = "1.4.f Two year student proficiency in Math."
 
-            # reorder columns #TODO: Make function
+            # reorder columns #TODO: convert to function
             school_cols = [e for e in ilearn_2yr_shape.columns if "School" in e]
             nsize_cols = [e for e in ilearn_2yr_shape.columns if "SN-Size" in e]
 
@@ -331,82 +331,38 @@ def update_academic_metrics(school: str, year: str):
             final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
 
             final_cols.insert(0, "Category")
-            ilearn_2yr_final = ilearn_2yr_shape[final_cols]
+            metric_14ef_data = ilearn_2yr_shape[final_cols]
 
             # calculate metrics
-            ilearn_2yr_limits = [0.8, .69, .59]
-# TODO: Tweak until it works
+            ilearn_2yr_limits = [0.8, 0.69, 0.59]
 
-    #   1) the loop ("for i in range(attendance_data_metrics.shape[1], 1, -2)")
-    #   counts backwards by 2, from a number equal to the length of the columns
-    #   (attendance_data_metrics.shape[1]) to 1. These are indexes, so the
-    #   loop stops at the third column (which has an index of 2);
-    #   2) for each step, the code inserts a new column, at index "i". The column
-    #   header is a string that is equal to "the year (YYYY) part of the column
-    #   string  + "Rate" + "i" (the value of "i" doesn"t matter other than to
-    #   differentiate the columns) + the accountability value, which is a string
-    #   returned by the set_academic_rating() function. Note that we have to subtract
-    #   1 from the column to be tested (to account for 0 based indexing)
-    #   3) the set_academic_rating() function calculates an "accountability rating"
-    #   ("MS", "DNMS", "N/A", etc) taking as args:
-    #       i) the "value" to be rated. this will be from the "School" column, if
-    #       the value itself is rated (e.g., iread performance), or the difference
-    #       ("Diff") column, if there is an additional calculation required (e.g.,
-    #       year over year or compared to corp);
-    #       ii) a list of the threshold "limits" to be used in the calculation; and
-    #       iii) an integer "flag" which tells the function which calculation to use.
             [
-                ilearn_2yr_final.insert(
-                    i + 1,
-                    str(ilearn_2yr_final.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-                    ilearn_2yr_final.apply(
+                metric_14ef_data.insert(
+                    i+1,
+                    str(metric_14ef_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
+                    metric_14ef_data.apply(
                         lambda x: set_academic_rating(
-                            x[ilearn_2yr_final.columns[i]], ilearn_2yr_limits, 2
+                            x[metric_14ef_data.columns[i - 1]], ilearn_2yr_limits, 2
                         ),
                         axis=1,
                     ),
                 )
-                for i in range(ilearn_2yr_final.shape[1] - 1, 1, -3)
+                for i in range(metric_14ef_data.shape[1] - 1, 1, -2)
             ]
 
-            pd.set_option("display.max_columns", None)
-            pd.set_option("display.max_rows", None)
-
-            print(ilearn_2yr_final)
-
-            ## TODO: TMP [TO REMOVE]
-            all_cols = combined_years.columns.tolist()
-
-            simple_cols = [x for x in all_cols if "School" in x or "N-Size" in x]
-            simple_cols = ["Category"] + simple_cols
-
-            year_proficiency_empty = pd.DataFrame(columns=simple_cols)
-
-            year_proficiency_dict = {
-                "Category": [
-                    "1.4.e Two year student proficiency in ELA.",
-                    "1.4.f Two year student proficiency in Math.",
-                ]
-            }
-            year_proficiency = pd.DataFrame(year_proficiency_dict)
-
-            metric_14ef_data = pd.concat(
-                [year_proficiency_empty, year_proficiency], ignore_index=True
-            )
-            metric_14ef_data.reset_index()
-            metric_14ef_data = conditional_fillna(metric_14ef_data)
             metric_14ef_label = [
                 "Percentage of students enrolled for at least two school years achieving proficiency on the state assessment in English Language Arts (1.4.e) and Math (1.4.f)"
             ]
+
+            metric_14ef_data = convert_to_svg_circle(metric_14ef_data)
             table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
+
             table_container_14ef = set_table_layout(
                 table_14ef, table_14ef, metric_14ef_data.columns
             )
 
-            ## TODO: TMP
-
-            # iread_data - combined_delta has all IREAD data, but we
-            # currently only use Total
+            # iread_data
+            # NOTE: combined_delta has other available data as well
             iread_data = combined_delta[
                 combined_delta["Category"] == "Total|IREAD Proficient %"
             ].copy()
@@ -423,13 +379,16 @@ def update_academic_metrics(school: str, year: str):
                     "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment."
                 ]
                 iread_data = convert_to_svg_circle(iread_data)
+
                 table_14g = create_metric_table(metric_14g_label, iread_data)
+
                 table_container_14g = set_table_layout(
                     table_14g, table_14g, iread_data.columns
                 )
 
             else:
-                # create_metric_table requies label to be a list, while no_data_table wants a string
+                # create_metric_table requies label to be a list, while
+                # no_data_table wants a string
                 empty_table_14g = no_data_table(
                     "No Data to Display.",
                     "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.",

@@ -28,7 +28,7 @@ from .calculations import calculate_percentage
 # whether we are analyzing a school or a corporation
 
 
-def transpose_data(df, params):
+def transpose_data(raw_df, params):
     # First, determine whether df contains data for the charter school or
     # the  geo school corporation. A school corporation will always have the
     # same School and Corporation Name and School and Corporation ID.
@@ -38,6 +38,8 @@ def transpose_data(df, params):
     # School and Corporation ID, but will have a different School and Corporation
     # Name. So we check whether the two sets of columns are equivalent and if
     # both are, the data must belong to a school corporation.
+    df = raw_df.copy()
+
     df = df.reset_index(drop=True)
 
     if (
@@ -194,7 +196,7 @@ def transpose_data(df, params):
 
 
 def process_growth_data(
-    data: pd.DataFrame, category: str
+    values: pd.DataFrame, category: str
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Process a dataframe with student levelgrowth data into two dataframes with
@@ -210,6 +212,7 @@ def process_growth_data(
         table_data (pd.DataFrame): processed dataframe used to create table
         fig_data (pd.DataFrame): processed dataframe used to create fig
     """
+    data = values.copy()
     # step 1: find the percentage of students with Adequate growth using
     # "Majority Enrolled" students (all available data) and the percentage
     # of students with Adequate growth using the set of students enrolled for

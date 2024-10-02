@@ -41,7 +41,6 @@ def calculate_attendance_metrics(
     corp_type = "corp_" + school_type
 
     school_attendance_rate = get_attendance_data(school, school_type, year)
-
     corp_attendance_rate = get_attendance_data(corp_id, corp_type, year)
 
     # make sure df have identical columns (corp can have more years)
@@ -163,7 +162,7 @@ def calculate_attendance_metrics(
 
 
 def calculate_values(
-    data: pd.DataFrame, year: str
+    df: pd.DataFrame, year: str
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Takes a dataframe of school academic data and calculates the proficiency difference
@@ -175,6 +174,7 @@ def calculate_values(
     Returns:
         pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
     """
+    data = df.copy()
 
     data.columns = data.columns.astype(str)
 
@@ -413,7 +413,7 @@ def calculate_metrics(
     return year_over_year_data, comparison_data
 
 
-def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
+def calculate_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a school dataframe and assigns an academic rating for each category for each year.
 
@@ -423,7 +423,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: dataframe with School, Tested, Diff, and Rate columns for each year
     """
-    data = merged_data.copy()
+    data = df.copy()
 
     grad_limits_state = [0, -0.05, -0.15]
     state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
@@ -500,7 +500,7 @@ def calculate_high_school_metrics(merged_data: pd.DataFrame) -> pd.DataFrame:
     return combined_grad_metrics
 
 
-def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
+def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a school dataframe and school ID string and assigns an academic rating
     for each category for each year.
@@ -514,12 +514,12 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
     """
     # AHS metrics is a small subset of all metrics, instead of pulling in the
     # entire HS DF, we just pull the datapoints we need directly from the DB.
-    ahs_data = values.copy()
+    data = df.copy()
 
-    if len(ahs_data.index) > 0:
-        ahs_data.columns = ahs_data.columns.astype(str)
+    if len(data.index) > 0:
+        data.columns = data.columns.astype(str)
 
-        ahs_data.rename(
+        data.rename(
             columns={
                 "Total|Graduation Rate": "In Cohort",
                 "Grade 12|Graduation Rate": "Grade 12",
@@ -529,21 +529,21 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         )
 
         # transpose dataframe and clean headers
-        ahs_data = (
-            ahs_data.set_index("Year")
+        data = (
+            data.set_index("Year")
             .T.rename_axis("Category")
             .rename_axis(None, axis=1)
             .reset_index()
         )
 
         # reorder year columns and apply to df headers
-        data_columns = list(ahs_data.columns[:0:-1])
+        data_columns = list(data.columns[:0:-1])
         data_columns.sort()
         reordered_columns = ["Category"] + data_columns
 
-        ahs_data = ahs_data[reordered_columns]
+        data = data[reordered_columns]
 
-        ahs_data = ahs_data.set_index(["Category"]).add_suffix("School").reset_index()
+        data = data.set_index(["Category"]).add_suffix("School").reset_index()
 
         #   1) the loop ("for i in range(data_metrics.shape[1], 0, -1)")
         #   counts backwards by 1 (-1), from a number equal to the length of the columns
@@ -567,7 +567,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         grad_limits_cohort = [0.75, 0.599, 0.45]
 
-        cohort_grad_metric = ahs_data[ahs_data["Category"].isin(["In Cohort"])]
+        cohort_grad_metric = data[data["Category"].isin(["In Cohort"])]
 
         [
             cohort_grad_metric.insert(
@@ -585,7 +585,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         grad_limits_all = [0.85, 0.699, 0.499]
 
-        all_grad_metric = ahs_data[ahs_data["Category"].isin(["Grade 12"])]
+        all_grad_metric = data[data["Category"].isin(["Grade 12"])]
 
         [
             all_grad_metric.insert(
@@ -603,8 +603,8 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         grad_limits_enrollment = [0.7499, 0.50, 0.20]
 
-        enrollment_grad_metric = ahs_data[
-            ahs_data["Category"].isin(["Graduation to Enrollment"])
+        enrollment_grad_metric = data[
+            data["Category"].isin(["Graduation to Enrollment"])
         ]
 
         [
@@ -623,7 +623,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         ccr_limits = [0.5, 0.499, 0.234]
 
-        ccr_metric = ahs_data[ahs_data["Category"].isin(["CCR Percentage"])]
+        ccr_metric = data[data["Category"].isin(["CCR Percentage"])]
 
         [
             ccr_metric.insert(
@@ -646,7 +646,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         )
 
         # NOTE: State Letter Grades are not currently used. so
-        # we create a 1 row dataframe using ahs_data cols,
+        # we create a 1 row dataframe using data cols,
         # set category to "State Grade", set value to "No Data",
         # and set Rate to "".
         combined_ahs_metrics_cols = combined_ahs_metrics.columns.tolist()
@@ -696,7 +696,7 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
 
         # # drop any cols (years) that aren't in CCR data
         # ahs_state_grades = ahs_state_grades[
-        #     ahs_state_grades.columns.intersection(ahs_data.columns)
+        #     ahs_state_grades.columns.intersection(data.columns)
         # ]
 
         # letter_grade_limits = ["A", "B", "C", "D", "F"]
@@ -715,8 +715,8 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
         # ]
 
         # concatenate and add metric column
-        ahs_data = pd.concat([state_grades, combined_ahs_metrics])
-        ahs_data = ahs_data.reset_index(drop=True)
+        data = pd.concat([state_grades, combined_ahs_metrics])
+        data = data.reset_index(drop=True)
         ahs_metric_nums = [
             "1.1. ",
             "1.2.a. ",
@@ -724,17 +724,17 @@ def calculate_adult_high_school_metrics(values: pd.DataFrame) -> pd.DataFrame:
             "(New) ",
             "1.3. ",
         ]
-        ahs_data.insert(loc=0, column="Metric", value=ahs_metric_nums)
+        data.insert(loc=0, column="Metric", value=ahs_metric_nums)
 
-        ahs_data = ahs_data.fillna("No Data")
+        data = data.fillna("No Data")
 
     else:
-        ahs_data = pd.DataFrame()
+        data = pd.DataFrame()
 
-    return ahs_data
+    return data
 
 
-def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
+def calculate_iread_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a school dataframe and an academic rating for iread proficiency
     for each year.
@@ -745,6 +745,8 @@ def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: dataframe with School,Tested, Diff, and Rate columns for each year
     """
+    data = df.copy()
+
     iread_limits = [0.9, 0.8, 0.7, 0.7]
 
     # IREAD data has already been run through the comparison_metric() function
@@ -773,7 +775,7 @@ def calculate_iread_metrics(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
+def calculate_financial_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a dataframe of float values and returns the same dataframe with one
     extra 'Rating' column for each year of data. Ratings are calculated based
@@ -791,7 +793,8 @@ def calculate_financial_metrics(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         final_grid (pd.DataFrame): a DataFrame object with additional 'Rating' columns
     """
-
+    data = df.copy()
+    
     # Some schools have 'pre-opening' financial activity before the school
     # begins to operate and receive state/federal grants. The below code
     # ignores all columns (years) where the value in the State Grant column

@@ -1832,97 +1832,79 @@ def update_academic_information_page(
                 # End WIDA to IREAD Table
         # End WIDA Breakdown (School Level) block
 
-    # The percentage of students who have been enrolled for at least two (2)
-    # full school years achieving proficiency on the state assessment in English
-    # Language Arts.
-    ilearn_student_raw = get_ilearn_student_data(school)
+    # TODO: Moved to academic_metrics
+    # # The percentage of students who have been enrolled for at least two (2)
+    # # full school years achieving proficiency on the state assessment in English
+    # # Language Arts.
+    # ilearn_student_raw = get_ilearn_student_data(school)
 
-    ilearn_student_raw = ilearn_student_raw[
-        (ilearn_student_raw["ELA Proficiency"] != "Did Not Test")
-        & (ilearn_student_raw["Math Proficiency"] != "Did Not Test")
-    ]
+    # ilearn_student_raw = ilearn_student_raw[
+    #     (ilearn_student_raw["ELA Proficiency"] != "Did Not Test")
+    #     & (ilearn_student_raw["Math Proficiency"] != "Did Not Test")
+    # ]
 
-    # sort by STN and Year and then shift STN up one - this shifts the
-    # previous year STN up - so any row with matching STN's is a row where
-    # the same student has been at the school for at least 2 years.
-    ilearn_student_raw = ilearn_student_raw.sort_values(
-        ["STN", "Year"], ascending=[True, False]
-    )
+    # # sort by STN and Year and then shift STN up one - this shifts the
+    # # previous year STN up - so any row with matching STN's is a row where
+    # # the same student has been at the school for at least 2 years.
+    # ilearn_student_raw = ilearn_student_raw.sort_values(
+    #     ["STN", "Year"], ascending=[True, False]
+    # )
 
-    ilearn_student_raw["STN_shift"] = ilearn_student_raw["STN"].shift(-1)
+    # ilearn_student_raw["STN_shift"] = ilearn_student_raw["STN"].shift(-1)
 
-    # Raw df also includes scale scores- which we aren't using here
-    ilearn_2yr = ilearn_student_raw.filter(
-        regex=rf"Year|School ID|STN|STN_shift|ELA Proficiency|Math Proficiency"
-    ).copy()
+    # # Raw df also includes scale scores- which we aren't using here
+    # ilearn_2yr = ilearn_student_raw.filter(
+    #     regex=rf"Year|School ID|STN|STN_shift|ELA Proficiency|Math Proficiency"
+    # ).copy()
 
-    ilearn_2yr_final = ilearn_2yr[ilearn_2yr["STN"] == ilearn_2yr["STN_shift"]]
+    # ilearn_2yr_final = ilearn_2yr[ilearn_2yr["STN"] == ilearn_2yr["STN_shift"]]
 
-    # NOTE: Not currently breaking down by proficiency category, so we change 
-    # "Above Proficiency" to "At Proficiency" to get final percentage
-    ilearn_2yr_final = ilearn_2yr_final.replace(
-        {"Above Proficiency": "At Proficiency"}, regex=True
-    )
-    
-    #  Calculate N-Size and Proficiency Percentage
-    ilearn_2yr_ela = (
-        ilearn_2yr_final.groupby("Year")["ELA Proficiency"]
-        .value_counts()
-        .reset_index(name="N-Size")
-    )
-    ela_prof = (
-        ilearn_2yr_final.groupby("Year")["Math Proficiency"]
-        .value_counts(normalize=True)
-        .reset_index(name="Percentage")
-    )
-    ilearn_2yr_ela["Percentage"] = ela_prof["Percentage"]
+    # # NOTE: Not currently breaking down by proficiency category, so we change
+    # # "Above Proficiency" to "At Proficiency" to get final percentage
+    # ilearn_2yr_final = ilearn_2yr_final.replace(
+    #     {"Above Proficiency": "At Proficiency"}, regex=True
+    # )
 
-    ilearn_2yr_math = (
-        ilearn_2yr_final.groupby("Year")["Math Proficiency"]
-        .value_counts()
-        .reset_index(name="N-Size")
-    )
-    math_prof = (
-        ilearn_2yr_final.groupby("Year")["Math Proficiency"]
-        .value_counts(normalize=True)
-        .reset_index(name="Percentage")
-    )
-    ilearn_2yr_math["Percentage"] = math_prof["Percentage"]
+    # #  Calculate N-Size and Proficiency Percentage
+    # ilearn_2yr_ela = (
+    #     ilearn_2yr_final.groupby("Year")["ELA Proficiency"]
+    #     .value_counts()
+    #     .reset_index(name="N-Size")
+    # )
+    # ela_prof = (
+    #     ilearn_2yr_final.groupby("Year")["Math Proficiency"]
+    #     .value_counts(normalize=True)
+    #     .reset_index(name="Percentage")
+    # )
+    # ilearn_2yr_ela["Percentage"] = ela_prof["Percentage"]
 
-    ela_year_counts = (
-        ilearn_2yr_ela.groupby("Year")["N-Size"]
-        .sum()
-        .reset_index(name="ELA N-Size")
-    )
+    # ilearn_2yr_math = (
+    #     ilearn_2yr_final.groupby("Year")["Math Proficiency"]
+    #     .value_counts()
+    #     .reset_index(name="N-Size")
+    # )
+    # math_prof = (
+    #     ilearn_2yr_final.groupby("Year")["Math Proficiency"]
+    #     .value_counts(normalize=True)
+    #     .reset_index(name="Percentage")
+    # )
+    # ilearn_2yr_math["Percentage"] = math_prof["Percentage"]
 
-    ilearn_2yr_ela = ilearn_2yr_ela[
-        (ilearn_2yr_ela["ELA Proficiency"] == "At Proficiency")
-    ]
+    # ela_year_counts = (
+    #     ilearn_2yr_ela.groupby("Year")["N-Size"]
+    #     .sum()
+    #     .reset_index(name="ELA N-Size")
+    # )
 
-    math_year_counts = (
-        ilearn_2yr_math.groupby("Year")["N-Size"]
-        .sum()
-        .reset_index(name="Math N-Size")
-    )
+    # ilearn_2yr_ela = ilearn_2yr_ela[
+    #     (ilearn_2yr_ela["ELA Proficiency"] == "At Proficiency")
+    # ]
 
-    # print(ilearn_2yr_ela)
-    # print(ilearn_2yr_math)
-
-    # Get total # of students for each grade for each year
-
-    # Calculate Proficiency for each year for each grade ->
-    #   # students / # At or Above
-    #   # students / # Approaching
-    #   for IREAD Passing Students and IREAD not passing students
-    # % Proficiency for students not passing IREAD
-    # % Proficiency for students passing IREAD
-
-    # Avg ELA/Math over time for IREAD Pass - 2018-19, 21, 22, 23
-    # group by IREAD Pass and ILEARN Year:
-    # a) count Exceeds, At, Approach, Below
-    # b) measure point diff between Cut and Scale and Average
-    # c) measure raw scale score avg
-    # Avg ELA over time for IREAD No Pass
+    # math_year_counts = (
+    #     ilearn_2yr_math.groupby("Year")["N-Size"]
+    #     .sum()
+    #     .reset_index(name="Math N-Size")
+    # )
 
     return (
         iread_school_level_layout,

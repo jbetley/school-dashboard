@@ -3,7 +3,7 @@
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     03/25/24
+# date:     10/02/24
 
 import pandas as pd
 import numpy as np
@@ -46,7 +46,7 @@ def customwrap(s: str, width: int = 16) -> str:
     return "  <br>".join(textwrap.wrap(s, width=width))
 
 
-def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
+def convert_to_svg_circle(df: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a Dataframe and replaces text with svg circles coded certain colors
     based on the text. See:
@@ -60,7 +60,7 @@ def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.Dataframe: returns the same dataframe with svg circles in place of text
     """
-    result = val.copy()
+    result = df.copy()
 
     # Using font-awesome circle icon to replace string ratings.
     result = result.replace(
@@ -88,7 +88,7 @@ def convert_to_svg_circle(val: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def create_chart_label(data: pd.DataFrame) -> str:
+def create_chart_label(df: pd.DataFrame) -> str:
     """
     Takes a dataframe of academic data and creates a chart label based on the column content
 
@@ -98,6 +98,7 @@ def create_chart_label(data: pd.DataFrame) -> str:
     Returns:
         label (str): chart label
     """
+    data = df.copy()
 
     data_columns = data.columns.tolist()
 
@@ -221,7 +222,7 @@ def create_chart_label(data: pd.DataFrame) -> str:
     return label
 
 
-def create_school_label(data: pd.DataFrame) -> pd.Series:
+def create_school_label(df: pd.DataFrame) -> pd.Series:
     """
     Takes a dataframe of academic data and creates a label for each school, merging school name
     and grade span. Used by the combine_school_name_and_grade_levels() function and by certain
@@ -233,6 +234,8 @@ def create_school_label(data: pd.DataFrame) -> pd.Series:
     Returns:
         label (pd.Series): a series of labels one for each school
     """
+
+    data = df.copy()
 
     label = data[["School Name", "Low Grade", "High Grade"]].copy()
 
@@ -259,7 +262,7 @@ def create_school_label(data: pd.DataFrame) -> pd.Series:
     return label
 
 
-def combine_school_name_and_grade_levels(data: pd.DataFrame) -> pd.DataFrame:
+def combine_school_name_and_grade_levels(df: pd.DataFrame) -> pd.DataFrame:
     """
     Creates a series that merges school name and grade spans and drops the
     grade span columns from the dataframe (they are not charted)
@@ -270,6 +273,8 @@ def combine_school_name_and_grade_levels(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         data (pd.DataFrame): dataframe
     """
+    data = df.copy()
+
     school_names = create_school_label(data)
 
     if "Low Grade" in data:
@@ -287,7 +292,7 @@ def combine_school_name_and_grade_levels(data: pd.DataFrame) -> pd.DataFrame:
 
 
 def identify_missing_categories(
-    raw_data: pd.DataFrame, tested_categories: list
+    df: pd.DataFrame, tested_categories: list
 ) -> Tuple[pd.DataFrame, str, str]:
     """
     Processes several dataframes for display in comparison tables while tracking both schools
@@ -308,6 +313,7 @@ def identify_missing_categories(
             school_string (str): a string of schools which have no data
         ]
     """
+    data = df.copy()
 
     subject_categories = [
         c
@@ -315,23 +321,23 @@ def identify_missing_categories(
         if c not in ["School Name", "Low Grade", "High Grade"]
     ]
 
-    school_columns = [i for i in subject_categories if i in raw_data.columns]
+    school_columns = [i for i in subject_categories if i in data.columns]
     school_categories = [ele for ele in school_columns if ele not in info_categories]
 
     # test all school columns and drop any where all columns (proficiency data) is nan/null
-    final_data = raw_data.dropna(subset=school_categories, how="all")
+    final_data = data.dropna(subset=school_categories, how="all")
     final_data = final_data.replace(r"^\s*$", np.nan, regex=True)
 
     # get the names of the schools that have no data by comparing the column sets before
     # and after the drop - we use this later to clean up the school_string
     missing_schools = list(
-        set(raw_data["School Name"]) - set(final_data["School Name"])
+        set(data["School Name"]) - set(final_data["School Name"])
     )
 
     # Get the names and categories of schools that have data for some categories and not others.
     # In the end we want  a list of schools that is made up of schools that are missing all data
     # + schools that are missing some data + what data they are missing
-    check_data = raw_data.copy()
+    check_data = data.copy()
 
     if check_data.columns.isin(["Low Grade", "High Grade"]).any():
         check_data = check_data.drop(["Low Grade", "High Grade"], axis=1)

@@ -12,7 +12,7 @@ from typing import Tuple
 import scipy.spatial as spatial
 
 
-def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
+def conditional_fillna(df: pd.DataFrame) -> pd.DataFrame:
     """
     conditional fillna based on column name using substrings to identify columns
 
@@ -22,6 +22,8 @@ def conditional_fillna(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the same dataframe with the nans filled
     """
+    data = df.copy()
+
     data.columns = data.columns.astype(str)
 
     fill_with_na = [i for i in data.columns if "Rate" in i or "Rating" in i]
@@ -108,7 +110,7 @@ def calculate_difference(value1: str, value2: str) -> npt.NDArray:
     return result
 
 
-def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
+def calculate_graduation_rate(df: pd.DataFrame) -> pd.DataFrame:
     """
     Wrapper around calculate_percentage() used to calculate graduation rate from a
     dataframe (Graduates / Cohort Count)
@@ -119,6 +121,8 @@ def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the same dataframe with "Graduation Rate" column added.
     """
+    data = df.copy()
+
     cohorts = data[
         data.columns[data.columns.str.contains(r"Cohort Count")]
     ].columns.tolist()
@@ -133,7 +137,7 @@ def calculate_graduation_rate(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
+def calculate_sat_rate(df: pd.DataFrame) -> pd.DataFrame:
     """
     Wrapper around calculate_percentage() used to calculate SAT At Benchmark %
     dataframe (At Benchmark / Total Tested)
@@ -144,6 +148,8 @@ def calculate_sat_rate(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: the same dataframe with "Benchmark %" column added.
     """
+    data = df.copy()
+    
     tested = data[
         data.columns[data.columns.str.contains(r"Total Tested")]
     ].columns.tolist()
@@ -493,7 +499,7 @@ def round_percentages(percentages: list) -> list:
     return [percentage[0] for percentage in result]
 
 
-def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
+def check_for_no_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     """
     Takes a dataframe, finds the Years where all values are "***", nan, or none
     and turns the results into a single string listing the year(s) meeting the condition
@@ -507,25 +513,25 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
 
     """
 
-    tmp = data.copy()
-    tmp["Year"] = tmp["Year"].astype(str)
+    data = df.copy()
+    data["Year"] = data["Year"].astype(str)
 
-    if "School Name" in tmp.columns:
-        tmp = tmp.drop("School Name", axis=1)
+    if "School Name" in data.columns:
+        data = data.drop("School Name", axis=1)
 
-    tmp = tmp.set_index("Year")
+    data = data.set_index("Year")
 
     # Identify and drop rows with no or insufficient data ("***" or NaN/None)
     # the nunique test will always be true for a single column (e.g., IREAD). so we
     # need to test one column dataframes separately
-    if len(tmp.columns) == 1:
+    if len(data.columns) == 1:
         # the safest way is to coerce all strings to numeric and then test for null
-        tmp[tmp.columns[0]] = pd.to_numeric(tmp[tmp.columns[0]], errors="coerce")
-        no_data_years = tmp.index[tmp[tmp.columns[0]].isnull()].values.tolist()
+        data[data.columns[0]] = pd.to_numeric(data[data.columns[0]], errors="coerce")
+        no_data_years = data.index[data[data.columns[0]].isnull()].values.tolist()
 
     else:
-        no_data_years = tmp[
-            tmp.apply(pd.Series.nunique, axis=1) == 1
+        no_data_years = data[
+            data.apply(pd.Series.nunique, axis=1) == 1
         ].index.values.tolist()
 
     if no_data_years:
@@ -541,7 +547,7 @@ def check_for_no_data(data: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     return data, string
 
 
-def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
+def check_for_insufficient_n_size(df: pd.DataFrame) -> str:
     """
     Takes a dataframe, finds the Categories and Years where the value is equal
     to "***"(insufficient n-size), and turns the results into a single string,
@@ -558,63 +564,65 @@ def check_for_insufficient_n_size(data: pd.DataFrame) -> str:
         string (str): A single string listing all years (rows) for which there is insufficient data
     """
 
+    data = df.copy()
+
     #  returns the indices of elements in a tuple of arrays where the condition is satisfied
     insufficient_n_size = np.where(data == "***")
 
     # creates a new dataframe from the respective indicies
-    df = pd.DataFrame(
+    tmp_df = pd.DataFrame(
         np.column_stack(insufficient_n_size), columns=["Year", "Category"]
     )
 
-    if len(df.index) > 0:
+    if len(tmp_df.index) > 0:
         # use map in conjunction with mask to replace the index values in the dataframes
         # with the Year and Category values
-        df["Category"] = df["Category"].mask(
-            df["Category"] >= 0,
-            df["Category"].map(dict(enumerate(data.columns.tolist()))),
+        tmp_df["Category"] = tmp_df["Category"].mask(
+            tmp_df["Category"] >= 0,
+            tmp_df["Category"].map(dict(enumerate(data.columns.tolist()))),
         )
-        df["Year"] = df["Year"].mask(
-            df["Year"] >= 0, df["Year"].map(dict(enumerate(data["Year"].tolist())))
+        tmp_df["Year"] = tmp_df["Year"].mask(
+            tmp_df["Year"] >= 0, tmp_df["Year"].map(dict(enumerate(data["Year"].tolist())))
         )
 
-        df["Category"] = df["Category"].str.replace("\|.*$", "", regex=True)
+        tmp_df["Category"] = tmp_df["Category"].str.replace("\|.*$", "", regex=True)
 
-        df = df.sort_values(by=["Year"], ascending=True)
+        tmp_df = tmp_df.sort_values(by=["Year"], ascending=True)
 
         # Shift the Year column one unit down then compare the shifted column with the
         # non-shifted one to create a boolean mask which can be used to identify the
         # boundaries between adjacent duplicate rows. then take the cumulative sum on
         # the boolean mask to identify the blocks of rows where the value stays the same
-        c = df["Category"].ne(df["Category"].shift()).cumsum()
+        c = tmp_df["Category"].ne(tmp_df["Category"].shift()).cumsum()
 
         # group the dataframe on the above identfied blocks and aggregate the Year column
         # using first and Message using .join
-        df = df.groupby(c, as_index=False).agg({"Category": "first", "Year": ", ".join})
+        tmp_df = tmp_df.groupby(c, as_index=False).agg({"Category": "first", "Year": ", ".join})
 
         # then do the same thing for year
-        y = df["Year"].ne(df["Year"].shift()).cumsum()
-        df = df.groupby(y, as_index=False).agg({"Year": "first", "Category": ", ".join})
+        y = tmp_df["Year"].ne(tmp_df["Year"].shift()).cumsum()
+        tmp_df = tmp_df.groupby(y, as_index=False).agg({"Year": "first", "Category": ", ".join})
 
         # reverse order of columns
-        df = df[df.columns[::-1]]
+        tmp_df = tmp_df[tmp_df.columns[::-1]]
 
-        df["Year"] = "(" + df["Year"].astype(str) + ")"
+        tmp_df["Year"] = "(" + tmp_df["Year"].astype(str) + ")"
 
         # Finally combine all rows into a single string.
-        int_string = [", ".join(val) for val in df.astype(str).values.tolist()]
-        df_string = "; ".join(int_string) + "."
+        int_string = [", ".join(val) for val in tmp_df.astype(str).values.tolist()]
+        tmp_df_string = "; ".join(int_string) + "."
 
         # clean up any extra commas
-        df_string = df_string.replace(", (", " (")
+        tmp_df_string = tmp_df_string.replace(", (", " (")
 
     else:
-        df_string = ""
+        tmp_df_string = ""
 
-    return df_string
+    return tmp_df_string
 
 
 def find_nearest(
-    school_idx: pd.Index, values: pd.DataFrame
+    school_idx: pd.Index, df: pd.DataFrame
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Based on https://stackoverflow.com/q/43020919/190597
@@ -640,7 +648,7 @@ def find_nearest(
         index (np.ndarray) & distance (np.ndarray): an array of dataframe indexes
         and an array of distances (in miles)
     """
-    data = values.copy()
+    data = df.copy()
 
     # number of schools to return (add 1 to account for the fact that the selected school
     # is included in the return set) - number needs to be high enough to ensure there are

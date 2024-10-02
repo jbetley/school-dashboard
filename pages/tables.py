@@ -1187,7 +1187,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
     return table_layout
 
 
-def create_metric_table(label: list, data: pd.DataFrame) -> list:
+def create_metric_table(label: list, values: pd.DataFrame) -> list:
     """
     Takes a label and a dataframe consisting of Rating and Metric Columns and returns
     a dash datatable. NOTE: could possibly be less complicated than it is, or maybe not-
@@ -1200,6 +1200,7 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
     Returns:
         table (list): dash html.Div enclosing html.Label and DataTable
     """
+    data = values.copy()
 
     table_size = len(data.columns)
 
@@ -1246,7 +1247,10 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         data.columns = data.columns.str.replace("SN-Size", "(N)", regex=True)
 
         # different column headers for AHS
-        if data["Category"].str.contains("CCR Percentage|Cohort Graduation Rate").any() == True:
+        if (
+            data["Category"].str.contains("CCR Percentage|Cohort Graduation Rate").any()
+            == True
+        ):
             data.columns = data.columns.str.replace("School", "Value", regex=True)
             school_headers = [y for y in data.columns.tolist() if "Value" in y]
         else:
@@ -1351,14 +1355,13 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
 
                 name_cols.append([item[:4], item[4:]])
 
-
         # Identify and Tag "Initial Year"- applies only to the year over year
         # calculation. For a df with only one year of data, the string "Diff"
         # will not appear in the column names. Search the label for "previous
         # school year" to distinguish year over year tables from comparison tables
         # For a df with multiple years of data, the column pattern ending in:
         # "%, (N), %" indicates a year where no difference was calculated.
-        # There may be a more elegant way to check the second case, but 
+        # There may be a more elegant way to check the second case, but
         # checking the 2nd, 3rd, and 4th cols looking for the pattern:
         # "%, (N), %", seems a reliable way to tell when we need to add str
         # "Initial Year" to idx 1 & 2.
@@ -1368,12 +1371,11 @@ def create_metric_table(label: list, data: pd.DataFrame) -> list:
         # styling the table
         first_year = None
 
-        check_string = '\t'.join(all_cols)
+        check_string = "\t".join(all_cols)
 
         # Single Year
         if "Diff" not in check_string:
             if len(all_cols) <= 3:
-
                 # typically, turning a list into a string and checking with
                 # "in" is faster than using any(), but can't do it here
                 # because it is possible to have markup code (e.g., Br(None))
