@@ -21,7 +21,6 @@ from .globals import ethnicity, subgroup, subject, grades_all, grades, grades_or
 from .load_data import (
     get_school_stns,
     get_iread_student_data,
-    get_ilearn_student_data,
     get_wida_student_data,
     get_proficiency_data,
     get_school_index,
@@ -353,6 +352,7 @@ def update_academic_information_page(
 
             # SAT releases prior to grad rate, so it is possible to have SAT
             # data but no grad data - so we drop Cols that are all NaN or blank
+
             graduation_data = graduation_data.loc[
                 :,
                 ~graduation_data.where(graduation_data.astype(bool)).isna().all(axis=0),

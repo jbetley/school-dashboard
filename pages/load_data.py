@@ -1108,6 +1108,8 @@ def get_academic_data(*args):
 
     school_data = run_query(q, params)
 
+    school_data = school_data.fillna(value=np.nan)
+
     # get corp data (for academic_metrics and academic_analysis_single_year)
     # and add to dataframe
     if params["type"] == "ahs":
@@ -1118,6 +1120,8 @@ def get_academic_data(*args):
     # add columns not in corp database
     corp_data["School ID"] = corp_data["Corporation ID"]
     corp_data["School Name"] = corp_data["Corporation Name"]
+
+    corp_data = corp_data.fillna(value=np.nan)
 
     # merge - result includes school, school corp, and comparable schools if
     # multiple school ids in the schools variable
@@ -1160,9 +1164,9 @@ def get_academic_data(*args):
             if "Total Tested" in col or "Cohort Count" in col
         ]
 
-    # remove any decimals in N-Size cols
-    for col in tested_cols:
-        data[col] = data[col].astype(str).replace("\.0", "", regex=True)
+    # remove  decimals in N-Size cols
+    # for col in tested_cols:
+    #     data[col] = data[col].astype(str).replace("\.0", "", regex=True)
 
     for col in tested_cols:
         if (
@@ -1373,8 +1377,8 @@ def get_academic_data(*args):
 
     # Additional page specific processing
 
-    # dataframe can be empty (if all columns other than 1st (Year) are null or
-    # if the dataframe has no school_id
+    # the dataframe can be empty if all columns other than the 1st
+    # Year are null or if the dataframe has no school_id
     if (
         processed_data.iloc[:, 1:].isna().all().all()
         or school_id not in processed_data["School ID"].values
@@ -1388,12 +1392,13 @@ def get_academic_data(*args):
             keep_years = years[:5]
             processed_data = processed_data[processed_data["Year"].isin(keep_years)]
 
-        ## academic_analysis_single_page #TODO add multipage analysis data
+        # TODO add multipage analysis data
         if params["page"] == "analysis":
+            ## HS/AHS academic_analysis_single.py
             if params["type"] == "hs" or params["type"] == "ahs":
                 hs_data = processed_data.copy()
 
-                # NOTE: Cohorts data (not currently kept): Actual Graduates,
+                # NOTE: Cohort data (not currently kept): Actual Graduates,
                 #   Actual Enrollment, CCR
                 if params["type"] == "ahs":
                     analysis_data = hs_data.filter(
@@ -1434,6 +1439,7 @@ def get_academic_data(*args):
 
                 return analysis_data
 
+            ## K8 academic_analysis_single.py
             else:
                 k8_data = processed_data.copy()
 
@@ -1478,7 +1484,6 @@ def get_academic_data(*args):
                 else:
                     return analysis_data
 
-        ## data for academic_information and academic_metrics pages
         elif params["page"] == "info" or params["page"] == "metrics":
             corp_data = processed_data[
                 processed_data["School ID"] == processed_data["Corporation ID"]
@@ -1487,10 +1492,8 @@ def get_academic_data(*args):
                 processed_data["School ID"] == school_id
             ].copy()
 
-            # No corp_data is used and school_data limited to single metric (CCR)
+            ## AHS academic_metrics.py
             if params["type"] == "ahs" and params["page"] == "metrics":
-                # AHS metric data is limited atm
-
                 school_metric_data = school_data[
                     [
                         "Year",
@@ -1503,6 +1506,7 @@ def get_academic_data(*args):
 
                 return school_metric_data
 
+            ## HS academic_information.py & academic_metrics.py
             elif params["type"] == "hs":
                 corp_data = processed_data[
                     processed_data["School ID"] == processed_data["Corporation ID"]
@@ -1524,10 +1528,11 @@ def get_academic_data(*args):
                     regex=r"Category|Corp", axis=1
                 )
 
-                ## HS data for academic_information
+                ## HS academic_information.py
                 if params["page"] == "info":
                     return school_metrics_data
 
+                ## HS academic_metrics.py
                 else:
                     # add state graduation average to corp df
                     state_grad_average = get_graduation_data()
@@ -1631,14 +1636,15 @@ def get_academic_data(*args):
 
                     return metric_data
 
-            else:  # info data for k8 and ahs
+            ## K8 academic_information.py & academic_metrics.py
+            else:
                 school_info_data = processed_data[
                     processed_data["School ID"] == school_id
                 ]
 
                 final_school_data = transpose_data(school_info_data, params)
 
-                # information data
+                ## K8 academic_information.py
                 if params["page"] == "info":
                     return final_school_data
 
@@ -1650,7 +1656,7 @@ def get_academic_data(*args):
                 # insuf_string = check_for_insufficient_n_size(result)
                 # print(insuf_string)
 
-                # academic_metrics data
+                ## K8 academic_metrics.py
                 else:
                     corp_info_data = processed_data[
                         processed_data["School ID"] == processed_data["Corporation ID"]
