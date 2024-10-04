@@ -161,9 +161,7 @@ def calculate_attendance_metrics(
     return attendance_metrics
 
 
-def calculate_values(
-    df: pd.DataFrame, year: str
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def calculate_values(df: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Takes a dataframe of school academic data and calculates the proficiency difference
     between successive years and the assigns an academic rating to each year.
@@ -794,7 +792,7 @@ def calculate_financial_metrics(df: pd.DataFrame) -> pd.DataFrame:
         final_grid (pd.DataFrame): a DataFrame object with additional 'Rating' columns
     """
     data = df.copy()
-    
+
     # Some schools have 'pre-opening' financial activity before the school
     # begins to operate and receive state/federal grants. The below code
     # ignores all columns (years) where the value in the State Grant column

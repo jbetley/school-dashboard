@@ -290,7 +290,6 @@ def update_academic_analysis_multiple_years(
             analysis_multi_dropdown_container = {"display": "block"}
 
             ## Create Year Over Year HS (SAT and Graduation Rate) Chart
-
             year_over_year_hs = create_year_over_year_layout(
                 school, year_over_year_hs_data, all_school_info, label, msg
             )

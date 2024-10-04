@@ -3,14 +3,15 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     10/03/24
 
 from dash import html, dcc
 import plotly.express as px
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+
+# from plotly.subplots import make_subplots
 from typing import Tuple
 
 from .calculations import check_for_insufficient_n_size, check_for_no_data
@@ -509,7 +510,8 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
         # One last check, if there is only one year of data being displayed, we need to drop
         # all columns with only NaN- otherwise the traces will be displayed on the chart
         # even though they are listed as having no data to display - afterwards we need
-        # to reset the cols variable to make sure it matches the changed df
+        # to reset the school_cols variable to make sure it matches the changed df
+
         if len(data.index) == 1:
             data = data.dropna(axis=1, how="all")
             school_cols = [i for i in data.columns if i not in ["Year"]]
@@ -944,6 +946,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
         ]
 
     return fig_layout
+
 
 # NOTE: Using make_line_chart instead
 # def make_growth_chart(

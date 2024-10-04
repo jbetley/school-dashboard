@@ -149,7 +149,7 @@ def calculate_sat_rate(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: the same dataframe with "Benchmark %" column added.
     """
     data = df.copy()
-    
+
     tested = data[
         data.columns[data.columns.str.contains(r"Total Tested")]
     ].columns.tolist()
@@ -514,6 +514,7 @@ def check_for_no_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
     """
 
     data = df.copy()
+
     data["Year"] = data["Year"].astype(str)
 
     if "School Name" in data.columns:
@@ -543,6 +544,9 @@ def check_for_no_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
             string = no_data_years[0] + "."
     else:
         string = ""
+
+    # convert Year back to column
+    data = data.reset_index()
 
     return data, string
 
@@ -582,7 +586,8 @@ def check_for_insufficient_n_size(df: pd.DataFrame) -> str:
             tmp_df["Category"].map(dict(enumerate(data.columns.tolist()))),
         )
         tmp_df["Year"] = tmp_df["Year"].mask(
-            tmp_df["Year"] >= 0, tmp_df["Year"].map(dict(enumerate(data["Year"].tolist())))
+            tmp_df["Year"] >= 0,
+            tmp_df["Year"].map(dict(enumerate(data["Year"].tolist()))),
         )
 
         tmp_df["Category"] = tmp_df["Category"].str.replace("\|.*$", "", regex=True)
@@ -597,11 +602,15 @@ def check_for_insufficient_n_size(df: pd.DataFrame) -> str:
 
         # group the dataframe on the above identfied blocks and aggregate the Year column
         # using first and Message using .join
-        tmp_df = tmp_df.groupby(c, as_index=False).agg({"Category": "first", "Year": ", ".join})
+        tmp_df = tmp_df.groupby(c, as_index=False).agg(
+            {"Category": "first", "Year": ", ".join}
+        )
 
         # then do the same thing for year
         y = tmp_df["Year"].ne(tmp_df["Year"].shift()).cumsum()
-        tmp_df = tmp_df.groupby(y, as_index=False).agg({"Year": "first", "Category": ", ".join})
+        tmp_df = tmp_df.groupby(y, as_index=False).agg(
+            {"Year": "first", "Category": ", ".join}
+        )
 
         # reverse order of columns
         tmp_df = tmp_df[tmp_df.columns[::-1]]
@@ -761,7 +770,6 @@ def calculate_comparison_school_list(
     schools: pd.DataFrame,
     max: int,
 ) -> pd.DataFrame:
-    
     # before doing anything else, we need to remove all rows where Lat
     # or Lon are blank or NaN because it chokes the spatial func
     schools[["Lat", "Lon"]] = schools[["Lat", "Lon"]].replace("", np.nan)

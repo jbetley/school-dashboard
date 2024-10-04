@@ -264,11 +264,11 @@ def create_barchart_layout(
             html.Div(
                 [
                     html.Div(
-                        [html.Div(fig)], # , style={"marginBottom": "-20px"}
+                        [html.Div(fig)],  # , style={"marginBottom": "-20px"}
                         className="pretty-container--close eleven columns",
                     ),
                 ],
-                className="row", #bar-chart-print",
+                className="row",  # bar-chart-print",
             ),
             html.Div(
                 [
@@ -277,7 +277,7 @@ def create_barchart_layout(
                         className="container__close eleven columns",
                     ),
                 ],
-                className="row", #bar-chart-print",
+                className="row",  # bar-chart-print",
             ),
         ]
     else:
@@ -285,7 +285,7 @@ def create_barchart_layout(
             html.Div(
                 [
                     html.Div(
-                        [html.Div(fig)], # , style={"marginBottom": "-20px"}
+                        [html.Div(fig)],  # , style={"marginBottom": "-20px"}
                         className="pretty-container--close twelve columns",
                     ),
                 ],
