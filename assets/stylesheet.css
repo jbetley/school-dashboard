@@ -298,6 +298,7 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
+
 /* same as pretty_container but adds min-width. Used for left side of 'About' page
   to ensure the width of the tables and figs are aligned. Gets screwy when the window
   is too small tho. */
@@ -771,6 +772,19 @@ hr {
     is a 0 value */
 .legendundefined {
   stroke-opacity: 0 !important;
+}
+
+/* Override default tooltip shape */
+.dash-tooltip .dash-table-tooltip {
+  background-color: #f0f0f0; 
+  font-size: 11px;
+  border: 1px solid #b2bdd4;
+  padding-bottom: 3px !important;
+  text-align: center;
+  border-radius: 5px;
+  width: fit-content !important;
+  max-width: fit-content !important;
+  min-width: fit-content !important;
 }
 
 /* increase datatable header height */
