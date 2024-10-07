@@ -1131,15 +1131,12 @@ def make_bar_chart(
         # assign colors for each comparison school - this data is returned
         # from the function
         trace_color = {schools[i]: color[i] for i in range(len(schools))}
-        print(school_name)
-        print(trace_color)
+
         # use specific color for selected school
         for key, value in trace_color.items():
             if key == school_name:
-                trace_color[key] = "#0a66c2"
-
-        print(trace_color)
-
+                trace_color[key] = "#ffce54"
+                # trace_color[key] = "#0a66c2"
         # Uncomment this and the other 'customdata' lines below to display
         # the distance of each comparable school from the selected school
         # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)

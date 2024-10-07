@@ -914,14 +914,15 @@ def get_attendance_data(school_id, school_type, year):
     # rows where both values are NaN
     attendance_data = results.replace(r"^\s*$", np.nan, regex=True)
     attendance_data = attendance_data.fillna(value=np.nan)
-    attendance_data = attendance_data.dropna( how='all',
-            subset=['Attendance Rate', 'Students Chronically Absent'])
+    attendance_data = attendance_data.dropna(
+        how="all", subset=["Attendance Rate", "Students Chronically Absent"]
+    )
 
     # Chronic Absenteeism isn't used for AHS
     if school_type != "corp_ahs" and school_type != "ahs":
         attendance_data["Chronic Absenteeism %"] = calculate_percentage(
             attendance_data["Students Chronically Absent"],
-            attendance_data["Total Student Count"]
+            attendance_data["Total Student Count"],
         )
 
     attendance_data = attendance_data.drop(
@@ -1144,13 +1145,12 @@ def get_academic_data(*args):
 
     raw_merged_data = raw_merged_data.reset_index(drop=True)
 
-    # Drop all columns for a Category if the value of "Total Tested" for
+    ## Drop all columns for a Category if the value of "Total Tested" for
     # the Category for the school is null or 0 for the "school"
     drop_columns = []
 
     data = raw_merged_data.copy()
 
-    # convert from float to str while dropping the decimal
     data["School ID"] = data["School ID"].astype("Int64").astype("str")
     data["Corporation ID"] = data["Corporation ID"].astype("Int64").astype("str")
 
@@ -1268,11 +1268,11 @@ def get_academic_data(*args):
                     / ahs_data["AHS|Actual Enrollment"]
                 )
 
-            # ## Graduation Calculation (AHS Accountability)
-            # # NOTE: a school must have at least ten (10) students graduate in the school
-            # # year being assessed. If school has fewer than ten (10) graduates for a year
-            # # based calculation on the current graduates aggregated with each immediately
-            # # preceding year's graduates until a cohort of at least ten (10) graduates is reached
+            ## AHS Graduation Calculation (AHS Accountability)
+            # NOTE: a school must have at least ten (10) students graduate in the school
+            # year being assessed. If school has fewer than ten (10) graduates for a year
+            # based calculation on the current graduates aggregated with each immediately
+            # preceding year's graduates until a cohort of at least ten (10) graduates is reached
 
             selected_school = get_school_index(school_id)
             corp_id = int(selected_school["Corporation ID"].values[0])
@@ -1406,7 +1406,7 @@ def get_academic_data(*args):
                 if params["type"] == "ahs":
                     analysis_data = hs_data.filter(
                         regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name \
-                        |CCR Percentage|Grade 12|Total|Graduation to Enrollment|Benchmark \%|^Year$",
+                        |CCR Percentage|Grade 12|Total\|Graduation Rate|Graduation to Enrollment|Benchmark \%|^Year$",
                         axis=1,
                     ).copy()
                 else:

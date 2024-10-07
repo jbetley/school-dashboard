@@ -96,8 +96,8 @@ def set_dropdown_options(
             schools_by_distance["Total|ELA Total Tested"], errors="coerce"
         )
         schools_by_distance = schools_by_distance[
-            (schools_by_distance["Total|ELA Total Tested"] >= 20) |
-            (schools_by_distance["School ID"] == int(school_id))
+            (schools_by_distance["Total|ELA Total Tested"] >= 20)
+            | (schools_by_distance["School ID"] == int(school_id))
         ]
 
     # NOTE: There is some time cost for running the dropdown selection function
@@ -154,7 +154,7 @@ def set_dropdown_options(
         # (value vs. state?)
 
         # at this point "existing_comparison_schools_list" is either [] (for no
-        # schools selected) or a list of currently selected schools. 
+        # schools selected) or a list of currently selected schools.
         # "new_comparison_schools_list" is a list of all of the schools matching
         # the current selection (which is triggered by a change in type from K8 to HS)
 
@@ -432,6 +432,7 @@ def update_academic_analysis_single_year(
                 )
 
                 # SAT Comparison Sets
+
                 overview = [
                     "Total|Math",
                     "Total|EBRW",
@@ -549,7 +550,6 @@ def update_academic_analysis_single_year(
                         sat_subgroup_container = {"display": "none"}
 
     if selected_school_type == "k8" or selected_school_type == "k12":
-        
         # If school is K12 and highschool tab is selected, skip k8 data
         if selected_school_type == "k12" and academic_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}

@@ -88,6 +88,7 @@ def create_hs_analysis_layout(
 
         if len(analysis_data.columns) > 1:
             analysis_label = create_chart_label(analysis_data)
+
             analysis_trace_colors, analysis_chart = make_group_bar_chart(
                 analysis_data, school_id, analysis_label
             )
