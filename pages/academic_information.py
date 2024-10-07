@@ -39,7 +39,7 @@ from .tables import (
 
 from .charts import no_data_fig_label, make_stacked_bar, make_line_chart
 from .layouts import set_table_layout, create_line_fig_layout
-from .calculations import round_percentages
+from .calculations import round_percentages, conditional_fillna
 from .string_helpers import natural_keys
 
 dash.register_page(
@@ -493,8 +493,8 @@ def update_academic_information_page(
                 )
 
                 # SAT cut score key table
-                # https://www.in.gov/sboe/files/2021-2022-hs-sat-Standard-Setting-SBOE-Review.pdf
-                hs_sat_cut_scores_label = "SAT Proficiency Cut Scores (2021 - 22)"
+                # Source: Varies but start with IDOE website
+                hs_sat_cut_scores_label = "SAT Proficiency Cut Scores"
                 hs_sat_cut_scores_dict = {
                     "Content Area": [
                         "Mathematics",

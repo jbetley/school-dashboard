@@ -27,7 +27,6 @@ from .calculations import (
     conditional_fillna,
     calculate_proficiency,
     recalculate_total_proficiency,
-    conditional_fillna,
     calculate_graduation_rate,
     calculate_sat_rate,
 )
@@ -911,14 +910,18 @@ def get_attendance_data(school_id, school_type, year):
     results = run_query(q, params)
     results = results.sort_values(by="Year", ascending=False)
 
-    # replace empty strings with NaN
+    # replace empty strings and "None" with NaN and drop any
+    # rows where both values are NaN
     attendance_data = results.replace(r"^\s*$", np.nan, regex=True)
+    attendance_data = attendance_data.fillna(value=np.nan)
+    attendance_data = attendance_data.dropna( how='all',
+            subset=['Attendance Rate', 'Students Chronically Absent'])
 
     # Chronic Absenteeism isn't used for AHS
     if school_type != "corp_ahs" and school_type != "ahs":
         attendance_data["Chronic Absenteeism %"] = calculate_percentage(
             attendance_data["Students Chronically Absent"],
-            attendance_data["Total Student Count"],
+            attendance_data["Total Student Count"]
         )
 
     attendance_data = attendance_data.drop(

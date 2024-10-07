@@ -3,7 +3,7 @@
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     03/25/24
+# date:     10/07/24
 
 import dash
 from dash import html, dash_table, Input, State, Output, callback
@@ -46,7 +46,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
 
     if finance_value_state:
         # need to reset state when changing dropdown from a school with
-        # network to one without 
+        # network to one without
         if (
             finance_value_state == "network-finance"
             and selected_school["Network"].values[0] == "None"

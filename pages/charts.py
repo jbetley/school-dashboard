@@ -1123,19 +1123,22 @@ def make_bar_chart(
     selected_school = get_school_index(str(school_id))
     school_name = selected_school["School Name"].values[0]
 
-    # dataframe should always have at least 4 columns ('School Name',
-    # 'Low Grade', 'High Grade' & one data column)
+    # dataframe will have minimum of 3 columns even without data ('School Name',
+    # 'Low Grade', 'High Grade')
     if (len(data.columns)) > 3:
         schools = data["School Name"].tolist()
 
         # assign colors for each comparison school - this data is returned
         # from the function
         trace_color = {schools[i]: color[i] for i in range(len(schools))}
-
+        print(school_name)
+        print(trace_color)
         # use specific color for selected school
         for key, value in trace_color.items():
             if key == school_name:
                 trace_color[key] = "#0a66c2"
+
+        print(trace_color)
 
         # Uncomment this and the other 'customdata' lines below to display
         # the distance of each comparable school from the selected school

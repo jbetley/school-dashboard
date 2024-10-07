@@ -472,7 +472,7 @@ def layout():
                                                 "Demographic data comes from the DOE-PE (Pupil Enrollment), DOE-LM (Language Minority and Immigrant Students), \
                                                    and DOE-SE (Special Education) reports submitted by schools in October and December. ADM is collected from the \
                                                    DOE-ME (Membership) report, which is now submitted in October (historically September) and February. Due to the \
-                                                   differing reporting periods, demographic data and ADM data does not always perfectly align.",
+                                                   differing reporting periods, demographic data and ADM data does not always align.",
                                                 style={
                                                     "color": "#6783a9",
                                                     "fontSize": 10,

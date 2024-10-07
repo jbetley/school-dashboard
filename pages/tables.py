@@ -16,7 +16,7 @@ import dash_mantine_components as dmc
 
 from .globals import metric_strings, table_style, table_cell, table_header
 from .load_data import get_student_level_ilearn
-
+from .calculations import conditional_fillna
 
 def create_proficiency_key() -> list:
     """
@@ -1072,10 +1072,15 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
     if table_size > 1:
         # pull out nsize data for tooltips and drop from main df
         nsize_data = data.loc[:, data.columns.str.contains("N-Size")].copy()
-        nsize_data = nsize_data.rename(columns={c: c[:4] for c in nsize_data.columns})
+
+        nsize_categories = data["Category"].tolist()
 
         for col in nsize_data.columns:
             nsize_data[col] = pd.to_numeric(nsize_data[col], errors="coerce")
+
+        nsize_data = conditional_fillna(nsize_data)
+
+        nsize_data = nsize_data.rename(columns={c: c[:4] for c in nsize_data.columns})
 
         data = data[data.columns[~data.columns.str.contains(r"N-Size")]]
 
@@ -1144,17 +1149,18 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
             for col in all_cols
         ]
 
-        tooltip_format = [
+        nsize_tooltip = [
             {
                 column: {
-                    "value": "N-Size: {:.1f}".format(float(value))
-                    if value == value
+                    "value": category.split("|", maxsplit=1)[0] + 
+                        " N-Size: {:.1f}".format(float(value))
+                    if value != "\u2014"
                     else "\u2014",
                     "type": "markdown",
                 }
                 for column, value in row.items()
             }
-            for row in nsize_data.to_dict("records")
+            for row, category in zip(nsize_data.to_dict("records"), nsize_categories)
         ]
 
         table_layout = [
@@ -1169,8 +1175,9 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
                 style_header_conditional=table_header_conditional,
                 style_cell_conditional=table_cell_conditional,
                 merge_duplicate_headers=True,
-                tooltip_data=tooltip_format,
-                css=[{"selector": ".dash-table-tooltip", "rule": "font-size: 12px"}],
+                tooltip_data=nsize_tooltip,
+                tooltip_delay=0,
+                tooltip_duration=None
             ),
         ]
     # TODO: Align this with line_fig_layout (two empty figs instead of fig/table)
@@ -1657,19 +1664,6 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
             }
             for row, category in zip(nsize_data.to_dict("records"), nsize_categories)
         ]
-
-        # nsize_tooltip = [
-        #     {
-        #         column: {
-        #             "value": " N-Size: {:.1f}".format(float(value))
-        #             if value != "\u2014"
-        #             else "\u2014",
-        #             "type": "markdown",
-        #         }
-        #         for column, value in row.items()
-        #     }
-        #     for row in nsize_data.to_dict("records")
-        # ]
 
         table = [
             html.Div(
