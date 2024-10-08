@@ -4,7 +4,6 @@
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
 # date:     09/06/24
-# TODO: Explore serverside disk caching for data loading
 
 from typing import Tuple
 import pandas as pd
@@ -21,16 +20,33 @@ from .globals import (
 
 from .calculations import calculate_percentage
 
-# filters tested (nsize) cols and proficiency calculations into
-# separate dataframes, performs some cleanup, including a transposition,
-# moving years to column headers and listing categories in their own
-# columns and then cross-merging the two. variables change depending on
-# whether we are analyzing a school or a corporation
 
+def transpose_data(raw_df: pd.DataFrame, params):
+    """
+    Filters tested (nsize) cols and proficiency calculations into
+    separate dataframes, performs some cleanup, including a transposition,
+    moving years to column headers and listing categories in their own
+    columns and then cross-merging the two. variables change depending on
+    whether we are analyzing a school or a corporation
 
-def transpose_data(raw_df, params):
+    Args:
+    raw_df (pd.DataFrame): student level growth data
+    params (dict): a variable dictionary of strings with keys:
+                    "schools": a list of school ids
+                    "type": the school type
+                    "year": the selected year
+                    "page": the selected page
+
+    Returns:
+        final_data (pd.DataFrame): processed and transposed dataframe
+    """
+
+    df = raw_df.copy()
+
+    df = df.reset_index(drop=True)
+
     # First, determine whether df contains data for the charter school or
-    # the  geo school corporation. A school corporation will always have the
+    # the geo school corporation. A school corporation will always have the
     # same School and Corporation Name and School and Corporation ID.
     # a charter school that is not part of a network will have the same
     # School and Corporation Name, but different School and Corporation IDs.
@@ -38,10 +54,6 @@ def transpose_data(raw_df, params):
     # School and Corporation ID, but will have a different School and Corporation
     # Name. So we check whether the two sets of columns are equivalent and if
     # both are, the data must belong to a school corporation.
-    df = raw_df.copy()
-
-    df = df.reset_index(drop=True)
-
     if (
         (df["School ID"][0] == df["Corporation ID"][0])
         + (df["School Name"][0] == df["Corporation Name"][0])
@@ -196,7 +208,7 @@ def transpose_data(raw_df, params):
 
 
 def process_growth_data(
-    values: pd.DataFrame, category: str
+    df: pd.DataFrame, category: str
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Process a dataframe with student levelgrowth data into two dataframes with
@@ -212,7 +224,7 @@ def process_growth_data(
         table_data (pd.DataFrame): processed dataframe used to create table
         fig_data (pd.DataFrame): processed dataframe used to create fig
     """
-    data = values.copy()
+    data = df.copy()
     # step 1: find the percentage of students with Adequate growth using
     # "Majority Enrolled" students (all available data) and the percentage
     # of students with Adequate growth using the set of students enrolled for
@@ -301,8 +313,6 @@ def process_growth_data(
     fig_data = fig_data.drop("Diff", axis=1)  # "Difference"
     fig_data = fig_data.pivot(index=["Year"], columns="Category")
     fig_data.columns = fig_data.columns.map(lambda x: "_".join(map(str, x)))
-
-    # fig_data = fig_data.reset_index()
 
     # create table data
     table_data = final_data.copy()

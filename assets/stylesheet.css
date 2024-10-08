@@ -1,9 +1,7 @@
 /*  ICSB Dashboard - Stylesheet
     author:   jbetley (https://github.com/jbetley)
     version:  1.15
-    date:     02/21/24
-
-    source: https://cdn.rawgit.com/plotly/dash-app-stylesheets/2d266c578d2a6e8850ebce48fdb52759b2aef506/stylesheet-oil-and-gas.css
+    date:     10/08/24
 */
 
 /* Google Fonts */
@@ -30,7 +28,6 @@
   width: 100%;
   float: left;
 }
-
 
 /** Media Queries **/
 /* TODO: Adapt and Test media queries */
@@ -234,7 +231,7 @@ body {
   margin: 0 8px 8px 8px;
 }
 
-/* a line */
+/* creates a thin line */
 hr {
   margin-top: -5px;
   width: 50%;
@@ -298,10 +295,9 @@ hr {
   box-shadow: 2px 2px 2px lightgrey;
 }
 
-
-/* same as pretty_container but adds min-width. Used for left side of 'About' page
-  to ensure the width of the tables and figs are aligned. Gets screwy when the window
-  is too small tho. */
+/* same as pretty_container but adds min-width. Used for left side of
+  'About' page to ensure the width of the tables and figs are aligned.
+   Gets screwy when the window is too small though. */
 .pretty-container--left {
   border-radius: 5px;
   background-color: #ffffff;
@@ -503,8 +499,9 @@ hr {
   align-items: center;
 }
 
-/* TODO: Centers n-size text - need it because I cant otherwise figure out how to center markdown */
-/* TODO: Try to remove markdown from n-size so I can use table styling to center */
+/* NOTE: Centers n-size text - need it because I cant otherwise figure out
+  how to center markdown. Try to remove markdown from n-size so I can use
+  table styling to center */
 .cell-markdown>p
   {
   display: flex;
@@ -584,8 +581,9 @@ hr {
   border-right: 1px solid rgba(192, 193, 199, 2);
 }
 
-/* The im-very-special id is a td id for situations where there are only 3 metrics and
-  we want to make sure that the 3rd metric is colored red and not orange */
+/* The im-very-special id is a td id for situations where
+  there are only 3 metrics and we want to make sure that
+  the 3rd metric is colored red and not orange */
 #im-very-special {
   color: #ea5545;
   font-weight: 800;
@@ -1156,7 +1154,6 @@ label>.label-body {
 
 .school-name-label__header {
   height: auto;
-  /* background-color: #6783a9; */
   font-size: 14px;
   font-family: 'Inter', sans-serif;
   color: #6783a9;
@@ -1167,7 +1164,6 @@ label>.label-body {
   padding-top: 5px;
   width: 80%;
   border: 1rem solid #6783a9;
-  /* border-color: black; */
   border-radius: 5px;
   border-width: thin;
   margin-top: 20px;
@@ -1186,14 +1182,11 @@ label>.label-body {
   padding-top: 5px;
 }
 
-/* TODO: Not using this any more on HS Academic Info - switch style to normal header */
-.hollow-label__header {
+/* .hollow-label__header {
   height: auto;
-  /* background-color: #ffffff; */
   background-color: #6783a9;
   font-size: 12px;
   font-family: 'Montserrat', sans-serif;
-  /* color: #6783a9; */
   color: #ffffff;
   text-align: center;
   width: 50%;
@@ -1203,7 +1196,7 @@ label>.label-body {
   padding-top: 5px;
   border: .5px solid #6783a9;
   border-radius: .5rem;
-}
+} */
 
 .school-string {
   color: #6783a9;
@@ -1242,7 +1235,6 @@ label>.label-body {
 
 .category-string__label:before {
   content: '';
-  /* position: relative; */
   display: block;
   padding-bottom: 10px;
   bottom: 25%;

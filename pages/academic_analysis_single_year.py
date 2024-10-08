@@ -3,14 +3,13 @@
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/06/24
+# date:     10/08/24
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
-# import local functions
 from .globals import ethnicity, subgroup, ethnicity
 
 from .load_data import (
@@ -43,7 +42,6 @@ dash.register_page(
     top_nav=True,
     order=10,
 )
-
 
 # Set dropdown options for comparison schools
 @callback(
@@ -125,7 +123,6 @@ def set_dropdown_options(
             school_id, schools_by_distance, num_schools_to_display
         )
 
-        # place new comparison schools into list of dicts
         new_comparison_schools = [
             {"label": name, "value": id} for name, id in comparison_list.items()
         ]
@@ -199,10 +196,11 @@ def set_dropdown_options(
             school_options = new_comparison_schools
 
         else:
-            # if none of the above cases apply, we first test the length of the existing
-            # list to make sure it hasn't exceeded max display
+            # if none of the above cases apply, we first test the length of
+            # the existing list to make sure it hasn't exceeded max display
 
             if len(existing_comparison_schools_list) > max_num_to_display:
+
                 # if it does, we throw a warning, keep the selected values the same
                 # and disable all of the options
                 input_warning = html.P(
@@ -294,7 +292,7 @@ def update_academic_analysis_single_year(
     selected_school = get_school_index(school_id)
     selected_school_type = selected_school["School Type"].values[0]
 
-    # CHS Exception
+    # Christel House South Exception
     if int(school_id) == 5874 and numeric_year < 2021:
         selected_school_type = "k12"
 
@@ -390,14 +388,12 @@ def update_academic_analysis_single_year(
 
             hs_cols = [c for c in hs_analysis_data if c != "School Name"]
 
-            # force all to numeric (this removes '***' strings) - we
-            # later use NaN as a proxy
             for col in hs_cols:
                 hs_analysis_data[col] = pd.to_numeric(
                     hs_analysis_data[col], errors="coerce"
                 )
 
-            # # drop all columns where the row at school_name_idx has a NaN value
+            # drop all columns where the row at school_name_idx has a NaN value
             school_name_idx = hs_analysis_data.index[
                 hs_analysis_data["School Name"].str.contains(hs_school_name)
             ].tolist()[0]
@@ -415,7 +411,7 @@ def update_academic_analysis_single_year(
                 hs_analysis_main_container = {"display": "block"}
                 hs_analysis_empty_container = {"display": "none"}
 
-                # Graduation Comparison Sets
+                ## Graduation Comparison Sets
                 grad_overview_categories = ["Total", "NonWaiver"]
 
                 grad_overview = create_hs_analysis_layout(
@@ -431,24 +427,28 @@ def update_academic_analysis_single_year(
                     "Graduation Rate", hs_analysis_data, subgroup, school_id
                 )
 
-                # SAT Comparison Sets
-
+                ## SAT Comparison Sets
                 overview = [
                     "Total|Math",
                     "Total|EBRW",
                 ]
+                
                 sat_overview = create_hs_analysis_layout(
                     "Total", hs_analysis_data, overview, school_id
                 )
+
                 sat_ethnicity_ebrw = create_hs_analysis_layout(
                     "EBRW", hs_analysis_data, ethnicity, school_id
                 )
+
                 sat_ethnicity_math = create_hs_analysis_layout(
                     "Math", hs_analysis_data, ethnicity, school_id
                 )
+
                 sat_subgroup_ebrw = create_hs_analysis_layout(
                     "EBRW", hs_analysis_data, subgroup, school_id
                 )
+
                 sat_subgroup_math = create_hs_analysis_layout(
                     "Math", hs_analysis_data, subgroup, school_id
                 )
@@ -550,6 +550,7 @@ def update_academic_analysis_single_year(
                         sat_subgroup_container = {"display": "none"}
 
     if selected_school_type == "k8" or selected_school_type == "k12":
+        
         # If school is K12 and highschool tab is selected, skip k8 data
         if selected_school_type == "k12" and academic_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
@@ -563,7 +564,7 @@ def update_academic_analysis_single_year(
                 and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
                 the selected school. Up to eight (8) schools may be displayed at once."
 
-            # add school_id first
+            # make sure selected school_id is first in list
             list_of_schools = [school_id] + comparison_school_list
 
             raw_k8_analysis_data = get_academic_data(
@@ -607,7 +608,6 @@ def update_academic_analysis_single_year(
                 k8_analysis_main_container = {"display": "none"}
                 k8_analysis_empty_container = {"display": "block"}
 
-            # if len(k8_analysis_data.index) > 0:
             else:
                 k8_analysis_main_container = {"display": "block"}
                 k8_analysis_empty_container = {"display": "none"}
@@ -621,7 +621,7 @@ def update_academic_analysis_single_year(
                     "High Grade",
                 ]
 
-                #### Current Year ELA Proficiency Compared to Similar Schools (1.4.c) #
+                ## Current Year ELA Proficiency Compared to Similar Schools (1.4.c) ##
                 category = "Total|ELA Proficient %"
 
                 # Get school value for specific category
@@ -663,7 +663,7 @@ def update_academic_analysis_single_year(
 
                 fig14c = create_barchart_layout(fig14c_chart, fig14c_table, "", "")
 
-                #### Current Year Math Proficiency Compared to Similar Schools (1.4.d) #
+                ## Current Year Math Proficiency Compared to Similar Schools (1.4.d) ##
                 category = "Total|Math Proficient %"
 
                 if category in combined_selected_data.columns:
@@ -705,7 +705,7 @@ def update_academic_analysis_single_year(
 
                 fig14d = create_barchart_layout(fig14d_chart, fig14d_table, "", "")
 
-                #### Current Year IREAD Proficiency Compared to Similar Schools #
+                ## Current Year IREAD Proficiency Compared to Similar Schools ##
                 category = "Total|IREAD Proficient %"
 
                 if category in combined_selected_data.columns:
@@ -747,7 +747,7 @@ def update_academic_analysis_single_year(
                     fig_iread_chart = []
                     fig_iread_table = []
 
-                # ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1)
+                ## ELA Proficiency by Ethnicity Compared to Similar Schools (1.6.a.1) ##
                 headers_16a1 = []
                 for e in ethnicity:
                     headers_16a1.append(e + "|" + "ELA Proficient %")
@@ -792,7 +792,7 @@ def update_academic_analysis_single_year(
                     )
                     fig16a1_container = {"display": "none"}
 
-                # IREAD Proficiency by Ethnicity Compared to Similar Schools
+                ## IREAD Proficiency by Ethnicity Compared to Similar Schools ##
                 headers_16b1 = []
                 for e in ethnicity:
                     headers_16b1.append(e + "|" + "IREAD Proficient %")
@@ -838,7 +838,7 @@ def update_academic_analysis_single_year(
                     )
                     fig16b1_container = {"display": "none"}
 
-                # Math Proficiency by Ethnicity Compared to Similar Schools (1.6.b.1)
+                ## Math Proficiency by Ethnicity Compared to Similar Schools (1.6.b.1) ##
                 headers_16c1 = []
                 for e in ethnicity:
                     headers_16c1.append(e + "|" + "Math Proficient %")
@@ -884,7 +884,7 @@ def update_academic_analysis_single_year(
 
                     fig16c1_container = {"display": "none"}
 
-                # ELA Proficiency by Subgroup Compared to Similar Schools (1.6.a.2)
+                ## ELA Proficiency by Subgroup Compared to Similar Schools (1.6.a.2) ##
                 headers_16a2 = []
                 for s in subgroup:
                     headers_16a2.append(s + "|" + "ELA Proficient %")
@@ -929,7 +929,7 @@ def update_academic_analysis_single_year(
                     )
                     fig16a2_container = {"display": "none"}
 
-                # IREAD Proficiency by Subgroup Compared to Similar Schools
+                ## IREAD Proficiency by Subgroup Compared to Similar Schools ##
                 headers_16b2 = []
                 for s in subgroup:
                     headers_16b2.append(s + "|" + "IREAD Proficient %")
@@ -974,7 +974,7 @@ def update_academic_analysis_single_year(
                     )
                     fig16b2_container = {"display": "none"}
 
-                # Math Proficiency by Subgroup Compared to Similar Schools (1.6.b.2)
+                ## Math Proficiency by Subgroup Compared to Similar Schools (1.6.b.2) ##
                 headers_16c2 = []
                 for s in subgroup:
                     headers_16c2.append(s + "|" + "Math Proficient %")

@@ -3,7 +3,7 @@
 #####################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     10/08/24
 
 import pandas as pd
 import numpy as np
@@ -23,6 +23,18 @@ from .tables import create_comparison_table, no_data_page, create_single_header_
 def create_hs_analysis_layout(
     data_type: str, data: pd.DataFrame, categories: list, school_id: str
 ) -> list:
+    """
+    Creates a layout for academic analysis page for hs/ahs.
+
+    Args:
+        data_type (str): one of: "Graduation Rate", "Total", "EBRW", "Math"
+        data (pd.DataFrame): pandas dataframe of school data
+        categories (list): ethnicity, subgroup, or overview
+        school_id (str)
+
+    Returns:
+        layout: a list of a layout html.Div object
+    """
     tested_categories = []
 
     if data_type == "Total":
@@ -111,7 +123,17 @@ def create_hs_analysis_layout(
     return final_analysis_group
 
 
-def create_simple_iread_layout(data):
+def create_simple_iread_layout(data: pd.DataFrame) -> list:
+    """
+    Create simple table and chart for iread data.
+
+    Args:
+        data (pd.DataFrame): pandas dataframe
+
+    Returns:
+        table_layout (list): an html Div enclosing dash datable and chart with
+        css formatting
+    """
     # Simple table and chart
     data = data.rename(
         columns={
@@ -265,11 +287,11 @@ def create_barchart_layout(
             html.Div(
                 [
                     html.Div(
-                        [html.Div(fig)],  # , style={"marginBottom": "-20px"}
+                        [html.Div(fig)],
                         className="pretty-container--close eleven columns",
                     ),
                 ],
-                className="row",  # bar-chart-print",
+                className="row",
             ),
             html.Div(
                 [
@@ -278,7 +300,7 @@ def create_barchart_layout(
                         className="container__close eleven columns",
                     ),
                 ],
-                className="row",  # bar-chart-print",
+                className="row",
             ),
         ]
     else:
@@ -286,7 +308,7 @@ def create_barchart_layout(
             html.Div(
                 [
                     html.Div(
-                        [html.Div(fig)],  # , style={"marginBottom": "-20px"}
+                        [html.Div(fig)],
                         className="pretty-container--close twelve columns",
                     ),
                 ],
@@ -342,10 +364,11 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
         layout (list): a dash html.Div layout with fig
     """
 
-    # a bit of a hack. typically "fig"" is of type class "dash.html.Div.Div" and table
-    # is of type 'dash.dash_table.DataTable.DataTable'. we use an empty fig when No Data
-    # is available for both the fig and the table, so their type (class "dash.html.Div.Div")
-    # will be the same. if so, we hide the endnote.
+    # a bit of a hack. typically "fig"" is of type class "dash.html.Div.Div"
+    # and table is of type 'dash.dash_table.DataTable.DataTable'. we use an
+    # empty fig when No Data is available for both the fig and the table, so
+    # their type (class "dash.html.Div.Div") will be the same. if so, we hide
+    # the endnote.
     if type(fig[0]) is type(table[0]):
         endnote = ""
         endnote_style = {}
@@ -470,8 +493,9 @@ def create_radio_layout(
     group = page + "-" + group_catagory + "-radio"
     container = group + "-container"
 
-    # NOTE: the default width is twelve, used for a single line of buttons. If a width is
-    # provided, it indicates a group of buttons on the same row as another group.
+    # NOTE: the default width is twelve, used for a single line of
+    # buttons. If a width is provided, it indicates a group of buttons
+    # on the same row as another group.
     if width == "twelve":
         layout = "bare-container--flex--center " + width + " columns"
     else:
@@ -538,15 +562,16 @@ def create_year_over_year_layout(
     else:
         data = data.drop("School ID", axis=1)
 
-        # drop rows (years) where the school has no data (2nd column will always be selected school)
-        # NOTE: tried to use name, but there are too many differences in DOE data
+        # drop rows (years) where the school has no data (2nd column will
+        # always be selected school). NOTE: tried to use name, but there
+        # are too many differences in DOE data
         data = data[data.iloc[:, 1].notna()]
 
         table_data = data.copy()
 
-        # transpose and merge table data and school_id_list
-        # the data is pivoted so we need to unpivot it before we add School ID back
-        # school id is used to identify the school in the comparison_table function
+        # transpose and merge table data and school_id_list. the data is pivoted
+        # so we need to unpivot it before we add School ID back school id is used
+        # to identify the school in the comparison_table function
         table_data = (
             table_data.set_index("Year")
             .T.rename_axis("School Name")
@@ -561,7 +586,7 @@ def create_year_over_year_layout(
         # type fun - merge casts the entire School ID, Low Grade, and High Grade
         # columns to float because a school corporation does not have these values
         # and are therefore set to NaN during the merge. To fix, we temporarily convert
-        # NaN to 0, convert the columns to int and then replace the 0 (this seems so messy)
+        # NaN to 0, convert the columns to int and then replace the 0
         table_data[["School ID", "Low Grade", "High Grade"]] = table_data[
             ["School ID", "Low Grade", "High Grade"]
         ].fillna(0)
@@ -572,7 +597,7 @@ def create_year_over_year_layout(
             ["School ID", "Low Grade", "High Grade"]
         ].replace(0, "")
 
-        fig_trace_colors, fig = make_multi_line_chart(data, label)
+        fig_trace_colors, fig = make_multi_line_chart(school_id, data, label)
 
         # Use Low/High grade columns to modify School Name and then drop.
         table_data["School Name"] = create_school_label(table_data)

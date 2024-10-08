@@ -3,15 +3,16 @@
 ##############################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/24/24
+# date:     10/08/24
 
 # NOTE: No K8 academic data exists for 2020
 
 # Current data:
-# ILEARN - 2024
-# IREAD - 2024
+# ILEARN & ILEARN Student - 2024
+# IREAD & IREAD Student - 2024
 # SAT - 2024
 # ADM - 2024
+# Attendance Rate - 2023
 # Chronic Absenteeism - 2024
 # Demographics - 2024 (except SPED/ELL)
 # Financial - 2023 (Audited) / 2024(Q4)
@@ -42,9 +43,10 @@ print("Database Engine Created . . .")
 
 def run_query(q, *args):
     """
-    Takes sql text query, gets query as a dataframe (read_sql is a convenience function
-    wrapper around read_sql_query), and perform a variety of basic clean up functions
-    If no data matches the query, an empty df is returned
+    Takes sql text query, gets query as a dataframe (read_sql is a
+    convenience function wrapper around read_sql_query), and perform
+    a variety of basic clean up functions. If no data matches the query,
+    an empty df is returned
 
     Args:
         q (string): a sqlalchemy "text" query
@@ -60,6 +62,8 @@ def run_query(q, *args):
 
         df = pd.read_sql_query(q, conn, params=conditions)
 
+        # NOTE: Is there a better way to do this?
+
         # sqlite column headers do not have spaces between words. But we need to
         # display the column names, so we have to do a bunch of str.replace to
         # account for all conditions. May be a better way, but this is pretty fast.
@@ -69,7 +73,7 @@ def run_query(q, *args):
         df.columns = df.columns.str.replace(
             r"([WADTO])([CATPB&])", r"\1 \2", regex=True
         )
-        # better way to do these?
+
         df.columns = df.columns.str.replace("EBRWand", "EBRW and")
         df.columns = df.columns.str.replace("Freeand", "Free and")
         df.columns = df.columns.str.replace("Outof", "Out of")
@@ -102,28 +106,6 @@ def get_current_year():
 
 
 current_academic_year = get_current_year()
-
-
-# def get_network_count():
-#     """
-#     Helper function to dynamically count the number of network logins present
-#     in the users database (identified with a negative group_id values). used to
-#     determine the offset for creation of the charter dropdown in app.py.
-
-#     Returns:
-#         int: the number of network logins
-#     """
-#     db = users.raw_connection()
-#     cur = db.cursor()
-#     cur.execute(""" SELECT COUNT(groupid) FROM users WHERE groupid < 0 """)
-#     count = cur.fetchone()[0]
-#     count = count + 1
-#     db.close()
-
-#     return count
-
-
-# network_count = get_network_count()
 
 
 def get_excluded_years(year: str) -> list:
@@ -281,36 +263,6 @@ def get_financial_dropdown_years(school_id, page):
     else:
         year_list = []
 
-    # NOTE: This is the original code (which doesn't handle schools with
-    # only one year of pre-opening financial data (e.g., no ADM))
-    # if len(results.columns) > 2:
-    #     adm_index = results.index[results["Category"] == "ADM Average"].values[0]
-
-    #     # for the financial analysis page, we skip years with
-    #     # quarterly data (Q#) entirely (the "$" skips years with
-    #     # a suffix).
-    #     if page == "financial_analysis":
-    #         results = results.filter(regex="^\d{4}$")
-    #     else:
-    #         # for all other pages, we want to display the quarterly
-    #         # data, so we keep the year and just trim the Q# suffix
-    #         # below
-    #         results = results.filter(regex="^\d{4}")
-
-    #     for col in results.columns:
-    #         results[col] = pd.to_numeric(results[col], errors="coerce")
-
-    #     mask = results.iloc[adm_index] > 0
-
-    #     results = results.loc[:, mask]
-
-    #     if page == "financial_analysis":
-    #         years = [int(x) for x in results.columns.to_list()]
-    #     else:
-    #         years = [int(x[:4]) for x in results.columns.to_list()]
-    # else:
-    #     years = []
-
     return year_list
 
 
@@ -339,7 +291,6 @@ def get_adm(corp_id):
         list(
             results.filter(
                 regex="Fall Virtual ADM|Spring Virtual ADM|School ID|Corporation ID|Corporation Name|School Name"
-                # regex="Fall Virtual ADM|Spring Virtual ADM|Corporation ID|Name"
             )
         ),
         axis=1,
@@ -446,14 +397,12 @@ def get_gradespan(school_id, selected_year, all_years):
 
     result = run_query(q, params)
 
-    # change "***" to nan
+    # change "***" & 0 to nan and drop
     for col in result.columns:
         result[col] = pd.to_numeric(result[col], errors="coerce")
 
-    # change 0 to nan
     result.replace(0, np.nan, inplace=True)
 
-    # drop those nas
     result = result.dropna(axis=1, how="all")
 
     # get a list of remaining grades (will be duplicates where both Tested and Proficient are
@@ -477,7 +426,6 @@ def get_ethnicity(
 ):
     # returns a list of ethnicities for which a school has numbers for both Tested
     # and Proficient students for the selected year (and all earlier years)
-
     params = dict(id=school_id)
 
     idx = all_years.index(int(selected_year))
@@ -554,7 +502,6 @@ def get_subgroup(
 ):
     # returns a list of subgroups for which a school has numbers for both Tested
     # and Proficient students for the selected year (and all earlier years)
-
     params = dict(id=school_id)
 
     idx = all_years.index(int(selected_year))
@@ -826,8 +773,8 @@ def get_ilearn_student_data(*args):
     return results
 
 
-# Calculates AHS State Graduation Average for all Years as
-# a substitute for corp_data
+# Calculates State graduation average for all ahs for
+# all years (as a substitute for state or corp avg)
 def get_ahs_averages():
     params = dict(id="")
     q = text(
@@ -961,7 +908,7 @@ def get_attendance_data(school_id, school_type, year):
     return attendance_rate
 
 
-# Get k8 academic data for single school
+# k8 academic data for single school
 def get_proficiency_data(*args):
     keys = ["id"]
     params = dict(zip(keys, args))
@@ -1026,10 +973,8 @@ def get_growth_data(*args):
 
     return results
 
-    # return run_query(q, params)
 
-
-# NOTE: "SchoolTotal|ELATotalTested" is a proxy for school
+# NOTE: Using "SchoolTotal|ELATotalTested" as a proxy for school
 # size for k8 schools.
 def get_school_coordinates(*args):
     keys = ["year", "type"]
@@ -1063,8 +1008,9 @@ def get_school_coordinates(*args):
     return run_query(q, params)
 
 
-# Where all the magic happens
-# Gets all the academic data and formats it for display
+# Where all the magic happens. Gets academic data and
+# formats it for display. NOTE: This needs to be separated
+# and refactored.
 def get_academic_data(*args):
     """Where the magic happens. Gets academic data for school, geo school corporation,
     and comparable schools, if relevant, and formats it for tables and figs depending
@@ -1166,10 +1112,6 @@ def get_academic_data(*args):
             for col in data.columns.to_list()
             if "Total Tested" in col or "Cohort Count" in col
         ]
-
-    # remove  decimals in N-Size cols
-    # for col in tested_cols:
-    #     data[col] = data[col].astype(str).replace("\.0", "", regex=True)
 
     for col in tested_cols:
         if (
@@ -1301,51 +1243,45 @@ def get_academic_data(*args):
             # -failed-returning-scalar-but-in-the-futur
             processed_data["School ID"] = ahs_data["School ID"].astype(str)
 
+            # NOTE: graduation calculation proposed by AHS. This is not unlike
+            # the Indiana Adult Accountability Graduation to Enrollment Percentage
+            # calculation (weighted 90%). the denominator is the school's
+            # within-year-average number of students (ADM average), the numerator
+            # is the total number of graduates for the assessed year, and then
+            # multiply the quotient by 4
             processed_data["Graduation to Enrollment|Graduation Rate"] = (
                 processed_data["Graduation to Enrollment|Cohort Count"]
                 / processed_data["ADM Average"]
             ) * 4
 
-            # NOTE: This is the Indiana Adult Accountability System Calculation
-            # still trying to figure it out.
+            # NOTE: the Indiana Adult Graduation Rate (weighted 10%) is not
+            # currently calculated because we don't have a reliable way to
+            # get the 5-year grad rate:
+            #   (1) Calculate 5-Year grad rate (IC 20-26-13-10.2) for the cohort
+            #   immediately prior to the assessed year cohort.
+            #   Formula: (Total|Graduates + PY Total|Graduates) / Total|Cohort
+            #   (2) Calculate 4-Year grad rate for the cohort immediately preceding
+            #   the prior year cohort
+            #   Formula: Total|Graduates/Total|Cohort
+            #   (3) Subtract the four 4-Year graduation rate from the 4-Year
+            #   graduation rate for the previous year.
+            #   (4) Add the sum of (3) to the 4-Year graduation rate of the
+            #   assessed year cohort
 
-            # # Graduation to Enrollment Percentage (weighted 90%- max 100)
-            # # denominator: school's within-year-average number of students
-            # # numerator: total number of graduates for the assessed year
-            # # multiply quotient by 4
-            # # NOTE: Currently using (Total|Graduates/Total|Cohort) * 4
+            # Final Graduation Calculation
+            #   (1) Calculate graduation qualifying examination passing rate
+            #   equals 1 if rate is at least 90% else use actual % passing
+            #   (2) Multiply GQE passing rate by the sum of Graduation to
+            #   Enrollment + Graduation Weights
 
-            # # Graduation Rate (weighted 10%)
-            # # (1) Calculate 5-Year grad rate (IC 20-26-13-10.2) for the cohort immediately
-            # # prior to the assessed year cohort.
-            # #   Formula: (Total|Graduates + PY Total|Graduates) / Total|Cohort
+            # CCR Score
+            #   (1) calculate the college and career achievement rate;
+            #   (2) the college and career readiness factor (100/.8); and
+            #   (3) one hundred (100).
 
-            # # (2) Calculate 4-Year grad rate for the cohort immediately preceding the prior
-            # # year cohort
-            # #   Formula: Total|Graduates/Total|Cohort
-
-            # grad_by_enrollment["4YR PY Cohort"] = (
-            #     grad_by_enrollment["Total|Graduates"]
-            #     / grad_by_enrollment["Total|Cohort Count"]
-            # )
-
-            # # (3) Subtract the four 4-Year graduation rate from the 4-Year graduation rate
-            # # for the previous year.
-            # # (4) Add the sum of (3) to the 4-Year graduation rate of the assessed year cohort
-
-            # # Final Graduation Calculation
-            # # (1) Calculate graduation qualifying examination passing rate
-            # #   equals 1 if rate is at least 90% else use actual % passing
-            # # (2) Multiply GQE passing rate by the sum of Graduation to Enrollent + Graduation Weights
-
-            # ## CCR Score
-            # # (1) calculate the college and career achievement rate;
-            # # (2) the college and career readiness factor (100/.8); and
-            # # (3) one hundred (100).
-
-            # ### Final Calculation
-            # # First Year weighting: graduation calculation (20%) and ccr score (80%)
-            # # All Other Years: graduation calculation (40%) / ccr score (60%)
+            # Final Calculation
+            # First Year weighting: graduation calculation (20%) and ccr score (80%)
+            # All Other Years: graduation calculation (40%) / ccr score (60%)
 
     # K8 data
     elif params["type"] == "k8":
@@ -1378,7 +1314,7 @@ def get_academic_data(*args):
         # this is school, school corporation, and comparable school data
         processed_data = processed_data.reset_index()
 
-    # Additional page specific processing
+    # Page specific processing
 
     # the dataframe can be empty if all columns other than the 1st
     # Year are null or if the dataframe has no school_id
@@ -1395,14 +1331,15 @@ def get_academic_data(*args):
             keep_years = years[:5]
             processed_data = processed_data[processed_data["Year"].isin(keep_years)]
 
-        # TODO add multipage analysis data
+        # TODO add multipage analysis data (currently being calculated separately in
+        # TODO: get_year_over_year_data)
         if params["page"] == "analysis":
             ## HS/AHS academic_analysis_single.py
             if params["type"] == "hs" or params["type"] == "ahs":
                 hs_data = processed_data.copy()
 
                 # NOTE: Cohort data (not currently kept): Actual Graduates,
-                #   Actual Enrollment, CCR
+                # Actual Enrollment, CCR
                 if params["type"] == "ahs":
                     analysis_data = hs_data.filter(
                         regex=r"School ID|School Name|Low Grade|High Grade|Corporation ID|Corporation Name \
@@ -1430,8 +1367,6 @@ def get_academic_data(*args):
                     analysis_data["School ID"] == school_id
                 ].tolist()[0]
 
-                # force all to numeric (this removes "***" strings) - we
-                # later use NaN as a proxy
                 for col in hs_cols:
                     analysis_data[col] = pd.to_numeric(
                         analysis_data[col], errors="coerce"
@@ -1555,7 +1490,7 @@ def get_academic_data(*args):
                     # Stat Average. So when the difference is calculated
                     # between the two data frames, Total Graduation Rate is the diff
                     # between school total and corp total and "State Average" is the
-                    # diff between school total and state average
+                    # diff between school total and state average.
 
                     # for this to work, we need to make sure the school has a "Total
                     # Graduation Rate" Category- if is missing, we add a new row filled
@@ -1651,14 +1586,6 @@ def get_academic_data(*args):
                 if params["page"] == "info":
                     return final_school_data
 
-                # TODO: Does this check belong here, in the chart, in the
-                # TODO: "calling" page (e.g., academic_info.py) before it is
-                # TODO: sent to the charting function, or in the layout.
-                # result, no_data = check_for_no_data(result)
-                # print(no_data)
-                # insuf_string = check_for_insufficient_n_size(result)
-                # print(insuf_string)
-
                 ## K8 academic_metrics.py
                 else:
                     corp_info_data = processed_data[
@@ -1682,8 +1609,12 @@ def get_academic_data(*args):
                     return metric_data
 
 
-# TODO: merge into get_academic_data()
-# TODO: Currently only used in multi-year academic data
+# TODO: merge into get_academic_data() (currently only used
+# TODO: in multi-year academic data)
+# NOTE: Primary difference is year_over_year data column names are school
+# names and index is Year - values are proficiency. in get_academic_data,
+# columns are YYYYSchool, YYYYN-Size, YYYYDiff, index is Category and
+# values are proficiency, nsize, diff, and rating
 def get_year_over_year_data(*args):
     keys = ["school_id", "comp_list", "category", "year", "flag"]
     params = dict(zip(keys, args))
@@ -1897,10 +1828,6 @@ def get_year_over_year_data(*args):
                     comparable_schools_data,
                     on="Year",
                 )
-
-        # excluded_years = get_excluded_years(params["year"])
-        # if excluded_years:
-        #     result = result[~result["Year"].isin(excluded_years)]
 
     return result, all_school_info
 

@@ -338,7 +338,7 @@ def update_academic_metrics(school: str, year: str):
 
             [
                 metric_14ef_data.insert(
-                    i+1,
+                    i + 1,
                     str(metric_14ef_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
                     metric_14ef_data.apply(
                         lambda x: set_academic_rating(
@@ -362,6 +362,9 @@ def update_academic_metrics(school: str, year: str):
             )
 
             # iread_data
+            # we have to recalculate IREAD metrics because the initial
+            # calculation (including IREAD with all other metrics) gives
+            # an erroneous result
             # NOTE: combined_delta has other available data as well
             iread_data = combined_delta[
                 combined_delta["Category"] == "Total|IREAD Proficient %"
@@ -373,6 +376,7 @@ def update_academic_metrics(school: str, year: str):
                 ] = "IREAD Proficient %"
 
                 iread_data = iread_data.reset_index(drop=True)
+
                 iread_data = calculate_iread_metrics(iread_data)
 
                 metric_14g_label = [

@@ -428,7 +428,7 @@ def make_stacked_bar(
         fig_layout = [
             html.Div(
                 [
-                    html.Label(label, className="hollow-label__header"),
+                    html.Label(label, className="label__header"),  # hollow-
                     dcc.Graph(
                         figure=fig,
                         config={
@@ -456,7 +456,7 @@ def make_stacked_bar(
         fig_layout = [
             html.Div(
                 [
-                    html.Label(label, className="hollow-label__header"),
+                    html.Label(label, className="label__header"),  # hollow-
                     dcc.Graph(
                         figure=fig,
                         config={
@@ -473,7 +473,9 @@ def make_stacked_bar(
     return fig_layout
 
 
-def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]:
+def make_multi_line_chart(
+    school_id: str, df: pd.DataFrame, label: str
+) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
     series of strings (if applicable) detailing missing data.
@@ -487,7 +489,7 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
         and another string(s) if certain conditions are met.
     """
 
-    data = values.copy()
+    data = df.copy()
 
     # NOTE: you can sometimes have a selected school disappear from
     # the school selection list if the school didn't exist or didn't
@@ -518,8 +520,15 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
 
         data = data.reset_index(drop=True)
 
-        # assign colors for each comparison school
         trace_color = {school_cols[i]: color[i] for i in range(len(school_cols))}
+
+        selected_school = get_school_index(school_id)
+        school_name = selected_school["School Name"].values[0]
+
+        # set selected school color
+        for key, value in trace_color.items():
+            if key == school_name:
+                trace_color[key] = "#ffce54"
 
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
@@ -540,7 +549,7 @@ def make_multi_line_chart(values: pd.DataFrame, label: str) -> Tuple[dict, list]
                 x="Year",
                 y=school_cols,
                 markers=True,
-                color_discrete_sequence=color,
+                color_discrete_map=trace_color,
             )
 
             fig.update_traces(hovertemplate=None)  # type: ignore
@@ -778,12 +787,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
             data_max = data_max.max(numeric_only=True).max()
 
             data["Year"] = data["Year"].astype(str)
-
-            # # If data_max is > 1 then it is WIDA data (all other data are decimals)
-            # if data_max > 1:
-            #     # make sure Year is a str and replace all negative numbers with 0
-            #     # data[data < 0] = 0
-            #     data["Year"] = data["Year"].astype(str)
 
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
@@ -1137,6 +1140,7 @@ def make_bar_chart(
             if key == school_name:
                 trace_color[key] = "#ffce54"
                 # trace_color[key] = "#0a66c2"
+
         # Uncomment this and the other 'customdata' lines below to display
         # the distance of each comparable school from the selected school
         # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
@@ -1282,7 +1286,8 @@ def make_group_bar_chart(
     # replace color for selected school
     for key, value in trace_color.items():
         if key == school_name:
-            trace_color[key] = "#0a66c2"
+            trace_color[key] = "#ffce54"
+            # trace_color[key] = "#0a66c2"
 
     fig = px.bar(
         data_frame=data_set,

@@ -252,7 +252,7 @@ def create_school_label(df: pd.DataFrame) -> pd.Series:
 
     label = label.replace("\(-\)", "", regex=True)
 
-    # shouldnt need this but keeping in case any floats sneak
+    # shouldn't need this but keeping in case any floats sneak
     # through. we escape "." because want to replace literal ".0"
     # and not anychar + "0"
     label = label.replace("\.0", "", regex=True)
@@ -334,17 +334,18 @@ def identify_missing_categories(
         set(data["School Name"]) - set(final_data["School Name"])
     )
 
-    # Get the names and categories of schools that have data for some categories and not others.
-    # In the end we want  a list of schools that is made up of schools that are missing all data
-    # + schools that are missing some data + what data they are missing
+    # Get the names and categories of schools that have data for some 
+    # categories and not others. In the end we want  a list of schools
+    # that is made up of schools that are missing all data + schools
+    # that are missing some data + what data they are missing.
     check_data = data.copy()
 
     if check_data.columns.isin(["Low Grade", "High Grade"]).any():
         check_data = check_data.drop(["Low Grade", "High Grade"], axis=1)
         check_data = check_data.reset_index(drop=True)
 
-    # get a list of the categories that are missing from selected school data and
-    # strip everything following "|" delimeter for annotation
+    # get a list of the categories that are missing from selected school
+    # data and strip everything following "|" delimeter for annotation.
     missing_categories = [i for i in subject_categories if i not in check_data.columns]
     missing_categories = [s.split("|")[0] for s in missing_categories]
 

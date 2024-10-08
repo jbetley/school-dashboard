@@ -18,6 +18,7 @@ from .globals import metric_strings, table_style, table_cell, table_header
 from .load_data import get_student_level_ilearn
 from .calculations import conditional_fillna
 
+
 def create_proficiency_key() -> list:
     """
     Creates a dash datatable "key" using proficiency ratings and
@@ -1030,7 +1031,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className="hollow-label__header"),
+                    html.Label(label, className="label__header"),  # hollow-
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict("records"),
@@ -1152,8 +1153,8 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
         nsize_tooltip = [
             {
                 column: {
-                    "value": category.split("|", maxsplit=1)[0] + 
-                        " N-Size: {:.1f}".format(float(value))
+                    "value": category.split("|", maxsplit=1)[0]
+                    + " N-Size: {:.1f}".format(float(value))
                     if value != "\u2014"
                     else "\u2014",
                     "type": "markdown",
@@ -1177,7 +1178,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
                 merge_duplicate_headers=True,
                 tooltip_data=nsize_tooltip,
                 tooltip_delay=0,
-                tooltip_duration=None
+                tooltip_duration=None,
             ),
         ]
     # TODO: Align this with line_fig_layout (two empty figs instead of fig/table)
@@ -1651,11 +1652,14 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
 
         header, body = create_hovercard_popup(metric_id)
 
+        # print(nsize_categories)
+        # print(nsize_data)
+
         nsize_tooltip = [
             {
                 column: {
-                    "value": category.split("|", maxsplit=1)[0] + 
-                        " N-Size: {:.1f}".format(float(value))
+                    "value": category.split("|", maxsplit=1)[0]
+                    + " N-Size: {:.1f}".format(float(value))
                     if value != "\u2014"
                     else "\u2014",
                     "type": "markdown",

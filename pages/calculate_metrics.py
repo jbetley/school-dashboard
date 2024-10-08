@@ -767,7 +767,11 @@ def calculate_iread_metrics(df: pd.DataFrame) -> pd.DataFrame:
         for i in range(data.shape[1], 1, -3)
     ]
 
-    data = conditional_fillna(data)
+    # perform a manual replace of "--" for "***" only in NSize cols
+    # (data = conditional_fillna(data)) doesn't work here
+    nsize_cols = [col for col in data.columns if "SN-Size" in col]
+    data[nsize_cols] = data[nsize_cols].replace("***","\u2014")
+
     data.columns = data.columns.astype(str)
 
     return data
