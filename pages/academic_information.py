@@ -39,7 +39,7 @@ from .tables import (
 
 from .charts import no_data_fig_label, make_stacked_bar, make_line_chart
 from .layouts import set_table_layout, create_line_fig_layout
-from .calculations import round_percentages, conditional_fillna
+from .calculations import round_percentages
 from .string_helpers import natural_keys
 
 dash.register_page(
