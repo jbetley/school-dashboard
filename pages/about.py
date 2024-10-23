@@ -122,19 +122,16 @@ def update_about_page(year: str, school: str):
         demographic_data["Year"] == selected_year_numeric
     ]
 
-    # TODO: Testing Discipline
-    # test_discipline = get_discipline_data(selected_school_id)
+    # Discipline data
 
-    # zoot = process_discipline_data(test_discipline, selected_year_string, selected_school_id)
-    # print("DISC Result")
-    # # print(zoot)
+    test_discipline = get_discipline_data(selected_school_id)
 
-    # overall_discipline_data = zoot.loc[:, zoot.columns.str.contains("Overall")]
+    zoot = process_discipline_data(
+        test_discipline, selected_year_string, selected_school_id
+    )
 
-    # print(overall_discipline_data)
-
-    # filename99 = "DISC_data.csv"
-    # overall_discipline_data.to_csv(filename99, index=False)
+    # filename98 = "zoot_data.csv"
+    # zoot.to_csv(filename98, index=False)
 
     if len(demographic_data.index) == 0:
         enroll_table = no_data_table("No Data to Display", enroll_title, "six")
@@ -456,7 +453,7 @@ def layout():
                         [
                             html.Div(""),
                             html.Div(
-                                id="update-table", children=[] #, className="no-print"
+                                id="update-table", children=[]  # , className="no-print"
                             ),
                             html.Div(
                                 [

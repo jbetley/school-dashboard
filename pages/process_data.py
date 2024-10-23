@@ -352,9 +352,16 @@ def process_discipline_data(raw_data, year, school_id):
     if excluded_years:
         raw_data = raw_data[~raw_data["Year"].isin(excluded_years)]
 
+    for col in raw_data.columns:
+        raw_data[col] = pd.to_numeric(
+            raw_data[col], errors="coerce"
+        )
+
     raw_data = raw_data.sort_values(by="Year", ascending=False)
 
     raw_data = raw_data.reset_index(drop=True)
+
+    all_columns = raw_data.columns.to_list()
 
     # keep Arrest and Law Enforcement "Overall" data and drop rest
     # for those Categories (#s are too low to measure)
@@ -384,6 +391,51 @@ def process_discipline_data(raw_data, year, school_id):
     data["School ID"] = data["School ID"].astype("Int64").astype("str")
     data["Corporation ID"] = data["Corporation ID"].astype("Int64").astype("str")
 
+    # overall data
+    # TODO: This one works
+    overall_discipline_data = raw_data.loc[:, raw_data.columns.str.contains("Overall")].copy()
+    overall_cols = overall_discipline_data.columns.drop("Total Unique Students|Overall").copy()
+    overall_discipline_data[overall_cols] = overall_discipline_data[overall_cols].div(overall_discipline_data["Total Unique Students|Overall"], axis=0)
+
+    # filename98 = "overall_discipline_data.csv"
+    # overall_discipline_data.to_csv(filename98, index=False)
+
+# TODO: This is a giant pain in the ass
+# loop through each ethnicity:
+#   loop through each group:
+#       group|ethnicity = group|ethnicity / Total Unique Students|Overall
+#       group|ethnicity Unique = group|ethnicity / Total Unique Students|ethnicity
+#
+    def discipline_calc(df, group, subject):
+        pass
+
+
+    # overall ethnicity
+    eth_cols = ethnicity + ["Total Unique Students\|Overall"]
+    ethnicity_columns = raw_data.filter(regex='|'.join(eth_cols)).columns
+    ethnicity_discipline_data = raw_data[ethnicity_columns]
+
+    filename99 = "ethnicity_discipline_data.csv"
+    ethnicity_discipline_data.to_csv(filename99, index=False)
+
+    # eth_total_cols = ["Total Unique Students|" + e for e in ethnicity]
+    # eth_category_cols = [d + "|" + e for d in discipline_categories for e in ethnicity]
+
+    #TODO: This works but only for 1 group at a time.
+    # tst = ethnicity_discipline_data.copy()
+    # tst.columns = pd.MultiIndex.from_arrays(zip(*tst.columns.str.split("|")))
+    # tst=tst.stack()
+    # tst_div = tst.filter(like='In School').div(tst.filter(like='Total').squeeze(), axis=0)
+    # tst_div = tst_div.unstack().sort_index(level=1, axis=1)
+    # tst_div.columns = [f'{i}_{j}' for i, j in tst_div.columns]
+    # filename98 = "tst_div.csv"
+    # tst_div.to_csv(filename98, index=False)
+
+    # overall subgroup
+    sub_cols = subgroup + ["Total Unique Students\|Overall"]
+    subgroup_columns = raw_data.filter(regex='|'.join(sub_cols)).columns
+    subgroup_discipline_data = raw_data[subgroup_columns]
+
     # "Total Unique Students" is the number of unique students in the school
     #  for each category
     tested_cols = [
@@ -402,7 +454,9 @@ def process_discipline_data(raw_data, year, school_id):
     # we use sum/all because there could be one or many columns
 
     data_all = pd.DataFrame()
+    data_overall_all = pd.DataFrame()
     data_unique = pd.DataFrame()
+    data_overall_unique = pd.DataFrame()
 
     for group in discipline_groups:
         # denominators
@@ -421,22 +475,40 @@ def process_discipline_data(raw_data, year, school_id):
             overall_result_all = all_in_category + " as Percentage of All"
             overall_result_unique = unique_in_category + " as Percentage of All Unique"
 
-            data_all[all_result] = calculate_percentage(
-                data[all_in_category], data[group_total]
-            )
+            d_a_i_c = data[all_in_category].copy()
+            d_g_t = data[group_total].copy()
+            data_all[all_result] = calculate_percentage(d_a_i_c, d_g_t)
+            # data_all[all_result] = calculate_percentage(
+            #     data[all_in_category], data[group_total]
+            # )
 
-            data_unique[unique_result] = calculate_percentage(
-                data[unique_in_category], data[group_total]
-            )
+            d_o_t = data[overall_total].copy()
+            data_overall_all[overall_result_all] = calculate_percentage(d_a_i_c, d_o_t)
+            # data_all[overall_result_all] = calculate_percentage(
+            #     data[all_in_category], data[overall_total]
+            # )
 
-            data_all[overall_result_all] = calculate_percentage(
-                data[all_in_category], data[overall_total]
-            )
+            d_u_i_c = data[unique_in_category].copy()
+            data_unique[unique_result] = calculate_percentage(d_u_i_c, d_g_t)
+            # data_unique[unique_result] = calculate_percentage(
+            #     data[unique_in_category], data[group_total]
+            # )
 
-            data_unique[overall_result_unique] = calculate_percentage(
-                data[unique_in_category], data[overall_total]
-            )
+            data_overall_unique[overall_result_unique] = calculate_percentage(d_u_i_c, d_o_t)
 
+            # data_unique[overall_result_unique] = calculate_percentage(
+            #     data[unique_in_category], data[overall_total]
+            # )
+
+    filename90 = "data_all.csv"
+    data_all.to_csv(filename90, index=False)
+
+    filename91 = "data_unique.csv"
+    data_unique.to_csv(filename91, index=False)
+
+    # print(overall_result_unique)
+    # print(overall_result_all)
+    # print(unique_result)
     final_data = pd.concat([data, data_all, data_unique, law_data], axis=1)
 
     return final_data

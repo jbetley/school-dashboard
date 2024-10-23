@@ -1091,6 +1091,7 @@ def get_academic_data(*args):
 
     raw_merged_data = raw_merged_data.reset_index(drop=True)
 
+    # TODO: Is this redundant? Same check is performed in Calculate Proficiency?
     ## Drop all columns for a Category if the value of "Total Tested" for
     # the Category for the school is null or 0 for the "school"
     drop_columns = []
