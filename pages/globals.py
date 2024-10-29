@@ -61,7 +61,7 @@ discipline_categories = [
     "Expulsion",
     "Attendance Incidents",
     # "Arrests",
-    # "Law Enforcement Incidents",
+    # "Law Enforcement Incidents"
 ]
 
 discipline_groups = [

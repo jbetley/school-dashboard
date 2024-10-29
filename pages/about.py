@@ -8,11 +8,13 @@
 import dash
 from dash import dcc, html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
+
+# import dash_ag_grid as dag
 import plotly.express as px
 import pandas as pd
 import numpy as np
 
-from .globals import ethnicity, subgroup, max_display_years
+from .globals import ethnicity, subgroup, max_display_years, discipline_groups
 from .load_data import (
     get_excluded_years,
     get_school_index,
@@ -24,7 +26,7 @@ from .load_data import (
     get_discipline_data,
 )
 
-from .process_data import process_discipline_data
+from .process_data import process_discipline_data, transpose_discipline_data
 
 from .charts import (
     loading_fig,
@@ -37,6 +39,7 @@ from .tables import (
     no_data_page,
     create_key_table,
     create_single_header_table,
+    create_multi_header_table
 )
 from .layouts import create_line_fig_layout
 
@@ -44,9 +47,28 @@ from .layouts import create_line_fig_layout
 dash.register_page(__name__, path="/about", order=0, top_nav=True)
 
 
+# Discipline Dropdown
+@callback(
+    Output("discipline-dropdown", "options"),
+    [Input("application-state", "children")],  # dummy input
+)
+def set_discipline_dropdown_options(app_state):
+    dropdown_options = [{"label": name, "value": name} for name in discipline_groups]
+
+    return dropdown_options
+
+# Sets the default value to the first value in discipline category list
+@callback(
+    Output("discipline-dropdown", "value"),
+    Input("discipline-dropdown", "options"))
+def set_dropdown_value(discipline_options):
+    return discipline_options[0]["value"]
+
+
 @callback(
     Output("update-table", "children"),
     Output("enroll-title", "children"),
+    # Output("tst-grid", "children"),
     Output("enroll-table", "children"),
     Output("adm-fig", "figure"),
     Output("attendance-layout", "children"),
@@ -54,13 +76,15 @@ dash.register_page(__name__, path="/about", order=0, top_nav=True)
     Output("ethnicity-fig", "figure"),
     Output("subgroup-title", "children"),
     Output("subgroup-fig", "figure"),
+    # Output("discipline-data", "children"),
     Output("about-main-container", "style"),
     Output("about-empty-container", "style"),
     Output("about-no-data", "children"),
     Input("year-dropdown", "value"),
     Input("charter-dropdown", "value"),
+    Input("discipline-dropdown", "value"),
 )
-def update_about_page(year: str, school: str):
+def update_about_page(year: str, school: str, discipline_category: str):
     if not school:
         raise PreventUpdate
 
@@ -124,14 +148,33 @@ def update_about_page(year: str, school: str):
 
     # Discipline data
 
-    test_discipline = get_discipline_data(selected_school_id)
+    raw_discipline_data = get_discipline_data(selected_school_id)
 
-    zoot = process_discipline_data(
-        test_discipline, selected_year_string, selected_school_id
+    processed_discipline_data = process_discipline_data(
+        raw_discipline_data, selected_year_string
     )
 
-    # filename98 = "zoot_data.csv"
-    # zoot.to_csv(filename98, index=False)
+    print(discipline_category)
+
+    discipline_data = transpose_discipline_data(
+        processed_discipline_data, discipline_category
+    )
+
+    print(discipline_data)
+
+    # TODO: Add table/fig layout
+    # discipline_table = create_multi_header_table(discipline_data)
+
+    # # ELA by Grade fig
+    # ela_grade_fig_data = ilearn_fig_data.filter(
+    #     regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
+    # )
+
+    # discipline_fig = make_line_chart(discipline_fig_data)
+
+    # discipline_layout = create_line_fig_layout(
+    #     discipline_table, discipline_fig, "ELA By Grade"
+    # )
 
     if len(demographic_data.index) == 0:
         enroll_table = no_data_table("No Data to Display", enroll_title, "six")
@@ -168,14 +211,32 @@ def update_about_page(year: str, school: str):
         enrollment.rename(columns={enrollment.columns[0]: "Enrollment"}, inplace=True)
         enrollment.rename(index={"Total Enrollment": "Total"}, inplace=True)
 
-        # if selected_school_type == "AHS":
-        #     # sum = enrollment["Enrollment"].astype(int).sum()
-        #     school_enrollment = pd.DataFrame(columns=["index", "Enrollment"])
-        #     school_enrollment.loc[0] = ["Adults", sum]
-        #     school_enrollment.loc[1] = ["Total", sum]
-
-        # else:
         school_enrollment = enrollment.reset_index()
+
+        # NOTE: Dash-Ag Grid Experiment
+        # columnTypes = {
+        #     "stringColumn": {"filter": False, "editable": False},
+        #     "numberColumn": {"filter": False, "editable": False},
+        # }
+
+        # columnDefs = [
+        #     {"field": "index", "headerName": "", "type": "stringColumn", "resizable": False},
+        #     {"field": "Enrollment", "type": "numberColumn", "resizable": False},
+        # ]
+
+        # grid = dag.AgGrid(
+        #     id="tst-grid",
+        #     rowData=school_enrollment.to_dict("records"),
+        #     columnDefs=columnDefs,
+        #     columnSize="sizeToFit",
+        #     dashGridOptions={
+        #         'columnTypes': columnTypes,
+        #         # "headerHeight": 0,
+        #         "animateRows": False,
+        #         "domLayout": "autoHeight"
+        #     },
+        #     style={"width": "100%"}
+        # )
 
         enroll_table = [
             dash_table.DataTable(
@@ -423,6 +484,7 @@ def update_about_page(year: str, school: str):
     return (
         update_table,
         enroll_title,
+        # grid,
         enroll_table,
         adm_fig,
         attendance_layout,
@@ -430,6 +492,8 @@ def update_about_page(year: str, school: str):
         ethnicity_fig,
         subgroup_title,
         subgroup_fig,
+        # discipline_dropdown,
+        # discipline_data,
         main_container,
         empty_container,
         no_data_to_display,
@@ -463,6 +527,7 @@ def layout():
                                                 id="enroll-title",
                                                 className="label__header",
                                             ),
+                                            # html.Div(id="tst-grid"),
                                             html.Div(id="enroll-table"),
                                             html.P(""),
                                             html.P(
@@ -504,15 +569,6 @@ def layout():
                             html.Div(
                                 [
                                     html.Div(
-                                        id="attendance-layout",
-                                        children=[],
-                                    ),
-                                ],
-                                className="pagebreak-after",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
                                         [
                                             html.Label(
                                                 id="subgroup-title",
@@ -542,6 +598,52 @@ def layout():
                                     ),
                                 ],
                                 className="bare-container--flex--center twelve columns",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        id="attendance-layout",
+                                        children=[],
+                                    ),
+                                ],
+                                className="pagebreak-after",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Label(
+                                                "Discipline Data",
+                                                className="label__header",
+                                                style={"marginTop": "20px"},
+                                            ),
+                                        ],
+                                        className="bare-container--center twelve columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.Label("Select Category:"),
+                                                ],
+                                                className="discipline-dropdown-label",
+                                                # id="discipline-dropdown-label",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="discipline-dropdown",
+                                                multi=False,
+                                                clearable=False,
+                                                className="discipline-dropdown-control",
+                                            ),
+                                        ],
+                                        className="bare-container--slim four columns",
+                                    ),
+                                    # html.Div(
+                                    #     id="discipline-data",
+                                    #     children=[],
+                                    # ),
+                                ],
+                                className="bare-container--center twelve columns",
                             ),
                         ],
                         id="about-main-container",

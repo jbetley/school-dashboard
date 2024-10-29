@@ -1121,7 +1121,7 @@ def layout():
                                 className="bare-container--slim two columns",
                             ),
                         ],
-                        className="row--fixed--top  no-print",
+                        className="row--fixed--top no-print",
                     ),
                 ],
                 className="bare-container--flex twelve columns",
