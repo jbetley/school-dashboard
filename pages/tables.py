@@ -1081,6 +1081,11 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
         nsize_data = conditional_fillna(nsize_data)
 
+        # some values have trailing ".0" due to float conversion,
+        # this gets rid of that
+        for col in nsize_data.columns:
+            nsize_data[col] = nsize_data[col].astype(str).str.split('.').str[0]
+
         # this keeps the Unique N-Size in the discipline data set, has
         # no effect otherwise
         nsize_data = nsize_data.rename(
@@ -1154,9 +1159,12 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
             for col in all_cols
         ]
 
-        # if discipline data, combine two nsizes into one column
+        # if dataframe contains discipline data, combine two nsizes
+        # into one column and then split for the tooltip
         if any("Unique" in col for col in nsize_data.columns):
+            
             tooltip_data = pd.DataFrame()
+            
             for header in school_headers:
                 tooltip_data[header] = (
                     nsize_data[header].astype(str)
@@ -1164,21 +1172,12 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
                     + nsize_data[header + "N-Size Unique"].astype(str)
                 )
 
-            print("WHYYYYYYY")
-            print(tooltip_data)
-
-            for row, category in zip(nsize_data.to_dict("records"), nsize_categories):
-                for column, value in row.items():
-                    print(column)
-                    print(value)
-
-            # TODO: NOT WORKING
             nsize_tooltip = [
                 {
                     column: {
                         "value": "Incidents: "
                         + value.split("|")[0]
-                        + "Unique Students: "
+                        + "  \nUnique Students: "
                         + value.split("|")[1]
                         if value != "\u2014"
                         else "\u2014",
@@ -1186,9 +1185,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
                     }
                     for column, value in row.items()
                 }
-                for row, category in zip(
-                    nsize_data.to_dict("records"), nsize_categories
-                )
+                for row in tooltip_data.to_dict("records")
             ]
 
         else:
@@ -1196,7 +1193,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
                 {
                     column: {
                         "value": category.split("|", maxsplit=1)[0]
-                        + " N-Size: {:.1f}".format(float(value))
+                        + " N-Size: " + value #{:.1f}".format(float(value))
                         if value != "\u2014"
                         else "\u2014",
                         "type": "markdown",

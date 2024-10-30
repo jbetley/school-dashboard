@@ -370,9 +370,10 @@ def transpose_discipline_data(data, category):
         "|" + category, " %", regex=False
     )
 
-    # TODO: What is this line doing
+    # sort columns alphabetically
     discipline_data = discipline_data.sort_index(axis=1)
 
+    # sort year column
     discipline_data = discipline_data.sort_values(by=["Year"], ascending=True)
 
     category_columns = [
@@ -380,7 +381,6 @@ def transpose_discipline_data(data, category):
         for col in discipline_data.columns
         if "%" in col or "Year" in col or "Total" in col
     ]
-    # Total N-Size (unique)
 
     nsize_columns = [
         col

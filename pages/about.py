@@ -6,7 +6,7 @@
 # date:     09/06/24
 
 import dash
-from dash import dcc, html, dash_table, Input, Output, callback
+from dash import dcc, html, dash_table, Input, Output, State, callback
 from dash.exceptions import PreventUpdate
 
 # import dash_ag_grid as dag
@@ -24,6 +24,7 @@ from .load_data import (
     get_adm,
     get_attendance_data,
     get_discipline_data,
+    current_academic_year
 )
 
 from .process_data import process_discipline_data, transpose_discipline_data
@@ -65,6 +66,46 @@ def set_discipline_dropdown_options(app_state):
 def set_dropdown_value(discipline_options):
     return discipline_options[0]["value"]
 
+# Update Discipline Table
+@callback(
+    Output("discipline-layout", "children"),
+    Input("discipline-dropdown", "value"),
+    State("year-dropdown", "value"),
+    State("charter-dropdown", "value")
+)
+def update_discipline_table(discipline_category, year_state, school_state):
+
+    # TODO: Fix total page refresh on Discipline data update.
+    if year_state == None:
+        year_state = current_academic_year
+
+    raw_discipline_data = get_discipline_data(school_state)
+
+    processed_discipline_data = process_discipline_data(
+        raw_discipline_data, year_state
+    )
+
+    discipline_data = transpose_discipline_data(
+        processed_discipline_data, discipline_category
+    )
+
+    discipline_table = create_multi_header_table(discipline_data)
+
+    # # ELA by Grade fig
+    # ela_grade_fig_data = ilearn_fig_data.filter(
+    #     regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
+    # )
+
+    # discipline_fig = make_line_chart(discipline_fig_data)
+
+    discipline_layout = create_line_fig_layout(
+        discipline_table,
+        discipline_table,
+        "Discipline Data"
+        # discipline_table, discipline_fig, "ELA By Grade"
+    )
+
+    return discipline_layout
 
 @callback(
     Output("update-table", "children"),
@@ -77,15 +118,15 @@ def set_dropdown_value(discipline_options):
     Output("ethnicity-fig", "figure"),
     Output("subgroup-title", "children"),
     Output("subgroup-fig", "figure"),
-    Output("discipline-layout", "children"),
+    # Output("discipline-layout", "children"),
     Output("about-main-container", "style"),
     Output("about-empty-container", "style"),
     Output("about-no-data", "children"),
     Input("year-dropdown", "value"),
     Input("charter-dropdown", "value"),
-    Input("discipline-dropdown", "value"),
+    # Input("discipline-dropdown", "value"),
 )
-def update_about_page(year: str, school: str, discipline_category: str):
+def update_about_page(year: str, school: str): #, discipline_category: str):
     if not school:
         raise PreventUpdate
 
@@ -147,40 +188,33 @@ def update_about_page(year: str, school: str, discipline_category: str):
         demographic_data["Year"] == selected_year_numeric
     ]
 
-    # Discipline data
+    # ## Discipline data
 
-    raw_discipline_data = get_discipline_data(selected_school_id)
+    # raw_discipline_data = get_discipline_data(selected_school_id)
 
-    processed_discipline_data = process_discipline_data(
-        raw_discipline_data, selected_year_string
-    )
-
-    print(discipline_category)
-
-    discipline_data = transpose_discipline_data(
-        processed_discipline_data, discipline_category
-    )
-
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
-    print(discipline_data)
-
-    # TODO: Add table/fig layout
-    discipline_table = create_multi_header_table(discipline_data)
-
-    # # ELA by Grade fig
-    # ela_grade_fig_data = ilearn_fig_data.filter(
-    #     regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
+    # processed_discipline_data = process_discipline_data(
+    #     raw_discipline_data, selected_year_string
     # )
 
-    # discipline_fig = make_line_chart(discipline_fig_data)
+    # discipline_data = transpose_discipline_data(
+    #     processed_discipline_data, discipline_category
+    # )
 
-    discipline_layout = create_line_fig_layout(
-        discipline_table,
-        discipline_table,
-        "Discipline Data"
-        # discipline_table, discipline_fig, "ELA By Grade"
-    )
+    # discipline_table = create_multi_header_table(discipline_data)
+
+    # # # ELA by Grade fig
+    # # ela_grade_fig_data = ilearn_fig_data.filter(
+    # #     regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
+    # # )
+
+    # # discipline_fig = make_line_chart(discipline_fig_data)
+
+    # discipline_layout = create_line_fig_layout(
+    #     discipline_table,
+    #     discipline_table,
+    #     "Discipline Data"
+    #     # discipline_table, discipline_fig, "ELA By Grade"
+    # )
 
     if len(demographic_data.index) == 0:
         enroll_table = no_data_table("No Data to Display", enroll_title, "six")
@@ -499,7 +533,7 @@ def update_about_page(year: str, school: str, discipline_category: str):
         subgroup_title,
         subgroup_fig,
         # discipline_dropdown,
-        discipline_layout,
+        # discipline_layout,
         main_container,
         empty_container,
         no_data_to_display,
