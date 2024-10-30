@@ -1081,14 +1081,18 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
         nsize_data = conditional_fillna(nsize_data)
 
-        nsize_data = nsize_data.rename(columns={c: c[:4] for c in nsize_data.columns})
+        # this keeps the Unique N-Size in the discipline data set, has
+        # no effect otherwise
+        nsize_data = nsize_data.rename(
+            columns={c: c[:4] for c in nsize_data.columns if "Unique" not in c}
+        )
 
         data = data[data.columns[~data.columns.str.contains(r"N-Size")]]
 
         data.columns = data.columns.str.replace("School", "", regex=True)
 
         data = data.fillna(value="\u2014")
-        data = data.replace("No Data", "\u2014", regex=True)  # test to see if necessary
+        data = data.replace("No Data", "\u2014", regex=True)
 
         school_headers = [y for y in data.columns if "Category" not in y]
 
@@ -1150,19 +1154,59 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
             for col in all_cols
         ]
 
-        nsize_tooltip = [
-            {
-                column: {
-                    "value": category.split("|", maxsplit=1)[0]
-                    + " N-Size: {:.1f}".format(float(value))
-                    if value != "\u2014"
-                    else "\u2014",
-                    "type": "markdown",
+        # if discipline data, combine two nsizes into one column
+        if any("Unique" in col for col in nsize_data.columns):
+            tooltip_data = pd.DataFrame()
+            for header in school_headers:
+                tooltip_data[header] = (
+                    nsize_data[header].astype(str)
+                    + "|"
+                    + nsize_data[header + "N-Size Unique"].astype(str)
+                )
+
+            print("WHYYYYYYY")
+            print(tooltip_data)
+
+            for row, category in zip(nsize_data.to_dict("records"), nsize_categories):
+                for column, value in row.items():
+                    print(column)
+                    print(value)
+
+            # TODO: NOT WORKING
+            nsize_tooltip = [
+                {
+                    column: {
+                        "value": "Incidents: "
+                        + value.split("|")[0]
+                        + "Unique Students: "
+                        + value.split("|")[1]
+                        if value != "\u2014"
+                        else "\u2014",
+                        "type": "markdown",
+                    }
+                    for column, value in row.items()
                 }
-                for column, value in row.items()
-            }
-            for row, category in zip(nsize_data.to_dict("records"), nsize_categories)
-        ]
+                for row, category in zip(
+                    nsize_data.to_dict("records"), nsize_categories
+                )
+            ]
+
+        else:
+            nsize_tooltip = [
+                {
+                    column: {
+                        "value": category.split("|", maxsplit=1)[0]
+                        + " N-Size: {:.1f}".format(float(value))
+                        if value != "\u2014"
+                        else "\u2014",
+                        "type": "markdown",
+                    }
+                    for column, value in row.items()
+                }
+                for row, category in zip(
+                    nsize_data.to_dict("records"), nsize_categories
+                )
+            ]
 
         table_layout = [
             dash_table.DataTable(

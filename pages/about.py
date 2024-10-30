@@ -39,7 +39,7 @@ from .tables import (
     no_data_page,
     create_key_table,
     create_single_header_table,
-    create_multi_header_table
+    create_multi_header_table,
 )
 from .layouts import create_line_fig_layout
 
@@ -57,10 +57,11 @@ def set_discipline_dropdown_options(app_state):
 
     return dropdown_options
 
+
 # Sets the default value to the first value in discipline category list
 @callback(
-    Output("discipline-dropdown", "value"),
-    Input("discipline-dropdown", "options"))
+    Output("discipline-dropdown", "value"), Input("discipline-dropdown", "options")
+)
 def set_dropdown_value(discipline_options):
     return discipline_options[0]["value"]
 
@@ -76,7 +77,7 @@ def set_dropdown_value(discipline_options):
     Output("ethnicity-fig", "figure"),
     Output("subgroup-title", "children"),
     Output("subgroup-fig", "figure"),
-    # Output("discipline-data", "children"),
+    Output("discipline-layout", "children"),
     Output("about-main-container", "style"),
     Output("about-empty-container", "style"),
     Output("about-no-data", "children"),
@@ -160,10 +161,12 @@ def update_about_page(year: str, school: str, discipline_category: str):
         processed_discipline_data, discipline_category
     )
 
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
     print(discipline_data)
 
     # TODO: Add table/fig layout
-    # discipline_table = create_multi_header_table(discipline_data)
+    discipline_table = create_multi_header_table(discipline_data)
 
     # # ELA by Grade fig
     # ela_grade_fig_data = ilearn_fig_data.filter(
@@ -172,9 +175,12 @@ def update_about_page(year: str, school: str, discipline_category: str):
 
     # discipline_fig = make_line_chart(discipline_fig_data)
 
-    # discipline_layout = create_line_fig_layout(
-    #     discipline_table, discipline_fig, "ELA By Grade"
-    # )
+    discipline_layout = create_line_fig_layout(
+        discipline_table,
+        discipline_table,
+        "Discipline Data"
+        # discipline_table, discipline_fig, "ELA By Grade"
+    )
 
     if len(demographic_data.index) == 0:
         enroll_table = no_data_table("No Data to Display", enroll_title, "six")
@@ -493,7 +499,7 @@ def update_about_page(year: str, school: str, discipline_category: str):
         subgroup_title,
         subgroup_fig,
         # discipline_dropdown,
-        # discipline_data,
+        discipline_layout,
         main_container,
         empty_container,
         no_data_to_display,
@@ -638,10 +644,10 @@ def layout():
                                         ],
                                         className="bare-container--slim four columns",
                                     ),
-                                    # html.Div(
-                                    #     id="discipline-data",
-                                    #     children=[],
-                                    # ),
+                                    html.Div(
+                                        id="discipline-layout",
+                                        children=[],
+                                    ),
                                 ],
                                 className="bare-container--center twelve columns",
                             ),

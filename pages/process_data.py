@@ -339,12 +339,10 @@ def process_growth_data(
     return fig_data, table_data
 
 
-def transpose_discipline_data (data, category):
-    #category = "Overall"
+def transpose_discipline_data(data, category):
+    # category = "Overall"
 
-    discipline_data = data.loc[
-        :, data.columns.str.contains(category + "|Year")
-    ].copy()
+    discipline_data = data.loc[:, data.columns.str.contains(category + "|Year")].copy()
 
     result_cols = discipline_data[
         discipline_data.columns.drop(list(discipline_data.filter(regex="Unique")))
@@ -372,24 +370,28 @@ def transpose_discipline_data (data, category):
         "|" + category, " %", regex=False
     )
 
-    #TODO: What is this line doing
+    # TODO: What is this line doing
     discipline_data = discipline_data.sort_index(axis=1)
-    
+
     discipline_data = discipline_data.sort_values(by=["Year"], ascending=True)
-    
+
     category_columns = [
-        col for col in discipline_data.columns if "%" in col or "Year" in col or "Total" in col
+        col
+        for col in discipline_data.columns
+        if "%" in col or "Year" in col or "Total" in col
     ]
     # Total N-Size (unique)
 
     nsize_columns = [
-        col for col in discipline_data.columns
-            if "unique" not in col and "Size" in col or "Year" in col
+        col
+        for col in discipline_data.columns
+        if "unique" not in col and "Size" in col or "Year" in col
     ]
 
     unique_columns = [
-        col for col in discipline_data.columns
-            if "Total" not in col and "unique" in col or "Year" in col
+        col
+        for col in discipline_data.columns
+        if "Total" not in col and "unique" in col or "Year" in col
     ]
 
     proficiency_values = discipline_data[category_columns]
@@ -424,11 +426,11 @@ def transpose_discipline_data (data, category):
 
     proficiency_values = proficiency_values.add_suffix("School")
     nsize_values = nsize_values.add_suffix("N-Size")
-    unique_nsize_values = unique_nsize_values.add_suffix("Unique")
+    unique_nsize_values = unique_nsize_values.add_suffix("N-Size Unique")
 
-    merged_data = pd.concat([proficiency_values, nsize_values, unique_nsize_values], axis=1)[
-        list(interleave([proficiency_values, nsize_values, unique_nsize_values]))
-    ]
+    merged_data = pd.concat(
+        [proficiency_values, nsize_values, unique_nsize_values], axis=1
+    )[list(interleave([proficiency_values, nsize_values, unique_nsize_values]))]
 
     merged_data.insert(loc=0, column="Category", value=category)
 
@@ -488,4 +490,4 @@ def process_discipline_data(data, year):
         raw_data["Corporation ID"].astype("Int64").astype("str")
     )
 
-    return raw_data  
+    return raw_data
