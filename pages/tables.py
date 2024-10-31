@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     02/21/24
+# date:     10/31/24
 
 import pandas as pd
 from typing import Tuple
@@ -1069,12 +1069,21 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
     """
 
     table_size = len(data.columns)
-
+    
+    isDiscipline = False
+    
+    if any("Unique" in col for col in data.columns):
+        isDiscipline = True
+    
     if table_size > 1:
-        # pull out nsize data for tooltips and drop from main df
-        nsize_data = data.loc[:, data.columns.str.contains("N-Size")].copy()
+        
+        # drop Total Students row so no tooltip appears there
+        nsize_data = data[data["Category"] != "Total Students"]
 
         nsize_categories = data["Category"].tolist()
+
+        # pull out nsize data for tooltips and drop from main df
+        nsize_data = nsize_data.loc[:, nsize_data.columns.str.contains("N-Size")].copy()
 
         for col in nsize_data.columns:
             nsize_data[col] = pd.to_numeric(nsize_data[col], errors="coerce")
@@ -1084,7 +1093,7 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
         # some values have trailing ".0" due to float conversion,
         # this gets rid of that
         for col in nsize_data.columns:
-            nsize_data[col] = nsize_data[col].astype(str).str.split('.').str[0]
+            nsize_data[col] = nsize_data[col].astype(str).str.split(".").str[0]
 
         # this keeps the Unique N-Size in the discipline data set, has
         # no effect otherwise
@@ -1102,6 +1111,53 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
         school_headers = [y for y in data.columns if "Category" not in y]
 
         all_cols = data.columns.tolist()
+
+        # tooltips- if dataframe contains discipline data, combine two nsizes
+        # into one column and then split for the tooltip
+        if isDiscipline == True:
+
+            tooltip_data = pd.DataFrame()
+
+            for header in school_headers:
+                tooltip_data[header] = (
+                    nsize_data[header].astype(str)
+                    + "|"
+                    + nsize_data[header + "N-Size Unique"].astype(str)
+                )
+
+            nsize_tooltip = [
+                {
+                    column: {
+                        "value": "Incidents: "
+                        + value.split("|")[0]
+                        + "  \nUnique Students: "
+                        + value.split("|")[1]
+                        if value != "\u2014"
+                        else "\u2014",
+                        "type": "markdown",
+                    }
+                    for column, value in row.items()
+                }
+                for row in tooltip_data.to_dict("records")
+            ]
+
+        else:
+            nsize_tooltip = [
+                {
+                    column: {
+                        "value": category.split("|", maxsplit=1)[0]
+                        + " N-Size: "
+                        + value
+                        if value != "\u2014"
+                        else "\u2014",
+                        "type": "markdown",
+                    }
+                    for column, value in row.items()
+                }
+                for row, category in zip(
+                    nsize_data.to_dict("records"), nsize_categories
+                )
+            ]
 
         category_width = 20
         data_width = 100 - category_width
@@ -1159,51 +1215,13 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
             for col in all_cols
         ]
 
-        # if dataframe contains discipline data, combine two nsizes
-        # into one column and then split for the tooltip
-        if any("Unique" in col for col in nsize_data.columns):
-            
-            tooltip_data = pd.DataFrame()
-            
-            for header in school_headers:
-                tooltip_data[header] = (
-                    nsize_data[header].astype(str)
-                    + "|"
-                    + nsize_data[header + "N-Size Unique"].astype(str)
-                )
-
-            nsize_tooltip = [
-                {
-                    column: {
-                        "value": "Incidents: "
-                        + value.split("|")[0]
-                        + "  \nUnique Students: "
-                        + value.split("|")[1]
-                        if value != "\u2014"
-                        else "\u2014",
-                        "type": "markdown",
-                    }
-                    for column, value in row.items()
-                }
-                for row in tooltip_data.to_dict("records")
-            ]
-
-        else:
-            nsize_tooltip = [
-                {
-                    column: {
-                        "value": category.split("|", maxsplit=1)[0]
-                        + " N-Size: " + value #{:.1f}".format(float(value))
-                        if value != "\u2014"
-                        else "\u2014",
-                        "type": "markdown",
-                    }
-                    for column, value in row.items()
-                }
-                for row, category in zip(
-                    nsize_data.to_dict("records"), nsize_categories
-                )
-            ]
+        if isDiscipline == True:
+            # cannot easily do row-wise formatting in a dataframe,
+            # so we loop through all columns on the last row and
+            # style each one individually (its just an int, rest
+            # of rows are percentages)
+            for x in range(1,len(data.columns)):
+                data.iat[-1,x] = '{:.0f}'.format(data.iat[-1,x])
 
         table_layout = [
             dash_table.DataTable(
@@ -1692,9 +1710,6 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
             return header, body
 
         header, body = create_hovercard_popup(metric_id)
-
-        # print(nsize_categories)
-        # print(nsize_data)
 
         nsize_tooltip = [
             {

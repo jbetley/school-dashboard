@@ -340,9 +340,15 @@ def process_growth_data(
 
 
 def transpose_discipline_data(data, category):
-    # category = "Overall"
-
+    # annoyingly, there are two cases in which str.contains grabs two "categories"
+    # instead of 1: "Homeless" also returns "Not Homeless" and "English Language Learner"
+    # also returns "Non English Language Learner"- so we need to test and drop
     discipline_data = data.loc[:, data.columns.str.contains(category + "|Year")].copy()
+
+    if category == "Homeless" or category == "English Language Learner":
+        discipline_data = discipline_data[
+            discipline_data.columns[~discipline_data.columns.str.contains(r"Not|Non")]
+        ]
 
     result_cols = discipline_data[
         discipline_data.columns.drop(list(discipline_data.filter(regex="Unique")))
@@ -433,14 +439,14 @@ def transpose_discipline_data(data, category):
     )[list(interleave([proficiency_values, nsize_values, unique_nsize_values]))]
 
     merged_data.insert(loc=0, column="Category", value=category)
+    merged_data = merged_data.replace(
+        "Total N-Size (unique)", "Total Students", regex=False
+    )
 
     return merged_data
 
 
 def process_discipline_data(data, year):
-    # Drop years of data that have been excluded by the
-    # selected year (are later than)
-
     raw_data = data.copy()
 
     excluded_years = []
@@ -460,8 +466,8 @@ def process_discipline_data(data, year):
     raw_data = raw_data.sort_values(by="Year", ascending=False)
     raw_data = raw_data.reset_index(drop=True)
 
-    # keep Arrest and Law Enforcement "Overall" data and drop rest
-    # for those Categories (#s are too low to measure)
+    # drop Arrest and Law Enforcement data (#s are
+    # generally too low to be worth measuring)
     drop_cols = [
         col
         for col in raw_data.columns.to_list()
@@ -469,7 +475,7 @@ def process_discipline_data(data, year):
     ]
     raw_data = raw_data.drop(drop_cols, axis=1)
 
-    # NOTE: Not currently tracking law_data
+    # NOTE: Uncomment to store "law data" in separate df
     # law_data = raw_data[
     #     ["Year", "Arrests|Overall", "Law Enforcement Incidents|Overall"]
     # ]

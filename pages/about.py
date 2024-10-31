@@ -24,7 +24,7 @@ from .load_data import (
     get_adm,
     get_attendance_data,
     get_discipline_data,
-    current_academic_year
+    current_academic_year,
 )
 
 from .process_data import process_discipline_data, transpose_discipline_data
@@ -66,33 +66,33 @@ def set_discipline_dropdown_options(app_state):
 def set_dropdown_value(discipline_options):
     return discipline_options[0]["value"]
 
+
 # Update Discipline Table
 @callback(
     Output("discipline-layout", "children"),
     Input("discipline-dropdown", "value"),
     State("year-dropdown", "value"),
-    State("charter-dropdown", "value")
+    State("charter-dropdown", "value"),
 )
 def update_discipline_table(discipline_category, year_state, school_state):
-
-    # TODO: Fix total page refresh on Discipline data update.
     if year_state == None:
         year_state = current_academic_year
 
     raw_discipline_data = get_discipline_data(school_state)
 
-    processed_discipline_data = process_discipline_data(
-        raw_discipline_data, year_state
-    )
+    processed_discipline_data = process_discipline_data(raw_discipline_data, year_state)
 
+    # TODO: Move the filtering (discipline_category to process above so it works for
+    # TODO: both table and fig)
+    # TODO: drop any categories for which there is no data- Can we do this for dropdown?
     discipline_data = transpose_discipline_data(
         processed_discipline_data, discipline_category
     )
 
+    print(processed_discipline_data)
     discipline_table = create_multi_header_table(discipline_data)
 
-    # # ELA by Grade fig
-    # ela_grade_fig_data = ilearn_fig_data.filter(
+    # discipline_fig_data = ilearn_fig_data.filter(
     #     regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
     # )
 
@@ -102,10 +102,10 @@ def update_discipline_table(discipline_category, year_state, school_state):
         discipline_table,
         discipline_table,
         "Discipline Data"
-        # discipline_table, discipline_fig, "ELA By Grade"
     )
 
     return discipline_layout
+
 
 @callback(
     Output("update-table", "children"),
@@ -126,7 +126,7 @@ def update_discipline_table(discipline_category, year_state, school_state):
     Input("charter-dropdown", "value"),
     # Input("discipline-dropdown", "value"),
 )
-def update_about_page(year: str, school: str): #, discipline_category: str):
+def update_about_page(year: str, school: str):  # , discipline_category: str):
     if not school:
         raise PreventUpdate
 

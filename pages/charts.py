@@ -747,6 +747,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
     """
     data = values.copy()
 
+    print(data)
     # use isIREAD bool later for chart formatting purposes
     isIREAD = False
     if data.columns.str.contains(r"IREAD|Spring Pass").any() == True:
