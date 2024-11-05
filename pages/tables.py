@@ -1069,14 +1069,13 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
     """
 
     table_size = len(data.columns)
-    
+
     isDiscipline = False
-    
+
     if any("Unique" in col for col in data.columns):
         isDiscipline = True
-    
+
     if table_size > 1:
-        
         # drop Total Students row so no tooltip appears there
         nsize_data = data[data["Category"] != "Total Students"]
 
@@ -1114,8 +1113,10 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
         # tooltips- if dataframe contains discipline data, combine two nsizes
         # into one column and then split for the tooltip
-        if isDiscipline == True:
 
+        # TODO: Geting userwarning
+        # TODO: DataFrame columns are not unique, some columns will be omitted.
+        if isDiscipline == True:
             tooltip_data = pd.DataFrame()
 
             for header in school_headers:
@@ -1220,8 +1221,8 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
             # so we loop through all columns on the last row and
             # style each one individually (its just an int, rest
             # of rows are percentages)
-            for x in range(1,len(data.columns)):
-                data.iat[-1,x] = '{:.0f}'.format(data.iat[-1,x])
+            for x in range(1, len(data.columns)):
+                data.iat[-1, x] = "{:.0f}".format(data.iat[-1, x])
 
         table_layout = [
             dash_table.DataTable(

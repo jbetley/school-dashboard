@@ -14,7 +14,13 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 
-from .globals import ethnicity, subgroup, max_display_years, discipline_groups
+from .globals import (
+    ethnicity,
+    subgroup,
+    max_display_years,
+    discipline_groups,
+    discipline_categories,
+)
 from .load_data import (
     get_excluded_years,
     get_school_index,
@@ -27,7 +33,7 @@ from .load_data import (
     current_academic_year,
 )
 
-from .process_data import process_discipline_data, transpose_discipline_data
+from .process_data import process_discipline_data
 
 from .charts import (
     loading_fig,
@@ -50,59 +56,78 @@ dash.register_page(__name__, path="/about", order=0, top_nav=True)
 
 # Discipline Dropdown
 @callback(
-    Output("discipline-dropdown", "options"),
+    Output("discipline-demographic-dropdown", "options"),
     [Input("application-state", "children")],  # dummy input
 )
-def set_discipline_dropdown_options(app_state):
-    dropdown_options = [{"label": name, "value": name} for name in discipline_groups]
-
-    return dropdown_options
+def set_discipline_demographic_dropdown_options(app_state):
+    discipline_demographic_options = [
+        {"label": name, "value": name} for name in discipline_groups
+    ]
+    return discipline_demographic_options
 
 
 # Sets the default value to the first value in discipline category list
 @callback(
-    Output("discipline-dropdown", "value"), Input("discipline-dropdown", "options")
+    Output("discipline-demographic-dropdown", "value"),
+    Input("discipline-demographic-dropdown", "options"),
 )
-def set_dropdown_value(discipline_options):
-    return discipline_options[0]["value"]
+def set_discipline_demographic_dropdown_value(discipline_demographic_options):
+    return discipline_demographic_options[0]["value"]
 
 
-# Update Discipline Table
+@callback(
+    Output("discipline-category-dropdown", "options"),
+    [Input("application-state", "children")],  # dummy input
+)
+def set_discipline_category_dropdown_options(app_state):
+    discipline_category_options = [
+        {"label": name, "value": name} for name in discipline_categories
+    ]
+    return discipline_category_options
+
+
+# Sets the default value to the first value in discipline category list
+@callback(
+    Output("discipline-category-dropdown", "value"),
+    Input("discipline-category-dropdown", "options"),
+)
+def set_discipline_category_dropdown_value(discipline_category_options):
+    return discipline_category_options[0]["value"]
+
+
+# Update Discipline Layout
 @callback(
     Output("discipline-layout", "children"),
-    Input("discipline-dropdown", "value"),
-    State("year-dropdown", "value"),
+    Input("discipline-demographic-dropdown", "value"),
+    Input("discipline-category-dropdown", "value"),
+    Input("year-dropdown", "value"),
     State("charter-dropdown", "value"),
 )
-def update_discipline_table(discipline_category, year_state, school_state):
-    if year_state == None:
-        year_state = current_academic_year
+def update_discipline_layout(
+    discipline_demographic, discipline_category, year_value, school_state
+):
+    if year_value == None:
+        year_value = current_academic_year
 
-    raw_discipline_data = get_discipline_data(school_state)
-
-    processed_discipline_data = process_discipline_data(raw_discipline_data, year_state)
-
-    # TODO: Move the filtering (discipline_category to process above so it works for
-    # TODO: both table and fig)
-    # TODO: drop any categories for which there is no data- Can we do this for dropdown?
-    discipline_data = transpose_discipline_data(
-        processed_discipline_data, discipline_category
+    raw_discipline_data = get_discipline_data(
+        school_state, discipline_demographic, discipline_category, year_value
     )
 
-    print(processed_discipline_data)
-    discipline_table = create_multi_header_table(discipline_data)
-
-    # discipline_fig_data = ilearn_fig_data.filter(
-    #     regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
-    # )
-
-    # discipline_fig = make_line_chart(discipline_fig_data)
-
-    discipline_layout = create_line_fig_layout(
-        discipline_table,
-        discipline_table,
-        "Discipline Data"
+    processed_discipline_data = process_discipline_data(
+        raw_discipline_data, discipline_category, discipline_demographic
     )
+
+    # pd.set_option("display.max_columns", None)
+    # pd.set_option("display.max_rows", None)
+    # print("****************")
+    # print(raw_discipline_data)
+    # print(processed_discipline_data)
+
+    discipline_table = create_multi_header_table(processed_discipline_data)
+
+    discipline_fig = make_line_chart(raw_discipline_data)
+
+    discipline_layout = create_line_fig_layout(discipline_table, discipline_fig, "")
 
     return discipline_layout
 
@@ -532,8 +557,6 @@ def update_about_page(year: str, school: str):  # , discipline_category: str):
         ethnicity_fig,
         subgroup_title,
         subgroup_fig,
-        # discipline_dropdown,
-        # discipline_layout,
         main_container,
         empty_container,
         no_data_to_display,
@@ -664,16 +687,32 @@ def layout():
                                         [
                                             html.Div(
                                                 [
-                                                    html.Label("Select Category:"),
+                                                    html.Label("Select Demographic:"),
                                                 ],
-                                                className="discipline-dropdown-label",
-                                                # id="discipline-dropdown-label",
+                                                className="discipline-demographic-dropdown-label",
                                             ),
                                             dcc.Dropdown(
-                                                id="discipline-dropdown",
+                                                id="discipline-demographic-dropdown",
                                                 multi=False,
                                                 clearable=False,
-                                                className="discipline-dropdown-control",
+                                                className="discipline-demographic-dropdown-control",
+                                            ),
+                                        ],
+                                        className="bare-container--slim four columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                [
+                                                    html.Label("Select Category:"),
+                                                ],
+                                                className="discipline-category-dropdown-label",
+                                            ),
+                                            dcc.Dropdown(
+                                                id="discipline-category-dropdown",
+                                                multi=False,
+                                                clearable=False,
+                                                className="discipline-category-dropdown-control",
                                             ),
                                         ],
                                         className="bare-container--slim four columns",

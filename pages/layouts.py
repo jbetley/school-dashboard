@@ -364,6 +364,16 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
         layout (list): a dash html.Div layout with fig
     """
 
+    label_layout = [
+        html.Label(label, className="label__header", style={"marginTop": "10px"}),
+    ]
+
+    # if a blank label is sent, don't display label at all.
+    if label == "":
+        label_layout = [
+            html.Div(),
+        ]
+
     # a bit of a hack. typically "fig"" is of type class "dash.html.Div.Div"
     # and table is of type 'dash.dash_table.DataTable.DataTable'. we use an
     # empty fig when No Data is available for both the fig and the table, so
@@ -400,9 +410,10 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     layout = [
         html.Div(
             [
-                html.Label(
-                    label, className="label__header", style={"marginTop": "10px"}
-                ),
+                label_layout[0],
+                # html.Label(
+                #     label, className="label__header", style={"marginTop": "10px"}
+                # ),
                 html.Div(
                     [
                         html.Div(

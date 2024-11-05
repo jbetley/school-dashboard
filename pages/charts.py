@@ -747,11 +747,17 @@ def make_line_chart(values: pd.DataFrame) -> list:
     """
     data = values.copy()
 
+    # TODO: Getting error on line 783
+    print("DISCP")
     print(data)
     # use isIREAD bool later for chart formatting purposes
     isIREAD = False
+    isDiscipline = False
     if data.columns.str.contains(r"IREAD|Spring Pass").any() == True:
         isIREAD = True
+
+    if data.columns.str.contains(r"Unique").any() == True:
+        isDiscipline = True
 
     data.columns = data.columns.str.split("|").str[0]
 
@@ -771,7 +777,8 @@ def make_line_chart(values: pd.DataFrame) -> list:
         no_data_string = ""
 
         # first check, if dataframe has more than one column, but not data
-        # to display ("",NaN, or "***"), we catch it here
+        # to display ("", NaN, or "***"), we catch it here
+
         if not data.empty:
             for col in cols:
                 data[col] = pd.to_numeric(data[col], errors="coerce")
@@ -821,6 +828,11 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 range_vals = [0, 1]  # type: list[float]
                 tick_format = ",.0%"
                 d_tick = 0.2
+
+            elif isDiscipline:
+                range_vals = [0, int(data_max)]
+                d_tick = 100
+                tick_format = ".0f"
 
             # WIDA is only data where the max will be > 1 (max is 5)
             elif data_max > 1:

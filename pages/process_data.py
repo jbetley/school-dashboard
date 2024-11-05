@@ -15,11 +15,9 @@ from .globals import (
     grades,
     ethnicity,
     subgroup,
-    discipline_categories,
-    discipline_groups,
 )
 
-from .calculations import calculate_percentage
+# from .calculations import calculate_percentage
 
 
 def transpose_data(raw_df: pd.DataFrame, params):
@@ -339,161 +337,205 @@ def process_growth_data(
     return fig_data, table_data
 
 
-def transpose_discipline_data(data, category):
+def process_discipline_data(data, category, demographic):
+    isOverall = False
+
+    if demographic == "Overall":
+        isOverall = True
+
     # annoyingly, there are two cases in which str.contains grabs two "categories"
     # instead of 1: "Homeless" also returns "Not Homeless" and "English Language Learner"
     # also returns "Non English Language Learner"- so we need to test and drop
-    discipline_data = data.loc[:, data.columns.str.contains(category + "|Year")].copy()
-
     if category == "Homeless" or category == "English Language Learner":
-        discipline_data = discipline_data[
-            discipline_data.columns[~discipline_data.columns.str.contains(r"Not|Non")]
+        data = data[data.columns[~data.columns.str.contains(r"Not|Non")]]
+
+    # The columns:
+
+    # "Year"
+
+    # e.g., In School Suspension|Male
+    selected_category = category + "|" + demographic
+
+    total_students = "Total Unique Students|Overall"
+
+    # e.g., In School Suspension Unique Students|Male
+    selected_category_unique = category + " Unique Students|" + demographic
+
+    # e.g., Total Unique Students|Male
+    category_students_unique = "Total Unique Students|" + demographic
+
+    # e.g., In School Suspension (% of All Students)
+    percentage_of_total = category + " (% of All Students)"
+
+    # e.g., In School Suspension (% of Male Students)
+    percentage_of_category = category + " (% of " + demographic + " Students)"
+
+    # the "Overall" category is treated differently because it
+    # doesn't have a separate Unique N-Size
+    if isOverall:
+        data[percentage_of_total] = data[selected_category].div(
+            data[total_students], axis=0
+        )
+
+        discipline_total = data[
+            ["Year", percentage_of_total, selected_category, total_students]
         ]
 
-    result_cols = discipline_data[
-        discipline_data.columns.drop(list(discipline_data.filter(regex="Unique")))
-    ].columns
+    else:
+        data[percentage_of_total] = data[selected_category].div(
+            data[total_students], axis=0
+        )
 
-    # get a list of category columns and duplicate (for NSize)
-    duplicate_cols = [c for c in result_cols if c != "Year"]
+        # percentage of the demographic (e.g., Male) that has experienced
+        # the particular category
+        data[percentage_of_category] = data[selected_category].div(
+            data[category_students_unique], axis=0
+        )
 
-    for col in duplicate_cols:
-        discipline_data[col + "_nsize"] = discipline_data[col]
+        discipline_total = data[
+            [
+                "Year",
+                percentage_of_total,
+                percentage_of_category,
+                selected_category,
+                selected_category_unique,
+                category_students_unique,
+                total_students,
+            ]
+        ]
 
-    # replace category col value with percentage of Total Unique Students
-    discipline_data[duplicate_cols] = discipline_data[duplicate_cols].div(
-        discipline_data["Total Unique Students|" + category], axis=0
-    )
+    discipline_total = discipline_total.sort_index(axis=1)
+    discipline_total = discipline_total.sort_values(by=["Year"], ascending=True)
 
-    # display names
-    discipline_data.columns = discipline_data.columns.str.replace(
-        "Unique Students|" + category, "N-Size (unique)", regex=False
-    )
-    discipline_data.columns = discipline_data.columns.str.replace(
-        "|" + category + "_nsize", " N-Size", regex=False
-    )
-    discipline_data.columns = discipline_data.columns.str.replace(
-        "|" + category, " %", regex=False
-    )
+    # In School Suspension (% of All Students)
+    result_total = discipline_total[["Year", percentage_of_total]]
 
-    # sort columns alphabetically
-    discipline_data = discipline_data.sort_index(axis=1)
+    # Total Unique Students|Overall
+    nsize_overall = discipline_total[["Year", total_students]]
 
-    # sort year column
-    discipline_data = discipline_data.sort_values(by=["Year"], ascending=True)
+    # see above, the Overall demographic doesn't have these categories
+    if isOverall == False:
+        # In School Suspension Unique Students|Male
+        category_total_unique = discipline_total[["Year", selected_category_unique]]
 
-    category_columns = [
-        col
-        for col in discipline_data.columns
-        if "%" in col or "Year" in col or "Total" in col
-    ]
+        # In School Suspension (% of Male Students)
+        results_category = discipline_total[["Year", percentage_of_category]]
 
-    nsize_columns = [
-        col
-        for col in discipline_data.columns
-        if "unique" not in col and "Size" in col or "Year" in col
-    ]
+        # Total Unique Students|Male
+        nsize_category = discipline_total[["Year", category_students_unique]]
 
-    unique_columns = [
-        col
-        for col in discipline_data.columns
-        if "Total" not in col and "unique" in col or "Year" in col
-    ]
+        # In School Suspension|Male
+        category_total = discipline_total[["Year", selected_category]]
 
-    proficiency_values = discipline_data[category_columns]
-    nsize_values = discipline_data[nsize_columns]
-    unique_nsize_values = discipline_data[unique_columns]
-
-    proficiency_values = (
-        proficiency_values.set_index("Year")
+    # all demographics have total results and overall nsize
+    result_total_T = (
+        result_total.set_index("Year")
         .T.rename_axis("Category")
         .rename_axis(None, axis=1)
         .reset_index()
     )
 
-    nsize_values = (
-        nsize_values.set_index("Year")
+    nsize_overall_T = (
+        nsize_overall.set_index("Year")
         .T.rename_axis("Category")
         .rename_axis(None, axis=1)
         .reset_index()
     )
 
-    unique_nsize_values = (
-        unique_nsize_values.set_index("Year")
-        .T.rename_axis("Category")
-        .rename_axis(None, axis=1)
-        .reset_index()
-    )
+    nsize_overall_T = nsize_overall_T.drop("Category", axis=1)
+    nsize_overall_T = nsize_overall_T.add_suffix("N-Size")
 
-    nsize_values = nsize_values.drop("Category", axis=1)
-    unique_nsize_values = unique_nsize_values.drop("Category", axis=1)
-    category = proficiency_values["Category"]
-    proficiency_values = proficiency_values.drop("Category", axis=1)
+    # Overall does not have a separate unique category
+    if isOverall:
 
-    proficiency_values = proficiency_values.add_suffix("School")
-    nsize_values = nsize_values.add_suffix("N-Size")
-    unique_nsize_values = unique_nsize_values.add_suffix("N-Size Unique")
+        # saving for later
+        category_col = result_total_T["Category"]
 
-    merged_data = pd.concat(
-        [proficiency_values, nsize_values, unique_nsize_values], axis=1
-    )[list(interleave([proficiency_values, nsize_values, unique_nsize_values]))]
+        result_total_T = result_total_T.drop("Category", axis=1)
+        result_total_T = result_total_T.add_suffix("School")
 
-    merged_data.insert(loc=0, column="Category", value=category)
-    merged_data = merged_data.replace(
-        "Total N-Size (unique)", "Total Students", regex=False
-    )
+        merged_data = pd.concat([result_total_T, nsize_overall_T], axis=1)[
+            list(interleave([result_total_T, nsize_overall_T]))
+        ]
+
+    else:
+        category_total_T = (
+            category_total.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        # duplicate this row because it applies to both categories
+        incidents_final = category_total_T.reindex(
+            category_total_T.index.append(
+                category_total_T.index[
+                    category_total_T["Category"] == selected_category
+                ]
+            )
+        ).sort_index()
+
+        incidents_final = incidents_final.drop("Category", axis=1)
+        incidents_final = incidents_final.add_suffix("Incidents")
+
+        category_total_unique_T = (
+            category_total_unique.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        students_final = category_total_unique_T.reindex(
+            category_total_unique_T.index.append(
+                category_total_unique_T.index[
+                    category_total_unique_T["Category"] == selected_category_unique
+                ]
+            )
+        ).sort_index()
+
+        students_final = students_final.drop("Category", axis=1)
+        students_final = students_final.add_suffix("N-Size (unique)")
+
+        results_category_T = (
+            results_category.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        # results_category_col = results_category_T["Category"]
+        # results_category_T = results_category_T.drop("Category", axis=1)
+        # results_category_T = results_category_T.add_suffix("School")
+
+        nsize_category_T = (
+            nsize_category.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        nsize_category_T = nsize_category_T.drop("Category", axis=1)
+        nsize_category_T = nsize_category_T.add_suffix("N-Size")
+
+        # concatenate vertically
+        results_final = pd.concat([result_total_T, results_category_T], axis=0)
+
+        category_col = results_category_T["Category"]
+        results_final = results_final.drop("Category", axis=1)
+        results_final = results_final.add_suffix("School")
+
+        nsize_final = pd.concat([nsize_overall_T, nsize_category_T], axis=0)
+
+        merged_data = pd.concat(
+            [results_final, incidents_final, students_final, nsize_final], axis=1
+        )[
+            list(
+                interleave(
+                    [results_final, incidents_final, students_final, nsize_final]
+                )
+            )
+        ]
+
+    merged_data.insert(0, "Category", category_col)
 
     return merged_data
-
-
-def process_discipline_data(data, year):
-    raw_data = data.copy()
-
-    excluded_years = []
-
-    excluded_academic_years = int(2024) - int(year)
-
-    for i in range(excluded_academic_years):
-        excluded_year = int(2024) - i
-        excluded_years.append(excluded_year)
-
-    if excluded_years:
-        raw_data = raw_data[~raw_data["Year"].isin(excluded_years)]
-
-    for col in raw_data.columns:
-        raw_data[col] = pd.to_numeric(raw_data[col], errors="coerce")
-
-    raw_data = raw_data.sort_values(by="Year", ascending=False)
-    raw_data = raw_data.reset_index(drop=True)
-
-    # drop Arrest and Law Enforcement data (#s are
-    # generally too low to be worth measuring)
-    drop_cols = [
-        col
-        for col in raw_data.columns.to_list()
-        if ("Arrest" in col or "Law Enforcement" in col) and "Overall" not in col
-    ]
-    raw_data = raw_data.drop(drop_cols, axis=1)
-
-    # NOTE: Uncomment to store "law data" in separate df
-    # law_data = raw_data[
-    #     ["Year", "Arrests|Overall", "Law Enforcement Incidents|Overall"]
-    # ]
-
-    raw_data = raw_data.drop(
-        [
-            "Arrests|Overall",
-            "Arrests Unique Students|Overall",
-            "Law Enforcement Incidents|Overall",
-            "Law Enforcement Incidents Unique Students|Overall",
-        ],
-        axis=1,
-    )
-
-    # convert from float to str while dropping the decimal
-    raw_data["School ID"] = raw_data["School ID"].astype("Int64").astype("str")
-    raw_data["Corporation ID"] = (
-        raw_data["Corporation ID"].astype("Int64").astype("str")
-    )
-
-    return raw_data

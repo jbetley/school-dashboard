@@ -688,7 +688,7 @@ def get_iread_student_data(*args):
 
 
 def get_discipline_data(*args):
-    keys = ["id"]
+    keys = ["id", "demographic", "category", "year"]
     params = dict(zip(keys, args))
 
     q = text(
@@ -700,12 +700,98 @@ def get_discipline_data(*args):
     )
 
     results = run_query(q, params)
-    results = results.sort_values(by="Year", ascending=False)
 
     results = results.rename(columns={"Test Year": "Year"})
-    results["Year"] = results["Year"].astype(str)
 
-    return results
+    # Drop years of data that have been excluded by the
+    # selected year (are later than)
+    excluded_years = get_excluded_years(params["year"])
+
+    if excluded_years:
+        results = results[~results["Year"].isin(excluded_years)]
+
+    for col in results.columns:
+        results[col] = pd.to_numeric(results[col], errors="coerce")
+
+    results = results.sort_values(by="Year", ascending=False)
+    results = results.reset_index(drop=True)
+
+    # NOTE: drop Arrest and Law Enforcement data #s are
+    # generally too low to be worth measuring, so we don't
+    # include them in the set, see globals.py definition of discipline_categories
+
+    # drop_cols = [
+    #     col
+    #     for col in results.columns.to_list()
+    #     if ("Arrest" in col or "Law Enforcement" in col) and "Overall" not in col
+    # ]
+    # results = results.drop(drop_cols, axis=1)
+
+    # NOTE: Uncomment to store "law data" in separate df
+    # law_data = raw_data[
+    #     ["Year", "Arrests|Overall", "Law Enforcement Incidents|Overall"]
+    # ]
+    # results = results.drop(
+    #     [
+    #         "Arrests|Overall",
+    #         "Arrests Unique Students|Overall",
+    #         "Law Enforcement Incidents|Overall",
+    #         "Law Enforcement Incidents Unique Students|Overall",
+    #     ],
+    #     axis=1,
+    # )
+
+    # converts float to str while dropping the decimal
+    results["School ID"] = results["School ID"].astype("Int64").astype("str")
+    results["Corporation ID"] = results["Corporation ID"].astype("Int64").astype("str")
+
+    # annoyingly, there are two cases in which str.contains grabs two "categories"
+    # instead of 1: "Homeless" also returns "Not Homeless" and "English Language Learner"
+    # also returns "Non English Language Learner"- so we need to test and drop
+
+    # We want the following columns for each selection:
+    # 1) "Year"
+    # 2) "Category" + "|" "Demographic" (e.g., In School Suspension|Male)
+    # 3) "Category" + "Unique Students|" + "Demographic" (e.g., In School Suspension Unique Students|Male)
+    # 4) "Total Unique Students|Overall"
+    # 5) "Total Unique Students|" + "Category" (e.g., Total Unique Students|Male)
+
+    year_col = "Year"
+    overall_nsize_col = "Total Unique Students|Overall"
+    category_col = params["category"] + "|" + params["demographic"]
+
+    # "Overall" does not have the (4) column (it is the same as (3)).
+    if params["demographic"] != "Overall":
+        category_nsize_col = "Total Unique Students|" + params["demographic"]
+        category_unique_nsize_col = (
+            params["category"] + " Unique Students|" + params["demographic"]
+        )
+        selected_cols = [
+            year_col,
+            category_col,
+            overall_nsize_col,
+            category_nsize_col,
+            category_unique_nsize_col,
+        ]
+    else:
+        selected_cols = [year_col, overall_nsize_col, category_col]
+
+    discipline_data = results[selected_cols].copy()
+
+    if (
+        params["category"] == "Homeless"
+        or params["category"] == "English Language Learner"
+    ):
+        discipline_data = discipline_data[
+            discipline_data.columns[~discipline_data.columns.str.contains(r"Not|Non")]
+        ]
+
+    # drop years where total students for the category is = 0
+    student_total = "Total Unique Students|" + params["demographic"]
+
+    discipline_data = discipline_data[~discipline_data[student_total].isna()]
+
+    return discipline_data
 
 
 def get_iread_stns(*args):
