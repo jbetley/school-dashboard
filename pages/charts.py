@@ -747,9 +747,12 @@ def make_line_chart(values: pd.DataFrame) -> list:
     """
     data = values.copy()
 
-    # TODO: Getting error on line 783
+    # TODO: Getting error on line 783 for Male and fig error for Overall
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
     print("DISCP")
     print(data)
+
     # use isIREAD bool later for chart formatting purposes
     isIREAD = False
     isDiscipline = False

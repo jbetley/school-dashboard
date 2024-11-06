@@ -1059,7 +1059,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
 def create_multi_header_table(data: pd.DataFrame) -> list:
     """
     Takes a dataframe of two or more columns and a label, and creates a table with multi-headers.
-
+    Used mostly for Academic Metric page, but also some tables on About page.
     Args:
         label (String): Table title
         data (pd.DataTable): dash dataTable
@@ -1070,19 +1070,24 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
     table_size = len(data.columns)
 
+    # special flags for discipline data
     isDiscipline = False
-
-    if any("Unique" in col for col in data.columns):
+    
+    if data["Category"].str.contains("All Students").any():
         isDiscipline = True
 
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+
+    # TODO: Incidents, Unique Incidents, % of Unique Students [Overall] Tooltip: NSIZE
+    # TODO: category: % of Unique Studnets/Total Demo Studnets
+    # TODO: Incidents, Unique Incidents, % of Unique Students [Overall] Tooltip: NSIZE
+
     if table_size > 1:
-        # drop Total Students row so no tooltip appears there
-        nsize_data = data[data["Category"] != "Total Students"]
 
         nsize_categories = data["Category"].tolist()
 
-        # pull out nsize data for tooltips and drop from main df
-        nsize_data = nsize_data.loc[:, nsize_data.columns.str.contains("N-Size")].copy()
+        nsize_data = data.loc[:, data.columns.str.contains("N-Size")].copy()
 
         for col in nsize_data.columns:
             nsize_data[col] = pd.to_numeric(nsize_data[col], errors="coerce")
@@ -1097,42 +1102,49 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
         # this keeps the Unique N-Size in the discipline data set, has
         # no effect otherwise
         nsize_data = nsize_data.rename(
-            columns={c: c[:4] for c in nsize_data.columns if "Unique" not in c}
+            columns={c: c[:4] for c in nsize_data.columns}
         )
 
         data = data[data.columns[~data.columns.str.contains(r"N-Size")]]
 
         data.columns = data.columns.str.replace("School", "", regex=True)
 
+        if isDiscipline:
+            data.columns = data.columns.str.replace("Incidents \(Unique\)", "Students", regex=True)
+# TODO: Need to add suffix to School Cols
         data = data.fillna(value="\u2014")
         data = data.replace("No Data", "\u2014", regex=True)
 
-        school_headers = [y for y in data.columns if "Category" not in y]
-
         all_cols = data.columns.tolist()
 
-        # tooltips- if dataframe contains discipline data, combine two nsizes
-        # into one column and then split for the tooltip
+        school_headers = [
+            y for y in data.columns if "Category" not in y
+            and "Incidents" not in y and "Students" not in y
+        ]
 
-        # TODO: Geting userwarning
-        # TODO: DataFrame columns are not unique, some columns will be omitted.
+        # print("NSIZE")
+        # print(nsize_data)
+        # print("DATA")
+        # print(data)
+
+#TODO: Fix this and max different rows have different tooltips
         if isDiscipline == True:
             tooltip_data = pd.DataFrame()
 
             for header in school_headers:
                 tooltip_data[header] = (
                     nsize_data[header].astype(str)
-                    + "|"
-                    + nsize_data[header + "N-Size Unique"].astype(str)
+                    # + "|"
+                    # + nsize_data[header + "N-Size Unique"].astype(str)
                 )
 
             nsize_tooltip = [
                 {
                     column: {
-                        "value": "Incidents: "
-                        + value.split("|")[0]
-                        + "  \nUnique Students: "
-                        + value.split("|")[1]
+                        "value": "Total N-Size: "
+                        + value
+                        # + "  \nUnique Students: "
+                        # + value.split("|")[1]
                         if value != "\u2014"
                         else "\u2014",
                         "type": "markdown",
@@ -1216,13 +1228,14 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
             for col in all_cols
         ]
 
-        if isDiscipline == True:
-            # cannot easily do row-wise formatting in a dataframe,
-            # so we loop through all columns on the last row and
-            # style each one individually (its just an int, rest
-            # of rows are percentages)
-            for x in range(1, len(data.columns)):
-                data.iat[-1, x] = "{:.0f}".format(data.iat[-1, x])
+#TODO: ADD THIS BACK
+        # if isDiscipline == True:
+        #     # cannot easily do row-wise formatting in a dataframe,
+        #     # so we loop through all columns on the last row and
+        #     # style each one individually (its just an int, rest
+        #     # of rows are percentages)
+        #     for x in range(1, len(data.columns)):
+        #         data.iat[-1, x] = "{:.0f}".format(data.iat[-1, x])
 
         table_layout = [
             dash_table.DataTable(

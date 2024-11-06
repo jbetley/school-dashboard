@@ -373,67 +373,61 @@ def process_discipline_data(data, category, demographic):
     # the "Overall" category is treated differently because it
     # doesn't have a separate Unique N-Size
     if isOverall:
-        data[percentage_of_total] = data[selected_category].div(
+        data[percentage_of_total] = data[selected_category_unique].div(
             data[total_students], axis=0
         )
 
-        discipline_total = data[
-            ["Year", percentage_of_total, selected_category, total_students]
-        ]
+        # discipline_total = data[
+        #     [
+        #         "Year",
+        #         selected_category,
+        #         percentage_of_total,
+        #         selected_category_unique,
+        #         total_students,
+        #     ]
+        # ]
 
     else:
-        data[percentage_of_total] = data[selected_category].div(
+        data[percentage_of_total] = data[selected_category_unique].div(
             data[total_students], axis=0
         )
 
-        # percentage of the demographic (e.g., Male) that has experienced
-        # the particular category
-        data[percentage_of_category] = data[selected_category].div(
+        # percentage of the specific demographic (e.g., Male) that have
+        # experienced and incident for a category
+        data[percentage_of_category] = data[selected_category_unique].div(
             data[category_students_unique], axis=0
         )
 
-        discipline_total = data[
-            [
-                "Year",
-                percentage_of_total,
-                percentage_of_category,
-                selected_category,
-                selected_category_unique,
-                category_students_unique,
-                total_students,
-            ]
-        ]
+        # discipline_total = data[
+        #     [
+        #         "Year",
+        #         selected_category,
+        #         selected_category_unique,
+        #         percentage_of_total,
+        #         percentage_of_category,
+        #         category_students_unique,
+        #         total_students,
+        #     ]
+        # ]
 
-    discipline_total = discipline_total.sort_index(axis=1)
-    discipline_total = discipline_total.sort_values(by=["Year"], ascending=True)
+    # data = data.sort_index(axis=1)
+    data = data.sort_values(by=["Year"], ascending=True)
 
-    # In School Suspension (% of All Students)
-    result_total = discipline_total[["Year", percentage_of_total]]
+    # All demographic categories have result_total, nsize_overall,
+    # selected_category_unique, and selected category
 
-    # Total Unique Students|Overall
-    nsize_overall = discipline_total[["Year", total_students]]
+    # e.g., In School Suspension (% of All Students)
+    result_total = data[["Year", percentage_of_total]].copy()
 
-    # see above, the Overall demographic doesn't have these categories
-    if isOverall == False:
-        # In School Suspension Unique Students|Male
-        category_total_unique = discipline_total[["Year", selected_category_unique]]
-
-        # In School Suspension (% of Male Students)
-        results_category = discipline_total[["Year", percentage_of_category]]
-
-        # Total Unique Students|Male
-        nsize_category = discipline_total[["Year", category_students_unique]]
-
-        # In School Suspension|Male
-        category_total = discipline_total[["Year", selected_category]]
-
-    # all demographics have total results and overall nsize
     result_total_T = (
         result_total.set_index("Year")
         .T.rename_axis("Category")
         .rename_axis(None, axis=1)
         .reset_index()
     )
+
+    # e.g., Total Unique Students|Overall
+    nsize_overall = data[["Year", total_students]].copy()
 
     nsize_overall_T = (
         nsize_overall.set_index("Year")
@@ -445,29 +439,67 @@ def process_discipline_data(data, category, demographic):
     nsize_overall_T = nsize_overall_T.drop("Category", axis=1)
     nsize_overall_T = nsize_overall_T.add_suffix("N-Size")
 
-    # Overall does not have a separate unique category
-    if isOverall:
+    # e.g., In School Suspension|Overall
+    category_total = data[["Year", selected_category]].copy()
 
-        # saving for later
+    category_total_T = (
+        category_total.set_index("Year")
+        .T.rename_axis("Category")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    # e.g., In School Suspension Unique Students|Overall
+    category_total_unique = data[["Year", selected_category_unique]].copy()
+
+    category_total_unique_T = (
+        category_total_unique.set_index("Year")
+        .T.rename_axis("Category")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    if isOverall:
+        # temporarily store this to re-add after merge
         category_col = result_total_T["Category"]
 
         result_total_T = result_total_T.drop("Category", axis=1)
         result_total_T = result_total_T.add_suffix("School")
 
-        merged_data = pd.concat([result_total_T, nsize_overall_T], axis=1)[
-            list(interleave([result_total_T, nsize_overall_T]))
-        ]
+        category_total_T = category_total_T.drop("Category", axis=1)
+        category_total_T = category_total_T.add_suffix("Incidents")
 
-    else:
-        category_total_T = (
-            category_total.set_index("Year")
-            .T.rename_axis("Category")
-            .rename_axis(None, axis=1)
-            .reset_index()
+        category_total_unique_T = category_total_unique_T.drop("Category", axis=1)
+        category_total_unique_T = category_total_unique_T.add_suffix(
+            "Incidents (Unique)"
         )
 
-        # duplicate this row because it applies to both categories
-        incidents_final = category_total_T.reindex(
+        merged_data = pd.concat(
+            [
+                category_total_T,
+                category_total_unique_T,
+                result_total_T,
+                nsize_overall_T,
+            ],
+            axis=1,
+        )[
+            list(
+                interleave(
+                    [
+                        category_total_T,
+                        category_total_unique_T,
+                        result_total_T,
+                        nsize_overall_T,
+                    ]
+                )
+            )
+        ]
+
+    # all other demographic categories
+    else:
+        # isOverall will only have one row of data, everything else
+        # will have two, so we need to duplicate this for each row.
+        dupe_category_total_T = category_total_T.reindex(
             category_total_T.index.append(
                 category_total_T.index[
                     category_total_T["Category"] == selected_category
@@ -475,17 +507,11 @@ def process_discipline_data(data, category, demographic):
             )
         ).sort_index()
 
-        incidents_final = incidents_final.drop("Category", axis=1)
-        incidents_final = incidents_final.add_suffix("Incidents")
+        dupe_category_total_T = dupe_category_total_T.drop("Category", axis=1)
+        dupe_category_total_T = dupe_category_total_T.add_suffix("Incidents")
 
-        category_total_unique_T = (
-            category_total_unique.set_index("Year")
-            .T.rename_axis("Category")
-            .rename_axis(None, axis=1)
-            .reset_index()
-        )
-
-        students_final = category_total_unique_T.reindex(
+        # duplicate row
+        dupe_category_total_unique_T = category_total_unique_T.reindex(
             category_total_unique_T.index.append(
                 category_total_unique_T.index[
                     category_total_unique_T["Category"] == selected_category_unique
@@ -493,8 +519,15 @@ def process_discipline_data(data, category, demographic):
             )
         ).sort_index()
 
-        students_final = students_final.drop("Category", axis=1)
-        students_final = students_final.add_suffix("N-Size (unique)")
+        dupe_category_total_unique_T = dupe_category_total_unique_T.drop(
+            "Category", axis=1
+        )
+        dupe_category_total_unique_T = dupe_category_total_unique_T.add_suffix(
+            "Incidents (Unique)"
+        )
+
+        # In School Suspension (% of Male Students)
+        results_category = data[["Year", percentage_of_category]].copy()
 
         results_category_T = (
             results_category.set_index("Year")
@@ -503,9 +536,8 @@ def process_discipline_data(data, category, demographic):
             .reset_index()
         )
 
-        # results_category_col = results_category_T["Category"]
-        # results_category_T = results_category_T.drop("Category", axis=1)
-        # results_category_T = results_category_T.add_suffix("School")
+        # Total Unique Students|Male
+        nsize_category = data[["Year", category_students_unique]].copy()
 
         nsize_category_T = (
             nsize_category.set_index("Year")
@@ -519,19 +551,29 @@ def process_discipline_data(data, category, demographic):
 
         # concatenate vertically
         results_final = pd.concat([result_total_T, results_category_T], axis=0)
+        nsize_final = pd.concat([nsize_overall_T, nsize_category_T], axis=0)
 
-        category_col = results_category_T["Category"]
+        category_col = results_final["Category"]
         results_final = results_final.drop("Category", axis=1)
         results_final = results_final.add_suffix("School")
 
-        nsize_final = pd.concat([nsize_overall_T, nsize_category_T], axis=0)
-
         merged_data = pd.concat(
-            [results_final, incidents_final, students_final, nsize_final], axis=1
+            [
+                dupe_category_total_T,
+                dupe_category_total_unique_T,
+                results_final,
+                nsize_final,
+            ],
+            axis=1,
         )[
             list(
                 interleave(
-                    [results_final, incidents_final, students_final, nsize_final]
+                    [
+                        dupe_category_total_T,
+                        dupe_category_total_unique_T,
+                        results_final,
+                        nsize_final,
+                    ]
                 )
             )
         ]

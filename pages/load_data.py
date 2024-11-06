@@ -759,13 +759,13 @@ def get_discipline_data(*args):
     year_col = "Year"
     overall_nsize_col = "Total Unique Students|Overall"
     category_col = params["category"] + "|" + params["demographic"]
-
-    # "Overall" does not have the (4) column (it is the same as (3)).
+    category_unique_nsize_col = (
+        params["category"] + " Unique Students|" + params["demographic"]
+    )
+    
+    # "Overall" does not have column (5) (it is the same as (4)).
     if params["demographic"] != "Overall":
         category_nsize_col = "Total Unique Students|" + params["demographic"]
-        category_unique_nsize_col = (
-            params["category"] + " Unique Students|" + params["demographic"]
-        )
         selected_cols = [
             year_col,
             category_col,
@@ -774,7 +774,7 @@ def get_discipline_data(*args):
             category_unique_nsize_col,
         ]
     else:
-        selected_cols = [year_col, overall_nsize_col, category_col]
+        selected_cols = [year_col, overall_nsize_col, category_col, category_unique_nsize_col]
 
     discipline_data = results[selected_cols].copy()
 
