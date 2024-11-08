@@ -748,14 +748,16 @@ def make_line_chart(values: pd.DataFrame) -> list:
     data = values.copy()
 
     # TODO: Getting error on line 783 for Male and fig error for Overall
+
     pd.set_option("display.max_columns", None)
     pd.set_option("display.max_rows", None)
-    print("DISCP")
-    print(data)
+    # print("DISCP")
+    # print(data)
 
-    # use isIREAD bool later for chart formatting purposes
+    # use bools later for chart formatting purposes
     isIREAD = False
     isDiscipline = False
+
     if data.columns.str.contains(r"IREAD|Spring Pass").any() == True:
         isIREAD = True
 
@@ -803,6 +805,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             data["Year"] = data["Year"].astype(str)
 
+        # print(data)
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
         if data.empty:

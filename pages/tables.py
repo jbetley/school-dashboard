@@ -471,7 +471,7 @@ def create_iread_ilearn_table(school: str, subject: str, excluded_years: list) -
         # replace NaN with em dash (—)
         table_data = table_data.replace({"nan": "\u2014", np.NaN: "\u2014"}, regex=True)
 
-        iread_ilearn_table = create_single_header_table(
+        iread_ilearn_table = create_simple_table(
             table_data, "IREAD Tested Students - " + subject + " Proficiency"
         )
 
@@ -609,7 +609,7 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
     return table_layout
 
 
-def create_single_header_table(data: pd.DataFrame, label: str) -> list:
+def create_simple_table(data: pd.DataFrame, label: str) -> list:
     """
     Takes a dataframe of two or more columns and a label and creates a single
     header table with borders around each cell. If more rows are added, need
@@ -813,7 +813,7 @@ def create_single_header_table(data: pd.DataFrame, label: str) -> list:
     return table_layout
 
 
-def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> list:
+def create_multi_header_table(data: pd.DataFrame, label: str) -> list:
     """
     Takes a dataframe of two or more columns and a label, and creates a table with multi-headers.
 
@@ -1031,7 +1031,7 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
         table_layout = [
             html.Div(
                 [
-                    html.Label(label, className="label__header"),  # hollow-
+                    html.Label(label, className="label__header"),
                     html.Div(
                         dash_table.DataTable(
                             data.to_dict("records"),
@@ -1056,12 +1056,11 @@ def create_multi_header_table_with_container(data: pd.DataFrame, label: str) -> 
     return table_layout
 
 
-def create_multi_header_table(data: pd.DataFrame) -> list:
+def create_discipline_table(data: pd.DataFrame) -> list:
     """
-    Takes a dataframe of two or more columns and a label, and creates a table with multi-headers.
-    Used mostly for Academic Metric page, but also some tables on About page.
+    Takes a dataframe of two or more columns and a label, and creates a table with multi-headers
+    and a tooltip. used for discipline table on About page.
     Args:
-        label (String): Table title
         data (pd.DataTable): dash dataTable
 
     Returns:
@@ -1070,21 +1069,187 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
     table_size = len(data.columns)
 
-    # special flags for discipline data
-    isDiscipline = False
-    
-    if data["Category"].str.contains("All Students").any():
-        isDiscipline = True
+    if table_size > 1:
+        # nsize_categories = data["Category"].tolist()
 
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
+        nsize_data = data.loc[:, data.columns.str.contains("N-Size")].copy()
 
-    # TODO: Incidents, Unique Incidents, % of Unique Students [Overall] Tooltip: NSIZE
-    # TODO: category: % of Unique Studnets/Total Demo Studnets
-    # TODO: Incidents, Unique Incidents, % of Unique Students [Overall] Tooltip: NSIZE
+        for col in nsize_data.columns:
+            nsize_data[col] = pd.to_numeric(nsize_data[col], errors="coerce")
+
+        nsize_data = conditional_fillna(nsize_data)
+
+        nsize_headers = nsize_data.columns.tolist()
+
+        # some values have trailing ".0" due to float conversion,
+        # this gets rid of that
+        for col in nsize_data.columns:
+            nsize_data[col] = nsize_data[col].astype(str).str.split(".").str[0]
+
+        # this keeps the Unique N-Size in the discipline data set, has
+        # no effect otherwise
+        nsize_data = nsize_data.rename(columns={c: c[:4] for c in nsize_data.columns})
+
+        data = data[data.columns[~data.columns.str.contains(r"N-Size")]]
+
+        data.columns = data.columns.str.replace("School", "", regex=True)
+
+        data.columns = data.columns.str.replace(
+            "Incidents \(Unique\)", "Students", regex=True
+        )
+
+        data = data.fillna(value="\u2014")
+        data = data.replace("No Data", "\u2014", regex=True)
+
+        all_cols = data.columns.tolist()
+
+        school_headers = [
+            y
+            for y in data.columns
+            if "Category" not in y and "Incidents" not in y and "Students" not in y
+        ]
+
+        nsize_headers = [ y for y in data.columns if "Incidents" in y or "Students" in y]
+# TODO: HERE. ADDING BORDERS AND SUCH FROM multi_header_table
+        tooltip_data = pd.DataFrame()
+
+        for header in school_headers:
+            tooltip_data[header] = nsize_data[header].astype(str)
+
+        nsize_tooltip = [
+            {
+                column: {
+                    "value": "Total N-Size: " + value
+                    if value != "\u2014"
+                    else "\u2014",
+                    "type": "markdown",
+                }
+                for column, value in row.items()
+            }
+            for row in tooltip_data.to_dict("records")
+        ]
+
+        category_width = 20
+        data_width = 100 - category_width
+        school_width = data_width / (table_size - 1)
+
+        # formatting logic is slightly different for a multi-header table
+        table_cell_conditional = [
+            {
+                "if": {"column_id": "Category"},
+                "textAlign": "left",
+                "paddingLeft": "20px",
+                "fontWeight": "600",
+                "fontSize": "11px",
+                "width": str(category_width) + "%",
+            },
+        ] + [
+            {
+                "if": {"column_id": school},
+                "textAlign": "center",
+                "fontWeight": "600",
+                "fontSize": "10px",
+                "width": str(school_width) + "%",
+            }
+            for school in school_headers
+        ]
+
+        table_header_conditional = [
+            {
+                "if": {
+                    "column_id": col,
+                },
+                "borderBottom": ".5px solid #b2bdd4",
+            }
+            for col in school_headers
+        ]
+
+        table_data_conditional = [
+            {
+                "if": {"state": "selected"},
+                "backgroundColor": "rgba(112,128,144, .3)",
+                "border": "thin solid silver",
+            },
+            {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
+        ] + [{"if": {"row_index": 0}, "paddingTop": "5px"}]
+
+        # Build list of lists, top level and secondary level column names
+        # for multi-level headers
+        name_cols = [["Category", ""]]
+
+        for item in all_cols:
+            if item.startswith("20"):
+                yr = item[:4]
+                nm = item[4:]
+                if nm == "":
+                    nm = "%"
+
+                name_cols.append([yr, nm])
+
+        table_columns = [
+            {
+                "name": col,
+                "id": all_cols[idx],
+                "type": "numeric",
+                "format": Format(precision=0, scheme=Scheme.decimal_integer),
+            }
+            if "Incidents" in col or "Students" in col
+            else {
+                "name": col,
+                "id": all_cols[idx],
+                "type": "numeric",
+                "format": Format(
+                    scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
+                ),
+            }
+            for (idx, col) in enumerate(name_cols)
+        ]
+
+        table_layout = [
+            dash_table.DataTable(
+                data.to_dict("records"),
+                style_table={"height": "300px"},
+                columns=table_columns,
+                style_data=table_style,
+                style_data_conditional=table_data_conditional,
+                style_header=table_header,
+                style_cell=table_cell,
+                style_header_conditional=table_header_conditional,
+                style_cell_conditional=table_cell_conditional,
+                merge_duplicate_headers=True,
+                tooltip_data=nsize_tooltip,
+                tooltip_delay=0,
+                tooltip_duration=None,
+            ),
+        ]
+    # TODO: Align this with line_fig_layout (two empty figs instead of fig/table)
+    else:
+        table_layout = [
+            html.Div(
+                [
+                    html.Div(empty_table("No Data to Display.")),
+                ],
+                className="pretty-container four columns",
+            )
+        ]
+
+    return table_layout
+
+
+def create_single_header_table(data: pd.DataFrame) -> list:
+    """
+    Takes a dataframe of two or more columns and a label, and creates a table with single-headers.
+    Used for certain tables on Academic Information page.
+    Args:
+        data (pd.DataTable): dash dataTable
+
+    Returns:
+        table_layout (list): dash DataTable wrapped in dash html components
+    """
+
+    table_size = len(data.columns)
 
     if table_size > 1:
-
         nsize_categories = data["Category"].tolist()
 
         nsize_data = data.loc[:, data.columns.str.contains("N-Size")].copy()
@@ -1101,17 +1266,12 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
         # this keeps the Unique N-Size in the discipline data set, has
         # no effect otherwise
-        nsize_data = nsize_data.rename(
-            columns={c: c[:4] for c in nsize_data.columns}
-        )
+        # nsize_data = nsize_data.rename(columns={c: c[:4] for c in nsize_data.columns})
 
         data = data[data.columns[~data.columns.str.contains(r"N-Size")]]
 
         data.columns = data.columns.str.replace("School", "", regex=True)
 
-        if isDiscipline:
-            data.columns = data.columns.str.replace("Incidents \(Unique\)", "Students", regex=True)
-# TODO: Need to add suffix to School Cols
         data = data.fillna(value="\u2014")
         data = data.replace("No Data", "\u2014", regex=True)
 
@@ -1119,64 +1279,29 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
 
         school_headers = [
             y for y in data.columns if "Category" not in y
-            and "Incidents" not in y and "Students" not in y
         ]
 
-        # print("NSIZE")
-        # print(nsize_data)
-        # print("DATA")
-        # print(data)
-
-#TODO: Fix this and max different rows have different tooltips
-        if isDiscipline == True:
-            tooltip_data = pd.DataFrame()
-
-            for header in school_headers:
-                tooltip_data[header] = (
-                    nsize_data[header].astype(str)
-                    # + "|"
-                    # + nsize_data[header + "N-Size Unique"].astype(str)
-                )
-
-            nsize_tooltip = [
-                {
-                    column: {
-                        "value": "Total N-Size: "
-                        + value
-                        # + "  \nUnique Students: "
-                        # + value.split("|")[1]
-                        if value != "\u2014"
-                        else "\u2014",
-                        "type": "markdown",
-                    }
-                    for column, value in row.items()
+        nsize_tooltip = [
+            {
+                column: {
+                    "value": category.split("|", maxsplit=1)[0]
+                    + " N-Size: "
+                    + value
+                    if value != "\u2014"
+                    else "\u2014",
+                    "type": "markdown",
                 }
-                for row in tooltip_data.to_dict("records")
-            ]
-
-        else:
-            nsize_tooltip = [
-                {
-                    column: {
-                        "value": category.split("|", maxsplit=1)[0]
-                        + " N-Size: "
-                        + value
-                        if value != "\u2014"
-                        else "\u2014",
-                        "type": "markdown",
-                    }
-                    for column, value in row.items()
-                }
-                for row, category in zip(
-                    nsize_data.to_dict("records"), nsize_categories
-                )
-            ]
+                for column, value in row.items()
+            }
+            for row, category in zip(
+                nsize_data.to_dict("records"), nsize_categories
+            )
+        ]
 
         category_width = 20
         data_width = 100 - category_width
         school_width = data_width / (table_size - 1)
 
-        # formatting logic is slightly different for a multi-header table
         table_cell_conditional = [
             {
                 "if": {"column_id": "Category"},
@@ -1227,15 +1352,6 @@ def create_multi_header_table(data: pd.DataFrame) -> list:
             }
             for col in all_cols
         ]
-
-#TODO: ADD THIS BACK
-        # if isDiscipline == True:
-        #     # cannot easily do row-wise formatting in a dataframe,
-        #     # so we loop through all columns on the last row and
-        #     # style each one individually (its just an int, rest
-        #     # of rows are percentages)
-        #     for x in range(1, len(data.columns)):
-        #         data.iat[-1, x] = "{:.0f}".format(data.iat[-1, x])
 
         table_layout = [
             dash_table.DataTable(
@@ -1790,541 +1906,6 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
         ]
 
     return table
-
-
-# # NOTE: This version includes N-Size data as a separate column. See
-# # preceeding version.
-# def create_metric_table(label: list, values: pd.DataFrame) -> list:
-#     """
-#     Takes a label and a dataframe consisting of Rating and Metric Columns and returns
-#     a dash datatable. NOTE: could possibly be less complicated than it is, or maybe not-
-#     gonna leave it up to future me. Also, beware of some tricksy bits.
-
-#     Args:
-#         label (String): Table title
-#         content (pd.DataTable): dash dataTable
-
-#     Returns:
-#         table (list): dash html.Div enclosing html.Label and DataTable
-#     """
-#     data = values.copy()
-
-#     table_size = len(data.columns)
-
-#     # this is annoying, but some labels are passed as lists with included html
-#     # elements (html.U() & html.Br()) - we need to remove these elements and convert
-#     # to a string for empty tables.
-#     if len(label) == 1:
-#         string_label = label[0]
-#     else:
-#         clean_label = " ".join(str(l) for l in label)
-#         string_label = (
-#             clean_label.replace("Br(None) ", "").replace("U('", "").replace("') ", "")
-#         )
-
-#     if len(data.index) == 0 or table_size == 1:
-#         table = no_data_table("No Data to Display.", string_label, "ten")
-
-#     else:
-#         if table_size <= 3:
-#             col_width = "four"
-#             category_width = 40
-#         if table_size > 3 and table_size < 5:
-#             col_width = "six"
-#             category_width = 35
-#         elif table_size >= 5 and table_size <= 7:
-#             col_width = "seven"
-#             category_width = 30
-#         elif table_size > 7 and table_size <= 9:
-#             col_width = "seven"
-#             category_width = 20
-#         elif table_size >= 10 and table_size <= 11:
-#             col_width = "eight"
-#             category_width = 15
-#         elif table_size >= 12 and table_size <= 13:
-#             col_width = "nine"
-#             category_width = 15
-#         elif table_size > 13 and table_size <= 17:
-#             col_width = "ten"
-#             category_width = 15
-#         elif table_size > 17:
-#             col_width = "twelve"
-#             category_width = 15
-
-#         data.columns = data.columns.str.replace("SN-Size", "(N)", regex=True)
-
-#         # different column headers for AHS
-#         if (
-#             data["Category"].str.contains("CCR Percentage|Cohort Graduation Rate").any()
-#             == True
-#         ):
-#             data.columns = data.columns.str.replace("School", "Value", regex=True)
-#             school_headers = [y for y in data.columns.tolist() if "Value" in y]
-#         else:
-#             data.columns = data.columns.str.replace("School", "%", regex=True)
-#             school_headers = [y for y in data.columns.tolist() if "%" in y]
-
-#         nsize_headers = [y for y in data.columns.tolist() if "N" in y]
-#         rating_headers = [y for y in data.columns.tolist() if "Rate" in y]
-#         diff_headers = [y for y in data.columns.tolist() if "Diff" in y]
-
-#         all_cols = data.columns.tolist()
-
-#         format_cols = rating_headers + diff_headers
-
-#         # splits column width evenly for all columns other than "Category"
-#         # can adjust individual categories by adjusting formula
-#         if table_size <= 3:
-#             data_width = 100 - category_width
-#             nsize_width = school_width = rating_width = diff_width = data_width / (
-#                 table_size - 1
-#             )
-
-#         else:
-#             nsize_width = 2
-#             rating_width = 3
-#             diff_width = 5
-#             remaining_width = (
-#                 100 - category_width - (nsize_width + rating_width + diff_width)
-#             )
-
-#             data_col_width = remaining_width / (table_size - 1)
-
-#             school_width = data_col_width - (data_col_width * 0.15)
-
-#         class_name = "pretty-container " + col_width + " columns"
-
-#         table_cell_conditional = (
-#             [
-#                 {
-#                     "if": {"column_id": "Category"},
-#                     "textAlign": "left",
-#                     "paddingLeft": "20px",
-#                     "fontWeight": "600",
-#                     "fontSize": "11px",
-#                     "width": str(category_width) + "%",
-#                 },
-#             ]
-#             + [
-#                 {
-#                     "if": {"column_id": school},
-#                     "textAlign": "center",
-#                     "fontWeight": "600",
-#                     "fontSize": "10px",
-#                     "width": str(school_width) + "%",
-#                 }
-#                 for school in school_headers
-#             ]
-#             + [
-#                 {
-#                     "if": {"column_id": nsize},
-#                     "textAlign": "center",
-#                     "fontWeight": "500",
-#                     "fontSize": "10px",
-#                     "width": str(nsize_width) + "%",
-#                 }
-#                 for nsize in nsize_headers
-#             ]
-#             + [
-#                 {
-#                     "if": {"column_id": rating},
-#                     "textAlign": "center",
-#                     "fontWeight": "500",
-#                     "fontSize": "10px",
-#                     "width": str(rating_width) + "%",
-#                 }
-#                 for rating in rating_headers
-#             ]
-#             + [
-#                 {
-#                     "if": {"column_id": diff},
-#                     "textAlign": "center",
-#                     "fontWeight": "500",
-#                     "fontSize": "10px",
-#                     "width": str(diff_width) + "%",
-#                 }
-#                 for diff in diff_headers
-#             ]
-#         )
-
-#         # drop subject from category strings
-#         data["Category"] = data["Category"].map(lambda x: x.split("|")[0])
-
-#         # Build list of lists, top level and secondary level column names
-#         # for multi-level headers
-#         name_cols = [["Category", ""]]
-
-#         for item in all_cols:
-#             if item.startswith("20"):
-#                 if "Rate" in item:
-#                     item = item[:8]
-
-#                 name_cols.append([item[:4], item[4:]])
-
-#         # Identify and Tag "Initial Year"- applies only to the year over year
-#         # calculation. For a df with only one year of data, the string "Diff"
-#         # will not appear in the column names. Search the label for "previous
-#         # school year" to distinguish year over year tables from comparison tables
-#         # For a df with multiple years of data, the column pattern ending in:
-#         # "%, (N), %" indicates a year where no difference was calculated.
-#         # There may be a more elegant way to check the second case, but
-#         # checking the 2nd, 3rd, and 4th cols looking for the pattern:
-#         # "%, (N), %", seems a reliable way to tell when we need to add str
-#         # "Initial Year" to idx 1 & 2.
-
-#         # we also want to save the name of the second column header (in format
-#         # YYYY(N)), so we can apply a right hand border to that column when
-#         # styling the table
-#         first_year = None
-
-#         check_string = "\t".join(all_cols)
-
-#         # Single Year
-#         if "Diff" not in check_string:
-#             if len(all_cols) <= 3:
-#                 # typically, turning a list into a string and checking with
-#                 # "in" is faster than using any(), but can't do it here
-#                 # because it is possible to have markup code (e.g., Br(None))
-#                 # instead of a string, which chokes the join()
-#                 if any("previous school year" in word for word in label):
-#                     name_cols[1][0] = name_cols[1][0] + " (Initial Year)"
-#                     first_year = name_cols[2][0] + name_cols[2][1]
-#                     name_cols[2][0] = name_cols[2][0] + " (Initial Year)"
-
-#         # Multiple Years
-#         if any("Rate" in s for s in all_cols):
-#             if (
-#                 name_cols[1][1] == "%"
-#                 and name_cols[2][1] == "(N)"
-#                 and name_cols[3][1] == "%"
-#             ):
-#                 name_cols[1][0] = name_cols[1][0] + " (Initial Year)"
-#                 first_year = name_cols[2][0] + name_cols[2][1]
-#                 name_cols[2][0] = name_cols[2][0] + " (Initial Year)"
-
-#         # NOTE: This adds a border to header_index:1 for each category
-#         # For a single bottom line: comment out blocks, comment out
-#         # style_header_conditional in table declaration,
-#         # and uncomment style_as_list in table declaration
-#         table_header_conditional = (
-#             [
-#                 {
-#                     "if": {
-#                         "column_id": school,
-#                         "header_index": 1,
-#                     },
-#                     "fontWeight": "600",
-#                     "fontSize": "10px",
-#                     "borderLeft": ".5px solid #b2bdd4",
-#                     "borderTop": ".5px solid #b2bdd4",
-#                     "borderBottom": ".5px solid #b2bdd4",
-#                 }
-#                 for school in school_headers
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "column_id": rating,
-#                         "header_index": 1,
-#                     },
-#                     "fontWeight": "500",
-#                     "fontSize": "10px",
-#                     "borderTop": ".5px solid #b2bdd4",
-#                     "borderBottom": ".5px solid #b2bdd4",
-#                 }
-#                 for rating in rating_headers
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "column_id": diff,
-#                         "header_index": 1,
-#                     },
-#                     "textAlign": "center",
-#                     "fontWeight": "500",
-#                     "fontSize": "10px",
-#                     "borderTop": ".5px solid #b2bdd4",
-#                     "borderBottom": ".5px solid #b2bdd4",
-#                 }
-#                 for diff in diff_headers
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "column_id": nsize,
-#                         "header_index": 1,
-#                     },
-#                     "textAlign": "center",
-#                     "fontWeight": "500",
-#                     "fontSize": "10px",
-#                     "borderTop": ".5px solid #b2bdd4",
-#                     "borderBottom": ".5px solid #b2bdd4",
-#                 }
-#                 for nsize in nsize_headers
-#             ]
-#             + [
-#                 # Use "all_cols[-1]" and "borderRight" for each subheader to have
-#                 # full border. Use "all_cols[1]" and "borderLeft" to leave first
-#                 # and last columns open on right and left
-#                 {
-#                     "if": {
-#                         "column_id": all_cols[-1],
-#                         #    "column_id": all_cols[1],
-#                         "header_index": 1,
-#                     },
-#                     "borderRight": ".5px solid #b2bdd4",  # "borderLeft"
-#                 }
-#             ]
-#         )
-
-#         # NOTE: A wee kludge here. Typically, we want a border on the right
-#         # side of every Rating column to signify the right edge of a year.
-#         # However, for IREAD, we actually want the border on the right side
-#         # of the Difference column and not on the Rating column. So we simply
-#         # swap rating headers for diff headers for formatting purposes for
-#         # IREAD data.
-#         if "IREAD-3" in label[0]:
-#             rating_headers = diff_headers
-
-#         # formatting logic is slightly different for a multi-header table
-#         table_data_conditional = (
-#             [
-#                 {
-#                     "if": {"state": "selected"},
-#                     "backgroundColor": "rgba(112,128,144, .3)",
-#                     "border": "thin solid silver",
-#                 },
-#                 {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "column_id": all_cols[-1],
-#                     },
-#                     "borderRight": ".5px solid #b2bdd4",
-#                 },
-#             ]
-#             + [{"if": {"row_index": 0}, "paddingTop": "5px"}]
-#             + [
-#                 {
-#                     "if": {"row_index": len(data) - 1},
-#                     "borderBottom": ".5px solid #b2bdd4",
-#                 }
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "column_id": "Category",
-#                     },
-#                     "borderRight": ".5px solid #b2bdd4",
-#                     "borderBottom": "none",
-#                 },
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "column_id": rating,
-#                     },
-#                     "borderRight": ".5px solid #b2bdd4",
-#                     "textAlign": "center",
-#                 }
-#                 for rating in rating_headers
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "filter_query": "{{{col}}} < 0".format(col=col),
-#                         "column_id": col,
-#                     },
-#                     "color": "#b44655",
-#                 }
-#                 for col in format_cols
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "filter_query": "{{{col}}} = '-***'".format(col=col),
-#                         "column_id": col,
-#                     },
-#                     "color": "#b44655",
-#                 }
-#                 for col in format_cols
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "filter_query": "{{{col}}} > 0".format(col=col),
-#                         "column_id": col,
-#                     },
-#                     "color": "#81b446",
-#                 }
-#                 for col in format_cols
-#             ]
-#             + [
-#                 {  # special case: change color to blue regardless of value
-#                     "if": {
-#                         "filter_query": "{Category} = '[Chronic Absenteeism %]'",
-#                         "column_id": col,
-#                     },
-#                     "color": "#6783a9",
-#                 }
-#                 for col in format_cols
-#             ]
-#             + [
-#                 {
-#                     "if": {
-#                         "column_id": first_year,
-#                     },
-#                     "borderRight": ".5px solid #b2bdd4",
-#                 }
-#             ]
-#         )
-
-#         table_columns = [
-#             {"name": col, "id": all_cols[idx], "presentation": "markdown"}
-#             if "Rate" in col or "(N)" in col
-#             # NOTE: Cannot figure out how to have a block here with three
-#             # different col formatting conditions
-#             # if "Rating" in col or "(N)" in col
-#             # {
-#             #     "name": col,
-#             #     "id": headers[idx],
-#             #     "type":"numeric",
-#             #     "format": Format()
-#             # }
-#             # if "n" in col
-#             else {
-#                 "name": col,
-#                 "id": all_cols[idx],
-#                 "type": "numeric",
-#                 "format": Format(
-#                     scheme=Scheme.percentage, precision=2, sign=Sign.parantheses
-#                 ),
-#             }
-#             for (idx, col) in enumerate(name_cols)
-#         ]
-
-#         # Create custom tooltip with metric/rating definitions- because the default
-#         # tooltip is limited, we use two dash-mantine-components: a dmc.Table inside
-#         # of a dmc.HoverCard
-
-#         # Metric definitions are stored in a dictionary keyed to the metric number
-#         # in load_data.py.
-#         metric_id = re.findall(r"[\d\.]+[a-z]{1}|[\d\.]+", label[0])
-
-#         def create_tooltip(id: list) -> Tuple[list, list]:
-#             # TODO: AHS - Eventually need to split out 1.1, 1.3 (AHS), 1.2.a (AHS)
-#             # TODO: and 1.2.b (AHS)
-
-#             if not id:
-#                 header = []
-#                 body = []
-#             else:
-#                 # These metrics share ratings with their counterparts (1.1.b,1.4.f,& 1.7.d)
-#                 # 1.1.c and 1.7.a have been merged
-#                 if (
-#                     id[0] == "1.1.a"
-#                     or id[0] == "1.1.c"
-#                     or id[0] == "1.4.e"
-#                     or id[0] == "1.7.a"
-#                     or id[0] == "1.7.c"
-#                 ):
-#                     header_string = id[0] + " & " + id[1]
-#                 else:
-#                     header_string = id[0]
-
-#                 header = [
-#                     html.Tr(
-#                         [
-#                             html.Th("Rate"),
-#                             html.Th("Metric (" + header_string + ")"),
-#                         ]
-#                     )
-#                 ]
-
-#                 rows = []
-#                 ratings = ["Exceeds", "Meets", "Approaches", "Does Not Meet"]
-
-#                 if id[0] in metric_strings:
-#                     for s in range(0, len(metric_strings[id[0]])):
-#                         if metric_strings[id[0]][s]:
-#                             # use id and "im-very-special" class to ensure metrics with only three
-#                             # ratings have the third rating colored red rather than orange
-#                             if id[0] == "1.1.a" and s == 3:
-#                                 rows.append(
-#                                     html.Tr(
-#                                         [
-#                                             html.Td(ratings[s], id="im-very-special"),
-#                                             html.Td(metric_strings[id[0]][s]),
-#                                         ]
-#                                     )
-#                                 )
-#                             else:
-#                                 rows.append(
-#                                     html.Tr(
-#                                         [
-#                                             html.Td(ratings[s]),
-#                                             html.Td(metric_strings[id[0]][s]),
-#                                         ]
-#                                     )
-#                                 )
-
-#                 body = [html.Tbody(rows)]
-
-#             return header, body
-
-#         header, body = create_tooltip(metric_id)
-
-#         table = [
-#             html.Div(
-#                 [
-#                     dmc.HoverCard(
-#                         className="hover_card",
-#                         withArrow=False,
-#                         width=300,
-#                         shadow="md",
-#                         position="bottom",
-#                         children=[
-#                             dmc.HoverCardTarget(
-#                                 html.Label(label, className="label__header"),
-#                             ),
-#                             dmc.HoverCardDropdown(dmc.Table(header + body)),
-#                         ],
-#                     ),
-#                     html.Div(
-#                         dash_table.DataTable(
-#                             data.to_dict("records"),
-#                             columns=table_columns,
-#                             style_data=table_style,
-#                             style_data_conditional=table_data_conditional,
-#                             style_header=table_header,
-#                             style_header_conditional=table_header_conditional,
-#                             style_cell=table_cell,
-#                             style_cell_conditional=table_cell_conditional,
-#                             merge_duplicate_headers=True,
-#                             id="metric-table",
-#                             markdown_options={"html": True},
-#                             tooltip_conditional=[
-#                                 {
-#                                     "if": {
-#                                         "column_id": col,
-#                                         "filter_query": f"{{{col}}} = '-***'",
-#                                     },
-#                                     "type": "markdown",
-#                                     "value": "This indicates a reduction from '***' (a measurable, but not reportable, value) in one year to '0' in the following year.",
-#                                 }
-#                                 for col in data.columns
-#                             ],
-#                             tooltip_delay=0,
-#                             tooltip_duration=None,
-#                         )
-#                     ),
-#                 ],
-#                 className=class_name,
-#             )
-#         ]
-
-#     return table
 
 
 def create_comparison_table(

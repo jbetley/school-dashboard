@@ -377,16 +377,6 @@ def process_discipline_data(data, category, demographic):
             data[total_students], axis=0
         )
 
-        # discipline_total = data[
-        #     [
-        #         "Year",
-        #         selected_category,
-        #         percentage_of_total,
-        #         selected_category_unique,
-        #         total_students,
-        #     ]
-        # ]
-
     else:
         data[percentage_of_total] = data[selected_category_unique].div(
             data[total_students], axis=0
@@ -398,19 +388,6 @@ def process_discipline_data(data, category, demographic):
             data[category_students_unique], axis=0
         )
 
-        # discipline_total = data[
-        #     [
-        #         "Year",
-        #         selected_category,
-        #         selected_category_unique,
-        #         percentage_of_total,
-        #         percentage_of_category,
-        #         category_students_unique,
-        #         total_students,
-        #     ]
-        # ]
-
-    # data = data.sort_index(axis=1)
     data = data.sort_values(by=["Year"], ascending=True)
 
     # All demographic categories have result_total, nsize_overall,

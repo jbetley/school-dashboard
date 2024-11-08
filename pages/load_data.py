@@ -757,24 +757,29 @@ def get_discipline_data(*args):
     # 5) "Total Unique Students|" + "Category" (e.g., Total Unique Students|Male)
 
     year_col = "Year"
-    overall_nsize_col = "Total Unique Students|Overall"
-    category_col = params["category"] + "|" + params["demographic"]
-    category_unique_nsize_col = (
+    total_students = "Total Unique Students|Overall"
+    selected_category = params["category"] + "|" + params["demographic"]
+    selected_category_unique = (
         params["category"] + " Unique Students|" + params["demographic"]
     )
-    
+
     # "Overall" does not have column (5) (it is the same as (4)).
     if params["demographic"] != "Overall":
-        category_nsize_col = "Total Unique Students|" + params["demographic"]
+        category_students_unique = "Total Unique Students|" + params["demographic"]
         selected_cols = [
             year_col,
-            category_col,
-            overall_nsize_col,
-            category_nsize_col,
-            category_unique_nsize_col,
+            selected_category,
+            total_students,
+            category_students_unique,
+            selected_category_unique,
         ]
     else:
-        selected_cols = [year_col, overall_nsize_col, category_col, category_unique_nsize_col]
+        selected_cols = [
+            year_col,
+            total_students,
+            selected_category,
+            selected_category_unique,
+        ]
 
     discipline_data = results[selected_cols].copy()
 
@@ -790,6 +795,11 @@ def get_discipline_data(*args):
     student_total = "Total Unique Students|" + params["demographic"]
 
     discipline_data = discipline_data[~discipline_data[student_total].isna()]
+
+    # table gets real wide, so we limit to three years of data
+    # limit to 3 years of data, also drop any years with no data.
+    discipline_data = discipline_data[discipline_data[selected_category].notna()].copy()
+    discipline_data = discipline_data.iloc[0:3]
 
     return discipline_data
 

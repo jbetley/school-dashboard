@@ -53,9 +53,9 @@ from .tables import (
     no_data_table,
     create_metric_table,
     create_proficiency_key,
-    create_multi_header_table_with_container,
-    create_single_header_table,
     create_multi_header_table,
+    create_simple_table,
+    create_single_header_table,
     create_financial_analysis_table,
 )
 
@@ -81,7 +81,7 @@ def create_about_layout(year: str, school_id: str) -> list:
     attendance_rate_data = get_attendance_data(school_id, school_type, year_string)
 
     if len(attendance_rate_data.index) > 0 and len(attendance_rate_data.columns) > 1:
-        attendance_table = create_single_header_table(
+        attendance_table = create_simple_table(
             attendance_rate_data, "Attendance"
         )
 
@@ -337,7 +337,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 ]
                 grad_overview = grad_overview.dropna(axis=1, how="all")
 
-                hs_grad_overview_table = create_multi_header_table_with_container(
+                hs_grad_overview_table = create_multi_header_table(
                     grad_overview, "Graduation Data"
                 )
 
@@ -367,7 +367,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
                     grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
 
-                    hs_grad_ethnicity_table = create_multi_header_table_with_container(
+                    hs_grad_ethnicity_table = create_multi_header_table(
                         grad_ethnicity, "Graduation Rate by Ethnicity"
                     )
 
@@ -383,7 +383,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
                     grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
 
-                    hs_grad_subgroup_table = create_multi_header_table_with_container(
+                    hs_grad_subgroup_table = create_multi_header_table(
                         grad_subgroup, "Graduation Rate by Subgroup"
                     )
                     hs_grad_subgroup_table = set_table_layout(
@@ -416,7 +416,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
                 hs_sat_overview = hs_sat_overview.dropna(axis=1, how="all")
 
-                hs_sat_overview_table = create_multi_header_table_with_container(
+                hs_sat_overview_table = create_multi_header_table(
                     hs_sat_overview, "SAT Overview"
                 )
 
@@ -432,7 +432,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
                 hs_sat_ethnicity = hs_sat_ethnicity.dropna(axis=1, how="all")
 
-                hs_sat_ethnicity_table = create_multi_header_table_with_container(
+                hs_sat_ethnicity_table = create_multi_header_table(
                     hs_sat_ethnicity, "SAT Benchmarks by Ethnicity"
                 )
 
@@ -448,7 +448,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
                 hs_sat_subgroup = hs_sat_subgroup.dropna(axis=1, how="all")
 
-                hs_sat_subgroup_table = create_multi_header_table_with_container(
+                hs_sat_subgroup_table = create_multi_header_table(
                     hs_sat_subgroup, "SAT Benchmarks by Subgroup"
                 )
 
@@ -528,7 +528,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 )
             ]
 
-            ela_grade_table = create_multi_header_table(years_by_grade_ela)
+            ela_grade_table = create_single_header_table(years_by_grade_ela)
 
             ela_grade_fig_data = ilearn_fig_data.filter(
                 regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
@@ -547,7 +547,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 )
             ]
 
-            ela_subgroup_table = create_multi_header_table(years_by_subgroup_ela)
+            ela_subgroup_table = create_single_header_table(years_by_subgroup_ela)
 
             ela_subgroup_fig_data = ilearn_fig_data.loc[
                 :,
@@ -567,7 +567,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 )
             ]
 
-            ela_ethnicity_table = create_multi_header_table(years_by_ethnicity_ela)
+            ela_ethnicity_table = create_single_header_table(years_by_ethnicity_ela)
 
             ela_ethnicity_fig_data = ilearn_fig_data.loc[
                 :,
@@ -587,7 +587,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 )
             ]
 
-            math_grade_table = create_multi_header_table(years_by_grade_math)
+            math_grade_table = create_single_header_table(years_by_grade_math)
 
             math_grade_fig_data = ilearn_fig_data.filter(
                 regex=r"^Grade \d\|Math|^School Name$|^Year$", axis=1
@@ -605,7 +605,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 )
             ]
 
-            math_subgroup_table = create_multi_header_table(years_by_subgroup_math)
+            math_subgroup_table = create_single_header_table(years_by_subgroup_math)
 
             math_subgroup_fig_data = ilearn_fig_data.loc[
                 :,
@@ -625,7 +625,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
                 )
             ]
 
-            math_ethnicity_table = create_multi_header_table(years_by_ethnicity_math)
+            math_ethnicity_table = create_single_header_table(years_by_ethnicity_math)
 
             math_ethnicity_fig_data = ilearn_fig_data.loc[
                 :,
@@ -891,7 +891,7 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
         ]
 
         if not public_iread_school_data.empty:
-            public_iread_school_table = create_multi_header_table(
+            public_iread_school_table = create_single_header_table(
                 public_iread_school_data
             )
 

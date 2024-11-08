@@ -45,8 +45,9 @@ from .tables import (
     no_data_table,
     no_data_page,
     create_key_table,
-    create_single_header_table,
-    create_multi_header_table,
+    create_simple_table,
+    # create_single_header_table,
+    create_discipline_table,
 )
 from .layouts import create_line_fig_layout
 
@@ -117,16 +118,21 @@ def update_discipline_layout(
         raw_discipline_data, discipline_category, discipline_demographic
     )
 
-    # pd.set_option("display.max_columns", None)
-    # pd.set_option("display.max_rows", None)
-    # print("****************")
-    # print(raw_discipline_data)
-    # print(processed_discipline_data)
+    discipline_table = create_discipline_table(processed_discipline_data)
 
-    discipline_table = create_multi_header_table(processed_discipline_data)
+    # a little pre-processing to remove superflous columns
+    incidents = discipline_category + "|" + discipline_demographic
+    unique_students = discipline_category + " Unique Students|" + discipline_demographic
+    discipline_fig_data = raw_discipline_data[["Year", incidents, unique_students]]
 
-    discipline_fig = make_line_chart(raw_discipline_data)
+    discipline_fig_data.columns = discipline_fig_data.columns.str.replace(
+        discipline_category + " Unique Students", "Unique Students", regex=False
+    )
+    discipline_fig_data.columns = discipline_fig_data.columns.str.replace(
+        discipline_category, "Incidents", regex=False
+    )
 
+    discipline_fig = make_line_chart(discipline_fig_data)
     discipline_layout = create_line_fig_layout(discipline_table, discipline_fig, "")
 
     return discipline_layout
@@ -225,7 +231,7 @@ def update_about_page(year: str, school: str):  # , discipline_category: str):
     #     processed_discipline_data, discipline_category
     # )
 
-    # discipline_table = create_multi_header_table(discipline_data)
+    # discipline_table = create_single_header_table(discipline_data)
 
     # # # ELA by Grade fig
     # # ela_grade_fig_data = ilearn_fig_data.filter(
@@ -517,9 +523,7 @@ def update_about_page(year: str, school: str):  # , discipline_category: str):
     )
 
     if len(attendance_rate_data.index) > 0 and len(attendance_rate_data.columns) > 1:
-        attendance_table = create_single_header_table(
-            attendance_rate_data, "Attendance"
-        )
+        attendance_table = create_simple_table(attendance_rate_data, "Attendance")
 
         attendance_fig_data = (
             attendance_rate_data.set_index("Category")

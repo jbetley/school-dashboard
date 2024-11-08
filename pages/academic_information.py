@@ -30,10 +30,10 @@ from .load_data import (
 
 from .tables import (
     no_data_page,
-    create_multi_header_table_with_container,
-    create_key_table,
-    create_single_header_table,
     create_multi_header_table,
+    create_key_table,
+    create_simple_table,
+    create_single_header_table,
     create_iread_ilearn_table,
 )
 
@@ -380,7 +380,7 @@ def update_academic_information_page(
                 ]
                 grad_overview = grad_overview.dropna(axis=1, how="all")
 
-                hs_grad_overview_table = create_multi_header_table_with_container(
+                hs_grad_overview_table = create_multi_header_table(
                     grad_overview, "Graduation Data"
                 )
 
@@ -397,7 +397,7 @@ def update_academic_information_page(
 
                     grad_ethnicity = grad_ethnicity.dropna(axis=1, how="all")
 
-                    hs_grad_ethnicity_table = create_multi_header_table_with_container(
+                    hs_grad_ethnicity_table = create_multi_header_table(
                         grad_ethnicity, "Graduation Rate by Ethnicity"
                     )
 
@@ -413,7 +413,7 @@ def update_academic_information_page(
 
                     grad_subgroup = grad_subgroup.dropna(axis=1, how="all")
 
-                    hs_grad_subgroup_table = create_multi_header_table_with_container(
+                    hs_grad_subgroup_table = create_multi_header_table(
                         grad_subgroup, "Graduation Rate by Subgroup"
                     )
                     hs_grad_subgroup_table = set_table_layout(
@@ -450,7 +450,7 @@ def update_academic_information_page(
 
                 hs_sat_overview = hs_sat_overview.dropna(axis=1, how="all")
 
-                hs_sat_overview_table = create_multi_header_table_with_container(
+                hs_sat_overview_table = create_multi_header_table(
                     hs_sat_overview, "SAT Overview"
                 )
 
@@ -466,7 +466,7 @@ def update_academic_information_page(
 
                 hs_sat_ethnicity = hs_sat_ethnicity.dropna(axis=1, how="all")
 
-                hs_sat_ethnicity_table = create_multi_header_table_with_container(
+                hs_sat_ethnicity_table = create_multi_header_table(
                     hs_sat_ethnicity, "SAT Benchmarks by Ethnicity"
                 )
 
@@ -482,7 +482,7 @@ def update_academic_information_page(
 
                 hs_sat_subgroup = hs_sat_subgroup.dropna(axis=1, how="all")
 
-                hs_sat_subgroup_table = create_multi_header_table_with_container(
+                hs_sat_subgroup_table = create_multi_header_table(
                     hs_sat_subgroup, "SAT Benchmarks by Subgroup"
                 )
 
@@ -595,7 +595,7 @@ def update_academic_information_page(
                 )
             ]
 
-            ela_grade_table = create_multi_header_table(years_by_grade_ela)
+            ela_grade_table = create_single_header_table(years_by_grade_ela)
 
             # ELA by Grade fig
             ela_grade_fig_data = ilearn_fig_data.filter(
@@ -616,7 +616,7 @@ def update_academic_information_page(
                 )
             ]
 
-            ela_subgroup_table = create_multi_header_table(years_by_subgroup_ela)
+            ela_subgroup_table = create_single_header_table(years_by_subgroup_ela)
 
             # ELA by Subgroup fig
             ela_subgroup_fig_data = ilearn_fig_data.loc[
@@ -638,7 +638,7 @@ def update_academic_information_page(
                 )
             ]
 
-            ela_ethnicity_table = create_multi_header_table(years_by_ethnicity_ela)
+            ela_ethnicity_table = create_single_header_table(years_by_ethnicity_ela)
 
             # ELA by Ethnicity fig
             ela_ethnicity_fig_data = ilearn_fig_data.loc[
@@ -660,7 +660,7 @@ def update_academic_information_page(
                 )
             ]
 
-            math_grade_table = create_multi_header_table(years_by_grade_math)
+            math_grade_table = create_single_header_table(years_by_grade_math)
 
             # Math by Grade fig
             math_grade_fig_data = ilearn_fig_data.filter(
@@ -680,7 +680,7 @@ def update_academic_information_page(
                 )
             ]
 
-            math_subgroup_table = create_multi_header_table(years_by_subgroup_math)
+            math_subgroup_table = create_single_header_table(years_by_subgroup_math)
 
             # Math by Subgroup fig
             math_subgroup_fig_data = ilearn_fig_data.loc[
@@ -702,7 +702,7 @@ def update_academic_information_page(
                 )
             ]
 
-            math_ethnicity_table = create_multi_header_table(years_by_ethnicity_math)
+            math_ethnicity_table = create_single_header_table(years_by_ethnicity_math)
 
             # Math by Ethnicity fig
             math_ethnicity_fig_data = ilearn_fig_data.loc[
@@ -1035,7 +1035,7 @@ def update_academic_information_page(
         else:
             main_container = {"display": "block"}
 
-            public_iread_school_table = create_multi_header_table(
+            public_iread_school_table = create_single_header_table(
                 public_iread_school_data
             )
 
@@ -1340,7 +1340,7 @@ def update_academic_information_page(
                         {"nan": "\u2014", np.NaN: "\u2014"}, regex=True
                     )
 
-                    iread_details_table = create_single_header_table(
+                    iread_details_table = create_simple_table(
                         iread_final_table_data, "IREAD"
                     )
 
@@ -1582,7 +1582,7 @@ def update_academic_information_page(
 
                 wida_breakdown_data = wida_breakdown_data[wida_final_columns]
 
-                wida_breakdown_table = create_multi_header_table(wida_breakdown_data)
+                wida_breakdown_table = create_single_header_table(wida_breakdown_data)
 
                 wida_breakdown = create_line_fig_layout(
                     wida_breakdown_table, wida_breakdown_fig, "WIDA Breakdown"
@@ -1825,7 +1825,7 @@ def update_academic_information_page(
                             )
                         )
 
-                        wida_iread_details_table = create_single_header_table(
+                        wida_iread_details_table = create_simple_table(
                             wida_iread_details_table_data, "WIDA Details"
                         )
 
