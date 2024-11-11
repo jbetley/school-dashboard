@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/06/24
+# date:     11/11/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, State, callback
@@ -46,7 +46,6 @@ from .tables import (
     no_data_page,
     create_key_table,
     create_simple_table,
-    # create_single_header_table,
     create_discipline_table,
 )
 from .layouts import create_line_fig_layout
@@ -149,15 +148,13 @@ def update_discipline_layout(
     Output("ethnicity-fig", "figure"),
     Output("subgroup-title", "children"),
     Output("subgroup-fig", "figure"),
-    # Output("discipline-layout", "children"),
     Output("about-main-container", "style"),
     Output("about-empty-container", "style"),
     Output("about-no-data", "children"),
     Input("year-dropdown", "value"),
     Input("charter-dropdown", "value"),
-    # Input("discipline-dropdown", "value"),
 )
-def update_about_page(year: str, school: str):  # , discipline_category: str):
+def update_about_page(year: str, school: str):
     if not school:
         raise PreventUpdate
 
@@ -196,12 +193,13 @@ def update_about_page(year: str, school: str):  # , discipline_category: str):
     # Updates Table - Right Now hardcoded - may want to add to DB
     update_table_label = ""
     update_table_dict = {
-        "Date": ["07.28.24", "07.30.24", "08.16.24", "08.25.24"],
+        "Date": ["07.28.24", "07.30.24", "08.16.24", "08.25.24", "11.11.24"],
         "Update": [
             "Added 2024 ILEARN to Information and Analysis pages.",
             "Added 2024 SAT to Information and Analysis pages.",
             "Added 2024 IREAD to Information and Analysis pages.",
             "Added 2024 Chronic Absenteeism.",
+            "Added 2019 - 23 Discipline Data.",
         ],
     }
 
@@ -218,34 +216,6 @@ def update_about_page(year: str, school: str):  # , discipline_category: str):
     demographic_data = demographic_data.loc[
         demographic_data["Year"] == selected_year_numeric
     ]
-
-    # ## Discipline data
-
-    # raw_discipline_data = get_discipline_data(selected_school_id)
-
-    # processed_discipline_data = process_discipline_data(
-    #     raw_discipline_data, selected_year_string
-    # )
-
-    # discipline_data = transpose_discipline_data(
-    #     processed_discipline_data, discipline_category
-    # )
-
-    # discipline_table = create_single_header_table(discipline_data)
-
-    # # # ELA by Grade fig
-    # # ela_grade_fig_data = ilearn_fig_data.filter(
-    # #     regex=r"^Grade \d\|ELA|^School Name$|^Year$", axis=1
-    # # )
-
-    # # discipline_fig = make_line_chart(discipline_fig_data)
-
-    # discipline_layout = create_line_fig_layout(
-    #     discipline_table,
-    #     discipline_table,
-    #     "Discipline Data"
-    #     # discipline_table, discipline_fig, "ELA By Grade"
-    # )
 
     if len(demographic_data.index) == 0:
         enroll_table = no_data_table("No Data to Display", enroll_title, "six")

@@ -404,6 +404,8 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
         elif "Attendance" in label:
             endnote = "Chronic absenteeism is the percentage of students who miss 18 or more days in a school year. \
                 Attendance and absenteeism data is not available for 2020 due to Covid."
+        elif label == "":  # Discipline Data
+            endnote = "I - Incidents / S - Unique Students / % - Percentage"
         else:
             endnote = "Hover over each data point to see N-Size. No test data data is available for 2020 due to Covid."
 
@@ -411,9 +413,6 @@ def create_line_fig_layout(table: list, fig: list, label: str) -> list:
         html.Div(
             [
                 label_layout[0],
-                # html.Label(
-                #     label, className="label__header", style={"marginTop": "10px"}
-                # ),
                 html.Div(
                     [
                         html.Div(

@@ -734,20 +734,18 @@ def make_multi_line_chart(
 
 def make_line_chart(values: pd.DataFrame) -> list:
     """
-    Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
-    series of strings (if applicable) detailing missing data.
+    Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line).
+    NOTE: Has code for display of a series of strings (if applicable) detailing missing
+    data that is not currently being used.
 
     Args:
         values (pd.DataFrame): a dataframe with proficiency categories for each year
-        label (str): title of the figure
 
     Returns:
         fig_layout (list): a plotly dash html layout in the form of a list containing a string, a px.line figure,
         and another string(s) if certain conditions are met.
     """
     data = values.copy()
-
-    # TODO: Getting fig error for Overall
 
     # use bools later for chart formatting purposes
     isIREAD = False
@@ -774,7 +772,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
         # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/19
         # data, no_data_string = check_for_no_data(data)
         # nsize_string = check_for_insufficient_n_size(data)
-        no_data_string = ""
+        # no_data_string = ""
 
         # first check, if dataframe has more than one column, but not data
         # to display ("", NaN, or "***"), we catch it here
@@ -800,14 +798,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             data["Year"] = data["Year"].astype(str)
 
-        
-        pd.set_option("display.max_columns", None)
-        pd.set_option("display.max_rows", None)
-        print("BETTYBOOp")
-        print(type(data["Incidents"][0]))
-        print(type(data["Year"][0]))
-        print(data)
-        data["Year"] = data["Year"].astype(int)
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
         if data.empty:
@@ -823,6 +813,14 @@ def make_line_chart(values: pd.DataFrame) -> list:
             ]
 
         else:
+            # NOTE: Was getting an error on the first load of the discipline chart
+            # only. All other loads are fine. Found this github error report:
+            # https://github.com/plotly/dash/issues/2061 which suggested that
+            # "there seems to be a problem with setting the default values." See
+            # also: https://stackoverflow.com/questions/74367104/dashboard-plotly-valueerror-invalid-value
+            #  It suggested adding the following line:
+            fig = go.Figure(layout=dict(template="plotly"))
+
             fig = px.line(
                 data,
                 x="Year",
@@ -931,45 +929,46 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 tickformat=tick_format,
             )
 
-            if no_data_string:
-                fig_layout = [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    dcc.Graph(
-                                        figure=fig, config={"displayModeBar": False}
-                                    )
-                                ],
-                            ),
-                            html.Div(
-                                [
-                                    html.P(
-                                        children=[
-                                            html.Span(
-                                                "Years with insufficient or no data:",
-                                                className="msg-string__label",
-                                            ),
-                                            html.Span(
-                                                no_data_string,
-                                                className="nodata-string",
-                                            ),
-                                        ],
-                                    ),
-                                ],
-                                className="container--close--noborder twelve columns",
-                            ),
-                        ],
-                        className="row",
-                    )
-                ]
+            # NOTE: not currently using no_data_string
+            # if no_data_string:
+            #     fig_layout = [
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         dcc.Graph(
+            #                             figure=fig, config={"displayModeBar": False}
+            #                         )
+            #                     ],
+            #                 ),
+            #                 html.Div(
+            #                     [
+            #                         html.P(
+            #                             children=[
+            #                                 html.Span(
+            #                                     "Years with insufficient or no data:",
+            #                                     className="msg-string__label",
+            #                                 ),
+            #                                 html.Span(
+            #                                     no_data_string,
+            #                                     className="nodata-string",
+            #                                 ),
+            #                             ],
+            #                         ),
+            #                     ],
+            #                     className="container--close--noborder twelve columns",
+            #                 ),
+            #             ],
+            #             className="row",
+            #         )
+            #     ]
 
-            else:
-                fig_layout = [
-                    html.Div(
-                        [dcc.Graph(figure=fig, config={"displayModeBar": False})],
-                    )
-                ]
+            # else:
+            fig_layout = [
+                html.Div(
+                    [dcc.Graph(figure=fig, config={"displayModeBar": False})],
+                )
+            ]
     else:
         fig = no_data_fig_blank()
 

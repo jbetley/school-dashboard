@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     10/31/24
+# date:     11/31/24
 
 import pandas as pd
 from typing import Tuple
@@ -1059,7 +1059,7 @@ def create_multi_header_table(data: pd.DataFrame, label: str) -> list:
 def create_discipline_table(data: pd.DataFrame) -> list:
     """
     Takes a dataframe of two or more columns and a label, and creates a table with multi-headers
-    and a tooltip. used for discipline table on About page.
+    and a tooltip. Used for discipline table on About page.
     Args:
         data (pd.DataTable): dash dataTable
 
@@ -1069,9 +1069,7 @@ def create_discipline_table(data: pd.DataFrame) -> list:
 
     table_size = len(data.columns)
 
-#TODO: Shorten col names- "I", "S", "%" - either key or tooltip?
     if table_size > 1:
-
         nsize_data = data.loc[:, data.columns.str.contains("N-Size")].copy()
 
         for col in nsize_data.columns:
@@ -1094,10 +1092,9 @@ def create_discipline_table(data: pd.DataFrame) -> list:
 
         data.columns = data.columns.str.replace("School", "", regex=True)
 
-        data.columns = data.columns.str.replace(
-            "Incidents \(Unique\)", "Students", regex=True
-        )
-
+        # need to shorten column names
+        data.columns = data.columns.str.replace("Incidents \(Unique\)", "S", regex=True)
+        data.columns = data.columns.str.replace("Incidents", "I", regex=True)
         data = data.fillna(value="\u2014")
         data = data.replace("No Data", "\u2014", regex=True)
 
@@ -1106,12 +1103,12 @@ def create_discipline_table(data: pd.DataFrame) -> list:
         school_headers = [
             y
             for y in data.columns
-            if "Category" not in y and "Incidents" not in y and "Students" not in y
+            if "Category" not in y and "I" not in y and "S" not in y
         ]
 
-        nsize_headers = [ y for y in data.columns if "Incidents" in y or "Students" in y]
+        nsize_headers = [y for y in data.columns if "I" in y or "S" in y]
 
-        incident_headers = [ y for y in data.columns if "Incidents" in y ]
+        incident_headers = [y for y in data.columns if "I" in y]
 
         tooltip_data = pd.DataFrame()
 
@@ -1137,25 +1134,28 @@ def create_discipline_table(data: pd.DataFrame) -> list:
         school_width = data_width / (table_size - 1)
 
         # formatting logic is slightly different for a multi-header table
-        table_cell_conditional = [
-            {
-                "if": {"column_id": "Category"},
-                "textAlign": "left",
-                "paddingLeft": "20px",
-                "fontWeight": "600",
-                "fontSize": "11px",
-                "width": str(category_width) + "%",
-            },
-        ] + [
-            {
-                "if": {"column_id": school},
-                "textAlign": "center",
-                "fontWeight": "600",
-                "fontSize": "10px",
-                "width": str(school_width) + "%",
-            }
-            for school in school_headers
-        ] + [
+        table_cell_conditional = (
+            [
+                {
+                    "if": {"column_id": "Category"},
+                    "textAlign": "left",
+                    "paddingLeft": "20px",
+                    "fontWeight": "600",
+                    "fontSize": "11px",
+                    "width": str(category_width) + "%",
+                },
+            ]
+            + [
+                {
+                    "if": {"column_id": school},
+                    "textAlign": "center",
+                    "fontWeight": "600",
+                    "fontSize": "10px",
+                    "width": str(school_width) + "%",
+                }
+                for school in school_headers
+            ]
+            + [
                 {
                     "if": {"column_id": nsize},
                     "textAlign": "center",
@@ -1165,6 +1165,7 @@ def create_discipline_table(data: pd.DataFrame) -> list:
                 }
                 for nsize in nsize_headers
             ]
+        )
 
         table_header_conditional = (
             [
@@ -1206,7 +1207,7 @@ def create_discipline_table(data: pd.DataFrame) -> list:
                     "borderBottom": ".5px solid #b2bdd4",
                 }
                 for school in school_headers
-            ]            
+            ]
             + [
                 {
                     "if": {
@@ -1218,24 +1219,6 @@ def create_discipline_table(data: pd.DataFrame) -> list:
             ]
         )
 
-
-        # table_data_conditional = [
-        #     {
-        #         "if": {"state": "selected"},
-        #         "backgroundColor": "rgba(112,128,144, .3)",
-        #         "border": "thin solid silver",
-        #     },
-        #     {
-        #         "if": {"row_index": "odd"},
-        #         "backgroundColor": "#eeeeee"
-        #     },
-        # ] + [
-        #     {
-        #         "if": {"row_index": 0},
-        #         "paddingTop": "5px"
-        #     }
-        # ]
-
         table_data_conditional = (
             [
                 {
@@ -1243,11 +1226,9 @@ def create_discipline_table(data: pd.DataFrame) -> list:
                     "backgroundColor": "rgba(112,128,144, .3)",
                     "border": "thin solid silver",
                 },
-                {
-                    "if": {"row_index": "odd"},
-                    "backgroundColor": "#eeeeee"
-                },
-            ] + [
+                {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
+            ]
+            + [
                 {
                     "if": {
                         "column_id": all_cols[-1],
@@ -1255,12 +1236,7 @@ def create_discipline_table(data: pd.DataFrame) -> list:
                     "borderRight": ".5px solid #b2bdd4",
                 },
             ]
-            + [
-                {
-                    "if": {"row_index": 0},
-                    "paddingTop": "5px"
-                }
-            ]
+            + [{"if": {"row_index": 0}, "paddingTop": "5px"}]
             + [
                 {
                     "if": {"row_index": len(data) - 1},
@@ -1307,7 +1283,7 @@ def create_discipline_table(data: pd.DataFrame) -> list:
                 "type": "numeric",
                 "format": Format(precision=0, scheme=Scheme.decimal_integer),
             }
-            if "Incidents" in col or "Students" in col
+            if "I" in col or "S" in col
             else {
                 "name": col,
                 "id": all_cols[idx],
@@ -1336,6 +1312,7 @@ def create_discipline_table(data: pd.DataFrame) -> list:
                 tooltip_duration=None,
             ),
         ]
+
     # TODO: Align this with line_fig_layout (two empty figs instead of fig/table)
     else:
         table_layout = [
@@ -1378,10 +1355,6 @@ def create_single_header_table(data: pd.DataFrame) -> list:
         for col in nsize_data.columns:
             nsize_data[col] = nsize_data[col].astype(str).str.split(".").str[0]
 
-        # this keeps the Unique N-Size in the discipline data set, has
-        # no effect otherwise
-        # nsize_data = nsize_data.rename(columns={c: c[:4] for c in nsize_data.columns})
-
         data = data[data.columns[~data.columns.str.contains(r"N-Size")]]
 
         data.columns = data.columns.str.replace("School", "", regex=True)
@@ -1391,25 +1364,19 @@ def create_single_header_table(data: pd.DataFrame) -> list:
 
         all_cols = data.columns.tolist()
 
-        school_headers = [
-            y for y in data.columns if "Category" not in y
-        ]
+        school_headers = [y for y in data.columns if "Category" not in y]
 
         nsize_tooltip = [
             {
                 column: {
-                    "value": category.split("|", maxsplit=1)[0]
-                    + " N-Size: "
-                    + value
+                    "value": category.split("|", maxsplit=1)[0] + " N-Size: " + value
                     if value != "\u2014"
                     else "\u2014",
                     "type": "markdown",
                 }
                 for column, value in row.items()
             }
-            for row, category in zip(
-                nsize_data.to_dict("records"), nsize_categories
-            )
+            for row, category in zip(nsize_data.to_dict("records"), nsize_categories)
         ]
 
         category_width = 20
@@ -1504,7 +1471,8 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
     """
     Takes a label and a dataframe consisting of Rating and Metric Columns and returns
     a dash datatable. NOTE: could possibly be less complicated than it is, or maybe not-
-    gonna leave it up to future me. Also, beware of some tricksy bits.
+    gonna leave it up to future me. N-Size data is used for tooltips (previous versions
+    of this file on github have a version where N-Size are columns in the table).
 
     Args:
         label (String): Table title
