@@ -747,12 +747,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
     """
     data = values.copy()
 
-    # TODO: Getting error on line 783 for Male and fig error for Overall
-
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
-    # print("DISCP")
-    # print(data)
+    # TODO: Getting fig error for Overall
 
     # use bools later for chart formatting purposes
     isIREAD = False
@@ -805,7 +800,14 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             data["Year"] = data["Year"].astype(str)
 
-        # print(data)
+        
+        pd.set_option("display.max_columns", None)
+        pd.set_option("display.max_rows", None)
+        print("BETTYBOOp")
+        print(type(data["Incidents"][0]))
+        print(type(data["Year"][0]))
+        print(data)
+        data["Year"] = data["Year"].astype(int)
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
         if data.empty:

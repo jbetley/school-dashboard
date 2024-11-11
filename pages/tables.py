@@ -1069,8 +1069,8 @@ def create_discipline_table(data: pd.DataFrame) -> list:
 
     table_size = len(data.columns)
 
+#TODO: Shorten col names- "I", "S", "%" - either key or tooltip?
     if table_size > 1:
-        # nsize_categories = data["Category"].tolist()
 
         nsize_data = data.loc[:, data.columns.str.contains("N-Size")].copy()
 
@@ -1110,7 +1110,9 @@ def create_discipline_table(data: pd.DataFrame) -> list:
         ]
 
         nsize_headers = [ y for y in data.columns if "Incidents" in y or "Students" in y]
-# TODO: HERE. ADDING BORDERS AND SUCH FROM multi_header_table
+
+        incident_headers = [ y for y in data.columns if "Incidents" in y ]
+
         tooltip_data = pd.DataFrame()
 
         for header in school_headers:
@@ -1130,7 +1132,8 @@ def create_discipline_table(data: pd.DataFrame) -> list:
         ]
 
         category_width = 20
-        data_width = 100 - category_width
+        nsize_width = 5
+        data_width = 100 - (category_width + nsize_width)
         school_width = data_width / (table_size - 1)
 
         # formatting logic is slightly different for a multi-header table
@@ -1152,26 +1155,137 @@ def create_discipline_table(data: pd.DataFrame) -> list:
                 "width": str(school_width) + "%",
             }
             for school in school_headers
-        ]
+        ] + [
+                {
+                    "if": {"column_id": nsize},
+                    "textAlign": "center",
+                    "fontWeight": "500",
+                    "fontSize": "10px",
+                    "width": str(nsize_width) + "%",
+                }
+                for nsize in nsize_headers
+            ]
 
-        table_header_conditional = [
-            {
-                "if": {
-                    "column_id": col,
+        table_header_conditional = (
+            [
+                {
+                    "if": {
+                        "column_id": incident,
+                        "header_index": 1,
+                    },
+                    "fontWeight": "600",
+                    "fontSize": "10px",
+                    "borderLeft": ".5px solid #b2bdd4",
+                    "borderTop": ".5px solid #b2bdd4",
+                    "borderBottom": ".5px solid #b2bdd4",
+                }
+                for incident in incident_headers
+            ]
+            + [
+                {
+                    "if": {
+                        "column_id": nsize,
+                        "header_index": 1,
+                    },
+                    "fontWeight": "500",
+                    "fontSize": "10px",
+                    "borderTop": ".5px solid #b2bdd4",
+                    "borderBottom": ".5px solid #b2bdd4",
+                }
+                for nsize in nsize_headers
+            ]
+            + [
+                {
+                    "if": {
+                        "column_id": school,
+                        "header_index": 1,
+                    },
+                    "fontWeight": "500",
+                    "fontSize": "10px",
+                    "borderTop": ".5px solid #b2bdd4",
+                    "borderBottom": ".5px solid #b2bdd4",
+                }
+                for school in school_headers
+            ]            
+            + [
+                {
+                    "if": {
+                        "column_id": all_cols[-1],
+                        "header_index": 1,
+                    },
+                    "borderRight": ".5px solid #b2bdd4",
+                }
+            ]
+        )
+
+
+        # table_data_conditional = [
+        #     {
+        #         "if": {"state": "selected"},
+        #         "backgroundColor": "rgba(112,128,144, .3)",
+        #         "border": "thin solid silver",
+        #     },
+        #     {
+        #         "if": {"row_index": "odd"},
+        #         "backgroundColor": "#eeeeee"
+        #     },
+        # ] + [
+        #     {
+        #         "if": {"row_index": 0},
+        #         "paddingTop": "5px"
+        #     }
+        # ]
+
+        table_data_conditional = (
+            [
+                {
+                    "if": {"state": "selected"},
+                    "backgroundColor": "rgba(112,128,144, .3)",
+                    "border": "thin solid silver",
                 },
-                "borderBottom": ".5px solid #b2bdd4",
-            }
-            for col in school_headers
-        ]
-
-        table_data_conditional = [
-            {
-                "if": {"state": "selected"},
-                "backgroundColor": "rgba(112,128,144, .3)",
-                "border": "thin solid silver",
-            },
-            {"if": {"row_index": "odd"}, "backgroundColor": "#eeeeee"},
-        ] + [{"if": {"row_index": 0}, "paddingTop": "5px"}]
+                {
+                    "if": {"row_index": "odd"},
+                    "backgroundColor": "#eeeeee"
+                },
+            ] + [
+                {
+                    "if": {
+                        "column_id": all_cols[-1],
+                    },
+                    "borderRight": ".5px solid #b2bdd4",
+                },
+            ]
+            + [
+                {
+                    "if": {"row_index": 0},
+                    "paddingTop": "5px"
+                }
+            ]
+            + [
+                {
+                    "if": {"row_index": len(data) - 1},
+                    "borderBottom": ".5px solid #b2bdd4",
+                }
+            ]
+            + [
+                {
+                    "if": {
+                        "column_id": "Category",
+                    },
+                    "borderRight": ".5px solid #b2bdd4",
+                    "borderBottom": "none",
+                },
+            ]
+            + [
+                {
+                    "if": {
+                        "column_id": school,
+                    },
+                    "borderRight": ".5px solid #b2bdd4",
+                }
+                for school in school_headers
+            ]
+        )
 
         # Build list of lists, top level and secondary level column names
         # for multi-level headers
