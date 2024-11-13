@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     11/31/24
+# date:     11/11/24
 
 import pandas as pd
 from typing import Tuple
@@ -17,6 +17,108 @@ import dash_mantine_components as dmc
 from .globals import metric_strings, table_style, table_cell, table_header
 from .load_data import get_student_level_ilearn
 from .calculations import conditional_fillna
+
+
+def empty_table(text: str) -> dash_table.DataTable:
+    """
+    create empty dash_table.Datatable with given text as only data.
+    helper function for create_empty_page and create_empty_table
+
+    Args:
+        text (str): table content
+
+    Returns:
+        dash datatable (dash_table.DataTable): a dash DataTable
+    """
+
+    if text == "":
+        text = "No Data to Display."
+
+    empty_table = dash_table.DataTable(
+        columns=[
+            {"id": "emptytable", "name": text},
+        ],
+        style_header={
+            "fontSize": "14px",
+            "border": "none",
+            "textAlign": "center",
+            "color": "#6783a9",
+            "backgroundColor": "#ffffff",
+            "fontFamily": "Inter, sans-serif",
+            "height": "20vh",
+        },
+    )
+
+    return empty_table
+
+
+def create_empty_page_layout(text: str, label: str = "No Data to Display") -> list:
+    """
+    [no_data_page]
+    Uses empty_table function and returns empty table with given label and content. This
+    table has a fixed column size (eight cols) and is meant to use when there is no data
+    at all to be displayed on a page.
+
+    Args:
+        label (str): string label
+        text (str)
+
+    Returns:
+        table_layout (list): dash html.Div objects enclosing a dash html.Label
+        object and a dash DataTable, with css classes
+    """
+
+    table_layout = [
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Label(label, className="label__header"),
+                        html.Div(empty_table(text), className="empty-table"),
+                    ],
+                    className="pretty-container eight columns",
+                ),
+            ],
+            className="bare-container--flex--center twelve columns",
+        ),
+    ]
+
+    return table_layout
+
+
+def create_empty_table_layout(
+    text: str, label: str = "No Data to Display", width: str = "four"
+) -> list:
+    """
+    [no_data_table]
+    Uses empty_table function and returns empty table with given label and content.
+
+    Args:
+        label (list): table label
+        text (list): table content
+        width (str): text number of columns (one - twelve) or "none" - if none,
+                    no container is used
+
+    Returns:
+        table_layout (list): a dash html.Label object and html.Div object enclosing a dash DataTable
+    """
+
+    if width == "none" or width == "":
+        table_layout = [
+            html.Label(label, className="label__header"),
+            html.Div(empty_table(text), className="empty-table"),
+        ]
+    else:
+        table_layout = [
+            html.Div(
+                [
+                    html.Label(label, className="label__header"),
+                    html.Div(empty_table(text), className="empty-table"),
+                ],
+                className="pretty-container " + width + " columns",
+            ),
+        ]
+    return table_layout
 
 
 def create_proficiency_key() -> list:
@@ -173,105 +275,6 @@ def create_proficiency_key() -> list:
     return proficiency_key
 
 
-def empty_table(text: str) -> dash_table.DataTable:
-    """
-    return empty dash_table.Datatable with given text as only data.
-
-    Args:
-        text (str): table content
-
-    Returns:
-        dash datatable (dash_table.DataTable): a dash DataTable
-    """
-
-    if text == "":
-        text = "No Data to Display."
-
-    empty_table = dash_table.DataTable(
-        columns=[
-            {"id": "emptytable", "name": text},
-        ],
-        style_header={
-            "fontSize": "14px",
-            "border": "none",
-            "textAlign": "center",
-            "color": "#6783a9",
-            "backgroundColor": "#ffffff",
-            "fontFamily": "Inter, sans-serif",
-            "height": "20vh",
-        },
-    )
-
-    return empty_table
-
-
-def no_data_table(
-    text: str, label: str = "No Data to Display", width: str = "four"
-) -> list:
-    """
-    Uses empty_table function and returns empty table with given label and content.
-
-    Args:
-        label (list): table label
-        text (list): table content
-        width (str): text number of columns (one - twelve) or "none" - if none,
-                    no container is used
-
-    Returns:
-        table_layout (list): a dash html.Label object and html.Div object enclosing a dash DataTable
-    """
-
-    if width == "none" or width == "":
-        table_layout = [
-            html.Label(label, className="label__header"),
-            html.Div(empty_table(text), className="empty-table"),
-        ]
-    else:
-        table_layout = [
-            html.Div(
-                [
-                    html.Label(label, className="label__header"),
-                    html.Div(empty_table(text), className="empty-table"),
-                ],
-                className="pretty-container " + width + " columns",
-            ),
-        ]
-    return table_layout
-
-
-def no_data_page(text: str, label: str = "No Data to Display") -> list:
-    """
-    Uses empty_table function and returns empty table with given label and content. This
-    table has a fixed column size (eight cols) and is meant to use when there is no data
-    at all to be displayed on a page.
-
-    Args:
-        label (str): string label
-        text (str)
-
-    Returns:
-        table_layout (list): dash html.Div objects enclosing a dash html.Label
-        object and a dash DataTable, with css classes
-    """
-
-    table_layout = [
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Label(label, className="label__header"),
-                        html.Div(empty_table(text), className="empty-table"),
-                    ],
-                    className="pretty-container eight columns",
-                ),
-            ],
-            className="bare-container--flex--center twelve columns",
-        ),
-    ]
-
-    return table_layout
-
-
 def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     """
     Takes a label, a dataframe, and a descriptive (type) string and creates a
@@ -317,7 +320,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
         table_layout = [
             html.Div(
                 [
-                    html.Div(no_data_table("", label)),
+                    html.Div(create_empty_table_layout("", label)),
                 ],
                 className="pretty-container ten columns",
             )
@@ -1051,7 +1054,7 @@ def create_multi_header_table(data: pd.DataFrame, label: str) -> list:
         ]
 
     else:
-        table_layout = no_data_table("", label)
+        table_layout = create_empty_table_layout("", label)
 
     return table_layout
 
@@ -1465,8 +1468,6 @@ def create_single_header_table(data: pd.DataFrame) -> list:
     return table_layout
 
 
-# NOTE: This version of the function includes N-Size data as tooltips
-# rather than as columns in the table. See following version.
 def create_metric_table(label: list, values: pd.DataFrame) -> list:
     """
     Takes a label and a dataframe consisting of Rating and Metric Columns and returns
@@ -1497,7 +1498,7 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
         )
 
     if len(data.index) == 0 or table_size == 1:
-        table = no_data_table("No Data to Display.", string_label, "ten")
+        table = create_empty_table_layout("No Data to Display.", string_label, "ten")
 
     else:
         if table_size <= 3:
@@ -1677,7 +1678,6 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
         # For a single bottom line: comment out blocks, comment out
         # style_header_conditional in table declaration,
         # and uncomment style_as_list in table declaration
-
         table_header_conditional = (
             [
                 {
@@ -1857,7 +1857,8 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
         # of a dmc.HoverCard
 
         # Metric definitions are stored in a dictionary keyed to the metric number
-        # in load_data.py.
+        # in globals.py.
+
         metric_id = re.findall(r"[\d\.]+[a-z]{1}|[\d\.]+", label[0])
 
         def create_hovercard_popup(id: list) -> Tuple[list, list]:
@@ -1921,6 +1922,7 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
 
             return header, body
 
+        print(metric_id)
         header, body = create_hovercard_popup(metric_id)
 
         nsize_tooltip = [
@@ -2182,6 +2184,7 @@ def create_financial_analysis_table(data: pd.DataFrame, categories: list) -> lis
         category_data["% Change"] = (
             category_data[years[1]] - category_data[years[0]]
         ).div(abs(category_data[years[0]]))
+
         category_data["% Change"] = pd.Series(
             ["{0:.2f}%".format(val * 100) for val in category_data["% Change"]],
             index=category_data.index,

@@ -3,7 +3,7 @@
 #####################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     10/08/24
+# date:     11/11/24
 
 import pandas as pd
 import numpy as np
@@ -16,8 +16,16 @@ from .string_helpers import (
     identify_missing_categories,
     create_school_label,
 )
-from .charts import make_group_bar_chart, make_multi_line_chart, make_line_chart
-from .tables import create_comparison_table, no_data_page, create_single_header_table
+from .charts import (
+    make_group_bar_chart,
+    make_multi_line_chart,
+    make_line_chart
+)
+from .tables import (
+    create_comparison_table,
+    create_single_header_table,
+    create_empty_table_layout
+)
 
 
 def create_hs_analysis_layout(
@@ -81,6 +89,7 @@ def create_hs_analysis_layout(
 
     # data will always have at least three cols (School Name, School ID, Low Grade, High Grade)
     if len(analysis_data.columns) > 4:
+
         # NOTE: For transparency purposes, we want to identify all categories that are
         # missing from the possible dataset, including those that aren't going to be
         # displayed (because the school is missing them). Because there are many cases
@@ -89,7 +98,6 @@ def create_hs_analysis_layout(
         # data to display before and after we collect the missing category information. After
         # we collect any missing information, we need to drop any columns where the school
         # has no data and then check again to see if the dataframe has any info.
-
         analysis_data, category_string, school_string = identify_missing_categories(
             analysis_data, tested_categories
         )
@@ -152,7 +160,7 @@ def create_simple_iread_layout(data: pd.DataFrame) -> list:
 
     table_data = table_data.set_index("Category")
 
-    # format table data (only numeric)
+    # format only numeric table data types
     numeric_dtypes = table_data.convert_dtypes().select_dtypes("number")
     table_data[numeric_dtypes.columns] = numeric_dtypes.applymap("{:.2%}".format)
 
@@ -568,7 +576,7 @@ def create_year_over_year_layout(
 
     # if school was dropped because it has no data return empty table
     if data["School ID"][0] != np.int64(school_id):
-        layout = no_data_page(label, msg)
+        layout = create_empty_table_layout(label, msg)
     else:
         data = data.drop("School ID", axis=1)
 

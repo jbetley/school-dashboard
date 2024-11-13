@@ -13,7 +13,7 @@ import pandas as pd
 # import local functions
 from .load_data import get_school_index, get_growth_data, get_excluded_years
 from .process_data import process_growth_data
-from .tables import no_data_page, create_growth_table
+from .tables import create_growth_table, create_empty_page_layout
 from .charts import make_line_chart # make_growth_chart, 
 from .layouts import create_growth_layout
 
@@ -63,7 +63,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
 
     academic_growth_notes_string = ""
 
-    no_growth_data = no_data_page("No Data to Display.", "Academic Growth")
+    no_growth_data = create_empty_page_layout("No Data to Display.", "Academic Growth")
 
     # State Growth Data
     # NOTE: "162-Days" means a student was enrolled at the school where they were

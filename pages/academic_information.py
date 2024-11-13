@@ -29,12 +29,12 @@ from .load_data import (
 )
 
 from .tables import (
-    no_data_page,
     create_multi_header_table,
     create_key_table,
     create_simple_table,
     create_single_header_table,
     create_iread_ilearn_table,
+    create_empty_page_layout
 )
 
 from .charts import no_data_fig_label, make_stacked_bar, make_line_chart
@@ -166,7 +166,7 @@ def update_academic_information_page(
     main_container = {"display": "none"}
     empty_container = {"display": "none"}
 
-    no_display_data = no_data_page("No Data to Display.", "Academic Information")
+    no_display_data = create_empty_page_layout("No Data to Display.", "Academic Information")
 
     academic_information_notes_string = "ILEARN was administered for the first time during the 2018-19 SY, \
         representing an entirely new type and mode of assessment (adaptive and online-only). No State assessment \
@@ -321,7 +321,7 @@ def update_academic_information_page(
             academic_information_notes_string_container = {"display": "none"}
             hs_grad_table_container = {"display": "none"}
             hs_sat_table_container = {"display": "none"}
-            no_display_data = no_data_page(
+            no_display_data = create_empty_page_layout(
                 "No Data to Display.", "High School Academic Data"
             )
 
@@ -540,7 +540,7 @@ def update_academic_information_page(
 
         if len(k8_info_data.index) < 1 or k8_info_data.empty:
             k8_table_container = {"display": "none"}
-            no_display_data = no_data_page(
+            no_display_data = create_empty_page_layout(
                 "No Data to Display.", "Academic Proficiency"
             )
 
@@ -1026,7 +1026,7 @@ def update_academic_information_page(
                 main_container = {"display": "none"}
                 empty_container = {"display": "block"}
                 academic_information_notes_string_container = {"display": "none"}
-                no_display_data = no_data_page("No Data to Display.", "IREAD")
+                no_display_data = create_empty_page_layout("No Data to Display.", "IREAD")
 
             else:
                 iread_school_level_layout = []
@@ -1380,7 +1380,7 @@ def update_academic_information_page(
                 main_container = {"display": "none"}
                 empty_container = {"display": "block"}
                 academic_information_notes_string_container = {"display": "none"}
-                no_display_data = no_data_page("No Data to Display.", "WIDA")
+                no_display_data = create_empty_page_layout("No Data to Display.", "WIDA")
 
             else:
                 wida_iread_details_table = []
@@ -1407,7 +1407,7 @@ def update_academic_information_page(
                     main_container = {"display": "none"}
                     empty_container = {"display": "block"}
                     academic_information_notes_string_container = {"display": "none"}
-                    no_display_data = no_data_page("No Data to Display.", "WIDA")
+                    no_display_data = create_empty_page_layout("No Data to Display.", "WIDA")
 
                 else:
                     wida_iread_details_table = []

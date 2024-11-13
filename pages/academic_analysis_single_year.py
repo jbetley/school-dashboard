@@ -21,13 +21,12 @@ from .load_data import (
 
 from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
 from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
-from .tables import create_comparison_table, no_data_page, no_data_table
-
-from .layouts import (
-    create_barchart_layout,
-    create_hs_analysis_layout,
+from .tables import (
+    create_comparison_table,
+    create_empty_page_layout,
+    create_empty_table_layout,
 )
-
+from .layouts import create_barchart_layout, create_hs_analysis_layout
 from .string_helpers import (
     create_school_label,
     combine_school_name_and_grade_levels,
@@ -42,6 +41,7 @@ dash.register_page(
     top_nav=True,
     order=10,
 )
+
 
 # Set dropdown options for comparison schools
 @callback(
@@ -200,7 +200,6 @@ def set_dropdown_options(
             # the existing list to make sure it hasn't exceeded max display
 
             if len(existing_comparison_schools_list) > max_num_to_display:
-
                 # if it does, we throw a warning, keep the selected values the same
                 # and disable all of the options
                 input_warning = html.P(
@@ -340,10 +339,10 @@ def update_academic_analysis_single_year(
     sat_subgroup_math = []
     sat_subgroup_container = {"display": "none"}
 
-    k8_analysis_no_data = no_data_page(
+    k8_analysis_no_data = create_empty_page_layout(
         "No Data to Display.", "Comparison Data - K-8 Academic Data"
     )
-    hs_analysis_no_data = no_data_page(
+    hs_analysis_no_data = create_empty_page_layout(
         "No Data to Display.", "Comparison Data - High School Academic Data"
     )
 
@@ -432,7 +431,7 @@ def update_academic_analysis_single_year(
                     "Total|Math",
                     "Total|EBRW",
                 ]
-                
+
                 sat_overview = create_hs_analysis_layout(
                     "Total", hs_analysis_data, overview, school_id
                 )
@@ -550,7 +549,6 @@ def update_academic_analysis_single_year(
                         sat_subgroup_container = {"display": "none"}
 
     if selected_school_type == "k8" or selected_school_type == "k12":
-        
         # If school is K12 and highschool tab is selected, skip k8 data
         if selected_school_type == "k12" and academic_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
@@ -657,7 +655,7 @@ def update_academic_analysis_single_year(
                     fig14c_chart = no_data_fig_label(
                         "Comparison: Current Year ELA Proficiency", 200
                     )
-                    fig14c_table = no_data_table(
+                    fig14c_table = create_empty_table_layout(
                         "No Data to Display.", "ELA Proficiency", "none"
                     )
 
@@ -699,7 +697,7 @@ def update_academic_analysis_single_year(
                     fig14d_chart = no_data_fig_label(
                         "Comparison: Current Year Math Proficiency", 200
                     )
-                    fig14d_table = no_data_table(
+                    fig14d_table = create_empty_table_layout(
                         "No Data to Display.", "Math Proficiency", "none"
                     )
 

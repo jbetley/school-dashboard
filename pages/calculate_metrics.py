@@ -519,9 +519,9 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
         data.rename(
             columns={
-                "Total|Graduation Rate": "In Cohort",
-                "Grade 12|Graduation Rate": "Grade 12",
-                "Graduation to Enrollment|Graduation Rate": "Graduation to Enrollment",
+                "Total|Graduation Rate": "In Cohort Grad Rate",
+                "Grade 12|Graduation Rate": "Grade 12 Grad Rate",
+                "Graduation to Enrollment|Graduation Rate": "Grad to Enrollment",
             },
             inplace=True,
         )
@@ -565,7 +565,7 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
         grad_limits_cohort = [0.75, 0.599, 0.45]
 
-        cohort_grad_metric = data[data["Category"].isin(["In Cohort"])]
+        cohort_grad_metric = data[data["Category"].isin(["In Cohort Grad Rate"])]
 
         [
             cohort_grad_metric.insert(
@@ -583,7 +583,7 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
         grad_limits_all = [0.85, 0.699, 0.499]
 
-        all_grad_metric = data[data["Category"].isin(["Grade 12"])]
+        all_grad_metric = data[data["Category"].isin(["Grade 12 Grad Rate"])]
 
         [
             all_grad_metric.insert(
@@ -596,13 +596,13 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
                     axis=1,
                 ),
             )
-            for i in range(all_grad_metric.shape[1] - 1, 0, -1)  # [1] - 1
+            for i in range(all_grad_metric.shape[1] - 1, 0, -1)
         ]
 
         grad_limits_enrollment = [0.7499, 0.50, 0.20]
 
         enrollment_grad_metric = data[
-            data["Category"].isin(["Graduation to Enrollment"])
+            data["Category"].isin(["Grad to Enrollment"])
         ]
 
         [

@@ -22,10 +22,10 @@ from .load_data import (
 )
 
 from .tables import (
-    no_data_page,
-    no_data_table,
     create_metric_table,
     create_proficiency_key,
+    create_empty_page_layout,
+    create_empty_table_layout,
 )
 
 from .layouts import set_table_layout
@@ -62,7 +62,6 @@ dash.register_page(__name__, path="/academic_metrics", top_nav=True, order=9)
     Output("table-container-17cd", "children"),
     Output("hs-metrics-container", "style"),
     Output("table-container-ahs", "children"),
-    # Output("table-container-ahs-1214", "children"),
     Output("ahs-metrics-container", "style"),
     Output("academic-metrics-main-container", "style"),
     Output("academic-metrics-empty-container", "style"),
@@ -95,13 +94,14 @@ def update_academic_metrics(school: str, year: str):
     hs_metrics_container = {"display": "none"}
 
     ahs_table_container = []
-    # ahs_table_container_1214 = []
     ahs_metrics_container = {"display": "none"}
 
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
 
-    no_data_to_display = no_data_page("No Data to Display.", "Academic Metrics")
+    no_data_to_display = create_empty_page_layout(
+        "No Data to Display.", "Academic Metrics"
+    )
 
     selected_school = get_school_index(school)
     selected_school_type = selected_school["School Type"].values[0]
@@ -206,8 +206,6 @@ def update_academic_metrics(school: str, year: str):
             )
 
             ## Accountability Metrics 1.4.e & 1.4.f
-
-            # TODO: create function(s) for this
 
             # The percentage of students who have been enrolled for at least two (2)
             # full school years achieving proficiency on the state assessment in English
@@ -321,7 +319,8 @@ def update_academic_metrics(school: str, year: str):
                 "Category",
             ] = "1.4.f Two year student proficiency in Math."
 
-            # reorder columns #TODO: convert to function
+            # reorder columns
+            # #TODO: convert to function
             school_cols = [e for e in ilearn_2yr_shape.columns if "School" in e]
             nsize_cols = [e for e in ilearn_2yr_shape.columns if "SN-Size" in e]
 
@@ -392,8 +391,8 @@ def update_academic_metrics(school: str, year: str):
 
             else:
                 # create_metric_table requies label to be a list, while
-                # no_data_table wants a string
-                empty_table_14g = no_data_table(
+                # create_empty_table_layout wants a string
+                empty_table_14g = create_empty_table_layout(
                     "No Data to Display.",
                     "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.",
                     "six",
@@ -516,7 +515,12 @@ def update_academic_metrics(school: str, year: str):
 
                 ahs_metric_data = ahs_metric_data.drop("Metric", axis=1)
 
-                ahs_metric_label = ["Adult High School Accountability Metrics"]
+                # TODO: Split these out into separate tables. one for each label
+                ahs_metric_label = ["In-cohort Graduation Rate (1.2.a)"]
+                # ahs_metric_label = ["Grade 12 Graduation Rate (1.2.b)"]
+                # ahs_metric_label = ["CCR Percentage (1.3)"]
+                # ahs_metric_label = ["State Letter Grade (1.1)"]
+
                 ahs_metric_data = convert_to_svg_circle(ahs_metric_data)
 
                 ahs_table = create_metric_table(ahs_metric_label, ahs_metric_data)
@@ -656,7 +660,7 @@ def update_academic_metrics(school: str, year: str):
         )
 
     else:
-        empty_table_11ab = no_data_table(
+        empty_table_11ab = create_empty_table_layout(
             "No Data to Display.",
             "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation.",
             "six",
@@ -666,7 +670,7 @@ def update_academic_metrics(school: str, year: str):
             empty_table_11ab, empty_table_11ab, [""]
         )
 
-        empty_table_11cd = no_data_table(
+        empty_table_11cd = create_empty_table_layout(
             "No Data to Display.",
             "End of Year to Beginning of Year (1.1.c) and Year over Year (1.1.d) Student Re-Enrollment Rate.",
         )
@@ -692,7 +696,6 @@ def update_academic_metrics(school: str, year: str):
         table_container_17cd,
         hs_metrics_container,
         ahs_table_container,
-        # ahs_table_container_1214,
         ahs_metrics_container,
         main_container,
         empty_container,
@@ -756,7 +759,6 @@ def layout():
                     html.Div(
                         [
                             html.Div(id="table-container-ahs", children=[]),
-                            # html.Div(id="table-container-ahs-1214", children=[]),
                         ],
                         id="ahs-metrics-container",
                     ),

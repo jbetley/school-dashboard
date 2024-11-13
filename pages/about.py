@@ -42,12 +42,13 @@ from .charts import (
     make_demographics_bar_chart,
 )
 from .tables import (
-    no_data_table,
-    no_data_page,
     create_key_table,
     create_simple_table,
     create_discipline_table,
+    create_empty_table_layout,
+    create_empty_page_layout
 )
+
 from .layouts import create_line_fig_layout
 
 
@@ -183,7 +184,7 @@ def update_about_page(year: str, school: str):
 
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
-    no_data_to_display = no_data_page(
+    no_data_to_display = create_empty_page_layout(
         "No Data to Display", "School Enrollment & Demographics"
     )
 
@@ -193,12 +194,10 @@ def update_about_page(year: str, school: str):
     # Updates Table - Right Now hardcoded - may want to add to DB
     update_table_label = ""
     update_table_dict = {
-        "Date": ["07.28.24", "07.30.24", "08.16.24", "08.25.24", "11.11.24"],
+        "Date": ["08.16.24", "10.07.24", "11.11.24"],
         "Update": [
-            "Added 2024 ILEARN to Information and Analysis pages.",
-            "Added 2024 SAT to Information and Analysis pages.",
-            "Added 2024 IREAD to Information and Analysis pages.",
             "Added 2024 Chronic Absenteeism.",
+            "Added Adult Accountability Metrics (beta).",
             "Added 2019 - 23 Discipline Data.",
         ],
     }
@@ -218,7 +217,7 @@ def update_about_page(year: str, school: str):
     ]
 
     if len(demographic_data.index) == 0:
-        enroll_table = no_data_table("No Data to Display", enroll_title, "six")
+        enroll_table = create_empty_table_layout("No Data to Display", enroll_title, "six")
         subgroup_fig = no_data_fig_label("Enrollment by Subgroup", 400)
         ethnicity_fig = no_data_fig_label("Enrollment by Ethnicity", 400)
 

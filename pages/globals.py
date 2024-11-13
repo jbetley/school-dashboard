@@ -123,6 +123,20 @@ metric_strings = {
         "The school received an D on under the State's Adult Accountability system.",
     ],
     # AHS
+    "1.2.a": [
+        "Seventy five percent (75%) or more of in cohort students graduated in the current school year.",
+        "Between (60.0-74.9%) of in cohort students graduated in the current school year.",
+        "Between (45.0-59.9%) of in cohort students graduated in the current school year.",
+        "Less than (45%) of in cohort students graduated in the current school year.",
+    ],
+    # AHS
+    "1.2.b": [
+        "Eighty five percent (85%) or more of grade 12 students graduated in the current school year.",
+        "Between (70.0-84.9%) of grade 12 students graduated in the current school year.",
+        "Between (50.0-69.9%) of grade 12 students graduated in the current school year.",
+        "Less than (50%) of grade 12 students graduated in the current school year.",
+    ], 
+    # AHS
     "1.3": [
         "Fifty percent (50%) or more of graduates achieved at least one CCR indicator.",
         "Between (36.8-49.9%) of graduates achieved at least one CCR indicator.",

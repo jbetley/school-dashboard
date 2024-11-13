@@ -12,7 +12,7 @@ import pandas as pd
 
 # import local functions
 from .load_data import get_school_index, get_year_over_year_data, get_school_coordinates
-from .tables import no_data_page
+from .tables import create_empty_page_layout
 from .layouts import create_year_over_year_layout
 from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
 
@@ -207,10 +207,10 @@ def update_academic_analysis_multiple_years(
     k8_analysis_multi_empty_container = {"display": "block"}
     analysis_multi_dropdown_container = {"display": "none"}
 
-    k8_analysis_multi_no_data = no_data_page(
+    k8_analysis_multi_no_data = create_empty_page_layout(
         "No Data to Display.", "Comparison Data - K-8 Academic Data"
     )
-    hs_analysis_multi_no_data = no_data_page(
+    hs_analysis_multi_no_data = create_empty_page_layout(
         "No Data to Display.", "Comparison Data - High School Academic Data"
     )
 

@@ -3,7 +3,7 @@
 #########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
-# date:     09/06/24
+# date:     11/11/24
 
 from typing import Tuple
 import pandas as pd
@@ -16,8 +16,6 @@ from .globals import (
     ethnicity,
     subgroup,
 )
-
-# from .calculations import calculate_percentage
 
 
 def transpose_data(raw_df: pd.DataFrame, params):

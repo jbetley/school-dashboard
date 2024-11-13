@@ -10,7 +10,7 @@ from dash.exceptions import PreventUpdate
 
 from .globals import max_display_years
 from .load_data import get_financial_data, get_school_index
-from .tables import no_data_table, create_proficiency_key
+from .tables import create_proficiency_key, create_empty_table_layout
 from .string_helpers import convert_to_svg_circle
 
 dash.register_page(__name__, top_nav=True, path="/organizational_compliance", order=5)
@@ -36,7 +36,7 @@ def update_organizational_compliance(school, year):
     financial_data = get_financial_data(school)
 
     if len(financial_data.columns) <= 1 or financial_data.empty:
-        org_compliance_table = no_data_table(
+        org_compliance_table = create_empty_table_layout(
             "No Data to Display.",
             selected_year_string + " Organizational and Operational Accountability",
         )

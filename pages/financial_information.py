@@ -14,7 +14,7 @@ import numpy as np
 
 from .globals import max_display_years
 from .load_data import get_school_index, get_financial_data
-from .tables import no_data_page
+from .tables import create_empty_page_layout
 
 dash.register_page(__name__, top_nav=True, path="/financial_information", order=1)
 
@@ -79,7 +79,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
-    no_data_to_display = no_data_page(
+    no_data_to_display = create_empty_page_layout(
         "No Data to Display", selected_year_string + " Financial Information"
     )
 

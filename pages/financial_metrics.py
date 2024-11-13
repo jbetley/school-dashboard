@@ -14,7 +14,11 @@ import pandas as pd
 from .globals import max_display_years
 from .load_data import get_school_index, get_financial_data
 from .calculate_metrics import calculate_financial_metrics
-from .tables import no_data_page, no_data_table, create_proficiency_key
+from .tables import (
+    create_proficiency_key,
+    create_empty_page_layout,
+    create_empty_table_layout
+)
 from .string_helpers import convert_to_svg_circle
 
 dash.register_page(__name__, top_nav=True, path="/financial_metrics", order=2)
@@ -83,7 +87,7 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
     financial_indicators_container = {"display": "block"}
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
-    no_data_to_display = no_data_page(
+    no_data_to_display = create_empty_page_layout(
         "No Data to Display.", selected_year_string + " Financial Metrics"
     )
 
@@ -127,10 +131,10 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
 
     # Financial Metrics
     if len(financial_data.columns) <= 1 or financial_data.empty:
-        financial_metrics_table = no_data_table(
+        financial_metrics_table = create_empty_table_layout(
             "No Data to Display.", selected_year_string + " Financial Metrics"
         )
-        financial_indicators_table = no_data_table(
+        financial_indicators_table = create_empty_table_layout(
             "No Data to Display.", selected_year_string + " Financial Indicators"
         )
 
@@ -165,10 +169,10 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
         if (len(financial_data.columns) <= 1) | (
             (len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == "0")
         ):
-            financial_metrics_table = no_data_table(
+            financial_metrics_table = create_empty_table_layout(
                 "No Data to Display.", selected_year_string + " Financial Metrics"
             )
-            financial_indicators_table = no_data_table(
+            financial_indicators_table = create_empty_table_layout(
                 "No Data to Display.", selected_year_string + " Financial Indicators"
             )
 

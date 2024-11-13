@@ -21,7 +21,11 @@ from .load_data import (
     get_financial_data,
     get_financial_ratios,
 )
-from .tables import no_data_page, no_data_table, create_financial_analysis_table
+from .tables import (
+    create_financial_analysis_table,
+    create_empty_page_layout,
+    create_empty_table_layout
+)
 from .charts import loading_fig
 from .calculations import round_nearest
 
@@ -97,7 +101,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
-    no_data_to_display = no_data_page(
+    no_data_to_display = create_empty_page_layout(
         "No Data to Display.", selected_year_string + " Financial Analysis"
     )
 
@@ -787,7 +791,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     ),
                 ]
             else:
-                financial_ratios_table = no_data_table(
+                financial_ratios_table = create_empty_table_layout(
                     "No Data to Display.", "Financial Ratios", "none"
                 )
 
