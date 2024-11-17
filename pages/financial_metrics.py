@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Metrics #
 ######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
+# version:  1.16
 # date:     03/25/24
 
 import dash

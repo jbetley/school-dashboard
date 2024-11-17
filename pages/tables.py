@@ -9,7 +9,7 @@ import pandas as pd
 from typing import Tuple
 import re
 import numpy as np
-from dash import dash_table, html
+from dash import dash_table, html, dcc
 from dash.dash_table import FormatTemplate
 from dash.dash_table.Format import Format, Scheme, Sign
 import dash_mantine_components as dmc
@@ -17,6 +17,7 @@ import dash_mantine_components as dmc
 from .globals import metric_strings, table_style, table_cell, table_header
 from .load_data import get_student_level_ilearn
 from .calculations import conditional_fillna
+from .charts import no_data_fig_blank
 
 
 def empty_table(text: str) -> dash_table.DataTable:
@@ -1316,16 +1317,17 @@ def create_discipline_table(data: pd.DataFrame) -> list:
             ),
         ]
 
-    # TODO: Align this with line_fig_layout (two empty figs instead of fig/table)
     else:
+        fig = no_data_fig_blank()
         table_layout = [
             html.Div(
                 [
-                    html.Div(empty_table("No Data to Display.")),
-                ],
-                className="pretty-container four columns",
+                    html.Div(
+                        [dcc.Graph(figure=fig, config={"displayModeBar": False})],
+                    ),
+                ]
             )
-        ]
+        ]        
 
     return table_layout
 

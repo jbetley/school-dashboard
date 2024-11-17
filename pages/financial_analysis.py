@@ -24,7 +24,7 @@ from .load_data import (
 from .tables import (
     create_financial_analysis_table,
     create_empty_page_layout,
-    create_empty_table_layout
+    create_empty_table_layout,
 )
 from .charts import loading_fig
 from .calculations import round_nearest
@@ -197,8 +197,9 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         # drop partial year data (financial data with a "Q#" in column header). may
         # eventually want to implement for Q4 data, but the display quickly gets
         # too confusing with incomplete data.
-        if "Q" in financial_data.columns[1]:
-            financial_data = financial_data.drop(financial_data.columns[[1]], axis=1)
+
+        # if "Q" in financial_data.columns[1]:
+        #     financial_data = financial_data.drop(financial_data.columns[[1]], axis=1)
 
         # only check to see if there are years to exclude if there
         # are years in the first place
@@ -206,7 +207,9 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             available_years = financial_data.columns.difference(
                 ["Category"], sort=False
             ).tolist()
+
             available_years = [int(c[:4]) for c in available_years]
+
             most_recent_finance_year = max(available_years)
 
             years_to_exclude = most_recent_finance_year - selected_year_numeric
@@ -498,6 +501,12 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 
             ## Two Year Finance Tables (Financial Position and Financial Activities)
             # display years are two years consisting of Selected Year and Previous Year
+
+            # remove any (Q4) in column names
+            financial_data.columns = financial_data.columns.str.replace(
+                " (Q4)", "", regex=False
+            )
+
             default_headers = ["Category"] + display_years
 
             # drop any columns where either ADM Average or State Grants is == 0

@@ -836,11 +836,23 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 d_tick = 0.2
 
             elif isDiscipline:
+
                 range_vals = [0, int(data_max)]
-                d_tick = 100
+
+                if int(data_max) > 5 and int(data_max) <= 20:
+                    d_tick = int(data_max) // 2
+                elif int(data_max) <=5:
+                    d_tick = int(data_max)
+                else:
+                    # divide by 4 and round down to nearest ten
+                    d_tick = int(round(int(data_max) // 4,-1))
+
+                print(d_tick)
+                
                 tick_format = ".0f"
 
-            # WIDA is only data where the max will be > 1 (max is 5)
+            # WIDA is only data (other than discipline which is captured
+            # above) where the max will be > 1 (max is 5)
             elif data_max > 1:
                 # set lower bound based on min value in df
                 minx = data.astype(float).min().min()

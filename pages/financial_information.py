@@ -2,7 +2,7 @@
 # ICSB Dashboard - Financial Information #
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
+# version:  1.16
 # date:     10/07/24
 
 import dash
@@ -45,7 +45,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
         radio_input_container = {"display": "block"}
 
     if finance_value_state:
-        # need to reset state when changing dropdown from a school with
+        # reset state when changing dropdown from a school with
         # network to one without
         if (
             finance_value_state == "network-finance"
@@ -165,7 +165,6 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             # NOTE: these categories already exist in the df, but we may remove them
             # later, so they are calculated here. Because the rows already exist in the
             # dataframe, we set Category as index (so we can use .loc with the Category names):
-
             financial_data = financial_data.set_index(["Category"])
             financial_data.loc["Total Grants"] = (
                 financial_data.loc["State Grants"]

@@ -2,8 +2,8 @@
 # ICSB Dashboard - About/Demographics #
 #######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
-# date:     11/11/24
+# version:  1.16
+# date:     11/16/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, State, callback
@@ -46,7 +46,7 @@ from .tables import (
     create_simple_table,
     create_discipline_table,
     create_empty_table_layout,
-    create_empty_page_layout
+    create_empty_page_layout,
 )
 
 from .layouts import create_line_fig_layout
@@ -217,7 +217,9 @@ def update_about_page(year: str, school: str):
     ]
 
     if len(demographic_data.index) == 0:
-        enroll_table = create_empty_table_layout("No Data to Display", enroll_title, "six")
+        enroll_table = create_empty_table_layout(
+            "No Data to Display", enroll_title, "six"
+        )
         subgroup_fig = no_data_fig_label("Enrollment by Subgroup", 400)
         ethnicity_fig = no_data_fig_label("Enrollment by Ethnicity", 400)
 
@@ -253,7 +255,7 @@ def update_about_page(year: str, school: str):
 
         school_enrollment = enrollment.reset_index()
 
-        # NOTE: Dash-Ag Grid Experiment
+        # NOTE: Testing Dash-Ag Grid
         # columnTypes = {
         #     "stringColumn": {"filter": False, "editable": False},
         #     "numberColumn": {"filter": False, "editable": False},
@@ -375,17 +377,15 @@ def update_about_page(year: str, school: str):
             subgroup_fig = make_demographics_bar_chart(subgroup_merged_data)
 
     ## ADM Values ##
-
     # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is known
     # for the year. So we check the first data column and if ADM Avg has data we
     # use it. If there is no financial_data, we use IDOE's adm- get_adm()- file which
-    # lags behind, and is typically very accurate for past years, but not as
+    # lags behind and is typically very accurate for past years, but not as
     # accurate for current years.
     financial_data = get_financial_data(school)
 
     if financial_data.empty:
         adm_values = get_adm(int(selected_school["Corporation ID"].values[0]))
-
     else:
         financial_data = financial_data.drop(["School ID", "School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
@@ -649,7 +649,7 @@ def layout():
                                     html.Div(
                                         [
                                             html.Label(
-                                                "Discipline Data",
+                                                "Discipline Data (beta)",
                                                 className="label__header",
                                                 style={"marginTop": "20px"},
                                             ),

@@ -250,14 +250,18 @@ def get_financial_dropdown_years(school_id, page):
     # State Grant data.
     results = results.dropna(axis=1, how="all")
     year_list = results.columns.tolist()
+
     year_list = [
         e for e in year_list if e not in ("School ID", "Category", "School Name")
     ]
 
     if len(results) > 0:
         if page == "financial_analysis":
-            # drop any years with quarterly reporting
-            year_list = [int(e) for e in year_list if "(Q" not in e]
+            # only keep Q4 data, if Q1-Q3 data exists, we drop the entire column
+            if "Q4" in "\t".join(year_list):
+                year_list = [int(e[:4]) for e in year_list]
+            else:
+                year_list = [int(e) for e in year_list if "(Q" not in e]
         else:
             year_list = [int(e[:4]) for e in year_list]
     else:
@@ -276,15 +280,12 @@ def get_adm(corp_id):
     q = text(
         """
         SELECT * 
-        FROM icsb_school_adm
+        FROM adm_all
         WHERE CorporationID = :id
     """
     )
 
     results = run_query(q, params)
-
-    # NOTE: From 2016 - 2019  "SpringADM" & "FallADM"; beginning with
-    # 2019-20SY: "2019Fall Non Virtual ADM" & "2020Spring Non Virtual ADM"
 
     # drop "Virtual ADM"
     results = results.drop(
