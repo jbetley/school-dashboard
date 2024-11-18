@@ -2,8 +2,8 @@
 # ICSB Dashboard - Financial Analysis #
 #######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
-# date:     08/05/24
+# version:  1.16
+# date:     11/14/24
 
 import dash
 from dash import dcc, html, dash_table, Input, State, Output, callback
@@ -194,15 +194,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         financial_data = financial_data.drop(["School ID", "School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
 
-        # drop partial year data (financial data with a "Q#" in column header). may
-        # eventually want to implement for Q4 data, but the display quickly gets
-        # too confusing with incomplete data.
-
-        # if "Q" in financial_data.columns[1]:
-        #     financial_data = financial_data.drop(financial_data.columns[[1]], axis=1)
-
-        # only check to see if there are years to exclude if there
-        # are years in the first place
+        # drop excluded years
         if len(financial_data.columns) > 1:
             available_years = financial_data.columns.difference(
                 ["Category"], sort=False
@@ -224,13 +216,14 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         # Second & third check- no data left after dropping (Q) columns and excluded
         # years, or schools with pre-opening financial data only- e.g., they have
         # financial data for a year, but State Grants == 0
-
+        # NOTE: the "or 0" returns 0 if the value is a Nonetype (Nonetype cannot be
+        # converted into a float)
         if (
             len(financial_data.columns) <= 1
             or float(
                 financial_data[financial_data["Category"] == "State Grants"]
                 .iloc[:, 1]
-                .values[0]
+                .values[0] or 0
             )
             == 0
         ):
