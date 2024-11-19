@@ -1327,7 +1327,7 @@ def create_discipline_table(data: pd.DataFrame) -> list:
                     ),
                 ]
             )
-        ]        
+        ]
 
     return table_layout
 
@@ -1924,7 +1924,6 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
 
             return header, body
 
-        print(metric_id)
         header, body = create_hovercard_popup(metric_id)
 
         nsize_tooltip = [

@@ -17,7 +17,7 @@ from .calculate_metrics import calculate_financial_metrics
 from .tables import (
     create_proficiency_key,
     create_empty_page_layout,
-    create_empty_table_layout
+    create_empty_table_layout,
 )
 from .string_helpers import convert_to_svg_circle
 
@@ -163,6 +163,7 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
         # create empty table if, after dropping excluded years, df has no financial
         # data, or file exists and has one year of data, but does not have a value for
         # State Grants (because the school is in Pre-Opening)
+
         # NOTE: To show schools in Pre-Opening year, remove the "or" condition
         # (you would also need to modify the financial metric calculation function, so
         # maybe think twice (or three times) before doing this)
@@ -228,14 +229,16 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
             )
             financial_data = financial_data.reset_index()
 
-            # Each column (year) in the df must have at least 12 values to be valid. To avoid the
-            # situation where there is a column that only contains financial ratio or ADM data,
-            # drop any column where more than 31 rows contain empty strings (df has 43 total rows)
+            # Each column (year) in the df must have at least 12 values to
+            # be valid. To avoid the situation where there is a column that
+            # only contains financial ratio or ADM data, drop any column where
+            # more than 31 rows contain empty strings (df has 43 total rows)
             for c in financial_data.columns:
                 if len(financial_data[financial_data[c] == 0].index) > 31:
                     financial_data.drop([c], inplace=True, axis=1)
 
-            # remove audit and other indicator data (it is displayed on the financial metrics page)
+            # remove audit and other indicator data (it is displayed on the
+            # financial metrics page)
             financial_values = financial_data.loc[
                 : (financial_data["Category"] == "Audit Information").idxmax() - 1
             ]

@@ -2,8 +2,8 @@
 # ICSB Dashboard - Charting Functions #
 #######################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
-# date:     10/03/24
+# version:  1.16
+# date:     11/18/24
 
 from dash import html, dcc
 import plotly.express as px
@@ -747,6 +747,8 @@ def make_line_chart(values: pd.DataFrame) -> list:
     """
     data = values.copy()
 
+    # data = data.replace("\*\*\*", np.nan, regex=True)
+
     # use bools later for chart formatting purposes
     isIREAD = False
     isDiscipline = False
@@ -781,12 +783,13 @@ def make_line_chart(values: pd.DataFrame) -> list:
             for col in cols:
                 data[col] = pd.to_numeric(data[col], errors="coerce")
 
-            data.sort_values("Year", inplace=True)
+            data = data.sort_values("Year")
 
             # One last check, if there is only one year of data being displayed, we need to drop
             # all columns with only NaN- otherwise the traces will be displayed on the chart
             # even though they are listed as having no data to display - afterwards we need
-            # to reset the cols variable to make sure it matches the changed df
+            # to reset the cols variable to make sure it matches the changed df (this will
+            # ensure that dataframes with all "***" will not display a chart)
             data = data.dropna(axis=1, how="all")
             cols = [i for i in data.columns if i not in ["School Name", "Year"]]
 
@@ -798,9 +801,9 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
             data["Year"] = data["Year"].astype(str)
 
-        # If the initial df has data, but after dropping all no data rows is then
-        # empty, we return an empty layout
-        if data.empty:
+        # If the initial df has data, but no data columns remain after
+        # dropping NaN (or if data is empty)- return an empty layout
+        if (len(cols)) == 0 or data.empty:
             fig = no_data_fig_blank()
             fig_layout = [
                 html.Div(
@@ -836,19 +839,16 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 d_tick = 0.2
 
             elif isDiscipline:
-
                 range_vals = [0, int(data_max)]
 
                 if int(data_max) > 5 and int(data_max) <= 20:
                     d_tick = int(data_max) // 2
-                elif int(data_max) <=5:
+                elif int(data_max) <= 5:
                     d_tick = int(data_max)
                 else:
                     # divide by 4 and round down to nearest ten
-                    d_tick = int(round(int(data_max) // 4,-1))
+                    d_tick = int(round(int(data_max) // 4, -1))
 
-                print(d_tick)
-                
                 tick_format = ".0f"
 
             # WIDA is only data (other than discipline which is captured
