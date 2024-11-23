@@ -2,8 +2,12 @@
 # ICSB Dashboard - Academic Information - Growth  #
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
+# version:  1.16
 # date:     03/25/24
+
+# NOTE: This is currently several years out of date and it is unclear when IDOE
+# will again be calculating and releasing growth data. May want to consider
+# shelving this page if it gets too old.
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -14,7 +18,7 @@ import pandas as pd
 from .load_data import get_school_index, get_growth_data, get_excluded_years
 from .process_data import process_growth_data
 from .tables import create_growth_table, create_empty_page_layout
-from .charts import make_line_chart # make_growth_chart, 
+from .charts import make_line_chart
 from .layouts import create_growth_layout
 
 dash.register_page(
@@ -51,7 +55,6 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     if not radio_category:
         radio_category = "all"
 
-    # default styles (all values empty - only empty_container displayed)
     growth_grades_ela = []
     growth_grades_math = []
     growth_ethnicity_ela = []

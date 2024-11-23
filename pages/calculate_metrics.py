@@ -158,6 +158,9 @@ def calculate_attendance_metrics(
         attendance_metrics["Category"] == "[Chronic Absenteeism %]", rate_cols
     ] = "NA"
 
+    # TODO: Testing - orig didn't have this
+    attendance_metrics = conditional_fillna(attendance_metrics)
+
     return attendance_metrics
 
 
@@ -493,7 +496,8 @@ def calculate_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
         "Category",
     ] = "1.7.b 4 year non-waiver graduation rate  with school corporation average"
 
-    combined_grad_metrics = conditional_fillna(combined_grad_metrics)
+    #TODO: Testing- borken when uncommented?
+    # combined_grad_metrics = conditional_fillna(combined_grad_metrics)
 
     return combined_grad_metrics
 
@@ -601,9 +605,7 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
         grad_limits_enrollment = [0.7499, 0.50, 0.20]
 
-        enrollment_grad_metric = data[
-            data["Category"].isin(["Grad to Enrollment"])
-        ]
+        enrollment_grad_metric = data[data["Category"].isin(["Grad to Enrollment"])]
 
         [
             enrollment_grad_metric.insert(
@@ -660,7 +662,7 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
                 state_grades[col] = ""
 
         # NOTE: this is the former letter grade code just in case
-        
+
         # # Letter grades are  stored in demographics table
         # # using Corp (not School) ID. so we need to convert
         # selected_school = get_school_index(school)
@@ -771,7 +773,7 @@ def calculate_iread_metrics(df: pd.DataFrame) -> pd.DataFrame:
     # perform a manual replace of "--" for "***" only in NSize cols
     # (data = conditional_fillna(data)) doesn't work here
     nsize_cols = [col for col in data.columns if "SN-Size" in col]
-    data[nsize_cols] = data[nsize_cols].replace("***","\u2014")
+    data[nsize_cols] = data[nsize_cols].replace("***", "\u2014")
 
     data.columns = data.columns.astype(str)
 
@@ -1215,9 +1217,13 @@ def calculate_financial_metrics(df: pd.DataFrame) -> pd.DataFrame:
         # so we get the index of any columns that are all nan and convert the
         # following column to NaN. this ensures that both Columns are blank when displayed
         # the above
-        nan_cols = [final_grid.columns.get_loc(i) for i in final_grid.columns if final_grid[i].isnull().all()]
+        nan_cols = [
+            final_grid.columns.get_loc(i)
+            for i in final_grid.columns
+            if final_grid[i].isnull().all()
+        ]
 
         for col in nan_cols:
-            final_grid.iloc[:, col+1] = np.nan
+            final_grid.iloc[:, col + 1] = np.nan
 
     return final_grid

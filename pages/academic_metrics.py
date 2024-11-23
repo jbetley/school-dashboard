@@ -2,7 +2,7 @@
 # ICSB Dashboard - Academic Metrics #
 #####################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
+# version:  1.16
 # date:     10/03/24
 
 import dash
@@ -585,6 +585,8 @@ def update_academic_metrics(school: str, year: str):
                     for col in empty_year_cols:
                         metric_17cd_data[col] = "No Data"
 
+                    # TODO: Testing -this is borken?? try uncommenting and
+                    # TODO: commenting in calculate_high school metrifcs
                     metric_17cd_data = conditional_fillna(metric_17cd_data)
 
                     metric_17cd_label = [
@@ -624,7 +626,8 @@ def update_academic_metrics(school: str, year: str):
             attendance_data, teacher_retention_rate, how="outer", on="Category"
         )
 
-        metric_11ab_data = conditional_fillna(metric_11ab_data)
+        # TODO: Testing, normally uncommented
+        # metric_11ab_data = conditional_fillna(metric_11ab_data)
 
         metric_11ab_data = convert_to_svg_circle(metric_11ab_data)
         table_11ab = create_metric_table(metric_11ab_label, metric_11ab_data)
@@ -651,7 +654,8 @@ def update_academic_metrics(school: str, year: str):
         )
         metric_11cd_data.reset_index()
 
-        metric_11cd_data = conditional_fillna(metric_11cd_data)
+        # TODO: Testing
+        # metric_11cd_data = conditional_fillna(metric_11cd_data)
 
         metric_11cd_data = convert_to_svg_circle(metric_11cd_data)
         table_11cd = create_metric_table(metric_11cd_label, metric_11cd_data)

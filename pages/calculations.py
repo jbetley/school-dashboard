@@ -35,6 +35,11 @@ def conditional_fillna(df: pd.DataFrame) -> pd.DataFrame:
         if "Diff" in i or "Tested" in i or "N-Size" in i or "(N)" in i
     ]
 
+    # TODO: review use of conditional_fillna to make sure it is used
+    # TODO: appropriately - i suspect it is used wjere is shouldnt be
+    # We do not want insufficient n-size in any of the fill-with-dash cols
+    data[fill_with_dash] = data[fill_with_dash].replace("***", np.nan)
+
     # \u2014 is an em dash (—)
     data[fill_with_dash] = data[fill_with_dash].fillna(value="\u2014")
 

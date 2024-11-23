@@ -1658,10 +1658,14 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
                 # "in" is faster than using any(), but can't do it here
                 # because it is possible to have markup code (e.g., Br(None))
                 # instead of a string, which chokes the join()
+
                 if any("previous school year" in word for word in label):
+                    first_year = name_cols[1][0] + name_cols[1][1]
                     name_cols[1][0] = name_cols[1][0] + " (Initial Year)"
-                    first_year = name_cols[2][0] + name_cols[2][1]
-                    name_cols[2][0] = name_cols[2][0] + " (Initial Year)"
+
+                    # name_cols[1][0] = name_cols[1][0] + " (Initial Year)"
+                    # first_year = name_cols[2][0] + name_cols[2][1]
+                    # name_cols[2][0] = name_cols[2][0] + " (Initial Year)"
 
         # Multiple Years
         if any("Rate" in s for s in all_cols):
@@ -1926,6 +1930,11 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
 
         header, body = create_hovercard_popup(metric_id)
 
+        pd.set_option("display.max_columns", None)
+        pd.set_option("display.max_rows", None)
+        print(nsize_data)
+        print(nsize_categories)
+        # TODO: NOT WORKING FOR HS METRICS?
         nsize_tooltip = [
             {
                 column: {
