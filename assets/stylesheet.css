@@ -8,6 +8,39 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
 
+
+/** Base Styles **/
+/* html is set to 62.5% so that all the REM measurements
+are based on 10px sizing. So basically 1.5rem = 15px */
+html {
+  font-size: 62.5%;
+}
+
+pre,
+dl,
+figure,
+table,
+form {
+  margin-bottom: 0rem;
+}
+
+p,
+ul,
+ol {
+  margin-bottom: 0.75rem;
+}
+
+body {
+  font-size: 1em;
+  line-height: 1.6;
+  font-weight: 400;
+  font-family: 'Inter', sans-serif;
+  color: steelblue;
+  background-color: #F2F2F2;
+  margin: 0 8px 8px 8px;
+}
+
+
 /** Grid  **/
 #main-container {
   display: flex;
@@ -16,7 +49,7 @@
 
 .container {
   position: relative;
-  width: 100%;
+  width: 100%; /* auto */
   max-width: 960px;
   margin: 0 auto;
   padding: 0 20px;
@@ -25,7 +58,7 @@
 
 .column,
 .columns {
-  width: 100%;
+  width: 100%; /* auto */
   float: left;
 }
 
@@ -66,41 +99,33 @@ there.
     width: 16.25%;
   }
 
+  .two-half.columns {
+    width: 19%;
+  }
+
   .three.columns {
     width: 22%;
+  }
+
+  .three-half.columns {
+    width: 29%;
   }
 
   .four.columns {
     width: 33%;
   }
 
-  /* .four.columns {
-    width: calc(100% / 3);
-  } */
-
   .five.columns {
     width: 39.3333333333%;
   }
-
-  /* .five.columns {
-    width: calc(100% * 5 / 12);
-  } */
 
   .six.columns {
     width: 49.75%;
   }
 
-  /* .six.columns {
-    width: 49.75%;
-  } */
-
   .seven.columns {
     width: 56.6666666667%;
   }
-
-  /* .seven.columns {
-    width: calc(100% * 7 / 12);
-  } */
 
   .eight.columns {
     width: 66.5%;
@@ -200,37 +225,6 @@ there.
 
 }
 
-/** Base Styles **/
-/* html is set to 62.5% so that all the REM measurements
-are based on 10px sizing. So basically 1.5rem = 15px */
-html {
-  font-size: 62.5%;
-}
-
-pre,
-dl,
-figure,
-table,
-form {
-  margin-bottom: 0rem;
-}
-
-p,
-ul,
-ol {
-  margin-bottom: 0.75rem;
-}
-
-body {
-  font-size: 1em;
-  line-height: 1.6;
-  font-weight: 400;
-  font-family: 'Inter', sans-serif;
-  color: steelblue;
-  background-color: #F2F2F2;
-  margin: 0 8px 8px 8px;
-}
-
 /* creates a thin line */
 hr {
   margin-top: -5px;
@@ -325,11 +319,6 @@ hr {
   display: flex;
 }
 
-.bare-container--slim {
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
 .bare-container--relative {
   margin: 0 0 0 0;
   padding: 0 0 0 0;
@@ -401,91 +390,12 @@ hr {
   position: relative;
 }
 
-/** Other Navigation **/
-
-.dash-label {
-  margin-right: 0;
-  padding-top: 10px;
-  color: #ffffff;
-  vertical-align: middle;
-  float: left;
-  font-size: 11px;
-  font-weight: 600;
-  color: "steelblue";
-}
-
-.discipline-dropdown-label {
-  padding-top: 8px;
-  margin-right: 0;
-  padding-right: 10px;
-  color: #ffffff;
-  vertical-align: middle;
-  float: left;
-  font-size: 11px;
-  font-weight: 600;
-  color: steelblue !important;
-}
-
-#year-dropdown-label {
-  width: 45%;
-}
-
-#charter-dropdown-label {
-  width: 20%;
-}
-
-.comparison-dropdown-control {
-  margin: 0;
-  float: left;
-}
-
-.comparison-dropdown-label {
-  padding-left: 5px;
-  font-size: 1.1rem;
-}
-
-.discipline-dropdown-control {
-  margin: 0;
-  padding: 0;
-  float: left;
-  width: 50%;
-  font-size: 11px;
-  color: "steelblue";
-}
-
-.charter-dropdown-control {
-  margin: 0;
-  padding: 0;
-  float: left;
-  width: 70%;
-  font-size: 11px;
-  color: "steelblue";
-}
-
-.year-dropdown-control {
-  margin: 0;
-  padding: 0;
-  float: left;
-  width: 50%;
-  font-size: 11px;
-  color: "steelblue";
-}
-
 .row--fixed {
   display: flex;
   width: 100%;
   position: fixed;
   z-index: 999;
   background-color: #F2F2F2;
-}
-
-.row--fixed--top {
-  display: flex;
-  width: 100%;
-  position: fixed;
-  height: 55px;
-  z-index: 999;
-  background-color: #6783a9;
 }
 
 /* login failure message */
@@ -1310,22 +1220,139 @@ label>.label-body {
   border-top: .5px solid rgb(201, 211, 224);
 }
 
+/** Other Navigation **/
+
+.comparison-dropdown-label {
+  padding-left: 5px;
+  font-size: 1.1rem;
+}
+
+.comparison-dropdown-control {
+  margin: 0;
+  float: left;
+}
+
+.bare-discipline-container--slim {
+  padding-top: 5px;
+  padding-bottom: 0px;
+}
+
+/* TODO: center dropdowns */
+
+.discipline-dropdown-label {
+  padding-top: 8px;
+  margin-right: 0;
+  padding-right: 10px;
+  color: #ffffff;
+  vertical-align: middle;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  /* float: left; */
+  font-size: 11px;
+  font-weight: 600;
+  color: steelblue !important;
+}
+
+.discipline-dropdown-control {
+  margin-top: 5px;
+  /* margin: 0; */
+  padding: 0;
+  float: left;
+  /* width: 20%; */
+  font-size: 10px;
+  color: "steelblue";
+  height: 35px;
+}
+
+/** Fixed Header **/
+.row--fixed--top {
+  display: flex;
+  width: 100%;
+  position: fixed;
+  height: 45px;
+  z-index: 999;
+  background-color: #6783a9;
+}
+
+.bare-container--slim {
+  padding-top: 5px;
+  padding-bottom: 0px;
+  margin-left: -25px;
+}
+
+#year-dropdown-label {
+  width: 25%;
+  padding-left: 35px;
+}
+
+.dash-label {
+  margin-right: 5px;
+  padding-top: 10px;
+  color: #ffffff;
+  vertical-align: middle;
+  float: left;
+  font-size: 10px;
+  font-weight: 600;
+  color: "steelblue";
+}
+
+#charter-dropdown-label {
+  width: 25%;
+}
+
+.charter-dropdown-control {
+  margin-top: 5px;
+  padding: 0;
+  float: left;
+  width: 70%;
+  font-size: 10px;
+  color: "steelblue";
+  height: 35px;
+}
+
+.year-dropdown-control {
+  margin-top: 5px;
+  padding: 0;
+  float: left;
+  width: 25%;
+  font-size: 11px;
+  color: "steelblue";
+}
+
+/** Override react styling to decrease height of dropdown **/
+
+#discipline-demographic-dropdown .Select-value, #discipline-category-dropdown .Select-value,
+#charter-dropdown .Select-value, #year-dropdown .Select-value {
+  line-height: 24px !important;
+}
+
+#discipline-demographic-dropdown .Select-input, #discipline-category-dropdown .Select-input,
+#charter-dropdown .Select-input, #year-dropdown .Select-input{
+  height: 24px !important;
+}
+
+#discipline-demographic-dropdown .Select-control, #discipline-category-dropdown .Select-control,
+#charter-dropdown .Select-control, #year-dropdown .Select-control{
+  height: 24px !important;
+}
+
 /** Logout Button **/
 .logout-button {
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;
   color: steelblue;
   background-color: #ffffff;
-  font-size: 12px;
+  font-size: 10px;
   margin-left: 20px;
-  padding-left: 10px;
+  padding-left: 9px;
   margin-top: 10px;
   font-weight: 300;
   border: 1px solid rgba(192, 193, 199, .5);
   border-radius: .5rem;
-  padding-top: 8px;
-  height: 26px;
-  width: 60px;
+  padding-top: 4px;
+  height: 18px;
+  width: 50px;
   position: relative;
 }
 
@@ -1334,13 +1361,14 @@ a.logout-button:hover {
   font-family: 'Inter', sans-serif;
   color: white;
   background-color: #c0c1c7;
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 10px;
+  font-weight: 600;
   border: 1px solid rgba(70, 130, 180, .5);
   border-radius: .5rem;
-  padding-top: 8px;
-  height: 26px;
-  width: 60px;
+  padding-top: 4px;
+  padding-left: 9px;
+  height: 18px;
+  width: 50px;
   position: relative;
 }
 

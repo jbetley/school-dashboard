@@ -972,7 +972,7 @@ def update_academic_analysis_single_year(
                     )
                     fig16b2_container = {"display": "none"}
 
-                ## Math Proficiency by Subgroup Compared to Similar Schools (1.6.b.2) ##
+                ## Math Proficiency by Subgroup Compared to Similar Schools (1.6.c.2) ##
                 headers_16c2 = []
                 for s in subgroup:
                     headers_16c2.append(s + "|" + "Math Proficient %")
@@ -988,7 +988,7 @@ def update_academic_analysis_single_year(
                         fig16c2_final_data,
                         fig16c2_category_string,
                         fig16c2_school_string,
-                    ) = identify_missing_categories(fig16c2_final_data, categories_16b2)
+                    ) = identify_missing_categories(fig16c2_final_data, categories_16c2)
 
                     fig16c2_label = create_chart_label(fig16c2_final_data)
                     fig16c2_trace_color, fig16c2_chart = make_group_bar_chart(

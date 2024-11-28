@@ -16,6 +16,7 @@ from .globals import ethnicity, subgroup, info_categories
 # natural keys is a function to provide natural sorting
 # https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
 
+
 # helper function for natural_keys
 def atoi(text):
     return int(text) if text.isdigit() else text
@@ -135,7 +136,6 @@ def create_chart_label(df: pd.DataFrame) -> str:
                 label = ""
 
         elif data.columns.str.contains("Proficient").any() == True:
-            
             # pull subject from the first "subject" column using regex
             subject_columns = [
                 c
@@ -330,11 +330,9 @@ def identify_missing_categories(
 
     # get the names of the schools that have no data by comparing the column sets before
     # and after the drop - we use this later to clean up the school_string
-    missing_schools = list(
-        set(data["School Name"]) - set(final_data["School Name"])
-    )
+    missing_schools = list(set(data["School Name"]) - set(final_data["School Name"]))
 
-    # Get the names and categories of schools that have data for some 
+    # Get the names and categories of schools that have data for some
     # categories and not others. In the end we want  a list of schools
     # that is made up of schools that are missing all data + schools
     # that are missing some data + what data they are missing.

@@ -2,7 +2,7 @@
 # ICSB School Dashboard #
 #########################
 # author:    jbetley (https://github.com/jbetley)
-# version:  1.15
+# version:  1.16
 # date:     11/11/24
 
 # This is the main application file for the Indiana Charter School Board school
@@ -1100,7 +1100,7 @@ def layout():
                                         style={"display": "none"},
                                     ),
                                 ],
-                                className="bare-container--slim six columns no-print",
+                                className="bare-container--slim five columns no-print",
                             ),
                             html.Div(
                                 [
@@ -1118,7 +1118,7 @@ def layout():
                                         className="year-dropdown-control",
                                     ),
                                 ],
-                                className="bare-container--slim two columns",
+                                className="bare-container--slim four columns",
                             ),
                         ],
                         className="row--fixed--top no-print",

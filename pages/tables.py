@@ -1930,11 +1930,6 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
 
         header, body = create_hovercard_popup(metric_id)
 
-        pd.set_option("display.max_columns", None)
-        pd.set_option("display.max_rows", None)
-        print(nsize_data)
-        print(nsize_categories)
-        # TODO: NOT WORKING FOR HS METRICS?
         nsize_tooltip = [
             {
                 column: {

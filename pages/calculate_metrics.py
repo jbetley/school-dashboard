@@ -496,8 +496,7 @@ def calculate_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
         "Category",
     ] = "1.7.b 4 year non-waiver graduation rate  with school corporation average"
 
-    #TODO: Testing- borken when uncommented?
-    # combined_grad_metrics = conditional_fillna(combined_grad_metrics)
+    combined_grad_metrics = conditional_fillna(combined_grad_metrics)
 
     return combined_grad_metrics
 

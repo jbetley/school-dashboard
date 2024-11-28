@@ -660,35 +660,44 @@ def layout():
                                         [
                                             html.Div(
                                                 [
-                                                    html.Label("Select Demographic:"),
+                                                    html.Div(
+                                                        [
+                                                            html.Label(
+                                                                "Select Demographic:"
+                                                            ),
+                                                        ],
+                                                        className="discipline-dropdown-label",
+                                                    ),
+                                                    dcc.Dropdown(
+                                                        id="discipline-demographic-dropdown",
+                                                        multi=False,
+                                                        clearable=False,
+                                                        className="discipline-demographic-dropdown-control",
+                                                    ),
                                                 ],
-                                                className="discipline-demographic-dropdown-label",
+                                                className="bare-discipline-container--slim three-half columns",
                                             ),
-                                            dcc.Dropdown(
-                                                id="discipline-demographic-dropdown",
-                                                multi=False,
-                                                clearable=False,
-                                                className="discipline-demographic-dropdown-control",
-                                            ),
-                                        ],
-                                        className="bare-container--slim four columns",
-                                    ),
-                                    html.Div(
-                                        [
                                             html.Div(
                                                 [
-                                                    html.Label("Select Category:"),
+                                                    html.Div(
+                                                        [
+                                                            html.Label(
+                                                                "Select Category:"
+                                                            ),
+                                                        ],
+                                                        className="discipline-dropdown-label",
+                                                    ),
+                                                    dcc.Dropdown(
+                                                        id="discipline-category-dropdown",
+                                                        multi=False,
+                                                        clearable=False,
+                                                        className="discipline-category-dropdown-control",
+                                                    ),
                                                 ],
-                                                className="discipline-category-dropdown-label",
-                                            ),
-                                            dcc.Dropdown(
-                                                id="discipline-category-dropdown",
-                                                multi=False,
-                                                clearable=False,
-                                                className="discipline-category-dropdown-control",
+                                                className="bare-discipline-container--slim three columns",
                                             ),
                                         ],
-                                        className="bare-container--slim four columns",
+                                        className="bare-container--nocenter twelve columns",
                                     ),
                                     html.Div(
                                         id="discipline-layout",

@@ -1117,10 +1117,10 @@ def make_group_bar_chart(
     selected_school = get_school_index(str(school_id))
     school_name = selected_school["School Name"].values[0]
 
+    data = data.drop("School ID", axis=1)
+
     if "Low Grade" in data:
         data = data.drop(["Low Grade", "High Grade"], axis=1)
-
-    data = data.drop("School ID", axis=1)
 
     # reset index
     data.reset_index(drop=True, inplace=True)
@@ -1134,12 +1134,9 @@ def make_group_bar_chart(
     else:
         data.columns = data.columns.str.split("|").str[0]
 
-    # replace any '***' values (insufficient n-size) with NaN
     data = data.replace("***", np.nan)
 
-    # force non-string columns to numeric
     cols = [i for i in data.columns if i not in ["School Name", "Year"]]
-
     for col in cols:
         data[col] = pd.to_numeric(data[col], errors="coerce")
 
@@ -1148,7 +1145,7 @@ def make_group_bar_chart(
     schools = data["School Name"].tolist()
 
     # melt dataframe from 'wide' format to 'long' format (plotly express
-    # can handle either, but long format makes hovertemplate easier - trust me)
+    # can handle either, but long format makes hovertemplate easier)
     data_set = pd.melt(
         data,
         id_vars="School Name",
@@ -1159,13 +1156,23 @@ def make_group_bar_chart(
 
     data_set.reset_index(drop=True, inplace=True)
 
+    # TODO: Figure out best way to easily identify selected school
     # Create text values for display.
-    # NOTE: This can be 99.9% done by setting 'text_auto=True'
-    # in 'fig' without setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
-    # that is displayed for ''. So this code converts the series to a string in the proper format
-    # and replaces nan with ''
+    # NOTE: This can be 99.9% done by setting 'text_auto=True' in 'fig' without
+    # setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
+    # that is displayed for ''. So this code converts the series to a string
+    # in the proper format and replaces nan with ''
     text_values = data_set["value"].map("{:.0%}".format)
     text_values = text_values.str.replace("nan%", "")
+
+    # NOTE: this seems like a dumb way to do this, but I couldn't get
+    # textfont_weight to work in the fig.foreach() function. This
+    # identifies the index of all selected school values and manually
+    # adds <b></b> to them
+    index_list = data_set.index[data_set["School Name"] == school_name].tolist()
+
+    for idx in index_list:
+        text_values[idx] = "<b>" + text_values[idx] + "</b>"
 
     # assign colors for each comparison
     trace_color = {schools[i]: color[i] for i in range(len(schools))}
@@ -1174,7 +1181,6 @@ def make_group_bar_chart(
     for key, value in trace_color.items():
         if key == school_name:
             trace_color[key] = "#ffce54"
-            # trace_color[key] = "#0a66c2"
 
     fig = px.bar(
         data_frame=data_set,
@@ -1235,13 +1241,21 @@ def make_group_bar_chart(
     )
 
     # switch text position and color based on size of bar (under 5%).
-    # color "0" values black
+    # colors "0" values grey
+    # print(school_name)
+
+    # NOTE: Want to make school trace text bold, getting following
+    # error: "Invalid property specified for object of type
+    # plotly.graph_objs.bar.Textfont: 'weight'"
     fig.for_each_trace(
         lambda t: t.update(
             textposition=np.where(t.y <= 0.05, "outside", "inside"),
             textfont_color=np.where(
                 t.y == 0, "#999999", np.where(t.y <= 0.05, "#6783a9", "#ffffff")
             ),
+            # textfont_weight = np.where(
+            #     (t.name == school_name) & (t.y != -1), 600, 400
+            # ),
             textfont_size=10,
         )
     )
