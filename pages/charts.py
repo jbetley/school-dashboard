@@ -1022,11 +1022,20 @@ def make_bar_chart(
         # from the function
         trace_color = {schools[i]: color[i] for i in range(len(schools))}
 
+        # NOTE: this seems like a dumb way to do this, but I couldn't get
+        # textfont_weight to work in the fig.foreach() function. This
+        # identifies the index of all selected school values and manually
+        # adds <b></b> to them
+        text_values = data[category].map("{:.0%}".format)
+        text_values = text_values.str.replace("nan%", "")
+
+        school_index = data.index[data["School Name"] == school_name] #.tolist()
+        text_values[school_index] = "<b>" + text_values[school_index] + "</b>"
+
         # use specific color for selected school
         for key, value in trace_color.items():
             if key == school_name:
                 trace_color[key] = "#ffce54"
-                # trace_color[key] = "#0a66c2"
 
         # Uncomment this and the other 'customdata' lines below to display
         # the distance of each comparable school from the selected school
@@ -1038,8 +1047,9 @@ def make_bar_chart(
             y=category,
             color_discrete_map=trace_color,
             color="School Name",
+            text=text_values,
+            # text_auto=True,
             # custom_data=["Low Grade", "High Grade","Distance"]
-            text_auto=True,
         )
 
         fig.update_yaxes(
@@ -1076,10 +1086,12 @@ def make_bar_chart(
             ),
         )
 
+# https://stackoverflow.com/questions/73312960/changing-text-inside-plotly-express-bar-charts
+
+
         fig.update_traces(
             textposition="outside",
             hovertemplate="<b>%{x}</b><br><b>Proficiency: </b>%{y}<br><extra></extra>",
-            # hovertemplate="<b>%{x}</b> (Grades %{customdata[0]} - %{customdata[1]})<br><b>Proficiency: </b>%{y}<br><extra></extra>",
         )
 
     else:
@@ -1223,7 +1235,7 @@ def make_group_bar_chart(
             font_family="Inter, sans-serif",
             align="left",
         ),
-        uniformtext_minsize=9,
+        uniformtext_minsize=8,
         uniformtext_mode="hide",
     )
 

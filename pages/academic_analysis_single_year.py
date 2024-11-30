@@ -1099,7 +1099,7 @@ def layout():
                                                 className="comparison-dropdown-label",
                                             ),
                                         ],
-                                        className="bare-container two columns",
+                                        className="bare-container one-half columns",
                                     ),
                                     html.Div(
                                         [
