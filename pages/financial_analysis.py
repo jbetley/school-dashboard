@@ -58,7 +58,8 @@ def financial_analysis_radio_selector(school: str, finance_value_state: str):
         radio_input_container = {"display": "block"}
 
     if finance_value_state:
-        # when changing dropdown from a school with network to one without, we need to reset state
+        # when changing dropdown from a school with network to
+        # one without, we need to reset state
         if (
             finance_value_state == "network-finance"
             and selected_school["Network"].values[0] == "None"
@@ -213,17 +214,18 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     inplace=True,
                 )
 
-        # Second & third check- no data left after dropping (Q) columns and excluded
-        # years, or schools with pre-opening financial data only- e.g., they have
-        # financial data for a year, but State Grants == 0
-        # NOTE: the "or 0" returns 0 if the value is a Nonetype (Nonetype cannot be
-        # converted into a float)
+        # Second & third check- no data left after dropping (Q) columns
+        # and excluded years, or schools with pre-opening financial data
+        # only- e.g., they have financial data for a year, but State Grants == 0
+        # NOTE: the "or 0" returns 0 if the value is a Nonetype (Nonetype
+        # cannot be converted into a float)
         if (
             len(financial_data.columns) <= 1
             or float(
                 financial_data[financial_data["Category"] == "State Grants"]
                 .iloc[:, 1]
-                .values[0] or 0
+                .values[0]
+                or 0
             )
             == 0
         ):
@@ -248,7 +250,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     .tolist()
                 )
 
-            # see financial_information.py
             financial_data = financial_data.set_index(["Category"])
             financial_data.loc["Total Grants"] = (
                 financial_data.loc["State Grants"]
@@ -282,6 +283,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             string_fig_years.pop(0)
             string_fig_years.reverse()
 
+#TODO: Create function
             ## Fig 1: Operating Revenue, Operating Expenses, & Change in
             # Net Assets (Net Income) show Operating Revenue and Expenses
             # as grouped bars and Change in Net Assets as line
@@ -316,10 +318,11 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 barmode="group",
             )
 
-            # revenue and expense data can vary widely (from 5 to 7 figures) from school to
-            # school and from year to year. Use round_nearest() to determine tick value
-            # based on the max value in a dataframe. Change the "step" value to increase or
-            # decrease the total number of ticks
+            # revenue and expense data can vary widely (from 5 to 7 figures)
+            # from school to school and from year to year. Use round_nearest()
+            # to determine tick value based on the max value in a dataframe.
+            # Change the "step" value to increase or decrease the total number
+            # of ticks
             step = 6
 
             tick_val = round_nearest(revenue_expenses_data, step)
@@ -470,9 +473,36 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             ] = "Total Assets<br>$ %{y:,.2f}<extra></extra>"
 
             # get Net Asset Position Value
-            assets_liabilities_line_data = financial_data_fig.iloc[10].tolist()
-            assets_liabilities_line_data.pop(0)
-            assets_liabilities_line_data.reverse()
+            assets_liabilities_line_data = financial_data_fig[
+                financial_data_fig["Category"].isin(["Net Asset Position"])
+            ]
+            assets_liabilities_line_data = assets_liabilities_line_data.reset_index(
+                drop=True
+            )
+
+
+            assets_liabilities_line_data = assets_liabilities_line_data.replace(
+                "", 0, regex=True
+            )
+
+            cols = [
+                i for i in assets_liabilities_line_data.columns if i not in ["Category"]
+            ]
+
+            for col in cols:
+                assets_liabilities_line_data[col] = pd.to_numeric(
+                    assets_liabilities_line_data[col], errors="coerce"
+                )
+
+            assets_liabilities_line_data = assets_liabilities_line_data.iloc[:, ::-1]
+            assets_liabilities_line_data.pop("Category")
+            assets_liabilities_line_data = (
+                assets_liabilities_line_data.loc[:, :].values.flatten().tolist()
+            )
+
+            # assets_liabilities_line_data = financial_data_fig.iloc[10].tolist()
+            # assets_liabilities_line_data.pop(0)
+            # assets_liabilities_line_data.reverse()
 
             assets_liabilities_line_fig = px.line(
                 x=string_fig_years,
@@ -514,14 +544,16 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 :, ~((financial_data.loc[idx1] == 0) | (financial_data.loc[idx2] == 0))
             ]
 
-            # if all of the years to display (+ Category) exist in (are a subset of) the dataframe,
-            # filter the dataframe by the display header
+            # if all of the years to display (+ Category) exist in (are a
+            # subset of) the dataframe, filter the dataframe by the display
+            # header
             if set(default_headers).issubset(set(financial_data.columns)):
                 financial_data = financial_data[default_headers]
 
             else:
-                # identify the missing_year and the remaining_year and then add the missing_year as a blank
-                # column to the dataframe either before or after remaining_year depending on which year
+                # identify the missing_year and the remaining_year and then
+                # add the missing_year as a blank column to the dataframe
+                # either before or after remaining_year depending on which year
                 # is earlier in time
                 missing_year = list(
                     set(default_headers).difference(financial_data.columns)
@@ -576,17 +608,19 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             )
 
             # Table 4: Financial Ratios
-            # cannot use create_analysis_table() function here because of need for special operations
-            # In addition, these values come from a separate data set, so may be empty even if other
+            # cannot use create_analysis_table() function here because of
+            # need for special operations In addition, these values come from
+            # a separate data set, so may be empty even if other
             # data is available
             school_corp = int(selected_school["Corporation ID"].values[0])
             financial_ratios_data = get_financial_ratios(school_corp)
             ratio_years = financial_ratios_data["Year"].astype(str).tolist()
 
-            # Networks do not have calculated financial ratios. So we show an empty table if:
-            # "network-finance" is being displayed; if there are no rows in financial_ratios_data
-            # (empty df); or where there are no years of data in the dataframe that match the years
-            # being displayed (the isdisjoint condition is True if the two lists share at least one
+            # Networks do not have calculated financial ratios. So we show an empty
+            # table if: "network-finance" is being displayed; if there are no rows
+            # in financial_ratios_data (empty df); or where there are no years of
+            # data in the dataframe that match the years being displayed (the
+            # isdisjoint condition is True if the two lists share at least one
             # element)
 
             if (
@@ -609,15 +643,15 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     str
                 )
 
-                # change all cols to numeric except for Category
                 for col in financial_ratios_data.columns[1:]:
                     financial_ratios_data[col] = pd.to_numeric(
                         financial_ratios_data[col], errors="coerce"
                     )
 
-                # Create an empty df in the shape and order that we want (e.g., Category, YYYY,
-                # YYYY-1), use combine_first to update all null elements in the empty df with a
-                # value in the same location in the existing df and then merge
+                # Create an empty df in the shape and order that we want
+                # (e.g., Category, YYYY, YYYY-1), use combine_first to update
+                # all null elements in the empty df with a value in the same
+                # location in the existing df and then merge
                 # https://stackoverflow.com/questions/56842140/pandas-merge-dataframes-with-shared-column-fillna-in-left-with-right
 
                 default_df = pd.DataFrame(columns=default_headers)
@@ -886,11 +920,11 @@ def layout():
                                             html.Div(
                                                 [
                                                     html.Label(
-                                                        id="finance-analysis-RandE-title",
+                                                        id="finance-analysis-AandL-title",
                                                         className="label__header",
                                                     ),
                                                     dcc.Graph(
-                                                        id="revenue-expenses-fig",
+                                                        id="assets-liabilities-fig",
                                                         figure=loading_fig(),
                                                         config={
                                                             "displayModeBar": False
@@ -902,11 +936,11 @@ def layout():
                                             html.Div(
                                                 [
                                                     html.Label(
-                                                        id="finance-analysis-AandL-title",
+                                                        id="finance-analysis-RandE-title",
                                                         className="label__header",
                                                     ),
                                                     dcc.Graph(
-                                                        id="assets-liabilities-fig",
+                                                        id="revenue-expenses-fig",
                                                         figure=loading_fig(),
                                                         config={
                                                             "displayModeBar": False

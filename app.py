@@ -536,6 +536,10 @@ def set_year_dropdown_options(
     Output("academic-information-category-radio", "value"),
     Output("academic-information-category-radio-container", "style"),
     Output("academic-information-subnav-container", "style"),
+    Output("main-navigation-container", "style"),
+    Output("display-main-menu", "style"),
+    Output("hide-main-menu", "style"),    
+    Output("space-filler", "style"),
     Output("analysis-multi-hs-group-radio", "options"),
     Output("analysis-multi-hs-group-radio", "value"),
     Output("analysis-multi-hs-group-radio-container", "style"),
@@ -552,6 +556,8 @@ def set_year_dropdown_options(
     Input("url", "href"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
+    Input("display-main-menu", "n_clicks"),
+    Input("hide-main-menu", "n_clicks"),    
     Input("academic-type-radio", "value"),
     Input("analysis-multi-hs-group-radio", "value"),
     Input("analysis-multi-category-radio", "value"),
@@ -565,6 +571,8 @@ def navigation(
     current_page: str,
     school_id: str,
     year_value: str,
+    display_main_menu_button: str,
+    hide_main_menu_button: str,
     academic_type_value: str,
     analysis_hs_group_value: str,
     analysis_multi_category_value: str,
@@ -586,15 +594,18 @@ def navigation(
     elif int(school_id) == 5874 and int(year_value) >= 2021:
         school_type = "k8"
 
-    # baseline is to display nothing
-    # values are only set to "" if they don't already exist
     academic_type_container = {"display": "none"}
-
     analysis_subnav_container = {"display": "none"}
     analysis_multi_hs_group_options = []
 
-    # could have dealt with this using multiple if/else statements,
-    # but it was getting too repetative.
+    # this applies in a single context- when multi-year is selected
+    # on acadmeic analysis tab - controls buttons used to hide or
+    # show main menu
+    main_navigation_container = {"display": "block"}
+    space_filler = {"height": "0px"}
+    display_main_menu = {"display": "none"}
+    hide_main_menu = {"display": "none"}
+
     try:
         analysis_multi_hs_group_value
     except NameError:
@@ -762,6 +773,26 @@ def navigation(
 
         # analysis_multiple_years.py
         if "analysis_multiple" in current_page:
+
+            # logic for the display/hide main menu button
+            changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
+        
+            if "display-main-menu" in changed_id:
+                display_main_menu = {"display": "none"}
+                hide_main_menu = {"display": "block"}
+                main_navigation_container = {"display": "block"}
+
+            elif "hide-main-menu" in changed_id:
+                display_main_menu = {"display": "block"}
+                hide_main_menu = {"display": "none"}
+                space_filler = {"height": "50px"}
+                main_navigation_container = {"display": "none"}
+            else:
+                main_navigation_container = {"display": "none"}
+                space_filler = {"height": "50px"}
+                display_main_menu = {"display": "block"}
+                hide_main_menu = {"display": "none"}
+
             if school_type == "k12":
                 academic_type_container = {"display": "block"}
 
@@ -838,6 +869,7 @@ def navigation(
                     analysis_multi_category_container = {"display": "block"}
 
             else:  # subject and categories for K8 and K12 (k8 type)
+
                 if school_type == "k8" or (
                     school_type == "k12" and academic_type_value == "k8"
                 ):
@@ -1020,6 +1052,10 @@ def navigation(
         info_category_value,
         info_category_container,
         info_subnav_container,
+        main_navigation_container,
+        display_main_menu,
+        hide_main_menu,        
+        space_filler,
         analysis_multi_hs_group_options,
         analysis_multi_hs_group_value,
         analysis_multi_hs_group_container,
@@ -1057,8 +1093,6 @@ def redirect_hs(school: str, current_page: str):
         return dash.no_update
 
 
-# app.layout = html.Div(
-# NOTE: Testing to see effect of layout as function vs. variable
 def layout():
     return html.Div(
         [
@@ -1128,6 +1162,18 @@ def layout():
             ),
             html.Div(
                 [
+                    html.Button(
+                        "Display Main Menu",
+                        id="display-main-menu",
+                        className="main-menu-button",
+                        n_clicks=0
+                    ),
+                    html.Button(
+                        "Hide Main Menu",
+                        id="hide-main-menu",
+                        className="main-menu-button",
+                        n_clicks=0
+                    ),                    
                     html.Div(
                         [
                             html.Div(
@@ -1208,7 +1254,9 @@ def layout():
                             html.Hr(),
                         ],
                         className="no-print",
+                        id="main-navigation-container",
                     ),
+                    html.Div(id="space-filler"),
                     # Subnavigation layout #
                     html.Div(
                         [
