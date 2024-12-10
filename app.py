@@ -306,7 +306,7 @@ def set_dropdown_value(charter_options):
 # 'financial_analysis_dropdown_years' except the quarterly data string (Q#) is removed.
 
 
-# TODO: hs multi select (Grad/SAT) should trigger year change
+# TODO: hs multiyear select (Grad/SAT) should trigger year change
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
@@ -488,7 +488,7 @@ def set_year_dropdown_options(
         (
             "academic" in current_page
             # or "academic_analysis_single" in current_page
-            # or "academic_analysis_multiple" in current_page
+            # or "academic_analysis_multiyear" in current_page
             or selected_school["Guest"].values[0] == "Y"
         )
         and (
@@ -538,49 +538,49 @@ def set_year_dropdown_options(
     Output("academic-information-subnav-container", "style"),
     Output("main-navigation-container", "style"),
     Output("display-main-menu", "style"),
-    Output("hide-main-menu", "style"),    
+    Output("hide-main-menu", "style"),
     Output("space-filler", "style"),
-    Output("analysis-multi-hs-group-radio", "options"),
-    Output("analysis-multi-hs-group-radio", "value"),
-    Output("analysis-multi-hs-group-radio-container", "style"),
-    Output("analysis-multi-subject-radio", "options"),
-    Output("analysis-multi-subject-radio", "value"),
-    Output("analysis-multi-subject-radio-container", "style"),
-    Output("analysis-multi-category-radio", "options"),
-    Output("analysis-multi-category-radio", "value"),
-    Output("analysis-multi-category-radio-container", "style"),
-    Output("analysis-multi-subcategory-radio", "options"),
-    Output("analysis-multi-subcategory-radio", "value"),
-    Output("analysis-multi-subcategory-radio-container", "style"),
+    Output("analysis-multiyear-hs-group-radio", "options"),
+    Output("analysis-multiyear-hs-group-radio", "value"),
+    Output("analysis-multiyear-hs-group-radio-container", "style"),
+    Output("analysis-multiyear-subject-radio", "options"),
+    Output("analysis-multiyear-subject-radio", "value"),
+    Output("analysis-multiyear-subject-radio-container", "style"),
+    Output("analysis-multiyear-category-radio", "options"),
+    Output("analysis-multiyear-category-radio", "value"),
+    Output("analysis-multiyear-category-radio-container", "style"),
+    Output("analysis-multiyear-subcategory-radio", "options"),
+    Output("analysis-multiyear-subcategory-radio", "value"),
+    Output("analysis-multiyear-subcategory-radio-container", "style"),
     Output("analysis-subnav-container", "style"),
     Input("url", "href"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("display-main-menu", "n_clicks"),
-    Input("hide-main-menu", "n_clicks"),    
+    Input("hide-main-menu", "n_clicks"),
     Input("academic-type-radio", "value"),
-    Input("analysis-multi-hs-group-radio", "value"),
-    Input("analysis-multi-category-radio", "value"),
-    Input("analysis-multi-subcategory-radio", "value"),
-    Input("analysis-multi-subject-radio", "value"),
+    Input("analysis-multiyear-hs-group-radio", "value"),
+    Input("analysis-multiyear-category-radio", "value"),
+    Input("analysis-multiyear-subcategory-radio", "value"),
+    Input("analysis-multiyear-subject-radio", "value"),
     State("academic-information-category-radio", "options"),
     State("academic-information-category-radio", "value"),
-    State("analysis-multi-subject-radio", "value"),
+    State("analysis-multiyear-subject-radio", "value"),
 )
 def navigation(
     current_page: str,
     school_id: str,
     year_value: str,
-    display_main_menu_button: str,
+    display_main_menu_button: str,  # don't use these directly, use
     hide_main_menu_button: str,
     academic_type_value: str,
     analysis_hs_group_value: str,
-    analysis_multi_category_value: str,
-    analysis_multi_subcategory_value: str,
-    analysis_multi_subject_value: str,
+    analysis_multiyear_category_value: str,
+    analysis_multiyear_subcategory_value: str,
+    analysis_multiyear_subject_value: str,
     info_category_options_state: list,
     info_category_value_state: str,
-    analysis_multi_subject_state: str,
+    analysis_multiyear_subject_state: str,
 ):
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
@@ -596,46 +596,45 @@ def navigation(
 
     academic_type_container = {"display": "none"}
     analysis_subnav_container = {"display": "none"}
-    analysis_multi_hs_group_options = []
+    analysis_multiyear_hs_group_options = []
 
-    # this applies in a single context- when multi-year is selected
-    # on acadmeic analysis tab - controls buttons used to hide or
-    # show main menu
+    # this applies only to academic_analysis tab, either page,
+    # adds and controls button used to hide or show main menu
     main_navigation_container = {"display": "block"}
     space_filler = {"height": "0px"}
     display_main_menu = {"display": "none"}
     hide_main_menu = {"display": "none"}
 
     try:
-        analysis_multi_hs_group_value
+        analysis_multiyear_hs_group_value
     except NameError:
-        analysis_multi_hs_group_value = ""
+        analysis_multiyear_hs_group_value = ""
 
-    analysis_multi_hs_group_container = {"display": "none"}
-    analysis_multi_subject_options = []
+    analysis_multiyear_hs_group_container = {"display": "none"}
+    analysis_multiyear_subject_options = []
 
     try:
-        analysis_multi_subject_value
+        analysis_multiyear_subject_value
     except NameError:
-        analysis_multi_subject_value = ""
+        analysis_multiyear_subject_value = ""
 
-    analysis_multi_subject_container = {"display": "none"}
-    analysis_multi_category_options = []
+    analysis_multiyear_subject_container = {"display": "none"}
+    analysis_multiyear_category_options = []
 
     try:
-        analysis_multi_category_value
+        analysis_multiyear_category_value
     except NameError:
-        analysis_multi_category_value = ""
+        analysis_multiyear_category_value = ""
 
-    analysis_multi_category_container = {"display": "none"}
-    analysis_multi_subcategory_options = []
+    analysis_multiyear_category_container = {"display": "none"}
+    analysis_multiyear_subcategory_options = []
 
     try:
-        analysis_multi_subcategory_value
+        analysis_multiyear_subcategory_value
     except NameError:
-        analysis_multi_subcategory_value = ""
+        analysis_multiyear_subcategory_value = ""
 
-    analysis_multi_subcategory_container = {"display": "none"}
+    analysis_multiyear_subcategory_container = {"display": "none"}
 
     info_subnav_container = {"display": "none"}
     info_category_container = {"display": "none"}
@@ -766,32 +765,50 @@ def navigation(
         # NOTE: No "if" statement is needed for hs or ahs as they have
         # no categories or subcategories atm
 
-    # analysis_single_year.py and analysis_multiple_years.py
+    # analysis_single_year.py and analysis_multiyear.py
     elif "academic_analysis" in current_page:
         # begin analysis subnavigation
         analysis_subnav_container = {"display": "block"}
 
-        # analysis_multiple_years.py
-        if "analysis_multiple" in current_page:
+        # logic for the display/hide main menu button
+        changed_id = [p["prop_id"] for p in dash.callback_context.triggered][0]
 
-            # logic for the display/hide main menu button
-            changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-        
-            if "display-main-menu" in changed_id:
-                display_main_menu = {"display": "none"}
-                hide_main_menu = {"display": "block"}
-                main_navigation_container = {"display": "block"}
+        if "display-main-menu" in changed_id:
+            display_main_menu = {"display": "none"}
+            hide_main_menu = {"display": "block"}
+            main_navigation_container = {"display": "block"}
 
-            elif "hide-main-menu" in changed_id:
-                display_main_menu = {"display": "block"}
-                hide_main_menu = {"display": "none"}
-                space_filler = {"height": "50px"}
-                main_navigation_container = {"display": "none"}
-            else:
-                main_navigation_container = {"display": "none"}
-                space_filler = {"height": "50px"}
-                display_main_menu = {"display": "block"}
-                hide_main_menu = {"display": "none"}
+        elif "hide-main-menu" in changed_id:
+            display_main_menu = {"display": "block"}
+            hide_main_menu = {"display": "none"}
+            space_filler = {"height": "50px"}
+            main_navigation_container = {"display": "none"}
+        else:
+            main_navigation_container = {"display": "none"}
+            space_filler = {"height": "50px"}
+            display_main_menu = {"display": "block"}
+            hide_main_menu = {"display": "none"}
+
+        # analysis_multiyear.py
+        if "analysis_multiyear" in current_page:
+            # # logic for the display/hide main menu button
+            # changed_id = [p["prop_id"] for p in dash.callback_context.triggered][0]
+
+            # if "display-main-menu" in changed_id:
+            #     display_main_menu = {"display": "none"}
+            #     hide_main_menu = {"display": "block"}
+            #     main_navigation_container = {"display": "block"}
+
+            # elif "hide-main-menu" in changed_id:
+            #     display_main_menu = {"display": "block"}
+            #     hide_main_menu = {"display": "none"}
+            #     space_filler = {"height": "50px"}
+            #     main_navigation_container = {"display": "none"}
+            # else:
+            #     main_navigation_container = {"display": "none"}
+            #     space_filler = {"height": "50px"}
+            #     display_main_menu = {"display": "block"}
+            #     hide_main_menu = {"display": "none"}
 
             if school_type == "k12":
                 academic_type_container = {"display": "block"}
@@ -802,24 +819,24 @@ def navigation(
                 or school_type == "ahs"
                 or (school_type == "k12" and academic_type_value == "hs")
             ):
-                analysis_multi_hs_group_options = [
+                analysis_multiyear_hs_group_options = [
                     {"label": "Graduation Rate", "value": "Graduation Rate"},
                     {"label": "SAT", "value": "SAT"},
                 ]
 
                 if analysis_hs_group_value:
-                    analysis_multi_hs_group_value = analysis_hs_group_value
+                    analysis_multiyear_hs_group_value = analysis_hs_group_value
                 else:
-                    analysis_multi_hs_group_value = "Graduation Rate"
+                    analysis_multiyear_hs_group_value = "Graduation Rate"
 
-                analysis_multi_hs_group_container = {"display": "block"}
+                analysis_multiyear_hs_group_container = {"display": "block"}
 
                 if (
-                    analysis_multi_hs_group_value == "Graduation Rate"
-                    or analysis_multi_hs_group_value == ""
+                    analysis_multiyear_hs_group_value == "Graduation Rate"
+                    or analysis_multiyear_hs_group_value == ""
                 ):
                     # show graduation rate categories
-                    analysis_multi_category_options = [
+                    analysis_multiyear_category_options = [
                         {"label": "Total", "value": "Total"},
                         {"label": "NonWaiver", "value": "NonWaiver"},
                         {"label": "Subgroup", "value": "Subgroup"},
@@ -827,102 +844,101 @@ def navigation(
                     ]
 
                     # use existing value or set default value to "Total"
-                    if analysis_multi_category_value not in [
+                    if analysis_multiyear_category_value not in [
                         "Total",
                         "NonWaiver",
                         "Subgroup",
                         "Race/Ethnicity",
                     ]:
-                        analysis_multi_category_value = "Total"
+                        analysis_multiyear_category_value = "Total"
 
-                    analysis_multi_category_container = {"display": "block"}
+                    analysis_multiyear_category_container = {"display": "block"}
 
-                elif analysis_multi_hs_group_value == "SAT":
+                elif analysis_multiyear_hs_group_value == "SAT":
                     # change subject values to SAT specific descriptions
-                    analysis_multi_subject_options = [
+                    analysis_multiyear_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
                         {"label": "Math", "value": "Math"},
                     ]
 
                     # use existing value or set default subject value to "EBRW"
-                    if analysis_multi_subject_state not in ["EBRW", "Math"]:
-                        analysis_multi_subject_value = "EBRW"
+                    if analysis_multiyear_subject_state not in ["EBRW", "Math"]:
+                        analysis_multiyear_subject_value = "EBRW"
 
-                    analysis_multi_subject_container = {"display": "block"}
+                    analysis_multiyear_subject_container = {"display": "block"}
 
                     # SAT subject and categories (SAT has different subject values
                     # than ELA & Math)
-                    analysis_multi_category_options = [
+                    analysis_multiyear_category_options = [
                         {"label": "School Total", "value": "Total"},
                         {"label": "Subgroup", "value": "Subgroup"},
                         {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                     ]
 
                     # use existing value or set default subject value to "Total"
-                    if analysis_multi_category_value not in [
+                    if analysis_multiyear_category_value not in [
                         "Total",
                         "Subgroup",
                         "Race/Ethnicity",
                     ]:
-                        analysis_multi_category_value = "Total"
+                        analysis_multiyear_category_value = "Total"
 
-                    analysis_multi_category_container = {"display": "block"}
+                    analysis_multiyear_category_container = {"display": "block"}
 
             else:  # subject and categories for K8 and K12 (k8 type)
-
                 if school_type == "k8" or (
                     school_type == "k12" and academic_type_value == "k8"
                 ):
                     # subject for both K8 and K12 schools (k8 type)
-                    analysis_multi_subject_options = [
+                    analysis_multiyear_subject_options = [
                         {"label": "ELA", "value": "ELA"},
                         {"label": "Math", "value": "Math"},
                         {"label": "IREAD", "value": "IREAD"},
                     ]
 
-                    analysis_multi_subject_container = {"display": "block"}
+                    analysis_multiyear_subject_container = {"display": "block"}
 
                     # default subject ("ELA")
-                    if analysis_multi_subject_state not in ["ELA", "Math", "IREAD"]:
-                        analysis_multi_subject_value = "ELA"
+                    if analysis_multiyear_subject_state not in ["ELA", "Math", "IREAD"]:
+                        analysis_multiyear_subject_value = "ELA"
 
-                    analysis_multi_category_container = {"display": "block"}
+                    analysis_multiyear_category_container = {"display": "block"}
 
                     # ELA/Math and IREAD have different options
                     if (
-                        analysis_multi_subject_value == "IREAD"
-                        or analysis_multi_subject_state == "IREAD"
+                        analysis_multiyear_subject_value == "IREAD"
+                        or analysis_multiyear_subject_state == "IREAD"
                     ):
                         # IREAD Categories (substitute Total for Grade)
-                        analysis_multi_category_options = [
+                        analysis_multiyear_category_options = [
                             {"label": "Total", "value": "Total"},
                             {"label": "Subgroup", "value": "Subgroup"},
                             {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                         ]
 
                         # use existing value or set default subject value to "Total"
-                        if analysis_multi_category_value not in [
+                        if analysis_multiyear_category_value not in [
                             "Total",
                             "Subgroup",
                             "Race/Ethnicity",
                         ]:
-                            analysis_multi_category_value = "Total"
+                            analysis_multiyear_category_value = "Total"
 
                     else:
                         # ILEARN Categories (substitute Grade for Total)
-                        analysis_multi_category_options = [
+                        analysis_multiyear_category_options = [
                             {"label": "Grade", "value": "Grade"},
                             {"label": "Subgroup", "value": "Subgroup"},
                             {"label": "Race/Ethnicity", "value": "Race/Ethnicity"},
                         ]
 
                         # use existing value or set default subject value to "Grade"
-                        if analysis_multi_category_value not in [
+                        if analysis_multiyear_category_value not in [
                             "Grade",
                             "Subgroup",
                             "Race/Ethnicity",
                         ]:
-                            analysis_multi_category_value = "Grade"
+                            analysis_multiyear_category_value = "Grade"
 
             # get years for subcategories
             if school_type == "k8" and academic_type_value == "hs":
@@ -934,14 +950,14 @@ def navigation(
                 "academic" in current_page
                 or "analysis" in current_page
                 # or "analysis_single" in current_page
-                # or "analysis_multiple" in current_page
+                # or "analysis_multiyear" in current_page
                 or selected_school["Guest"].values[0] == "Y"
             ):
                 if (
                     "academic_information" in current_page
                     or "analysis" in current_page
                     # or "analysis_single" in current_page
-                    # or "analysis_multiple" in current_page
+                    # or "analysis_multiyear" in current_page
                 ) and academic_type_value == "hs":
                     years = get_academic_dropdown_years(school_id, "hs")
 
@@ -949,93 +965,93 @@ def navigation(
                     years = get_academic_dropdown_years(school_id, school_type)
 
             # subcategories for all schools
-            if analysis_multi_category_value == "Grade":
+            if analysis_multiyear_category_value == "Grade":
                 grades = get_gradespan(school_id, year_value, years)
 
                 if grades:
-                    analysis_multi_subcategory_options = [
+                    analysis_multiyear_subcategory_options = [
                         {"label": g, "value": "Grade " + g} for g in grades
                     ]
-                    analysis_multi_subcategory_options.append(
+                    analysis_multiyear_subcategory_options.append(
                         {"label": "School Total", "value": "Total"}
                     )
 
                     grade_strings = ["Grade " + g for g in grades]
 
-                    if analysis_multi_subcategory_value not in grade_strings:
-                        analysis_multi_subcategory_value = "Total"
+                    if analysis_multiyear_subcategory_value not in grade_strings:
+                        analysis_multiyear_subcategory_value = "Total"
 
-                    analysis_multi_subcategory_container = {"display": "block"}
+                    analysis_multiyear_subcategory_container = {"display": "block"}
 
                 else:
-                    analysis_multi_subcategory_options = []
-                    analysis_multi_subcategory_value = "No Data"
-                    analysis_multi_subcategory_container = {"display": "block"}
+                    analysis_multiyear_subcategory_options = []
+                    analysis_multiyear_subcategory_value = "No Data"
+                    analysis_multiyear_subcategory_container = {"display": "block"}
 
-            elif analysis_multi_category_value == "Race/Ethnicity":
+            elif analysis_multiyear_category_value == "Race/Ethnicity":
                 ethnicity = get_ethnicity(
                     school_id,
                     academic_type_value,
-                    analysis_multi_hs_group_value,
-                    analysis_multi_subject_value,
+                    analysis_multiyear_hs_group_value,
+                    analysis_multiyear_subject_value,
                     year_value,
                     years,
                 )
 
-                analysis_multi_subcategory_options = [
+                analysis_multiyear_subcategory_options = [
                     {"label": e, "value": e} for e in ethnicity
                 ]
                 ethnicity.sort()
 
                 if ethnicity:
-                    if analysis_multi_subcategory_value not in ethnicity:
-                        analysis_multi_subcategory_value = ethnicity[0]
+                    if analysis_multiyear_subcategory_value not in ethnicity:
+                        analysis_multiyear_subcategory_value = ethnicity[0]
 
-                    analysis_multi_subcategory_container = {"display": "block"}
+                    analysis_multiyear_subcategory_container = {"display": "block"}
 
                 else:
-                    analysis_multi_subcategory_options = []
-                    analysis_multi_subcategory_value = "No Race/Ethnicity Data"
-                    analysis_multi_subcategory_container = {"display": "block"}
+                    analysis_multiyear_subcategory_options = []
+                    analysis_multiyear_subcategory_value = "No Race/Ethnicity Data"
+                    analysis_multiyear_subcategory_container = {"display": "block"}
 
-            elif analysis_multi_category_value == "Subgroup":
+            elif analysis_multiyear_category_value == "Subgroup":
                 subgroup = get_subgroup(
                     school_id,
                     academic_type_value,
-                    analysis_multi_hs_group_value,
-                    analysis_multi_subject_value,
+                    analysis_multiyear_hs_group_value,
+                    analysis_multiyear_subject_value,
                     year_value,
                     years,
                 )
                 subgroup.sort()
 
                 if subgroup:
-                    analysis_multi_subcategory_options = [
+                    analysis_multiyear_subcategory_options = [
                         {"label": s, "value": s} for s in subgroup
                     ]
 
-                    if analysis_multi_subcategory_value not in subgroup:
-                        analysis_multi_subcategory_value = subgroup[0]
+                    if analysis_multiyear_subcategory_value not in subgroup:
+                        analysis_multiyear_subcategory_value = subgroup[0]
 
-                    analysis_multi_subcategory_container = {"display": "block"}
+                    analysis_multiyear_subcategory_container = {"display": "block"}
 
                 else:
-                    analysis_multi_subcategory_options = []
-                    analysis_multi_subcategory_value = "No Subgroup Data"
-                    analysis_multi_subcategory_container = {"display": "block"}
+                    analysis_multiyear_subcategory_options = []
+                    analysis_multiyear_subcategory_value = "No Subgroup Data"
+                    analysis_multiyear_subcategory_container = {"display": "block"}
 
             # grad rate only
-            elif analysis_multi_category_value == "NonWaiver":
-                analysis_multi_subcategory_value = "NonWaiver"
-                analysis_multi_subcategory_options = []
-                analysis_multi_subcategory_container = {"display": "none"}
+            elif analysis_multiyear_category_value == "NonWaiver":
+                analysis_multiyear_subcategory_value = "NonWaiver"
+                analysis_multiyear_subcategory_options = []
+                analysis_multiyear_subcategory_container = {"display": "none"}
 
             # for SAT ('School Total') and Grad Rate ('Total) set single value,
             # with no options
             else:
-                analysis_multi_subcategory_value = "Total"
-                analysis_multi_subcategory_options = []
-                analysis_multi_subcategory_container = {"display": "none"}
+                analysis_multiyear_subcategory_value = "Total"
+                analysis_multiyear_subcategory_options = []
+                analysis_multiyear_subcategory_container = {"display": "none"}
 
         else:  # analysis_single_year page has no radio buttons other than 'type'
             if school_type == "k12":
@@ -1054,20 +1070,20 @@ def navigation(
         info_subnav_container,
         main_navigation_container,
         display_main_menu,
-        hide_main_menu,        
+        hide_main_menu,
         space_filler,
-        analysis_multi_hs_group_options,
-        analysis_multi_hs_group_value,
-        analysis_multi_hs_group_container,
-        analysis_multi_subject_options,
-        analysis_multi_subject_value,
-        analysis_multi_subject_container,
-        analysis_multi_category_options,
-        analysis_multi_category_value,
-        analysis_multi_category_container,
-        analysis_multi_subcategory_options,
-        analysis_multi_subcategory_value,
-        analysis_multi_subcategory_container,
+        analysis_multiyear_hs_group_options,
+        analysis_multiyear_hs_group_value,
+        analysis_multiyear_hs_group_container,
+        analysis_multiyear_subject_options,
+        analysis_multiyear_subject_value,
+        analysis_multiyear_subject_container,
+        analysis_multiyear_category_options,
+        analysis_multiyear_category_value,
+        analysis_multiyear_category_container,
+        analysis_multiyear_subcategory_options,
+        analysis_multiyear_subcategory_value,
+        analysis_multiyear_subcategory_container,
         analysis_subnav_container,
     )
 
@@ -1166,14 +1182,14 @@ def layout():
                         "Display Main Menu",
                         id="display-main-menu",
                         className="main-menu-button",
-                        n_clicks=0
+                        n_clicks=0,
                     ),
                     html.Button(
                         "Hide Main Menu",
                         id="hide-main-menu",
                         className="main-menu-button",
-                        n_clicks=0
-                    ),                    
+                        n_clicks=0,
+                    ),
                     html.Div(
                         [
                             html.Div(
@@ -1334,7 +1350,7 @@ def layout():
                                 [
                                     html.Div(
                                         create_radio_layout(
-                                            "analysis-multi", "hs-group"
+                                            "analysis-multiyear", "hs-group"
                                         ),
                                         className="tabs",
                                     ),
@@ -1350,13 +1366,13 @@ def layout():
                                 [
                                     html.Div(
                                         create_radio_layout(
-                                            "analysis-multi", "subject", "six"
+                                            "analysis-multiyear", "subject", "six"
                                         ),
                                         className="tabs",
                                     ),
                                     html.Div(
                                         create_radio_layout(
-                                            "analysis-multi", "category", "six"
+                                            "analysis-multiyear", "category", "six"
                                         ),
                                         className="tabs",
                                     ),
@@ -1372,7 +1388,7 @@ def layout():
                                 [
                                     html.Div(
                                         create_radio_layout(
-                                            "analysis-multi", "subcategory"
+                                            "analysis-multiyear", "subcategory"
                                         ),
                                         className="tabs",
                                     ),

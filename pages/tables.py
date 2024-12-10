@@ -2,7 +2,7 @@
 # ICSB Dashboard - DataTable Functions #
 ########################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
+# version:  1.16
 # date:     11/11/24
 
 import pandas as pd
@@ -15,7 +15,7 @@ from dash.dash_table.Format import Format, Scheme, Sign
 import dash_mantine_components as dmc
 
 from .globals import metric_strings, table_style, table_cell, table_header
-from .load_data import get_student_level_ilearn
+from .process_data import process_student_level_ilearn
 from .calculations import conditional_fillna
 from .charts import no_data_fig_blank
 
@@ -440,7 +440,7 @@ def create_iread_ilearn_table(school: str, subject: str, excluded_years: list) -
         iread_ilearn_table (list): dash DataTable wrapped in dash html components
     """
 
-    iread_pass_ilearn, iread_nopass_ilearn = get_student_level_ilearn(school, subject)
+    iread_pass_ilearn, iread_nopass_ilearn = process_student_level_ilearn(school, subject)
 
     if iread_pass_ilearn.empty and iread_nopass_ilearn.empty:
         iread_ilearn_table = []
@@ -1633,10 +1633,10 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
 
                 name_cols.append([item[:4], item[4:]])
 
-        # Identify and Tag "Initial Year"- applies only to the year over year
+        # Identify and Tag "Initial Year"- applies only to the multiyear
         # calculation. For a df with only one year of data, the string "Diff"
         # will not appear in the column names. Search the label for "previous
-        # school year" to distinguish year over year tables from comparison tables
+        # school year" to distinguish multiyear tables from comparison tables
         # For a df with multiple years of data, the column pattern ending in:
         # "%, %" indicates a year where no difference (or rate) was calculated.
         # There may be a more elegant way to check the second case, but
@@ -2061,7 +2061,7 @@ def create_comparison_table(
         data.columns = data.columns.str.replace("Benchmark %", "")
         data.columns = data.columns.str.replace("Total\|", "", regex=True)
 
-    # this should work for another 976 years (skip the year over year dfs)
+    # this should work for another 976 years (skip the multiyear dfs)
     elif data.columns.str.startswith("2").any() == True:
         pass
 

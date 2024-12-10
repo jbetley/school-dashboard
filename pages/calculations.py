@@ -221,6 +221,15 @@ def calculate_proficiency(df: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
+def calculate_proficiency_manually(series):
+    # get the count of students At or Above proficiency and divide by the total #
+    # of students in the series (essentially calculating proficiency)
+    return (
+        (series == "At Proficiency").sum()
+        + (series == "Above Proficiency").sum()
+    ) / series.value_counts().sum()
+
+
 def recalculate_total_proficiency(
     data: pd.DataFrame, school_data: pd.DataFrame
 ) -> pd.DataFrame:
@@ -286,11 +295,11 @@ def recalculate_total_proficiency(
     return revised_totals
 
 
-def calculate_year_over_year(
+def calculate_multiyear(
     current_year: pd.Series, previous_year: pd.Series
 ) -> npt.NDArray:
     """
-    Calculates year_over_year differences, accounting for string representation ("***")
+    Calculates multiyear differences, accounting for string representation ("***")
     of insufficent n-size (there is available data, but not enough of it to show under privacy laws).
         1) If both the current_year and previous_year values are "***" -> the result is "***"
         2) If the previous year is either NaN or "***" and the current_year is 0 (that is 0% of students

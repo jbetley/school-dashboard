@@ -33,6 +33,8 @@ from .load_data import (
     get_academic_data,
 )
 
+from .clean_data import clean_academic_data
+
 from .calculations import round_nearest, conditional_fillna
 
 from .calculate_metrics import (
@@ -54,7 +56,7 @@ from .tables import (
     create_simple_table,
     create_single_header_table,
     create_financial_analysis_table,
-    create_empty_table_layout
+    create_empty_table_layout,
 )
 
 from .charts import (
@@ -283,8 +285,10 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
         list_of_schools = [school_id]
 
-        hs_info_data = get_academic_data(
-            list_of_schools, scoped_type, year_numeric, "info"
+        raw_hs_info_data = get_academic_data(list_of_schools, scoped_type)
+
+        hs_info_data = clean_academic_data(
+            raw_hs_info_data, list_of_schools, scoped_type, year_numeric, "info"
         )
 
         if len(hs_info_data.index) > 1 and not hs_info_data.empty:
@@ -477,8 +481,10 @@ def create_academicinfo_layout(year: str, school_id: str) -> list:
 
         list_of_schools = [school_id]
 
-        k8_info_data = get_academic_data(
-            list_of_schools, scoped_type, year_numeric, "info"
+        raw_k8_info_data = get_academic_data(list_of_schools, scoped_type)
+
+        k8_info_data = clean_academic_data(
+            raw_k8_info_data, list_of_schools, scoped_type, year_numeric, "info"
         )
 
         k8_info_data["Category"] = (
@@ -1044,8 +1050,14 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
         else:
             school_type = selected_school_type
 
-        metric_data = get_academic_data(
-            list_of_schools, school_type, selected_year_numeric, "metrics"
+        raw_metric_data = get_academic_data(list_of_schools, school_type)
+
+        metric_data = clean_academic_data(
+            raw_metric_data,
+            list_of_schools,
+            school_type,
+            selected_year_numeric,
+            "metrics",
         )
 
         if len(metric_data.index) > 0:
@@ -1055,7 +1067,7 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
                 metric_data, selected_year_string
             )
 
-            # Get Year over Year and Combined Metrics
+            # Get Multi-Year and Combined Metrics
             combined_years, combined_delta = calculate_metrics(
                 k8_year_values, k8_comparison_values
             )
@@ -1256,21 +1268,24 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
         or selected_school_type == "ahs"
         or selected_school_type == "k12"
     ):
-        if selected_school_type == "k12":
-            selected_school_type = "hs"
+        school_type = "hs"
 
         list_of_schools = [school_id]
 
-        raw_metric_data = get_academic_data(
-            list_of_schools, selected_school_type, selected_year_numeric, "metrics"
+        raw_metric_data = get_academic_data(list_of_schools, school_type)
+
+        metric_data = get_academic_data(
+            raw_metric_data,
+            list_of_schools,
+            school_type,
+            selected_year_numeric,
+            "metrics",
         )
 
-        if len(raw_metric_data.index) > 0:
+        if len(metric_data.index) > 0:
             # Adult High School Metrics
             if selected_school_type == "ahs":
-                ahs_metric_data_113 = calculate_adult_high_school_metrics(
-                    raw_metric_data
-                )
+                ahs_metric_data_113 = calculate_adult_high_school_metrics(metric_data)
 
                 ahs_metric_data_113["Category"] = (
                     ahs_metric_data_113["Metric"]
@@ -1325,10 +1340,10 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
                 # )
 
             else:
-                # NOTE: We do not currently use hs_year_over_year_values
+                # NOTE: We do not currently use hs_multiyear_values
                 # for hs metrics
-                hs_year_over_year_values, hs_comparison_values = calculate_values(
-                    raw_metric_data, selected_year_string
+                hs_multiyear_values, hs_comparison_values = calculate_values(
+                    metric_data, selected_year_string
                 )
 
                 if not hs_comparison_values.empty:
@@ -1396,7 +1411,7 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
 
     # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
     metric_11cd_label = [
-        "End of Year to Beginning of Year (1.1.c) and Year over Year (1.1.d) Student Re-Enrollment Rate."
+        "End of Year to Beginning of Year (1.1.c) and Multi-Year (1.1.d) Student Re-Enrollment Rate."
     ]
 
     attendance_data = calculate_attendance_metrics(
@@ -1427,7 +1442,7 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
         student_retention_rate_dict = {
             "Category": [
                 "1.1.c End of Year to Beginning of Year Re-Enrollment Rate",
-                "1.1.d Year over Year Re-Enrollment Rate",
+                "1.1.d Multi-Year Re-Enrollment Rate",
             ]
         }
 
@@ -1463,7 +1478,7 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
 
         empty_table_11cd = create_empty_table_layout(
             "No Data to Display.",
-            "End of Year to Beginning of Year (1.1.c) and Year over Year (1.1.d) Student Re-Enrollment Rate.",
+            "End of Year to Beginning of Year (1.1.c) and Multi-Year (1.1.d) Student Re-Enrollment Rate.",
         )
 
         table_container_11cd = set_table_layout(

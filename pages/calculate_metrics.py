@@ -13,7 +13,7 @@ from typing import Tuple
 from .load_data import get_school_index, get_attendance_data
 
 from .calculations import (
-    calculate_year_over_year,
+    calculate_multiyear,
     set_academic_rating,
     conditional_fillna,
     calculate_difference,
@@ -25,7 +25,7 @@ def calculate_attendance_metrics(
 ) -> pd.DataFrame:
     """
     Gets attendance data (df) for school and school corporation, calculates the
-    year over year difference using calculate_year_over_year than adds a Rating
+    multiyear difference using calculate_multiyear than adds a Rating
     using set_academic_rating
 
     Args:
@@ -85,7 +85,7 @@ def calculate_attendance_metrics(
     end = int(len(attendance_metrics.columns) / 2)
 
     for x in range(0, end):
-        values = calculate_year_over_year(
+        values = calculate_multiyear(
             attendance_metrics.iloc[:, y], attendance_metrics.iloc[:, y + 1]
         )
         attendance_metrics.insert(
@@ -131,7 +131,7 @@ def calculate_attendance_metrics(
     #       i) the "value" to be rated. this will be from the "School" column, if
     #       the value itself is rated (e.g., iread performance), or the difference
     #       ("Diff") column, if there is an additional calculation required (e.g.,
-    #       year over year or compared to corp);
+    #       multiyear or compared to corp);
     #       ii) a list of the threshold "limits" to be used in the calculation; and
     #       iii) an integer "flag" which tells the function which calculation to use.
 
@@ -201,10 +201,10 @@ def calculate_values(df: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Data
     category_column = data["Category"]
     data = data.drop("Category", axis=1)
 
-    # school data for year over year dataframe
-    year_over_year_data = data.filter(regex="School|N-Size", axis=1).copy()
+    # school data for multiyear dataframe
+    multiyear_data = data.filter(regex="School|N-Size", axis=1).copy()
 
-    # Calculate Year over Year Values #
+    # Calculate multiyear Values #
 
     # Two columns for each year - [School, N-Size]; years are ascending. We want
     # to calculate the difference between the second to last column (the school
@@ -222,31 +222,31 @@ def calculate_values(df: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Data
     # result at the last position col[-1] and then every 3rd index position prior.
 
     # NOTE: Vectorize using shift() and then insert result at proper index?
-    # Could do, but would require reworking calculate_year_over_year() - so leave in
+    # Could do, but would require reworking calculate_multiyear() - so leave in
     # loop for now:
     # shifted_data = data.shift(2, axis=1)
-    # result_data = calculate_year_over_year(data,shifted_data)
+    # result_data = calculate_multiyear(data,shifted_data)
     # len 8: Want 7-5; 5-3; 3-1 -> insert result at 8,5,3
 
-    len_cols = len(year_over_year_data.columns)
+    len_cols = len(multiyear_data.columns)
 
     num_pairs = int((len_cols - 2) / 2)
     end = len_cols - 2  # begin at second to last column
 
     for y in range(0, num_pairs):
-        values = calculate_year_over_year(
-            year_over_year_data.iloc[:, end], year_over_year_data.iloc[:, end - 2]
+        values = calculate_multiyear(
+            multiyear_data.iloc[:, end], multiyear_data.iloc[:, end - 2]
         )
-        year_over_year_data.insert(
+        multiyear_data.insert(
             loc=end + 2,
-            column=year_over_year_data.columns[end][0:4] + "Diff",
+            column=multiyear_data.columns[end][0:4] + "Diff",
             value=values,
         )
         end -= 2
 
-    year_over_year_data.insert(loc=0, column="Category", value=category_column)
-    year_over_year_data["Category"] = (
-        year_over_year_data["Category"].str.replace(" Proficient %", "").str.strip()
+    multiyear_data.insert(loc=0, column="Category", value=category_column)
+    multiyear_data["Category"] = (
+        multiyear_data["Category"].str.replace(" Proficient %", "").str.strip()
     )
 
     # Calculate Comparison Values #
@@ -319,11 +319,11 @@ def calculate_values(df: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Data
 
     comparison_data = comparison_data[final_cols]
 
-    return year_over_year_data, comparison_data
+    return multiyear_data, comparison_data
 
 
 def calculate_metrics(
-    year_over_year_data: pd.DataFrame, comparison_data: pd.DataFrame
+    multiyear_data: pd.DataFrame, comparison_data: pd.DataFrame
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Takes a dataframe of school academic data and calculates the proficiency difference
@@ -336,35 +336,35 @@ def calculate_metrics(
         pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
     """
 
-    # Calculate Year over Year Values and Metrics
+    # Calculate multiyear Values and Metrics
 
-    year_over_year_cols = list(year_over_year_data.columns[1:])
+    multiyear_cols = list(multiyear_data.columns[1:])
 
     # thresholds for academic rating
-    year_over_year_limits = [0.05, 0.02, 0]
+    multiyear_limits = [0.05, 0.02, 0]
 
     # see note in calculate_attendance_metrics()
     [
-        year_over_year_data.insert(
+        multiyear_data.insert(
             i + 1,
-            str(year_over_year_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-            year_over_year_data.apply(
+            str(multiyear_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
+            multiyear_data.apply(
                 lambda x: set_academic_rating(
-                    x[year_over_year_data.columns[i]], year_over_year_limits, 1
+                    x[multiyear_data.columns[i]], multiyear_limits, 1
                 ),
                 axis=1,
             ),
         )
-        for i in range(year_over_year_data.shape[1] - 1, 4, -3)
+        for i in range(multiyear_data.shape[1] - 1, 4, -3)
     ]
 
-    year_over_year_data = conditional_fillna(year_over_year_data)
+    multiyear_data = conditional_fillna(multiyear_data)
 
-    year_over_year_data.columns = year_over_year_data.columns.astype(str)
+    multiyear_data.columns = multiyear_data.columns.astype(str)
 
     # one last processing step is needed to ensure proper ratings. The set_academic_rating()
-    # function assigns a rating based on the "Diff" difference value (either year over year
-    # or as compared to corp). For the year over year comparison it is possible to get a
+    # function assigns a rating based on the "Diff" difference value (either multiyear
+    # or as compared to corp). For the multiyear comparison it is possible to get a
     # rating of "Approaches Standard" for a "Diff" value of "0.00%" when the yearly ratings
     # are both "0". There is no case where we want a school to receive anything other
     # than a "DNMS" for a 0% proficiency. However, the set_academic_rating() function does
@@ -379,15 +379,15 @@ def calculate_metrics(
     # NOTE: the zip function stops at the end of the shortest list which automatically drops
     # the single "Initial Year" column from the list. It returns an empty list if
     # school_years_cols only contains the Initial Year columns (because rating_cols will be empty)
-    rating_cols = list(col for col in year_over_year_data.columns if "Rate" in col)
-    col_pair = list(zip(year_over_year_cols, rating_cols))
+    rating_cols = list(col for col in multiyear_data.columns if "Rate" in col)
+    col_pair = list(zip(multiyear_cols, rating_cols))
 
     # iterate over list of tuples, if value in first item in pair is zero,
     # change the second value in pair to DNMS
     if col_pair:
         for k, v in col_pair:
-            year_over_year_data[v] = np.where(
-                year_over_year_data[k] == 0, "DNMS", year_over_year_data[v]
+            multiyear_data[v] = np.where(
+                multiyear_data[k] == 0, "DNMS", multiyear_data[v]
             )
 
     # Calculate Comparison Metrics
@@ -411,7 +411,7 @@ def calculate_metrics(
 
     comparison_data = conditional_fillna(comparison_data)
 
-    return year_over_year_data, comparison_data
+    return multiyear_data, comparison_data
 
 
 def calculate_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
@@ -426,6 +426,8 @@ def calculate_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     data = df.copy()
 
+    print(data)
+    
     grad_limits_state = [0, -0.05, -0.15]
     state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
 
@@ -561,7 +563,7 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
         #       i) the "value" to be rated. this will be from the "School" column, if
         #       the value itself is rated (e.g., iread performance), or the difference
         #       ("Diff") column, if there is an additional calculation required (e.g.,
-        #       year over year or compared to corp);
+        #       multiyear or compared to corp);
         #       ii) a list of the threshold "limits" to be used in the calculation; and
         #       iii) an integer "flag" which tells the function which calculation to use (see
         #            set_academic_rating() for types).

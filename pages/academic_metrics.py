@@ -21,6 +21,8 @@ from .load_data import (
     get_excluded_years,
 )
 
+from .clean_data import clean_academic_data
+
 from .tables import (
     create_metric_table,
     create_proficiency_key,
@@ -119,8 +121,14 @@ def update_academic_metrics(school: str, year: str):
         else:
             school_type = selected_school_type
 
-        metric_data = get_academic_data(
-            list_of_schools, school_type, selected_year_numeric, "metrics"
+        raw_metric_data = get_academic_data(list_of_schools, school_type)
+
+        metric_data = clean_academic_data(
+            raw_metric_data,
+            list_of_schools,
+            school_type,
+            selected_year_numeric,
+            "metrics",
         )
 
         if len(metric_data.index) > 0:
@@ -134,7 +142,7 @@ def update_academic_metrics(school: str, year: str):
                 metric_data, selected_year_string
             )
 
-            # Get Year over Year and Combined Metrics
+            # Get multiyear and Combined Metrics
             combined_years, combined_delta = calculate_metrics(
                 k8_year_values, k8_comparison_values
             )
@@ -490,16 +498,19 @@ def update_academic_metrics(school: str, year: str):
         or selected_school_type == "ahs"
         or selected_school_type == "k12"
     ):
-        if selected_school_type == "k12":
-            selected_school_type = "hs"
+        # if selected_school_type == "k12":
+        school_type = "hs"
 
         list_of_schools = [school]
 
+
         raw_metric_data = get_academic_data(
-            list_of_schools, selected_school_type, selected_year_numeric, "metrics"
+            list_of_schools, school_type
         )
 
-        if len(raw_metric_data.index) > 0:
+        metric_data = clean_academic_data(raw_metric_data, list_of_schools, school_type, selected_year_numeric, "metrics")
+        
+        if len(metric_data.index) > 0:
             # Adult High School Metrics (in single table atm)
             # NOTE: Create additional tables as needed
             if selected_school_type == "ahs":
@@ -507,7 +518,7 @@ def update_academic_metrics(school: str, year: str):
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                ahs_metric_data = calculate_adult_high_school_metrics(raw_metric_data)
+                ahs_metric_data = calculate_adult_high_school_metrics(metric_data)
 
                 ahs_metric_data["Category"] = (
                     ahs_metric_data["Metric"] + " " + ahs_metric_data["Category"]
@@ -530,10 +541,10 @@ def update_academic_metrics(school: str, year: str):
                 )
 
             else:
-                # NOTE: We do not currently use hs_year_over_year_values
+                # NOTE: We do not currently use hs_multiyear_values
                 # for hs metrics
-                hs_year_over_year_values, hs_comparison_values = calculate_values(
-                    raw_metric_data, selected_year_string
+                hs_multiyear_values, hs_comparison_values = calculate_values(
+                    metric_data, selected_year_string
                 )
 
                 if not hs_comparison_values.empty:
@@ -606,7 +617,7 @@ def update_academic_metrics(school: str, year: str):
 
     # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
     metric_11cd_label = [
-        "End of Year to Beginning of Year (1.1.c) and Year over Year (1.1.d) Student Re-Enrollment Rate."
+        "End of Year to Beginning of Year (1.1.c) and Multi-Year (1.1.d) Student Re-Enrollment Rate."
     ]
 
     attendance_data = calculate_attendance_metrics(
@@ -636,7 +647,7 @@ def update_academic_metrics(school: str, year: str):
         student_retention_rate_dict = {
             "Category": [
                 "1.1.c End of Year to Beginning of Year Re-Enrollment Rate",
-                "1.1.d Year over Year Re-Enrollment Rate",
+                "1.1.d Multi-Year Re-Enrollment Rate",
             ]
         }
 
@@ -671,7 +682,7 @@ def update_academic_metrics(school: str, year: str):
 
         empty_table_11cd = create_empty_table_layout(
             "No Data to Display.",
-            "End of Year to Beginning of Year (1.1.c) and Year over Year (1.1.d) Student Re-Enrollment Rate.",
+            "End of Year to Beginning of Year (1.1.c) and Multi-Year (1.1.d) Student Re-Enrollment Rate.",
         )
 
         table_container_11cd = set_table_layout(

@@ -1,6 +1,6 @@
-#######################################################
-# ICSB Dashboard - Academic Analysis - Year over Year #
-#######################################################
+##################################################
+# ICSB Dashboard - Academic Analysis - Multi-Year #
+##################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.15
 # date:     09/24/24
@@ -11,15 +11,15 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
-from .load_data import get_school_index, get_year_over_year_data, get_school_coordinates
+from .load_data import get_school_index, get_multiyear_data, get_school_coordinates
 from .tables import create_empty_page_layout
-from .layouts import create_year_over_year_layout
+from .layouts import create_multiyear_layout
 from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
 
 dash.register_page(
     __name__,
-    name="Year over Year",
-    path="/academic_analysis_multiple_year",
+    name="Multi-Year",
+    path="/academic_analysis_multiyear",
     top_nav=False,
     order=11,
 )
@@ -27,12 +27,12 @@ dash.register_page(
 
 # Set dropdown options for comparison schools
 @callback(
-    Output("analysis-multi-comparison-dropdown", "options"),
-    Output("analysis-multi-input-warning", "children"),
-    Output("analysis-multi-comparison-dropdown", "value"),
+    Output("analysis-multiyear-comparison-dropdown", "options"),
+    Output("analysis-multiyear-input-warning", "children"),
+    Output("analysis-multiyear-comparison-dropdown", "value"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input("analysis-multi-comparison-dropdown", "value"),
+    Input("analysis-multiyear-comparison-dropdown", "value"),
     Input("academic-type-radio", "value"),
 )
 def set_dropdown_options(
@@ -129,7 +129,7 @@ def set_dropdown_options(
         else:
             if len(comparison_schools) > max_num_to_display:
                 input_warning = html.P(
-                    id="multi-year-input-warning",
+                    id="multiyear-input-warning",
                     children="Limit reached (Maximum of "
                     + str(max_num_to_display + 1)
                     + " schools).",
@@ -154,25 +154,25 @@ def set_dropdown_options(
 
 
 @callback(
-    Output("analysis-multi-dropdown-container", "style"),
+    Output("analysis-multiyear-dropdown-container", "style"),
     Output("year-over-year-grade", "children"),
     Output("year-over-year-hs", "children"),
-    Output("k8-analysis-multi-main-container", "style"),
-    Output("k8-analysis-multi-empty-container", "style"),
-    Output("k8-analysis-multi-no-data", "children"),
-    Output("hs-analysis-multi-main-container", "style"),
-    Output("hs-analysis-multi-empty-container", "style"),
-    Output("hs-analysis-multi-no-data", "children"),
-    Output("multi-year-analysis-notes", "children"),
+    Output("k8-analysis-multiyear-main-container", "style"),
+    Output("k8-analysis-multiyear-empty-container", "style"),
+    Output("k8-analysis-multiyear-no-data", "children"),
+    Output("hs-analysis-multiyear-main-container", "style"),
+    Output("hs-analysis-multiyear-empty-container", "style"),
+    Output("hs-analysis-multiyear-no-data", "children"),
+    Output("multiyear-analysis-notes", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
     Input("academic-type-radio", "value"),
-    Input("analysis-multi-subject-radio", "value"),
-    Input("analysis-multi-hs-group-radio", "value"),
-    [Input("analysis-multi-comparison-dropdown", "value")],
-    State("analysis-multi-subcategory-radio", "value"),
+    Input("analysis-multiyear-subject-radio", "value"),
+    Input("analysis-multiyear-hs-group-radio", "value"),
+    [Input("analysis-multiyear-comparison-dropdown", "value")],
+    State("analysis-multiyear-subcategory-radio", "value"),
 )
-def update_academic_analysis_multiple_years(
+def update_academic_analysis_multiyear(
     school: str,
     year: str,
     academic_type_value: str,
@@ -223,7 +223,7 @@ def update_academic_analysis_multiple_years(
         or (school_type == "k12" and academic_type_value == "hs")
     ):
         k8_analysis_multi_empty_container = {"display": "none"}
-        year_over_year_grade = []  # type: list
+        multiyear_grade = []  # type: list
 
         analysis__multi_notes_label = "Comparison Data - High School"
         analysis__multi_notes_string = "Use this page to view SAT and Graduation Rate comparison data for all ethnicities, \
@@ -244,10 +244,10 @@ def update_academic_analysis_multiple_years(
                 else:
                     category = "Total|EBRW"
 
-                label = "Year over Year Comparison (SAT At Benchmark) - " + category
+                label = "Multi-Year Comparison (SAT At Benchmark) - " + category
                 msg = ""
 
-                year_over_year_hs_data, all_school_info = get_year_over_year_data(
+                multiyear_hs_data, all_school_info = get_multiyear_data(
                     school, comparison_school_list, category, string_year, "sat"
                 )
 
@@ -257,53 +257,53 @@ def update_academic_analysis_multiple_years(
                 else:
                     category = "Total|"
 
-                label = "Year over Year Comparison (Graduation Rate) - " + category[:-1]
+                label = "Multi-Year Comparison (Graduation Rate) - " + category[:-1]
                 msg = ""
 
-                year_over_year_hs_data, all_school_info = get_year_over_year_data(
+                multiyear_hs_data, all_school_info = get_multiyear_data(
                     school, comparison_school_list, category, string_year, "grad"
                 )
 
         else:
-            year_over_year_hs_data = pd.DataFrame()
+            multiyear_hs_data = pd.DataFrame()
 
             if subcategory_radio_value == "No Data" or subcategory_radio_value == "":
-                label = "Year over Year Comparison (" + hs_group_radio_value + ")"
+                label = "Multi-Year Comparison (" + hs_group_radio_value + ")"
                 msg = "No Data for Selected School."
             else:
                 label = (
-                    "Year over Year Comparison ("
+                    "Multi-Year Comparison ("
                     + hs_group_radio_value
                     + ") - "
                     + subcategory_radio_value[3:-5:]
                 )
                 msg = subcategory_radio_value + " for Selected School."
 
-        if year_over_year_hs_data.empty:
+        if multiyear_hs_data.empty:
             analysis_multi_dropdown_container = {"display": "none"}
             hs_analysis_multi_empty_container = {"display": "block"}
-            year_over_year_hs = []
+            multiyear_hs = []
 
         else:
             hs_analysis_multi_main_container = {"display": "block"}
             hs_analysis_multi_empty_container = {"display": "none"}
             analysis_multi_dropdown_container = {"display": "block"}
 
-            ## Create Year Over Year HS (SAT and Graduation Rate) Chart
-            year_over_year_hs = create_year_over_year_layout(
-                school, year_over_year_hs_data, all_school_info, label, msg
+            ## Create Multi-Year HS (SAT and Graduation Rate) Chart
+            multiyear_hs = create_multiyear_layout(
+                school, multiyear_hs_data, all_school_info, label, msg
             )
 
     elif school_type == "k8" or (school_type == "k12" and academic_type_value == "k8"):
         hs_analysis_multi_main_container = {"display": "none"}
-        year_over_year_hs = []
+        multiyear_hs = []
 
         analysis__multi_notes_label = "Comparison Data - K-8"
         analysis__multi_notes_string = "Use this page to view ILEARN & IREAD proficiency comparison data for all grades, ethnicities, \
             and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
             the selected school. Up to eight (8) schools may be displayed at once."
 
-        ## K8 Year Over Year Chart
+        ## K8 Multi-Year Chart
         if subject_radio_value == "IREAD":
             if (
                 subcategory_radio_value != "No Subgroup Data"
@@ -315,22 +315,22 @@ def update_academic_analysis_multiple_years(
                 else:
                     category = "Total|IREAD"
 
-                label = "Year over Year Comparison - " + category
+                label = "Multi-Year Comparison - " + category
                 msg = ""
 
-                year_over_year_k8_data, all_school_info = get_year_over_year_data(
+                multiyear_k8_data, all_school_info = get_multiyear_data(
                     school, comparison_school_list, category, string_year, "k8"
                 )
 
             else:
-                year_over_year_k8_data = pd.DataFrame()
+                multiyear_k8_data = pd.DataFrame()
 
                 if (
                     subcategory_radio_value == "No Data"
                     or subcategory_radio_value == ""
                 ):
                     label = (
-                        "Year over Year Comparison ("
+                        "Multi-Year Comparison ("
                         + subcategory_radio_value
                         + "|"
                         + subject_radio_value
@@ -339,7 +339,7 @@ def update_academic_analysis_multiple_years(
                     msg = "No Data for Selected School."
                 else:
                     label = (
-                        "Year over Year Comparison ("
+                        "Multi-Year Comparison ("
                         + subcategory_radio_value
                         + "|"
                         + subject_radio_value
@@ -348,10 +348,10 @@ def update_academic_analysis_multiple_years(
                     )
                     msg = subcategory_radio_value + " for Selected School."
 
-            if year_over_year_k8_data.empty:
+            if multiyear_k8_data.empty:
                 analysis_multi_dropdown_container = {"display": "none"}
                 k8_analysis_multi_empty_container = {"display": "block"}
-                year_over_year_grade = []
+                multiyear_grade = []
 
             else:
                 k8_analysis_multi_main_container = {"display": "block"}
@@ -361,9 +361,9 @@ def update_academic_analysis_multiple_years(
                 # all_school_info is a dataframe with school names and school ids,
                 # it is used in the comparison_table function to identify the index
                 # of the school by Id
-                year_over_year_grade = create_year_over_year_layout(
+                multiyear_grade = create_multiyear_layout(
                     school,
-                    year_over_year_k8_data,
+                    multiyear_k8_data,
                     all_school_info,
                     label,
                     subcategory_radio_value,
@@ -380,22 +380,22 @@ def update_academic_analysis_multiple_years(
                 else:
                     category = "Total|ELA"
 
-                label = "Year over Year Comparison - " + category
+                label = "Multi-Year Comparison - " + category
                 msg = ""
 
-                year_over_year_k8_data, all_school_info = get_year_over_year_data(
+                multiyear_k8_data, all_school_info = get_multiyear_data(
                     school, comparison_school_list, category, string_year, "k8"
                 )
 
             else:
-                year_over_year_k8_data = pd.DataFrame()
+                multiyear_k8_data = pd.DataFrame()
 
                 if (
                     subcategory_radio_value == "No Data"
                     or subcategory_radio_value == ""
                 ):
                     label = (
-                        "Year over Year Comparison ("
+                        "Multi-Year Comparison ("
                         + subcategory_radio_value
                         + "|"
                         + subject_radio_value
@@ -404,7 +404,7 @@ def update_academic_analysis_multiple_years(
                     msg = "No Data for Selected School."
                 else:
                     label = (
-                        "Year over Year Comparison ("
+                        "Multi-Year Comparison ("
                         + subcategory_radio_value
                         + "|"
                         + subject_radio_value
@@ -413,10 +413,10 @@ def update_academic_analysis_multiple_years(
                     )
                     msg = subcategory_radio_value + " for Selected School."
 
-            if year_over_year_k8_data.empty:
+            if multiyear_k8_data.empty:
                 analysis_multi_dropdown_container = {"display": "none"}
                 k8_analysis_multi_empty_container = {"display": "block"}
-                year_over_year_grade = []
+                multiyear_grade = []
 
             else:
                 k8_analysis_multi_main_container = {"display": "block"}
@@ -426,9 +426,9 @@ def update_academic_analysis_multiple_years(
                 # all_school_info is a dataframe with school names and school ids,
                 # it is used in the comparison_table function to identify the index
                 # of the school by Id
-                year_over_year_grade = create_year_over_year_layout(
+                multiyear_grade = create_multiyear_layout(
                     school,
-                    year_over_year_k8_data,
+                    multiyear_k8_data,
                     all_school_info,
                     label,
                     subcategory_radio_value,
@@ -462,8 +462,8 @@ def update_academic_analysis_multiple_years(
 
     return (
         analysis_multi_dropdown_container,
-        year_over_year_grade,
-        year_over_year_hs,
+        multiyear_grade,
+        multiyear_hs,
         k8_analysis_multi_main_container,
         k8_analysis_multi_empty_container,
         k8_analysis_multi_no_data,
@@ -494,13 +494,13 @@ layout = html.Div(
                                 html.Div(
                                     [
                                         dcc.Dropdown(
-                                            id="analysis-multi-comparison-dropdown",
+                                            id="analysis-multiyear-comparison-dropdown",
                                             style={"fontSize": "1.1rem"},
                                             multi=True,
                                             clearable=False,
                                             className="comparison-dropdown-control",
                                         ),
-                                        html.Div(id="analysis-multi-input-warning"),
+                                        html.Div(id="analysis-multiyear-input-warning"),
                                     ],
                                     className="bare-container eight columns",
                                 ),
@@ -508,42 +508,42 @@ layout = html.Div(
                             className="comparison-dropdown-row",
                         ),
                     ],
-                    id="analysis-multi-dropdown-container",
+                    id="analysis-multiyear-dropdown-container",
                 ),
                 html.Div(
                     [
                         html.Div(id="year-over-year-grade", children=[]),
                         html.Div(
                             [
-                                html.Div(id="multi-year-analysis-notes", children=[]),
+                                html.Div(id="multiyear-analysis-notes", children=[]),
                             ],
                             className="row",
                         ),
                     ],
-                    id="k8-analysis-multi-main-container",
+                    id="k8-analysis-multiyear-main-container",
                     style={"display": "none"},
                 ),
                 html.Div(
                     [
-                        html.Div(id="k8-analysis-multi-no-data"),
+                        html.Div(id="k8-analysis-multiyear-no-data"),
                     ],
-                    id="k8-analysis-multi-empty-container",
+                    id="k8-analysis-multiyear-empty-container",
                 ),
                 html.Div(
                     [
                         html.Div(id="year-over-year-hs", children=[]),
                     ],
-                    id="hs-analysis-multi-main-container",
+                    id="hs-analysis-multiyear-main-container",
                     style={"display": "none"},
                 ),
                 html.Div(
                     [
-                        html.Div(id="hs-analysis-multi-no-data"),
+                        html.Div(id="hs-analysis-multiyear-no-data"),
                     ],
-                    id="hs-analysis-multi-empty-container",
+                    id="hs-analysis-multiyear-empty-container",
                 ),
             ],
-            id="multi-academic-analysis-page",
+            id="multiyear-academic-analysis-page",
         )
     ],
     id="main-container",

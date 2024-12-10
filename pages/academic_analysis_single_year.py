@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Analysis - Single Year #
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
-# date:     10/08/24
+# version:  1.16
+# date:     12/10/24
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -19,6 +19,7 @@ from .load_data import (
     current_academic_year,
 )
 
+from .clean_data import clean_academic_data
 from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
 from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
 from .tables import (
@@ -36,7 +37,7 @@ from .string_helpers import (
 
 dash.register_page(
     __name__,
-    name="Selected Year",
+    name="Single Year",
     path="/academic_analysis_single_year",
     top_nav=True,
     order=10,
@@ -368,11 +369,13 @@ def update_academic_analysis_single_year(
 
         list_of_schools = [school_id] + comparison_school_list
         raw_hs_analysis_data = get_academic_data(
-            list_of_schools, school_type, numeric_year, "analysis"
+            list_of_schools, school_type
         )
 
-        hs_analysis_data = raw_hs_analysis_data.loc[
-            raw_hs_analysis_data["Year"] == numeric_year
+        clean_hs_analysis_data = clean_academic_data(raw_hs_analysis_data, list_of_schools, school_type, numeric_year, "analysis")
+
+        hs_analysis_data = clean_hs_analysis_data.loc[
+            clean_hs_analysis_data["Year"] == numeric_year
         ].copy()
 
         if hs_analysis_data.empty:
@@ -566,11 +569,13 @@ def update_academic_analysis_single_year(
             list_of_schools = [school_id] + comparison_school_list
 
             raw_k8_analysis_data = get_academic_data(
-                list_of_schools, school_type, numeric_year, "analysis"
+                list_of_schools, school_type
             )
 
-            k8_analysis_data = raw_k8_analysis_data.loc[
-                raw_k8_analysis_data["Year"] == numeric_year
+            clean_k8_analysis_data = clean_academic_data(raw_k8_analysis_data, list_of_schools, school_type, numeric_year, "analysis")
+
+            k8_analysis_data = clean_k8_analysis_data.loc[
+                clean_k8_analysis_data["Year"] == numeric_year
             ].copy()
             k8_analysis_data = k8_analysis_data.reset_index(drop=True)
 

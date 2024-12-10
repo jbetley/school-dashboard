@@ -2,8 +2,8 @@
 # ICSB Dashboard - Clean & Process Data #
 #########################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
-# date:     11/11/24
+# version:  1.16
+# date:     12/10/24
 
 from typing import Tuple
 import pandas as pd
@@ -17,8 +17,11 @@ from .globals import (
     subgroup,
 )
 
+from .load_data import get_ilearn_student_data, get_iread_student_data
+from .calculations import calculate_proficiency_manually
 
-def transpose_data(raw_df: pd.DataFrame, params):
+
+def transpose_data(raw_df: pd.DataFrame, school_type: str):
     """
     Filters tested (nsize) cols and proficiency calculations into
     separate dataframes, performs some cleanup, including a transposition,
@@ -28,11 +31,8 @@ def transpose_data(raw_df: pd.DataFrame, params):
 
     Args:
     raw_df (pd.DataFrame): student level growth data
-    params (dict): a variable dictionary of strings with keys:
-                    "schools": a list of school ids
-                    "type": the school type
-                    "year": the selected year
-                    "page": the selected page
+    school_type (str): the school type
+
 
     Returns:
         final_data (pd.DataFrame): processed and transposed dataframe
@@ -64,7 +64,7 @@ def transpose_data(raw_df: pd.DataFrame, params):
         name_id = "School"
 
     # create dataframes with N-Size data for info/analysis pages
-    if params["type"] == "ahs":
+    if school_type == "ahs":
         # Three Graduation Rate measurements for AHS:
         #   Graduation to Enrollment =  AHS|Actual Graduates/ADM Average
         #   Grade 12 = AHS|Actual Graduates/AHS|Actual Enrollment
@@ -79,7 +79,7 @@ def transpose_data(raw_df: pd.DataFrame, params):
             "\|Count": "",
         }
 
-    elif params["type"] == "hs":
+    elif school_type == "hs":
         tested_cols = "Total Tested|Cohort Count|Year"
         filter_cols = r"^Category|Graduation Rate$|AHS|Pass Rate$|Benchmark %|Below|Approaching|At|^Year$"
         substring_dict = {" Total Tested": "", "\|Cohort Count": "|Graduation"}
@@ -144,7 +144,7 @@ def transpose_data(raw_df: pd.DataFrame, params):
     proficiency_data = proficiency_data.reset_index(drop=True)
 
     # temporarily store Low/High grade cols for K8
-    if params["type"] == "k8":
+    if school_type == "k8":
         other_rows = proficiency_data[
             proficiency_data["Category"].str.contains(r"Low|High")
         ]
@@ -195,7 +195,7 @@ def transpose_data(raw_df: pd.DataFrame, params):
 
     # Add Low and High Grade rows back to k8 data and
     # create df for information figs
-    if params["type"] == "k8":
+    if school_type == "k8":
         final_data = pd.concat(
             [final_data.reset_index(drop=True), other_rows.reset_index(drop=True)],
             axis=0,
@@ -556,3 +556,111 @@ def process_discipline_data(data, category, demographic):
     merged_data.insert(0, "Category", category_col)
 
     return merged_data
+
+
+def process_student_level_ilearn(school, subject):
+    ilearn_student_all = get_ilearn_student_data(school)
+
+    # will also be empty for guest schools
+    if ilearn_student_all.empty:
+        return (
+            pd.DataFrame(),
+            pd.DataFrame(),
+        )  # iread_ilearn_pass_final, iread_ilearn_nopass_final
+
+    else:
+        iread_student_data = get_iread_student_data(school)
+
+        ilearn_filtered = ilearn_student_all.filter(
+            regex=rf"STN|Current Grade|Tested Grade|{subject}"
+        )
+
+        ilearn_filtered = ilearn_filtered.rename(
+            columns={
+                "Current Grade": "ILEARN Current Grade",
+                "Tested Grade": "ILEARN Tested Grade",
+            }
+        )
+        iread_student_data = iread_student_data.rename(columns={"Year": "Test Year"})
+        ilearn_filtered["STN"] = ilearn_filtered["STN"].astype(str)
+
+        school_all_student_data = pd.merge(
+            iread_student_data, ilearn_filtered, on="STN"
+        )
+
+        category = subject + " Proficiency"
+
+        school_all_student_data = school_all_student_data[
+            [
+                "Test Year",
+                "STN",
+                "Tested Grade",
+                "Status",
+                "Exemption Status",
+                "ILEARN Tested Grade",
+                category,
+            ]
+        ]
+
+        all_student_data_nopass = school_all_student_data[
+            school_all_student_data["Status"] == "Did Not Pass"
+        ]
+        all_student_data_pass = school_all_student_data[
+            school_all_student_data["Status"] == "Pass"
+        ]
+
+        pass_proficiency = (
+            all_student_data_pass.groupby(by="Test Year")[category]
+            .apply(calculate_proficiency_manually)
+            .reset_index(name="Proficiency")
+        )
+        nopass_proficiency = (
+            all_student_data_nopass.groupby(by="Test Year")[category]
+            .apply(calculate_proficiency_manually)
+            .reset_index(name="Proficiency")
+        )
+
+        nopass_nsize = (
+            all_student_data_nopass["Test Year"]
+            .value_counts()
+            .reset_index(name="N-Size")
+            .rename(columns={"index": "Test Year"})
+        )
+        pass_nsize = (
+            all_student_data_pass["Test Year"]
+            .value_counts()
+            .reset_index(name="N-Size")
+            .rename(columns={"index": "Test Year"})
+        )
+
+        iread_ilearn_pass_final = pd.merge(pass_proficiency, pass_nsize, on="Test Year")
+        iread_ilearn_nopass_final = pd.merge(
+            nopass_proficiency, nopass_nsize, on="Test Year"
+        )
+
+        pass_column_name = "Avg. " + subject + " Proficiency - Students Passing IREAD"
+        iread_ilearn_pass_final = iread_ilearn_pass_final.rename(
+            columns={
+                "Proficiency": pass_column_name,
+                "Test Year": "Year",
+                "N-Size": "N-Size (Pass IREAD)",
+            }
+        )
+
+        nopass_column_name = (
+            "Avg. " + subject + " Proficiency - Students not Passing IREAD"
+        )
+        iread_ilearn_nopass_final = iread_ilearn_nopass_final.rename(
+            columns={
+                "Proficiency": nopass_column_name,
+                "Test Year": "Year",
+                "N-Size": "N-Size (Did Not Pass IREAD)",
+            }
+        )
+
+        iread_ilearn_pass_final["Year"] = iread_ilearn_pass_final["Year"].astype(str)
+        iread_ilearn_nopass_final["Year"] = iread_ilearn_nopass_final["Year"].astype(
+            str
+        )
+
+        return iread_ilearn_pass_final, iread_ilearn_nopass_final

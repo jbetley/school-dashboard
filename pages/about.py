@@ -27,12 +27,13 @@ from .load_data import (
     get_financial_data,
     get_corp_demographic_data,
     get_school_demographic_data,
-    get_adm,
+    get_adm_data,
     get_attendance_data,
     get_discipline_data,
     current_academic_year,
 )
 
+from .clean_data import clean_adm_data, clean_discipline_data
 from .process_data import process_discipline_data
 
 from .charts import (
@@ -110,12 +111,14 @@ def update_discipline_layout(
     if year_value == None:
         year_value = current_academic_year
 
-    raw_discipline_data = get_discipline_data(
-        school_state, discipline_demographic, discipline_category, year_value
+    raw_discipline_data = get_discipline_data(school_state)
+    
+    discipline_data_clean = clean_discipline_data(
+        raw_discipline_data, discipline_demographic, discipline_category, year_value
     )
 
     processed_discipline_data = process_discipline_data(
-        raw_discipline_data, discipline_category, discipline_demographic
+        discipline_data_clean, discipline_category, discipline_demographic
     )
 
     discipline_table = create_discipline_table(processed_discipline_data)
@@ -385,7 +388,8 @@ def update_about_page(year: str, school: str):
     financial_data = get_financial_data(school)
 
     if financial_data.empty:
-        adm_values = get_adm(int(selected_school["Corporation ID"].values[0]))
+        raw_adm = get_adm_data(int(selected_school["Corporation ID"].values[0]))
+        adm_values = clean_adm_data(raw_adm)
     else:
         financial_data = financial_data.drop(["School ID", "School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
@@ -484,6 +488,13 @@ def update_about_page(year: str, school: str):
             height=400,
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y= -0.3, 
+                xanchor="center",
+                x=0.45 
+            )
         )
 
     ## Attendance Rate & Chronic Absenteeism

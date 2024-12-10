@@ -289,7 +289,7 @@ def create_barchart_layout(
         layout: a list of a layout html.Div object
     """
 
-    # year_over_year charts do not have category or school strings
+    # multiyear charts do not have category or school strings
     if category_string == "" and school_string == "":
         layout = [
             html.Div(
@@ -552,11 +552,11 @@ def create_radio_layout(
     return radio_button_group
 
 
-def create_year_over_year_layout(
+def create_multiyear_layout(
     school_id: str, data: pd.DataFrame, school_id_list: list, label: str, msg: str
 ) -> list:
     """
-    Creates a layout for a year over year chart and table grouping
+    Creates a layout for a multiyear chart and table grouping
 
     Args:
         school_id (str): four digit number as a string

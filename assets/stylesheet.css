@@ -1,13 +1,13 @@
-/*  ICSB Dashboard - Stylesheet
+/*  
+    ICSB Dashboard - Stylesheet
     author:   jbetley (https://github.com/jbetley)
-    version:  1.15
-    date:     10/08/24
+    version:  1.16
+    date:     12/10/24
 */
 
 /* Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap');
-
 
 /** Base Styles **/
 /* html is set to 62.5% so that all the REM measurements
@@ -63,7 +63,7 @@ body {
 }
 
 /** Media Queries **/
-/* TODO: Adapt and Test media queries */
+/* TODO: Test media queries */
 /*
 Note: The best way to structure the use of media queries is to create the queries
 near the relevant code. For example, if you wanted to change the styles for buttons
@@ -229,7 +229,7 @@ there.
 
 }
 
-/* creates a thin line */
+/* lines */
 hr {
   margin-top: -5px;
   width: 50%;
@@ -295,7 +295,7 @@ hr {
 
 /* same as pretty_container but adds min-width. Used for left side of
   'About' page to ensure the width of the tables and figs are aligned.
-   Gets screwy when the window is too small though. */
+   Gets screwy when the window is too small. */
 .pretty-container--left {
   border-radius: 5px;
   background-color: #ffffff;
@@ -400,12 +400,6 @@ hr {
   position: fixed;
   z-index: 999;
   background-color: #F2F2F2;
-}
-
-/* login failure message */
-.msg {
-  padding-top: 5px;
-  color: blue;
 }
 
 /* datatables export button (not currently used)*/
@@ -528,8 +522,8 @@ hr {
 /** Plotly Dash Overrides **/
 /* Overrides certain styles within the hoverlayer (for x hover mode) 
    Control the page using the id of the single-analysis page div*/
-
 /* Love me some CSS but there's gotta be a better way to do this */
+
 /* 1st group */
 #year-over-year-hs .hoverlayer>.hovertext>path {
   stroke-width: 0px !important;
@@ -730,8 +724,7 @@ hr {
     that doesn't contain: 1) a dash datatable that has cells (not counting
     the header); 2) a plotly fig; 3) a dash dropdown component; or 4) notes-string
     element. Any other components in a div without one of these three things that
-    we WANT to display must be added to the chained selector
-*/
+    we WANT to display must be added to the chained selector */
 .pretty_container:not(:has(div.dash-table-container td,
     div.js-plotly-plot,
     div.dash-dropdown,
@@ -911,13 +904,14 @@ input[type=checkbox] {
 }
 
 /** Nav and SubNav Links **/
-/* TODO: Not working consistently across pages - doesn't stay active when selected */
-/* See:
+/* TODO: Not working - doesn't stay active when selected across pages */
+/*
 https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
 You're only ever setting/removing the active class when the button is clicked.
 You'll also need javascript code that runs on page load, checks the current url,
 removes the 'active' class from all nav links, then adds the 'active' class to
-the nav link that matches the current url. (or you could do that in php, either way */
+the nav link that matches the current url. (or you could do that in php, either way
+*/
 
 .nav-container {
   justify-content: center;
@@ -1023,11 +1017,11 @@ a.nav-link:hover {
   margin-bottom: 7px;
 }
 
-#analysis-multi-subject-radio-container {
+#analysis-multiyear-subject-radio-container {
   padding-right: 10px;
 }
 
-#analysis-multi-subject-radio-container::after {
+#analysis-multiyear-subject-radio-container::after {
   content: "";
   background: steelblue;
   position: absolute;
@@ -1041,7 +1035,7 @@ a.nav-link:hover {
   margin-bottom: 7px;
 }
 
-#analysis-multi-category-radio-container {
+#analysis-multiyear-category-radio-container {
   padding-left: 10px;
 }
 
@@ -1055,6 +1049,13 @@ a.nav-link:hover {
 }
 
 /** Strings & Labels **/
+
+/* login failure message */
+.msg {
+  padding-top: 5px;
+  color: blue;
+}
+
 label,
 legend {
   display: block;
@@ -1116,22 +1117,6 @@ label>.label-body {
   padding-bottom: 5px;
   padding-top: 5px;
 }
-
-/* .hollow-label__header {
-  height: auto;
-  background-color: #6783a9;
-  font-size: 12px;
-  font-family: 'Montserrat', sans-serif;
-  color: #ffffff;
-  text-align: center;
-  width: 50%;
-  margin: auto;
-  font-weight: bold;
-  padding-bottom: 5px;
-  padding-top: 5px;
-  border: .5px solid #6783a9;
-  border-radius: .5rem;
-} */
 
 .school-string {
   color: #6783a9;
@@ -1225,7 +1210,6 @@ label>.label-body {
 }
 
 /** Other Navigation **/
-
 .comparison-dropdown-label {
   padding-top: 8px;
   padding-left: 5px;
@@ -1237,10 +1221,9 @@ label>.label-body {
   margin: 0;
   padding: 0;
   font-size: 10px;
-  /* height: 35px;   */
 }
 
-/* Trying to decrease space between values */
+/* Trying to decrease space between values - if 2nd row exists */
 /* .comparison-dropdown-row  .Select-value:nth-child(n+4) {
   margin-top: 0px !important;
 } */
@@ -1249,8 +1232,6 @@ label>.label-body {
   padding-top: 5px;
   padding-bottom: 0px;
 }
-
-/* TODO: center dropdowns */
 
 .discipline-dropdown-label {
   padding-top: 8px;
@@ -1261,7 +1242,6 @@ label>.label-body {
   text-align: center;
   align-items: center;
   justify-content: center;
-  /* float: left; */
   font-size: 11px;
   font-weight: 600;
   color: steelblue !important;
@@ -1269,16 +1249,14 @@ label>.label-body {
 
 .discipline-dropdown-control {
   margin-top: 5px;
-  /* margin: 0; */
   padding: 0;
   float: left;
-  /* width: 20%; */
   font-size: 10px;
   color: "steelblue";
   height: 35px;
 }
 
-/** Fixed Header **/
+/** Main Header - Fixed **/
 .row--fixed--top {
   display: flex;
   width: 100%;
@@ -1292,11 +1270,6 @@ label>.label-body {
   padding-top: 5px;
   padding-bottom: 0px;
   margin-left: -25px;
-}
-
-#year-dropdown-label {
-  width: 25%;
-  padding-left: 35px;
 }
 
 .dash-label {
@@ -1324,6 +1297,11 @@ label>.label-body {
   height: 35px;
 }
 
+#year-dropdown-label {
+  width: 25%;
+  padding-left: 35px;
+}
+
 .year-dropdown-control {
   margin-top: 5px;
   padding: 0;
@@ -1334,7 +1312,6 @@ label>.label-body {
 }
 
 /** Override react styling to decrease height of dropdown **/
-
 #discipline-demographic-dropdown .Select-value, #discipline-category-dropdown .Select-value,
 #charter-dropdown .Select-value, #year-dropdown .Select-value {
   line-height: 24px !important;
@@ -1385,7 +1362,7 @@ a.logout-button:hover {
   position: relative;
 }
 
-/** Display Main Menu Button **/
+/** Main Menu Button - Displayed only on Academic Analysis - Multi-Year **/
 .main-menu-button {
   text-transform: uppercase;
   font-family: 'Inter', sans-serif;

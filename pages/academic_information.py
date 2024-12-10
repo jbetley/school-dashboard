@@ -28,6 +28,8 @@ from .load_data import (
     get_academic_data,
 )
 
+from .clean_data import clean_academic_data
+
 from .tables import (
     create_multi_header_table,
     create_key_table,
@@ -313,8 +315,14 @@ def update_academic_information_page(
 
         list_of_schools = [school]
 
-        hs_info_data = get_academic_data(
-            list_of_schools, school_type, selected_year_numeric, "info"
+        raw_hs_info_data = get_academic_data(list_of_schools, school_type)
+
+        hs_info_data = clean_academic_data(
+            raw_hs_info_data,
+            list_of_schools,
+            school_type,
+            selected_year_numeric,
+            "info",
         )
 
         # TODO: Add figs for SAT and Grad Rates
@@ -532,8 +540,14 @@ def update_academic_information_page(
         list_of_schools = [school]
 
         # NOTE: no ilearn/iread data available for 2020
-        k8_info_data = get_academic_data(
-            list_of_schools, school_type, selected_year_numeric, "info"
+        raw_k8_info_data = get_academic_data(list_of_schools, school_type)
+
+        k8_info_data = clean_academic_data(
+            raw_k8_info_data,
+            list_of_schools,
+            school_type,
+            selected_year_numeric,
+            "info",
         )
 
         k8_info_data["Category"] = (
@@ -552,7 +566,7 @@ def update_academic_information_page(
 
             ilearn_table_data = k8_info_data.copy()
 
-            # Reformat data for multi-year line charts
+            # Reformat data for multiyear line charts
             # Remove N-Size cols, strip suffix from years, and
             # transpose dataframe so categories become column names
             ilearn_fig_data = k8_info_data.loc[
