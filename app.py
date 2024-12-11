@@ -250,7 +250,8 @@ def set_dropdown_options(app_state):
     # login.
 
     # NOTE: user 0 is admin; users 1-7 are network logins; users 8- are individual schools
-    # Groups: CHA (-1); Excel (-2); GEI (-3); PLA (-4); Paramount (-5); Purdue (-6); EdOne (-7)
+    # Groups: CHA (-1); Excel (-2); GEI (-3); PLA (-4); Paramount (-5); Purdue (-6);
+    # user 9 is guest icsb account.
     authorized_user = current_user._get_current_object()
     group_id = current_user.group_id
     school_id = authorized_user.school_id
@@ -262,7 +263,9 @@ def set_dropdown_options(app_state):
 
     # admin user
     if authorized_user.id == 0:
-        charters = available_charters
+
+        # groupID 9 is the guest "icsb" account 
+        charters = available_charters[available_charters["GroupID"] != "9"] 
 
     else:
         # check for network login - use abs value of network group_id
@@ -571,8 +574,8 @@ def navigation(
     current_page: str,
     school_id: str,
     year_value: str,
-    display_main_menu_button: str,  # don't use these directly, use
-    hide_main_menu_button: str,
+    display_main_menu_button: str,  # not using these directly, using 
+    hide_main_menu_button: str,     # 'dash.callback_context.triggered' instead
     academic_type_value: str,
     analysis_hs_group_value: str,
     analysis_multiyear_category_value: str,
@@ -791,25 +794,6 @@ def navigation(
 
         # analysis_multiyear.py
         if "analysis_multiyear" in current_page:
-            # # logic for the display/hide main menu button
-            # changed_id = [p["prop_id"] for p in dash.callback_context.triggered][0]
-
-            # if "display-main-menu" in changed_id:
-            #     display_main_menu = {"display": "none"}
-            #     hide_main_menu = {"display": "block"}
-            #     main_navigation_container = {"display": "block"}
-
-            # elif "hide-main-menu" in changed_id:
-            #     display_main_menu = {"display": "block"}
-            #     hide_main_menu = {"display": "none"}
-            #     space_filler = {"height": "50px"}
-            #     main_navigation_container = {"display": "none"}
-            # else:
-            #     main_navigation_container = {"display": "none"}
-            #     space_filler = {"height": "50px"}
-            #     display_main_menu = {"display": "block"}
-            #     hide_main_menu = {"display": "none"}
-
             if school_type == "k12":
                 academic_type_container = {"display": "block"}
 

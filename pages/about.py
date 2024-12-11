@@ -112,7 +112,7 @@ def update_discipline_layout(
         year_value = current_academic_year
 
     raw_discipline_data = get_discipline_data(school_state)
-    
+
     discipline_data_clean = clean_discipline_data(
         raw_discipline_data, discipline_demographic, discipline_category, year_value
     )
@@ -180,6 +180,11 @@ def update_about_page(year: str, school: str):
     enroll_table = []
     attendance_layout = []
 
+    # use this flag to determine if the selected school is a traditional
+    # public school instead of a charter public school- it impacts how
+    # we utilize the "Corporation Name" value
+    isTradSchool = False
+
     # NOTE: first load of any plotly object is very slow
     adm_fig = px.line()
     ethnicity_fig = px.bar()
@@ -197,7 +202,7 @@ def update_about_page(year: str, school: str):
     # Updates Table - Right Now hardcoded - may want to add to DB
     update_table_label = ""
     update_table_dict = {
-        "Date": ["08.16.24", "10.07.24", "11.11.24"],
+        "Date": ["08.16.24", "12.10.24", "12.10.24"],
         "Update": [
             "Added 2024 Chronic Absenteeism.",
             "Added Adult Accountability Metrics (beta).",
@@ -213,13 +218,13 @@ def update_about_page(year: str, school: str):
     )
 
     # Get data for enrollment table, and subgroup/ethnicity demographic figs (single year)
-    demographic_data = get_school_demographic_data(selected_school_id)
+    school_demographics_all = get_school_demographic_data(selected_school_id)
 
-    demographic_data = demographic_data.loc[
-        demographic_data["Year"] == selected_year_numeric
-    ]
+    school_demographics = school_demographics_all.loc[
+        school_demographics_all["Year"] == selected_year_numeric
+    ].copy()
 
-    if len(demographic_data.index) == 0:
+    if len(school_demographics.index) == 0:
         enroll_table = create_empty_table_layout(
             "No Data to Display", enroll_title, "six"
         )
@@ -233,12 +238,31 @@ def update_about_page(year: str, school: str):
         # Enrollment table
         corp_id = str(selected_school["GEO Corp"].values[0])
 
-        corp_demographics = get_corp_demographic_data(corp_id)
-        corp_demographics = corp_demographics.loc[
-            corp_demographics["Year"] == selected_year_numeric
-        ]
+        corp_demographics_all = get_corp_demographic_data(corp_id)
 
-        enrollment_filter = demographic_data.filter(
+        corp_demographics = corp_demographics_all.loc[
+            corp_demographics_all["Year"] == selected_year_numeric
+        ].copy()
+
+        # when loading a traditional public school, "Corporation
+        # Name" will be the same for both the school and the corp, so
+        # we need to replace the school's "Corporation Name" values
+        # with the school's "School Name" value
+        school_demographics.reset_index(drop=True, inplace=True)
+        corp_demographics.reset_index(drop=True, inplace=True)
+
+        if (
+            school_demographics["Corporation Name"].values[0]
+            == corp_demographics["Corporation Name"].values[0]
+        ):
+            
+            isTradSchool = True
+
+            school_demographics.loc[0, "Corporation Name"] = school_demographics[
+                "School Name"
+            ].values[0]
+
+        enrollment_filter = school_demographics.filter(
             regex=r"^Grade \d{1}|[1-9]\d{1}$;|^Pre-K$|^Kindergarten$|^Total Enrollment$",
             axis=1,
         )
@@ -324,10 +348,14 @@ def update_about_page(year: str, school: str):
         ]
 
         # Enrollment by ethnicity fig
-        ethnicity_school = demographic_data.loc[
+        ethnicity_school = school_demographics.loc[
             :,
-            (demographic_data.columns.isin(ethnicity))
-            | (demographic_data.columns.isin(["Corporation Name", "Total Enrollment"])),
+            (school_demographics.columns.isin(ethnicity))
+            | (
+                school_demographics.columns.isin(
+                    ["Corporation Name", "Total Enrollment"]
+                )
+            ),
         ]
 
         if not ethnicity_school.empty:
@@ -358,10 +386,14 @@ def update_about_page(year: str, school: str):
             ethnicity_fig = make_demographics_bar_chart(ethnicity_data)
 
         # Enrollment by subgroup fig
-        subgroup_school = demographic_data.loc[
+        subgroup_school = school_demographics.loc[
             :,
-            (demographic_data.columns.isin(subgroup))
-            | (demographic_data.columns.isin(["Corporation Name", "Total Enrollment"])),
+            (school_demographics.columns.isin(subgroup))
+            | (
+                school_demographics.columns.isin(
+                    ["Corporation Name", "Total Enrollment"]
+                )
+            ),
         ]
 
         if not subgroup_school.empty:
@@ -387,9 +419,22 @@ def update_about_page(year: str, school: str):
     # accurate for current years.
     financial_data = get_financial_data(school)
 
-    if financial_data.empty:
+    # adm is calculated at corp level so not available for traditional schools-
+    # so we use demographic data (Total Enrollment) as a proxy
+    if isTradSchool:
+        values = school_demographics_all["Total Enrollment"].astype(float).tolist()
+        
+        adm_values = pd.DataFrame(
+            [values],
+            columns=school_demographics_all["Year"].tolist()
+        )
+        adm_values.columns = adm_values.columns.astype(str)
+
+    elif financial_data.empty:
+
         raw_adm = get_adm_data(int(selected_school["Corporation ID"].values[0]))
         adm_values = clean_adm_data(raw_adm)
+             
     else:
         financial_data = financial_data.drop(["School ID", "School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
@@ -456,6 +501,7 @@ def update_about_page(year: str, school: str):
         # because we are checking against column names this time, we first
         # need to convert the list to strings
         excluded_years = [str(y) for y in excluded_years]
+
         if excluded_years:
             adm_values = adm_values.loc[
                 :, ~adm_values.columns.str.contains("|".join(excluded_years))
@@ -489,12 +535,8 @@ def update_about_page(year: str, school: str):
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y= -0.3, 
-                xanchor="center",
-                x=0.45 
-            )
+                orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.45
+            ),
         )
 
     ## Attendance Rate & Chronic Absenteeism
