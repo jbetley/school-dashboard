@@ -263,9 +263,8 @@ def set_dropdown_options(app_state):
 
     # admin user
     if authorized_user.id == 0:
-
-        # groupID 9 is the guest "icsb" account 
-        charters = available_charters[available_charters["GroupID"] != "9"] 
+        # groupID 9 is the guest "icsb" account
+        charters = available_charters[available_charters["GroupID"] != "9"]
 
     else:
         # check for network login - use abs value of network group_id
@@ -574,8 +573,8 @@ def navigation(
     current_page: str,
     school_id: str,
     year_value: str,
-    display_main_menu_button: str,  # not using these directly, using 
-    hide_main_menu_button: str,     # 'dash.callback_context.triggered' instead
+    display_main_menu_button: str,  # not using these directly, using
+    hide_main_menu_button: str,  # 'dash.callback_context.triggered' instead
     academic_type_value: str,
     analysis_hs_group_value: str,
     analysis_multiyear_category_value: str,
@@ -1093,305 +1092,308 @@ def redirect_hs(school: str, current_page: str):
         return dash.no_update
 
 
-def layout():
-    return html.Div(
-        [
-            dcc.Location(id="url", refresh="callback-nav"),
-            html.Div(id="hidden", style={"display": "none"}),
-            dcc.Store(id="input-state", storage_type="local"),
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.A(
-                                        "logout",
-                                        href="../logout",
-                                        className="logout-button no-print",
-                                    ),
-                                ],
-                                className="bare-container--flex two columns no-print",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Label("Select School:"),
-                                        ],
-                                        className="dash-label",
-                                        id="charter-dropdown-label",
-                                    ),
-                                    dcc.Dropdown(
-                                        id="charter-dropdown",
-                                        multi=False,
-                                        clearable=False,
-                                        className="charter-dropdown-control",
-                                    ),
-                                    # Dummy input for dropdown
-                                    html.Div(
-                                        id="application-state",
-                                        style={"display": "none"},
-                                    ),
-                                ],
-                                className="bare-container--slim five columns no-print",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Label("Select Year:"),
-                                        ],
-                                        className="dash-label",
-                                        id="year-dropdown-label",
-                                    ),
-                                    dcc.Dropdown(
-                                        id="year-dropdown",
-                                        multi=False,
-                                        clearable=False,
-                                        className="year-dropdown-control",
-                                    ),
-                                ],
-                                className="bare-container--slim four columns",
-                            ),
-                        ],
-                        className="row--fixed--top no-print",
-                    ),
-                ],
-                className="bare-container--flex twelve columns",
-            ),
-            html.Div(
-                [
-                    html.Button(
-                        "Display Main Menu",
-                        id="display-main-menu",
-                        className="main-menu-button",
-                        n_clicks=0,
-                    ),
-                    html.Button(
-                        "Hide Main Menu",
-                        id="hide-main-menu",
-                        className="main-menu-button",
-                        n_clicks=0,
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            dbc.Nav(
-                                                [
-                                                    dbc.NavLink(
-                                                        "About",
-                                                        href="/about",
-                                                        className="tab",
-                                                        active="exact",
-                                                    ),
-                                                    dbc.NavLink(
-                                                        "Financial Information",
-                                                        href="/financial_information",
-                                                        className="tab",
-                                                        active="exact",
-                                                    ),
-                                                    dbc.NavLink(
-                                                        "Financial Metrics",
-                                                        href="/financial_metrics",
-                                                        className="tab",
-                                                        active="exact",
-                                                    ),
-                                                    dbc.NavLink(
-                                                        "Financial Analysis",
-                                                        href="/financial_analysis",
-                                                        className="tab",
-                                                        active="exact",
-                                                    ),
-                                                    dbc.NavLink(
-                                                        "Organizational Compliance",
-                                                        href="/organizational_compliance",
-                                                        className="tab",
-                                                        active="exact",
-                                                    ),
-                                                    # hardcoding this instead of using a loop so that we
-                                                    # can manually add this break
-                                                    html.Br(),
-                                                    html.Div(
-                                                        style={"marginTop": "17px"}
-                                                    ),
-                                                    dbc.NavLink(
-                                                        "Academic Information",
-                                                        href="/academic_information",
-                                                        className="tab",
-                                                        active="exact",
-                                                    ),
-                                                    dbc.NavLink(
-                                                        "Academic Metrics",
-                                                        href="/academic_metrics",
-                                                        className="tab",
-                                                        active="exact",
-                                                    ),
-                                                    dbc.NavLink(
-                                                        "Academic Analysis",
-                                                        href="/academic_analysis_single_year",
-                                                        className="tab",
-                                                        active="exact",
-                                                    ),
-                                                    dbc.NavLink(
-                                                        "Print Pages",
-                                                        href="/print_page",
-                                                        className="tab",
-                                                        active="exact",
-                                                    ),
-                                                ],
-                                                className="tabs",
-                                            ),
-                                        ],
-                                        className="nav-container twelve columns",
-                                    ),
-                                ],
-                                className="row",
-                            ),
-                            html.Hr(),
-                        ],
-                        className="no-print",
-                        id="main-navigation-container",
-                    ),
-                    html.Div(id="space-filler"),
-                    # Subnavigation layout #
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                subnav_academic_information(),
-                                                id="subnav-academic-info",
-                                                className="tabs",
-                                            ),
-                                        ],
-                                        className="bare-container--flex--center twelve columns",
-                                    ),
-                                ],
-                                className="row",
-                            ),
-                        ],
-                        id="academic-information-subnav-container",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                subnav_academic_analysis(),
-                                                id="subnav-academic-analysis",
-                                                className="tabs",
-                                            ),
-                                        ],
-                                        className="bare-container--flex--center twelve columns",
-                                    ),
-                                ],
-                                className="row",
-                            ),
-                        ],
-                        id="analysis-subnav-container",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        create_radio_layout("academic", "type"),
-                                        className="tabs",
-                                    ),
-                                ],
-                                className="bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className="row",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        create_radio_layout(
-                                            "academic-information", "category"
+# NOTE: if substituting the following for "app.layout =" you also
+# need to uncomment "app.layout = layout" on line 1392
+# def layout():
+#     return
+app.layout = html.Div(
+    [
+        dcc.Location(id="url", refresh="callback-nav"),
+        html.Div(id="hidden", style={"display": "none"}),
+        dcc.Store(id="input-state", storage_type="local"),
+        # following is used by analysis_single and analysis_multiyear to
+        # store the 'previous' list of comparison schools (to ensure assigned
+        # colors remain consistent)
+        dcc.Store(id="school-list-state", storage_type="memory", data={}),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.A(
+                                    "logout",
+                                    href="../logout",
+                                    className="logout-button no-print",
+                                ),
+                            ],
+                            className="bare-container--flex two columns no-print",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Label("Select School:"),
+                                    ],
+                                    className="dash-label",
+                                    id="charter-dropdown-label",
+                                ),
+                                dcc.Dropdown(
+                                    id="charter-dropdown",
+                                    multi=False,
+                                    clearable=False,
+                                    className="charter-dropdown-control",
+                                ),
+                                # Dummy input for dropdown
+                                html.Div(
+                                    id="application-state",
+                                    style={"display": "none"},
+                                ),
+                            ],
+                            className="bare-container--slim five columns no-print",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Label("Select Year:"),
+                                    ],
+                                    className="dash-label",
+                                    id="year-dropdown-label",
+                                ),
+                                dcc.Dropdown(
+                                    id="year-dropdown",
+                                    multi=False,
+                                    clearable=False,
+                                    className="year-dropdown-control",
+                                ),
+                            ],
+                            className="bare-container--slim four columns",
+                        ),
+                    ],
+                    className="row--fixed--top no-print",
+                ),
+            ],
+            className="bare-container--flex twelve columns",
+        ),
+        html.Div(
+            [
+                html.Button(
+                    "Display Main Menu",
+                    id="display-main-menu",
+                    className="main-menu-button",
+                    n_clicks=0,
+                ),
+                html.Button(
+                    "Hide Main Menu",
+                    id="hide-main-menu",
+                    className="main-menu-button",
+                    n_clicks=0,
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        dbc.Nav(
+                                            [
+                                                dbc.NavLink(
+                                                    "About",
+                                                    href="/about",
+                                                    className="tab",
+                                                    active="exact",
+                                                ),
+                                                dbc.NavLink(
+                                                    "Financial Information",
+                                                    href="/financial_information",
+                                                    className="tab",
+                                                    active="exact",
+                                                ),
+                                                dbc.NavLink(
+                                                    "Financial Metrics",
+                                                    href="/financial_metrics",
+                                                    className="tab",
+                                                    active="exact",
+                                                ),
+                                                dbc.NavLink(
+                                                    "Financial Analysis",
+                                                    href="/financial_analysis",
+                                                    className="tab",
+                                                    active="exact",
+                                                ),
+                                                dbc.NavLink(
+                                                    "Organizational Compliance",
+                                                    href="/organizational_compliance",
+                                                    className="tab",
+                                                    active="exact",
+                                                ),
+                                                # hardcoding this instead of using a loop so that we
+                                                # can manually add this break
+                                                html.Br(),
+                                                html.Div(style={"marginTop": "17px"}),
+                                                dbc.NavLink(
+                                                    "Academic Information",
+                                                    href="/academic_information",
+                                                    className="tab",
+                                                    active="exact",
+                                                ),
+                                                dbc.NavLink(
+                                                    "Academic Metrics",
+                                                    href="/academic_metrics",
+                                                    className="tab",
+                                                    active="exact",
+                                                ),
+                                                dbc.NavLink(
+                                                    "Academic Analysis",
+                                                    href="/academic_analysis_single_year",
+                                                    className="tab",
+                                                    active="exact",
+                                                ),
+                                                dbc.NavLink(
+                                                    "Print Pages",
+                                                    href="/print_page",
+                                                    className="tab",
+                                                    active="exact",
+                                                ),
+                                            ],
+                                            className="tabs",
                                         ),
-                                        className="tabs",
-                                    ),
-                                ],
-                                className="bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className="row",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        create_radio_layout(
-                                            "analysis-multiyear", "hs-group"
+                                    ],
+                                    className="nav-container twelve columns",
+                                ),
+                            ],
+                            className="row",
+                        ),
+                        html.Hr(),
+                    ],
+                    className="no-print",
+                    id="main-navigation-container",
+                ),
+                html.Div(id="space-filler"),
+                # Subnavigation layout #
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            subnav_academic_information(),
+                                            id="subnav-academic-info",
+                                            className="tabs",
                                         ),
-                                        className="tabs",
-                                    ),
-                                ],
-                                className="bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className="row",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        create_radio_layout(
-                                            "analysis-multiyear", "subject", "six"
+                                    ],
+                                    className="bare-container--flex--center twelve columns",
+                                ),
+                            ],
+                            className="row",
+                        ),
+                    ],
+                    id="academic-information-subnav-container",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            subnav_academic_analysis(),
+                                            id="subnav-academic-analysis",
+                                            className="tabs",
                                         ),
-                                        className="tabs",
+                                    ],
+                                    className="bare-container--flex--center twelve columns",
+                                ),
+                            ],
+                            className="row",
+                        ),
+                    ],
+                    id="analysis-subnav-container",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    create_radio_layout("academic", "type"),
+                                    className="tabs",
+                                ),
+                            ],
+                            className="bare-container--flex--center twelve columns",
+                        ),
+                    ],
+                    className="row",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    create_radio_layout(
+                                        "academic-information", "category"
                                     ),
-                                    html.Div(
-                                        create_radio_layout(
-                                            "analysis-multiyear", "category", "six"
-                                        ),
-                                        className="tabs",
+                                    className="tabs",
+                                ),
+                            ],
+                            className="bare-container--flex--center twelve columns",
+                        ),
+                    ],
+                    className="row",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    create_radio_layout(
+                                        "analysis-multiyear", "hs-group"
                                     ),
-                                ],
-                                className="bare-container--flex--center_subnav twelve columns",
-                            ),
-                        ],
-                        className="row",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        create_radio_layout(
-                                            "analysis-multiyear", "subcategory"
-                                        ),
-                                        className="tabs",
+                                    className="tabs",
+                                ),
+                            ],
+                            className="bare-container--flex--center twelve columns",
+                        ),
+                    ],
+                    className="row",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    create_radio_layout(
+                                        "analysis-multiyear", "subject", "six"
                                     ),
-                                ],
-                                className="bare-container--flex--center twelve columns",
-                            ),
-                        ],
-                        className="row",
-                    ),
-                    dash.page_container,
-                ],
-            ),
-        ],
-    )
+                                    className="tabs",
+                                ),
+                                html.Div(
+                                    create_radio_layout(
+                                        "analysis-multiyear", "category", "six"
+                                    ),
+                                    className="tabs",
+                                ),
+                            ],
+                            className="bare-container--flex--center_subnav twelve columns",
+                        ),
+                    ],
+                    className="row",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    create_radio_layout(
+                                        "analysis-multiyear", "subcategory"
+                                    ),
+                                    className="tabs",
+                                ),
+                            ],
+                            className="bare-container--flex--center twelve columns",
+                        ),
+                    ],
+                    className="row",
+                ),
+                dash.page_container,
+            ],
+        ),
+    ],
+)
 
-
-# testing layout as a function - not sure its faster
-app.layout = layout
+# uncomment if layout is set as function
+# app.layout = layout
 
 if __name__ == "__main__":
     app.run_server(debug=True)
-#    application.run(host="0.0.0.0", port="8080")

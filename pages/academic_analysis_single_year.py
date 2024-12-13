@@ -6,7 +6,7 @@
 # date:     12/10/24
 
 import dash
-from dash import ctx, dcc, html, Input, Output, callback
+from dash import ctx, dcc, html, Input, State, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
@@ -238,6 +238,7 @@ def set_dropdown_options(
 
 
 @callback(
+    Output("school-list-state", "data"),  # dcc.store for previous comparison list
     Output("analysis-single-dropdown-container", "style"),
     Output("fig14c", "children"),
     Output("fig14d", "children"),
@@ -279,9 +280,14 @@ def set_dropdown_options(
     Input("year-dropdown", "value"),
     Input("academic-type-radio", "value"),
     [Input("analysis-single-comparison-dropdown", "value")],
+    Input("school-list-state", "data"),
 )
 def update_academic_analysis_single_year(
-    school_id: str, year: str, academic_type_value: str, comparison_school_list: list
+    school_id: str,
+    year: str,
+    academic_type_value: str,
+    comparison_school_list: list,
+    school_list_state: list,
 ):
     if not school_id:
         raise PreventUpdate
@@ -301,6 +307,11 @@ def update_academic_analysis_single_year(
 
     if not academic_type_value:
         academic_type_value = "k8"
+
+    if not school_list_state:
+        school_list_state = {}
+
+    combined_selected_data = pd.DataFrame()
 
     # default values (only empty container displayed)
     hs_analysis_main_container = {"display": "none"}
@@ -350,6 +361,8 @@ def update_academic_analysis_single_year(
     academic_analysis_notes_label = ""
     academic_analysis_notes_string = ""
 
+    fig14c_trace_color = []
+
     if (
         selected_school_type == "hs"
         or selected_school_type == "ahs"
@@ -368,11 +381,11 @@ def update_academic_analysis_single_year(
             school_type = selected_school_type
 
         list_of_schools = [school_id] + comparison_school_list
-        raw_hs_analysis_data = get_academic_data(
-            list_of_schools, school_type
-        )
+        raw_hs_analysis_data = get_academic_data(list_of_schools, school_type)
 
-        clean_hs_analysis_data = clean_academic_data(raw_hs_analysis_data, list_of_schools, school_type, numeric_year, "analysis")
+        clean_hs_analysis_data = clean_academic_data(
+            raw_hs_analysis_data, list_of_schools, school_type, numeric_year, "analysis"
+        )
 
         hs_analysis_data = clean_hs_analysis_data.loc[
             clean_hs_analysis_data["Year"] == numeric_year
@@ -568,11 +581,15 @@ def update_academic_analysis_single_year(
             # make sure selected school_id is first in list
             list_of_schools = [school_id] + comparison_school_list
 
-            raw_k8_analysis_data = get_academic_data(
-                list_of_schools, school_type
-            )
+            raw_k8_analysis_data = get_academic_data(list_of_schools, school_type)
 
-            clean_k8_analysis_data = clean_academic_data(raw_k8_analysis_data, list_of_schools, school_type, numeric_year, "analysis")
+            clean_k8_analysis_data = clean_academic_data(
+                raw_k8_analysis_data,
+                list_of_schools,
+                school_type,
+                numeric_year,
+                "analysis",
+            )
 
             k8_analysis_data = clean_k8_analysis_data.loc[
                 clean_k8_analysis_data["Year"] == numeric_year
@@ -641,6 +658,7 @@ def update_academic_analysis_single_year(
                         fig14c_all_data,
                         category,
                         school_id,
+                        school_list_state,
                         "Comparison: Current Year ELA Proficiency",
                     )
 
@@ -682,6 +700,7 @@ def update_academic_analysis_single_year(
                         fig14d_all_data,
                         category,
                         school_id,
+                        school_list_state,
                         "Comparison: Current Year Math Proficiency",
                     )
 
@@ -726,6 +745,7 @@ def update_academic_analysis_single_year(
                         fig_iread_all_data,
                         category,
                         school_id,
+                        school_list_state,
                         "Comparison: Current Year IREAD Proficiency",
                     )
 
@@ -1047,7 +1067,12 @@ def update_academic_analysis_single_year(
         )
     ]
 
+    # store list of school ids in the dataset
+    # school_list_state = combined_selected_data["School Name"].tolist()
+    school_list_state = fig14c_trace_color
+
     return (
+        school_list_state,
         analysis_single_dropdown_container,
         fig14c,
         fig14d,
@@ -1088,181 +1113,179 @@ def update_academic_analysis_single_year(
     )
 
 
-def layout():
-    return html.Div(
-        [
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        [
-                                            html.Div(
-                                                "Add or Remove Schools: ",
-                                                className="comparison-dropdown-label",
-                                            ),
-                                        ],
-                                        className="bare-container one-half columns",
-                                    ),
-                                    html.Div(
-                                        [
-                                            dcc.Dropdown(
-                                                id="analysis-single-comparison-dropdown",
-                                                style={"fontSize": "1.1rem"},
-                                                multi=True,
-                                                clearable=False,
-                                                className="comparison-dropdown-control",
-                                            ),
-                                            html.Div(id="single-year-input-warning"),
-                                        ],
-                                        className="bare-container eight columns",
-                                    ),
-                                ],
-                                className="comparison-dropdown-row",
-                            ),
-                        ],
-                        id="analysis-single-dropdown-container",
-                        style={"display": "none"},
-                        # className="no-print",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                id="fig14c",
-                                children=[],
-                                style={"table-layout": "fixed"},
-                            ),
-                            html.Div(id="fig14d", children=[], className="pagebreak"),
-                            html.Div(
-                                id="fig-iread", children=[], className="pagebreak"
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="fig16a1"),
-                                ],
-                                id="fig16a1-container",
-                                style={"display": "none"},
-                                className="pagebreak",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="fig16b1"),
-                                ],
-                                id="fig16b1-container",
-                                style={"display": "none"},
-                                className="pagebreak",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="fig16c1"),
-                                ],
-                                id="fig16c1-container",
-                                style={"display": "none"},
-                                className="pagebreak",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="fig16a2"),
-                                ],
-                                id="fig16a2-container",
-                                style={"display": "none"},
-                                className="pagebreak",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="fig16b2"),
-                                ],
-                                id="fig16b2-container",
-                                style={"display": "none"},
-                                className="pagebreak",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="fig16c2"),
-                                ],
-                                id="fig16c2-container",
-                                style={"display": "none"},
-                                className="pagebreak",
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(
-                                        id="single-year-analysis-notes", children=[]
-                                    ),
-                                ],
-                                className="row",
-                            ),
-                        ],
-                        id="k8-analysis-single-main-container",
-                        style={"display": "none"},
-                    ),
-                    html.Div(
-                        [
-                            html.Div(id="k8-analysis-single-no-data"),
-                        ],
-                        id="k8-analysis-single-empty-container",
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    html.Div(id="grad-overview"),
-                                ],
-                                id="grad-overview-container",
-                                style={"display": "none"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="grad-ethnicity"),
-                                ],
-                                id="grad-ethnicity-container",
-                                style={"display": "none"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="grad-subgroup"),
-                                ],
-                                id="grad-subgroup-container",
-                                style={"display": "none"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="sat-overview"),
-                                ],
-                                id="sat-overview-container",
-                                style={"display": "none"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="sat-ethnicity-ebrw"),
-                                    html.Div(id="sat-ethnicity-math"),
-                                ],
-                                id="sat-ethnicity-container",
-                                style={"display": "none"},
-                            ),
-                            html.Div(
-                                [
-                                    html.Div(id="sat-subgroup-ebrw"),
-                                    html.Div(id="sat-subgroup-math"),
-                                ],
-                                id="sat-subgroup-container",
-                                style={"display": "none"},
-                            ),
-                        ],
-                        id="hs-analysis-single-main-container",
-                        style={"display": "none"},
-                    ),
-                    html.Div(
-                        [
-                            html.Div(id="hs-analysis-single-no-data"),
-                        ],
-                        id="hs-analysis-single-empty-container",
-                    ),
-                ],
-                id="single-academic-analysis-page",
-            )
-        ],
-        id="main-container",
-    )
+# NOTE: Uncomment (and remove "layout =") to return layout as function
+# def layout():
+#     return html.Div(
+layout = html.Div(
+    [
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            "Add or Remove Schools: ",
+                                            className="comparison-dropdown-label",
+                                        ),
+                                    ],
+                                    className="bare-container one-half columns",
+                                ),
+                                html.Div(
+                                    [
+                                        dcc.Dropdown(
+                                            id="analysis-single-comparison-dropdown",
+                                            style={"fontSize": "1.1rem"},
+                                            multi=True,
+                                            clearable=False,
+                                            className="comparison-dropdown-control",
+                                        ),
+                                        html.Div(id="single-year-input-warning"),
+                                    ],
+                                    className="bare-container eight columns",
+                                ),
+                            ],
+                            className="comparison-dropdown-row",
+                        ),
+                    ],
+                    id="analysis-single-dropdown-container",
+                    style={"display": "none"},
+                    # className="no-print",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            id="fig14c",
+                            children=[],
+                            style={"table-layout": "fixed"},
+                        ),
+                        html.Div(id="fig14d", children=[], className="pagebreak"),
+                        html.Div(id="fig-iread", children=[], className="pagebreak"),
+                        html.Div(
+                            [
+                                html.Div(id="fig16a1"),
+                            ],
+                            id="fig16a1-container",
+                            style={"display": "none"},
+                            className="pagebreak",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="fig16b1"),
+                            ],
+                            id="fig16b1-container",
+                            style={"display": "none"},
+                            className="pagebreak",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="fig16c1"),
+                            ],
+                            id="fig16c1-container",
+                            style={"display": "none"},
+                            className="pagebreak",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="fig16a2"),
+                            ],
+                            id="fig16a2-container",
+                            style={"display": "none"},
+                            className="pagebreak",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="fig16b2"),
+                            ],
+                            id="fig16b2-container",
+                            style={"display": "none"},
+                            className="pagebreak",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="fig16c2"),
+                            ],
+                            id="fig16c2-container",
+                            style={"display": "none"},
+                            className="pagebreak",
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="single-year-analysis-notes", children=[]),
+                            ],
+                            className="row",
+                        ),
+                    ],
+                    id="k8-analysis-single-main-container",
+                    style={"display": "none"},
+                ),
+                html.Div(
+                    [
+                        html.Div(id="k8-analysis-single-no-data"),
+                    ],
+                    id="k8-analysis-single-empty-container",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(id="grad-overview"),
+                            ],
+                            id="grad-overview-container",
+                            style={"display": "none"},
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="grad-ethnicity"),
+                            ],
+                            id="grad-ethnicity-container",
+                            style={"display": "none"},
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="grad-subgroup"),
+                            ],
+                            id="grad-subgroup-container",
+                            style={"display": "none"},
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="sat-overview"),
+                            ],
+                            id="sat-overview-container",
+                            style={"display": "none"},
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="sat-ethnicity-ebrw"),
+                                html.Div(id="sat-ethnicity-math"),
+                            ],
+                            id="sat-ethnicity-container",
+                            style={"display": "none"},
+                        ),
+                        html.Div(
+                            [
+                                html.Div(id="sat-subgroup-ebrw"),
+                                html.Div(id="sat-subgroup-math"),
+                            ],
+                            id="sat-subgroup-container",
+                            style={"display": "none"},
+                        ),
+                    ],
+                    id="hs-analysis-single-main-container",
+                    style={"display": "none"},
+                ),
+                html.Div(
+                    [
+                        html.Div(id="hs-analysis-single-no-data"),
+                    ],
+                    id="hs-analysis-single-empty-container",
+                ),
+            ],
+            id="single-academic-analysis-page",
+        ),
+    ],
+    id="main-container",
+)

@@ -992,7 +992,11 @@ def make_line_chart(values: pd.DataFrame) -> list:
 
 
 def make_bar_chart(
-    values: pd.DataFrame, category: str, school_id: str, label: str
+    values: pd.DataFrame,
+    category: str,
+    school_id: str,
+    school_list_state: list,
+    label: str,
 ) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label and a simple bar chart (px.bar)
@@ -1001,7 +1005,8 @@ def make_bar_chart(
         values (pd.DataFrame): a dataframe with a list of schools and proficiency values
             for a given category
         category (str): the category being compared
-        school_name (str): the name of the selected school
+        school_id (str): the id of the selected school
+        school_list_state (list): the 'prior' list of comparison schools
         label (str): the title of the figure
 
     Returns:
@@ -1016,11 +1021,57 @@ def make_bar_chart(
     # dataframe will have minimum of 3 columns even without data ('School Name',
     # 'Low Grade', 'High Grade')
     if (len(data.columns)) > 3:
-        schools = data["School Name"].tolist()
+        current_school_list = data["School Name"].tolist()
 
         # assign colors for each comparison school - this data is returned
         # from the function
-        trace_color = {schools[i]: color[i] for i in range(len(schools))}
+    # TODO: make school:color relationship static so values dont
+    # TODO: change when a new school is added. This is more complicated
+    # TODO: than I initially thought. A colormap is the answer, but we
+    # TODO: can't declare it at the beginning. Too many schools, high
+    # TODO: Risk of overlap, so we need to check it somehow
+
+        # colors are always added in the order they appear in the "color" array,
+        # we want to ensure that colors do not change for existing traces when
+        # schools are added or removed
+        # colors: '#7b6888', '#df8f2d', '#a8b462', '#ebbb81', '#74a2d7', '#d4773f',
+        # '#83941f', '#f0c33b', '#bc986a', '#96b8db'
+        print("TRACE COLOR STATE")
+        print(school_list_state)
+        
+        # on first load, assign colors as normal
+        used_colors = []
+        remaining_colors = []
+
+        # if not school_list_state:
+        trace_color = {current_school_list[i]: color[i] for i in range(len(current_school_list))}
+        # else:
+        used_colors = [*trace_color.values()]
+        remaining_colors = list(set(color) - set(used_colors))
+
+        diff = school_list_state.keys() ^ trace_color.keys()
+
+        # diff will have every element in trace_color on the first run
+        # and will have a single element if a school is added or removed
+        if len(diff) == 1:
+            # tuple unpacking. fails if more than one element is present
+            (element,) = diff
+
+            trace_color = school_list_state
+
+            # a school has been removed
+            if element in school_list_state:
+                print("school_removed")
+            # a school has been added
+            elif element not in school_list_state:
+                trace_color[element] = remaining_colors[0]
+
+
+
+        print("NEW TRACE COLOR")
+        print(trace_color)
+
+# TODO: NEED THIS IN GROUP BAR TOO
 
         # NOTE: this seems like a dumb way to do this, but I couldn't get
         # textfont_weight to work in the fig.foreach() function. This
@@ -1029,7 +1080,7 @@ def make_bar_chart(
         text_values = data[category].map("{:.0%}".format)
         text_values = text_values.str.replace("nan%", "")
 
-        school_index = data.index[data["School Name"] == school_name] #.tolist()
+        school_index = data.index[data["School Name"] == school_name]
         text_values[school_index] = "<b>" + text_values[school_index] + "</b>"
 
         # use specific color for selected school
@@ -1086,12 +1137,11 @@ def make_bar_chart(
             ),
         )
 
-# https://stackoverflow.com/questions/73312960/changing-text-inside-plotly-express-bar-charts
-
+        # https://stackoverflow.com/questions/73312960/changing-text-inside-plotly-express-bar-charts
 
         fig.update_traces(
             textposition="outside",
-            hovertemplate="<b>%{x}</b><br><b>Proficiency: </b>%{y}<br><extra></extra>",
+            hovertemplate="<b>%{x}</b><br><b>Proficiency: </b>%{y:.2%}<br><extra></extra>",
         )
 
     else:
@@ -1168,7 +1218,8 @@ def make_group_bar_chart(
 
     data_set.reset_index(drop=True, inplace=True)
 
-    # TODO: Figure out best way to easily identify selected school
+    # TODO: Determine if there is better way to visually identify the
+    # TODO: selected school. Currently by color (gold) and bold text
     # Create text values for display.
     # NOTE: This can be 99.9% done by setting 'text_auto=True' in 'fig' without
     # setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
@@ -1245,7 +1296,7 @@ def make_group_bar_chart(
                 s.replace(" ", "&nbsp;")
                 for s in [
                     "<b>%{customdata[0]}</b>",
-                    "<b>Proficiency: </b>%{y}<br><extra></extra>",
+                    "<b>Proficiency: </b>%{y:.2%}<br><extra></extra>",
                 ]
             ]
         ),
@@ -1254,20 +1305,13 @@ def make_group_bar_chart(
 
     # switch text position and color based on size of bar (under 5%).
     # colors "0" values grey
-    # print(school_name)
 
-    # NOTE: Want to make school trace text bold, getting following
-    # error: "Invalid property specified for object of type
-    # plotly.graph_objs.bar.Textfont: 'weight'"
     fig.for_each_trace(
         lambda t: t.update(
-            textposition=np.where(t.y <= 0.05, "outside", "inside"),
+            textposition=np.where(t.y <= 0.06, "outside", "inside"),
             textfont_color=np.where(
-                t.y == 0, "#999999", np.where(t.y <= 0.05, "#6783a9", "#ffffff")
+                t.y == 0, "#999999", np.where(t.y <= 0.06, "#6783a9", "#ffffff")
             ),
-            # textfont_weight = np.where(
-            #     (t.name == school_name) & (t.y != -1), 600, 400
-            # ),
             textfont_size=10,
         )
     )
