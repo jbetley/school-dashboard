@@ -2,8 +2,8 @@
 # ICSB Dashboard - Academic Analysis - Multi-Year #
 ##################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
-# date:     09/24/24
+# version:  1.16
+# date:     12/12/24
 
 import dash
 from dash import dcc, ctx, html, Input, Output, State, callback
@@ -11,10 +11,12 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 # import local functions
+from .globals import color
 from .load_data import get_school_index, get_multiyear_data, get_school_coordinates
 from .tables import create_empty_page_layout
 from .layouts import create_multiyear_layout
 from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
+from .string_helpers import generate_colors
 
 dash.register_page(
     __name__,
@@ -154,6 +156,9 @@ def set_dropdown_options(
 
 
 @callback(
+    Output(
+        "trace-color-state-multiyear", "data"
+    ),  # dcc.store for existing trace colors
     Output("analysis-multiyear-dropdown-container", "style"),
     Output("year-over-year-grade", "children"),
     Output("year-over-year-hs", "children"),
@@ -170,6 +175,7 @@ def set_dropdown_options(
     Input("analysis-multiyear-subject-radio", "value"),
     Input("analysis-multiyear-hs-group-radio", "value"),
     [Input("analysis-multiyear-comparison-dropdown", "value")],
+    Input("trace-color-state-multiyear", "data"),
     State("analysis-multiyear-subcategory-radio", "value"),
 )
 def update_academic_analysis_multiyear(
@@ -179,6 +185,7 @@ def update_academic_analysis_multiyear(
     subject_radio_value: str,
     hs_group_radio_value: str,
     comparison_school_list: list,
+    trace_color_state: dict,
     subcategory_radio_value: str,
 ):
     if not school:
@@ -199,6 +206,9 @@ def update_academic_analysis_multiyear(
     # this radio button doesn't always play nice for some reason
     if not academic_type_value:
         academic_type_value = "k8"
+
+    if not trace_color_state:
+        trace_color_state = {}
 
     # default values (only empty container displayed)
     hs_analysis_multi_main_container = {"display": "none"}
@@ -290,8 +300,13 @@ def update_academic_analysis_multiyear(
             analysis_multi_dropdown_container = {"display": "block"}
 
             ## Create Multi-Year HS (SAT and Graduation Rate) Chart
+
+            trace_colors = generate_colors(
+                multiyear_hs_data, trace_color_state, color, school_name
+            )
+
             multiyear_hs = create_multiyear_layout(
-                school, multiyear_hs_data, all_school_info, label, msg
+                school, multiyear_hs_data, all_school_info, label, trace_colors, msg
             )
 
     elif school_type == "k8" or (school_type == "k12" and academic_type_value == "k8"):
@@ -361,11 +376,17 @@ def update_academic_analysis_multiyear(
                 # all_school_info is a dataframe with school names and school ids,
                 # it is used in the comparison_table function to identify the index
                 # of the school by Id
+
+                trace_colors = generate_colors(
+                    multiyear_k8_data, trace_color_state, color, school_name
+                )
+
                 multiyear_grade = create_multiyear_layout(
                     school,
                     multiyear_k8_data,
                     all_school_info,
                     label,
+                    trace_colors,
                     subcategory_radio_value,
                 )
 
@@ -426,11 +447,15 @@ def update_academic_analysis_multiyear(
                 # all_school_info is a dataframe with school names and school ids,
                 # it is used in the comparison_table function to identify the index
                 # of the school by Id
+                trace_colors = generate_colors(
+                    multiyear_k8_data, trace_color_state, color, school_name
+                )
                 multiyear_grade = create_multiyear_layout(
                     school,
                     multiyear_k8_data,
                     all_school_info,
                     label,
+                    trace_colors,
                     subcategory_radio_value,
                 )
 
@@ -460,7 +485,10 @@ def update_academic_analysis_multiyear(
         )
     ]
 
+    trace_color_state = trace_colors
+
     return (
+        trace_color_state,
         analysis_multi_dropdown_container,
         multiyear_grade,
         multiyear_hs,
@@ -474,77 +502,87 @@ def update_academic_analysis_multiyear(
     )
 
 
-layout = html.Div(
-    [
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            "Add or Remove Schools: ",
-                                            className="comparison-dropdown-label",
-                                        ),
-                                    ],
-                                    className="bare-container two columns",
-                                ),
-                                html.Div(
-                                    [
-                                        dcc.Dropdown(
-                                            id="analysis-multiyear-comparison-dropdown",
-                                            style={"fontSize": "1.1rem"},
-                                            multi=True,
-                                            clearable=False,
-                                            className="comparison-dropdown-control",
-                                        ),
-                                        html.Div(id="analysis-multiyear-input-warning"),
-                                    ],
-                                    className="bare-container eight columns",
-                                ),
-                            ],
-                            className="comparison-dropdown-row",
-                        ),
-                    ],
-                    id="analysis-multiyear-dropdown-container",
-                ),
-                html.Div(
-                    [
-                        html.Div(id="year-over-year-grade", children=[]),
-                        html.Div(
-                            [
-                                html.Div(id="multiyear-analysis-notes", children=[]),
-                            ],
-                            className="row",
-                        ),
-                    ],
-                    id="k8-analysis-multiyear-main-container",
-                    style={"display": "none"},
-                ),
-                html.Div(
-                    [
-                        html.Div(id="k8-analysis-multiyear-no-data"),
-                    ],
-                    id="k8-analysis-multiyear-empty-container",
-                ),
-                html.Div(
-                    [
-                        html.Div(id="year-over-year-hs", children=[]),
-                    ],
-                    id="hs-analysis-multiyear-main-container",
-                    style={"display": "none"},
-                ),
-                html.Div(
-                    [
-                        html.Div(id="hs-analysis-multiyear-no-data"),
-                    ],
-                    id="hs-analysis-multiyear-empty-container",
-                ),
-            ],
-            id="multiyear-academic-analysis-page",
-        )
-    ],
-    id="main-container",
-)
+def layout():
+    return html.Div(
+        # layout = html.Div(
+        [
+            html.Div(
+                [
+                    # used to store school:color data to ensure consistency
+                    dcc.Store(
+                        id="trace-color-state-multiyear", storage_type="memory", data={}
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                "Add or Remove Schools: ",
+                                                className="comparison-dropdown-label",
+                                            ),
+                                        ],
+                                        className="bare-container two columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Dropdown(
+                                                id="analysis-multiyear-comparison-dropdown",
+                                                style={"fontSize": "1.1rem"},
+                                                multi=True,
+                                                clearable=False,
+                                                className="comparison-dropdown-control",
+                                            ),
+                                            html.Div(
+                                                id="analysis-multiyear-input-warning"
+                                            ),
+                                        ],
+                                        className="bare-container eight columns",
+                                    ),
+                                ],
+                                className="comparison-dropdown-row",
+                            ),
+                        ],
+                        id="analysis-multiyear-dropdown-container",
+                    ),
+                    html.Div(
+                        [
+                            html.Div(id="year-over-year-grade", children=[]),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        id="multiyear-analysis-notes", children=[]
+                                    ),
+                                ],
+                                className="row",
+                            ),
+                        ],
+                        id="k8-analysis-multiyear-main-container",
+                        style={"display": "none"},
+                    ),
+                    html.Div(
+                        [
+                            html.Div(id="k8-analysis-multiyear-no-data"),
+                        ],
+                        id="k8-analysis-multiyear-empty-container",
+                    ),
+                    html.Div(
+                        [
+                            html.Div(id="year-over-year-hs", children=[]),
+                        ],
+                        id="hs-analysis-multiyear-main-container",
+                        style={"display": "none"},
+                    ),
+                    html.Div(
+                        [
+                            html.Div(id="hs-analysis-multiyear-no-data"),
+                        ],
+                        id="hs-analysis-multiyear-empty-container",
+                    ),
+                ],
+                id="multiyear-academic-analysis-page",
+            )
+        ],
+        id="main-container",
+    )

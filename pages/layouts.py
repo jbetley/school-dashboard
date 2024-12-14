@@ -16,20 +16,20 @@ from .string_helpers import (
     identify_missing_categories,
     create_school_label,
 )
-from .charts import (
-    make_group_bar_chart,
-    make_multi_line_chart,
-    make_line_chart
-)
+from .charts import make_group_bar_chart, make_multi_line_chart, make_line_chart
 from .tables import (
     create_comparison_table,
     create_single_header_table,
-    create_empty_table_layout
+    create_empty_table_layout,
 )
 
 
 def create_hs_analysis_layout(
-    data_type: str, data: pd.DataFrame, categories: list, school_id: str
+    data_type: str,
+    data: pd.DataFrame,
+    categories: list,
+    school_id: str,
+    trace_colors: dict,
 ) -> list:
     """
     Creates a layout for academic analysis page for hs/ahs.
@@ -89,7 +89,6 @@ def create_hs_analysis_layout(
 
     # data will always have at least three cols (School Name, School ID, Low Grade, High Grade)
     if len(analysis_data.columns) > 4:
-
         # NOTE: For transparency purposes, we want to identify all categories that are
         # missing from the possible dataset, including those that aren't going to be
         # displayed (because the school is missing them). Because there are many cases
@@ -109,13 +108,13 @@ def create_hs_analysis_layout(
         if len(analysis_data.columns) > 1:
             analysis_label = create_chart_label(analysis_data)
 
-            analysis_trace_colors, analysis_chart = make_group_bar_chart(
-                analysis_data, school_id, analysis_label
+            analysis_chart = make_group_bar_chart(
+                analysis_data, school_id, trace_colors, analysis_label
             )
             analysis_table_data = combine_school_name_and_grade_levels(analysis_data)
 
             analysis_table = create_comparison_table(
-                analysis_table_data, analysis_trace_colors, school_id
+                analysis_table_data, trace_colors, school_id
             )
 
             final_analysis_group = create_barchart_layout(
@@ -553,7 +552,12 @@ def create_radio_layout(
 
 
 def create_multiyear_layout(
-    school_id: str, data: pd.DataFrame, school_id_list: list, label: str, msg: str
+    school_id: str,
+    data: pd.DataFrame,
+    school_id_list: list,
+    label: str,
+    trace_colors: dict,
+    msg: str,
 ) -> list:
     """
     Creates a layout for a multiyear chart and table grouping
@@ -615,14 +619,14 @@ def create_multiyear_layout(
             ["School ID", "Low Grade", "High Grade"]
         ].replace(0, "")
 
-        fig_trace_colors, fig = make_multi_line_chart(school_id, data, label)
+        fig = make_multi_line_chart(school_id, data, trace_colors, label)
 
         # Use Low/High grade columns to modify School Name and then drop.
         table_data["School Name"] = create_school_label(table_data)
 
         table_data = table_data.drop(["Low Grade", "High Grade"], axis=1)
 
-        table = create_comparison_table(table_data, fig_trace_colors, school_id)
+        table = create_comparison_table(table_data, trace_colors, school_id)
         category_string = ""
         school_string = ""
         layout = create_barchart_layout(fig, table, category_string, school_string)

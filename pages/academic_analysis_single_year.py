@@ -3,14 +3,14 @@
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/10/24
+# date:     12/12/24
 
 import dash
-from dash import ctx, dcc, html, Input, State, Output, callback
+from dash import ctx, dcc, html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
-from .globals import ethnicity, subgroup, ethnicity
+from .globals import ethnicity, subgroup, ethnicity, color
 
 from .load_data import (
     get_school_index,
@@ -33,6 +33,7 @@ from .string_helpers import (
     combine_school_name_and_grade_levels,
     create_chart_label,
     identify_missing_categories,
+    generate_colors,
 )
 
 dash.register_page(
@@ -67,8 +68,7 @@ def set_dropdown_options(
     numeric_year = int(string_year)
 
     # clear the list of comparison_schools when a new school is
-    # selected, otherwise comparison_schools will carry over, however
-    # we want to keep the list for a year or type change
+    # selected, otherwise comparison_schools will carry over
     input_trigger = ctx.triggered_id
     if input_trigger == "charter-dropdown":
         existing_comparison_schools_list = []
@@ -76,20 +76,19 @@ def set_dropdown_options(
     selected_school = get_school_index(school_id)
     selected_school_type = selected_school["School Type"].values[0]
 
-    # Get School ID, School Name, Lat & Lon for all schools in the
-    # set for selected year. SQL query depends on school type
     if selected_school_type == "k12":
         if academic_type_value == "hs":
             selected_school_type = "hs"
         else:
             selected_school_type = "k8"
 
+    # Get School ID, School Name, Lat & Lon for all schools in the
+    # set for selected year.
     schools_by_distance = get_school_coordinates(numeric_year, selected_school_type)
 
     # Drop any school not testing at least 20 students (k8 only- probably
     # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
     # We want to include the selected school regardless of its n-size
-
     if selected_school_type == "k8":
         schools_by_distance["Total|ELA Total Tested"] = pd.to_numeric(
             schools_by_distance["Total|ELA Total Tested"], errors="coerce"
@@ -108,9 +107,7 @@ def set_dropdown_options(
     else:
         # NOTE: Before we do the distance check, we reduce the size of the df by
         # removing schools where there is no, or only a one grade overlap between
-        # the comparison schools. The variable "overlap" is one less than the the
-        # number of grades that we want as a minimum (a value of "1" means a 2
-        # grade overlap, "2" means 3 grade overlap, etc.).
+        # the comparison schools.
 
         # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
         if selected_school_type != "ahs":
@@ -137,7 +134,6 @@ def set_dropdown_options(
         # used to display message if the number of selections exceeds the max
         input_warning = None
 
-        # options and values (comparison_schools) logic
         # there are three occasions when we want to reset the list: 1) there are
         # no values (existing_comparison_schools_list = []); 2) there are values,
         # but none of the existing values overlap with the new values; 3) there
@@ -201,6 +197,7 @@ def set_dropdown_options(
             # the existing list to make sure it hasn't exceeded max display
 
             if len(existing_comparison_schools_list) > max_num_to_display:
+                
                 # if it does, we throw a warning, keep the selected values the same
                 # and disable all of the options
                 input_warning = html.P(
@@ -222,6 +219,7 @@ def set_dropdown_options(
                 ]
 
             else:
+
                 # if it doesn't, we return the selected list and options.
                 comparison_schools = existing_comparison_schools_list
 
@@ -238,7 +236,7 @@ def set_dropdown_options(
 
 
 @callback(
-    Output("school-list-state", "data"),  # dcc.store for previous comparison list
+    Output("trace-color-state-single", "data"),  # dcc.store for existing trace colors
     Output("analysis-single-dropdown-container", "style"),
     Output("fig14c", "children"),
     Output("fig14d", "children"),
@@ -280,14 +278,14 @@ def set_dropdown_options(
     Input("year-dropdown", "value"),
     Input("academic-type-radio", "value"),
     [Input("analysis-single-comparison-dropdown", "value")],
-    Input("school-list-state", "data"),
+    Input("trace-color-state-single", "data"),
 )
 def update_academic_analysis_single_year(
     school_id: str,
     year: str,
     academic_type_value: str,
     comparison_school_list: list,
-    school_list_state: list,
+    trace_color_state: dict,
 ):
     if not school_id:
         raise PreventUpdate
@@ -308,12 +306,11 @@ def update_academic_analysis_single_year(
     if not academic_type_value:
         academic_type_value = "k8"
 
-    if not school_list_state:
-        school_list_state = {}
+    if not trace_color_state:
+        trace_color_state = {}
 
     combined_selected_data = pd.DataFrame()
 
-    # default values (only empty container displayed)
     hs_analysis_main_container = {"display": "none"}
     hs_analysis_empty_container = {"display": "none"}
     k8_analysis_main_container = {"display": "none"}
@@ -360,8 +357,6 @@ def update_academic_analysis_single_year(
 
     academic_analysis_notes_label = ""
     academic_analysis_notes_string = ""
-
-    fig14c_trace_color = []
 
     if (
         selected_school_type == "hs"
@@ -426,6 +421,9 @@ def update_academic_analysis_single_year(
                 hs_analysis_main_container = {"display": "block"}
                 hs_analysis_empty_container = {"display": "none"}
 
+                # this keeps trace colors consistent when schools are added or removed
+                trace_colors = generate_colors(hs_analysis_data, trace_color_state, color, school_name)
+
                 ## Graduation Comparison Sets
                 grad_overview_categories = ["Total", "NonWaiver"]
 
@@ -434,12 +432,23 @@ def update_academic_analysis_single_year(
                     hs_analysis_data,
                     grad_overview_categories,
                     school_id,
+                    trace_colors
                 )
+
                 grad_ethnicity = create_hs_analysis_layout(
-                    "Graduation Rate", hs_analysis_data, ethnicity, school_id
+                    "Graduation Rate",
+                    hs_analysis_data,
+                    ethnicity,
+                    school_id,
+                    trace_colors
                 )
+
                 grad_subgroup = create_hs_analysis_layout(
-                    "Graduation Rate", hs_analysis_data, subgroup, school_id
+                    "Graduation Rate",
+                    hs_analysis_data,
+                    subgroup,
+                    school_id,
+                    trace_colors
                 )
 
                 ## SAT Comparison Sets
@@ -449,23 +458,43 @@ def update_academic_analysis_single_year(
                 ]
 
                 sat_overview = create_hs_analysis_layout(
-                    "Total", hs_analysis_data, overview, school_id
+                    "Total",
+                    hs_analysis_data,
+                    overview,
+                    school_id,
+                    trace_colors
                 )
 
                 sat_ethnicity_ebrw = create_hs_analysis_layout(
-                    "EBRW", hs_analysis_data, ethnicity, school_id
+                    "EBRW",
+                    hs_analysis_data,
+                    ethnicity,
+                    school_id,
+                    trace_colors
                 )
 
                 sat_ethnicity_math = create_hs_analysis_layout(
-                    "Math", hs_analysis_data, ethnicity, school_id
+                    "Math",
+                    hs_analysis_data,
+                    ethnicity,
+                    school_id,
+                    trace_colors
                 )
 
                 sat_subgroup_ebrw = create_hs_analysis_layout(
-                    "EBRW", hs_analysis_data, subgroup, school_id
+                    "EBRW",
+                    hs_analysis_data,
+                    subgroup,
+                    school_id,
+                    trace_colors
                 )
 
                 sat_subgroup_math = create_hs_analysis_layout(
-                    "Math", hs_analysis_data, subgroup, school_id
+                    "Math",
+                    hs_analysis_data,
+                    subgroup,
+                    school_id,
+                    trace_colors
                 )
 
                 # Display Logic - Grad data / SAT data
@@ -574,9 +603,10 @@ def update_academic_analysis_single_year(
             school_type = "k8"
 
             academic_analysis_notes_label = "Comparison Data - K-8"
-            academic_analysis_notes_string = "Use this page to view ILEARN proficiency comparison data for all grades, ethnicities, \
-                and subgroups. The dropdown list consists of the twenty (20) closest schools that overlap at least two grades with \
-                the selected school. Up to eight (8) schools may be displayed at once."
+            academic_analysis_notes_string = "Use this page to view ILEARN proficiency comparison data \
+                for all grades, ethnicities, and subgroups. The dropdown list consists of the twenty (20) \
+                closest schools that overlap at least two grades with the selected school. Up to eight (8) \
+                schools may be displayed at once."
 
             # make sure selected school_id is first in list
             list_of_schools = [school_id] + comparison_school_list
@@ -596,7 +626,6 @@ def update_academic_analysis_single_year(
             ].copy()
             k8_analysis_data = k8_analysis_data.reset_index(drop=True)
 
-            # Force '***' to NaN for numeric columns
             numeric_columns = [
                 col
                 for col in k8_analysis_data.columns.to_list()
@@ -641,6 +670,9 @@ def update_academic_analysis_single_year(
                     "High Grade",
                 ]
 
+                # this keeps trace colors consistent when schools are added or removed
+                trace_colors = generate_colors(combined_selected_data, trace_color_state, color, school_name)
+
                 ## Current Year ELA Proficiency Compared to Similar Schools (1.4.c) ##
                 category = "Total|ELA Proficient %"
 
@@ -654,11 +686,11 @@ def update_academic_analysis_single_year(
 
                     fig14c_all_data[category] = pd.to_numeric(fig14c_all_data[category])
 
-                    fig14c_trace_color, fig14c_chart = make_bar_chart(
+                    fig14c_chart = make_bar_chart(
                         fig14c_all_data,
                         category,
                         school_id,
-                        school_list_state,
+                        trace_colors,
                         "Comparison: Current Year ELA Proficiency",
                     )
 
@@ -671,7 +703,7 @@ def update_academic_analysis_single_year(
                     fig14c_table_data = fig14c_table_data.reset_index(drop=True)
 
                     fig14c_table = create_comparison_table(
-                        fig14c_table_data, fig14c_trace_color, school_id
+                        fig14c_table_data, trace_colors, school_id
                     )
                 else:
                     # NOTE: This should never ever happen. So yeah.
@@ -696,11 +728,11 @@ def update_academic_analysis_single_year(
 
                     fig14d_all_data[category] = pd.to_numeric(fig14d_all_data[category])
 
-                    fig14d_trace_color, fig14d_chart = make_bar_chart(
+                    fig14d_chart = make_bar_chart(
                         fig14d_all_data,
                         category,
                         school_id,
-                        school_list_state,
+                        trace_colors,
                         "Comparison: Current Year Math Proficiency",
                     )
 
@@ -714,7 +746,7 @@ def update_academic_analysis_single_year(
                     fig14d_table_data = fig14d_table_data.reset_index(drop=True)
 
                     fig14d_table = create_comparison_table(
-                        fig14d_table_data, fig14d_trace_color, school_id
+                        fig14d_table_data, trace_colors, school_id
                     )
 
                 else:
@@ -741,11 +773,11 @@ def update_academic_analysis_single_year(
                         fig_iread_all_data[category]
                     )
 
-                    fig_iread_trace_color, fig_iread_chart = make_bar_chart(
+                    fig_iread_chart = make_bar_chart(
                         fig_iread_all_data,
                         category,
                         school_id,
-                        school_list_state,
+                        trace_colors,
                         "Comparison: Current Year IREAD Proficiency",
                     )
 
@@ -759,7 +791,7 @@ def update_academic_analysis_single_year(
                     fig_iread_table_data = fig_iread_table_data.reset_index(drop=True)
 
                     fig_iread_table = create_comparison_table(
-                        fig_iread_table_data, fig_iread_trace_color, school_id
+                        fig_iread_table_data, trace_colors, school_id
                     )
 
                     fig_iread = create_barchart_layout(
@@ -789,14 +821,14 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16a1_final_data, categories_16a1)
 
                     fig16a1_label = create_chart_label(fig16a1_final_data)
-                    fig16a1_trace_color, fig16a1_chart = make_group_bar_chart(
-                        fig16a1_final_data, school_id, fig16a1_label
+                    fig16a1_chart = make_group_bar_chart(
+                        fig16a1_final_data, school_id, trace_colors, fig16a1_label
                     )
                     fig16a1_table_data = combine_school_name_and_grade_levels(
                         fig16a1_final_data
                     )
                     fig16a1_table = create_comparison_table(
-                        fig16a1_table_data, fig16a1_trace_color, school_id
+                        fig16a1_table_data, trace_colors, school_id
                     )
 
                     fig16a1 = create_barchart_layout(
@@ -834,15 +866,15 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16b1_final_data, categories_16b1)
 
                     fig16b1_label = create_chart_label(fig16b1_final_data)
-                    fig16b1_trace_color, fig16b1_chart = make_group_bar_chart(
-                        fig16b1_final_data, school_id, fig16b1_label
+                    fig16b1_chart = make_group_bar_chart(
+                        fig16b1_final_data, school_id, trace_colors, fig16b1_label
                     )
                     fig16b1_table_data = combine_school_name_and_grade_levels(
                         fig16b1_final_data
                     )
 
                     fig16b1_table = create_comparison_table(
-                        fig16b1_table_data, fig16b1_trace_color, school_id
+                        fig16b1_table_data, trace_colors, school_id
                     )
 
                     fig16b1 = create_barchart_layout(
@@ -880,14 +912,14 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16c1_final_data, categories_16c1)
 
                     fig16c1_label = create_chart_label(fig16c1_final_data)
-                    fig16c1_trace_color, fig16c1_chart = make_group_bar_chart(
-                        fig16c1_final_data, school_id, fig16c1_label
+                    fig16c1_chart = make_group_bar_chart(
+                        fig16c1_final_data, school_id, trace_colors, fig16c1_label
                     )
                     fig16c1_table_data = combine_school_name_and_grade_levels(
                         fig16c1_final_data
                     )
                     fig16c1_table = create_comparison_table(
-                        fig16c1_table_data, fig16c1_trace_color, school_id
+                        fig16c1_table_data, trace_colors, school_id
                     )
 
                     fig16c1 = create_barchart_layout(
@@ -926,15 +958,15 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16a2_final_data, categories_16a2)
 
                     fig16a2_label = create_chart_label(fig16a2_final_data)
-                    fig16a2_trace_color, fig16a2_chart = make_group_bar_chart(
-                        fig16a2_final_data, school_id, fig16a2_label
+                    fig16a2_chart = make_group_bar_chart(
+                        fig16a2_final_data, school_id, trace_colors, fig16a2_label
                     )
                     fig16a2_table_data = combine_school_name_and_grade_levels(
                         fig16a2_final_data
                     )
 
                     fig16a2_table = create_comparison_table(
-                        fig16a2_table_data, fig16a2_trace_color, school_id
+                        fig16a2_table_data, trace_colors, school_id
                     )
 
                     fig16a2 = create_barchart_layout(
@@ -971,15 +1003,15 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16b2_final_data, categories_16b2)
 
                     fig16b2_label = create_chart_label(fig16b2_final_data)
-                    fig16b2_trace_color, fig16b2_chart = make_group_bar_chart(
-                        fig16b2_final_data, school_id, fig16b2_label
+                    fig16b2_chart = make_group_bar_chart(
+                        fig16b2_final_data, school_id, trace_colors, fig16b2_label
                     )
                     fig16b2_table_data = combine_school_name_and_grade_levels(
                         fig16b2_final_data
                     )
 
                     fig16b2_table = create_comparison_table(
-                        fig16b2_table_data, fig16b2_trace_color, school_id
+                        fig16b2_table_data, trace_colors, school_id
                     )
 
                     fig16b2 = create_barchart_layout(
@@ -1016,14 +1048,14 @@ def update_academic_analysis_single_year(
                     ) = identify_missing_categories(fig16c2_final_data, categories_16c2)
 
                     fig16c2_label = create_chart_label(fig16c2_final_data)
-                    fig16c2_trace_color, fig16c2_chart = make_group_bar_chart(
-                        fig16c2_final_data, school_id, fig16c2_label
+                    fig16c2_chart = make_group_bar_chart(
+                        fig16c2_final_data, school_id, trace_colors, fig16c2_label
                     )
                     fig16c2_table_data = combine_school_name_and_grade_levels(
                         fig16c2_final_data
                     )
                     fig16c2_table = create_comparison_table(
-                        fig16c2_table_data, fig16c2_trace_color, school_id
+                        fig16c2_table_data, trace_colors, school_id
                     )
 
                     fig16c2 = create_barchart_layout(
@@ -1067,12 +1099,10 @@ def update_academic_analysis_single_year(
         )
     ]
 
-    # store list of school ids in the dataset
-    # school_list_state = combined_selected_data["School Name"].tolist()
-    school_list_state = fig14c_trace_color
+    trace_color_state = trace_colors
 
     return (
-        school_list_state,
+        trace_color_state,
         analysis_single_dropdown_container,
         fig14c,
         fig14d,
@@ -1114,178 +1144,186 @@ def update_academic_analysis_single_year(
 
 
 # NOTE: Uncomment (and remove "layout =") to return layout as function
-# def layout():
-#     return html.Div(
-layout = html.Div(
-    [
-        html.Div(
-            [
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            "Add or Remove Schools: ",
-                                            className="comparison-dropdown-label",
-                                        ),
-                                    ],
-                                    className="bare-container one-half columns",
-                                ),
-                                html.Div(
-                                    [
-                                        dcc.Dropdown(
-                                            id="analysis-single-comparison-dropdown",
-                                            style={"fontSize": "1.1rem"},
-                                            multi=True,
-                                            clearable=False,
-                                            className="comparison-dropdown-control",
-                                        ),
-                                        html.Div(id="single-year-input-warning"),
-                                    ],
-                                    className="bare-container eight columns",
-                                ),
-                            ],
-                            className="comparison-dropdown-row",
-                        ),
-                    ],
-                    id="analysis-single-dropdown-container",
-                    style={"display": "none"},
-                    # className="no-print",
-                ),
-                html.Div(
-                    [
-                        html.Div(
-                            id="fig14c",
-                            children=[],
-                            style={"table-layout": "fixed"},
-                        ),
-                        html.Div(id="fig14d", children=[], className="pagebreak"),
-                        html.Div(id="fig-iread", children=[], className="pagebreak"),
-                        html.Div(
-                            [
-                                html.Div(id="fig16a1"),
-                            ],
-                            id="fig16a1-container",
-                            style={"display": "none"},
-                            className="pagebreak",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="fig16b1"),
-                            ],
-                            id="fig16b1-container",
-                            style={"display": "none"},
-                            className="pagebreak",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="fig16c1"),
-                            ],
-                            id="fig16c1-container",
-                            style={"display": "none"},
-                            className="pagebreak",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="fig16a2"),
-                            ],
-                            id="fig16a2-container",
-                            style={"display": "none"},
-                            className="pagebreak",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="fig16b2"),
-                            ],
-                            id="fig16b2-container",
-                            style={"display": "none"},
-                            className="pagebreak",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="fig16c2"),
-                            ],
-                            id="fig16c2-container",
-                            style={"display": "none"},
-                            className="pagebreak",
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="single-year-analysis-notes", children=[]),
-                            ],
-                            className="row",
-                        ),
-                    ],
-                    id="k8-analysis-single-main-container",
-                    style={"display": "none"},
-                ),
-                html.Div(
-                    [
-                        html.Div(id="k8-analysis-single-no-data"),
-                    ],
-                    id="k8-analysis-single-empty-container",
-                ),
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Div(id="grad-overview"),
-                            ],
-                            id="grad-overview-container",
-                            style={"display": "none"},
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="grad-ethnicity"),
-                            ],
-                            id="grad-ethnicity-container",
-                            style={"display": "none"},
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="grad-subgroup"),
-                            ],
-                            id="grad-subgroup-container",
-                            style={"display": "none"},
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="sat-overview"),
-                            ],
-                            id="sat-overview-container",
-                            style={"display": "none"},
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="sat-ethnicity-ebrw"),
-                                html.Div(id="sat-ethnicity-math"),
-                            ],
-                            id="sat-ethnicity-container",
-                            style={"display": "none"},
-                        ),
-                        html.Div(
-                            [
-                                html.Div(id="sat-subgroup-ebrw"),
-                                html.Div(id="sat-subgroup-math"),
-                            ],
-                            id="sat-subgroup-container",
-                            style={"display": "none"},
-                        ),
-                    ],
-                    id="hs-analysis-single-main-container",
-                    style={"display": "none"},
-                ),
-                html.Div(
-                    [
-                        html.Div(id="hs-analysis-single-no-data"),
-                    ],
-                    id="hs-analysis-single-empty-container",
-                ),
-            ],
-            id="single-academic-analysis-page",
-        ),
-    ],
-    id="main-container",
-)
+def layout():
+    return html.Div(
+        # layout = html.Div(
+        [
+            html.Div(
+                [
+                    # used to store school:color data to ensure consistency
+                    dcc.Store(
+                        id="trace-color-state-single", storage_type="memory", data={}
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(
+                                                "Add or Remove Schools: ",
+                                                className="comparison-dropdown-label",
+                                            ),
+                                        ],
+                                        className="bare-container one-half columns",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Dropdown(
+                                                id="analysis-single-comparison-dropdown",
+                                                style={"fontSize": "1.1rem"},
+                                                multi=True,
+                                                clearable=False,
+                                                className="comparison-dropdown-control",
+                                            ),
+                                            html.Div(id="single-year-input-warning"),
+                                        ],
+                                        className="bare-container eight columns",
+                                    ),
+                                ],
+                                className="comparison-dropdown-row",
+                            ),
+                        ],
+                        id="analysis-single-dropdown-container",
+                        style={"display": "none"},
+                        # className="no-print",
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                id="fig14c",
+                                children=[],
+                                style={"table-layout": "fixed"},
+                            ),
+                            html.Div(id="fig14d", children=[], className="pagebreak"),
+                            html.Div(
+                                id="fig-iread", children=[], className="pagebreak"
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="fig16a1"),
+                                ],
+                                id="fig16a1-container",
+                                style={"display": "none"},
+                                className="pagebreak",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="fig16b1"),
+                                ],
+                                id="fig16b1-container",
+                                style={"display": "none"},
+                                className="pagebreak",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="fig16c1"),
+                                ],
+                                id="fig16c1-container",
+                                style={"display": "none"},
+                                className="pagebreak",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="fig16a2"),
+                                ],
+                                id="fig16a2-container",
+                                style={"display": "none"},
+                                className="pagebreak",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="fig16b2"),
+                                ],
+                                id="fig16b2-container",
+                                style={"display": "none"},
+                                className="pagebreak",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="fig16c2"),
+                                ],
+                                id="fig16c2-container",
+                                style={"display": "none"},
+                                className="pagebreak",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        id="single-year-analysis-notes", children=[]
+                                    ),
+                                ],
+                                className="row",
+                            ),
+                        ],
+                        id="k8-analysis-single-main-container",
+                        style={"display": "none"},
+                    ),
+                    html.Div(
+                        [
+                            html.Div(id="k8-analysis-single-no-data"),
+                        ],
+                        id="k8-analysis-single-empty-container",
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(id="grad-overview"),
+                                ],
+                                id="grad-overview-container",
+                                style={"display": "none"},
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="grad-ethnicity"),
+                                ],
+                                id="grad-ethnicity-container",
+                                style={"display": "none"},
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="grad-subgroup"),
+                                ],
+                                id="grad-subgroup-container",
+                                style={"display": "none"},
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="sat-overview"),
+                                ],
+                                id="sat-overview-container",
+                                style={"display": "none"},
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="sat-ethnicity-ebrw"),
+                                    html.Div(id="sat-ethnicity-math"),
+                                ],
+                                id="sat-ethnicity-container",
+                                style={"display": "none"},
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(id="sat-subgroup-ebrw"),
+                                    html.Div(id="sat-subgroup-math"),
+                                ],
+                                id="sat-subgroup-container",
+                                style={"display": "none"},
+                            ),
+                        ],
+                        id="hs-analysis-single-main-container",
+                        style={"display": "none"},
+                    ),
+                    html.Div(
+                        [
+                            html.Div(id="hs-analysis-single-no-data"),
+                        ],
+                        id="hs-analysis-single-empty-container",
+                    ),
+                ],
+                id="single-academic-analysis-page",
+            ),
+        ],
+        id="main-container",
+    )

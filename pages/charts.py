@@ -474,7 +474,7 @@ def make_stacked_bar(
 
 
 def make_multi_line_chart(
-    school_id: str, df: pd.DataFrame, label: str
+    school_id: str, df: pd.DataFrame, trace_colors: dict, label: str
 ) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
@@ -520,15 +520,9 @@ def make_multi_line_chart(
 
         data = data.reset_index(drop=True)
 
-        trace_color = {school_cols[i]: color[i] for i in range(len(school_cols))}
-
-        selected_school = get_school_index(school_id)
-        school_name = selected_school["School Name"].values[0]
-
-        # set selected school color
-        for key, value in trace_color.items():
-            if key == school_name:
-                trace_color[key] = "#ffce54"
+        # reversing order of school_cols places the selected school at the end
+        # of the list which ensures that it is the last trace drawn (on top)
+        school_cols.reverse()
 
         # If the initial df has data, but after dropping all no data rows is then
         # empty, we return an empty layout
@@ -544,12 +538,13 @@ def make_multi_line_chart(
             ]
 
         else:
+
             fig = px.line(
                 data,
                 x="Year",
                 y=school_cols,
                 markers=True,
-                color_discrete_map=trace_color,
+                color_discrete_map=trace_colors,
             )
 
             fig.update_traces(hovertemplate=None)  # type: ignore
@@ -729,7 +724,7 @@ def make_multi_line_chart(
             )
         ]
 
-    return trace_color, fig_layout
+    return fig_layout
 
 
 def make_line_chart(values: pd.DataFrame) -> list:
@@ -995,7 +990,7 @@ def make_bar_chart(
     values: pd.DataFrame,
     category: str,
     school_id: str,
-    school_list_state: list,
+    trace_colors: dict,
     label: str,
 ) -> Tuple[dict, list]:
     """
@@ -1021,58 +1016,6 @@ def make_bar_chart(
     # dataframe will have minimum of 3 columns even without data ('School Name',
     # 'Low Grade', 'High Grade')
     if (len(data.columns)) > 3:
-        current_school_list = data["School Name"].tolist()
-
-        # assign colors for each comparison school - this data is returned
-        # from the function
-    # TODO: make school:color relationship static so values dont
-    # TODO: change when a new school is added. This is more complicated
-    # TODO: than I initially thought. A colormap is the answer, but we
-    # TODO: can't declare it at the beginning. Too many schools, high
-    # TODO: Risk of overlap, so we need to check it somehow
-
-        # colors are always added in the order they appear in the "color" array,
-        # we want to ensure that colors do not change for existing traces when
-        # schools are added or removed
-        # colors: '#7b6888', '#df8f2d', '#a8b462', '#ebbb81', '#74a2d7', '#d4773f',
-        # '#83941f', '#f0c33b', '#bc986a', '#96b8db'
-        print("TRACE COLOR STATE")
-        print(school_list_state)
-        
-        # on first load, assign colors as normal
-        used_colors = []
-        remaining_colors = []
-
-        # if not school_list_state:
-        trace_color = {current_school_list[i]: color[i] for i in range(len(current_school_list))}
-        # else:
-        used_colors = [*trace_color.values()]
-        remaining_colors = list(set(color) - set(used_colors))
-
-        diff = school_list_state.keys() ^ trace_color.keys()
-
-        # diff will have every element in trace_color on the first run
-        # and will have a single element if a school is added or removed
-        if len(diff) == 1:
-            # tuple unpacking. fails if more than one element is present
-            (element,) = diff
-
-            trace_color = school_list_state
-
-            # a school has been removed
-            if element in school_list_state:
-                print("school_removed")
-            # a school has been added
-            elif element not in school_list_state:
-                trace_color[element] = remaining_colors[0]
-
-
-
-        print("NEW TRACE COLOR")
-        print(trace_color)
-
-# TODO: NEED THIS IN GROUP BAR TOO
-
         # NOTE: this seems like a dumb way to do this, but I couldn't get
         # textfont_weight to work in the fig.foreach() function. This
         # identifies the index of all selected school values and manually
@@ -1083,11 +1026,6 @@ def make_bar_chart(
         school_index = data.index[data["School Name"] == school_name]
         text_values[school_index] = "<b>" + text_values[school_index] + "</b>"
 
-        # use specific color for selected school
-        for key, value in trace_color.items():
-            if key == school_name:
-                trace_color[key] = "#ffce54"
-
         # Uncomment this and the other 'customdata' lines below to display
         # the distance of each comparable school from the selected school
         # data['Distance'] = pd.Series(['{:,.2f}'.format(val) for val in data['Distance']], index = data.index)
@@ -1096,7 +1034,7 @@ def make_bar_chart(
             data,
             x="School Name",
             y=category,
-            color_discrete_map=trace_color,
+            color_discrete_map=trace_colors,
             color="School Name",
             text=text_values,
             # text_auto=True,
@@ -1156,11 +1094,11 @@ def make_bar_chart(
         )
     ]
 
-    return trace_color, fig_layout
+    return fig_layout
 
 
 def make_group_bar_chart(
-    values: pd.DataFrame, school_id: str, label: str
+    values: pd.DataFrame, school_id: str, trace_colors: dict, label: str
 ) -> Tuple[dict, list]:
     """
     Creates a layout containing a label and a grouped bar chart (px.bar)
@@ -1204,10 +1142,10 @@ def make_group_bar_chart(
 
     categories = data.columns.tolist()
     categories.remove("School Name")
-    schools = data["School Name"].tolist()
 
     # melt dataframe from 'wide' format to 'long' format (plotly express
     # can handle either, but long format makes hovertemplate easier)
+
     data_set = pd.melt(
         data,
         id_vars="School Name",
@@ -1218,8 +1156,6 @@ def make_group_bar_chart(
 
     data_set.reset_index(drop=True, inplace=True)
 
-    # TODO: Determine if there is better way to visually identify the
-    # TODO: selected school. Currently by color (gold) and bold text
     # Create text values for display.
     # NOTE: This can be 99.9% done by setting 'text_auto=True' in 'fig' without
     # setting specific 'text' values; EXCEPT, it does not hide the 'NaN%' text
@@ -1237,20 +1173,12 @@ def make_group_bar_chart(
     for idx in index_list:
         text_values[idx] = "<b>" + text_values[idx] + "</b>"
 
-    # assign colors for each comparison
-    trace_color = {schools[i]: color[i] for i in range(len(schools))}
-
-    # replace color for selected school
-    for key, value in trace_color.items():
-        if key == school_name:
-            trace_color[key] = "#ffce54"
-
     fig = px.bar(
         data_frame=data_set,
         x="Categories",
         y="value",
         color="School Name",
-        color_discrete_map=trace_color,
+        color_discrete_map=trace_colors,
         orientation="v",
         barmode="group",
         custom_data=["School Name"],
@@ -1325,4 +1253,4 @@ def make_group_bar_chart(
         )
     ]
 
-    return trace_color, fig_layout
+    return fig_layout

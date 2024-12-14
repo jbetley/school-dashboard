@@ -47,6 +47,70 @@ def customwrap(s: str, width: int = 16) -> str:
     return "  <br>".join(textwrap.wrap(s, width=width))
 
 
+def generate_colors(
+    data: pd.DataFrame, color_state: dict, color_list: list, school_name: str
+) -> dict:
+    # NOTE: we want to ensure that colors do not change for existing traces when
+    # schools are added or removed- normally would use a fixed colormap, but in this
+    # case we have too many possible schools (40) and dont know which ones will
+    # be chosen- so need to store the existing colors (dict) and modify it one school
+    # at a time instead of recreating the map each run.
+
+    # colors are added in the order they appear in the "color" array, which contains
+    # 10 colors
+
+    # single_year analysis data has a School Name column, multiyear analysis
+    # data does not
+    if "School Name" in data:
+        school_list = data["School Name"].tolist()
+    else:
+        exclude_columns = ["Year", "School ID"]
+        school_list = [col for col in data.columns if col not in exclude_columns]
+
+    used_colors = []
+    remaining_colors = []
+
+    adjusted_colors = {school_list[i]: color_list[i] for i in range(len(school_list))}
+
+    used_colors = [*color_state.values()]
+    remaining_colors = list(set(color_list) - set(used_colors))
+
+    # "^" is symmetric difference operator
+    diff = color_state.keys() ^ adjusted_colors.keys()
+
+    # diff will have every element in trace_color on the first run
+    # because trace_colors_state is empty (which we want to ignore)
+    # and will have a single element if a school is added or removed
+    if len(diff) == 1:
+        # tuple unpacking. fails if more than one element is present
+        (element,) = diff
+
+        adjusted_colors = color_state
+
+        # if a school has been removed, use existing list (state), but
+        # remove the school from the dict. NOTE: We don't have to add
+        # the color back to "remaining_colors", because remaining colors
+        # is generated above from state, which will no longer have the
+        # color in the dict
+        if element in color_state:
+            adjusted_colors.pop(element)
+
+        # if a school has been added, use existing list (state), but
+        # add the school to the dict with the first available remaining
+        # color.
+        elif element not in color_state:
+            adjusted_colors[element] = remaining_colors[0]
+
+    # set selected school color
+    # other options: #0033aa (UA Blue); #002fa7 (International Klein Blue);
+    # #0047ab (Cobalt); #1c39bb (Persian Blue); #002147 (Oxford Blue)
+    for key, value in adjusted_colors.items():
+        if key == school_name:
+            adjusted_colors[key] = "#1c39bb"  # Persian Blue
+
+    return adjusted_colors
+
+
 def convert_to_svg_circle(df: pd.DataFrame) -> pd.DataFrame:
     """
     Takes a Dataframe and replaces text with svg circles coded certain colors
