@@ -117,16 +117,14 @@ def update_academic_metrics(school: str, year: str):
     if selected_school_type == "k8" or selected_school_type == "k12":
         list_of_schools = [school]
         if selected_school_type == "k12":
-            school_type = "k8"
-        else:
-            school_type = selected_school_type
+            selected_school_type = "k8"
 
-        raw_metric_data = get_academic_data(list_of_schools, school_type)
+        raw_metric_data = get_academic_data(list_of_schools, selected_school_type)
 
         metric_data = clean_academic_data(
             raw_metric_data,
             list_of_schools,
-            school_type,
+            selected_school_type,
             selected_year_numeric,
             "metrics",
         )
@@ -498,17 +496,17 @@ def update_academic_metrics(school: str, year: str):
         or selected_school_type == "ahs"
         or selected_school_type == "k12"
     ):
-        # if selected_school_type == "k12":
-        school_type = "hs"
+        if selected_school_type == "k12":
+            selected_school_type = "hs"
 
         list_of_schools = [school]
 
 
         raw_metric_data = get_academic_data(
-            list_of_schools, school_type
+            list_of_schools, selected_school_type
         )
 
-        metric_data = clean_academic_data(raw_metric_data, list_of_schools, school_type, selected_year_numeric, "metrics")
+        metric_data = clean_academic_data(raw_metric_data, list_of_schools, selected_school_type, selected_year_numeric, "metrics")
         
         if len(metric_data.index) > 0:
             # Adult High School Metrics (in single table atm)

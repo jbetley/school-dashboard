@@ -531,6 +531,9 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
             inplace=True,
         )
 
+# TODO: ERROR - No YEAR In Cols
+        print("AHS DATA")
+        print(data)
         # transpose dataframe and clean headers
         data = (
             data.set_index("Year")
