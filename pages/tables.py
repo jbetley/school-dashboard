@@ -1663,10 +1663,6 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
                     first_year = name_cols[1][0] + name_cols[1][1]
                     name_cols[1][0] = name_cols[1][0] + " (Initial Year)"
 
-                    # name_cols[1][0] = name_cols[1][0] + " (Initial Year)"
-                    # first_year = name_cols[2][0] + name_cols[2][1]
-                    # name_cols[2][0] = name_cols[2][0] + " (Initial Year)"
-
         # Multiple Years
         if any("Rate" in s for s in all_cols):
             if name_cols[1][1] == "%" and name_cols[2][1] == "%":
@@ -1864,12 +1860,9 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
 
         # Metric definitions are stored in a dictionary keyed to the metric number
         # in globals.py.
-
-        metric_id = re.findall(r"[\d\.]+[a-z]{1}|[\d\.]+", label[0])
+        metric_id = re.findall(r"[\d\.]+\w{1}\.", label[0])
 
         def create_hovercard_popup(id: list) -> Tuple[list, list]:
-            # TODO: AHS - Eventually need to split out 1.1, 1.3 (AHS), 1.2.a (AHS)
-            # TODO: and 1.2.b (AHS)
 
             if not id:
                 header = []
@@ -1878,11 +1871,11 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
                 # These metrics share ratings with their counterparts (1.1.b,1.4.f,& 1.7.d)
                 # 1.1.c and 1.7.a have been merged
                 if (
-                    id[0] == "1.1.a"
-                    or id[0] == "1.1.c"
-                    or id[0] == "1.4.e"
-                    or id[0] == "1.7.a"
-                    or id[0] == "1.7.c"
+                    id[0] == "1.1.a."
+                    or id[0] == "1.1.c."
+                    or id[0] == "1.4.e."
+                    or id[0] == "1.7.a."
+                    or id[0] == "1.7.c."
                 ):
                     header_string = id[0] + " & " + id[1]
                 else:
@@ -1905,7 +1898,7 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
                         if metric_strings[id[0]][s]:
                             # use id and "im-very-special" class to ensure metrics with only three
                             # ratings have the third rating colored red rather than orange
-                            if id[0] == "1.1.a" and s == 3:
+                            if id[0] == "1.1.a." and s == 3:
                                 rows.append(
                                     html.Tr(
                                         [

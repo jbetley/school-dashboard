@@ -427,7 +427,7 @@ def calculate_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
     data = df.copy()
 
     print(data)
-    
+
     grad_limits_state = [0, -0.05, -0.15]
     state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
 
@@ -531,9 +531,6 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
             inplace=True,
         )
 
-# TODO: ERROR - No YEAR In Cols
-        print("AHS DATA")
-        print(data)
         # transpose dataframe and clean headers
         data = (
             data.set_index("Year")
@@ -607,7 +604,7 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
             for i in range(all_grad_metric.shape[1] - 1, 0, -1)
         ]
 
-        grad_limits_enrollment = [0.7499, 0.50, 0.20]
+        grad_limits_enrollment = [0.75, 0.599, 0.45]
 
         enrollment_grad_metric = data[data["Category"].isin(["Grad to Enrollment"])]
 
@@ -726,7 +723,7 @@ def calculate_adult_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
             "1.1. ",
             "1.2.a. ",
             "1.2.b. ",
-            "(New) ",
+            "",
             "1.3. ",
         ]
         data.insert(loc=0, column="Metric", value=ahs_metric_nums)

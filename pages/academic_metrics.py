@@ -63,7 +63,11 @@ dash.register_page(__name__, path="/academic_metrics", top_nav=True, order=9)
     Output("table-container-17ab", "children"),
     Output("table-container-17cd", "children"),
     Output("hs-metrics-container", "style"),
-    Output("table-container-ahs", "children"),
+    Output("table-container-ahs11", "children"),
+    Output("table-container-ahs12a", "children"),
+    Output("table-container-ahs12b", "children"),
+    Output("table-container-ahsgte", "children"),
+    Output("table-container-ahs13", "children"),
     Output("ahs-metrics-container", "style"),
     Output("academic-metrics-main-container", "style"),
     Output("academic-metrics-empty-container", "style"),
@@ -95,7 +99,11 @@ def update_academic_metrics(school: str, year: str):
     table_container_17cd = []
     hs_metrics_container = {"display": "none"}
 
-    ahs_table_container = []
+    ahs_table_container11 = []
+    ahs_table_container12a = []
+    ahs_table_container12b = []
+    ahs_table_containergte = []
+    ahs_table_container13 = [] 
     ahs_metrics_container = {"display": "none"}
 
     main_container = {"display": "none"}
@@ -152,7 +160,7 @@ def update_academic_metrics(school: str, year: str):
                 & (combined_years["Category"].str.contains("ELA"))
             ]
             metric_14a_label = [
-                "1.4.a Grade level proficiency on the state assessment in",
+                "1.4.a. Grade level proficiency on the state assessment in",
                 html.Br(),
                 html.U("English Language Arts"),
                 " compared with the previous school year.",
@@ -166,7 +174,7 @@ def update_academic_metrics(school: str, year: str):
                 & (combined_years["Category"].str.contains("Math"))
             ]
             metric_14b_label = [
-                "1.4.b Grade level proficiency on the state assessment in",
+                "1.4.b. Grade level proficiency on the state assessment in",
                 html.Br(),
                 html.U("Math"),
                 " compared with the previous school year.",
@@ -184,7 +192,7 @@ def update_academic_metrics(school: str, year: str):
                 & (combined_delta["Category"].str.contains("ELA"))
             ]
             metric_14c_label = [
-                "1.4.c Grade level proficiency on the state assessment in",
+                "1.4.c. Grade level proficiency on the state assessment in",
                 html.Br(),
                 html.U("English Language Arts"),
                 " compared with traditional school corporation.",
@@ -198,7 +206,7 @@ def update_academic_metrics(school: str, year: str):
                 & (combined_delta["Category"].str.contains("Math"))
             ]
             metric_14d_label = [
-                "1.4.d Grade level proficiency on the state assessment in",
+                "1.4.d. Grade level proficiency on the state assessment in",
                 html.Br(),
                 html.U("Math"),
                 " compared with traditional school corporation.",
@@ -318,12 +326,12 @@ def update_academic_metrics(school: str, year: str):
             ilearn_2yr_shape.loc[
                 ilearn_2yr_shape["Category"] == "ELA Proficiency",
                 "Category",
-            ] = "1.4.e Two year student proficiency in ELA."
+            ] = "1.4.e. Two year student proficiency in ELA."
 
             ilearn_2yr_shape.loc[
                 ilearn_2yr_shape["Category"] == "Math Proficiency",
                 "Category",
-            ] = "1.4.f Two year student proficiency in Math."
+            ] = "1.4.f. Two year student proficiency in Math."
 
             # reorder columns
             # #TODO: convert to function
@@ -356,7 +364,7 @@ def update_academic_metrics(school: str, year: str):
             ]
 
             metric_14ef_label = [
-                "Percentage of students enrolled for at least two school years achieving proficiency on the state assessment in English Language Arts (1.4.e) and Math (1.4.f)"
+                "Percentage of students enrolled for at least two school years achieving proficiency on the state assessment in English Language Arts (1.4.e.) and Math (1.4.f.)"
             ]
 
             metric_14ef_data = convert_to_svg_circle(metric_14ef_data)
@@ -385,7 +393,7 @@ def update_academic_metrics(school: str, year: str):
                 iread_data = calculate_iread_metrics(iread_data)
 
                 metric_14g_label = [
-                    "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment."
+                    "1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment."
                 ]
                 iread_data = convert_to_svg_circle(iread_data)
 
@@ -400,7 +408,7 @@ def update_academic_metrics(school: str, year: str):
                 # create_empty_table_layout wants a string
                 empty_table_14g = create_empty_table_layout(
                     "No Data to Display.",
-                    "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.",
+                    "1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment.",
                     "six",
                 )
                 table_container_14g = set_table_layout(
@@ -434,7 +442,7 @@ def update_academic_metrics(school: str, year: str):
                 & (combined_delta["Category"].str.contains("ELA"))
             ]
             metric_16a_label = [
-                "1.6.a Proficiency on the state assessment in ",
+                "1.6.a. Proficiency on the state assessment in ",
                 html.U("English Language Arts"),
                 html.Br(),
                 "for each subgroup compared with traditional school corporation.",
@@ -447,7 +455,7 @@ def update_academic_metrics(school: str, year: str):
                 & (combined_delta["Category"].str.contains("Math"))
             ]
             metric_16b_label = [
-                "1.6.b Proficiency on the state assessment in ",
+                "1.6.b. Proficiency on the state assessment in ",
                 html.U("Math"),
                 " for each",
                 html.Br(),
@@ -466,7 +474,7 @@ def update_academic_metrics(school: str, year: str):
                 & (combined_years["Category"].str.contains("ELA"))
             ]
             metric_16c_label = [
-                "1.6.c The change in proficiency on the state assessment in",
+                "1.6.c. The change in proficiency on the state assessment in",
                 html.Br(),
                 html.U("English Language Arts"),
                 " for each subgroup compared with the previous school year.",
@@ -479,7 +487,7 @@ def update_academic_metrics(school: str, year: str):
                 & (combined_years["Category"].str.contains("Math"))
             ]
             metric_16d_label = [
-                "1.6.d The change in proficiency on the state assessment in",
+                "1.6.d. The change in proficiency on the state assessment in",
                 html.Br(),
                 html.U("Math"),
                 " for each subgroup compared with the previous school year.",
@@ -501,16 +509,19 @@ def update_academic_metrics(school: str, year: str):
 
         list_of_schools = [school]
 
+        raw_metric_data = get_academic_data(list_of_schools, selected_school_type)
 
-        raw_metric_data = get_academic_data(
-            list_of_schools, selected_school_type
+        metric_data = clean_academic_data(
+            raw_metric_data,
+            list_of_schools,
+            selected_school_type,
+            selected_year_numeric,
+            "metrics",
         )
 
-        metric_data = clean_academic_data(raw_metric_data, list_of_schools, selected_school_type, selected_year_numeric, "metrics")
-        
         if len(metric_data.index) > 0:
-            # Adult High School Metrics (in single table atm)
-            # NOTE: Create additional tables as needed
+
+            # Adult High School Metrics
             if selected_school_type == "ahs":
                 ahs_metrics_container = {"display": "block"}
                 main_container = {"display": "block"}
@@ -524,19 +535,43 @@ def update_academic_metrics(school: str, year: str):
 
                 ahs_metric_data = ahs_metric_data.drop("Metric", axis=1)
 
-                # TODO: Split these out into separate tables. one for each label
-                ahs_metric_label = ["In-cohort Graduation Rate (1.2.a)"]
-                # ahs_metric_label = ["Grade 12 Graduation Rate (1.2.b)"]
-                # ahs_metric_label = ["CCR Percentage (1.3)"]
-                # ahs_metric_label = ["State Letter Grade (1.1)"]
+                ahs_metric_label11 = ["State Letter Grade (1.1.)"]
+                ahs_metric_label12a = ["In-Cohort Graduation Rate (1.2.a.)"]
+                ahs_metric_label12b = ["Grade 12 Graduation Rate (1.2.b.)"]
+                ahs_metric_labelgte = ["Graduation to Enrollment (beta)"]
+                ahs_metric_label13 = ["CCR Percentage (1.3.)"]
 
                 ahs_metric_data = convert_to_svg_circle(ahs_metric_data)
 
-                ahs_table = create_metric_table(ahs_metric_label, ahs_metric_data)
-
-                ahs_table_container = set_table_layout(
-                    ahs_table, ahs_table, ahs_metric_data.columns
+                ahs_metric_data11 = ahs_metric_data[ahs_metric_data["Category"].str.contains("State Grade")]
+                ahs_table11 = create_metric_table(ahs_metric_label11, ahs_metric_data11)
+                ahs_table_container11 = set_table_layout(
+                    ahs_table11, ahs_table11, ahs_metric_data.columns
                 )
+
+                ahs_metric_data12a = ahs_metric_data[ahs_metric_data["Category"].str.contains("In Cohort")]
+                ahs_table12a = create_metric_table(ahs_metric_label12a, ahs_metric_data12a)
+                ahs_table_container12a = set_table_layout(
+                    ahs_table12a, ahs_table12a, ahs_metric_data.columns
+                )
+
+                ahs_metric_data12b = ahs_metric_data[ahs_metric_data["Category"].str.contains("Grade 12")]
+                ahs_table12b = create_metric_table(ahs_metric_label12b, ahs_metric_data12b)
+                ahs_table_container12b = set_table_layout(
+                    ahs_table12b, ahs_table12b, ahs_metric_data.columns
+                )               
+
+                ahs_metric_datagte = ahs_metric_data[ahs_metric_data["Category"].str.contains("Grad to Enrollment")]                
+                ahs_tablegte = create_metric_table(ahs_metric_labelgte, ahs_metric_datagte)
+                ahs_table_containergte = set_table_layout(
+                    ahs_tablegte, ahs_tablegte, ahs_metric_data.columns
+                )                  
+
+                ahs_metric_data13 = ahs_metric_data[ahs_metric_data["Category"].str.contains("CCR Percentage")]                  
+                ahs_table13 = create_metric_table(ahs_metric_label13, ahs_metric_data13)                                                                
+                ahs_table_container13 = set_table_layout(
+                    ahs_table13, ahs_table13, ahs_metric_data.columns
+                )  
 
             else:
                 # NOTE: We do not currently use hs_multiyear_values
@@ -553,7 +588,7 @@ def update_academic_metrics(school: str, year: str):
                     hs_metric_data = calculate_high_school_metrics(hs_comparison_values)
 
                     metric_17ab_label = [
-                        "High School Accountability Metrics 1.7.a & 1.7.b"
+                        "High School Accountability Metrics 1.7.a. & 1.7.b."
                     ]
                     hs_metric_data = convert_to_svg_circle(hs_metric_data)
                     table_17ab = create_metric_table(metric_17ab_label, hs_metric_data)
@@ -576,7 +611,7 @@ def update_academic_metrics(school: str, year: str):
 
                     grad_metrics_dict = {
                         "Category": [
-                            "1.7.c The percentage of students entering Grade 12 at beginning of year who graduated",
+                            "1.7.c. The percentage of students entering Grade 12 at beginning of year who graduated",
                             "1.7.d. The percentage of graduating students planning to pursue college or career.",
                         ]
                     }
@@ -598,7 +633,7 @@ def update_academic_metrics(school: str, year: str):
                     metric_17cd_data = conditional_fillna(metric_17cd_data)
 
                     metric_17cd_label = [
-                        "High School Accountability Metrics 1.7.c & 1.7.d"
+                        "High School Accountability Metrics 1.7.c. & 1.7.d."
                     ]
                     metric_17cd_data = convert_to_svg_circle(metric_17cd_data)
                     table_17cd = create_metric_table(
@@ -610,12 +645,12 @@ def update_academic_metrics(school: str, year: str):
 
     # Attendance Data & Teacher Retention Rate (all schools have this data)
     metric_11ab_label = [
-        "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation."
+        "Student Attendance Rate (1.1.a.) and Teacher Retention Rate (1.1.b.) compared with traditional school corporation."
     ]
 
     # Re-enrollment Rates (Acountability Metrics 1.1.c & 1.1.d): Currently Placeholders
     metric_11cd_label = [
-        "End of Year to Beginning of Year (1.1.c) and Multi-Year (1.1.d) Student Re-Enrollment Rate."
+        "End of Year to Beginning of Year (1.1.c.) and Multi-Year (1.1.d.) Student Re-Enrollment Rate."
     ]
 
     attendance_data = calculate_attendance_metrics(
@@ -627,7 +662,7 @@ def update_academic_metrics(school: str, year: str):
 
         # Create placeholders (Acountability Metric 1.1.b.)
         teacher_retention_rate = pd.DataFrame(
-            {"Category": ["1.1.b Teacher Retention Rate"]}
+            {"Category": ["1.1.b. Teacher Retention Rate"]}
         )
 
         metric_11ab_data = pd.merge(
@@ -644,8 +679,8 @@ def update_academic_metrics(school: str, year: str):
         # Create placeholders (Acountability Metric 1.1.c.)
         student_retention_rate_dict = {
             "Category": [
-                "1.1.c End of Year to Beginning of Year Re-Enrollment Rate",
-                "1.1.d Multi-Year Re-Enrollment Rate",
+                "1.1.c. End of Year to Beginning of Year Re-Enrollment Rate",
+                "1.1.d. Multi-Year Re-Enrollment Rate",
             ]
         }
 
@@ -670,7 +705,7 @@ def update_academic_metrics(school: str, year: str):
     else:
         empty_table_11ab = create_empty_table_layout(
             "No Data to Display.",
-            "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation.",
+            "Student Attendance Rate (1.1.a.) and Teacher Retention Rate (1.1.b.) compared with traditional school corporation.",
             "six",
         )
 
@@ -680,7 +715,7 @@ def update_academic_metrics(school: str, year: str):
 
         empty_table_11cd = create_empty_table_layout(
             "No Data to Display.",
-            "End of Year to Beginning of Year (1.1.c) and Multi-Year (1.1.d) Student Re-Enrollment Rate.",
+            "End of Year to Beginning of Year (1.1.c.) and Multi-Year (1.1.d.) Student Re-Enrollment Rate.",
         )
 
         table_container_11cd = set_table_layout(
@@ -703,7 +738,11 @@ def update_academic_metrics(school: str, year: str):
         table_container_17ab,
         table_container_17cd,
         hs_metrics_container,
-        ahs_table_container,
+        ahs_table_container11,
+        ahs_table_container12a,
+        ahs_table_container12b,
+        ahs_table_containergte,
+        ahs_table_container13,                                
         ahs_metrics_container,
         main_container,
         empty_container,
@@ -766,7 +805,11 @@ def layout():
                     ),
                     html.Div(
                         [
-                            html.Div(id="table-container-ahs", children=[]),
+                            html.Div(id="table-container-ahs11", children=[]),
+                            html.Div(id="table-container-ahs12a", children=[]),
+                            html.Div(id="table-container-ahs12b", children=[]),
+                            html.Div(id="table-container-ahsgte", children=[]),
+                            html.Div(id="table-container-ahs13", children=[]),
                         ],
                         id="ahs-metrics-container",
                     ),

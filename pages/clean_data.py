@@ -360,7 +360,7 @@ def clean_academic_data(data, schools, school_type, year, page):
                     / ahs_data["AHS|Actual Enrollment"]
                 )
 
-            ## AHS Graduation Calculation (AHS Accountability)
+            ## Graduation To Enrollment Calculation (AHS Accountability)
             # NOTE: a school must have at least ten (10) students graduate in the school
             # year being assessed. If school has fewer than ten (10) graduates for a year
             # based calculation on the current graduates aggregated with each immediately
@@ -370,7 +370,9 @@ def clean_academic_data(data, schools, school_type, year, page):
             corp_id = int(selected_school["Corporation ID"].values[0])
 
             # get adm average and add to dataframe matching on school_id and Year
-            adm_average = get_adm_data(corp_id)
+            raw_adm = get_adm_data(corp_id)
+            adm_average = clean_adm_data(raw_adm)
+
             school_adm = adm_average.T.rename_axis("Year").reset_index()
             school_adm = school_adm.rename(columns={0: "ADM Average"})
             school_adm["School ID"] = school_id
@@ -432,6 +434,16 @@ def clean_academic_data(data, schools, school_type, year, page):
             # Final Calculation
             # First Year weighting: graduation calculation (20%) and ccr score (80%)
             # All Other Years: graduation calculation (40%) / ccr score (60%)
+
+            # "Grade 12 Grad Rate" and "Grad to Enrollment" are capped at 100%
+            processed_data.loc[
+                processed_data["Grade 12|Graduation Rate"] > 1,
+                "Grade 12|Graduation Rate",
+            ] = 1
+            processed_data.loc[
+                processed_data["Graduation to Enrollment|Graduation Rate"] > 1,
+                "Graduation to Enrollment|Graduation Rate",
+            ] = 1
 
     # K8 data
     elif school_type == "k8":
