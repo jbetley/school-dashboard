@@ -2,8 +2,8 @@
 # ICSB Dashboard - String Maninpulation Functions #
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
-# date:     10/02/24
+# version:  1.16
+# date:     12/16/24
 
 import pandas as pd
 import numpy as np
@@ -13,11 +13,8 @@ from typing import Tuple
 
 from .globals import ethnicity, subgroup, info_categories
 
-# natural keys is a function to provide natural sorting
+# helper function for natural_keys (provides natural sorting)
 # https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
-
-
-# helper function for natural_keys
 def atoi(text):
     return int(text) if text.isdigit() else text
 
@@ -46,7 +43,19 @@ def customwrap(s: str, width: int = 16) -> str:
     """
     return "  <br>".join(textwrap.wrap(s, width=width))
 
+def reorder_columns(data: pd.DataFrame, match_cols: list) -> list:
 
+    col_list = []
+
+    for i, col in enumerate(match_cols):
+        col_list.append([c for c in data.columns if col in c])
+        col_list[i].sort()
+
+    final_cols = list(sum(zip(*col_list), ()))
+    final_cols.insert(0, "Category")
+
+    return final_cols
+    
 def generate_colors(
     data: pd.DataFrame, color_state: dict, color_list: list, school_name: str
 ) -> dict:

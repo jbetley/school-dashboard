@@ -388,13 +388,18 @@ def make_stacked_bar(
     # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/21
     # fig.update_layout(hovermode='x unified')
 
+    # hov_text= [f'🌀 Wind Speed <br><br>{d}<br>Daily average: {w} km/h'
+    #         for d, w in zip(dff['date'].dt.strftime('%B %d,%Y'), dff['wind_daily_average'])]
+
+
     fig.update_traces(
         textfont_size=9,
         insidetextanchor="middle",
         textposition="inside",
         marker_line=dict(width=0),
-        hovertemplate="%{text}",
+        # hovertemplate="%{text}",
         # hovertemplate="%{text} (n-size: %{customdata[0]})",  # adds n-size (Total Tested) info to each trace.
+        hovertext="%{text}",
         hoverinfo="none",
     )
 

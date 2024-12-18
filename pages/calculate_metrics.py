@@ -159,8 +159,11 @@ def calculate_attendance_metrics(
     ] = "NA"
 
     # TODO: Testing - orig didn't have this
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.max_rows", None)
+    print(attendance_metrics)
     attendance_metrics = conditional_fillna(attendance_metrics)
-
+    print(attendance_metrics)
     return attendance_metrics
 
 
@@ -267,6 +270,10 @@ def calculate_values(df: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Data
 
     result_cols = [str(s) + "Diff" for s in year_cols]
 
+    # Create final column order
+    final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
+    final_cols.insert(0, "Category")
+
     # temporarily place school and corp cols next to each other
     merged_cols = list(itertools.chain(*zip(school_cols, corp_cols, nsize_cols)))
     merged_cols.insert(0, "Category")
@@ -304,10 +311,6 @@ def calculate_values(df: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.Data
             comparison_result[c + "Diff"] = calculate_difference(
                 school_comparison_data[c + "School"], corp_comparison_data[c + "Corp"]
             )
-
-    # Create final column order
-    final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
-    final_cols.insert(0, "Category")
 
     comparison_result = comparison_result.set_axis(result_cols, axis=1)
     comparison_result.insert(loc=0, column="Category", value=category_column)

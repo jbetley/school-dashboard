@@ -3,11 +3,7 @@
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     03/25/24
-
-# NOTE: This is currently several years out of date and it is unclear when IDOE
-# will again be calculating and releasing growth data. May want to consider
-# shelving this page if it gets too old.
+# date:     12/17/24
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -69,13 +65,13 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     no_growth_data = create_empty_page_layout("No Data to Display.", "Academic Growth")
 
     # State Growth Data
-    # NOTE: "162-Days" means a student was enrolled at the school where they were
-    # assigned for at least 162 days. "Majority Enrolled" is misleading. It actually
-    # means "Greatest Number of Days." So the actual number of days could be less
-    # than half of the year (82) if, for example, a student transferred a few
-    # times, or was out of the system for most of the year. "Tested School" is
-    # where the student actually took the test. IDOE uses "Majority Enrolled" for
-    # their calculations. So we do the same here.
+    # NOTE: "Majority Enrolled" means the school and school corporation in
+    # which a student was enrolled for the  "greatest number of days" over
+    # a school year. The actual number of days could be less than half of
+    # the yearif, for example, a student transferred a few times, or was out
+    # of the system for most of the year. "Tested School ID" is the school
+    # where the student actually took the test, which could be different than
+    # "Majority Enrolled School ID". So we do the same here.
 
     # ICSB Accountability growth metrics need to be updated, currently say:
     #   Percentage of students achieving “typical” or “high” growth on the state
@@ -83,10 +79,10 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
     #   Median SGP of students achieving "adequate and sufficient growth" on the
     #   state assessment in ELA/Math
 
-    # NOTE: Growth data shows: byGrade, byEthnicity, bySES, byEL Status, & by Sped Status
-    # Also available in the data, but not currently shown: Homeless Status and High Ability Status
+    # NOTE: Growth data can be shown by Grade, Ethnicity, Socioeconomic Status,
+    # English Learner Status, Special Education Status, and Gender. Also available
+    # in the data, but not currently shown: Homeless Status and High Ability Status
 
-    # all students who are coded as "Majority Enrolled" at the school
     growth_data = get_growth_data(school)
 
     excluded_years = get_excluded_years(selected_year_string)
@@ -131,12 +127,6 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         fig_data_subgroup_growth = pd.concat(
             [fig_data_ses_growth, fig_data_el_growth, fig_data_sped_growth], axis=1
         )
-
-        # NOTE: df currently also includes data for 162-Day Students which is
-        # used in table tooltips, but not in chart. See version of this file
-        # prior to 09/25/24 for alternative charts which use both
-
-        ## By Grade
 
         # grades growth ela table/fig #1
         table_data_grades_growth_ela = table_data_grades_growth[
@@ -196,8 +186,6 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         growth_grades_math = create_growth_layout(
             table_grades_growth_math, fig_grades_growth_math, label_grades_growth_math
         )
-
-        ## By Ethnicity
 
         # ethnicity growth ela table/fig #5
         table_data_ethnicity_growth_ela = table_data_ethnicity_growth[
@@ -259,8 +247,6 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
             fig_ethnicity_growth_math,
             label_ethnicity_growth_math,
         )
-
-        ## By Subgroup
 
         # subgroup growth ela table/fig #9
         table_data_subgroup_growth_ela = table_data_subgroup_growth[
@@ -353,8 +339,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
         over the entire school year (Majority Enrolled). This does not necessarily mean that the student was \
         enrolled in the school for an actual majority of the year (e.g., 82 days). This calculation thus includes \
         more students than previous year calculations which only included students who were enrolled in the \
-        school for 162 Days. The 162 Day value is included in the tooltip of each table and chart when you hover \
-        over the individual data point for comparison purposes."
+        school for 162 Days."
 
     return (
         growth_grades_ela,

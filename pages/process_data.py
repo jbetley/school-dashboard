@@ -3,12 +3,11 @@
 #########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/10/24
+# date:     12/16/24
 
 from typing import Tuple
 import pandas as pd
 import numpy as np
-import itertools
 from toolz import interleave
 
 from .globals import (
@@ -19,6 +18,7 @@ from .globals import (
 
 from .load_data import get_ilearn_student_data, get_iread_student_data
 from .calculations import calculate_proficiency_manually
+from .string_helpers import reorder_columns
 
 
 def transpose_data(raw_df: pd.DataFrame, school_type: str):
@@ -181,16 +181,19 @@ def transpose_data(raw_df: pd.DataFrame, school_type: str):
     merged_data = merged_data.drop("Substring", axis=1)
     merged_data = merged_data.reset_index(drop=True)
 
-    # reorder columns for display
-    school_cols = [e for e in merged_data.columns if name_id in e]
-    nsize_cols = [e for e in merged_data.columns if nsize_id in e]
+    # reorder and interleave columns
+    final_cols = reorder_columns(merged_data, [name_id, nsize_id])
 
-    school_cols.sort()
-    nsize_cols.sort()
+    # school_cols = [e for e in merged_data.columns if name_id in e]
+    # nsize_cols = [e for e in merged_data.columns if nsize_id in e]
 
-    final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+    # school_cols.sort()
+    # nsize_cols.sort()
 
-    final_cols.insert(0, "Category")
+    # final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+
+    # final_cols.insert(0, "Category")
+
     final_data = merged_data[final_cols]
 
     # Add Low and High Grade rows back to k8 data and
@@ -227,7 +230,8 @@ def process_growth_data(
     # of students with Adequate growth using the set of students enrolled for
     # "162 Days" (a subset of available data)
 
-    data_162 = data[data["Day 162"].str.contains("True|TRUE") == True]  #  == "True"]
+    # TODO: Get rid of 162 day data
+    # data_162 = data[data["Day 162"].str.contains("True|TRUE") == True]
 
     # grouby by relevant categories and count the values in the "ILEARNGrowth Level"
     # column (normalize gives us the relative frequencies (%) of the values)
@@ -237,11 +241,11 @@ def process_growth_data(
         .reset_index(name="Majority Enrolled")
     )
 
-    data_162 = (
-        data_162.groupby(["Year", category, "Subject"])["ILEARNGrowth Level"]
-        .value_counts(normalize=True)
-        .reset_index(name="162 Days")
-    )
+    # data_162 = (
+    #     data_162.groupby(["Year", category, "Subject"])["ILEARNGrowth Level"]
+    #     .value_counts(normalize=True)
+    #     .reset_index(name="162 Days")
+    # )
 
     # If the frequency of "Not Adequate Growth" == 1.0: then all ME and Day 162
     # values for that category and subject were Not Adequate (e.g., 100% of the
@@ -255,23 +259,23 @@ def process_growth_data(
     data.loc[mask, "ILEARNGrowth Level"] = "Adequate Growth"
     data.loc[mask, "Majority Enrolled"] = 0
 
-    mask_162 = data_162["162 Days"] == 1.0
-    data_162.loc[mask_162, "ILEARNGrowth Level"] = "Adequate Growth"
-    data_162.loc[mask_162, "162 Days"] = 0
+    # mask_162 = data_162["162 Days"] == 1.0
+    # data_162.loc[mask_162, "ILEARNGrowth Level"] = "Adequate Growth"
+    # data_162.loc[mask_162, "162 Days"] = 0
 
     # drop all rows with "Not Adequate"
     data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-    data_162 = data_162[
-        data_162["ILEARNGrowth Level"].str.contains("Not Adequate") == False
-    ]
+    # data_162 = data_162[
+    #     data_162["ILEARNGrowth Level"].str.contains("Not Adequate") == False
+    # ]
 
     # step 3: Merge data_162["162 Days"] column into 'data'- cols will likely
     # be of different length, so we need to key on Year, Subject, Category
-    data = data.merge(
-        data_162, how="left", on=["Year", category, "Subject"], suffixes=("", "_y")
-    )
+    # data = data.merge(
+    #     data_162, how="left", on=["Year", category, "Subject"], suffixes=("", "_y")
+    # )
 
-    data["Diff"] = data["162 Days"] - data["Majority Enrolled"]  # "Difference"
+    # data["Diff"] = data["162 Days"] - data["Majority Enrolled"]
 
     # step 4: get into proper format for display as multi-header DataTable
 
@@ -280,7 +284,7 @@ def process_growth_data(
 
     # filter unneeded columns
     final_data = data.filter(
-        regex=r"Year|Category|Majority Enrolled|162 Days|Diff",  # "Difference"
+        regex=r"Year|Category|Majority Enrolled",
         axis=1,
     )
 
@@ -307,21 +311,23 @@ def process_growth_data(
 
     # create fig data
     fig_data = final_data.copy()
-    fig_data = fig_data.drop("Diff", axis=1)  # "Difference"
+    # fig_data = fig_data.drop("Diff", axis=1)  # "Difference"
     fig_data = fig_data.pivot(index=["Year"], columns="Category")
     fig_data.columns = fig_data.columns.map(lambda x: "_".join(map(str, x)))
 
     # create table data
     table_data = final_data.copy()
 
+    # TODO: What is 0? is that nothing or is it actually 0 growth?
+    
     # Need specific column order. sort_index does not work
     cols = []
     yrs = list(set(table_data["Year"].to_list()))
     yrs.sort(reverse=True)
     for y in yrs:
-        cols.append(str(y) + "162 Days")
+        # cols.append(str(y) + "162 Days")
         cols.append(str(y) + "Majority Enrolled")
-        cols.append(str(y) + "Diff")  # "Difference"
+        # cols.append(str(y) + "Diff")  # "Difference"
 
     # pivot df from wide to long" add years to each column name; move year to
     # front of column name; sort and reset_index

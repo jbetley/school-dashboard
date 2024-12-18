@@ -32,7 +32,7 @@ from .tables import (
 
 from .layouts import set_table_layout
 
-from .string_helpers import convert_to_svg_circle
+from .string_helpers import convert_to_svg_circle, reorder_columns
 
 from .calculate_metrics import (
     calculate_high_school_metrics,
@@ -103,7 +103,7 @@ def update_academic_metrics(school: str, year: str):
     ahs_table_container12a = []
     ahs_table_container12b = []
     ahs_table_containergte = []
-    ahs_table_container13 = [] 
+    ahs_table_container13 = []
     ahs_metrics_container = {"display": "none"}
 
     main_container = {"display": "none"}
@@ -333,17 +333,19 @@ def update_academic_metrics(school: str, year: str):
                 "Category",
             ] = "1.4.f. Two year student proficiency in Math."
 
-            # reorder columns
-            # #TODO: convert to function
-            school_cols = [e for e in ilearn_2yr_shape.columns if "School" in e]
-            nsize_cols = [e for e in ilearn_2yr_shape.columns if "SN-Size" in e]
+            # reorder and interleave columns
+            final_cols = reorder_columns(ilearn_2yr_shape, ["School", "SN-Size"])
 
-            school_cols.sort()
-            nsize_cols.sort()
+            # school_cols = [e for e in ilearn_2yr_shape.columns if "School" in e]
+            # nsize_cols = [e for e in ilearn_2yr_shape.columns if "SN-Size" in e]
 
-            final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+            # school_cols.sort()
+            # nsize_cols.sort()
 
-            final_cols.insert(0, "Category")
+            # final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
+
+            # final_cols.insert(0, "Category")
+
             metric_14ef_data = ilearn_2yr_shape[final_cols]
 
             # calculate metrics
@@ -520,7 +522,6 @@ def update_academic_metrics(school: str, year: str):
         )
 
         if len(metric_data.index) > 0:
-
             # Adult High School Metrics
             if selected_school_type == "ahs":
                 ahs_metrics_container = {"display": "block"}
@@ -543,35 +544,51 @@ def update_academic_metrics(school: str, year: str):
 
                 ahs_metric_data = convert_to_svg_circle(ahs_metric_data)
 
-                ahs_metric_data11 = ahs_metric_data[ahs_metric_data["Category"].str.contains("State Grade")]
+                ahs_metric_data11 = ahs_metric_data[
+                    ahs_metric_data["Category"].str.contains("State Grade")
+                ]
                 ahs_table11 = create_metric_table(ahs_metric_label11, ahs_metric_data11)
                 ahs_table_container11 = set_table_layout(
                     ahs_table11, ahs_table11, ahs_metric_data.columns
                 )
 
-                ahs_metric_data12a = ahs_metric_data[ahs_metric_data["Category"].str.contains("In Cohort")]
-                ahs_table12a = create_metric_table(ahs_metric_label12a, ahs_metric_data12a)
+                ahs_metric_data12a = ahs_metric_data[
+                    ahs_metric_data["Category"].str.contains("In Cohort")
+                ]
+                ahs_table12a = create_metric_table(
+                    ahs_metric_label12a, ahs_metric_data12a
+                )
                 ahs_table_container12a = set_table_layout(
                     ahs_table12a, ahs_table12a, ahs_metric_data.columns
                 )
 
-                ahs_metric_data12b = ahs_metric_data[ahs_metric_data["Category"].str.contains("Grade 12")]
-                ahs_table12b = create_metric_table(ahs_metric_label12b, ahs_metric_data12b)
+                ahs_metric_data12b = ahs_metric_data[
+                    ahs_metric_data["Category"].str.contains("Grade 12")
+                ]
+                ahs_table12b = create_metric_table(
+                    ahs_metric_label12b, ahs_metric_data12b
+                )
                 ahs_table_container12b = set_table_layout(
                     ahs_table12b, ahs_table12b, ahs_metric_data.columns
-                )               
+                )
 
-                ahs_metric_datagte = ahs_metric_data[ahs_metric_data["Category"].str.contains("Grad to Enrollment")]                
-                ahs_tablegte = create_metric_table(ahs_metric_labelgte, ahs_metric_datagte)
+                ahs_metric_datagte = ahs_metric_data[
+                    ahs_metric_data["Category"].str.contains("Grad to Enrollment")
+                ]
+                ahs_tablegte = create_metric_table(
+                    ahs_metric_labelgte, ahs_metric_datagte
+                )
                 ahs_table_containergte = set_table_layout(
                     ahs_tablegte, ahs_tablegte, ahs_metric_data.columns
-                )                  
+                )
 
-                ahs_metric_data13 = ahs_metric_data[ahs_metric_data["Category"].str.contains("CCR Percentage")]                  
-                ahs_table13 = create_metric_table(ahs_metric_label13, ahs_metric_data13)                                                                
+                ahs_metric_data13 = ahs_metric_data[
+                    ahs_metric_data["Category"].str.contains("CCR Percentage")
+                ]
+                ahs_table13 = create_metric_table(ahs_metric_label13, ahs_metric_data13)
                 ahs_table_container13 = set_table_layout(
                     ahs_table13, ahs_table13, ahs_metric_data.columns
-                )  
+                )
 
             else:
                 # NOTE: We do not currently use hs_multiyear_values
@@ -742,7 +759,7 @@ def update_academic_metrics(school: str, year: str):
         ahs_table_container12a,
         ahs_table_container12b,
         ahs_table_containergte,
-        ahs_table_container13,                                
+        ahs_table_container13,
         ahs_metrics_container,
         main_container,
         empty_container,
