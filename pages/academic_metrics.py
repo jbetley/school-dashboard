@@ -39,7 +39,10 @@ from .calculate_metrics import (
     calculate_attendance_metrics,
     calculate_iread_metrics,
     calculate_values,
-    calculate_metrics,
+    # calculate_ilearn_metrics,
+    calculate_multiyear_ilearn_metrics,
+    calculate_comparison_ilearn_metrics,
+    calculate_metric_ratings,
 )
 
 from .calculations import conditional_fillna, set_academic_rating
@@ -81,7 +84,7 @@ def update_academic_metrics(school: str, year: str):
     selected_year_string = year
     selected_year_numeric = int(selected_year_string)
 
-    # default values (only empty container displayed)
+    # defaults
     table_container_11ab = []
     table_container_11cd = []
     table_container_14ab = []
@@ -143,13 +146,18 @@ def update_academic_metrics(school: str, year: str):
             main_container = {"display": "block"}
             empty_container = {"display": "none"}
 
-            k8_year_values, k8_comparison_values = calculate_values(
+            k8_multiyear_values, k8_comparison_values = calculate_values(
                 metric_data, selected_year_string
             )
 
-            # Get multiyear and Combined Metrics
-            combined_years, combined_delta = calculate_metrics(
-                k8_year_values, k8_comparison_values
+            k8_multiyear_limits = [0.05, 0.02, 0]
+            combined_years = calculate_multiyear_ilearn_metrics(
+                k8_multiyear_values, k8_multiyear_limits
+            )
+
+            k8_comparison_limits = [0.1, 0.02, 0]
+            combined_delta = calculate_comparison_ilearn_metrics(
+                k8_comparison_values, k8_comparison_limits
             )
 
             category = ethnicity + subgroup
@@ -340,23 +348,26 @@ def update_academic_metrics(school: str, year: str):
             metric_14ef_data = ilearn_2yr_shape[final_cols]
             # TODO: Separate Concerns
 
-            # TODO: Can we separate the metric calculation into a function?
             # calculate metrics
             ilearn_2yr_limits = [0.8, 0.69, 0.59]
+            rangevals = [-1, 1, -2]
+            metric_14ef_data = calculate_metric_ratings(
+                metric_14ef_data, 1, -1, -1, ilearn_2yr_limits, 2, rangevals
+            )
 
-            [
-                metric_14ef_data.insert(
-                    i + 1,
-                    str(metric_14ef_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-                    metric_14ef_data.apply(
-                        lambda x: set_academic_rating(
-                            x[metric_14ef_data.columns[i - 1]], ilearn_2yr_limits, 2
-                        ),
-                        axis=1,
-                    ),
-                )
-                for i in range(metric_14ef_data.shape[1] - 1, 1, -2)
-            ]
+            # [
+            #     metric_14ef_data.insert(
+            #         i + 1,
+            #         str(metric_14ef_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
+            #         metric_14ef_data.apply(
+            #             lambda x: set_academic_rating(
+            #                 x[metric_14ef_data.columns[i - 1]], ilearn_2yr_limits, 2
+            #             ),
+            #             axis=1,
+            #         ),
+            #     )
+            #     for i in range(metric_14ef_data.shape[1] - 1, 1, -2)
+            # ]
 
             metric_14ef_label = [
                 "Percentage of students enrolled for at least two school years achieving proficiency on the state assessment in English Language Arts (1.4.e.) and Math (1.4.f.)"
@@ -385,7 +396,18 @@ def update_academic_metrics(school: str, year: str):
 
                 iread_data = iread_data.reset_index(drop=True)
 
-                iread_data = calculate_iread_metrics(iread_data)
+                # IREAD data has already been run through the comparison_metric() function
+                # (in order to calculate the difference from school corporation). However,
+                # the IREAD rating is calculated on the School's proficiency and not on the
+                # difference, so we need to recalculate the metrics in order to get
+                # accurate ratings.
+
+                iread_data = iread_data[
+                    iread_data.columns.drop(list(iread_data.filter(regex="Rate")))
+                ]
+
+                iread_limits = [0.9, 0.8, 0.7, 0.7]
+                iread_data = calculate_iread_metrics(iread_data, iread_limits)
 
                 metric_14g_label = [
                     "1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment."
@@ -409,7 +431,9 @@ def update_academic_metrics(school: str, year: str):
                 table_container_14g = set_table_layout(
                     empty_table_14g, empty_table_14g, [""]
                 )
-            # Placeholders for Growth data metrics (Accountability Metrics 1.5.a, 1.5.b, 1.5.c, & 1.5.d)
+
+            # NOTE: Placeholders for Growth data metrics (Accountability Metrics
+            #   1.5.a, 1.5.b, 1.5.c, & 1.5.d)
 
             # growth_metrics_empty = pd.DataFrame(columns = simple_cols)
             # growth_metrics_dict = {
@@ -432,6 +456,7 @@ def update_academic_metrics(school: str, year: str):
             # table_15abcd = create_metric_table(metric_15abcd_label, metric_15abcd_data)
             # table_container_15abcd = set_table_layout(table_15abcd, table_15abcd, metric_15abcd_data.columns)
 
+            # 1.6.a
             metric_16a_data = combined_delta[
                 (combined_delta["Category"].str.contains("|".join(category)))
                 & (combined_delta["Category"].str.contains("ELA"))
@@ -521,7 +546,18 @@ def update_academic_metrics(school: str, year: str):
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                ahs_metric_data = calculate_adult_high_school_metrics(metric_data)
+                grad_limits_cohort = [0.75, 0.599, 0.45]
+                grad_limits_all = [0.85, 0.699, 0.499]
+                grad_limits_enrollment = [0.75, 0.599, 0.45]
+                ccr_limits = [0.5, 0.499, 0.234]
+
+                ahs_metric_data = calculate_adult_high_school_metrics(
+                    metric_data,
+                    grad_limits_cohort,
+                    grad_limits_all,
+                    grad_limits_enrollment,
+                    ccr_limits,
+                )
 
                 ahs_metric_data["Category"] = (
                     ahs_metric_data["Metric"] + " " + ahs_metric_data["Category"]

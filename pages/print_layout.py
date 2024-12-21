@@ -44,7 +44,8 @@ from .calculate_metrics import (
     calculate_attendance_metrics,
     calculate_iread_metrics,
     calculate_values,
-    calculate_metrics,
+    calculate_multiyear_ilearn_metrics,
+    calculate_comparison_ilearn_metrics,
 )
 
 from .string_helpers import convert_to_svg_circle
@@ -1063,14 +1064,20 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
         if len(metric_data.index) > 0:
             metric_data = metric_data.replace({"^": "***"})
 
-            k8_year_values, k8_comparison_values = calculate_values(
+            k8_multiyear_values, k8_comparison_values = calculate_values(
                 metric_data, selected_year_string
             )
 
-            # Get Multi-Year and Combined Metrics
-            combined_years, combined_delta = calculate_metrics(
-                k8_year_values, k8_comparison_values
-            )
+            # # Get Multi-Year and Combined Metrics
+            # combined_years, combined_delta = calculate_metrics(
+            #     k8_year_values, k8_comparison_values
+            # )
+            k8_multiyear_limits = [0.05, 0.02, 0]
+            combined_years = calculate_multiyear_ilearn_metrics(k8_multiyear_values, k8_multiyear_limits)
+            
+            k8_comparison_limits = [0.1, 0.02, 0]
+            combined_delta = calculate_comparison_ilearn_metrics(k8_comparison_values, k8_comparison_limits)
+            
 
             category = ethnicity + subgroup
 
