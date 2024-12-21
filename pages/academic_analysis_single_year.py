@@ -38,7 +38,7 @@ from .string_helpers import (
 
 dash.register_page(
     __name__,
-    name="Single Year",
+    name="Single Year Analysis",
     path="/academic_analysis_single_year",
     top_nav=True,
     order=10,

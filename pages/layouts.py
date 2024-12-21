@@ -619,7 +619,7 @@ def create_multiyear_layout(
             ["School ID", "Low Grade", "High Grade"]
         ].replace(0, "")
 
-        fig = make_multi_line_chart(school_id, data, trace_colors, label)
+        fig = make_multi_line_chart(data, trace_colors, label)
 
         # Use Low/High grade columns to modify School Name and then drop.
         table_data["School Name"] = create_school_label(table_data)

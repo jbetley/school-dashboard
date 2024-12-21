@@ -20,7 +20,7 @@ from .string_helpers import generate_colors
 
 dash.register_page(
     __name__,
-    name="Multi-Year",
+    name="Multi-Year Analysis",
     path="/academic_analysis_multiyear",
     top_nav=False,
     order=11,
@@ -160,8 +160,8 @@ def set_dropdown_options(
         "trace-color-state-multiyear", "data"
     ),  # dcc.store for existing trace colors
     Output("analysis-multiyear-dropdown-container", "style"),
-    Output("year-over-year-grade", "children"),
-    Output("year-over-year-hs", "children"),
+    Output("linechart-year-over-year-grade", "children"),
+    Output("linechart-year-over-year-hs", "children"),
     Output("k8-analysis-multiyear-main-container", "style"),
     Output("k8-analysis-multiyear-empty-container", "style"),
     Output("k8-analysis-multiyear-no-data", "children"),
@@ -548,7 +548,7 @@ def layout():
                     ),
                     html.Div(
                         [
-                            html.Div(id="year-over-year-grade", children=[]),
+                            html.Div(id="linechart-year-over-year-grade", children=[]),
                             html.Div(
                                 [
                                     html.Div(
@@ -569,7 +569,7 @@ def layout():
                     ),
                     html.Div(
                         [
-                            html.Div(id="year-over-year-hs", children=[]),
+                            html.Div(id="linechart-year-over-year-hs", children=[]),
                         ],
                         id="hs-analysis-multiyear-main-container",
                         style={"display": "none"},

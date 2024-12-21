@@ -3,13 +3,12 @@
 #####################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     10/03/24
+# date:     12/19/24
 
 import dash
 from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
-import itertools
 
 # import local functions
 from .globals import ethnicity, subgroup, grades_all
@@ -221,11 +220,12 @@ def update_academic_metrics(school: str, year: str):
 
             ## Accountability Metrics 1.4.e & 1.4.f
 
-            # The percentage of students who have been enrolled for at least two (2)
-            # full school years achieving proficiency on the state assessment in English
-            # Language Arts & Math.
+            # The percentage of students who have been enrolled for at least
+            # two (2) full school years achieving proficiency on the state
+            # assessment in ELA & Math.
             ilearn_student_raw = get_ilearn_student_data(school)
 
+            # TODO: Separate Concerns
             ilearn_student_raw = ilearn_student_raw[
                 (ilearn_student_raw["ELA Proficiency"] != "Did Not Test")
                 & (ilearn_student_raw["Math Proficiency"] != "Did Not Test")
@@ -248,7 +248,8 @@ def update_academic_metrics(school: str, year: str):
             ilearn_2yr_final = ilearn_2yr[ilearn_2yr["STN"] == ilearn_2yr["STN_shift"]]
 
             # NOTE: Not currently breaking down by proficiency category, so we change
-            # "Above Proficiency" to "At Proficiency" to get final percentage
+            # "Above Proficiency" to "At Proficiency" to get final percentage of all
+            # students who passed
             ilearn_2yr_final = ilearn_2yr_final.replace(
                 {"Above Proficiency": "At Proficiency"}, regex=True
             )
@@ -336,18 +337,10 @@ def update_academic_metrics(school: str, year: str):
             # reorder and interleave columns
             final_cols = reorder_columns(ilearn_2yr_shape, ["School", "SN-Size"])
 
-            # school_cols = [e for e in ilearn_2yr_shape.columns if "School" in e]
-            # nsize_cols = [e for e in ilearn_2yr_shape.columns if "SN-Size" in e]
-
-            # school_cols.sort()
-            # nsize_cols.sort()
-
-            # final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
-
-            # final_cols.insert(0, "Category")
-
             metric_14ef_data = ilearn_2yr_shape[final_cols]
+            # TODO: Separate Concerns
 
+            # TODO: Can we separate the metric calculation into a function?
             # calculate metrics
             ilearn_2yr_limits = [0.8, 0.69, 0.59]
 
@@ -613,15 +606,14 @@ def update_academic_metrics(school: str, year: str):
                         table_17ab, table_17ab, hs_metric_data.columns
                     )
 
+                    # TODO: Create Func for placeholder table #
                     # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
                     all_cols = hs_metric_data.columns.tolist()
 
                     simple_cols = [
                         x
                         for x in all_cols
-                        if (
-                            not x.endswith("+/-") and not x.endswith("Diff")
-                        )  # Difference
+                        if (not x.endswith("+/-") and not x.endswith("Diff"))
                     ]
 
                     grad_metrics_empty = pd.DataFrame(columns=simple_cols)
@@ -653,6 +645,7 @@ def update_academic_metrics(school: str, year: str):
                         "High School Accountability Metrics 1.7.c. & 1.7.d."
                     ]
                     metric_17cd_data = convert_to_svg_circle(metric_17cd_data)
+                    # TODO: Create Func for placeholder table  HERE ^^ #
                     table_17cd = create_metric_table(
                         metric_17cd_label, metric_17cd_data
                     )
@@ -788,8 +781,9 @@ def layout():
                         ],
                         className="bare-container--flex--center twelve columns",
                     ),
-                    # Display attendance data in div outside of the metrics containers, because
-                    # individual schools may have attendance data even if they have no academic data
+                    # We display attendance data in div outside of the other
+                    # metric containers, because individual schools may have
+                    # attendance data even if they have no academic data
                     html.Div(
                         [
                             html.Div(id="table-container-11ab", children=[]),

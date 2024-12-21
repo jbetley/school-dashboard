@@ -521,156 +521,44 @@ hr {
 
 /** Plotly Dash Overrides **/
 /* Overrides certain styles within the hoverlayer (for x hover mode) 
-   Control the page using the id of the single-analysis page div*/
-/* Love me some CSS but there's gotta be a better way to do this */
+   Love me some CSS but there's gotta be a better way to do this */
 
-/* 1st group */
-#year-over-year-hs .hoverlayer>.hovertext>path {
+/* x-unified hover - hides titletext on stacked bars */
+/* [id*="stacked-"] text.legendtitletext {
+  display: none;
+} */
+
+[id*="linechart-"] .hoverlayer>.hovertext>path {
   stroke-width: 0px !important;
   stroke: none !important;
 }
+[id*="linechart-"] .hoverlayer>.hovertext>text.nums {
+  font-weight: 500;
+  fill: #ffffff !important;
+}
+[id*="linechart-"] .hoverlayer>.axistext>path {
+  fill: steelblue !important;
+}
+[id*="linechart-"] .hoverlayer>.axistext>text {
+  font-weight: 600;
+}
+/* Former code:
 
-#year-over-year-grade .hoverlayer>.hovertext>path {
+ #attendance-layout .hoverlayer>.hovertext>path {
   stroke-width: 0px !important;
   stroke: none !important;
 }
-
-#proficiency-grades-ela .hoverlayer>.hovertext>path {
-  stroke-width: 0px !important;
-  stroke: none !important;
-}
-
-#proficiency-ethnicity-ela .hoverlayer>.hovertext>path {
-  stroke-width: 0px !important;
-  stroke: none !important;
-}
-
-#proficiency-subgroup-ela .hoverlayer>.hovertext>path {
-  stroke-width: 0px !important;
-  stroke: none !important;
-}
-
-#proficiency-grades-math .hoverlayer>.hovertext>path {
-  stroke-width: 0px !important;
-  stroke: none !important;
-}
-
-#proficiency-ethnicity-math .hoverlayer>.hovertext>path {
-  stroke-width: 0px !important;
-  stroke: none !important;
-}
-
-#proficiency-subgroup-math .hoverlayer>.hovertext>path {
-  stroke-width: 0px !important;
-  stroke: none !important;
-}
-
-/* 2nd group */
-#year-over-year-hs .hoverlayer>.hovertext>text.nums {
+#attendance-layout .hoverlayer>.hovertext>text.nums {
   font-weight: 500;
   fill: #ffffff !important;
 }
-
-#year-over-year-grade .hoverlayer>.hovertext>text.nums {
-  font-weight: 500;
-  fill: #ffffff !important;
-}
-
-#proficiency-grades-ela .hoverlayer>.hovertext>text.nums {
-  font-weight: 500;
-  fill: #ffffff !important;
-}
-
-#proficiency-ethnicity-ela .hoverlayer>.hovertext>text.nums {
-  font-weight: 500;
-  fill: #ffffff !important;
-}
-
-#proficiency-subgroup-ela .hoverlayer>.hovertext>text.nums {
-  font-weight: 500;
-  fill: #ffffff !important;
-}
-
-#proficiency-grades-math .hoverlayer>.hovertext>text.nums {
-  font-weight: 500;
-  fill: #ffffff !important;
-}
-
-#proficiency-ethnicity-math .hoverlayer>.hovertext>text.nums {
-  font-weight: 500;
-  fill: #ffffff !important;
-}
-
-#proficiency-subgroup-math .hoverlayer>.hovertext>text.nums {
-  font-weight: 500;
-  fill: #ffffff !important;
-}
-
-/* 3rd Group */
-#year-over-year-hs .hoverlayer>.axistext>path {
+#attendance-layout .hoverlayer>.axistext>path {
   fill: steelblue !important;
 }
-
-#year-over-year-grade .hoverlayer>.axistext>path {
-  fill: steelblue !important;
-}
-
-#proficiency-grades-ela .hoverlayer>.axistext>path {
-  fill: steelblue !important;
-}
-
-#proficiency-ethnicity-ela .hoverlayer>.axistext>path {
-  fill: steelblue !important;
-}
-
-#proficiency-subgroup-ela .hoverlayer>.axistext>path {
-  fill: steelblue !important;
-}
-
-#proficiency-grades-math .hoverlayer>.axistext>path {
-  fill: steelblue !important;
-}
-
-#proficiency-ethnicity-math .hoverlayer>.axistext>path {
-  fill: steelblue !important;
-}
-
-#proficiency-subgroup-math .hoverlayer>.axistext>path {
-  fill: steelblue !important;
-}
-
-/* 4th Group */
-#year-over-year-hs .hoverlayer>.axistext>text {
+#attendance-layout .hoverlayer>.axistext>text {
   font-weight: 600;
 }
-
-#year-over-year-grade .hoverlayer>.axistext>text {
-  font-weight: 600;
-}
-
-#proficiency-grades-ela .hoverlayer>.axistext>text {
-  font-weight: 600;
-}
-
-#proficiency-ethnicity-ela .hoverlayer>.axistext>text {
-  font-weight: 600;
-}
-
-#proficiency-subgroup-ela .hoverlayer>.axistext>text {
-  font-weight: 600;
-}
-
-#proficiency-grades-math .hoverlayer>.axistext>text {
-  font-weight: 600;
-}
-
-#proficiency-ethnicity-math .hoverlayer>.axistext>text {
-  font-weight: 600;
-}
-
-#proficiency-subgroup-math .hoverlayer>.axistext>text {
-  font-weight: 600;
-}
+*/
 
 /* Overides base color of all dropdown menu options */
 .VirtualizedSelectOption {
@@ -904,13 +792,15 @@ input[type=checkbox] {
 }
 
 /** Nav and SubNav Links **/
-/* TODO: Not working - doesn't stay active when selected across pages */
-/*
-https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
-You're only ever setting/removing the active class when the button is clicked.
-You'll also need javascript code that runs on page load, checks the current url,
-removes the 'active' class from all nav links, then adds the 'active' class to
-the nav link that matches the current url. (or you could do that in php, either way
+/* 
+  NOTE: not working absolutely perfectly, nav links don't stay active
+  when subnav links are selected, eg., "Academic Information" does not
+  stay selected when Academic Growth is selected. Not a huge deal.
+  https://stackoverflow.com/questions/64202977/navbar-link-does-not-add-active-class-to-the-navbar-clicked-on
+  You're only ever setting/removing the active class when the button is clicked.
+  You'll also need javascript code that runs on page load, checks the current url,
+  removes the 'active' class from all nav links, then adds the 'active' class to
+  the nav link that matches the current url. (or you could do that in php, either way
 */
 
 .nav-container {

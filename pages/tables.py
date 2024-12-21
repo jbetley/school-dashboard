@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     11/11/24
+# date:     12/19/24
 
 import pandas as pd
 from typing import Tuple
@@ -18,6 +18,76 @@ from .globals import metric_strings, table_style, table_cell, table_header
 from .process_data import process_student_level_ilearn
 from .calculations import conditional_fillna
 from .charts import no_data_fig_blank
+
+
+def create_hovercard_popup(id: list, metric_strings: dict) -> Tuple[list, list]:
+    """
+    create html "card" of metric key information for academic_metric page,
+    using metric_strings global
+
+    Args:
+        id (list): one or more metric id strings in a list
+
+    Returns:
+        header (list): a dash html object in a list
+        body (list): a dash html object in a list
+    """
+    if not id:
+        header = []
+        body = []
+    else:
+        # These metrics share ratings with their counterparts (1.1.b,1.4.f,& 1.7.d)
+        # 1.1.c and 1.7.a have been merged
+        if (
+            id[0] == "1.1.a."
+            or id[0] == "1.1.c."
+            or id[0] == "1.4.e."
+            or id[0] == "1.7.a."
+            or id[0] == "1.7.c."
+        ):
+            header_string = id[0] + " & " + id[1]
+        else:
+            header_string = id[0]
+
+        header = [
+            html.Tr(
+                [
+                    html.Th("Rate"),
+                    html.Th("Metric (" + header_string + ")"),
+                ]
+            )
+        ]
+
+        rows = []
+        ratings = ["Exceeds", "Meets", "Approaches", "Does Not Meet"]
+
+        if id[0] in metric_strings:
+            for s in range(0, len(metric_strings[id[0]])):
+                if metric_strings[id[0]][s]:
+                    # use id and "im-very-special" class to ensure metrics with only three
+                    # ratings have the third rating colored red rather than orange
+                    if id[0] == "1.1.a." and s == 3:
+                        rows.append(
+                            html.Tr(
+                                [
+                                    html.Td(ratings[s], id="im-very-special"),
+                                    html.Td(metric_strings[id[0]][s]),
+                                ]
+                            )
+                        )
+                    else:
+                        rows.append(
+                            html.Tr(
+                                [
+                                    html.Td(ratings[s]),
+                                    html.Td(metric_strings[id[0]][s]),
+                                ]
+                            )
+                        )
+
+        body = [html.Tbody(rows)]
+
+    return header, body
 
 
 def empty_table(text: str) -> dash_table.DataTable:
@@ -280,7 +350,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     """
     Takes a label, a dataframe, and a descriptive (type) string and creates a
     multi-header table with academic growth and sgp data using Majority Enrolled
-    Students (162-Day Student data in in tooltips).
+    Students
 
     Args:
         label (str): Table title
@@ -292,32 +362,33 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
 
     data["Category"] = data["Category"].str.split("|").str[0]
 
-    data_me = data.loc[
-        :, data.columns.str.contains("Category|Majority Enrolled")
-    ].copy()
-
-    data_me = data_me.rename(
-        columns={c: c[:4] for c in data_me.columns if c not in ["Category"]}
+    # nsize data is used for tooltip
+    nsize_data = data.loc[:, data.columns.str.contains("Category|NSize")].copy()
+    nsize_data = nsize_data.rename(
+        columns={c: c[:4] for c in nsize_data.columns if c not in ["Category"]}
     )
+    nsize_data = nsize_data.drop("Category", axis=1)
 
-    # 162 day data is used for tooltip
-    data_162 = data.loc[:, data.columns.str.contains("Category|162 Days")].copy()
-    data_162 = data_162.rename(
-        columns={c: c[:4] for c in data_162.columns if c not in ["Category"]}
+    nsize_data = conditional_fillna(nsize_data)
+
+    # removes trailing ".0" due to float conversion
+    for col in nsize_data.columns:
+        nsize_data[col] = nsize_data[col].astype(str).str.split(".").str[0]
+
+    data = data.loc[:, data.columns.str.contains("Category|Majority Enrolled")].copy()
+
+    data = data.rename(
+        columns={c: c[:4] for c in data.columns if c not in ["Category"]}
     )
-    data_162 = data_162.drop("Category", axis=1)
-
-    # Reverse year order (ignoring Category) to align with charts (ascending order)
-    data_me = data_me.iloc[:, ::-1]
 
     # replace NaN with em dash (—)
-    data_me = data_me.fillna(value="\u2014")
+    data = data.fillna(value="\u2014")
 
-    data_me.insert(0, "Category", data_me.pop("Category"))
+    data.insert(0, "Category", data.pop("Category"))
 
-    table_size = len(data_me.columns)
+    table_size = len(data.columns)
 
-    if len(data_me.index) == 0 or table_size == 1:
+    if len(data.index) == 0 or table_size == 1:
         table_layout = [
             html.Div(
                 [
@@ -340,7 +411,7 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
         remaining_width = 100 - category_width
         data_col_width = remaining_width / (table_size - 1)
 
-        all_cols = data_me.columns.tolist()
+        all_cols = data.columns.tolist()
         data_cols = [col for col in all_cols if "Category" not in col]
 
         table_cell_conditional = [
@@ -397,18 +468,16 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
         tooltip_format = [
             {
                 column: {
-                    "value": "162 Days: {:.2%}".format(float(value))
-                    if value == value
-                    else "\u2014",
+                    "value": "N-Size: " + value if value == value else "\u2014",
                     "type": "markdown",
                 }
                 for column, value in row.items()
             }
-            for row in data_162.to_dict("records")
+            for row in nsize_data.to_dict("records")
         ]
 
         table = dash_table.DataTable(
-            data_me.to_dict("records"),
+            data.to_dict("records"),
             columns=column_format,
             style_table={"height": "300px"},
             style_data=table_style,
@@ -440,7 +509,9 @@ def create_iread_ilearn_table(school: str, subject: str, excluded_years: list) -
         iread_ilearn_table (list): dash DataTable wrapped in dash html components
     """
 
-    iread_pass_ilearn, iread_nopass_ilearn = process_student_level_ilearn(school, subject)
+    iread_pass_ilearn, iread_nopass_ilearn = process_student_level_ilearn(
+        school, subject
+    )
 
     if iread_pass_ilearn.empty and iread_nopass_ilearn.empty:
         iread_ilearn_table = []
@@ -485,7 +556,9 @@ def create_iread_ilearn_table(school: str, subject: str, excluded_years: list) -
 def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> list:
     """
     Takes a dataframe, a string, and a width (optional) and creates a simple
-    header table with a border around the edge.
+    header table with a border around the edge. Currently only used for the
+    dashboard_update table in the about.py page and the SAT cut score table
+    on academic_information.py page.
 
     Args:
         label (String): Table title
@@ -495,10 +568,6 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
     """
-
-    # key_table is currently only used for the dashboard_update table in the
-    # about.py page and the SAT cut score table on academic_information.py page.
-
     table_size = len(data.columns)
 
     # determines the col_width class and width of the category column based
@@ -1862,66 +1931,7 @@ def create_metric_table(label: list, values: pd.DataFrame) -> list:
         # in globals.py.
         metric_id = re.findall(r"[\d\.]+\w{1}\.", label[0])
 
-        def create_hovercard_popup(id: list) -> Tuple[list, list]:
-
-            if not id:
-                header = []
-                body = []
-            else:
-                # These metrics share ratings with their counterparts (1.1.b,1.4.f,& 1.7.d)
-                # 1.1.c and 1.7.a have been merged
-                if (
-                    id[0] == "1.1.a."
-                    or id[0] == "1.1.c."
-                    or id[0] == "1.4.e."
-                    or id[0] == "1.7.a."
-                    or id[0] == "1.7.c."
-                ):
-                    header_string = id[0] + " & " + id[1]
-                else:
-                    header_string = id[0]
-
-                header = [
-                    html.Tr(
-                        [
-                            html.Th("Rate"),
-                            html.Th("Metric (" + header_string + ")"),
-                        ]
-                    )
-                ]
-
-                rows = []
-                ratings = ["Exceeds", "Meets", "Approaches", "Does Not Meet"]
-
-                if id[0] in metric_strings:
-                    for s in range(0, len(metric_strings[id[0]])):
-                        if metric_strings[id[0]][s]:
-                            # use id and "im-very-special" class to ensure metrics with only three
-                            # ratings have the third rating colored red rather than orange
-                            if id[0] == "1.1.a." and s == 3:
-                                rows.append(
-                                    html.Tr(
-                                        [
-                                            html.Td(ratings[s], id="im-very-special"),
-                                            html.Td(metric_strings[id[0]][s]),
-                                        ]
-                                    )
-                                )
-                            else:
-                                rows.append(
-                                    html.Tr(
-                                        [
-                                            html.Td(ratings[s]),
-                                            html.Td(metric_strings[id[0]][s]),
-                                        ]
-                                    )
-                                )
-
-                body = [html.Tbody(rows)]
-
-            return header, body
-
-        header, body = create_hovercard_popup(metric_id)
+        header, body = create_hovercard_popup(metric_id, metric_strings)
 
         nsize_tooltip = [
             {
@@ -2062,7 +2072,8 @@ def create_comparison_table(
         # remove everything between | & % in column name
         data.columns = data.columns.str.replace(r"\|(.*?)\%", "", regex=True)
 
-    # NOTE: sort on native DataTable is ugly - explore migration to AG Grid
+    # NOTE: sort on native DataTable is ugly - explore migration to 
+    # dash AG Grid (sample is in about.py)
     table = dash_table.DataTable(
         data.to_dict("records"),
         columns=[
@@ -2133,7 +2144,7 @@ def create_comparison_table(
 
     table_layout = [html.Div([html.Div(table)])]
 
-    # NOTE: below code adds a label if one is passed (used for same row chart/
+    # NOTE: following code adds a label if one is passed (used for same row chart/
     # table layout). If using this, need to re-add "label" variable to fn.
 
     # bar-chart tables (Math, ELA, & IREAD) should have a label multi-bar chart tables

@@ -99,7 +99,7 @@ def set_discipline_category_dropdown_value(discipline_category_options):
 
 # Update Discipline Layout
 @callback(
-    Output("discipline-layout", "children"),
+    Output("linechart-discipline-layout", "children"),
     Input("discipline-demographic-dropdown", "value"),
     Input("discipline-category-dropdown", "value"),
     Input("year-dropdown", "value"),
@@ -147,7 +147,7 @@ def update_discipline_layout(
     # Output("tst-grid", "children"),
     Output("enroll-table", "children"),
     Output("adm-fig", "figure"),
-    Output("attendance-layout", "children"),
+    Output("linechart-attendance-layout", "children"),
     Output("ethnicity-title", "children"),
     Output("ethnicity-fig", "figure"),
     Output("subgroup-title", "children"),
@@ -255,7 +255,6 @@ def update_about_page(year: str, school: str):
             school_demographics["Corporation Name"].values[0]
             == corp_demographics["Corporation Name"].values[0]
         ):
-            
             isTradSchool = True
 
             school_demographics.loc[0, "Corporation Name"] = school_demographics[
@@ -423,18 +422,16 @@ def update_about_page(year: str, school: str):
     # so we use demographic data (Total Enrollment) as a proxy
     if isTradSchool:
         values = school_demographics_all["Total Enrollment"].astype(float).tolist()
-        
+
         adm_values = pd.DataFrame(
-            [values],
-            columns=school_demographics_all["Year"].tolist()
+            [values], columns=school_demographics_all["Year"].tolist()
         )
         adm_values.columns = adm_values.columns.astype(str)
 
     elif financial_data.empty:
-
         raw_adm = get_adm_data(int(selected_school["Corporation ID"].values[0]))
         adm_values = clean_adm_data(raw_adm)
-             
+
     else:
         financial_data = financial_data.drop(["School ID", "School Name"], axis=1)
         financial_data = financial_data.dropna(axis=1, how="all")
@@ -691,7 +688,7 @@ def layout():
                             html.Div(
                                 [
                                     html.Div(
-                                        id="attendance-layout",
+                                        id="linechart-attendance-layout",
                                         children=[],
                                     ),
                                 ],
@@ -753,7 +750,7 @@ def layout():
                                         className="bare-container--nocenter twelve columns",
                                     ),
                                     html.Div(
-                                        id="discipline-layout",
+                                        id="linechart-discipline-layout",
                                         children=[],
                                     ),
                                 ],

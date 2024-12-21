@@ -225,8 +225,7 @@ def calculate_proficiency_manually(series):
     # get the count of students At or Above proficiency and divide by the total #
     # of students in the series (essentially calculating proficiency)
     return (
-        (series == "At Proficiency").sum()
-        + (series == "Above Proficiency").sum()
+        (series == "At Proficiency").sum() + (series == "Above Proficiency").sum()
     ) / series.value_counts().sum()
 
 

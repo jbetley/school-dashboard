@@ -3,7 +3,7 @@
 ##################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/10/24
+# date:     12/19/24
 
 import pandas as pd
 import numpy as np
@@ -22,26 +22,41 @@ from .calculations import (
     calculate_proficiency,
     recalculate_total_proficiency,
 )
-from .process_data import transpose_data
+from .process_data import transpose_data, check_total_tested, remove_empty_cols
 
 
-def clean_discipline_data(data, demographic, category, year):
-    results = data.copy()
+def clean_discipline_data(
+    df: pd.DataFrame, demographic: str, category: str, year: str
+) -> pd.DataFrame:
+    """
+    Takes raw dataframe of discipline data and a few qualifying strings
+    and returns a dataframe ready for display.
 
-    results = results.rename(columns={"Test Year": "Year"})
+    Args:
+        df (pd.DataFrame): raw discipline data
+        demographic (str): demographic (e.g., "Male", "Black")
+        category (str): discipline category (e.g., "In School Suspension", "Explusion")
+        excluded_years (list): list of none or more years to exclude from df
+
+    Returns:
+        discipline_data (pd.DataFrame): processed dataframe
+    """
+    data = df.copy()
+
+    data = data.rename(columns={"Test Year": "Year"})
 
     # Drop years of data that have been excluded by the
     # selected year (are later than)
     excluded_years = get_excluded_years(year)
 
     if excluded_years:
-        results = results[~results["Year"].isin(excluded_years)]
+        data = data[~data["Year"].isin(excluded_years)]
 
-    for col in results.columns:
-        results[col] = pd.to_numeric(results[col], errors="coerce")
+    for col in data.columns:
+        data[col] = pd.to_numeric(data[col], errors="coerce")
 
-    results = results.sort_values(by="Year", ascending=False)
-    results = results.reset_index(drop=True)
+    data = data.sort_values(by="Year", ascending=False)
+    data = data.reset_index(drop=True)
 
     # NOTE: drop Arrest and Law Enforcement data #s are
     # generally too low to be worth measuring, so we don't
@@ -49,16 +64,16 @@ def clean_discipline_data(data, demographic, category, year):
 
     # drop_cols = [
     #     col
-    #     for col in results.columns.to_list()
+    #     for col in data.columns.to_list()
     #     if ("Arrest" in col or "Law Enforcement" in col) and "Overall" not in col
     # ]
-    # results = results.drop(drop_cols, axis=1)
+    # data = data.drop(drop_cols, axis=1)
 
     # NOTE: Uncomment to store "law data" in separate df
     # law_data = raw_data[
     #     ["Year", "Arrests|Overall", "Law Enforcement Incidents|Overall"]
     # ]
-    # results = results.drop(
+    # data = data.drop(
     #     [
     #         "Arrests|Overall",
     #         "Arrests Unique Students|Overall",
@@ -69,8 +84,8 @@ def clean_discipline_data(data, demographic, category, year):
     # )
 
     # converts float to str while dropping the decimal
-    results["School ID"] = results["School ID"].astype("Int64").astype("str")
-    results["Corporation ID"] = results["Corporation ID"].astype("Int64").astype("str")
+    data["School ID"] = data["School ID"].astype("Int64").astype("str")
+    data["Corporation ID"] = data["Corporation ID"].astype("Int64").astype("str")
 
     # annoyingly, there are two cases in which str.contains grabs two "categories"
     # instead of 1: "Homeless" also returns "Not Homeless" and "English Language Learner"
@@ -106,7 +121,7 @@ def clean_discipline_data(data, demographic, category, year):
             selected_category_unique,
         ]
 
-    discipline_data = results[selected_cols].copy()
+    discipline_data = data[selected_cols].copy()
 
     if category == "Homeless" or category == "English Language Learner":
         discipline_data = discipline_data[
@@ -118,7 +133,7 @@ def clean_discipline_data(data, demographic, category, year):
 
     discipline_data = discipline_data[~discipline_data[student_total].isna()]
 
-    # table gets real wide, so we limit to three years of data
+    # NOTE: table gets real wide, so we limit to three years of data
     # limit to 3 years of data, also drop any years with no data.
     discipline_data = discipline_data[discipline_data[selected_category].notna()].copy()
     discipline_data = discipline_data.iloc[0:3]
@@ -126,13 +141,22 @@ def clean_discipline_data(data, demographic, category, year):
     return discipline_data
 
 
-def clean_adm_data(data):
-    results = data.copy()
+def clean_adm_data(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes raw dataframe of adm data and produce display ready dataframe
+
+    Args:
+        df (pd.DataFrame): raw adm data
+
+    Returns:
+        final (pd.DataFrame): processed ADM dataframe
+    """
+    data = df.copy()
 
     # drop "Virtual ADM"
-    results = results.drop(
+    data = data.drop(
         list(
-            results.filter(
+            data.filter(
                 regex="Fall Virtual ADM|Spring Virtual ADM|School ID|Corporation ID|Corporation Name|School Name"
             )
         ),
@@ -145,20 +169,20 @@ def clean_adm_data(data):
     # and add it back later
     last_col = pd.DataFrame()
 
-    if (len(results.columns) % 2) != 0:
-        last_col_name = str(int(results.columns[-1][:4]) + 1)
-        last_col[last_col_name] = results[results.columns[-1]]
-        results = results.drop(results.columns[-1], axis=1)
+    if (len(data.columns) % 2) != 0:
+        last_col_name = str(int(data.columns[-1][:4]) + 1)
+        last_col[last_col_name] = data[data.columns[-1]]
+        data = data.drop(data.columns[-1], axis=1)
 
     # get years with data
-    adm_columns = [c[:4] for c in results.columns if "Spring" in c]
+    adm_columns = [c[:4] for c in data.columns if "Spring" in c]
 
     # make numbers
-    for col in results:
-        results[col] = pd.to_numeric(results[col], errors="coerce")
+    for col in data:
+        data[col] = pd.to_numeric(data[col], errors="coerce")
 
     # Average each group of 2 columns and use name of 2nd column (Spring) for result
-    final = results.groupby(np.arange(len(results.columns)) // 2, axis=1).mean()
+    final = data.groupby(np.arange(len(data.columns)) // 2, axis=1).mean()
     final.columns = adm_columns
 
     if not last_col.empty:
@@ -167,11 +191,21 @@ def clean_adm_data(data):
     return final
 
 
-def clean_ahs_averages(data):
-    results = data.copy()
+def clean_ahs_averages(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes raw dataframe of adult high school graduation data and produces
+    an average graduation rate for all adult high schools.
+
+    Args:
+        df (pd.DataFrame): raw adult hish school graduation data
+
+    Returns:
+        final_data (pd.DataFrame): processed dataframe with statewide AHS grad averages
+    """
+    data = df.copy()
 
     drop_cols = ["School Name", "School Type", "Lat", "Lon"]
-    results = results.drop(drop_cols, axis=1)
+    data = data.drop(drop_cols, axis=1)
 
     non_sum_cols = [
         "Year",
@@ -181,10 +215,10 @@ def clean_ahs_averages(data):
         "Low Grade",
         "High Grade",
     ]
-    sum_cols = [c for c in results.columns if c not in non_sum_cols]
+    sum_cols = [c for c in data.columns if c not in non_sum_cols]
 
     for col in sum_cols:
-        results[col] = pd.to_numeric(results[col], errors="coerce")
+        data[col] = pd.to_numeric(data[col], errors="coerce")
 
     # create a dict for agg()
     column_map = {col: "first" for col in non_sum_cols}
@@ -192,23 +226,24 @@ def clean_ahs_averages(data):
     column_map3 = {"Attendance Rate": "mean"}
     group_cols = {**column_map, **column_map2, **column_map3}
 
-    final_results = results.groupby(["Year"], as_index=False).agg(group_cols)
+    final_data = data.groupby(["Year"], as_index=False).agg(group_cols)
 
-    final_results["Corporation Name"] = "AHS State Average"
-    final_results["Corporation ID"] = 9999
-    final_results["School ID"] = 9999
+    final_data["Corporation Name"] = "AHS State Average"
+    final_data["Corporation ID"] = 9999
+    final_data["School ID"] = 9999
 
-    final_results = final_results.sort_values(by="Year")
+    final_data = final_data.sort_values(by="Year")
 
-    return final_results
+    return final_data
 
 
-def clean_academic_data(data, schools, school_type, year, page):
-    school_data = data.copy()
+def clean_academic_data(df, schools, school_type, year, page):
+    school_data = df.copy()
 
     school_data = school_data.fillna(value=np.nan)
 
     school_id = schools[0]
+
     # get corp data (for academic_metrics and academic_analysis_single_year)
     # and add to dataframe
     if school_type == "ahs":
@@ -240,57 +275,7 @@ def clean_academic_data(data, schools, school_type, year, page):
 
     raw_merged_data = raw_merged_data.reset_index(drop=True)
 
-    # TODO: Is this redundant? Same check is performed in Calculate Proficiency?
-    ## Drop all columns for a Category if the value of "Total Tested" for
-    # the Category for the school is null or 0 for the "school"
-    drop_columns = []
-
-    data = raw_merged_data.copy()
-
-    data["School ID"] = data["School ID"].astype("Int64").astype("str")
-    data["Corporation ID"] = data["Corporation ID"].astype("Int64").astype("str")
-
-    if school_type == "k8":
-        tested_cols = [
-            col
-            for col in data.columns.to_list()
-            if "Total Tested" in col or "Test N" in col
-        ]
-    else:
-        tested_cols = [
-            col
-            for col in data.columns.to_list()
-            if "Total Tested" in col or "Cohort Count" in col
-        ]
-
-    for col in tested_cols:
-        if (
-            pd.to_numeric(
-                data[data["School ID"] == school_id][col], errors="coerce"
-            ).sum()
-            == 0
-            or data[data["School ID"] == school_id][col].isnull().all()
-        ):
-            if "Total Tested" in col:
-                match_string = " Total Tested"
-            else:
-                if school_type == "k8":
-                    match_string = " Test N"
-                else:
-                    match_string = "|Cohort Count"
-
-            matching_cols = data.columns[
-                pd.Series(data.columns).str.startswith(col.split(match_string)[0])
-            ]
-
-            drop_columns.append(matching_cols.tolist())
-
-    drop_all = [i for sub_list in drop_columns for i in sub_list]
-
-    data = data.drop(drop_all, axis=1).copy()
-
-    # k8 or hs data with excluded years and non-tested categories dropped
-    data = data.reset_index(drop=True)
+    data = check_total_tested(raw_merged_data, school_id, school_type)
 
     # HS/AHS data
     if school_type == "hs" or school_type == "ahs":
@@ -489,6 +474,7 @@ def clean_academic_data(data, schools, school_type, year, page):
     else:
         ## Keep five years of data at most
         years = processed_data["Year"].unique().tolist()
+
         if len(years) > 5:
             keep_years = years[:5]
             processed_data = processed_data[processed_data["Year"].isin(keep_years)]
@@ -614,8 +600,6 @@ def clean_academic_data(data, schools, school_type, year, page):
                 school_data = processed_data[
                     processed_data["School ID"] == school_id
                 ].copy()
-
-                # ["schools", "type", "year", "page"]
 
                 school_metrics_data = transpose_data(school_data, school_type)
 

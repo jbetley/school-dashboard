@@ -23,12 +23,12 @@ dash.register_page(
 
 
 @callback(
-    Output("growth-grades-ela", "children"),
-    Output("growth-grades-math", "children"),
-    Output("growth-ethnicity-ela", "children"),
-    Output("growth-ethnicity-math", "children"),
-    Output("growth-subgroup-ela", "children"),
-    Output("growth-subgroup-math", "children"),
+    Output("linechart-growth-grades-ela", "children"),
+    Output("linechart-growth-grades-math", "children"),
+    Output("linechart-growth-ethnicity-ela", "children"),
+    Output("linechart-growth-ethnicity-math", "children"),
+    Output("linechart-growth-subgroup-ela", "children"),
+    Output("linechart-growth-subgroup-math", "children"),
     Output("academic-growth-main-growth-container", "style"),
     Output("academic-growth-empty-growth-container", "style"),
     Output("academic-growth-no-growth-data", "children"),
@@ -374,12 +374,12 @@ def layout():
                         children=[
                             html.Div(
                                 [
-                                    html.Div(id="growth-grades-ela", children=[]),
-                                    html.Div(id="growth-grades-math", children=[]),
-                                    html.Div(id="growth-ethnicity-ela", children=[]),
-                                    html.Div(id="growth-ethnicity-math", children=[]),
-                                    html.Div(id="growth-subgroup-ela", children=[]),
-                                    html.Div(id="growth-subgroup-math", children=[]),
+                                    html.Div(id="linechart-growth-grades-ela", children=[]),
+                                    html.Div(id="linechart-growth-grades-math", children=[]),
+                                    html.Div(id="linechart-growth-ethnicity-ela", children=[]),
+                                    html.Div(id="linechart-growth-ethnicity-math", children=[]),
+                                    html.Div(id="linechart-growth-subgroup-ela", children=[]),
+                                    html.Div(id="linechart-growth-subgroup-math", children=[]),
                                 ],
                                 id="academic-growth-main-growth-container",
                             ),

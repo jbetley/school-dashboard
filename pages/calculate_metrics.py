@@ -110,44 +110,90 @@ def calculate_attendance_metrics(
     attendance_metrics = attendance_metrics.loc[
         :, ~attendance_metrics.columns.str.contains("Corp")
     ]
+# TODO: FIX ALL OTHER OCCURANCES
+    def calculate_metric_ratings(df, insert_adj, col_idx_adj, rating_col_idx_adj, limits, flag, rangevals):
+        """
+        Calculates and adds an accountability rating ("MS", "DNMS", "N/A", etc)
+        # as a new column for each measured value using a reverse loop:
 
-    attendance_limits = [0, -0.01]
+        #   1) the loop ("for i in range(attendance_data_metrics.shape[1], 1, -2)")
+        #   counts backwards by 2, from a number equal to the length of the columns
+        #   (attendance_data_metrics.shape[1]) to 1. These are indexes, so the
+        #   loop stops at the third column (which has an index of 2);
+        #   2) for each step, the code inserts a new column, at index "i". The column
+        #   header is a string that is equal to "the year (YYYY) part of the column
+        #   string  + "Rate" + "i" (the value of "i" doesn"t matter other than to
+        #   differentiate the columns) + the accountability value, which is a string
+        #   returned by the set_academic_rating() function. Note that we have to subtract
+        #   1 from the column to be tested (to account for 0 based indexing)
+        #   3) the set_academic_rating() function calculates an "accountability rating"
+        #   ("MS", "DNMS", "N/A", etc) taking as args:
+        #       i) the "value" to be rated. this will be from the "School" column, if
+        #       the value itself is rated (e.g., iread performance), or the difference
+        #       ("Diff") column, if there is an additional calculation required (e.g.,
+        #       multiyear or compared to corp);
+        #       ii) a list of the threshold "limits" to be used in the calculation; and
+        #       iii) an integer "flag" which tells the function which calculation to use.
+    
+        Args:
+            data (pd.DataFrame): academic data
+            insert_adj (int): 
+            col_idx_adj (int):
+            rating_col_idx_adj (int):
+            limits (list):
+            flag (int):
+            rangevals (list):
+        Returns:
+            data (pd.DataFrame): a dataframe with a metric rating column added for each
+                column of academic data.
+        """	
+        data = df.copy()
 
-    # Calculates and adds an accountability rating ("MS", "DNMS", "N/A", etc)
-    # as a new column for each measured value using a reverse loop:
-
-    #   1) the loop ("for i in range(attendance_data_metrics.shape[1], 1, -2)")
-    #   counts backwards by 2, from a number equal to the length of the columns
-    #   (attendance_data_metrics.shape[1]) to 1. These are indexes, so the
-    #   loop stops at the third column (which has an index of 2);
-    #   2) for each step, the code inserts a new column, at index "i". The column
-    #   header is a string that is equal to "the year (YYYY) part of the column
-    #   string  + "Rate" + "i" (the value of "i" doesn"t matter other than to
-    #   differentiate the columns) + the accountability value, which is a string
-    #   returned by the set_academic_rating() function. Note that we have to subtract
-    #   1 from the column to be tested (to account for 0 based indexing)
-    #   3) the set_academic_rating() function calculates an "accountability rating"
-    #   ("MS", "DNMS", "N/A", etc) taking as args:
-    #       i) the "value" to be rated. this will be from the "School" column, if
-    #       the value itself is rated (e.g., iread performance), or the difference
-    #       ("Diff") column, if there is an additional calculation required (e.g.,
-    #       multiyear or compared to corp);
-    #       ii) a list of the threshold "limits" to be used in the calculation; and
-    #       iii) an integer "flag" which tells the function which calculation to use.
-
-    [
-        attendance_metrics.insert(
-            i,
-            str(attendance_metrics.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-            attendance_metrics.apply(
-                lambda x: set_academic_rating(
-                    x[attendance_metrics.columns[i - 1]], attendance_limits, 3
+        # print(data.shape[1])
+        
+        start = data.shape[1] + rangevals[0]
+        stop = rangevals[1]
+        step = rangevals[2]
+        
+        # print("FUNC RANGE")
+        # print(start)
+        # print(stop)
+        # print(step)
+        
+        [
+            data.insert(
+                i + insert_adj,
+                str(data.columns[i + col_idx_adj])[: 7 - 3] + "Rate" + str(i),
+                    data.apply(
+                    lambda x: set_academic_rating(
+                        x[data.columns[i + rating_col_idx_adj]], limits, flag
+                    ),
+                    axis=1,
                 ),
-                axis=1,
-            ),
-        )
-        for i in range(attendance_metrics.shape[1], 1, -2)
-    ]
+            )
+            for i in range(start, stop, step)
+        ]
+
+        return data
+    
+    attendance_limits = [0, -0.01]
+    rangevals = [0,1,-2]
+
+    attendance_metrics = calculate_metric_ratings(attendance_metrics, 0, -1, -1, attendance_limits, 3, rangevals)
+
+    # [
+    #     attendance_metrics.insert(
+    #         i,
+    #         str(attendance_metrics.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
+    #         attendance_metrics.apply(
+    #             lambda x: set_academic_rating(
+    #                 x[attendance_metrics.columns[i - 1]], attendance_limits, 3
+    #             ),
+    #             axis=1,
+    #         ),
+    #     )
+    #     for i in range(attendance_metrics.shape[1], 1, -2)
+    # ]
 
     # NOTE: Currently, chronic absenteeism is not officially in the
     # accountability system- we are calculating it above (using the
@@ -158,12 +204,8 @@ def calculate_attendance_metrics(
         attendance_metrics["Category"] == "[Chronic Absenteeism %]", rate_cols
     ] = "NA"
 
-    # TODO: Testing - orig didn't have this
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.max_rows", None)
-    print(attendance_metrics)
     attendance_metrics = conditional_fillna(attendance_metrics)
-    print(attendance_metrics)
+
     return attendance_metrics
 
 
@@ -428,8 +470,6 @@ def calculate_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: dataframe with School, Tested, Diff, and Rate columns for each year
     """
     data = df.copy()
-
-    print(data)
 
     grad_limits_state = [0, -0.05, -0.15]
     state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]

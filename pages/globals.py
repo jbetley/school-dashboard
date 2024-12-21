@@ -2,8 +2,8 @@
 # ICSB Dashboard - Globals #
 ############################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
-# date:     02/21/24
+# version:  1.16
+# date:     12/19/24
 
 max_display_years = 5
 

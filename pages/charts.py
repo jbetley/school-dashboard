@@ -3,15 +3,13 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     11/18/24
+# date:     12/16/24
 
 from dash import html, dcc
 import plotly.express as px
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-
-# from plotly.subplots import make_subplots
 from typing import Tuple
 
 from .calculations import check_for_insufficient_n_size, check_for_no_data
@@ -284,10 +282,6 @@ def make_demographics_bar_chart(df: pd.DataFrame) -> list:
         ticks="outside", tickcolor="#a9a9a9", title="", tickfont=dict(size=11)
     )
 
-    # Uncomment to add hover
-    # fig["data"][0]["hovertemplate"] = fig["data"][0]["name"] + ": %{x}<extra></extra>"
-    # fig["data"][1]["hovertemplate"] = fig["data"][1]["name"] + ": %{x}<extra></extra>"
-
     if not missing_categories.empty:
         anno_txt = ", ".join(missing_categories.index.values.astype(str))
 
@@ -368,7 +362,6 @@ def make_stacked_bar(
     # text (Percentage) if the size of the chart causes the text of the font
     # to decrease below 8px. The text is positioned 'inside' the bar due to
     # the 'textposition' variable
-
     fig.update_layout(
         margin=dict(l=10, r=10, t=20, b=0),
         font_family="Inter, sans-serif",
@@ -377,29 +370,25 @@ def make_stacked_bar(
         bargroupgap=0,
         showlegend=False,
         plot_bgcolor="white",
-        hovermode="y unified",
+        hovermode="y unified",  # 'x unified'
         yaxis=dict(autorange="reversed"),
         uniformtext_minsize=9,
         uniformtext_mode="hide",
+        # legend_title_text="Testing"   # does not work to change hover legend title
     )
 
     # TODO: remove hover 'title' (currently the subcategory) and, if possible,
     # TODO: replace with: 'Total Tested: {z}'. Not currently possible
     # https://community.plotly.com/t/customizing-text-on-x-unified-hovering/39440/21
-    # fig.update_layout(hovermode='x unified')
-
-    # hov_text= [f'🌀 Wind Speed <br><br>{d}<br>Daily average: {w} km/h'
-    #         for d, w in zip(dff['date'].dt.strftime('%B %d,%Y'), dff['wind_daily_average'])]
-
-
+    # following adds n-size (Total Tested) info to each trace, but we only want it to appear once.
+    # hovertemplate="%{text} (n-size: %{customdata[0]})"
+    
     fig.update_traces(
         textfont_size=9,
         insidetextanchor="middle",
         textposition="inside",
         marker_line=dict(width=0),
-        # hovertemplate="%{text}",
-        # hovertemplate="%{text} (n-size: %{customdata[0]})",  # adds n-size (Total Tested) info to each trace.
-        hovertext="%{text}",
+        hovertemplate="%{text}",
         hoverinfo="none",
     )
 
@@ -433,7 +422,7 @@ def make_stacked_bar(
         fig_layout = [
             html.Div(
                 [
-                    html.Label(label, className="label__header"),  # hollow-
+                    html.Label(label, className="label__header"),
                     dcc.Graph(
                         figure=fig,
                         config={
@@ -446,7 +435,7 @@ def make_stacked_bar(
                     html.P(
                         children=[
                             html.Span(
-                                "Insufficient n-size for Total Proficiency:",
+                                "Insufficient n-size:",
                                 className="category-string__label",
                             ),
                             html.Span(annotation_string, className="category-string"),
@@ -461,7 +450,7 @@ def make_stacked_bar(
         fig_layout = [
             html.Div(
                 [
-                    html.Label(label, className="label__header"),  # hollow-
+                    html.Label(label, className="label__header"),
                     dcc.Graph(
                         figure=fig,
                         config={
@@ -478,9 +467,7 @@ def make_stacked_bar(
     return fig_layout
 
 
-def make_multi_line_chart(
-    school_id: str, df: pd.DataFrame, trace_colors: dict, label: str
-) -> Tuple[dict, list]:
+def make_multi_line_chart(df: pd.DataFrame, trace_colors: dict, label: str) -> Tuple[dict, list]:
     """
     Creates a dash html.Div layout with a label, a basic line (scatter) plot (px.line), and a
     series of strings (if applicable) detailing missing data.
@@ -747,8 +734,6 @@ def make_line_chart(values: pd.DataFrame) -> list:
     """
     data = values.copy()
 
-    # data = data.replace("\*\*\*", np.nan, regex=True)
-
     # use bools later for chart formatting purposes
     isIREAD = False
     isDiscipline = False
@@ -902,7 +887,8 @@ def make_line_chart(values: pd.DataFrame) -> list:
                 plot_bgcolor="white",
                 xaxis=dict(
                     title="",
-                    # next four values gives evenly spaced axis ticks from left edge to right edge.
+                    # next four values gives evenly spaced axis ticks from
+                    # left edge to right edge.
                     autorange=False,
                     range=[0, len(data["Year"]) - 1],
                     tick0=0,

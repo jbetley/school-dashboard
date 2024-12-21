@@ -3,12 +3,14 @@
 #########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/16/24
+# date:     12/19/24
 
 from typing import Tuple
 import pandas as pd
 import numpy as np
 from toolz import interleave
+import itertools
+from functools import reduce
 
 from .globals import (
     grades,
@@ -17,11 +19,101 @@ from .globals import (
 )
 
 from .load_data import get_ilearn_student_data, get_iread_student_data
-from .calculations import calculate_proficiency_manually
-from .string_helpers import reorder_columns
+from .calculations import calculate_proficiency_manually, round_percentages
+from .string_helpers import reorder_columns, natural_keys
 
 
-def transpose_data(raw_df: pd.DataFrame, school_type: str):
+def remove_empty_cols(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Remove columns from dataframe that are all NaN, null, or None.
+
+    Args:
+    df (pd.DataFrame): academic data
+
+    Returns:
+        data (pd.DataFrame): df with NaN, null, or None columns removed
+    """
+    data = df.copy()
+
+    data = data.loc[
+        :,
+        ~data.where(data.astype(bool)).isna().all(axis=0),
+    ]
+
+    data = data.loc[:, ~(data.astype(str) == "None").all()]
+
+    return data
+
+
+def check_total_tested(
+    df: pd.DataFrame, school_id: str, school_type: str
+) -> pd.DataFrame:
+    """
+    Drop all columns for a Category if the value of "Total Tested" for
+    the Category for the school is null or 0.
+    NOTE: This is essentially the same as the check in "Calculate
+    Proficiency"- at some point should combine.
+
+    Args:
+    raw_df (pd.DataFrame): academic data
+    school_id (str): the SchoolID
+    school_type (str): the school type
+
+    Returns:
+        data (pd.DataFrame): df with null/0 categories removed
+    """
+    drop_columns = []
+
+    data = df.copy()
+
+    data["School ID"] = data["School ID"].astype("Int64").astype("str")
+    data["Corporation ID"] = data["Corporation ID"].astype("Int64").astype("str")
+
+    if school_type == "k8":
+        tested_cols = [
+            col
+            for col in data.columns.to_list()
+            if "Total Tested" in col or "Test N" in col
+        ]
+    else:
+        tested_cols = [
+            col
+            for col in data.columns.to_list()
+            if "Total Tested" in col or "Cohort Count" in col
+        ]
+
+    for col in tested_cols:
+        if (
+            pd.to_numeric(
+                data[data["School ID"] == school_id][col], errors="coerce"
+            ).sum()
+            == 0
+            or data[data["School ID"] == school_id][col].isnull().all()
+        ):
+            if "Total Tested" in col:
+                match_string = " Total Tested"
+            else:
+                if school_type == "k8":
+                    match_string = " Test N"
+                else:
+                    match_string = "|Cohort Count"
+
+            matching_cols = data.columns[
+                pd.Series(data.columns).str.startswith(col.split(match_string)[0])
+            ]
+
+            drop_columns.append(matching_cols.tolist())
+
+    drop_all = [i for sub_list in drop_columns for i in sub_list]
+
+    data = data.drop(drop_all, axis=1).copy()
+
+    data = data.reset_index(drop=True)
+
+    return data
+
+
+def transpose_data(raw_df: pd.DataFrame, school_type: str) -> pd.DataFrame:
     """
     Filters tested (nsize) cols and proficiency calculations into
     separate dataframes, performs some cleanup, including a transposition,
@@ -184,16 +276,6 @@ def transpose_data(raw_df: pd.DataFrame, school_type: str):
     # reorder and interleave columns
     final_cols = reorder_columns(merged_data, [name_id, nsize_id])
 
-    # school_cols = [e for e in merged_data.columns if name_id in e]
-    # nsize_cols = [e for e in merged_data.columns if nsize_id in e]
-
-    # school_cols.sort()
-    # nsize_cols.sort()
-
-    # final_cols = list(itertools.chain(*zip(school_cols, nsize_cols)))
-
-    # final_cols.insert(0, "Category")
-
     final_data = merged_data[final_cols]
 
     # Add Low and High Grade rows back to k8 data and
@@ -225,66 +307,50 @@ def process_growth_data(
         fig_data (pd.DataFrame): processed dataframe used to create fig
     """
     data = df.copy()
-    # step 1: find the percentage of students with Adequate growth using
-    # "Majority Enrolled" students (all available data) and the percentage
-    # of students with Adequate growth using the set of students enrolled for
-    # "162 Days" (a subset of available data)
 
-    # TODO: Get rid of 162 day data
-    # data_162 = data[data["Day 162"].str.contains("True|TRUE") == True]
+    # get nsize for each group
+    nsize = data.value_counts(subset=["Year", category, "Subject"])
+    nsize_df = nsize.reset_index()
 
-    # grouby by relevant categories and count the values in the "ILEARNGrowth Level"
-    # column (normalize gives us the relative frequencies (%) of the values)
+    nsize_df.columns = ["Year", category, "Subject", "NSize"]
+
+    # find the percentage of students with Adequate growth using
+    # "Majority Enrolled" students- grouby by relevant categories and
+    # count the values in the "ILEARNGrowth Level" column (normalize
+    # gives us the relative frequencies (%) of the values)
     data = (
         data.groupby(["Year", category, "Subject"])["ILEARNGrowth Level"]
         .value_counts(normalize=True)
         .reset_index(name="Majority Enrolled")
     )
 
-    # data_162 = (
-    #     data_162.groupby(["Year", category, "Subject"])["ILEARNGrowth Level"]
-    #     .value_counts(normalize=True)
-    #     .reset_index(name="162 Days")
-    # )
-
-    # If the frequency of "Not Adequate Growth" == 1.0: then all ME and Day 162
-    # values for that category and subject were Not Adequate (e.g., 100% of the
-    # students in that category were Not Adequate), meaning that 0% of students
-    # had adequate growth. So wherever "Not Adequate Growth" == 1.0, we change
-    # "ILEARNGrowth Level" to "Adequate Growth" and Majority Enrolled (or Day
-    # 162) to 0 (otherwise these values would disappear when we get rid of the
-    # "ILEARNGrowth Level" column)
-
+    # If the frequency of "Not Adequate Growth" == 1.0: then all values for that
+    # category and subject were Not Adequate (e.g., 100% of the students in that
+    # category were Not Adequate), meaning that 0% of students had adequate growth.
+    # So wherever "Not Adequate Growth" == 1.0, we change "ILEARNGrowth Level" to
+    # "Adequate Growth" and Majority Enrolled to 0 (otherwise these values would
+    # disappear when we get rid of the "ILEARNGrowth Level" column)
     mask = data["Majority Enrolled"] == 1.0
     data.loc[mask, "ILEARNGrowth Level"] = "Adequate Growth"
     data.loc[mask, "Majority Enrolled"] = 0
 
-    # mask_162 = data_162["162 Days"] == 1.0
-    # data_162.loc[mask_162, "ILEARNGrowth Level"] = "Adequate Growth"
-    # data_162.loc[mask_162, "162 Days"] = 0
-
     # drop all rows with "Not Adequate"
     data = data[data["ILEARNGrowth Level"].str.contains("Not Adequate") == False]
-    # data_162 = data_162[
-    #     data_162["ILEARNGrowth Level"].str.contains("Not Adequate") == False
-    # ]
 
-    # step 3: Merge data_162["162 Days"] column into 'data'- cols will likely
-    # be of different length, so we need to key on Year, Subject, Category
-    # data = data.merge(
-    #     data_162, how="left", on=["Year", category, "Subject"], suffixes=("", "_y")
-    # )
-
-    # data["Diff"] = data["162 Days"] - data["Majority Enrolled"]
-
-    # step 4: get into proper format for display as multi-header DataTable
+    # merge n-size values
+    merged_data = pd.merge(
+        data,
+        nsize_df[["Year", category, "Subject", "NSize"]],
+        on=["Year", category, "Subject"],
+        how="left",
+    )
 
     # create final category
-    data["Category"] = data[category] + "|" + data["Subject"]
+    merged_data["Category"] = merged_data[category] + "|" + merged_data["Subject"]
 
     # filter unneeded columns
-    final_data = data.filter(
-        regex=r"Year|Category|Majority Enrolled",
+    final_data = merged_data.filter(
+        regex=r"Year|Category|Majority Enrolled|NSize",
         axis=1,
     )
 
@@ -310,38 +376,43 @@ def process_growth_data(
         final_data = final_data[final_data["Category"].str.contains("|".join(subgroup))]
 
     # create fig data
-    fig_data = final_data.copy()
-    # fig_data = fig_data.drop("Diff", axis=1)  # "Difference"
+    fig_data = final_data.drop("NSize", axis=1).copy()
+
     fig_data = fig_data.pivot(index=["Year"], columns="Category")
     fig_data.columns = fig_data.columns.map(lambda x: "_".join(map(str, x)))
 
     # create table data
     table_data = final_data.copy()
 
-    # TODO: What is 0? is that nothing or is it actually 0 growth?
-    
-    # Need specific column order. sort_index does not work
-    cols = []
-    yrs = list(set(table_data["Year"].to_list()))
-    yrs.sort(reverse=True)
-    for y in yrs:
-        # cols.append(str(y) + "162 Days")
-        cols.append(str(y) + "Majority Enrolled")
-        # cols.append(str(y) + "Diff")  # "Difference"
-
     # pivot df from wide to long" add years to each column name; move year to
     # front of column name; sort and reset_index
     table_data = table_data.pivot(index=["Category"], columns="Year")
-
     table_data.columns = table_data.columns.map(lambda x: "".join(map(str, x)))
     table_data.columns = table_data.columns.map(lambda x: x[-4:] + x[:-4])
-    table_data = table_data[cols]
+
     table_data = table_data.reset_index()
 
     return fig_data, table_data
 
 
-def process_discipline_data(data, category, demographic):
+def process_discipline_data(
+    df: pd.DataFrame, category: str, demographic: str
+) -> pd.DataFrame:
+    """
+    Drop all columns for a Category if the value of "Total Tested" for
+    the Category for the school is null or 0.
+
+    Args:
+    raw_df (pd.DataFrame): academic data
+    school_id (str): the SchoolID
+    school_type (str): the school type
+
+    Returns:
+        data (pd.DataFrame): df with null/0 categories removed
+    """
+
+    data = df.copy()
+
     isOverall = False
 
     if demographic == "Overall":
@@ -564,8 +635,21 @@ def process_discipline_data(data, category, demographic):
     return merged_data
 
 
-def process_student_level_ilearn(school, subject):
-    ilearn_student_all = get_ilearn_student_data(school)
+def process_student_level_ilearn(
+    school_id: str, subject: str
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Loads and processes student level data to create the average ELA
+    and Math proficiency of students Passing and not Passing IREAD.
+
+    Args:
+    school_id (str): the SchoolID
+    subject (str): "ELA" or "Math
+
+    Returns:
+        data (Tuple[pd.DataFrame, pd.DataFrame]): two dataframes Pass and No-Pass
+    """
+    ilearn_student_all = get_ilearn_student_data(school_id)
 
     # will also be empty for guest schools
     if ilearn_student_all.empty:
@@ -575,7 +659,7 @@ def process_student_level_ilearn(school, subject):
         )  # iread_ilearn_pass_final, iread_ilearn_nopass_final
 
     else:
-        iread_student_data = get_iread_student_data(school)
+        iread_student_data = get_iread_student_data(school_id)
 
         ilearn_filtered = ilearn_student_all.filter(
             regex=rf"STN|Current Grade|Tested Grade|{subject}"
@@ -670,3 +754,724 @@ def process_student_level_ilearn(school, subject):
         )
 
         return iread_ilearn_pass_final, iread_ilearn_nopass_final
+
+
+def process_stacked_bar(
+    df: pd.DataFrame,
+    categories: list,
+    subject: list,
+    proficiency_rating: list,
+    year: str,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Processes ilearn proficiency data to create 100% stacked bar charts for each
+    category and subject. Also creates an "annotations" dataframe with missing
+    and insufficient data by category.
+
+    Args:
+    df (pd.DataFrame): ilearn proficiency data
+    categories (list): list of proficiency Categories
+    subject (list): "ELA" & "Math
+    proficiency_rating (list): list of proficiency ratings
+    year (str): the selected year
+    Returns:
+        data (Tuple[pd.DataFrame, pd.DataFrame]): a dataframe of processed ILEARN proficiency
+            data and a dataframe of "annotations"
+    """
+    data = df.copy()
+
+    proficency_data = data.loc[data["Year"] == year].copy()
+
+    proficency_data = proficency_data.dropna(axis=1)
+    proficency_data = proficency_data.reset_index()
+
+    for col in proficency_data.columns:
+        proficency_data[col] = pd.to_numeric(proficency_data[col], errors="coerce")
+
+    # this keeps ELA and Math as well, which we drop later
+    proficency_data = proficency_data.filter(
+        regex=r"ELA Below|ELA At|ELA Approaching|ELA Above|ELA Total|Math Below|Math At|Math Approaching|Math Above|Math Total",
+        axis=1,
+    )
+
+    # create dataframe to hold fig annotations
+    annotations = pd.DataFrame(columns=["Category", "Total Tested"])
+
+    for c in categories:
+        for s in subject:
+            category_subject = c + "|" + s
+            proficiency_columns = [
+                category_subject + " " + x for x in proficiency_rating
+            ]
+            total_tested = category_subject + " " + "Total Tested"
+
+            # We do not want categories that do not appear in the dataframe to
+            # appear in a chart. However, we also do not want to lose sight of
+            # critical data because of the way that IDOE determines insufficient
+            # N-Size. There are three possible data configurations for each column:
+            # 1) Total Tested > 0 and the sum of proficiency_rating(s) is > 0: the school
+            #    has tested category and there is publicly available data [display]
+            # 2) Total Tested AND sum of proficiency_rating(s) == 0: the school does not
+            #    have data for the tested category [do not display, but 'may' want
+            #    annotation as "Missing"]
+            # 3) Total Tested > 0 and the sum of proficiency_rating(s) are == "NaN": the
+            #    school has tested category but there is no publicly available data
+            #    [do not display, but 'may' want annotation as "Insufficient N-size"
+
+            # Neither (2) or (3) permit the creation of a valid or meaningful chart.
+            # However, we do want to track which Category/Subject combinations meet
+            # either condition (for figure annotation purposes).
+
+            if total_tested in proficency_data.columns:
+                # The following is true if: 1) there are any NaN values in the set
+                # (one or more '***) or 2) the sum of all values is equal to 0 (no
+                # data) or 0.0 (NaN's converted from '***' meaning insufficient data)
+                # Can tell whether the annotation reflects insufficient n-size or
+                # missing data by the value in Total Tested (will be 0 for missing)
+                if (proficency_data[proficiency_columns].isna().sum().sum() > 0) or (
+                    proficency_data[proficiency_columns].iloc[0].sum() == 0
+                ):
+                    # add the category and value of Total Tested to a df
+                    annotation_category = proficiency_columns[0].split("|")[0]
+                    annotations.loc[len(annotations.index)] = [
+                        annotation_category + "|" + s,
+                        proficency_data[total_tested].values[0],
+                    ]
+
+                    # clean up numbers and replace NaN with "None"
+                    annotations["Total Tested"] = annotations["Total Tested"].fillna(0)
+                    annotations["Total Tested"] = annotations["Total Tested"].astype(
+                        int
+                    )
+
+                    # drop any columns in the (non-chartable) category from the df
+                    all_proficiency_columns = proficiency_columns + [total_tested]
+
+                    proficency_data = proficency_data.drop(
+                        all_proficiency_columns, axis=1
+                    )
+
+                else:
+                    # calculate percentage
+                    proficency_data[proficiency_columns] = proficency_data[
+                        proficiency_columns
+                    ].divide(proficency_data[total_tested], axis="index")
+
+                    # get a list of all values
+                    row_list = proficency_data[proficiency_columns].values.tolist()
+
+                    # round percentages using Largest Remainder Method
+                    # to build the 100% stacked bar chart
+                    rounded = round_percentages(row_list[0])
+
+                    # add back to dataframe
+                    rounded_percentages = pd.DataFrame([rounded])
+                    rounded_percentages_cols = list(rounded_percentages.columns)
+                    proficency_data[proficiency_columns] = rounded_percentages[
+                        rounded_percentages_cols
+                    ]
+
+    return proficency_data, annotations
+
+
+def process_iread_student_data(
+    df_student: pd.DataFrame, iread_total: pd.DataFrame
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Processes student level iread data and returns two dataframes for a
+    plotly dash datatable and a plotly dash fig.
+
+    Args:
+    df_student (pd.DataFrame): student-level ilearn proficiency data
+    iread_total (pd.DataFrame): total iread proficiency for school
+    Returns:
+        data (Tuple[pd.DataFrame, pd.DataFrame]): a dataframe of processed student level
+         ilearn data for table and fig.
+    """
+    student_data = df_student.copy()
+    
+    # Group by Year and Period - get percentage passing and not passing
+    student_pass = (
+        student_data.groupby(["Year", "Test Period"])["Status"]
+        .value_counts(normalize=True)
+        .reset_index(name="Percent")
+    )
+
+    # There are potentially six rows for each year: 1) Spring Pass;
+    # 2) Spring Did Not Pass; 3) Spring No Result; 4) Summer Pass;
+    # 5) Summer Did Not Pass; 6) Summer No Result. However, if, for example,
+    # all students were either Pass or Did Not Pass, the opposite row will
+    # be missing- e.g., if all students Did Not Pass, there will not be a Pass
+    # row for that year and period
+
+    # The solution is to use pd.MultiIndex.from_product. This makes a MultiIndex
+    # from the cartesian product of multiple iterables. That is, we get a multindex
+    # of all possible combinations from columns by index.levels (in this case, "Year"
+    # "Test Period", and "Status" passed to .reindex. Will get a ValueError: "cannot
+    # handle a non-unique multi-index" when there are duplicated pairs in the passed
+    # columns, so we remove any duplicates first.
+    student_mask = student_pass.duplicated(["Year", "Test Period", "Status"])
+
+    student_pass = student_pass[~student_mask].set_index(
+        ["Year", "Test Period", "Status"]
+    )
+
+    student_pass = (
+        student_pass.reindex(pd.MultiIndex.from_product(student_pass.index.levels))
+        .fillna({"Test Period": "Summer", "Percent": 0})
+        .reset_index()
+    )
+
+    # Filter to remove everything but Passing Students
+    student_pass = student_pass[student_pass["Status"].str.startswith("Pass")]
+
+    # Get count (nsize) for total # of Students Tested per year and period
+    student_tested = (
+        student_data.groupby(["Year", "Test Period"])["Status"]
+        .count()
+        .reset_index(name="N-Size")
+    )
+
+    # pivot to get Test Period as Column Name and Year as col value
+    student_tested = (
+        student_tested.pivot_table(
+            index=["Year"], columns="Test Period", values="N-Size"
+        )
+        .reset_index()
+        .rename_axis(None, axis=1)
+    )
+
+    student_tested = student_tested.rename(
+        columns={"Spring": "Spring N-Size", "Summer": "Summer N-Size"}
+    )
+
+    student_pass = student_pass.drop(["Status"], axis=1)
+
+    final_student_pass = (
+        student_pass.pivot_table(
+            index=["Year"], columns="Test Period", values="Percent"
+        )
+        .reset_index()
+        .rename_axis(None, axis=1)
+    )
+
+    final_student_pass = final_student_pass.rename(
+        columns={"Spring": "Spring Pass %", "Summer": "Summer Pass %"}
+    )
+
+    # merge student level data with school total
+    iread_total = iread_total.filter(regex=r"School", axis=1).reset_index(drop=True)
+
+    iread_total = iread_total.T.rename_axis("Year").reset_index()
+
+    iread_total = iread_total.rename(columns={0: "Total|IREAD"})
+
+    iread_total["Year"] = iread_total["Year"].str[:4]
+
+    # IREAD Details fig
+    final_fig_data = pd.merge(final_student_pass, iread_total, on=["Year"])
+
+    final_fig_data = final_fig_data.rename(
+        columns={
+            "Total|IREAD": "School Total",
+        }
+    )
+
+    # IREAD Details table
+    table_data = final_fig_data.copy()
+
+    # Combine passing and tested students
+    table_data = table_data.merge(student_tested, on="Year", how="inner")
+
+    table_cols = table_data.columns.tolist()
+
+    # reorder columns (move "Total" to the end and then swap places of
+    # "Summer" and "Spring N-Size")
+    table_cols.append(table_cols.pop(table_cols.index("School Total")))
+    table_cols[2], table_cols[-3] = (
+        table_cols[-3],
+        table_cols[2],
+    )
+
+    table_data = table_data[table_cols]
+
+    # Other IREAD data
+    if table_data.empty:
+        final_fig_data = pd.DataFrame()
+        final_table_data = pd.DataFrame()
+
+    else:
+        # Number of 2nd Graders Tested and 2nd Grader Proficiency
+        grade2_count = student_data[student_data["Tested Grade"] == "Grade 2"]
+
+        grade2_tested = (
+            grade2_count.groupby(["Year", "Test Period", "Status"])["Tested Grade"]
+            .value_counts()
+            .reset_index(name="2nd Graders Tested")
+        )
+
+        grade2_proficiency = (
+            grade2_count.groupby(["Year", "Test Period"])["Status"]
+            .value_counts(normalize=True)
+            .reset_index(name="2nd Graders Proficiency")
+        )
+
+        # Number of Exemptions Granted for Non-Pass Students
+        exemption_count = student_data[student_data["Exemption Status"] == "Exemption"]
+
+        exemptions = (
+            exemption_count.groupby(["Year"])["Exemption Status"]
+            .value_counts()
+            .reset_index(name="No Pass (Exemption)")
+        )
+
+        # Number of Non-passing Students Advanced
+        advance_no_pass_count = student_data[
+            (student_data["Status"] == "Did Not Pass")
+            & (student_data["Current Grade"] == "Grade 4")
+        ]
+        advance_no_pass = (
+            advance_no_pass_count.groupby(["Year"])["Status"]
+            .value_counts()
+            .reset_index(name="No Pass (Advanced)")
+        )
+
+        # Number of Students Retained
+        retained_count = student_data[
+            (
+                (student_data["Status"] == "Did Not Pass")
+                & (student_data["Tested Grade"] == "Grade 3")
+                & (student_data["Current Grade"] == "Grade 3")
+            )
+        ]
+        retained = (
+            retained_count.groupby(["Year"])["Status"]
+            .value_counts()
+            .reset_index(name="No Pass (Retained)")
+        )
+
+        # Merge iread table data
+        dfs_to_merge = [
+            table_data,
+            grade2_tested,
+            grade2_proficiency,
+            exemptions,
+            advance_no_pass,
+            retained,
+        ]
+
+        merged = reduce(
+            lambda left, right: pd.merge(
+                left,
+                right,
+                on=["Year"],
+                how="outer",
+                suffixes=("", "_remove"),
+            ),
+            dfs_to_merge,
+        )
+
+        # select and order columns
+        merged = merged[
+            [
+                "Year",
+                "Spring Pass %",
+                "Spring N-Size",
+                "Summer Pass %",
+                "Summer N-Size",
+                "School Total",
+                "2nd Graders Tested",
+                "2nd Graders Proficiency",
+                "No Pass (Exemption)",
+                "No Pass (Advanced)",
+                "No Pass (Retained)",
+            ]
+        ]
+
+        final_table_data = (
+            merged.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        # format table data
+        for col in final_table_data.columns[1:]:
+            final_table_data[col] = pd.to_numeric(
+                final_table_data[col], errors="coerce"
+            )
+
+        # NOTE: dataframes aren't built for row-wise operations, so if we need different
+        # formatting for different rows, we have to do something grotesque like the following
+        # start at 1 to again skip "Category" column
+        for x in range(1, len(final_table_data.columns)):
+            for i in range(0, len(final_table_data.index)):
+                if (i == 0) | (i == 2) | (i == 4) | (i == 6) | (i == 14) | (i == 16):
+                    if ~np.isnan(final_table_data.iat[i, x]):
+                        final_table_data.iat[i, x] = "{:.2%}".format(
+                            final_table_data.iat[i, x]
+                        )
+                elif (i == 11) | (i == 13):
+                    final_table_data.iat[i, x] = "{:,.2f}".format(
+                        final_table_data.iat[i, x]
+                    )
+                else:
+                    final_table_data.iat[i, x] = "{:,.0f}".format(
+                        final_table_data.iat[i, x]
+                    )
+
+        # replace Nan with "-"
+        final_table_data = final_table_data.replace(
+            {"nan": "\u2014", np.NaN: "\u2014"}, regex=True
+        )
+
+        return final_fig_data, final_table_data
+
+
+def process_wida_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Takes raw wida data and processes data for display
+    in plotly dash fig and table.
+
+    Args:
+    df (pd.DataFrame): wida data
+
+    Returns:
+        final_fig_data, final_table_data (Tuple[pd.DataFrame, pd.DataFrame]): two dfs
+    """
+    data = df.copy()
+
+    # WIDA average per grade by year
+    avg_per_grade = (
+        data.groupby(["Year", "Tested Grade"])["Composite Overall Proficiency Level"]
+        .mean()
+        .reset_index(name="Average")
+    )
+
+    # WIDA total school average by year
+    avg_total = (
+        data.groupby(["Year"])["Composite Overall Proficiency Level"]
+        .mean()
+        .reset_index(name="Average")
+    )
+
+    # Drop data for AHS students
+    avg_per_grade = avg_per_grade.loc[
+        avg_per_grade["Tested Grade"] != "Grade 12+/Adult"
+    ]
+
+    # pivot to show average WIDA schore by grade (col) by year (row)
+    breakdown_fig_data = (
+        avg_per_grade.pivot_table(
+            index=["Year"], columns="Tested Grade", values="Average"
+        )
+        .reset_index()
+        .rename_axis(None, axis=1)
+    )
+
+    # temporarily store and drop Year col
+    breakdown_year_col = breakdown_fig_data["Year"]
+    breakdown_fig_data = breakdown_fig_data.drop(["Year"], axis=1)
+
+    # reindex and sort columns using only the numerical part
+    breakdown_fig_data = breakdown_fig_data.reindex(
+        sorted(breakdown_fig_data.columns, key=lambda x: float(x[6:])),
+        axis=1,
+    )
+
+    # add Year col back
+    breakdown_fig_data.insert(loc=0, column="Year", value=breakdown_year_col)
+
+    # Add school Average to by year calcs
+    final_fig_data = pd.merge(breakdown_fig_data, avg_total, on="Year")
+
+    # should not have negative values, but bad data causes
+    # them to appear from time to time
+    final_fig_data[final_fig_data < 0] = np.NaN
+
+    # Wida table
+    breakdown_table_data = (
+        breakdown_fig_data.set_index("Year")
+        .T.rename_axis("Category")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    ).copy()
+
+    # Get N-Size for each grade for each year and add to table data
+    school_nsize_data = (
+        data.value_counts(["Tested Grade", "Year"])
+        .reset_index()
+        .rename(columns={0: "N-Size"})
+    )
+    breakdown_nsize = pd.merge(
+        avg_per_grade,
+        school_nsize_data,
+        on=["Year", "Tested Grade"],
+    )
+
+    # put nsize data in same format as scores
+    breakdown_nsize = breakdown_nsize.drop("Average", axis=1)
+
+    breakdown_nsize = (
+        breakdown_nsize.pivot_table(
+            index=["Year"], columns="Tested Grade", values="N-Size"
+        )
+        .reset_index()
+        .rename_axis(None, axis=1)
+    )
+
+    # identify year columns to get totals (named Average to match
+    # scores df col name)
+    nsize_years = [c for c in breakdown_nsize.columns if "Grade" in c]
+    breakdown_nsize["Average"] = breakdown_nsize[nsize_years].sum(axis=1)
+
+    # sort nsize columns to match data dataframe (using natural sort)
+    nsize_years.sort(key=natural_keys)
+    nsize_columns_sorted = ["Year"] + nsize_years + ["Average"]
+    breakdown_nsize = breakdown_nsize[nsize_columns_sorted]
+
+    breakdown_nsize = (
+        breakdown_nsize.set_index("Year")
+        .T.rename_axis("Category")
+        .rename_axis(None, axis=1)
+        .reset_index()
+    )
+
+    # clean and format table data
+    breakdown_nsize.columns = breakdown_nsize.columns.astype(str)
+    breakdown_nsize.columns = ["Category"] + [
+        str(col) + "N-Size" for col in breakdown_nsize.columns if "Category" not in col
+    ]
+    breakdown_table_data.columns = breakdown_table_data.columns.astype(str)
+    breakdown_nsize.columns = ["Category"] + [
+        str(col) + "School" for col in breakdown_nsize.columns if "Category" not in col
+    ]
+
+    for col in breakdown_table_data.columns[1:]:
+        breakdown_table_data[col] = pd.to_numeric(
+            breakdown_table_data[col], errors="coerce"
+        )
+
+    breakdown_table_data = breakdown_table_data.set_index("Category")
+
+    breakdown_table_data = breakdown_table_data.applymap("{:.2f}".format)
+    breakdown_table_data = breakdown_table_data.reset_index()
+
+    breakdown_table_data = breakdown_table_data.replace(
+        {"nan": "\u2014", np.NaN: "\u2014"}, regex=True
+    )
+
+    # merge nsize data into data to get into the format
+    # expected by multi_table function
+    # interweave columns and add category back
+    data_columns = [e for e in breakdown_table_data.columns if "Category" not in e]
+    nsize_columns = [e for e in breakdown_nsize.columns if "Category" not in e]
+    final_columns = list(itertools.chain(*zip(data_columns, nsize_columns)))
+    final_columns.insert(0, "Category")
+
+    # merge and re-order using wida_final_columns
+    final_table_data = pd.merge(breakdown_table_data, breakdown_nsize, on="Category")
+
+    final_table_data = final_table_data[final_columns]
+
+    return final_fig_data, final_table_data
+
+
+def process_wida_to_iread_details(
+    wida_df: pd.DataFrame, iread_df: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Takes raw wida and iread data and processes data for display
+    in plotly dash table.
+
+    Args:
+    wida_df (pd.DataFrame): student wida data
+    iread_df (pd.DataFrame): student iread data
+
+    Returns:
+        details_table_data (pd.DataFrame): dataframe with processed data
+    """
+
+    wida_data = wida_df.copy()
+    iread_data = iread_df.copy()
+
+    # all_stns = get_school_stns(school_id)
+
+    wida_data["STN"] = wida_data["STN"].astype(str)
+
+    # NOTE: For many schools the number of students (STNs) with
+    # both IREAD and WIDA data will be small.
+    wida_comp_data = wida_data[
+        ["STN", "Year", "Composite Overall Proficiency Level"]
+    ].copy()
+
+    iread_comp_data = iread_data[
+        ["STN", "Year", "Test Period", "Status", "Exemption Status"]
+    ].copy()
+
+    wida_comp_data["Year"] = wida_comp_data["Year"].astype(str)
+    iread_comp_data["Year"] = iread_comp_data["Year"].astype(str)
+    iread_comp_data["STN"] = iread_comp_data["STN"].astype(str)
+
+    # matches all STNs with WIDA and IREAD scores from same year.
+    # NOTE: This captures all students who took WIDA in the same year
+    # that they took IREAD. It does not match students with a recorded
+    # WIDA score either before or after a recorded IREAD score. While
+    # we do not want to capture the latter, we do want to add those
+    # students who has a prior year WIDA score. So we need to run two
+    # merge operations, one on STN and YEAR (which captures same year
+    # testers) and one just on STN where we search for any STN
+    # matches where IREAD Tested Year is > than Max WIDA Tested Year
+    current_match = pd.merge(iread_comp_data, wida_comp_data, on=["STN", "Year"])
+
+    # need to differentiate between years when not merging on Year
+    iread_comp_data = iread_comp_data.rename(columns={"Year": "IREAD Year"})
+    wida_comp_data = wida_comp_data.rename(columns={"Year": "WIDA Year"})
+
+    # find STNs where WIDA tested year < IREAD Year
+    prior_match = pd.merge(iread_comp_data, wida_comp_data, on=["STN"])
+
+    # Find Max WIDA Year value for each STN
+    year_max = (
+        prior_match.groupby(["STN"])["WIDA Year"].max().reset_index(name="WIDA Max")
+    )
+
+    # drop duplicates from the full data set (where the same STN can appear
+    # up to 5 times) and merge with WIDA Max to add IREAD Year
+    prior_match = prior_match.drop_duplicates(subset=["STN"], keep="last")
+    year_max = pd.merge(year_max, prior_match, on=["STN"], how="left")
+
+    # filter by STNs where IREAD Year is > then WIDA Max Year
+    stn_to_add = year_max[
+        year_max["IREAD Year"].astype(int) > year_max["WIDA Max"].astype(int)
+    ]
+
+    # Merge the prior and current testers into one df
+    if stn_to_add.empty:
+        details_data = current_match
+
+    else:
+        # change column names to match
+        stn_to_add = stn_to_add.drop(["WIDA Max", "WIDA Year"], axis=1)
+        stn_to_add = stn_to_add.rename(columns={"IREAD Year": "Year"})
+
+        details_data = pd.concat([current_match, stn_to_add])
+
+    if details_data.empty:
+        details_table_data = pd.DataFrame()
+
+    else:
+        # Get WIDA Average by Year and Status (Pass/No Pass)
+        details_avg = (
+            details_data.groupby(["Year", "Status"])[
+                "Composite Overall Proficiency Level"
+            ]
+            .mean()
+            .reset_index(name="Average")
+        )
+
+        # Get N-Size for each Year and category (Pass/No Pass)
+        details_nsize = (
+            details_data.groupby("Year")["Status"]
+            .value_counts()
+            .reset_index(name="N-Size")
+        )
+
+        # Merge to add N-Size to WIDA Average df
+        details_final = pd.merge(
+            details_avg,
+            details_nsize,
+            on=["Year", "Status"],
+        )
+
+        details_nopass = details_final[details_final["Status"] == "Did Not Pass"]
+        details_pass = details_final[details_final["Status"] == "Pass"]
+
+        details_pass = details_pass.rename(
+            columns={
+                "Average": "Avg. WIDA for Students Passing IREAD",
+                "N-Size": "# of WIDA Tested Students Passing IREAD",
+            }
+        )
+        details_nopass = details_nopass.rename(
+            columns={
+                "Average": "Avg. WIDA for Students Not Passing IREAD",
+                "N-Size": "# of WIDA Tested Students Not Passing IREAD",
+            }
+        )
+
+        # prepare to combine
+        details_nopass = details_nopass.drop(["Year", "Status"], axis=1)
+        details_pass = details_pass.drop("Status", axis=1)
+        details_pass = details_pass.reset_index(drop=True)
+        details_nopass = details_nopass.reset_index(drop=True)
+
+        details_table_data = pd.concat([details_pass, details_nopass], axis=1)
+
+        for col in details_table_data.columns[1:]:
+            details_table_data[col] = pd.to_numeric(
+                details_table_data[col], errors="coerce"
+            )
+
+        details_nsize = details_table_data[
+            "# of WIDA Tested Students Passing IREAD"
+        ].fillna(0) + details_table_data[
+            "# of WIDA Tested Students Not Passing IREAD"
+        ].fillna(
+            0
+        )
+
+        details_table_data["N-Size"] = details_nsize
+        details_table_data["% of WIDA Tested Students Passing IREAD"] = (
+            details_table_data["# of WIDA Tested Students Passing IREAD"]
+            / details_nsize
+        )
+
+        details_table_data = details_table_data.drop(
+            [
+                "# of WIDA Tested Students Passing IREAD",
+                "# of WIDA Tested Students Not Passing IREAD",
+            ],
+            axis=1,
+        )
+
+        details_table_data = details_table_data[
+            [
+                "Year",
+                "% of WIDA Tested Students Passing IREAD",
+                "Avg. WIDA for Students Passing IREAD",
+                "Avg. WIDA for Students Not Passing IREAD",
+                "N-Size",
+            ]
+        ]
+
+        details_table_data = (
+            details_table_data.set_index("Year")
+            .T.rename_axis("Category")
+            .rename_axis(None, axis=1)
+            .reset_index()
+        )
+
+        # table format
+        for x in range(1, len(details_table_data.columns)):
+            for i in range(0, len(details_table_data.index)):
+                if i == 0:
+                    if ~np.isnan(details_table_data.iat[i, x]):
+                        details_table_data.iat[i, x] = "{:.2%}".format(
+                            details_table_data.iat[i, x]
+                        )
+                elif (i == 1) | (i == 2):
+                    details_table_data.iat[i, x] = "{:,.2f}".format(
+                        details_table_data.iat[i, x]
+                    )
+                else:
+                    details_table_data.iat[i, x] = "{:,.0f}".format(
+                        details_table_data.iat[i, x]
+                    )
+
+        # replace Nan with "-"
+        details_table_data = details_table_data.replace(
+            {"nan": "\u2014", np.NaN: "\u2014"}, regex=True
+        )
+
+    return details_table_data
