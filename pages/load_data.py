@@ -27,12 +27,7 @@ from sqlalchemy import create_engine, text
 from .calculations import (
     calculate_percentage,
     conditional_fillna,
-    # recalculate_total_proficiency,
-    # calculate_graduation_rate,
-    # calculate_sat_rate,
 )
-
-# from .process_data import transpose_data
 
 # NOTE: Considering moving engine instantiation to app.py
 engine = create_engine("sqlite:///data/indiana_schools.db")
@@ -249,6 +244,7 @@ def get_financial_dropdown_years(school_id, page):
     # with ADM" which captures pre-opening years with "0"
     # State Grant data.
     results = results.dropna(axis=1, how="all")
+
     year_list = results.columns.tolist()
 
     year_list = [
@@ -260,6 +256,7 @@ def get_financial_dropdown_years(school_id, page):
             # only keep Q4 data, if Q1-Q3 data exists, we drop the entire column
             if "Q4" in "\t".join(year_list):
                 year_list = [int(e[:4]) for e in year_list]
+
             else:
                 year_list = [int(e) for e in year_list if "(Q" not in e]
         else:
@@ -966,11 +963,9 @@ def get_academic_data(*args):
     # of schools (academic_analysis), otherwise one school (academic_info and
     # academic_metric)
     if len(params["schools"]) > 1:
-        # school_id = params["schools"][0]
         school_str = ", ".join([str(int(v)) for v in params["schools"]])
 
     else:
-        # school_id = params["schools"][0]
         school_str = params["schools"][0]
 
     # Get data for academic_information and academic_metrics

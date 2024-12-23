@@ -18,7 +18,11 @@ from .globals import (
     subgroup,
 )
 
-from .load_data import get_ilearn_student_data, get_iread_student_data
+from .load_data import (
+    get_ilearn_student_data,
+    get_iread_student_data,
+    get_excluded_years,
+)
 from .calculations import calculate_proficiency_manually, round_percentages
 from .string_helpers import reorder_columns, natural_keys
 
@@ -756,6 +760,118 @@ def process_student_level_ilearn(
         return iread_ilearn_pass_final, iread_ilearn_nopass_final
 
 
+def process_2yr_ilearn_data(df: pd.DataFrame, year: str) -> pd.DataFrame:
+    """
+    Take a dataframe with ilearn proficiency data and calculates the
+    proficiency of students who have been with the selected school for
+    at least two years.
+
+    Args:
+    df (pd.DataFrame): ilearn proficiency data
+    year (str): selected year
+
+    Returns:
+        final_data (pd.DataFrame): processed dataframe
+    """
+
+    data = df.copy()
+
+    data = data[
+        (data["ELA Proficiency"] != "Did Not Test")
+        & (data["Math Proficiency"] != "Did Not Test")
+    ]
+
+    # sort by STN and Year and then shift STN up one - this shifts the
+    # previous year STN up - so any row with matching STN's is a row where
+    # the same student has been at the school for at least 2 years.
+    data = data.sort_values(["STN", "Year"], ascending=[True, False])
+
+    data["STN_shift"] = data["STN"].shift(-1)
+
+    # Raw df also includes scale scores- which we aren't using here
+    filtered_data = data.filter(
+        regex=rf"Year|School ID|STN|STN_shift|ELA Proficiency|Math Proficiency"
+    ).copy()
+
+    filtered_data = filtered_data[filtered_data["STN"] == filtered_data["STN_shift"]]
+
+    # NOTE: Not currently breaking down by proficiency category, so we change
+    # "Above Proficiency" to "At Proficiency" to get final percentage of all
+    # students who passed
+    filtered_data = filtered_data.replace(
+        {"Above Proficiency": "At Proficiency"}, regex=True
+    )
+
+    #  Calculate N-Size and Proficiency Percentage
+    ela_data = (
+        filtered_data.groupby("Year")["ELA Proficiency"]
+        .value_counts()
+        .reset_index(name="SN-Size")
+    )
+    ela_proficiency = (
+        filtered_data.groupby("Year")["ELA Proficiency"]
+        .value_counts(normalize=True)
+        .reset_index(name="School")
+    )
+    ela_data["School"] = ela_proficiency["School"]
+
+    ela_data = ela_data[(ela_data["ELA Proficiency"] == "At Proficiency")]
+
+    ela_data = ela_data.replace({"At Proficiency": "ELA Proficiency"}, regex=True)
+    ela_data = ela_data.rename(columns={"ELA Proficiency": "Proficiency"})
+
+    math_data = (
+        filtered_data.groupby("Year")["Math Proficiency"]
+        .value_counts()
+        .reset_index(name="SN-Size")
+    )
+    math_proficiency = (
+        filtered_data.groupby("Year")["Math Proficiency"]
+        .value_counts(normalize=True)
+        .reset_index(name="School")
+    )
+    math_data["School"] = math_proficiency["School"]
+
+    math_data = math_data[(math_data["Math Proficiency"] == "At Proficiency")]
+
+    math_data = math_data.replace({"At Proficiency": "Math Proficiency"}, regex=True)
+    math_data = math_data.rename(columns={"Math Proficiency": "Proficiency"})
+
+    # merge
+    merged_data = pd.concat([ela_data, math_data], axis=0)
+
+    # drop excluded years
+    excluded_years = get_excluded_years(year)
+
+    if excluded_years:
+        merged_data = merged_data[~merged_data["Year"].isin(excluded_years)]
+
+    # reshape
+    data_pivot = merged_data.pivot(
+        index="Proficiency", columns="Year", values=["SN-Size", "School"]
+    )
+    data_pivot.columns = [f"{y}{x}" for x, y in data_pivot.columns.to_flat_index()]
+    data_pivot = data_pivot.reset_index()
+    data_pivot = data_pivot.rename(columns={"Proficiency": "Category"})
+
+    data_pivot.loc[
+        data_pivot["Category"] == "ELA Proficiency",
+        "Category",
+    ] = "1.4.e. Two year student proficiency in ELA."
+
+    data_pivot.loc[
+        data_pivot["Category"] == "Math Proficiency",
+        "Category",
+    ] = "1.4.f. Two year student proficiency in Math."
+
+    # reorder and interleave columns
+    final_cols = reorder_columns(data_pivot, ["School", "SN-Size"])
+
+    final_data = data_pivot[final_cols]
+
+    return final_data
+
+
 def process_stacked_bar(
     df: pd.DataFrame,
     categories: list,
@@ -889,7 +1005,7 @@ def process_iread_student_data(
          ilearn data for table and fig.
     """
     student_data = df_student.copy()
-    
+
     # Group by Year and Period - get percentage passing and not passing
     student_pass = (
         student_data.groupby(["Year", "Test Period"])["Status"]

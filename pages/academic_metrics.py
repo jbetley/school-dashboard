@@ -3,24 +3,25 @@
 #####################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/19/24
+# date:     12/22/24
 
 import dash
 from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
-# import local functions
+
 from .globals import ethnicity, subgroup, grades_all
 
 from .load_data import (
     get_school_index,
     get_academic_data,
-    get_ilearn_student_data,
-    get_excluded_years,
+    get_ilearn_student_data
 )
 
 from .clean_data import clean_academic_data
+
+from .process_data import process_2yr_ilearn_data
 
 from .tables import (
     create_metric_table,
@@ -31,21 +32,19 @@ from .tables import (
 
 from .layouts import set_table_layout
 
-from .string_helpers import convert_to_svg_circle, reorder_columns
+from .string_helpers import convert_to_svg_circle
 
 from .calculate_metrics import (
     calculate_high_school_metrics,
     calculate_adult_high_school_metrics,
     calculate_attendance_metrics,
     calculate_iread_metrics,
-    calculate_values,
-    # calculate_ilearn_metrics,
     calculate_multiyear_ilearn_metrics,
     calculate_comparison_ilearn_metrics,
-    calculate_metric_ratings,
+    calculate_metric_ratings
 )
 
-from .calculations import conditional_fillna, set_academic_rating
+from .calculations import conditional_fillna, calculate_values
 
 dash.register_page(__name__, path="/academic_metrics", top_nav=True, order=9)
 
@@ -126,15 +125,18 @@ def update_academic_metrics(school: str, year: str):
     # K8 Academic Metrics (for K8 and K12 schools)
     if selected_school_type == "k8" or selected_school_type == "k12":
         list_of_schools = [school]
-        if selected_school_type == "k12":
-            selected_school_type = "k8"
 
-        raw_metric_data = get_academic_data(list_of_schools, selected_school_type)
+        if selected_school_type == "k12":
+            k8_local_school_type = "k8"
+        else:
+            k8_local_school_type = selected_school_type
+
+        raw_metric_data = get_academic_data(list_of_schools, k8_local_school_type)
 
         metric_data = clean_academic_data(
             raw_metric_data,
             list_of_schools,
-            selected_school_type,
+            k8_local_school_type,
             selected_year_numeric,
             "metrics",
         )
@@ -146,9 +148,7 @@ def update_academic_metrics(school: str, year: str):
             main_container = {"display": "block"}
             empty_container = {"display": "none"}
 
-            k8_multiyear_values, k8_comparison_values = calculate_values(
-                metric_data, selected_year_string
-            )
+            k8_multiyear_values, k8_comparison_values = calculate_values(metric_data)
 
             k8_multiyear_limits = [0.05, 0.02, 0]
             combined_years = calculate_multiyear_ilearn_metrics(
@@ -233,120 +233,7 @@ def update_academic_metrics(school: str, year: str):
             # assessment in ELA & Math.
             ilearn_student_raw = get_ilearn_student_data(school)
 
-            # TODO: Separate Concerns
-            ilearn_student_raw = ilearn_student_raw[
-                (ilearn_student_raw["ELA Proficiency"] != "Did Not Test")
-                & (ilearn_student_raw["Math Proficiency"] != "Did Not Test")
-            ]
-
-            # sort by STN and Year and then shift STN up one - this shifts the
-            # previous year STN up - so any row with matching STN's is a row where
-            # the same student has been at the school for at least 2 years.
-            ilearn_student_raw = ilearn_student_raw.sort_values(
-                ["STN", "Year"], ascending=[True, False]
-            )
-
-            ilearn_student_raw["STN_shift"] = ilearn_student_raw["STN"].shift(-1)
-
-            # Raw df also includes scale scores- which we aren't using here
-            ilearn_2yr = ilearn_student_raw.filter(
-                regex=rf"Year|School ID|STN|STN_shift|ELA Proficiency|Math Proficiency"
-            ).copy()
-
-            ilearn_2yr_final = ilearn_2yr[ilearn_2yr["STN"] == ilearn_2yr["STN_shift"]]
-
-            # NOTE: Not currently breaking down by proficiency category, so we change
-            # "Above Proficiency" to "At Proficiency" to get final percentage of all
-            # students who passed
-            ilearn_2yr_final = ilearn_2yr_final.replace(
-                {"Above Proficiency": "At Proficiency"}, regex=True
-            )
-
-            #  Calculate N-Size and Proficiency Percentage
-            ilearn_2yr_ela = (
-                ilearn_2yr_final.groupby("Year")["ELA Proficiency"]
-                .value_counts()
-                .reset_index(name="SN-Size")
-            )
-            ela_prof = (
-                ilearn_2yr_final.groupby("Year")["ELA Proficiency"]
-                .value_counts(normalize=True)
-                .reset_index(name="School")
-            )
-            ilearn_2yr_ela["School"] = ela_prof["School"]
-
-            ilearn_2yr_ela = ilearn_2yr_ela[
-                (ilearn_2yr_ela["ELA Proficiency"] == "At Proficiency")
-            ]
-
-            ilearn_2yr_ela = ilearn_2yr_ela.replace(
-                {"At Proficiency": "ELA Proficiency"}, regex=True
-            )
-            ilearn_2yr_ela = ilearn_2yr_ela.rename(
-                columns={"ELA Proficiency": "Proficiency"}
-            )
-
-            ilearn_2yr_math = (
-                ilearn_2yr_final.groupby("Year")["Math Proficiency"]
-                .value_counts()
-                .reset_index(name="SN-Size")
-            )
-            math_prof = (
-                ilearn_2yr_final.groupby("Year")["Math Proficiency"]
-                .value_counts(normalize=True)
-                .reset_index(name="School")
-            )
-            ilearn_2yr_math["School"] = math_prof["School"]
-
-            ilearn_2yr_math = ilearn_2yr_math[
-                (ilearn_2yr_math["Math Proficiency"] == "At Proficiency")
-            ]
-
-            ilearn_2yr_math = ilearn_2yr_math.replace(
-                {"At Proficiency": "Math Proficiency"}, regex=True
-            )
-            ilearn_2yr_math = ilearn_2yr_math.rename(
-                columns={"Math Proficiency": "Proficiency"}
-            )
-
-            # merge
-            ilearn_2yr_all = pd.concat([ilearn_2yr_ela, ilearn_2yr_math], axis=0)
-
-            # drop excluded years
-            excluded_years = get_excluded_years(selected_year_string)
-
-            if excluded_years:
-                ilearn_2yr_all = ilearn_2yr_all[
-                    ~ilearn_2yr_all["Year"].isin(excluded_years)
-                ]
-
-            # reshape
-            ilearn_2yr_shape = ilearn_2yr_all.pivot(
-                index="Proficiency", columns="Year", values=["SN-Size", "School"]
-            )
-            ilearn_2yr_shape.columns = [
-                f"{y}{x}" for x, y in ilearn_2yr_shape.columns.to_flat_index()
-            ]
-            ilearn_2yr_shape = ilearn_2yr_shape.reset_index()
-            ilearn_2yr_shape = ilearn_2yr_shape.rename(
-                columns={"Proficiency": "Category"}
-            )
-
-            ilearn_2yr_shape.loc[
-                ilearn_2yr_shape["Category"] == "ELA Proficiency",
-                "Category",
-            ] = "1.4.e. Two year student proficiency in ELA."
-
-            ilearn_2yr_shape.loc[
-                ilearn_2yr_shape["Category"] == "Math Proficiency",
-                "Category",
-            ] = "1.4.f. Two year student proficiency in Math."
-
-            # reorder and interleave columns
-            final_cols = reorder_columns(ilearn_2yr_shape, ["School", "SN-Size"])
-
-            metric_14ef_data = ilearn_2yr_shape[final_cols]
-            # TODO: Separate Concerns
+            metric_14ef_data = process_2yr_ilearn_data(ilearn_student_raw, selected_year_string)
 
             # calculate metrics
             ilearn_2yr_limits = [0.8, 0.69, 0.59]
@@ -354,20 +241,6 @@ def update_academic_metrics(school: str, year: str):
             metric_14ef_data = calculate_metric_ratings(
                 metric_14ef_data, 1, -1, -1, ilearn_2yr_limits, 2, rangevals
             )
-
-            # [
-            #     metric_14ef_data.insert(
-            #         i + 1,
-            #         str(metric_14ef_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-            #         metric_14ef_data.apply(
-            #             lambda x: set_academic_rating(
-            #                 x[metric_14ef_data.columns[i - 1]], ilearn_2yr_limits, 2
-            #             ),
-            #             axis=1,
-            #         ),
-            #     )
-            #     for i in range(metric_14ef_data.shape[1] - 1, 1, -2)
-            # ]
 
             metric_14ef_label = [
                 "Percentage of students enrolled for at least two school years achieving proficiency on the state assessment in English Language Arts (1.4.e.) and Math (1.4.f.)"
@@ -384,7 +257,6 @@ def update_academic_metrics(school: str, year: str):
             # we have to recalculate IREAD metrics because the initial
             # calculation (including IREAD with all other metrics) gives
             # an erroneous result
-            # NOTE: combined_delta has other available data as well
             iread_data = combined_delta[
                 combined_delta["Category"] == "Total|IREAD Proficient %"
             ].copy()
@@ -524,38 +396,41 @@ def update_academic_metrics(school: str, year: str):
         or selected_school_type == "ahs"
         or selected_school_type == "k12"
     ):
+        
         if selected_school_type == "k12":
-            selected_school_type = "hs"
+            hs_local_school_type = "hs"
+        else:
+            hs_local_school_type = selected_school_type
 
         list_of_schools = [school]
 
-        raw_metric_data = get_academic_data(list_of_schools, selected_school_type)
+        raw_metric_data = get_academic_data(list_of_schools, hs_local_school_type)
 
         metric_data = clean_academic_data(
             raw_metric_data,
             list_of_schools,
-            selected_school_type,
+            hs_local_school_type,
             selected_year_numeric,
             "metrics",
         )
 
         if len(metric_data.index) > 0:
             # Adult High School Metrics
-            if selected_school_type == "ahs":
+            if hs_local_school_type == "ahs":
                 ahs_metrics_container = {"display": "block"}
                 main_container = {"display": "block"}
                 empty_container = {"display": "none"}
 
-                grad_limits_cohort = [0.75, 0.599, 0.45]
-                grad_limits_all = [0.85, 0.699, 0.499]
-                grad_limits_enrollment = [0.75, 0.599, 0.45]
+                cohort_grads_limits = [0.75, 0.599, 0.45]
+                all_grads_limits = [0.85, 0.699, 0.499]
+                by_enrollment_grads_limits = [0.75, 0.599, 0.45]
                 ccr_limits = [0.5, 0.499, 0.234]
 
                 ahs_metric_data = calculate_adult_high_school_metrics(
                     metric_data,
-                    grad_limits_cohort,
-                    grad_limits_all,
-                    grad_limits_enrollment,
+                    cohort_grads_limits,
+                    all_grads_limits,
+                    by_enrollment_grads_limits,
                     ccr_limits,
                 )
 
@@ -623,7 +498,7 @@ def update_academic_metrics(school: str, year: str):
                 # NOTE: We do not currently use hs_multiyear_values
                 # for hs metrics
                 hs_multiyear_values, hs_comparison_values = calculate_values(
-                    metric_data, selected_year_string
+                    metric_data
                 )
 
                 if not hs_comparison_values.empty:
@@ -631,7 +506,12 @@ def update_academic_metrics(school: str, year: str):
                     main_container = {"display": "block"}
                     empty_container = {"display": "none"}
 
-                    hs_metric_data = calculate_high_school_metrics(hs_comparison_values)
+                    state_grad_limits = [0, -0.05, -0.15]
+                    local_grad_limits = [0, -0.05, -0.10]
+
+                    hs_metric_data = calculate_high_school_metrics(
+                        hs_comparison_values, state_grad_limits, local_grad_limits
+                    )
 
                     metric_17ab_label = [
                         "High School Accountability Metrics 1.7.a. & 1.7.b."
@@ -642,8 +522,7 @@ def update_academic_metrics(school: str, year: str):
                         table_17ab, table_17ab, hs_metric_data.columns
                     )
 
-                    # TODO: Create Func for placeholder table #
-                    # Create placeholders (High School Accountability Metrics 1.7.c & 1.7.d)
+                    # Create placeholder table (High School Accountability Metrics 1.7.c & 1.7.d)
                     all_cols = hs_metric_data.columns.tolist()
 
                     simple_cols = [
@@ -681,7 +560,7 @@ def update_academic_metrics(school: str, year: str):
                         "High School Accountability Metrics 1.7.c. & 1.7.d."
                     ]
                     metric_17cd_data = convert_to_svg_circle(metric_17cd_data)
-                    # TODO: Create Func for placeholder table  HERE ^^ #
+
                     table_17cd = create_metric_table(
                         metric_17cd_label, metric_17cd_data
                     )

@@ -21,8 +21,9 @@ from .calculations import (
     calculate_sat_rate,
     calculate_proficiency,
     recalculate_total_proficiency,
+    calculate_ahs_average,
 )
-from .process_data import transpose_data, check_total_tested, remove_empty_cols
+from .process_data import transpose_data, check_total_tested
 
 
 def clean_discipline_data(
@@ -191,52 +192,6 @@ def clean_adm_data(df: pd.DataFrame) -> pd.DataFrame:
     return final
 
 
-def clean_ahs_averages(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Takes raw dataframe of adult high school graduation data and produces
-    an average graduation rate for all adult high schools.
-
-    Args:
-        df (pd.DataFrame): raw adult hish school graduation data
-
-    Returns:
-        final_data (pd.DataFrame): processed dataframe with statewide AHS grad averages
-    """
-    data = df.copy()
-
-    drop_cols = ["School Name", "School Type", "Lat", "Lon"]
-    data = data.drop(drop_cols, axis=1)
-
-    non_sum_cols = [
-        "Year",
-        "School ID",
-        "Corporation ID",
-        "Corporation Name",
-        "Low Grade",
-        "High Grade",
-    ]
-    sum_cols = [c for c in data.columns if c not in non_sum_cols]
-
-    for col in sum_cols:
-        data[col] = pd.to_numeric(data[col], errors="coerce")
-
-    # create a dict for agg()
-    column_map = {col: "first" for col in non_sum_cols}
-    column_map2 = {col: "sum" for col in sum_cols}
-    column_map3 = {"Attendance Rate": "mean"}
-    group_cols = {**column_map, **column_map2, **column_map3}
-
-    final_data = data.groupby(["Year"], as_index=False).agg(group_cols)
-
-    final_data["Corporation Name"] = "AHS State Average"
-    final_data["Corporation ID"] = 9999
-    final_data["School ID"] = 9999
-
-    final_data = final_data.sort_values(by="Year")
-
-    return final_data
-
-
 def clean_academic_data(df, schools, school_type, year, page):
     school_data = df.copy()
 
@@ -247,7 +202,9 @@ def clean_academic_data(df, schools, school_type, year, page):
     # get corp data (for academic_metrics and academic_analysis_single_year)
     # and add to dataframe
     if school_type == "ahs":
-        corp_data = get_ahs_averages()
+        raw_ahs_data = get_ahs_averages()
+        corp_data = calculate_ahs_average(raw_ahs_data)
+
     else:
         corp_data = get_corporation_academic_data(school_id, school_type)
 
@@ -479,8 +436,7 @@ def clean_academic_data(df, schools, school_type, year, page):
             keep_years = years[:5]
             processed_data = processed_data[processed_data["Year"].isin(keep_years)]
 
-        # TODO add multipage analysis data (currently being calculated separately in
-        # TODO: get_multiyear_data)
+        # TODO add multipage analysis data (currently in get_multiyear_data)
         if page == "analysis":
             ## HS/AHS academic_analysis_single.py
             if school_type == "hs" or school_type == "ahs":

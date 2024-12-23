@@ -3,12 +3,10 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/20/24
+# date:     12/22/24
 
 import pandas as pd
 import numpy as np
-import itertools
-from typing import Tuple
 
 from .load_data import get_school_index, get_attendance_data
 
@@ -16,7 +14,6 @@ from .calculations import (
     calculate_multiyear,
     set_academic_rating,
     conditional_fillna,
-    calculate_difference,
 )
 
 
@@ -61,20 +58,9 @@ def calculate_metric_ratings(
     """
     data = df.copy()
 
-    # print("NEW FUNC SHAPE")
-    # pd.set_option("display.max_columns", None)
-    # pd.set_option("display.max_rows", None)
-    # print(data)
-    # print(data.shape[1])
-    # print(rangevals[0])
     start = data.shape[1] + rangevals[0]
     stop = rangevals[1]
     step = rangevals[2]
-
-    # print("FUNC RANGE")
-    # print(start)
-    # print(stop)
-    # print(step)
 
     [
         data.insert(
@@ -185,25 +171,11 @@ def calculate_attendance_metrics(
     ]
 
     attendance_limits = [0, -0.01]
-    rangevals = [0, 1, -2]
+    attendance_rangevals = [0, 1, -2]
 
     attendance_metrics = calculate_metric_ratings(
-        attendance_metrics, 0, -1, -1, attendance_limits, 3, rangevals
+        attendance_metrics, 0, -1, -1, attendance_limits, 3, attendance_rangevals
     )
-
-    # [
-    #     attendance_metrics.insert(
-    #         i,
-    #         str(attendance_metrics.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-    #         attendance_metrics.apply(
-    #             lambda x: set_academic_rating(
-    #                 x[attendance_metrics.columns[i - 1]], attendance_limits, 3
-    #             ),
-    #             axis=1,
-    #         ),
-    #     )
-    #     for i in range(attendance_metrics.shape[1], 1, -2)
-    # ]
 
     # NOTE: Currently, chronic absenteeism is not officially in the
     # accountability system- we are calculating it above (using the
@@ -217,164 +189,6 @@ def calculate_attendance_metrics(
     attendance_metrics = conditional_fillna(attendance_metrics)
 
     return attendance_metrics
-
-
-def calculate_values(df: pd.DataFrame, year: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Takes a dataframe of school academic data and calculates the proficiency difference
-    between successive years and the assigns an academic rating to each year.
-
-    Args:
-        data (pd.DataFrame): school proficiency data
-
-    Returns:
-        pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
-    """
-    data = df.copy()
-
-    data.columns = data.columns.astype(str)
-
-    # drop low/high grade rows
-    data = data[(data["Category"] != "Low Grade") & (data["Category"] != "High Grade")]
-
-    # copies of school and corp data for comparison dataframe (school to corp)
-    school_comparison_data = data.filter(regex="Category|School|N-Size", axis=1).copy()
-    corp_comparison_data = data.filter(regex="Category|Corp", axis=1).copy()
-
-    school_cols = [
-        c[:4] + "Corp" for c in school_comparison_data.columns if c.startswith("20")
-    ]
-    school_cols = list(set(school_cols))
-    school_cols.append("Category")
-
-    # make sure df have identical columns (corp can have more years)
-    corp_comparison_data = corp_comparison_data[
-        corp_comparison_data.columns.intersection(school_cols)
-    ]
-
-    # store and drop Category column temporarily for calculations
-    category_column = data["Category"]
-    data = data.drop("Category", axis=1)
-
-    # school data for multiyear dataframe
-    multiyear_data = data.filter(regex="School|N-Size", axis=1).copy()
-
-    # Calculate multiyear Values #
-
-    # Two columns for each year - [School, N-Size]; years are ascending. We want
-    # to calculate the difference between the second to last column (the school
-    # column for the most recent Year) and the fourth from last column (the school
-    # column for the most recent previous year) and continue doing so as long as we
-    # have a two-year pair. That is, given a dataframe with cols: ['2019School',
-    # '2019N-Size', '2021School', '2021N-Size', '2022School', '2022N-Size', '2023School',
-    # '2023N-Size'], we want 3 loops: 2023School - 2022School; 2022School - 2021School; &
-    # 2021School - 2019School. As 2019School does not have a previous year, we stop at
-    # that point. We calculate the # of loops by: length of the columns minus 2 (for
-    # the initial School, N-Size pair) divided by 2.
-
-    # The following loops over the dataframe from back to front, calculating the
-    # difference between col (Year) and col - 2 (Previous Year) and inserting the
-    # result at the last position col[-1] and then every 3rd index position prior.
-
-    # NOTE: Vectorize using shift() and then insert result at proper index?
-    # Could do, but would require reworking calculate_multiyear() - so leave in
-    # loop for now:
-    # shifted_data = data.shift(2, axis=1)
-    # result_data = calculate_multiyear(data,shifted_data)
-    # len 8: Want 7-5; 5-3; 3-1 -> insert result at 8,5,3
-
-    len_cols = len(multiyear_data.columns)
-
-    num_pairs = int((len_cols - 2) / 2)
-    end = len_cols - 2  # begin at second to last column
-
-    for y in range(0, num_pairs):
-        values = calculate_multiyear(
-            multiyear_data.iloc[:, end], multiyear_data.iloc[:, end - 2]
-        )
-        multiyear_data.insert(
-            loc=end + 2,
-            column=multiyear_data.columns[end][0:4] + "Diff",
-            value=values,
-        )
-        end -= 2
-
-    multiyear_data.insert(loc=0, column="Category", value=category_column)
-    multiyear_data["Category"] = (
-        multiyear_data["Category"].str.replace(" Proficient %", "").str.strip()
-    )
-
-    # Calculate Comparison Values #
-
-    # Clean up and merge school and corporation dataframes
-    year_cols = list(school_comparison_data.columns[:0:-1])
-    year_cols = [c[0:4] for c in year_cols]
-    year_cols = list(set(year_cols))
-    year_cols.sort()
-
-    # Use column list to merge
-    corp_cols = [e for e in corp_comparison_data.columns if "Corp" in e]
-    school_cols = [e for e in school_comparison_data.columns if "School" in e]
-    nsize_cols = [e for e in school_comparison_data.columns if "N-Size" in e]
-    school_cols.sort()
-    corp_cols.sort()
-    nsize_cols.sort()
-
-    result_cols = [str(s) + "Diff" for s in year_cols]
-
-    # Create final column order
-    final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
-    final_cols.insert(0, "Category")
-
-    # temporarily place school and corp cols next to each other
-    merged_cols = list(itertools.chain(*zip(school_cols, corp_cols, nsize_cols)))
-    merged_cols.insert(0, "Category")
-
-    # merge school and corp data
-    merged_comparison_data = school_comparison_data.merge(
-        corp_comparison_data, on="Category", how="left"
-    )
-    merged_comparison_data = merged_comparison_data[merged_cols]
-
-    # check to see if data is HS or K8
-    if school_comparison_data["Category"].str.contains("Graduation").any():
-        is_high_school = True
-    else:
-        is_high_school = False
-
-    # tmp drop Category Column to calculate difference
-    school_comparison_data = school_comparison_data.drop("Category", axis=1)
-    corp_comparison_data = corp_comparison_data.drop("Category", axis=1)
-
-    # calculate difference between two dataframes (using a for loop
-    # is not ideal, but we need to use row-wise calculations)
-    comparison_result = pd.DataFrame()
-
-    # slightly different difference calculation for HS vs K8
-    if is_high_school:
-        for c in year_cols:
-            comparison_result[c + "Diff"] = calculate_difference(
-                school_comparison_data[c + "School"], corp_comparison_data[c + "Corp"]
-            )
-
-    else:
-        for c in school_comparison_data.columns:
-            c = c[0:4]
-            comparison_result[c + "Diff"] = calculate_difference(
-                school_comparison_data[c + "School"], corp_comparison_data[c + "Corp"]
-            )
-
-    comparison_result = comparison_result.set_axis(result_cols, axis=1)
-    comparison_result.insert(loc=0, column="Category", value=category_column)
-
-    # merge and reorder cols
-    comparison_data = merged_comparison_data.merge(
-        comparison_result, on="Category", how="left"
-    )
-
-    comparison_data = comparison_data[final_cols]
-
-    return multiyear_data, comparison_data
 
 
 def calculate_multiyear_ilearn_metrics(
@@ -391,9 +205,6 @@ def calculate_multiyear_ilearn_metrics(
     Returns:
         pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
     """
-
-    # Calculate multiyear Values and Metrics
-
     cols = list(data.columns[1:])
 
     rangevals = [-1, 4, -3]
@@ -438,7 +249,7 @@ def calculate_comparison_ilearn_metrics(
 ) -> pd.DataFrame:
     """
     Takes a dataframe of school academic data and calculates the proficiency difference
-    between the school and the school corp i nwhich it is located.
+    between the school and the school corp in which it is located.
 
     Args:
         comparison_data (pd.DataFrame): school proficiency data
@@ -447,8 +258,6 @@ def calculate_comparison_ilearn_metrics(
     Returns:
         pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
     """
-    # Calculate Comparison Metrics
-
     rangevals = [-1, 2, -3]
 
     data = calculate_metric_ratings(data, 1, -1, 0, limits, 1, rangevals)
@@ -458,102 +267,9 @@ def calculate_comparison_ilearn_metrics(
     return data
 
 
-def calculate_ilearn_metrics(
-    multiyear_data: pd.DataFrame,
-    multiyear_limits: list,
-    comparison_data: pd.DataFrame,
-    comparison_limits: list,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Takes a dataframe of school academic data and calculates the proficiency difference
-    between successive years and the assigns an academic rating to each year.
-
-    Args:
-        data (pd.DataFrame): school proficiency data
-
-    Returns:
-        pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
-    """
-
-    # Calculate multiyear Values and Metrics
-
-    multiyear_cols = list(multiyear_data.columns[1:])
-
-    # thresholds for academic rating
-    # multiyear_limits = [0.05, 0.02, 0]
-
-    # # see note in calculate_attendance_metrics()
-    [
-        multiyear_data.insert(
-            i + 1,
-            str(multiyear_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-            multiyear_data.apply(
-                lambda x: set_academic_rating(
-                    x[multiyear_data.columns[i]], multiyear_limits, 1
-                ),
-                axis=1,
-            ),
-        )
-        for i in range(multiyear_data.shape[1] - 1, 4, -3)
-    ]
-
-    multiyear_data = conditional_fillna(multiyear_data)
-
-    multiyear_data.columns = multiyear_data.columns.astype(str)
-
-    # one last processing step is needed to ensure proper ratings. The set_academic_rating()
-    # function assigns a rating based on the "Diff" difference value (either multiyear
-    # or as compared to corp). For the multiyear comparison it is possible to get a
-    # rating of "Approaches Standard" for a "Diff" value of "0.00%" when the yearly ratings
-    # are both "0". There is no case where we want a school to receive anything other
-    # than a "DNMS" for a 0% proficiency. However, the set_academic_rating() function does
-    # not have access to the values used to calculate the difference value (so it cannot
-    # tell if a 0 value is the result of a 0 proficiency). So we need to manually replace
-    # any rating in the Rating column with "DMNS" where the School proficiency value is "0.00%."
-
-    # because we are changing the value of one column based on the value of another (paired)
-    # column, the way we do this is to create a list of tuples (a list of year and rating
-    # column pairs), e.g., [("2022School", "2022Rating3")], and then iterate over the column pair
-
-    # NOTE: the zip function stops at the end of the shortest list which automatically drops
-    # the single "Initial Year" column from the list. It returns an empty list if
-    # school_years_cols only contains the Initial Year columns (because rating_cols will be empty)
-    rating_cols = list(col for col in multiyear_data.columns if "Rate" in col)
-    col_pair = list(zip(multiyear_cols, rating_cols))
-
-    # iterate over list of tuples, if value in first item in pair is zero,
-    # change the second value in pair to DNMS
-    if col_pair:
-        for k, v in col_pair:
-            multiyear_data[v] = np.where(
-                multiyear_data[k] == 0, "DNMS", multiyear_data[v]
-            )
-
-    # Calculate Comparison Metrics
-
-    # delta limits for ilearn
-    # comparison_limits = [0.1, 0.02, 0]
-
-    [
-        comparison_data.insert(
-            i + 1,
-            str(comparison_data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-            comparison_data.apply(
-                lambda x: set_academic_rating(
-                    x[comparison_data.columns[i]], comparison_limits, 1
-                ),
-                axis=1,
-            ),
-        )
-        for i in range(comparison_data.shape[1] - 1, 2, -3)
-    ]
-
-    comparison_data = conditional_fillna(comparison_data)
-
-    return multiyear_data, comparison_data
-
-
-def calculate_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
+def calculate_high_school_metrics(
+    df: pd.DataFrame, state_grad_limits: list, local_grad_limits: list
+) -> pd.DataFrame:
     """
     Takes a school dataframe and assigns an academic rating for each category for each year.
 
@@ -565,42 +281,23 @@ def calculate_high_school_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """
     data = df.copy()
 
-    grad_limits_state = [0, -0.05, -0.15]
     state_grad_metric = data.loc[data["Category"] == "State Graduation Average"]
 
-    [
-        state_grad_metric.insert(
-            i + 1,
-            str(state_grad_metric.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-            state_grad_metric.apply(
-                lambda x: set_academic_rating(
-                    x[state_grad_metric.columns[i]], grad_limits_state, 2
-                ),
-                axis=1,
-            ),
-        )
-        for i in range(state_grad_metric.shape[1] - 1, 1, -3)
-    ]
+    state_grad_rangevals = [-1, 1, -3]
 
-    grad_limits_local = [0, -0.05, -0.10]
+    state_grad_metric = calculate_metric_ratings(
+        state_grad_metric, 1, -1, 0, state_grad_limits, 2, state_grad_rangevals
+    )
 
     local_grad_metric = data[
         data["Category"].isin(["Total Graduation Rate", "Non Waiver Graduation Rate"])
     ]
 
-    [
-        local_grad_metric.insert(
-            i + 1,
-            str(local_grad_metric.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-            local_grad_metric.apply(
-                lambda x: set_academic_rating(
-                    x[local_grad_metric.columns[i]], grad_limits_local, 2
-                ),
-                axis=1,
-            ),
-        )
-        for i in range(local_grad_metric.shape[1] - 1, 1, -3)
-    ]
+    local_grad_rangevals = [-1, 1, -3]
+
+    local_grad_metric = calculate_metric_ratings(
+        local_grad_metric, 1, -1, 0, local_grad_limits, 2, local_grad_rangevals
+    )
 
     # NOTE: Strength of Diploma is not currently displayed
     strength_diploma = data[data["Category"] == "Strength of Diploma"]
@@ -644,7 +341,7 @@ def calculate_adult_high_school_metrics(
     df: pd.DataFrame,
     cohort_grads_limits: list,
     all_grads_limits,
-    by_enrollment_grad_limits: list,
+    by_enrollment_grads_limits: list,
     ccr_limits: list,
 ) -> pd.DataFrame:
     """
@@ -693,103 +390,53 @@ def calculate_adult_high_school_metrics(
 
         cohort_grad_metric = data[data["Category"].isin(["In Cohort Grad Rate"])]
 
-        # grad_limits_cohort = [0.75, 0.599, 0.45]
-        # cohort_grads_limits = [0.75, 0.599, 0.45]
         cohort_grads_rangevals = [-1, 0, -1]
 
         cohort_grad_metric = calculate_metric_ratings(
             cohort_grad_metric, 1, 0, 0, cohort_grads_limits, 2, cohort_grads_rangevals
         )
-        
-        # [
-        #     cohort_grad_metric.insert(
-        #         i + 1,
-        #         str(cohort_grad_metric.columns[i])[: 7 - 3] + "Rate" + str(i),
-        #         cohort_grad_metric.apply(
-        #             lambda x: set_academic_rating(
-        #                 x[cohort_grad_metric.columns[i]], grad_limits_cohort, 2
-        #             ),
-        #             axis=1,
-        #         ),
-        #     )
-        #     for i in range(cohort_grad_metric.shape[1] - 1, 0, -1)
-        # ]
 
         all_grad_metric = data[data["Category"].isin(["Grade 12 Grad Rate"])]
 
-        all_grads_tst = all_grad_metric.copy()
-
-# TODO: This one works, but numbers are wrong.
-        grad_limits_all = [0.85, 0.699, 0.499]
         all_grads_limits = [0.85, 0.699, 0.499]
         all_grads_rangevals = [-1, 0, -1]
 
-        all_grads_tst = calculate_metric_ratings(
-            all_grads_tst, 1, 0, 0, all_grads_limits, 2, all_grads_rangevals
+        all_grad_metric = calculate_metric_ratings(
+            all_grad_metric, 1, 0, 0, all_grads_limits, 2, all_grads_rangevals
         )
 
-        [
-            all_grad_metric.insert(
-                i + 1,
-                str(all_grad_metric.columns[i])[: 7 - 3] + "Rate" + str(i),
-                all_grad_metric.apply(
-                    lambda x: set_academic_rating(
-                        x[all_grad_metric.columns[i]], grad_limits_all, 2
-                    ),
-                    axis=1,
-                ),
-            )
-            for i in range(all_grad_metric.shape[1] - 1, 0, -1)
-        ]
+        by_enrollment_grads_metric = data[data["Category"].isin(["Grad to Enrollment"])]
 
-        print("NEW")
-        print(all_grads_tst)
-        print("ORIG")
-        print(cohort_grad_metric)
-# TODO: This one works, but numbers are wrong.
-
-        enrollment_grad_metric = data[data["Category"].isin(["Grad to Enrollment"])]
-
-        grad_limits_enrollment = [0.75, 0.599, 0.45]
         by_enrollment_grads_limits = [0.75, 0.599, 0.45]
-        by_enrollment_grads_rangevals = []
+        by_enrollment_grads_rangevals = [-1, 0, -1]
 
-        [
-            enrollment_grad_metric.insert(
-                i + 1,
-                str(enrollment_grad_metric.columns[i])[: 7 - 3] + "Rate" + str(i),
-                enrollment_grad_metric.apply(
-                    lambda x: set_academic_rating(
-                        x[enrollment_grad_metric.columns[i]], grad_limits_enrollment, 2
-                    ),
-                    axis=1,
-                ),
-            )
-            for i in range(enrollment_grad_metric.shape[1] - 1, 0, -1)  # [1] - 1
-        ]
+        by_enrollment_grads_metric = calculate_metric_ratings(
+            by_enrollment_grads_metric,
+            1,
+            0,
+            0,
+            by_enrollment_grads_limits,
+            2,
+            by_enrollment_grads_rangevals,
+        )
 
         ccr_metric = data[data["Category"].isin(["CCR Percentage"])]
 
         ccr_limits = [0.5, 0.499, 0.234]
-        ccr_rangevals = []
+        ccr_rangevals = [-1, 0, -1]
 
-        [
-            ccr_metric.insert(
-                i + 1,
-                str(ccr_metric.columns[i][:4]) + "Rate" + str(i),
-                ccr_metric.apply(
-                    lambda x: set_academic_rating(
-                        x[ccr_metric.columns[i]], ccr_limits, 2
-                    ),
-                    axis=1,
-                ),
-            )
-            for i in range(ccr_metric.shape[1] - 1, 0, -1)
-        ]
+        ccr_metric = calculate_metric_ratings(
+            ccr_metric, 1, 0, 0, ccr_limits, 2, ccr_rangevals
+        )
 
         # combine dataframes and rename categories
         combined_ahs_metrics = pd.concat(
-            [cohort_grad_metric, all_grad_metric, enrollment_grad_metric, ccr_metric],
+            [
+                cohort_grad_metric,
+                all_grad_metric,
+                by_enrollment_grads_metric,
+                ccr_metric,
+            ],
             ignore_index=True,
         )
 
@@ -848,20 +495,12 @@ def calculate_adult_high_school_metrics(
         #     ahs_state_grades.columns.intersection(data.columns)
         # ]
 
-        # letter_grade_limits = ["A", "B", "C", "D", "F"]
-        # [
-        #     ahs_state_grades.insert(
-        #         i,
-        #         str(ahs_state_grades.columns[i - 1][:4]) + "Rate" + str(i),
-        #         ahs_state_grades.apply(
-        #             lambda x: set_academic_rating(
-        #                 x[ahs_state_grades.columns[i - 1]], letter_grade_limits, 4
-        #             ),
-        #             axis=1,
-        #         ),
-        #     )
-        #     for i in range(ahs_state_grades.shape[1], 1, -1)
-        # ]
+        # ahs_letter_grade_limits = ["A", "B", "C", "D", "F"]
+        # ahs_letter_grade_rangevals = [0, 1, -1]
+
+        # ahs_state_grades = calculate_metric_ratings(
+        #     ahs_state_grades, 0, -1, -1, ahs_letter_grade_limits, 2, ahs_letter_grade_rangevals
+        # )
 
         # concatenate and add metric column
         data = pd.concat([state_grades, combined_ahs_metrics])
@@ -897,8 +536,6 @@ def calculate_iread_metrics(df: pd.DataFrame, limits: list) -> pd.DataFrame:
     """
     data = df.copy()
 
-    # iread_limits = [0.9, 0.8, 0.7, 0.7]
-
     # IREAD data has already been run through the comparison_metric() function
     # (in order to calculate the difference from school corporation). However,
     # the IREAD rating is calculated on the School's proficiency and not on the
@@ -908,18 +545,6 @@ def calculate_iread_metrics(df: pd.DataFrame, limits: list) -> pd.DataFrame:
 
     rangevals = [0, 1, -3]
     data = calculate_metric_ratings(data, -1, -1, -3, limits, 1, rangevals)
-
-    # [
-    #     data.insert(
-    #         i - 1,
-    #         str(data.columns[i - 1])[: 7 - 3] + "Rate" + str(i),
-    #         data.apply(
-    #             lambda x: set_academic_rating(x[data.columns[i - 3]], iread_limits, 1),
-    #             axis=1,
-    #         ),
-    #     )
-    #     for i in range(data.shape[1], 1, -3)
-    # ]
 
     # perform a manual replace of "--" for "***" only in NSize cols
     # (data = conditional_fillna(data)) doesn't work here

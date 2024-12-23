@@ -43,8 +43,19 @@ def customwrap(s: str, width: int = 16) -> str:
     """
     return "  <br>".join(textwrap.wrap(s, width=width))
 
-def reorder_columns(data: pd.DataFrame, match_cols: list) -> list:
 
+def reorder_columns(data: pd.DataFrame, match_cols: list) -> list:
+    """
+    Takes a list of matching column names and interleaves the columns
+    in the dataframe according to the order in the list.
+
+    Args:
+        data (pd.DataFrame): academic data
+        match_cols (list): list of strings (column names)
+
+    Returns:
+        final_cols (list): list of inteleaved columns
+    """
     col_list = []
 
     for i, col in enumerate(match_cols):
@@ -55,7 +66,8 @@ def reorder_columns(data: pd.DataFrame, match_cols: list) -> list:
     final_cols.insert(0, "Category")
 
     return final_cols
-    
+
+
 def generate_colors(
     data: pd.DataFrame, color_state: dict, color_list: list, school_name: str
 ) -> dict:

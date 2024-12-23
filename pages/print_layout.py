@@ -35,7 +35,7 @@ from .load_data import (
 
 from .clean_data import clean_academic_data
 
-from .calculations import round_nearest, conditional_fillna
+from .calculations import round_nearest, conditional_fillna, calculate_values
 
 from .calculate_metrics import (
     calculate_financial_metrics,
@@ -43,7 +43,6 @@ from .calculate_metrics import (
     calculate_adult_high_school_metrics,
     calculate_attendance_metrics,
     calculate_iread_metrics,
-    calculate_values,
     calculate_multiyear_ilearn_metrics,
     calculate_comparison_ilearn_metrics,
 )
@@ -1073,11 +1072,14 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
             #     k8_year_values, k8_comparison_values
             # )
             k8_multiyear_limits = [0.05, 0.02, 0]
-            combined_years = calculate_multiyear_ilearn_metrics(k8_multiyear_values, k8_multiyear_limits)
-            
+            combined_years = calculate_multiyear_ilearn_metrics(
+                k8_multiyear_values, k8_multiyear_limits
+            )
+
             k8_comparison_limits = [0.1, 0.02, 0]
-            combined_delta = calculate_comparison_ilearn_metrics(k8_comparison_values, k8_comparison_limits)
-            
+            combined_delta = calculate_comparison_ilearn_metrics(
+                k8_comparison_values, k8_comparison_limits
+            )
 
             category = ethnicity + subgroup
 

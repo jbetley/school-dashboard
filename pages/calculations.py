@@ -3,11 +3,12 @@
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     09/06/24
+# date:     12/22/24
 
 import pandas as pd
 import numpy as np
 import numpy.typing as npt
+import itertools
 from typing import Tuple
 import scipy.spatial as spatial
 
@@ -49,6 +50,52 @@ def conditional_fillna(df: pd.DataFrame) -> pd.DataFrame:
     data[fill_with_no_data] = data[fill_with_no_data].fillna(value="No Data")
 
     return data
+
+
+def calculate_ahs_average(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes raw dataframe of adult high school graduation data and produces
+    an average graduation rate for all adult high schools.
+
+    Args:
+        df (pd.DataFrame): raw adult hish school graduation data
+
+    Returns:
+        final_data (pd.DataFrame): processed dataframe with statewide AHS grad averages
+    """
+    data = df.copy()
+
+    drop_cols = ["School Name", "School Type", "Lat", "Lon"]
+    data = data.drop(drop_cols, axis=1)
+
+    non_sum_cols = [
+        "Year",
+        "School ID",
+        "Corporation ID",
+        "Corporation Name",
+        "Low Grade",
+        "High Grade",
+    ]
+    sum_cols = [c for c in data.columns if c not in non_sum_cols]
+
+    for col in sum_cols:
+        data[col] = pd.to_numeric(data[col], errors="coerce")
+
+    # create a dict for agg()
+    column_map = {col: "first" for col in non_sum_cols}
+    column_map2 = {col: "sum" for col in sum_cols}
+    column_map3 = {"Attendance Rate": "mean"}
+    group_cols = {**column_map, **column_map2, **column_map3}
+
+    final_data = data.groupby(["Year"], as_index=False).agg(group_cols)
+
+    final_data["Corporation Name"] = "AHS State Average"
+    final_data["Corporation ID"] = 9999
+    final_data["School ID"] = 9999
+
+    final_data = final_data.sort_values(by="Year")
+
+    return final_data
 
 
 def calculate_percentage(numerator: str, denominator: str) -> npt.NDArray:
@@ -252,7 +299,7 @@ def recalculate_total_proficiency(
 
     revised_totals[["Year", "School ID", "School Name"]] = revised_data[
         ["Year", "School ID", "School Name"]
-    ]  # remove (?)
+    ]
 
     numeric_columns = [
         c
@@ -349,6 +396,8 @@ def set_academic_rating(data: str | float | None, threshold: list, flag: int) ->
     floats defining the thresholds of the ratings), and an integer "flag," that tells the
     function which switch to use.
 
+    NOTE: The order of the operations matters
+
     Args:
         data (str|float|None): a Rating value
         threshold (list): a list of floats
@@ -358,7 +407,6 @@ def set_academic_rating(data: str | float | None, threshold: list, flag: int) ->
         str: metric rating
     """
 
-    # NOTE: The order of the following operations matter
     if data == "***" or data == "No Grade" or data == "No Data":
         indicator = "NA"
         return indicator
@@ -523,7 +571,6 @@ def check_for_no_data(df: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
         and a string of all years of missing data
 
     """
-
     data = df.copy()
 
     data["Year"] = data["Year"].astype(str)
@@ -578,7 +625,6 @@ def check_for_insufficient_n_size(df: pd.DataFrame) -> str:
     Returns:
         string (str): A single string listing all years (rows) for which there is insufficient data
     """
-
     data = df.copy()
 
     #  returns the indices of elements in a tuple of arrays where the condition is satisfied
@@ -646,9 +692,7 @@ def find_nearest(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Based on https://stackoverflow.com/q/43020919/190597
-
     Used to find the [20] nearest schools to the selected school.
-
     Takes a dataframe of schools and their Lat and Lon coordinates and the index of the
     selected school within that list. Calculates the distances of all schools in the
     dataframe from the lat/lon coordinates of the selected school using the scipy.spatial
@@ -759,6 +803,7 @@ def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.Dat
     #   d) a school with grades 3-4     [No match]: low grade is lower than selected school's
     #       low grade, but high grade (4) minus the selected school's low grade (5) is not greater
     #       (-1) than the overlap (1).
+
     schools = schools.loc[
         (
             (schools["Low Grade"] <= school_low)
@@ -839,3 +884,159 @@ def calculate_comparison_school_list(
     comparison_list = dict(comparison_dict.items())
 
     return comparison_list
+
+
+def calculate_values(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Takes a dataframe of school academic data and calculates the proficiency difference
+    between successive years and the assigns an academic rating to each year.
+
+    Args:
+        data (pd.DataFrame): school proficiency data
+
+    Returns:
+        pd.DataFrame: a dataframe with School, Diff, & Rate columns for each year
+    """
+    data = df.copy()
+
+    data.columns = data.columns.astype(str)
+
+    # drop low/high grade rows
+    data = data[(data["Category"] != "Low Grade") & (data["Category"] != "High Grade")]
+
+    # copies of school and corp data for comparison dataframe (school to corp)
+    school_comparison_data = data.filter(regex="Category|School|N-Size", axis=1).copy()
+    corp_comparison_data = data.filter(regex="Category|Corp", axis=1).copy()
+
+    school_cols = [
+        c[:4] + "Corp" for c in school_comparison_data.columns if c.startswith("20")
+    ]
+    school_cols = list(set(school_cols))
+    school_cols.append("Category")
+
+    # make sure df have identical columns (corp can have more years)
+    corp_comparison_data = corp_comparison_data[
+        corp_comparison_data.columns.intersection(school_cols)
+    ]
+
+    # store and drop Category column temporarily for calculations
+    category_column = data["Category"]
+    data = data.drop("Category", axis=1)
+
+    # school data for multiyear dataframe
+    multiyear_data = data.filter(regex="School|N-Size", axis=1).copy()
+
+    # Calculate Multiyear Values #
+
+    # Two columns for each year - [School, N-Size]; years are ascending. We want
+    # to calculate the difference between the second to last column (the school
+    # column for the most recent Year) and the fourth from last column (the school
+    # column for the most recent previous year) and continue doing so as long as we
+    # have a two-year pair. That is, given a dataframe with cols: ['2019School',
+    # '2019N-Size', '2021School', '2021N-Size', '2022School', '2022N-Size', '2023School',
+    # '2023N-Size'], we want 3 loops: 2023School - 2022School; 2022School - 2021School; &
+    # 2021School - 2019School. As 2019School does not have a previous year, we stop at
+    # that point. We calculate the # of loops by: length of the columns minus 2 (for
+    # the initial School, N-Size pair) divided by 2.
+
+    # The following loops over the dataframe from back to front, calculating the
+    # difference between col (Year) and col - 2 (Previous Year) and inserting the
+    # result at the last position col[-1] and then every 3rd index position prior.
+
+    # NOTE: Vectorize using shift() and then insert result at proper index?
+    # Could do, but would require reworking calculate_multiyear() - so leave in
+    # loop for now:
+    # shifted_data = data.shift(2, axis=1)
+    # result_data = calculate_multiyear(data,shifted_data)
+    # len 8: Want 7-5; 5-3; 3-1 -> insert result at 8,5,3
+
+    len_cols = len(multiyear_data.columns)
+
+    num_pairs = int((len_cols - 2) / 2)
+    end = len_cols - 2  # begin at second to last column
+
+    for y in range(0, num_pairs):
+        values = calculate_multiyear(
+            multiyear_data.iloc[:, end], multiyear_data.iloc[:, end - 2]
+        )
+        multiyear_data.insert(
+            loc=end + 2,
+            column=multiyear_data.columns[end][0:4] + "Diff",
+            value=values,
+        )
+        end -= 2
+
+    multiyear_data.insert(loc=0, column="Category", value=category_column)
+    multiyear_data["Category"] = (
+        multiyear_data["Category"].str.replace(" Proficient %", "").str.strip()
+    )
+
+    # Clean up and merge school and corporation dataframes
+    year_cols = list(school_comparison_data.columns[:0:-1])
+    year_cols = [c[0:4] for c in year_cols]
+    year_cols = list(set(year_cols))
+    year_cols.sort()
+
+    # Use column list to merge
+    corp_cols = [e for e in corp_comparison_data.columns if "Corp" in e]
+    school_cols = [e for e in school_comparison_data.columns if "School" in e]
+    nsize_cols = [e for e in school_comparison_data.columns if "N-Size" in e]
+    school_cols.sort()
+    corp_cols.sort()
+    nsize_cols.sort()
+
+    result_cols = [str(s) + "Diff" for s in year_cols]
+
+    # Create final column order
+    final_cols = list(itertools.chain(*zip(school_cols, nsize_cols, result_cols)))
+    final_cols.insert(0, "Category")
+
+    # temporarily place school and corp cols next to each other
+    merged_cols = list(itertools.chain(*zip(school_cols, corp_cols, nsize_cols)))
+    merged_cols.insert(0, "Category")
+
+    # merge school and corp data
+    merged_comparison_data = school_comparison_data.merge(
+        corp_comparison_data, on="Category", how="left"
+    )
+    merged_comparison_data = merged_comparison_data[merged_cols]
+
+    # check to see if data is HS or K8
+    if school_comparison_data["Category"].str.contains("Graduation").any():
+        is_high_school = True
+    else:
+        is_high_school = False
+
+    # tmp drop Category Column to calculate difference
+    school_comparison_data = school_comparison_data.drop("Category", axis=1)
+    corp_comparison_data = corp_comparison_data.drop("Category", axis=1)
+
+    # calculate difference between two dataframes (using a for loop
+    # is not ideal, but we need to use row-wise calculations)
+    comparison_result = pd.DataFrame()
+
+    # slightly different difference calculation for HS vs K8
+    if is_high_school:
+        for c in year_cols:
+            comparison_result[c + "Diff"] = calculate_difference(
+                school_comparison_data[c + "School"], corp_comparison_data[c + "Corp"]
+            )
+
+    else:
+        for c in school_comparison_data.columns:
+            c = c[0:4]
+            comparison_result[c + "Diff"] = calculate_difference(
+                school_comparison_data[c + "School"], corp_comparison_data[c + "Corp"]
+            )
+
+    comparison_result = comparison_result.set_axis(result_cols, axis=1)
+    comparison_result.insert(loc=0, column="Category", value=category_column)
+
+    # merge and reorder cols
+    comparison_data = merged_comparison_data.merge(
+        comparison_result, on="Category", how="left"
+    )
+
+    comparison_data = comparison_data[final_cols]
+
+    return multiyear_data, comparison_data

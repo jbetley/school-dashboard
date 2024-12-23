@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     11/14/24
+# date:     12/22/24
 
 import dash
 from dash import dcc, html, dash_table, Input, State, Output, callback
@@ -32,6 +32,7 @@ from .calculations import round_nearest
 dash.register_page(__name__, path="/financial_analysis", top_nav=True, order=3)
 
 
+# TODO: Combine the two callbacks to get data change to trigger on Network chnage?
 # Financial data type (school or network)
 @callback(
     Output("financial-analysis-radio", "options"),
@@ -125,6 +126,18 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             financial_data = get_financial_data(network_id)
         else:
             financial_data = {}
+
+        # TODO: Fix the year issue with Networks - shows completely blank 2024
+        # TODO: Needs to default to 2023
+        # Networks typically do not have Quarterly data, so
+        # we do a quick check of the selected year against
+        # valid years of data
+        # valid_data = financial_data.dropna(axis=1)
+        # valid_years =  [e for e in valid_data.columns if e not in ("School ID", "Category", "School Name")]
+        # valid_years.sort(reverse=True)
+
+        # if int(selected_year_string) > int(valid_years[0]):
+        #     selected_year_string = valid_years[0]
 
         RandE_title = (
             selected_year_string
@@ -283,7 +296,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             string_fig_years.pop(0)
             string_fig_years.reverse()
 
-#TODO: Create function
+            # TODO: Create function
             ## Fig 1: Operating Revenue, Operating Expenses, & Change in
             # Net Assets (Net Income) show Operating Revenue and Expenses
             # as grouped bars and Change in Net Assets as line
@@ -479,7 +492,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             assets_liabilities_line_data = assets_liabilities_line_data.reset_index(
                 drop=True
             )
-
 
             assets_liabilities_line_data = assets_liabilities_line_data.replace(
                 "", 0, regex=True

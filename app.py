@@ -303,7 +303,9 @@ def set_dropdown_value(charter_options):
 
 
 # TODO: hs multiyear select (Grad/SAT) should trigger year change- having circular
-# TODO: callback issues
+# TODO: callback issues.
+# TODO: Network/School on Financial Analysis as well
+# TODO: financial information not working either when school to network.
 @callback(
     Output("year-dropdown", "options"),
     Output("year-dropdown", "value"),
@@ -335,7 +337,7 @@ def set_year_dropdown_options(
     if not year_value:
         year_value = str(current_academic_year)
 
-    # input_state saves (in a dcc.store) the values for previous and
+    # input_state saves (in a dcc.store) the values for previous AND
     # current year and page. think of previous as the state of the variable
     # and current as the value. if input_state is None, there is no previous
     # history.
@@ -1066,9 +1068,7 @@ def navigation(
 # url and selects a HS, AHS, & K12 (HS type)
 # NOTE: Couldn't figure out a better way to do this
 @callback(
-    Output("url", "href"),
-    Input("charter-dropdown", "value"),
-    Input("url", "href")
+    Output("url", "href"), Input("charter-dropdown", "value"), Input("url", "href")
 )
 def redirect_hs(school: str, current_page: str):
     selected_school = get_school_index(school)
@@ -1082,6 +1082,7 @@ def redirect_hs(school: str, current_page: str):
         return f"/academic_information"
     else:
         return dash.no_update
+
 
 # NOTE: still trying to determine whether to return layout as
 # a variable or as a function. Currently returning as a function.
@@ -1382,6 +1383,7 @@ def layout():
             ),
         ],
     )
+
 
 # comment out if layout is set as variable
 app.layout = layout

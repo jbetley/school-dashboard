@@ -197,7 +197,6 @@ def set_dropdown_options(
             # the existing list to make sure it hasn't exceeded max display
 
             if len(existing_comparison_schools_list) > max_num_to_display:
-                
                 # if it does, we throw a warning, keep the selected values the same
                 # and disable all of the options
                 input_warning = html.P(
@@ -219,7 +218,6 @@ def set_dropdown_options(
                 ]
 
             else:
-
                 # if it doesn't, we return the selected list and options.
                 comparison_schools = existing_comparison_schools_list
 
@@ -422,7 +420,9 @@ def update_academic_analysis_single_year(
                 hs_analysis_empty_container = {"display": "none"}
 
                 # this keeps trace colors consistent when schools are added or removed
-                trace_colors = generate_colors(hs_analysis_data, trace_color_state, color, school_name)
+                trace_colors = generate_colors(
+                    hs_analysis_data, trace_color_state, color, school_name
+                )
 
                 ## Graduation Comparison Sets
                 grad_overview_categories = ["Total", "NonWaiver"]
@@ -432,7 +432,7 @@ def update_academic_analysis_single_year(
                     hs_analysis_data,
                     grad_overview_categories,
                     school_id,
-                    trace_colors
+                    trace_colors,
                 )
 
                 grad_ethnicity = create_hs_analysis_layout(
@@ -440,7 +440,7 @@ def update_academic_analysis_single_year(
                     hs_analysis_data,
                     ethnicity,
                     school_id,
-                    trace_colors
+                    trace_colors,
                 )
 
                 grad_subgroup = create_hs_analysis_layout(
@@ -448,7 +448,7 @@ def update_academic_analysis_single_year(
                     hs_analysis_data,
                     subgroup,
                     school_id,
-                    trace_colors
+                    trace_colors,
                 )
 
                 ## SAT Comparison Sets
@@ -458,43 +458,23 @@ def update_academic_analysis_single_year(
                 ]
 
                 sat_overview = create_hs_analysis_layout(
-                    "Total",
-                    hs_analysis_data,
-                    overview,
-                    school_id,
-                    trace_colors
+                    "Total", hs_analysis_data, overview, school_id, trace_colors
                 )
 
                 sat_ethnicity_ebrw = create_hs_analysis_layout(
-                    "EBRW",
-                    hs_analysis_data,
-                    ethnicity,
-                    school_id,
-                    trace_colors
+                    "EBRW", hs_analysis_data, ethnicity, school_id, trace_colors
                 )
 
                 sat_ethnicity_math = create_hs_analysis_layout(
-                    "Math",
-                    hs_analysis_data,
-                    ethnicity,
-                    school_id,
-                    trace_colors
+                    "Math", hs_analysis_data, ethnicity, school_id, trace_colors
                 )
 
                 sat_subgroup_ebrw = create_hs_analysis_layout(
-                    "EBRW",
-                    hs_analysis_data,
-                    subgroup,
-                    school_id,
-                    trace_colors
+                    "EBRW", hs_analysis_data, subgroup, school_id, trace_colors
                 )
 
                 sat_subgroup_math = create_hs_analysis_layout(
-                    "Math",
-                    hs_analysis_data,
-                    subgroup,
-                    school_id,
-                    trace_colors
+                    "Math", hs_analysis_data, subgroup, school_id, trace_colors
                 )
 
                 # Display Logic - Grad data / SAT data
@@ -671,7 +651,9 @@ def update_academic_analysis_single_year(
                 ]
 
                 # this keeps trace colors consistent when schools are added or removed
-                trace_colors = generate_colors(combined_selected_data, trace_color_state, color, school_name)
+                trace_colors = generate_colors(
+                    combined_selected_data, trace_color_state, color, school_name
+                )
 
                 ## Current Year ELA Proficiency Compared to Similar Schools (1.4.c) ##
                 category = "Total|ELA Proficient %"
