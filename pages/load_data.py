@@ -243,9 +243,16 @@ def get_financial_dropdown_years(school_id, page):
     # NOTE: Testing using "years with data" instead of "years
     # with ADM" which captures pre-opening years with "0"
     # State Grant data.
-    results = results.dropna(axis=1, how="all")
 
-    year_list = results.columns.tolist()
+    # valid_years = results.dropna(axis=1, how="all")
+
+    # get a list of columns where a specific range of rows (including
+    # Operating Revenue & Expenses, Total Assets & Liabilites, etc)
+    # are all NaN and then drop them
+    invalid_cols = results.iloc[1:17].columns[results.iloc[1:17].isna().all()]
+    valid_years = results.drop(columns=invalid_cols)
+
+    year_list = valid_years.columns.tolist()
 
     year_list = [
         e for e in year_list if e not in ("School ID", "Category", "School Name")
@@ -471,7 +478,7 @@ def get_subgroup(
     available_years = all_years[idx:]
 
     year_str = ", ".join([str(int(v)) for v in available_years])
-
+ 
     if school_type == "hs":
         if hs_category == "SAT":
             q = text(

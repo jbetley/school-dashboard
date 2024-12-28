@@ -26,52 +26,12 @@ from .tables import (
     create_empty_page_layout,
     create_empty_table_layout,
 )
+
+from .process_data import find_valid_year
 from .charts import loading_fig
 from .calculations import round_nearest
 
 dash.register_page(__name__, path="/financial_analysis", top_nav=True, order=3)
-
-
-# TODO: Combine the two callbacks to get data change to trigger on Network chnage?
-# Financial data type (school or network)
-@callback(
-    Output("financial-analysis-radio", "options"),
-    Output("financial-analysis-radio", "value"),
-    Output("financial-analysis-radio-container", "style"),
-    Input("charter-dropdown", "value"),
-    State("financial-analysis-radio", "value"),
-)
-def financial_analysis_radio_selector(school: str, finance_value_state: str):
-    selected_school = get_school_index(school)
-
-    value_default = "school-finance"
-    finance_value = value_default
-
-    if selected_school["Network"].values[0] == "None":
-        finance_options = []
-        radio_input_container = {"display": "none"}
-
-    else:
-        finance_options = [
-            {"label": "School", "value": "school-finance"},
-            {"label": "Network", "value": "network-finance"},
-        ]
-        radio_input_container = {"display": "block"}
-
-    if finance_value_state:
-        # when changing dropdown from a school with network to
-        # one without, we need to reset state
-        if (
-            finance_value_state == "network-finance"
-            and selected_school["Network"].values[0] == "None"
-        ):
-            finance_value = value_default
-        else:
-            finance_value = finance_value_state
-    else:
-        finance_value = value_default
-
-    return finance_options, finance_value, radio_input_container
 
 
 @callback(
@@ -91,7 +51,7 @@ def financial_analysis_radio_selector(school: str, finance_value_state: str):
     Output("financial-analysis-notes-string", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="financial-analysis-radio", component_property="value"),
+    Input(component_id="financial-network-radio", component_property="value"),
 )
 def update_financial_analysis_page(school: str, year: str, radio_value: str):
     if not school:
@@ -127,17 +87,10 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
         else:
             financial_data = {}
 
-        # TODO: Fix the year issue with Networks - shows completely blank 2024
-        # TODO: Needs to default to 2023
-        # Networks typically do not have Quarterly data, so
-        # we do a quick check of the selected year against
-        # valid years of data
-        # valid_data = financial_data.dropna(axis=1)
-        # valid_years =  [e for e in valid_data.columns if e not in ("School ID", "Category", "School Name")]
-        # valid_years.sort(reverse=True)
+        most_recent_year = find_valid_year(financial_data)
 
-        # if int(selected_year_string) > int(valid_years[0]):
-        #     selected_year_string = valid_years[0]
+        if int(selected_year_string) > int(most_recent_year):
+            selected_year_string = most_recent_year
 
         RandE_title = (
             selected_year_string
@@ -864,30 +817,30 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 def layout():
     return html.Div(
         [
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    dbc.RadioItems(
-                                        id="financial-analysis-radio",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        value=[],
-                                        persistence=False,
-                                    ),
-                                ],
-                                className="radio-group-finance",
-                            )
-                        ],
-                        className="bare-container--flex--center twelve columns",
-                    ),
-                ],
-                id="financial-analysis-radio-container",
-            ),
+            # html.Div(
+            #     [
+            #         html.Div(
+            #             [
+            #                 html.Div(
+            #                     [
+            #                         dbc.RadioItems(
+            #                             id="financial-analysis-radio",
+            #                             className="btn-group",
+            #                             inputClassName="btn-check",
+            #                             labelClassName="btn btn-outline-primary",
+            #                             labelCheckedClassName="active",
+            #                             value=[],
+            #                             persistence=False,
+            #                         ),
+            #                     ],
+            #                     className="radio-group-finance",
+            #                 )
+            #             ],
+            #             className="bare-container--flex--center twelve columns",
+            #         ),
+            #     ],
+            #     id="financial-analysis-radio-container",
+            # ),
             html.Div(
                 [
                     dcc.Loading(

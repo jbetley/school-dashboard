@@ -24,44 +24,44 @@ from .string_helpers import convert_to_svg_circle
 dash.register_page(__name__, top_nav=True, path="/financial_metrics", order=2)
 
 
-# Financial data type (school or network)
-@callback(
-    Output("financial-metrics-radio", "options"),
-    Output("financial-metrics-radio", "value"),
-    Output("financial-metrics-radio-container", "style"),
-    Input("charter-dropdown", "value"),
-    State("financial-metrics-radio", "value"),
-)
-def radio_finance_info_selector(school: str, finance_value_state: str):
-    selected_school = get_school_index(school)
+# # Financial data type (school or network)
+# @callback(
+#     Output("financial-metrics-radio", "options"),
+#     Output("financial-metrics-radio", "value"),
+#     Output("financial-metrics-radio-container", "style"),
+#     Input("charter-dropdown", "value"),
+#     State("financial-metrics-radio", "value"),
+# )
+# def radio_finance_info_selector(school: str, finance_value_state: str):
+#     selected_school = get_school_index(school)
 
-    value_default = "school-finance"
-    finance_value = value_default
+#     value_default = "school-finance"
+#     finance_value = value_default
 
-    if selected_school["Network"].values[0] == "None":
-        finance_options = []
-        radio_input_container = {"display": "none"}
+#     if selected_school["Network"].values[0] == "None":
+#         finance_options = []
+#         radio_input_container = {"display": "none"}
 
-    else:
-        finance_options = [
-            {"label": "School", "value": "school-finance"},
-            {"label": "Network", "value": "network-finance"},
-        ]
-        radio_input_container = {"display": "block"}
+#     else:
+#         finance_options = [
+#             {"label": "School", "value": "school-finance"},
+#             {"label": "Network", "value": "network-finance"},
+#         ]
+#         radio_input_container = {"display": "block"}
 
-    if finance_value_state:
-        # reset state when changing dropdown from a school with network to one without
-        if (
-            finance_value_state == "network-finance"
-            and selected_school["Network"].values[0] == "None"
-        ):
-            finance_value = value_default
-        else:
-            finance_value = finance_value_state
-    else:
-        finance_value = value_default
+#     if finance_value_state:
+#         # reset state when changing dropdown from a school with network to one without
+#         if (
+#             finance_value_state == "network-finance"
+#             and selected_school["Network"].values[0] == "None"
+#         ):
+#             finance_value = value_default
+#         else:
+#             finance_value = finance_value_state
+#     else:
+#         finance_value = value_default
 
-    return finance_options, finance_value, radio_input_container
+#     return finance_options, finance_value, radio_input_container
 
 
 @callback(
@@ -74,7 +74,7 @@ def radio_finance_info_selector(school: str, finance_value_state: str):
     Output("financial-metrics-no-data", "children"),
     Input("charter-dropdown", "value"),
     Input("year-dropdown", "value"),
-    Input(component_id="financial-metrics-radio", component_property="value"),
+    Input(component_id="financial-network-radio", component_property="value"),
 )
 def update_financial_metrics(school: str, year: str, radio_value: str):
     if not school:
@@ -725,30 +725,30 @@ def layout():
                 ],
                 className="row",
             ),
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.Div(
-                                [
-                                    dbc.RadioItems(
-                                        id="financial-metrics-radio",
-                                        className="btn-group",
-                                        inputClassName="btn-check",
-                                        labelClassName="btn btn-outline-primary",
-                                        labelCheckedClassName="active",
-                                        value=[],
-                                        persistence=False,
-                                    ),
-                                ],
-                                className="radio-group-finance",
-                            )
-                        ],
-                        className="bare-container--flex--center twelve columns",
-                    ),
-                ],
-                id="financial-metrics-radio-container",
-            ),
+            # html.Div(
+            #     [
+            #         html.Div(
+            #             [
+            #                 html.Div(``
+            #                     [
+            #                         dbc.RadioItems(
+            #                             id="financial-metrics-radio",
+            #                             className="btn-group",
+            #                             inputClassName="btn-check",
+            #                             labelClassName="btn btn-outline-primary",
+            #                             labelCheckedClassName="active",
+            #                             value=[],
+            #                             persistence=False,
+            #                         ),
+            #                     ],
+            #                     className="radio-group-finance",
+            #                 )
+            #             ],
+            #             className="bare-container--flex--center twelve columns",
+            #         ),
+            #     ],
+            #     id="financial-metrics-radio-container",
+            # ),
             html.Div(
                 [
                     html.Div(

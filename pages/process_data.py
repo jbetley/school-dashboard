@@ -23,6 +23,19 @@ from .calculations import calculate_proficiency_manually, round_percentages
 from .string_helpers import reorder_columns, natural_keys
 
 
+def find_valid_year(data: pd.DataFrame) -> str:
+    # Networks typically do not have Quarterly data, so
+    # we do a quick check of the selected year against
+    # valid years of data
+    valid_data = data.dropna(axis=1)
+    valid_years =  [e for e in valid_data.columns if e not in (
+        "School ID", "Category", "School Name"
+    )]
+    valid_years.sort(reverse=True)
+    most_recent_year = valid_years[0]
+
+    return most_recent_year
+
 def remove_empty_cols(df: pd.DataFrame) -> pd.DataFrame:
     """
     Remove columns from dataframe that are all NaN, null, or None.

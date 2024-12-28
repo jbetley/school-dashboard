@@ -209,6 +209,7 @@ def update_academic_analysis_multiyear(
 
     if not trace_color_state:
         trace_color_state = {}
+        trace_colors = {}
 
     # default values (only empty container displayed)
     hs_analysis_multi_main_container = {"display": "none"}
@@ -293,6 +294,7 @@ def update_academic_analysis_multiyear(
             analysis_multi_dropdown_container = {"display": "none"}
             hs_analysis_multi_empty_container = {"display": "block"}
             multiyear_hs = []
+            trace_colors = {}
 
         else:
             hs_analysis_multi_main_container = {"display": "block"}
@@ -447,9 +449,11 @@ def update_academic_analysis_multiyear(
                 # all_school_info is a dataframe with school names and school ids,
                 # it is used in the comparison_table function to identify the index
                 # of the school by Id
+
                 trace_colors = generate_colors(
                     multiyear_k8_data, trace_color_state, color, school_name
                 )
+
                 multiyear_grade = create_multiyear_layout(
                     school,
                     multiyear_k8_data,
