@@ -3,7 +3,7 @@
 ####################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/12/24
+# date:     12/29/24
 
 import dash
 from dash import ctx, dcc, html, Input, Output, callback
@@ -20,6 +20,7 @@ from .load_data import (
 )
 
 from .clean_data import clean_academic_data
+from .process_data import create_comparison_dropdown_list
 from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
 from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
 from .tables import (
@@ -45,7 +46,7 @@ dash.register_page(
 )
 
 
-# Set dropdown options for comparison schools
+# Comparison school dropdown
 @callback(
     Output("analysis-single-comparison-dropdown", "options"),
     Output("single-year-input-warning", "children"),
@@ -64,8 +65,8 @@ def set_dropdown_options(
     if not year:
         year = current_academic_year
 
-    string_year = year
-    numeric_year = int(string_year)
+    # string_year = year
+    # numeric_year = int(string_year)
 
     # clear the list of comparison_schools when a new school is
     # selected, otherwise comparison_schools will carry over
@@ -82,155 +83,162 @@ def set_dropdown_options(
         else:
             selected_school_type = "k8"
 
-    # Get School ID, School Name, Lat & Lon for all schools in the
-    # set for selected year.
-    schools_by_distance = get_school_coordinates(numeric_year, selected_school_type)
+    (
+        school_options,
+        input_warning,
+        comparison_schools,
+    ) = create_comparison_dropdown_list(
+        school_id, year, existing_comparison_schools_list, academic_type_value
+    )
 
-    # Drop any school not testing at least 20 students (k8 only- probably
-    # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
-    # We want to include the selected school regardless of its n-size
-    if selected_school_type == "k8":
-        schools_by_distance["Total|ELA Total Tested"] = pd.to_numeric(
-            schools_by_distance["Total|ELA Total Tested"], errors="coerce"
-        )
-        schools_by_distance = schools_by_distance[
-            (schools_by_distance["Total|ELA Total Tested"] >= 20)
-            | (schools_by_distance["School ID"] == int(school_id))
-        ]
+    # # School ID, School Name, Lat & Lon
+    # schools_by_distance = get_school_coordinates(numeric_year, selected_school_type)
 
-    # NOTE: There is some time cost for running the dropdown selection function
-    # (typically ~0.8 - 1.2s), so we want to exit out as early as possible if we
-    # know it isn't necessary because the selected school didn't exist
-    if int(school_id) not in schools_by_distance["School ID"].values:
-        return [], [], []
+    # # Drop any school not testing at least 20 students (k8 only- probably
+    # # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
+    # # We want to include the selected school regardless of its n-size
+    # if selected_school_type == "k8":
+    #     schools_by_distance["Total|ELA Total Tested"] = pd.to_numeric(
+    #         schools_by_distance["Total|ELA Total Tested"], errors="coerce"
+    #     )
+    #     schools_by_distance = schools_by_distance[
+    #         (schools_by_distance["Total|ELA Total Tested"] >= 20)
+    #         | (schools_by_distance["School ID"] == int(school_id))
+    #     ]
 
-    else:
-        # NOTE: Before we do the distance check, we reduce the size of the df by
-        # removing schools where there is no, or only a one grade overlap between
-        # the comparison schools.
+    # # NOTE: There is some time cost for running the dropdown selection function
+    # # (typically ~0.8 - 1.2s), so we want to exit out as early as possible if we
+    # # know it isn't necessary because the selected school didn't exist
+    # if int(school_id) not in schools_by_distance["School ID"].values:
+    #     return [], [], []
 
-        # Skip this step for AHS (don't have a 'gradespan' in the technical sense)
-        if selected_school_type != "ahs":
-            schools_by_distance = check_for_gradespan_overlap(
-                school_id, schools_by_distance
-            )
+    # else:
+    #     # NOTE: Before we do the distance check, we reduce the size of the df by
+    #     # removing schools where there is no, or only a one grade overlap between
+    #     # the comparison schools.
 
-        num_schools_to_display = 40
+    #     # AHS don't have a 'gradespan' in the technical sense
+    #     if selected_school_type != "ahs":
+    #         schools_by_distance = check_for_gradespan_overlap(
+    #             school_id, schools_by_distance
+    #         )
 
-        comparison_list = calculate_comparison_school_list(
-            school_id, schools_by_distance, num_schools_to_display
-        )
+    #     num_schools_to_display = 20
 
-        new_comparison_schools = [
-            {"label": name, "value": id} for name, id in comparison_list.items()
-        ]
+    #     comparison_list = calculate_comparison_school_list(
+    #         school_id, schools_by_distance, num_schools_to_display
+    #     )
 
-        # value for number of default display selections and maximum
-        # display selections (because of zero indexing, max should be
-        # 1 less than actual desired number)
-        default_num_to_display = 4
-        max_num_to_display = 7
+    #     new_comparison_schools = [
+    #         {"label": name, "value": id} for name, id in comparison_list.items()
+    #     ]
 
-        # used to display message if the number of selections exceeds the max
-        input_warning = None
+    #     # value for number of default display selections and maximum
+    #     # display selections (because of zero indexing, max should be
+    #     # 1 less than actual desired number)
+    #     default_num_to_display = 4
+    #     max_num_to_display = 7
 
-        # there are three occasions when we want to reset the list: 1) there are
-        # no values (existing_comparison_schools_list = []); 2) there are values,
-        # but none of the existing values overlap with the new values; 3) there
-        # are values, and there is an overlap, but the number of overlapping
-        # schools is less than the total number of existing schools.
-        # (3) should only occur when we have a K12 school selected and are switching
-        # between "K8" and "HS" types where there is another K12 school in the
-        # comparable school list. Because the K12 school is in both lists- when
-        # the user switches, it is the only school that will be displayed. We don't
-        # want this, so we reset. NOTE: Probably easier to just reset K12 display
-        # every time the type changes, but I'm not quite sure how to track that
-        # (value vs. state?)
+    #     # used to display message if the number of selections exceeds the max
+    #     input_warning = None
 
-        # at this point "existing_comparison_schools_list" is either [] (for no
-        # schools selected) or a list of currently selected schools.
-        # "new_comparison_schools_list" is a list of all of the schools matching
-        # the current selection (which is triggered by a change in type from K8 to HS)
+    #     # there are three occasions when we want to reset the list: 1) there are
+    #     # no values (existing_comparison_schools_list = []); 2) there are values,
+    #     # but none of the existing values overlap with the new values; 3) there
+    #     # are values, and there is an overlap, but the number of overlapping
+    #     # schools is less than the total number of existing schools.
+    #     # (3) should only occur when we have a K12 school selected and are switching
+    #     # between "K8" and "HS" types where there is another K12 school in the
+    #     # comparable school list. Because the K12 school is in both lists- when
+    #     # the user switches, it is the only school that will be displayed. We don't
+    #     # want this, so we reset. NOTE: Probably easier to just reset K12 display
+    #     # every time the type changes, but I'm not quite sure how to track that
+    #     # (value vs. state?)
 
-        new_comparison_schools_list = [d["value"] for d in new_comparison_schools]
+    #     # at this point "existing_comparison_schools_list" is either [] (for no
+    #     # schools selected) or a list of currently selected schools.
+    #     # "new_comparison_schools_list" is a list of all of the schools matching
+    #     # the current selection (which is triggered by a change in type from K8 to HS)
 
-        # count the number of schools shared by the two lists
-        overlap = 0
+    #     new_comparison_schools_list = [d["value"] for d in new_comparison_schools]
 
-        if not existing_comparison_schools_list:
-            overlap = 0
+    #     # count the number of schools shared by the two lists
+    #     overlap = 0
 
-        else:
-            for sch in new_comparison_schools_list:
-                overlap += existing_comparison_schools_list.count(sch)
+    #     if not existing_comparison_schools_list:
+    #         overlap = 0
 
-        if (
-            not existing_comparison_schools_list
-            or existing_comparison_schools_list
-            and (
-                # isdisjoint returns True if there are no common items between the sets
-                # there is an existing list, but there is no overlap (e.g., K8 to HS)
-                set(existing_comparison_schools_list).isdisjoint(
-                    new_comparison_schools_list
-                )
-                == True
-                or
-                # there is an existing list, and there is overlap, but the number of overlapping
-                # schools is less than the length of all of the existing schools
-                (
-                    set(existing_comparison_schools_list).isdisjoint(
-                        new_comparison_schools_list
-                    )
-                    == False
-                    and overlap < len(existing_comparison_schools_list)
-                )
-            )
-        ):
-            # If any of these are true, we reset options and values
-            comparison_schools = [
-                d["value"] for d in new_comparison_schools[:default_num_to_display]
-            ]
-            school_options = new_comparison_schools
+    #     else:
+    #         for sch in new_comparison_schools_list:
+    #             overlap += existing_comparison_schools_list.count(sch)
 
-        else:
-            # if none of the above cases apply, we first test the length of
-            # the existing list to make sure it hasn't exceeded max display
+    #     if (
+    #         not existing_comparison_schools_list
+    #         or existing_comparison_schools_list
+    #         and (
+    #             # isdisjoint returns True if there are no common items between the sets
+    #             # there is an existing list, but there is no overlap (e.g., K8 to HS)
+    #             set(existing_comparison_schools_list).isdisjoint(
+    #                 new_comparison_schools_list
+    #             )
+    #             == True
+    #             or
+    #             # there is an existing list, and there is overlap, but the number of overlapping
+    #             # schools is less than the length of all of the existing schools
+    #             (
+    #                 set(existing_comparison_schools_list).isdisjoint(
+    #                     new_comparison_schools_list
+    #                 )
+    #                 == False
+    #                 and overlap < len(existing_comparison_schools_list)
+    #             )
+    #         )
+    #     ):
+    #         # If any of these are true, we reset options and values
+    #         comparison_schools = [
+    #             d["value"] for d in new_comparison_schools[:default_num_to_display]
+    #         ]
+    #         school_options = new_comparison_schools
 
-            if len(existing_comparison_schools_list) > max_num_to_display:
-                # if it does, we throw a warning, keep the selected values the same
-                # and disable all of the options
-                input_warning = html.P(
-                    id="single-year-input-warning",
-                    children="Limit reached (Maximum of "
-                    + str(max_num_to_display + 1)
-                    + " schools).",
-                )
+    #     else:
+    #         # if none of the above cases apply, we first test the length of
+    #         # the existing list to make sure it hasn't exceeded max display
 
-                comparison_schools = existing_comparison_schools_list
+    #         if len(existing_comparison_schools_list) > max_num_to_display:
+    #             # if it does, we throw a warning, keep the selected values the same
+    #             # and disable all of the options
+    #             input_warning = html.P(
+    #                 id="single-year-input-warning",
+    #                 children="Limit reached (Maximum of "
+    #                 + str(max_num_to_display + 1)
+    #                 + " schools).",
+    #             )
 
-                school_options = [
-                    {
-                        "label": option["label"],
-                        "value": option["value"],
-                        "disabled": True,
-                    }
-                    for option in new_comparison_schools
-                ]
+    #             comparison_schools = existing_comparison_schools_list
 
-            else:
-                # if it doesn't, we return the selected list and options.
-                comparison_schools = existing_comparison_schools_list
+    #             school_options = [
+    #                 {
+    #                     "label": option["label"],
+    #                     "value": option["value"],
+    #                     "disabled": True,
+    #                 }
+    #                 for option in new_comparison_schools
+    #             ]
 
-                school_options = [
-                    {
-                        "label": option["label"],
-                        "value": option["value"],
-                        "disabled": False,
-                    }
-                    for option in new_comparison_schools
-                ]
+    #         else:
+    #             # if it doesn't, we return the selected list and options.
+    #             comparison_schools = existing_comparison_schools_list
 
-        return school_options, input_warning, comparison_schools
+    #             school_options = [
+    #                 {
+    #                     "label": option["label"],
+    #                     "value": option["value"],
+    #                     "disabled": False,
+    #                 }
+    #                 for option in new_comparison_schools
+    #             ]
+
+    return school_options, input_warning, comparison_schools
 
 
 @callback(

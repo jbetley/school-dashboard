@@ -3,7 +3,7 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/26/24
+# date:     12/29/24
 
 import dash
 from dash import dcc, html, dash_table, Input, Output, State, callback
@@ -185,7 +185,6 @@ def update_about_page(year: str, school: str):
     # we utilize the "Corporation Name" value
     isTradSchool = False
 
-    # NOTE: first load of any plotly object is very slow
     adm_fig = px.line()
     ethnicity_fig = px.bar()
     subgroup_fig = px.bar()
@@ -196,10 +195,9 @@ def update_about_page(year: str, school: str):
         "No Data to Display", "School Enrollment & Demographics"
     )
 
-    # see full color list in charts.py
+    # see full color list in globals.py
     linecolor = ["#df8f2d"]
 
-    # Updates Table - Right Now hardcoded - may want to add to DB
     update_table_label = ""
     update_table_dict = {
         "Date": ["08.16.24", "12.10.24", "12.10.24"],
@@ -270,7 +268,6 @@ def update_about_page(year: str, school: str):
             + ["Total Enrollment"]
         ]
 
-        # drop columns with no data
         enrollment_filter = enrollment_filter.loc[
             :, (~enrollment_filter.isin([np.nan, 0, "0"])).all()
         ]
@@ -411,10 +408,10 @@ def update_about_page(year: str, school: str):
             subgroup_fig = make_demographics_bar_chart(subgroup_merged_data)
 
     ## ADM Values ##
-    # NOTE: Usually we don't use Quarterly data, however, by Q3 ADM data is known
+    # We don't normally use Quarterly data, however, by Q3 ADM data is known
     # for the year. So we check the first data column and if ADM Avg has data we
     # use it. If there is no financial_data, we use IDOE's adm- get_adm()- file which
-    # lags behind and is typically very accurate for past years, but not as
+    # lags behind. It is typically very accurate for past years, but not as
     # accurate for current years.
     financial_data = get_financial_data(school)
 
@@ -512,6 +509,7 @@ def update_about_page(year: str, school: str):
         years = adm_values.columns.tolist()
 
         # create chart
+        # NOTE: At some point integrate this into existing charting functions
         adm_fig = px.line(
             x=years,
             y=adm_data,
@@ -603,7 +601,7 @@ def layout():
                         [
                             html.Div(""),
                             html.Div(
-                                id="update-table", children=[]  # , className="no-print"
+                                id="update-table", children=[]
                             ),
                             html.Div(
                                 [

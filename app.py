@@ -3,7 +3,7 @@
 #########################
 # author:    jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/26/24
+# date:     12/29/24
 
 # This is the main application file for the Indiana Charter School Board school
 # dashboard. This dashboard consists of ~10 tabs of charts and tables created
@@ -289,248 +289,8 @@ def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
 
 
-# Selected Year Dropdown
-# options max: 5 years
-# values: depend on which page is being accessed and, in some circumstances, the type of
-# school (or selected type of school). for academic_information, academic_metrics, and
-# academic_analysis pages, 'academic_dropdown_years' are the 5 most recently available
-# years of academic data in either academic_data_k8 or academic_data_hs.
-# for the financial_analysis page, we use a list of the 'year' column names for each
-# year for which ADM Average is greater than '0' in the financial_data database table.
-# All other pages use 'financial_info_dropdown_years' which is the same as
-# 'financial_analysis_dropdown_years' except the quarterly data string (Q#) is removed.
-
-## https://stackoverflow.com/questions/62102453/how-to-define-callbacks-in-separate-files-plotly-dash ##
-
-
-# @callback(
-#     Output("year-dropdown", "options"),
-#     Output("year-dropdown", "value"),
-#     Output("hidden", "children"),
-#     Output("input-state", "data"),
-#     Output("academic-type-radio", "options"),
-#     Output("academic-type-radio", "value"),
-#     Input("charter-dropdown", "value"),
-#     Input("url", "href"),
-#     Input("year-dropdown", "value"),
-#     Input("academic-type-radio", "value"),
-#     Input("input-state", "data"),
-#     Input("financial-network-radio", "value"),
-#     State("year-dropdown", "value"),
-# )
-# def set_year_dropdown_options(
-#     school_id: str,
-#     current_page: str,
-#     year_value: str,
-#     academic_type_value: str,
-#     input_state: dict,
-#     financial_network_value: str,
-#     year_state: str,
-
-# ):
-#     max_dropdown_years = 5
-
-#     if not financial_network_value:
-#         financial_network_value = "school-finance"
-
-#     current_page = current_page.rsplit("/", 1)[-1]
-
-#     # on initial login or history clear, this will be Nonetype
-#     # so set initial default
-#     if not year_value:
-#         year_value = str(current_academic_year)
-
-#     # input_state saves (in a dcc.store) the values for previous AND
-#     # current year and page. think of previous as the state of the variable
-#     # and current as the value. if input_state is None, there is no previous
-#     # history.
-#     if input_state:
-#         # input_state can exist with a None previousyear, so need to
-#         # make sure it has a value for the initial test below
-#         if not input_state["previousyear"]:
-#             input_state["previousyear"] = input_state["currentyear"]
-
-#         # there are two pages (financial_analysis and academic_growth) that
-#         # will almost always lag behind all other data in the respective
-#         # category (financial or academic) by at least a year. the year
-#         # dropdown logic automatically switches the selected year to the
-#         # closest earlier year with data for pages that have no data for
-#         # the selected year- a change which may or may not be obvious to
-#         # the user (ie. they select 2023, go to one of those two pages, the
-#         # code switches the year to 2022, and when they exit out to a new
-#         # page, they may assume they are still in the selected year, when they
-#         # are actually in the adjusted year. The following code tracks the
-#         # previous page and previous year and switches back to previous year
-#         # in that instance.
-
-#         if (
-#             input_state["currentpage"] == "financial_analysis"
-#             or input_state["currentpage"] == "academic_information_growth"
-#         ) and int(input_state["currentyear"]) < int(input_state["previousyear"]):
-#             input_state["currentyear"] = input_state["previousyear"]
-#         else:
-#             input_state["currentyear"] = year_value
-#             input_state["previousyear"] = input_state["currentyear"]
-
-#         input_state["previouspage"] = input_state["currentpage"]
-#         input_state["currentpage"] = current_page
-
-#         previous_page = input_state["previouspage"]
-
-#     else:
-#         input_state = {}
-#         input_state["currentyear"] = year_value
-#         input_state["previousyear"] = input_state["currentyear"]
-#         input_state["currentpage"] = current_page
-#         input_state["previouspage"] = input_state["currentpage"]
-
-#     selected_school = get_school_index(school_id)
-#     school_type = selected_school["School Type"].values[0]
-
-#     # for K12 schools, we need to use "HS" data when analysis_type is "hs". We also
-#     # want to make sure that we reset the type if the user switches to a k8 school
-#     # from a AHS/HS/K12 where the analysis_type was "hs"
-
-#     academic_type_options = [
-#         {"label": "K8", "value": "k8"},
-#         {"label": "High School", "value": "hs"},
-#     ]
-
-#     # academic_type: general rule
-#     if not academic_type_value:
-#         academic_type_value = "k8"
-
-#     # guest schools use academic_dropdown_years (as they do not have financial data)
-#     if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
-#         if (
-#             "academic_information_growth" in current_page
-#             and selected_school["Guest"].values[0] != "Y"
-#         ):
-#             years = get_academic_growth_dropdown_years(school_id)
-#         else:
-#             # account for academic_type selection for k12 schools
-#             if school_type == "k12" or (
-#                 int(school_id) == 5874 and int(year_value) < 2021
-#             ):
-#                 if academic_type_value == "k8":
-#                     school_type = "k8"
-#                 else:
-#                     school_type = "hs"
-
-#             years = get_academic_dropdown_years(school_id, school_type)
-#     else:
-#         if financial_network_value == "network-finance":
-#             school_id = selected_school["Network"].values[0]
-
-#         years = get_financial_dropdown_years(school_id, input_state["currentpage"])
-
-#     # accounts for edge case for a school that has no financial data
-#     # other than pre-opening year (eg., no ADM) - which would otherwise
-#     # return empty list
-#     if not years:
-#         years = [int(year_value)]
-
-#     # set year_value and year_options
-#     number_of_years_to_display = (
-#         len(years) if len(years) <= max_dropdown_years else max_dropdown_years
-#     )
-
-#     dropdown_years = years[0:number_of_years_to_display]
-
-#     latest_year = dropdown_years[0]
-#     oldest_year = dropdown_years[-1]
-
-#     # year_value for the dropdown is determined as follows:
-
-#     # 1) initial load: "latest_year"; or
-#     # 2) if selected year is < than the school's oldest year: "oldest_year"; or
-#     # 3) if selected year is > than the school's latest_year: "latest_year"; or
-#     # 4) if user switches from a financial tab to an academic tab or from
-#     #    an academic tab to a financial tab: "latest_year"; or
-#     # 5) if user visits academic_information_growth or financial_analysis and then
-#     #    switches back to another page in the same category: "input_state["current_year"]"
-#     #    (which is equivalent to the selected year prior to visiting the growth or
-#     #    analysis page); or
-#     # 6) do not change the year value.
-
-#     if year_state is None:
-#         year_value = str(latest_year)
-
-#     elif int(year_state) < oldest_year:
-#         year_value = str(oldest_year)
-
-#     elif int(year_state) > latest_year:
-#         year_value = str(latest_year)
-
-#     elif "academic" in current_page and "academic" not in previous_page:
-#         year_value = str(latest_year)
-
-#     elif "academic" not in current_page and "academic" in previous_page:
-#         year_value = str(latest_year)
-
-#     elif previous_page == "financial_analysis" and (
-#         "financial" in current_page
-#         or "about" in current_page
-#         or "organizational" in current_page
-#     ):
-#         year_value = input_state["currentyear"]
-
-#     elif previous_page == "academic_information_growth" and "academic" in current_page:
-#         year_value = input_state["currentyear"]
-
-#     else:
-#         year_value = year_state
-
-#     # if the above logic changes the value of the current year, we
-#     # need to replace with the changed value
-#     if input_state["currentyear"] != year_value:
-#         input_state["currentyear"] = year_value
-
-#     # K8 schools do not have data for 2020 - so that year should never appear
-#     # in the dropdown for an academic page, except HS, AHS, and K12 schools with
-#     # the "HS" academic_type_radio button selected can have 2020 data- school_type
-#     # generally takes care of this for K8, HS, and AHS schools, but not K12.
-
-#     if (
-#         ("academic" in current_page or selected_school["Guest"].values[0] == "Y")
-#         and (
-#             (school_type == "k8")
-#             or (
-#                 (
-#                     school_type == "k12"
-#                     or (int(school_id) == 5874 and int(year_value) < 2021)
-#                 )
-#                 and academic_type_value == "k8"
-#             )
-#         )
-#         and year_state == "2020"
-#     ):
-#         year_value = "2019"
-
-#     if not dropdown_years:
-#         raise Exception("No idea how you got here.")
-
-#     year_options = [{"label": str(y), "value": str(y)} for y in dropdown_years]
-
-#     # One last check to ensure that the displayed dropdown year is never higher
-#     # than the highest year of available data.
-#     if int(year_value) > years[0]:
-#         year_value = str(years[0])
-
-#     return (
-#         year_options,
-#         year_value,
-#         current_page,
-#         input_state,
-#         academic_type_options,
-#         academic_type_value,
-#     )
-
-
 # TODO: hs multiyear select (Grad/SAT) should trigger year change- having circular
 # TODO: callback issues.
-
-
 # Subnavigation - Dropdown #
 # Not thrilled with how complicated this is, but in order to avoid
 # circular callbacks given how the values are interlinked we have to
@@ -602,7 +362,7 @@ def navigation(
     analysis_multiyear_subject_state: str,
     year_state: str,
 ):
-    # Nav defaults #
+
     academic_type_container = {"display": "none"}
     analysis_subnav_container = {"display": "none"}
     analysis_multiyear_hs_group_options = []
@@ -700,6 +460,13 @@ def navigation(
         {"label": "High School", "value": "hs"},
     ]
 
+    # NOTE: The "CHS exception." CHS was a k12 until 2021 and then
+    # became a K8. Right now this applies to one school, need to
+    # make this more robust if more schools change (applies only
+    # to schools that go from k12 to k8 or hs or vice versa)
+    if int(school_id) == 5874 and int(year_value) < 2021:
+        school_type = "k12"
+
     # academic_type applies only to k12 schools
     if school_type != "k12":
         academic_type_value = school_type
@@ -715,11 +482,9 @@ def navigation(
         ):
             years = get_academic_growth_dropdown_years(school_id)
         else:
-            # account for academic_type selection for k12 schools-
+
             # academic_type selection displayed only on academic pages
-            if school_type == "k12" or (
-                int(school_id) == 5874 and int(year_value) < 2021
-            ):
+            if school_type == "k12":
                 academic_type_container = {"display": "block"}
 
                 if academic_type_value == "k8":
@@ -741,9 +506,8 @@ def navigation(
             input_state["currentyear"] = str(years[0])
             year_state = str(years[0])
 
-    # accounts for edge case for a school that has no financial data
-    # other than pre-opening year (eg., no ADM) - which would otherwise
-    # return empty list
+    # edge case for a school that has no financial data other than pre-opening
+    # year (eg., no ADM) - which would otherwise return empty list
     if not years:
         years = [int(year_value)]
 
@@ -801,14 +565,14 @@ def navigation(
     # less year of data than a school- we want the year to revert back to the
     # previous school year when the user switches from network to school
 
-    # TODO: This is not triggering? but it isn't necessary either? keep testing
-    if (
-        "financial" in current_page
-        and "school" in financial_network_value
-        and (int(input_state["currentyear"]) < int(input_state["previousyear"]))
-    ):
-        print("Test Triggered")
-        year_value = input_state["previousyear"]
+    # TODO: This is not triggering? is it necessary? 
+    # if (
+    #     "financial" in current_page
+    #     and "school" in financial_network_value
+    #     and (int(input_state["currentyear"]) < int(input_state["previousyear"]))
+    # ):
+    #     print("Test Triggered")
+    #     year_value = input_state["previousyear"]
     # TODO: Testing
 
     # if the above logic changes the value of the current year, we
@@ -826,10 +590,7 @@ def navigation(
         and (
             (school_type == "k8")
             or (
-                (
-                    school_type == "k12"
-                    or (int(school_id) == 5874 and int(year_value) < 2021)
-                )
+                school_type == "k12"
                 and academic_type_value == "k8"
             )
         )
@@ -852,16 +613,12 @@ def navigation(
     ## Begin Navigation/Subnavigation ##
     current_page = current_page.rsplit("/", 1)[-1]
 
-    # special case for "split" K12 schools:
-    # CHS was K12 in 2019 and is K8 from 2020 on
-    # NOTE: only need special exception when going from K12
-    # to either k8 or hs
-    if int(school_id) == 5874 and int(year_value) < 2021:
-        school_type = "k12"
-        academic_type_container = {"display": "block"}
+    # if int(school_id) == 5874 and int(year_value) < 2021:
+    #     school_type = "k12"
+    #     academic_type_container = {"display": "block"}
 
-    elif int(school_id) == 5874 and int(year_value) >= 2021:
-        school_type = "k8"
+    # elif int(school_id) == 5874 and int(year_value) >= 2021:
+    #     school_type = "k8"
 
     try:
         analysis_multiyear_hs_group_value
@@ -933,7 +690,6 @@ def navigation(
         # note that academic_information_growth.py does not have a
         # type radio button (k8 only)
         if school_type == "k12" and academic_type_value == "k8":
-            # (academic_type_value == "k8" or not academic_type_value):
             school_type = "k8"
             info_subnav_container = {"display": "block"}
 
@@ -1052,6 +808,7 @@ def navigation(
             hide_main_menu = {"display": "none"}
 
         if "analysis_multiyear" in current_page:
+
             # options and values for for HS/AHS/K12 (hs type)
             if (
                 school_type == "hs"
@@ -1094,6 +851,7 @@ def navigation(
                     analysis_multiyear_category_container = {"display": "block"}
 
                 elif analysis_multiyear_hs_group_value == "SAT":
+                    
                     # SAT specific descriptions
                     analysis_multiyear_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
@@ -1125,6 +883,7 @@ def navigation(
                     analysis_multiyear_category_container = {"display": "block"}
 
             else:  # subject and categories for K8 and K12 (k8 type)
+
                 if school_type == "k8" or (
                     school_type == "k12" and academic_type_value == "k8"
                 ):
@@ -1179,7 +938,8 @@ def navigation(
                         ]:
                             analysis_multiyear_category_value = "Grade"
 
-            # get years for subcategories
+            # if switching from a k12 school with a "hs" academic_type
+            # to a k8 school, we need to reset the type value
             if school_type == "k8" and academic_type_value == "hs":
                 academic_type_value = "k8"
 
@@ -1285,10 +1045,6 @@ def navigation(
                 analysis_multiyear_subcategory_value = "Total"
                 analysis_multiyear_subcategory_options = []
                 analysis_multiyear_subcategory_container = {"display": "none"}
-
-        # else:  # analysis_single page has no radio buttons other than 'type'
-        #     if school_type == "k12":
-        #         academic_type_container = {"display": "block"}
 
     elif "financial" in current_page:
         financial_network_value_default = "school-finance"

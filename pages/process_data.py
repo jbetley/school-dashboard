@@ -11,6 +11,7 @@ import numpy as np
 from toolz import interleave
 import itertools
 from functools import reduce
+from dash import html
 
 from .globals import (
     grades,
@@ -18,23 +19,216 @@ from .globals import (
     subgroup,
 )
 
-from .load_data import get_ilearn_student_data, get_iread_student_data, get_excluded_years
-from .calculations import calculate_proficiency_manually, round_percentages
+from .load_data import (
+    get_ilearn_student_data,
+    get_iread_student_data,
+    get_excluded_years,
+    get_school_coordinates,
+)
+
+from .calculations import (
+    calculate_proficiency_manually,
+    round_percentages,
+    check_for_gradespan_overlap,
+    calculate_comparison_school_list,
+)
 from .string_helpers import reorder_columns, natural_keys
 
 
+def create_comparison_dropdown_list(
+        school_id: str, year: str, existing_list: list, school_type: str
+    ) -> Tuple[list, str, list]:
+    """
+    given a dataframe with Years as columns, drops columns with all nan
+    and returns the most recent year with data.
+
+    Args:
+    school_id (str): selected school_id
+    year (str): selected year
+    existing_list (list): a list of currently selected school ids for comparison
+        schools (or [])
+    school_type (str): k8 or hs
+    
+    Returns:
+        Tuple[
+        school_options (list):
+        input_warning (str):
+        comparison_schools (list):
+        ]
+    """       
+    numeric_year = int(year)
+
+    # School ID, School Name, Lat & Lon
+    schools_by_distance = get_school_coordinates(numeric_year, school_type)
+
+    # Drop any school not testing at least 20 students (k8 only- probably
+    # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
+    # We want to include the selected school regardless of its n-size
+    if school_type == "k8":
+        schools_by_distance["Total|ELA Total Tested"] = pd.to_numeric(
+            schools_by_distance["Total|ELA Total Tested"], errors="coerce"
+        )
+        schools_by_distance = schools_by_distance[
+            (schools_by_distance["Total|ELA Total Tested"] >= 20)
+            | (schools_by_distance["School ID"] == int(school_id))
+        ]
+
+    # There is some time cost for running the dropdown selection function
+    # (typically ~0.8 - 1.2s), so we want to exit out as early as possible if we
+    # know it isn't necessary because the selected school didn't exist
+    if int(school_id) not in schools_by_distance["School ID"].values:
+        return [], [], []
+
+    else:
+        # NOTE: Before we do the distance check, we reduce the size of the
+        # df by removing schools where there is no or only one grade overlap
+        # between the comparison schools. The variable "overlap" is one less
+        # than the the number of grades that we want as a minimum (a value of
+        # "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
+
+        # AHS don't have a 'gradespan' in the technical sense
+        if school_type != "ahs":
+            schools_by_distance = check_for_gradespan_overlap(
+                school_id, schools_by_distance
+            )
+
+        num_schools_to_display = 30
+
+        comparison_list = calculate_comparison_school_list(
+            school_id, schools_by_distance, num_schools_to_display
+        )
+
+        new_comparison_schools = [
+            {"label": name, "value": id} for name, id in comparison_list.items()
+        ]
+
+        # value for number of default display selections and maximum
+        # display selections (because of zero indexing, max should be
+        # 1 less than actual desired number)
+        default_num_to_display = 4
+        max_num_to_display = 7
+
+        # used to display message if the number of selections exceeds the max
+        input_warning = None
+
+        # there are three occasions when we want to reset the list: 1) there are
+        # no values (existing_comparison_schools_list = []); 2) there are values,
+        # but none of the existing values overlap with the new values; 3) there
+        # are values, and there is an overlap, but the number of overlapping
+        # schools is less than the total number of existing schools.
+        # (3) should only occur when we have a K12 school selected and are switching
+        # between "K8" and "HS" types where there is another K12 school in the
+        # comparable school list. Because the K12 school is in both lists- when
+        # the user switches, it is the only school that will be displayed. We don't
+        # want this, so we reset. NOTE: Probably easier to just reset K12 display
+        # every time the type changes, but I'm not quite sure how to track that
+        # (value vs. state?)
+
+        # at this point "existing_comparison_schools_list" is either [] (for no
+        # schools selected) or a list of currently selected schools.
+        # "new_comparison_schools_list" is a list of all of the schools matching
+        # the current selection (which is triggered by a change in type from K8 to HS)
+
+        new_comparison_schools_list = [d["value"] for d in new_comparison_schools]
+
+        # count the number of schools shared by the two lists
+        overlap = 0
+
+        if not existing_list:
+            overlap = 0
+
+        else:
+            for sch in new_comparison_schools_list:
+                overlap += existing_list.count(sch)
+
+        if (
+            not existing_list
+            or existing_list
+            and (
+                # isdisjoint returns True if there are no common items between the sets
+                # there is an existing list, but there is no overlap (e.g., K8 to HS)
+                set(existing_list).isdisjoint(new_comparison_schools_list) == True
+                or
+                # there is an existing list, and there is overlap, but the number of overlapping
+                # schools is less than the length of all of the existing schools
+                (
+                    set(existing_list).isdisjoint(new_comparison_schools_list) == False
+                    and overlap < len(existing_list)
+                )
+            )
+        ):
+            # If any of these are true, we reset options and values
+            comparison_schools = [
+                d["value"] for d in new_comparison_schools[:default_num_to_display]
+            ]
+            school_options = new_comparison_schools
+
+        else:
+            # if none of the above cases apply, we first test the length of
+            # the existing list to make sure it hasn't exceeded max display
+
+            if len(existing_list) > max_num_to_display:
+                # if it does, we throw a warning, keep the selected values the same
+                # and disable all of the options
+                input_warning = html.P(
+                    id="single-year-input-warning",
+                    children="Limit reached (Maximum of "
+                    + str(max_num_to_display + 1)
+                    + " schools).",
+                )
+
+                comparison_schools = existing_list
+
+                school_options = [
+                    {
+                        "label": option["label"],
+                        "value": option["value"],
+                        "disabled": True,
+                    }
+                    for option in new_comparison_schools
+                ]
+
+            else:
+                # if it doesn't, we return the selected list and options.
+                comparison_schools = existing_list
+
+                school_options = [
+                    {
+                        "label": option["label"],
+                        "value": option["value"],
+                        "disabled": False,
+                    }
+                    for option in new_comparison_schools
+                ]
+
+        return school_options, input_warning, comparison_schools
+
+
 def find_valid_year(data: pd.DataFrame) -> str:
+    """
+    given a dataframe with Years as columns names, drops columns with all nan
+    and returns the most recent year with data.
+
+    Args:
+    data (pd.DataFrame): academic data
+
+    Returns:
+        most_recent_year (str): a string value of most recent year in YYYY format
+    """    
     # Networks typically do not have Quarterly data, so
     # we do a quick check of the selected year against
     # valid years of data
     valid_data = data.dropna(axis=1)
-    valid_years =  [e for e in valid_data.columns if e not in (
-        "School ID", "Category", "School Name"
-    )]
+    valid_years = [
+        e
+        for e in valid_data.columns
+        if e not in ("School ID", "Category", "School Name")
+    ]
     valid_years.sort(reverse=True)
     most_recent_year = valid_years[0]
 
     return most_recent_year
+
 
 def remove_empty_cols(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -771,7 +965,7 @@ def process_student_level_ilearn(
 
 def process_2yr_ilearn_data(df: pd.DataFrame, year: str) -> pd.DataFrame:
     """
-    Take a dataframe with ilearn proficiency data and calculates the 
+    Take a dataframe with ilearn proficiency data and calculates the
     proficiency of students who have been with the selected school for
     at least two years.
 
@@ -784,7 +978,7 @@ def process_2yr_ilearn_data(df: pd.DataFrame, year: str) -> pd.DataFrame:
     """
 
     data = df.copy()
-    
+
     data = data[
         (data["ELA Proficiency"] != "Did Not Test")
         & (data["Math Proficiency"] != "Did Not Test")
@@ -793,9 +987,7 @@ def process_2yr_ilearn_data(df: pd.DataFrame, year: str) -> pd.DataFrame:
     # sort by STN and Year and then shift STN up one - this shifts the
     # previous year STN up - so any row with matching STN's is a row where
     # the same student has been at the school for at least 2 years.
-    data = data.sort_values(
-        ["STN", "Year"], ascending=[True, False]
-    )
+    data = data.sort_values(["STN", "Year"], ascending=[True, False])
 
     data["STN_shift"] = data["STN"].shift(-1)
 
@@ -826,16 +1018,10 @@ def process_2yr_ilearn_data(df: pd.DataFrame, year: str) -> pd.DataFrame:
     )
     ela_data["School"] = ela_proficiency["School"]
 
-    ela_data = ela_data[
-        (ela_data["ELA Proficiency"] == "At Proficiency")
-    ]
+    ela_data = ela_data[(ela_data["ELA Proficiency"] == "At Proficiency")]
 
-    ela_data = ela_data.replace(
-        {"At Proficiency": "ELA Proficiency"}, regex=True
-    )
-    ela_data = ela_data.rename(
-        columns={"ELA Proficiency": "Proficiency"}
-    )
+    ela_data = ela_data.replace({"At Proficiency": "ELA Proficiency"}, regex=True)
+    ela_data = ela_data.rename(columns={"ELA Proficiency": "Proficiency"})
 
     math_data = (
         filtered_data.groupby("Year")["Math Proficiency"]
@@ -849,16 +1035,10 @@ def process_2yr_ilearn_data(df: pd.DataFrame, year: str) -> pd.DataFrame:
     )
     math_data["School"] = math_proficiency["School"]
 
-    math_data = math_data[
-        (math_data["Math Proficiency"] == "At Proficiency")
-    ]
+    math_data = math_data[(math_data["Math Proficiency"] == "At Proficiency")]
 
-    math_data = math_data.replace(
-        {"At Proficiency": "Math Proficiency"}, regex=True
-    )
-    math_data = math_data.rename(
-        columns={"Math Proficiency": "Proficiency"}
-    )
+    math_data = math_data.replace({"At Proficiency": "Math Proficiency"}, regex=True)
+    math_data = math_data.rename(columns={"Math Proficiency": "Proficiency"})
 
     # merge
     merged_data = pd.concat([ela_data, math_data], axis=0)
@@ -867,21 +1047,15 @@ def process_2yr_ilearn_data(df: pd.DataFrame, year: str) -> pd.DataFrame:
     excluded_years = get_excluded_years(year)
 
     if excluded_years:
-        merged_data = merged_data[
-            ~merged_data["Year"].isin(excluded_years)
-        ]
+        merged_data = merged_data[~merged_data["Year"].isin(excluded_years)]
 
     # reshape
     data_pivot = merged_data.pivot(
         index="Proficiency", columns="Year", values=["SN-Size", "School"]
     )
-    data_pivot.columns = [
-        f"{y}{x}" for x, y in data_pivot.columns.to_flat_index()
-    ]
+    data_pivot.columns = [f"{y}{x}" for x, y in data_pivot.columns.to_flat_index()]
     data_pivot = data_pivot.reset_index()
-    data_pivot = data_pivot.rename(
-        columns={"Proficiency": "Category"}
-    )
+    data_pivot = data_pivot.rename(columns={"Proficiency": "Category"})
 
     data_pivot.loc[
         data_pivot["Category"] == "ELA Proficiency",
@@ -1034,7 +1208,7 @@ def process_iread_student_data(
          ilearn data for table and fig.
     """
     student_data = df_student.copy()
-    
+
     # Group by Year and Period - get percentage passing and not passing
     student_pass = (
         student_data.groupby(["Year", "Test Period"])["Status"]
