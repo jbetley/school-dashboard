@@ -166,7 +166,7 @@ def update_academic_information_page(
     empty_container = {"display": "none"}
 
     no_display_data = create_empty_page_layout(
-        "No Data to Display.", "Academic Information"
+        "Academic Information", "No Data to Display."
     )
 
     academic_information_notes_string = "ILEARN was administered for the first time during the 2018-19 SY, \
@@ -330,7 +330,7 @@ def update_academic_information_page(
             hs_sat_table_container = {"display": "none"}
 
             no_display_data = create_empty_page_layout(
-                "No Data to Display.", "High School Academic Data"
+                "High School Academic Data", "No Data to Display."
             )
 
         else:
@@ -542,7 +542,7 @@ def update_academic_information_page(
             k8_table_container = {"display": "none"}
 
             no_display_data = create_empty_page_layout(
-                "No Data to Display.", "Academic Proficiency"
+                "Academic Proficiency", "No Data to Display."
             )
 
         else:
@@ -921,7 +921,7 @@ def update_academic_information_page(
                 empty_container = {"display": "block"}
                 academic_information_notes_string_container = {"display": "none"}
                 no_display_data = create_empty_page_layout(
-                    "No Data to Display.", "IREAD"
+                    "IREAD", "No Data to Display."
                 )
 
             else:
@@ -1025,7 +1025,7 @@ def update_academic_information_page(
                 empty_container = {"display": "block"}
                 academic_information_notes_string_container = {"display": "none"}
                 no_display_data = create_empty_page_layout(
-                    "No Data to Display.", "WIDA"
+                    "WIDA", "No Data to Display."
                 )
 
             else:
@@ -1055,7 +1055,7 @@ def update_academic_information_page(
                     empty_container = {"display": "block"}
                     academic_information_notes_string_container = {"display": "none"}
                     no_display_data = create_empty_page_layout(
-                        "No Data to Display.", "WIDA"
+                        "WIDA", "No Data to Display."
                     )
 
                 else:

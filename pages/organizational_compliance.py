@@ -37,8 +37,8 @@ def update_organizational_compliance(school, year):
 
     if len(financial_data.columns) <= 1 or financial_data.empty:
         org_compliance_table = create_empty_table_layout(
-            "No Data to Display.",
             selected_year_string + " Organizational and Operational Accountability",
+            "No Data to Display.",
         )
 
     else:

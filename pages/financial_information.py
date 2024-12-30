@@ -38,7 +38,7 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
     no_data_to_display = create_empty_page_layout(
-        "No Data to Display", selected_year_string + " Financial Information"
+        selected_year_string + " Financial Information", "No Data to Display"
     )
 
     if radio_value == "network-finance":

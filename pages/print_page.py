@@ -1,8 +1,9 @@
-###################
-# Print Dashboard #
-###################
-# author:   jbetley
-# rev:     08.18.24
+####################################
+# ICSB Dashboard - Print Dashboard #
+####################################
+# author:   jbetley (https://github.com/jbetley)
+# version:  1.16
+# date:     12/29/24
 
 import dash
 
@@ -25,7 +26,8 @@ from .print_layout import (
 
 dash.register_page(__name__, path="/print_page", top_nav=True, order=12)
 
-# https://dash.plotly.com/advanced-callbacks (for: dash 2.16)
+# NOTE: possibly shift to https://dash.plotly.com/advanced-callbacks once we 
+# update to dash 2.16- right now we are using dash 2.13
 
 # https://community.plotly.com/t/show-spinner-in-dbc-button-via-client-side-callback/81048
 clientside_callback(
@@ -96,7 +98,6 @@ def generate_print_page(
                 html.Label(
                     school_name,
                     className="school-name-label__header",
-                    # style={"marginTop": "10px"},
                 ),
             ]
 

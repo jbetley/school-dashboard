@@ -1032,7 +1032,7 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
     ahs_table_container_113 = []
     ahs_table_container_1214 = []
 
-    # no_data_to_display = create_empty_page_layout("No Data to Display.", "Academic Metrics")
+    # no_data_to_display = create_empty_page_layout("Academic Metrics", "No Data to Display.")
 
     selected_school = get_school_index(school_id)
     selected_school_type = selected_school["School Type"].values[0]
@@ -1202,8 +1202,8 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
             else:
                 # create_metric_table requies label to be a list, while create_empty_table_layout wants a string
                 empty_table_14g = create_empty_table_layout(
-                    "No Data to Display.",
                     "1.4.g Percentage of students achieving proficiency on the IREAD-3 state assessment.",
+                    "No Data to Display.",
                     "six",
                 )
                 table_container_14g = set_table_layout(
@@ -1476,8 +1476,8 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
 
     else:
         empty_table_11ab = create_empty_table_layout(
-            "No Data to Display.",
             "Student Attendance Rate (1.1.a) and Teacher Retention Rate (1.1.b) compared with traditional school corporation.",
+            "No Data to Display.",
             "six",
         )
 
@@ -1486,8 +1486,8 @@ def create_academicmetrics_layout(year: str, school_id: str) -> list:
         )
 
         empty_table_11cd = create_empty_table_layout(
-            "No Data to Display.",
             "End of Year to Beginning of Year (1.1.c) and Multi-Year (1.1.d) Student Re-Enrollment Rate.",
+            "No Data to Display.",
         )
 
         table_container_11cd = set_table_layout(

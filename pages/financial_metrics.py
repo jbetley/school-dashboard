@@ -47,7 +47,7 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
     no_data_to_display = create_empty_page_layout(
-        "No Data to Display.", selected_year_string + " Financial Metrics"
+        selected_year_string + " Financial Metrics", "No Data to Display."
     )
 
     if radio_value == "network-finance":
@@ -93,10 +93,10 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
     # Financial Metrics
     if len(financial_data.columns) <= 1 or financial_data.empty:
         financial_metrics_table = create_empty_table_layout(
-            "No Data to Display.", selected_year_string + " Financial Metrics"
+            selected_year_string + " Financial Metrics", "No Data to Display."
         )
         financial_indicators_table = create_empty_table_layout(
-            "No Data to Display.", selected_year_string + " Financial Indicators"
+            selected_year_string + " Financial Indicators", "No Data to Display."
         )
 
         financial_indicators_container = {"display": "none"}
@@ -133,10 +133,10 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
             (len(financial_data.columns) == 2) and (financial_data.iloc[1][1] == "0")
         ):
             financial_metrics_table = create_empty_table_layout(
-                "No Data to Display.", selected_year_string + " Financial Metrics"
+                selected_year_string + " Financial Metrics", "No Data to Display."
             )
             financial_indicators_table = create_empty_table_layout(
-                "No Data to Display.", selected_year_string + " Financial Indicators"
+                selected_year_string + " Financial Indicators", "No Data to Display."
             )
 
             financial_indicators_container = {"display": "none"}

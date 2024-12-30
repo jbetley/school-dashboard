@@ -208,10 +208,10 @@ def update_academic_analysis_single_year(
     sat_subgroup_container = {"display": "none"}
 
     k8_analysis_no_data = create_empty_page_layout(
-        "No Data to Display.", "Comparison Data - K-8 Academic Data"
+        "Comparison Data - K-8 Academic Data", "No Data to Display."
     )
     hs_analysis_no_data = create_empty_page_layout(
-        "No Data to Display.", "Comparison Data - High School Academic Data"
+        "Comparison Data - High School Academic Data", "No Data to Display."
     )
 
     academic_analysis_notes_label = ""
@@ -435,7 +435,6 @@ def update_academic_analysis_single_year(
                         sat_subgroup_container = {"display": "none"}
 
     if selected_school_type == "k8" or selected_school_type == "k12":
-        
         if selected_school_type == "k12" and academic_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
 
@@ -551,7 +550,7 @@ def update_academic_analysis_single_year(
                         "Comparison: Current Year ELA Proficiency", 200
                     )
                     fig14c_table = create_empty_table_layout(
-                        "No Data to Display.", "ELA Proficiency", "none"
+                        "ELA Proficiency", "No Data to Display.", "none"
                     )
 
                 fig14c = create_barchart_layout(fig14c_chart, fig14c_table, "", "")
@@ -594,7 +593,7 @@ def update_academic_analysis_single_year(
                         "Comparison: Current Year Math Proficiency", 200
                     )
                     fig14d_table = create_empty_table_layout(
-                        "No Data to Display.", "Math Proficiency", "none"
+                        "Math Proficiency", "No Data to Display.", "none"
                     )
 
                 fig14d = create_barchart_layout(fig14d_chart, fig14d_table, "", "")

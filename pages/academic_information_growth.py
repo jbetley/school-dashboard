@@ -61,7 +61,7 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
 
     academic_growth_notes_string = ""
 
-    no_growth_data = create_empty_page_layout("No Data to Display.", "Academic Growth")
+    no_growth_data = create_empty_page_layout("Academic Growth", "No Data to Display.")
 
     # State Growth Data
     # NOTE: "Majority Enrolled" means the school and school corporation in

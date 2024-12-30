@@ -12,11 +12,7 @@ import pandas as pd
 
 
 from .globals import ethnicity, subgroup, grades_all
-from .load_data import (
-    get_school_index,
-    get_academic_data,
-    get_ilearn_student_data
-)
+from .load_data import get_school_index, get_academic_data, get_ilearn_student_data
 from .clean_data import clean_academic_data
 from .process_data import process_2yr_ilearn_data
 from .tables import (
@@ -34,7 +30,7 @@ from .calculate_metrics import (
     calculate_iread_metrics,
     calculate_multiyear_ilearn_metrics,
     calculate_comparison_ilearn_metrics,
-    calculate_metric_ratings
+    calculate_metric_ratings,
 )
 from .calculations import conditional_fillna, calculate_values
 
@@ -103,7 +99,7 @@ def update_academic_metrics(school: str, year: str):
     empty_container = {"display": "block"}
 
     no_data_to_display = create_empty_page_layout(
-        "No Data to Display.", "Academic Metrics"
+         "Academic Metrics", "No Data to Display."
     )
 
     selected_school = get_school_index(school)
@@ -173,7 +169,7 @@ def update_academic_metrics(school: str, year: str):
             ]
 
             metric_14a_data = convert_to_svg_circle(metric_14a_data)
-            table_14a = create_metric_table(metric_14a_label, metric_14a_data)
+            table_14a = create_metric_table(metric_14a_data, metric_14a_label)
 
             metric_14b_data = combined_years[
                 (combined_years["Category"].str.contains("|".join(grades_all)))
@@ -187,7 +183,7 @@ def update_academic_metrics(school: str, year: str):
             ]
 
             metric_14b_data = convert_to_svg_circle(metric_14b_data)
-            table_14b = create_metric_table(metric_14b_label, metric_14b_data)
+            table_14b = create_metric_table(metric_14b_data, metric_14b_label)
 
             table_container_14ab = set_table_layout(
                 table_14a, table_14b, combined_years.columns
@@ -205,7 +201,7 @@ def update_academic_metrics(school: str, year: str):
             ]
 
             metric_14c_data = convert_to_svg_circle(metric_14c_data)
-            table_14c = create_metric_table(metric_14c_label, metric_14c_data)
+            table_14c = create_metric_table(metric_14c_data, metric_14c_label)
 
             metric_14d_data = combined_delta[
                 (combined_delta["Category"].str.contains("|".join(grades_all)))
@@ -219,7 +215,7 @@ def update_academic_metrics(school: str, year: str):
             ]
 
             metric_14d_data = convert_to_svg_circle(metric_14d_data)
-            table_14d = create_metric_table(metric_14d_label, metric_14d_data)
+            table_14d = create_metric_table(metric_14d_data, metric_14d_label)
 
             table_container_14cd = set_table_layout(
                 table_14c, table_14d, combined_delta.columns
@@ -232,7 +228,9 @@ def update_academic_metrics(school: str, year: str):
             # assessment in ELA & Math.
             ilearn_student_raw = get_ilearn_student_data(school)
 
-            metric_14ef_data = process_2yr_ilearn_data(ilearn_student_raw, selected_year_string)
+            metric_14ef_data = process_2yr_ilearn_data(
+                ilearn_student_raw, selected_year_string
+            )
 
             # calculate metrics
             ilearn_2yr_limits = [0.8, 0.69, 0.59]
@@ -246,7 +244,7 @@ def update_academic_metrics(school: str, year: str):
             ]
 
             metric_14ef_data = convert_to_svg_circle(metric_14ef_data)
-            table_14ef = create_metric_table(metric_14ef_label, metric_14ef_data)
+            table_14ef = create_metric_table(metric_14ef_data, metric_14ef_label)
 
             table_container_14ef = set_table_layout(
                 table_14ef, table_14ef, metric_14ef_data.columns
@@ -285,7 +283,7 @@ def update_academic_metrics(school: str, year: str):
                 ]
                 iread_data = convert_to_svg_circle(iread_data)
 
-                table_14g = create_metric_table(metric_14g_label, iread_data)
+                table_14g = create_metric_table(iread_data, metric_14g_label)
 
                 table_container_14g = set_table_layout(
                     table_14g, table_14g, iread_data.columns
@@ -295,8 +293,8 @@ def update_academic_metrics(school: str, year: str):
                 # create_metric_table requies label to be a list, while
                 # create_empty_table_layout wants a string
                 empty_table_14g = create_empty_table_layout(
+                    "1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment.",                    
                     "No Data to Display.",
-                    "1.4.g. Percentage of students achieving proficiency on the IREAD-3 state assessment.",
                     "six",
                 )
                 table_container_14g = set_table_layout(
@@ -339,7 +337,7 @@ def update_academic_metrics(school: str, year: str):
                 "for each subgroup compared with traditional school corporation.",
             ]
             metric_16a_data = convert_to_svg_circle(metric_16a_data)
-            table_16a = create_metric_table(metric_16a_label, metric_16a_data)
+            table_16a = create_metric_table(metric_16a_data, metric_16a_label)
 
             metric_16b_data = combined_delta[
                 (combined_delta["Category"].str.contains("|".join(category)))
@@ -354,7 +352,7 @@ def update_academic_metrics(school: str, year: str):
             ]
             metric_16b_data = convert_to_svg_circle(metric_16b_data)
 
-            table_16b = create_metric_table(metric_16b_label, metric_16b_data)
+            table_16b = create_metric_table(metric_16b_data, metric_16b_label)
 
             table_container_16ab = set_table_layout(
                 table_16a, table_16b, combined_delta.columns
@@ -371,7 +369,7 @@ def update_academic_metrics(school: str, year: str):
                 " for each subgroup compared with the previous school year.",
             ]
             metric_16c_data = convert_to_svg_circle(metric_16c_data)
-            table_16c = create_metric_table(metric_16c_label, metric_16c_data)
+            table_16c = create_metric_table(metric_16c_data, metric_16c_label)
 
             metric_16d_data = combined_years[
                 (combined_years["Category"].str.contains("|".join(category)))
@@ -384,7 +382,7 @@ def update_academic_metrics(school: str, year: str):
                 " for each subgroup compared with the previous school year.",
             ]
             metric_16d_data = convert_to_svg_circle(metric_16d_data)
-            table_16d = create_metric_table(metric_16d_label, metric_16d_data)
+            table_16d = create_metric_table(metric_16d_data, metric_16d_label)
 
             table_container_16cd = set_table_layout(
                 table_16c, table_16d, combined_years.columns
@@ -395,7 +393,6 @@ def update_academic_metrics(school: str, year: str):
         or selected_school_type == "ahs"
         or selected_school_type == "k12"
     ):
-        
         if selected_school_type == "k12":
             hs_local_school_type = "hs"
         else:
@@ -450,7 +447,7 @@ def update_academic_metrics(school: str, year: str):
                 ahs_metric_data11 = ahs_metric_data[
                     ahs_metric_data["Category"].str.contains("State Grade")
                 ]
-                ahs_table11 = create_metric_table(ahs_metric_label11, ahs_metric_data11)
+                ahs_table11 = create_metric_table(ahs_metric_data11, ahs_metric_label11)
                 ahs_table_container11 = set_table_layout(
                     ahs_table11, ahs_table11, ahs_metric_data.columns
                 )
@@ -459,7 +456,7 @@ def update_academic_metrics(school: str, year: str):
                     ahs_metric_data["Category"].str.contains("In Cohort")
                 ]
                 ahs_table12a = create_metric_table(
-                    ahs_metric_label12a, ahs_metric_data12a
+                    ahs_metric_data12a, ahs_metric_label12a
                 )
                 ahs_table_container12a = set_table_layout(
                     ahs_table12a, ahs_table12a, ahs_metric_data.columns
@@ -469,7 +466,7 @@ def update_academic_metrics(school: str, year: str):
                     ahs_metric_data["Category"].str.contains("Grade 12")
                 ]
                 ahs_table12b = create_metric_table(
-                    ahs_metric_label12b, ahs_metric_data12b
+                    ahs_metric_data12b, ahs_metric_label12b
                 )
                 ahs_table_container12b = set_table_layout(
                     ahs_table12b, ahs_table12b, ahs_metric_data.columns
@@ -479,7 +476,7 @@ def update_academic_metrics(school: str, year: str):
                     ahs_metric_data["Category"].str.contains("Grad to Enrollment")
                 ]
                 ahs_tablegte = create_metric_table(
-                    ahs_metric_labelgte, ahs_metric_datagte
+                    ahs_metric_datagte, ahs_metric_labelgte
                 )
                 ahs_table_containergte = set_table_layout(
                     ahs_tablegte, ahs_tablegte, ahs_metric_data.columns
@@ -488,7 +485,7 @@ def update_academic_metrics(school: str, year: str):
                 ahs_metric_data13 = ahs_metric_data[
                     ahs_metric_data["Category"].str.contains("CCR Percentage")
                 ]
-                ahs_table13 = create_metric_table(ahs_metric_label13, ahs_metric_data13)
+                ahs_table13 = create_metric_table(ahs_metric_data13, ahs_metric_label13)
                 ahs_table_container13 = set_table_layout(
                     ahs_table13, ahs_table13, ahs_metric_data.columns
                 )
@@ -516,7 +513,7 @@ def update_academic_metrics(school: str, year: str):
                         "High School Accountability Metrics 1.7.a. & 1.7.b."
                     ]
                     hs_metric_data = convert_to_svg_circle(hs_metric_data)
-                    table_17ab = create_metric_table(metric_17ab_label, hs_metric_data)
+                    table_17ab = create_metric_table(hs_metric_data, metric_17ab_label)
                     table_container_17ab = set_table_layout(
                         table_17ab, table_17ab, hs_metric_data.columns
                     )
@@ -561,7 +558,7 @@ def update_academic_metrics(school: str, year: str):
                     metric_17cd_data = convert_to_svg_circle(metric_17cd_data)
 
                     table_17cd = create_metric_table(
-                        metric_17cd_label, metric_17cd_data
+                        metric_17cd_data, metric_17cd_label
                     )
                     table_container_17cd = set_table_layout(
                         table_17cd, table_17cd, metric_17cd_data.columns
@@ -595,7 +592,7 @@ def update_academic_metrics(school: str, year: str):
 
         metric_11ab_data = conditional_fillna(metric_11ab_data)
         metric_11ab_data = convert_to_svg_circle(metric_11ab_data)
-        table_11ab = create_metric_table(metric_11ab_label, metric_11ab_data)
+        table_11ab = create_metric_table(metric_11ab_data, metric_11ab_label)
         table_container_11ab = set_table_layout(
             table_11ab, table_11ab, metric_11ab_data.columns
         )
@@ -621,15 +618,15 @@ def update_academic_metrics(school: str, year: str):
 
         metric_11cd_data = conditional_fillna(metric_11cd_data)
         metric_11cd_data = convert_to_svg_circle(metric_11cd_data)
-        table_11cd = create_metric_table(metric_11cd_label, metric_11cd_data)
+        table_11cd = create_metric_table(metric_11cd_data, metric_11cd_label)
         table_container_11cd = set_table_layout(
             table_11cd, table_11cd, metric_11cd_data.columns
         )
 
     else:
         empty_table_11ab = create_empty_table_layout(
+            "Student Attendance Rate (1.1.a.) and Teacher Retention Rate (1.1.b.) compared with traditional school corporation.",            
             "No Data to Display.",
-            "Student Attendance Rate (1.1.a.) and Teacher Retention Rate (1.1.b.) compared with traditional school corporation.",
             "six",
         )
 
@@ -638,8 +635,8 @@ def update_academic_metrics(school: str, year: str):
         )
 
         empty_table_11cd = create_empty_table_layout(
+            "End of Year to Beginning of Year (1.1.c.) and Multi-Year (1.1.d.) Student Re-Enrollment Rate.",            
             "No Data to Display.",
-            "End of Year to Beginning of Year (1.1.c.) and Multi-Year (1.1.d.) Student Re-Enrollment Rate.",
         )
 
         table_container_11cd = set_table_layout(

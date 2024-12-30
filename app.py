@@ -481,11 +481,17 @@ def navigation(
             and selected_school["Guest"].values[0] != "Y"
         ):
             years = get_academic_growth_dropdown_years(school_id)
-        else:
 
-            # academic_type selection displayed only on academic pages
+        else:
+            
             if school_type == "k12":
-                academic_type_container = {"display": "block"}
+
+                # academic_type buttons displayed only on academic info
+                # and academic analysis pages
+                if ("academic_information" in current_page or
+                    "academic_analysis" in current_page):
+                
+                    academic_type_container = {"display": "block"}
 
                 if academic_type_value == "k8":
                     school_type = "k8"

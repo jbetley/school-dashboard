@@ -3,7 +3,7 @@
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/16/24
+# date:     12/29/24
 
 import pandas as pd
 import numpy as np
@@ -13,9 +13,12 @@ from typing import Tuple
 
 from .globals import ethnicity, subgroup, info_categories
 
-# helper function for natural_keys (provides natural sorting)
-# https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
+
 def atoi(text):
+    """
+    helper function for natural_keys (provides natural sorting)
+    https://stackoverflow.com/questions/5967500/how-to-correctly-sort-a-string-with-a-number-inside
+    """    
     return int(text) if text.isdigit() else text
 
 
@@ -71,14 +74,24 @@ def reorder_columns(data: pd.DataFrame, match_cols: list) -> list:
 def generate_colors(
     data: pd.DataFrame, color_state: dict, color_list: list, school_name: str
 ) -> dict:
-    # NOTE: we want to ensure that colors do not change for existing traces when
-    # schools are added or removed- normally would use a fixed colormap, but in this
-    # case we have too many possible schools (40) and dont know which ones will
-    # be chosen- so need to store the existing colors (dict) and modify it one school
-    # at a time instead of recreating the map each run.
+    """
+    We want to ensure that colors do not change for existing traces when
+    schools are added or removed- normally would use a fixed colormap, but
+    in this case we have too many possible schools (40) and dont know which
+    ones will be chosen- so need to store the existing colors (dict) and
+    modify the dict one school at a time instead of recreating the map each
+    run. colors are added in the order they appear in the static "color" array,
+    which contains 10 colors.
 
-    # colors are added in the order they appear in the "color" array, which contains
-    # 10 colors
+    Args:
+        data (pd.DataFrame): academic data
+        color_state (dict): current color assignments {school:color}
+        color_list (list): list of colors
+        school_name (str): selected school name
+
+    Returns:
+        adjusted_colors (dict): colors adjusted based on passed data
+    """    
 
     # single_year analysis data has a School Name column, multiyear analysis
     # data does not
@@ -353,7 +366,7 @@ def combine_school_name_and_grade_levels(df: pd.DataFrame) -> pd.DataFrame:
     grade span columns from the dataframe (they are not charted)
 
     Args:
-        data (pd.DataFrame): dataframe of academic data
+        df (pd.DataFrame): dataframe of academic data
 
     Returns:
         data (pd.DataFrame): dataframe
@@ -385,11 +398,8 @@ def identify_missing_categories(
     missing data for all categories (school_string).
 
     Args:
-        school_data (pd.DataFrame): academic data from the selected school
-        corporation_data (pd.DataFrame): academic data from the school corporation where the school is located
-        comparison_data (pd.DataFrame): academic data from comparable schools (may or may not be in school corp)
-        categories (list): a list of academic categories
-        corp_name (str): the name of the school corporation
+        df (pd.DataFrame): academic data from the selected school
+        tested_categories (list): list of the categories being tested
 
     Returns:
         Tuple[

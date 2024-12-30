@@ -3,9 +3,8 @@
 ##############################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/10/24
+# date:     12/29/24
 
-# TODO: Separate database call from processing for all functions
 # NOTE: No K8 academic data exists for 2020
 
 # Current data:
@@ -57,23 +56,19 @@ def run_query(q, *args):
 
         df = pd.read_sql_query(q, conn, params=conditions)
 
-        # NOTE: Is there a better way to do this?
-
         # sqlite column headers do not have spaces between words. But we need to
         # display the column names, so we have to do a bunch of str.replace to
         # account for all conditions. May be a better way, but this is pretty fast.
         # Adding a space between any lowercase character and any uppercase/number
         # character takes care of most of it. The other replace functions catch edge cases.
         df.columns = df.columns.str.replace(r"([a-z])([A-Z1-9%])", r"\1 \2", regex=True)
+        
         df.columns = df.columns.str.replace(
             r"([WADTO])([CATPB&])", r"\1 \2", regex=True
         )
-
         df.columns = df.columns.str.replace("EBRWand", "EBRW and")
         df.columns = df.columns.str.replace("Freeand", "Free and")
         df.columns = df.columns.str.replace("Outof", "Out of")
-
-        # the above is adding a space to NonWaiver- so we need to remove it
         df.columns = df.columns.str.replace("Non Waiver", "NonWaiver")
         df.columns = df.columns.str.replace(r"([A])([a])", r"\1 \2", regex=True)
         df.columns = df.columns.str.replace(r"([1-9])([(])", r"\1 \2", regex=True)
@@ -114,7 +109,6 @@ def get_excluded_years(year: str) -> list:
     Returns:
         list: a list of year strings - all years more recent than selected year
     """
-
     excluded_years = []
 
     excluded_academic_years = int(current_academic_year) - int(year)
@@ -126,7 +120,7 @@ def get_excluded_years(year: str) -> list:
     return excluded_years
 
 
-def get_school_index(school_id):
+def get_school_index(school_id: str) -> pd.DataFrame:
     """
     returns school index information
 
@@ -149,7 +143,7 @@ def get_school_index(school_id):
     return run_query(q, params)
 
 
-def get_academic_dropdown_years(*args):
+def get_academic_dropdown_years(*args: str) -> list:
     """
     gets a list of all available years of academic proficiency data
 
@@ -187,7 +181,7 @@ def get_academic_dropdown_years(*args):
     return years
 
 
-def get_academic_growth_dropdown_years(*args):
+def get_academic_growth_dropdown_years(*args: str) -> list:
     """
     gets a list of all available years of academic growth data
 
@@ -216,7 +210,7 @@ def get_academic_growth_dropdown_years(*args):
     return years
 
 
-def get_financial_dropdown_years(school_id, page):
+def get_financial_dropdown_years(school_id: str, page: str) -> list:
     """
     gets a list of all available years of financial data - returns
     # a list of Year column names for each year for which ADM Average
@@ -226,10 +220,12 @@ def get_financial_dropdown_years(school_id, page):
         school_id (string): a 4 digit number in string format
         page(string): a string identifying the url for which the call
         is being made
+
     Returns:
         list: a list of integers representing years
     """
     params = dict(id=school_id)
+
     q = text(
         """
         SELECT * 
@@ -240,13 +236,7 @@ def get_financial_dropdown_years(school_id, page):
 
     results = run_query(q, params)
 
-    # NOTE: Testing using "years with data" instead of "years
-    # with ADM" which captures pre-opening years with "0"
-    # State Grant data.
-
-    # valid_years = results.dropna(axis=1, how="all")
-
-    # get a list of columns where a specific range of rows (including
+    # get a list of columns where a specific index range of rows (including
     # Operating Revenue & Expenses, Total Assets & Liabilites, etc)
     # are all NaN and then drop them
     invalid_cols = results.iloc[1:17].columns[results.iloc[1:17].isna().all()]
@@ -274,11 +264,17 @@ def get_financial_dropdown_years(school_id, page):
     return year_list
 
 
-def get_adm_data(corp_id):
-    # financial data will almost always be more accurate, but
-    # some schools (Guests) don't have financial data and this
-    # is an adequate substitute.
+def get_adm_data(corp_id: str) -> pd.DataFrame:
+    """
+    gets a dataframe of detailed ADM data from IDOE's official ADM
+    release (most accurate for previous years, but not very timely).
 
+    Args:
+        corp_id (string): a 4 digit number in string format
+
+    Returns:
+        pd.DataFrame: detailed adm data
+    """    
     params = dict(id=corp_id)
 
     q = text(
@@ -294,7 +290,16 @@ def get_adm_data(corp_id):
     return results
 
 
-def get_school_dropdown_list():
+def get_school_dropdown_list() -> pd.DataFrame:
+    """
+    returns a list of the schools in the school index for the school
+    dropdown.
+
+    Args:
+
+    Returns:
+        pd.DataFrame: school information
+    """        
     q = text(
         """
         SELECT SchoolName, SchoolID, SchoolType, GroupID
@@ -309,7 +314,15 @@ def get_school_dropdown_list():
     return schools
 
 
-def get_graduation_data():
+def get_graduation_data() -> pd.DataFrame:
+    """
+    returns a dataframe of state graduation averages for all years (not including AHS).
+
+    Args:
+
+    Returns:
+        pd.DataFrame: state graducation averages
+    """        
     params = dict(id="")
 
     q = text(
@@ -328,7 +341,6 @@ def get_graduation_data():
 
     results = results.loc[::-1].reset_index(drop=True)
 
-    # merge state_grad_average with corp_data
     results = (
         results.set_index("Year")
         .T.rename_axis("Category")
@@ -336,7 +348,6 @@ def get_graduation_data():
         .reset_index()
     )
 
-    # rename columns and add state_grad average to corp df
     results = results.rename(
         columns={c: str(c) + "Corp" for c in results.columns if c not in ["Category"]}
     )
@@ -344,10 +355,44 @@ def get_graduation_data():
     return results
 
 
-def get_gradespan(school_id, selected_year, all_years):
-    # returns a list of grades for for which a school has numbers for both Tested
-    # and Proficient students for the selected year (and all earlier years)
-    # if no grades are found - returns an empty list
+def get_ahs_averages():
+    """
+    Calculates State graduation average for all ahs for
+    all years (as a substitute for state or corp avg)
+
+    Args:
+
+    Returns:
+        pd.DataFrame: ahs grad averages
+    """     
+    params = dict(id="")
+    q = text(
+        """
+        SELECT *
+            FROM academic_data_hs
+            WHERE SchoolType = "AHS"
+        """
+    )
+
+    results = run_query(q, params)
+
+    return results
+
+
+def get_gradespan(school_id: str, selected_year: str, all_years: list) -> list:
+    """
+    returns a list of grades for for which a school has numbers for both Tested
+    and Proficient students for the selected year (and all earlier years)
+    if no grades are found - returns an empty list
+
+    Args:
+        school_id (str): a 4 digit number in string format
+        selected_year (str): selected year in YYYY format
+        all_years (list): list of all available years of data
+
+    Returns:
+        list: of grades (in integer format) offered by the school for the selected year
+    """    
     params = dict(id=school_id)
 
     idx = all_years.index(int(selected_year))
@@ -392,10 +437,24 @@ def get_gradespan(school_id, selected_year, all_years):
 
 
 def get_ethnicity(
-    school_id, school_type, hs_category, subject_value, selected_year, all_years
-):
-    # returns a list of ethnicities for which a school has numbers for both Tested
-    # and Proficient students for the selected year (and all earlier years)
+    school_id: str, school_type: str, hs_category: str, subject_value: str, selected_year: str, all_years: list
+) -> list:
+    """
+    returns a list of ethnicities for which a school has numbers for both Tested
+    and Proficient students for the selected year (and all earlier years)
+    if no ethnicities are found - returns an empty list
+
+    Args:
+        school_id (str): a 4 digit number in string format
+        school_type (str): k8 or hs   
+        hs_category (str): Grad or SAT
+        subject_value (str): Math or ELA     
+        selected_year (str): selected year in YYYY format
+        all_years (list): list of all available years of data
+
+    Returns:
+        list: of ethnicities offered by the school for the selected year
+    """      
     params = dict(id=school_id)
 
     idx = all_years.index(int(selected_year))
@@ -468,8 +527,24 @@ def get_ethnicity(
 
 
 def get_subgroup(
-    school_id, school_type, hs_category, subject_value, selected_year, all_years
-):
+    school_id: str, school_type: str, hs_category: str, subject_value: str, selected_year: str, all_years: list
+) -> list:
+    """
+    returns a list of subgroups for which a school has numbers for both Tested
+    and Proficient students for the selected year (and all earlier years)
+    if no subgroups are found - returns an empty list
+
+    Args:
+        school_id (str): a 4 digit number in string format
+        school_type (str): k8 or hs   
+        hs_category (str): Grad or SAT
+        subject_value (str): Math or ELA     
+        selected_year (str): selected year in YYYY format
+        all_years (list): list of all available years of data
+
+    Returns:
+        list: of subgroups offered by the school for the selected year
+    """     
     # returns a list of subgroups for which a school has numbers for both Tested
     # and Proficient students for the selected year (and all earlier years)
     params = dict(id=school_id)
@@ -543,7 +618,16 @@ def get_subgroup(
     return result
 
 
-def get_financial_data(school_id):
+def get_financial_data(school_id: str) -> pd.DataFrame:
+    """
+    returns a dataframe of financial data for all years
+
+    Args:
+        school_id (str): 4 digit school id in string format
+
+    Returns:
+        pd.DataFrame: financial data
+    """       
     params = dict(id=school_id)
     q = text(
         """
@@ -556,7 +640,16 @@ def get_financial_data(school_id):
     return run_query(q, params)
 
 
-def get_financial_ratios(corp_id):
+def get_financial_ratios(corp_id: str) -> pd.DataFrame:
+    """
+    returns a dataframe of financial ratio data for all years
+
+    Args:
+        corp_id (str): 4 digit corp id in string format
+
+    Returns:
+        pd.DataFrame: financial ratio data
+    """      
     params = dict(id=corp_id)
     q = text(
         """
@@ -568,7 +661,16 @@ def get_financial_ratios(corp_id):
     return run_query(q, params)
 
 
-def get_corp_demographic_data(*args):
+def get_corp_demographic_data(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of demographic data
+
+    Args:
+        corp_id (str): 4 digit corp id in string format
+
+    Returns:
+        pd.DataFrame: demographic data
+    """     
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -583,7 +685,16 @@ def get_corp_demographic_data(*args):
     return run_query(q, params)
 
 
-def get_school_demographic_data(*args):
+def get_school_demographic_data(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of demographic data
+
+    Args:
+        school_id (str): 4 digit school id in string format
+
+    Returns:
+        pd.DataFrame: demographic data
+    """      
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -598,7 +709,16 @@ def get_school_demographic_data(*args):
     return run_query(q, params)
 
 
-def get_letter_grades(*args):
+def get_letter_grades(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of state and federal "letter grades" for a corp
+
+    Args:
+        corp_id (str): 4 digit corp id in string format
+
+    Returns:
+        pd.DataFrame: letter grade data
+    """      
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -613,7 +733,16 @@ def get_letter_grades(*args):
     return run_query(q, params)
 
 
-def get_wida_student_data(stns):
+def get_wida_student_data(stns: list) -> pd.DataFrame:
+    """
+    returns a dataframe of wida data matching a list of stns
+
+    Args:
+        stns (list): a list of STNs for a school corporation
+
+    Returns:
+        pd.DataFrame: wida data
+    """      
     params = dict(id="")
 
     # when looking for a string value in a column, we need to wrap each
@@ -635,7 +764,16 @@ def get_wida_student_data(stns):
     return results
 
 
-def get_iread_student_data(*args):
+def get_iread_student_data(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of student level iread data
+
+    Args:
+        school_id (str): 4 digit corp id in string format
+
+    Returns:
+        pd.DataFrame: student level iread data
+    """      
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -658,7 +796,16 @@ def get_iread_student_data(*args):
     return results
 
 
-def get_discipline_data(*args):
+def get_discipline_data(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of school level discipline data
+
+    Args:
+        school_id (str): 4 digit corp id in string format
+
+    Returns:
+        pd.DataFrame: school level discipline data
+    """      
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -675,7 +822,16 @@ def get_discipline_data(*args):
     return results
 
 
-def get_iread_stns(*args):
+def get_iread_stns(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of STNs from the student level iread data table
+
+    Args:
+        school_id (str): 4 digit corp id in string format
+
+    Returns:
+        pd.DataFrame: school level STNs from iread table
+    """     
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -692,7 +848,16 @@ def get_iread_stns(*args):
     return results
 
 
-def get_ilearn_stns(*args):
+def get_ilearn_stns(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of STNs from the student level ilearn data table
+
+    Args:
+        school_id (str): 4 digit corp id in string format
+
+    Returns:
+        pd.DataFrame: school level STNs from ilearn table
+    """     
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -710,7 +875,18 @@ def get_ilearn_stns(*args):
 
 
 # combination the above two functions
-def get_school_stns(school):
+def get_school_stns(school: str) -> pd.DataFrame:
+    """
+    uses the get_ilearn_stns() and get_iread_stns() functions to return
+    a list of all STNs appearing in either student level iread or ilearn
+    tables for the selected school.
+
+    Args:
+        school_id (str): 4 digit corp id in string format
+
+    Returns:
+        pd.DataFrame: merged df containing unique STNs from ilearn and iread table
+    """      
     ilearn_stns = get_ilearn_stns(school)
     ilearn_stns["STN"] = ilearn_stns["STN"].astype(str)
 
@@ -723,7 +899,16 @@ def get_school_stns(school):
     return school_stns
 
 
-def get_ilearn_student_data(*args):
+def get_ilearn_student_data(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of student level ilearn data for selected school
+
+    Args:
+        school_id (str): 4 digit corp id in string format
+
+    Returns:
+        pd.DataFrame: student level ilearn data
+    """     
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -740,24 +925,18 @@ def get_ilearn_student_data(*args):
     return results
 
 
-# Calculates State graduation average for all ahs for
-# all years (as a substitute for state or corp avg)
-def get_ahs_averages():
-    params = dict(id="")
-    q = text(
-        """
-        SELECT *
-            FROM academic_data_hs
-            WHERE SchoolType = "AHS"
-        """
-    )
+def get_attendance_data(school_id: str, school_type: str, year: str) -> pd.DataFrame:
+    """
+    returns a dataframe of attendance data for selected school for 
+    a particular year
 
-    results = run_query(q, params)
-
-    return results
-
-
-def get_attendance_data(school_id, school_type, year):
+    Args:
+        school_id (str): 4 digit school id in string format
+        school_type (str): k8, hs, or k12
+        year (str): selected year
+    Returns:
+        pd.DataFrame: attendance data
+    """      
     params = dict(id=school_id)
 
     # NOTE: AHS attendance data is stored in the hs table. K12 attendance
@@ -845,8 +1024,16 @@ def get_attendance_data(school_id, school_type, year):
     return attendance_rate
 
 
-# k8 academic data for single school
-def get_proficiency_data(*args):
+def get_proficiency_data(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of k8 academic data for single school
+
+    Args:
+        school_id (str): 4 digit school id in string format
+
+    Returns:
+        pd.DataFrame: ilearn proficiency data
+    """       
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -864,7 +1051,18 @@ def get_proficiency_data(*args):
     return results
 
 
-def get_corporation_academic_data(*args):
+def get_corporation_academic_data(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of k8 academic data for a single school
+    corporation
+
+    Args:
+        school_id (str): 4 digit school id in string format
+        school_type (str): k8, hs, ahs, k12
+
+    Returns:
+        pd.DataFrame: ilearn proficiency data for corporation
+    """      
     keys = ["id", "type"]
     params = dict(zip(keys, args))
 
@@ -892,7 +1090,17 @@ def get_corporation_academic_data(*args):
     return results
 
 
-def get_growth_data(*args):
+def get_growth_data(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of k8 academic growth data for single school
+    (using majority enrolled school id)
+
+    Args:
+        school_id (str): 4 digit school id in string format
+        
+    Returns:
+        pd.DataFrame: ilearn growth data
+    """      
     keys = ["id"]
     params = dict(zip(keys, args))
 
@@ -911,9 +1119,20 @@ def get_growth_data(*args):
     return results
 
 
-# NOTE: Using "SchoolTotal|ELATotalTested" as a proxy for school
-# size for k8 schools.
-def get_school_coordinates(*args):
+def get_school_coordinates(*args: str) -> pd.DataFrame:
+    """
+    returns a dataframe of k8 academic growth data for single school
+    (using majority enrolled school id). NOTE: Using "SchoolTotal|ELATotalTested"
+    as a proxy for school size for k8 schools.
+
+    Args:
+        school_id (str): 4 digit school id in string format
+        school_type (str): k8, hs, ahs
+
+    Returns:
+        pd.DataFrame: dataframe of school coordinate information, used for
+            finding comparison schools
+    """      
     keys = ["year", "type"]
     params = dict(zip(keys, args))
 
@@ -945,9 +1164,6 @@ def get_school_coordinates(*args):
     return run_query(q, params)
 
 
-# Where all the magic happens. Gets academic data and
-# formats it for display. NOTE: This needs to be separated
-# and refactored.
 def get_academic_data(*args):
     """Where the magic happens. Gets academic data for school, geo school corporation,
     and comparable schools, if relevant, and formats it for tables and figs depending
@@ -996,13 +1212,26 @@ def get_academic_data(*args):
     return results
 
 
-# TODO: merge into get_academic_data() (currently only used
-# TODO: in multiyear academic data) - unfortunately thats a lot of differences
-# NOTE: Primary difference is multiyear data column names are school
-# names and index is Year - values are proficiency. in get_academic_data,
-# columns are YYYYSchool, YYYYN-Size, YYYYDiff, index is Category and
-# values are proficiency, nsize, diff, and rating
-def get_multiyear_data(*args):
+# TODO: merge into get_academic_data() (currently only used in multiyear academic data)
+def get_multiyear_data(*args) -> pd.DataFrame:
+    """
+    Gets academic data for school, geo school corporation, and comparable schools, 
+    and formats it for table and fig on the multi-year analysis page. The primary
+    difference between this and get_academic_data() is that multiyear data column
+    names are school names and index is Year - values are proficiency. get_academic_data
+    returned columns are YYYYSchool, YYYYN-Size, YYYYDiff, index is Category and
+    values are proficiency, nsize, diff, and rating.
+
+    Args:
+    school_id (str): 4 digit school it in str format
+    comp_list (list): list of cmparable schools
+    category (str): ELA/Math/EBRW/Math/Graduates, etc.
+    year (str): selected year
+    flag (str): sat/grad
+
+    Returns:
+        pd.DataFrame: dataframe of multi-year academic data
+    """    
     keys = ["school_id", "comp_list", "category", "year", "flag"]
     params = dict(zip(keys, args))
 

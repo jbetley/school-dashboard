@@ -192,7 +192,7 @@ def update_about_page(year: str, school: str):
     main_container = {"display": "none"}
     empty_container = {"display": "block"}
     no_data_to_display = create_empty_page_layout(
-        "No Data to Display", "School Enrollment & Demographics"
+        "School Enrollment & Demographics", "No Data to Display"
     )
 
     # see full color list in globals.py
@@ -224,7 +224,7 @@ def update_about_page(year: str, school: str):
 
     if len(school_demographics.index) == 0:
         enroll_table = create_empty_table_layout(
-            "No Data to Display", enroll_title, "six"
+            enroll_title, "No Data to Display", "six"
         )
         subgroup_fig = no_data_fig_label("Enrollment by Subgroup", 400)
         ethnicity_fig = no_data_fig_label("Enrollment by Ethnicity", 400)

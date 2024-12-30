@@ -134,10 +134,10 @@ def update_academic_analysis_multiyear(
     analysis_multi_dropdown_container = {"display": "none"}
 
     k8_analysis_multi_no_data = create_empty_page_layout(
-        "No Data to Display.", "Comparison Data - K-8 Academic Data"
+        "Comparison Data - K-8 Academic Data", "No Data to Display."
     )
     hs_analysis_multi_no_data = create_empty_page_layout(
-        "No Data to Display.", "Comparison Data - High School Academic Data"
+        "Comparison Data - High School Academic Data", "No Data to Display."
     )
 
     analysis__multi_notes_label = ""

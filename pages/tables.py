@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/19/24
+# date:     12/29/24
 
 import pandas as pd
 from typing import Tuple
@@ -27,6 +27,8 @@ def create_hovercard_popup(id: list, metric_strings: dict) -> Tuple[list, list]:
 
     Args:
         id (list): one or more metric id strings in a list
+        metric_strings (dict): a dictionary containing the strings themselves with
+            the metric id as the key
 
     Returns:
         header (list): a dash html object in a list
@@ -123,16 +125,15 @@ def empty_table(text: str) -> dash_table.DataTable:
     return empty_table
 
 
-def create_empty_page_layout(text: str, label: str = "No Data to Display") -> list:
+def create_empty_page_layout(label: str, text: str = "No Data to Display") -> list:
     """
-    [no_data_page]
     Uses empty_table function and returns empty table with given label and content. This
     table has a fixed column size (eight cols) and is meant to use when there is no data
     at all to be displayed on a page.
 
     Args:
         label (str): string label
-        text (str)
+        text (str): string displayed inside table
 
     Returns:
         table_layout (list): dash html.Div objects enclosing a dash html.Label
@@ -158,10 +159,9 @@ def create_empty_page_layout(text: str, label: str = "No Data to Display") -> li
 
 
 def create_empty_table_layout(
-    text: str, label: str = "No Data to Display", width: str = "four"
+    label: str, text: str = "No Data to Display", width: str = "four"
 ) -> list:
     """
-    [no_data_table]
     Uses empty_table function and returns empty table with given label and content.
 
     Args:
@@ -353,8 +353,9 @@ def create_growth_table(all_data: pd.DataFrame, label: str = "") -> list:
     Students
 
     Args:
+        all_data (pd.DataTable): dash dataTable
         label (str): Table title
-        content (pd.DataTable): dash dataTable
+
     Returns:
         table_layout (list): dash html.Div enclosing html.Label and DataTable
     """
@@ -561,9 +562,9 @@ def create_key_table(data: pd.DataFrame, label: str = "", width: int = 0) -> lis
     on academic_information.py page.
 
     Args:
-        label (String): Table title
         data (pd.DataTable): dash dataTable
-        table_type (String): type of table.
+        label (String): table title
+        width (int): column width (instead of basing it on size of cols)
 
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
@@ -687,13 +688,11 @@ def create_simple_table(data: pd.DataFrame, label: str) -> list:
     Takes a dataframe of two or more columns and a label and creates a single
     header table with borders around each cell. If more rows are added, need
     to adjust logic to remove horizontal borders between rows.
-
     Note: Special layout if "IREAD", "WIDA", or "Attendance" is passed as a label.
 
     Args:
-        label (String): table title
         data (pd.DataTable): dash dataTable
-        table_type (String): type of table.
+        label (String): table title
 
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
@@ -891,8 +890,8 @@ def create_multi_header_table(data: pd.DataFrame, label: str) -> list:
     Takes a dataframe of two or more columns and a label, and creates a table with multi-headers.
 
     Args:
-        label (String): Table title
         data (pd.DataTable): dash dataTable
+        label (String): Table title
 
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
@@ -1403,8 +1402,10 @@ def create_discipline_table(data: pd.DataFrame) -> list:
 
 def create_single_header_table(data: pd.DataFrame) -> list:
     """
-    Takes a dataframe of two or more columns and a label, and creates a table with single-headers.
-    Used for certain tables on Academic Information page.
+    Takes a dataframe of two or more columns and a label, and creates a
+    table with single-headers. Used for certain tables on Academic
+    Information page.
+
     Args:
         data (pd.DataTable): dash dataTable
 
@@ -1539,21 +1540,23 @@ def create_single_header_table(data: pd.DataFrame) -> list:
     return table_layout
 
 
-def create_metric_table(label: list, values: pd.DataFrame) -> list:
+def create_metric_table(df: pd.DataFrame, label: list) -> list:
     """
-    Takes a label and a dataframe consisting of Rating and Metric Columns and returns
-    a dash datatable. NOTE: could possibly be less complicated than it is, or maybe not-
-    gonna leave it up to future me. N-Size data is used for tooltips (previous versions
-    of this file on github have a version where N-Size are columns in the table).
+    Takes a label and a dataframe consisting of Rating and Metric
+    Columns and returns a dash datatable. NOTE: could possibly be
+    less complicated than it is, or maybe not- gonna leave it up to
+    future me. N-Size data is used for tooltips (previous versions
+    of this file on github have a version where N-Size are columns
+    in the table).
 
     Args:
+        df (pd.DataTable): dash dataTable
         label (String): Table title
-        content (pd.DataTable): dash dataTable
 
     Returns:
         table (list): dash html.Div enclosing html.Label and DataTable
     """
-    data = values.copy()
+    data = df.copy()
 
     table_size = len(data.columns)
 
@@ -2010,8 +2013,8 @@ def create_comparison_table(
 
     Args:
         data (pd.DataFrame): dataframe of academic data
-        school_name (str):
-        label (str): title of table
+        trace_colors (dict): dict of {school:color} key:value pairs
+        school_id (str): 4 digit school id in str format
 
     Returns:
         table_layout (list): dash DataTable wrapped in dash html components
@@ -2072,7 +2075,7 @@ def create_comparison_table(
         # remove everything between | & % in column name
         data.columns = data.columns.str.replace(r"\|(.*?)\%", "", regex=True)
 
-    # NOTE: sort on native DataTable is ugly - explore migration to 
+    # NOTE: sort on native DataTable is ugly - explore migration to
     # dash AG Grid (sample is in about.py)
     table = dash_table.DataTable(
         data.to_dict("records"),

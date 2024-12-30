@@ -61,7 +61,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
     main_container = {"display": "block"}
     empty_container = {"display": "none"}
     no_data_to_display = create_empty_page_layout(
-        "No Data to Display.", selected_year_string + " Financial Analysis"
+        selected_year_string + " Financial Analysis", "No Data to Display."
     )
 
     selected_school = get_school_index(school)
@@ -785,7 +785,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 ]
             else:
                 financial_ratios_table = create_empty_table_layout(
-                    "No Data to Display.", "Financial Ratios", "none"
+                    "Financial Ratios", "No Data to Display.", "none"
                 )
 
     return (

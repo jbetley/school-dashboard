@@ -3,7 +3,7 @@
 #########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/19/24
+# date:     12/29/24
 
 from typing import Tuple
 import pandas as pd
@@ -255,9 +255,8 @@ def check_total_tested(
 ) -> pd.DataFrame:
     """
     Drop all columns for a Category if the value of "Total Tested" for
-    the Category for the school is null or 0.
-    NOTE: This is essentially the same as the check in "Calculate
-    Proficiency"- at some point should combine.
+    the Category for the school is null or 0. NOTE: This is essentially
+    the same as the check in "Calculate Proficiency"- at some point should combine.
 
     Args:
     raw_df (pd.DataFrame): academic data
@@ -500,7 +499,7 @@ def process_growth_data(
     df: pd.DataFrame, category: str
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Process a dataframe with student levelgrowth data into two dataframes with
+    Process a dataframe with student level growth data into two dataframes with
     aggregated data using both Majority Enrolled (ME) and 162-Day counts. primary
     difference between dataframes is table data has been pivoted from long to
     wide.
@@ -606,18 +605,16 @@ def process_discipline_data(
     df: pd.DataFrame, category: str, demographic: str
 ) -> pd.DataFrame:
     """
-    Drop all columns for a Category if the value of "Total Tested" for
-    the Category for the school is null or 0.
+    Process discipline data for discipline table on about page.
 
     Args:
-    raw_df (pd.DataFrame): academic data
-    school_id (str): the SchoolID
-    school_type (str): the school type
+    df (pd.DataFrame): discipline data
+    category (str): demographic category
+    demographic (str): demographic (Black, Male, English Learner)
 
     Returns:
         data (pd.DataFrame): df with null/0 categories removed
     """
-
     data = df.copy()
 
     isOverall = False
@@ -1040,7 +1037,6 @@ def process_2yr_ilearn_data(df: pd.DataFrame, year: str) -> pd.DataFrame:
     math_data = math_data.replace({"At Proficiency": "Math Proficiency"}, regex=True)
     math_data = math_data.rename(columns={"Math Proficiency": "Proficiency"})
 
-    # merge
     merged_data = pd.concat([ela_data, math_data], axis=0)
 
     # drop excluded years
@@ -1203,8 +1199,9 @@ def process_iread_student_data(
     Args:
     df_student (pd.DataFrame): student-level ilearn proficiency data
     iread_total (pd.DataFrame): total iread proficiency for school
+
     Returns:
-        data (Tuple[pd.DataFrame, pd.DataFrame]): a dataframe of processed student level
+    data (Tuple[pd.DataFrame, pd.DataFrame]): a dataframe of processed student level
          ilearn data for table and fig.
     """
     student_data = df_student.copy()
@@ -1613,8 +1610,6 @@ def process_wida_to_iread_details(
 
     wida_data = wida_df.copy()
     iread_data = iread_df.copy()
-
-    # all_stns = get_school_stns(school_id)
 
     wida_data["STN"] = wida_data["STN"].astype(str)
 
