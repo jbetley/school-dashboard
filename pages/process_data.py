@@ -18,14 +18,12 @@ from .globals import (
     ethnicity,
     subgroup,
 )
-
 from .load_data import (
     get_ilearn_student_data,
     get_iread_student_data,
     get_excluded_years,
     get_school_coordinates,
 )
-
 from .calculations import (
     calculate_proficiency_manually,
     round_percentages,
@@ -369,7 +367,8 @@ def transpose_data(raw_df: pd.DataFrame, school_type: str) -> pd.DataFrame:
         #   Grade 12 = AHS|Actual Graduates/AHS|Actual Enrollment
         #   Total (Cohort) = Total|Graduates/Total|Cohort Count
 
-        # NOTE: CCR Percentage uses "|Count", grad rates use "|Cohort Count", SAT uses "Total Tested"
+        # NOTE: CCR Percentage uses "|Count", grad rates use "|Cohort Count",
+        # SAT uses "Total Tested"
         tested_cols = "Total Tested|Cohort Count|Count|Year"
         filter_cols = r"^Category|CCR Percentage|Grade 12\|Graduation Rate|Total\|Graduation Rate|ADM Average|Graduation to Enrollment\|Graduation Rate|Benchmark \%|Below|Approaching|At|^Year$"
         substring_dict = {
@@ -392,7 +391,8 @@ def transpose_data(raw_df: pd.DataFrame, school_type: str) -> pd.DataFrame:
     # convert the n-size category names into a substring of the data category
     # names and then merge the two dataframes based on a substring match
     # e.g., use the substring dict to convert "Graduation to Enrollment|Cohort Count" to
-    # the substring "Graduation to Enrollment|Graduation" which matches "Graduation to Enrollment|Graduation Rate"
+    # the substring "Graduation to Enrollment|Graduation" which matches
+    # "Graduation to Enrollment|Graduation Rate"
     df.columns = df.columns.astype(str)
 
     tested_data = df.filter(regex=tested_cols, axis=1).copy()

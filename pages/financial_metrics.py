@@ -3,11 +3,10 @@
 ######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     03/25/24
+# date:     12/29/24
 
 import dash
-from dash import html, dash_table, Input, State, Output, callback
-import dash_bootstrap_components as dbc
+from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
 
@@ -22,46 +21,6 @@ from .tables import (
 from .string_helpers import convert_to_svg_circle
 
 dash.register_page(__name__, top_nav=True, path="/financial_metrics", order=2)
-
-
-# # Financial data type (school or network)
-# @callback(
-#     Output("financial-metrics-radio", "options"),
-#     Output("financial-metrics-radio", "value"),
-#     Output("financial-metrics-radio-container", "style"),
-#     Input("charter-dropdown", "value"),
-#     State("financial-metrics-radio", "value"),
-# )
-# def radio_finance_info_selector(school: str, finance_value_state: str):
-#     selected_school = get_school_index(school)
-
-#     value_default = "school-finance"
-#     finance_value = value_default
-
-#     if selected_school["Network"].values[0] == "None":
-#         finance_options = []
-#         radio_input_container = {"display": "none"}
-
-#     else:
-#         finance_options = [
-#             {"label": "School", "value": "school-finance"},
-#             {"label": "Network", "value": "network-finance"},
-#         ]
-#         radio_input_container = {"display": "block"}
-
-#     if finance_value_state:
-#         # reset state when changing dropdown from a school with network to one without
-#         if (
-#             finance_value_state == "network-finance"
-#             and selected_school["Network"].values[0] == "None"
-#         ):
-#             finance_value = value_default
-#         else:
-#             finance_value = finance_value_state
-#     else:
-#         finance_value = value_default
-
-#     return finance_options, finance_value, radio_input_container
 
 
 @callback(
@@ -107,13 +66,15 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
         )
 
     else:
-        # If the selected school is a guest school, load dummy data (Schooly McSchoolface).
+        # If the selected school is a guest school, load dummy
+        # data (Schooly McSchoolface).
         if selected_school["Guest"].values[0] == "Y":
             school = "9999"
 
         financial_data = get_financial_data(school)
 
-        # don't display school name in title if the school isn't part of a network
+        # don't display school name in title if the school isn't
+        # part of a network
         if selected_school["Network"].values[0] == "None":
             if selected_school["Guest"].values[0] == "Y":
                 table_title = (
@@ -138,7 +99,6 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
             "No Data to Display.", selected_year_string + " Financial Indicators"
         )
 
-        # if no data, show no data page
         financial_indicators_container = {"display": "none"}
         main_container = {"display": "none"}
         empty_container = {"display": "block"}
@@ -150,7 +110,9 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
         available_years = financial_data.columns.difference(
             ["Category"], sort=False
         ).tolist()
+
         available_years = [int(c[:4]) for c in available_years]
+
         most_recent_finance_year = max(available_years)
 
         years_to_exclude = most_recent_finance_year - selected_year_numeric
@@ -182,7 +144,7 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
             empty_container = {"display": "block"}
 
         else:
-            # sort Year cols in ascending order (ignore Category)
+
             financial_data = (
                 financial_data.set_index("Category")
                 .sort_index(ascending=True, axis=1)
@@ -274,7 +236,6 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
                 # up to metric_display_years # of columns.
                 financial_metrics = financial_metrics.iloc[:, -metric_display_years:]
 
-                # add back "Metric" column
                 financial_metrics.insert(loc=0, column="Metric", value=tmp_metric)
 
                 # convert ratings to purty colored circles
@@ -308,7 +269,6 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
                 headers = financial_metrics.columns.tolist()
 
                 # determine # of columns and width of category column for display
-
                 clean_headers = ["Rate" if "Rating" in c else c for c in headers]
                 year_headers = [
                     i for i in headers if "Rating" not in i and "Metric" not in i
@@ -448,7 +408,8 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
                     )
                 ]
 
-            # Financial Indicators
+            # Financial Indicators #
+            
             # Networks do not have financial indicators
             if (
                 len(financial_indicators.columns) <= 1
@@ -588,8 +549,8 @@ def update_financial_metrics(school: str, year: str, radio_value: str):
                 ]
 
         # Financial Metric Definitions - Currently this is always displayed
+        
         # NOTE: At some point would like to style this better. Markdown or dmc Table?
-        # (see Academic Metrics tooltips)
         financial_metrics_definitions_data = [
             [
                 "Current Ratio = Current Assets ÷ Current Liabilities",
@@ -725,30 +686,6 @@ def layout():
                 ],
                 className="row",
             ),
-            # html.Div(
-            #     [
-            #         html.Div(
-            #             [
-            #                 html.Div(``
-            #                     [
-            #                         dbc.RadioItems(
-            #                             id="financial-metrics-radio",
-            #                             className="btn-group",
-            #                             inputClassName="btn-check",
-            #                             labelClassName="btn btn-outline-primary",
-            #                             labelCheckedClassName="active",
-            #                             value=[],
-            #                             persistence=False,
-            #                         ),
-            #                     ],
-            #                     className="radio-group-finance",
-            #                 )
-            #             ],
-            #             className="bare-container--flex--center twelve columns",
-            #         ),
-            #     ],
-            #     id="financial-metrics-radio-container",
-            # ),
             html.Div(
                 [
                     html.Div(

@@ -46,8 +46,6 @@ def clean_discipline_data(
 
     data = data.rename(columns={"Test Year": "Year"})
 
-    # Drop years of data that have been excluded by the
-    # selected year (are later than)
     excluded_years = get_excluded_years(year)
 
     if excluded_years:
@@ -182,7 +180,8 @@ def clean_adm_data(df: pd.DataFrame) -> pd.DataFrame:
     for col in data:
         data[col] = pd.to_numeric(data[col], errors="coerce")
 
-    # Average each group of 2 columns and use name of 2nd column (Spring) for result
+    # Average each group of 2 columns and use name of 2nd column
+    # (Spring) for result
     final = data.groupby(np.arange(len(data.columns)) // 2, axis=1).mean()
     final.columns = adm_columns
 
@@ -192,15 +191,31 @@ def clean_adm_data(df: pd.DataFrame) -> pd.DataFrame:
     return final
 
 
-def clean_academic_data(df, schools, school_type, year, page):
+def clean_academic_data(
+        df: pd.DataFrame, schools: list, school_type: str, year: str, page: str
+    ) -> pd.DataFrame:
+    """
+    A big chonky function that takes raw academic data and processes it in
+    different ways for multiple pages.
+
+    Args:
+        df (pd.DataFrame): raw academic data
+        schools (list): list of school(s)
+        school_type (str): school type
+        year (str): selected year
+        page (str): sending url
+
+    Returns:
+        data (pd.DataFrame): processed dataframe
+    """    
     school_data = df.copy()
 
     school_data = school_data.fillna(value=np.nan)
 
     school_id = schools[0]
 
-    # get corp data (for academic_metrics and academic_analysis_single_year)
-    # and add to dataframe
+    # corp data (for academic_metrics and academic_analysis_single_year)
+    # no corp data for AHS other than ahs grad average
     if school_type == "ahs":
         raw_ahs_data = get_ahs_averages()
         corp_data = calculate_ahs_average(raw_ahs_data)
@@ -276,8 +291,9 @@ def clean_academic_data(df, schools, school_type, year, page):
                     ahs_data["AHS|CCR"] / ahs_data["AHS|Actual Graduates"]
                 )
 
-            # AHS|Actual Graduates is used in three calculations where we want to track N-Size,
-            # "Graduation Graduation to Enrollment", "Grade 12 Graduation", and "CCR Percentage"
+            # AHS|Actual Graduates is used in three calculations where we want to
+            # track N-Size, "Graduation Graduation to Enrollment", "Grade 12
+            # Graduation", and "CCR Percentage"
             ahs_data["Graduation to Enrollment|Cohort Count"] = ahs_data[
                 "AHS|Actual Graduates"
             ]
@@ -342,7 +358,7 @@ def clean_academic_data(df, schools, school_type, year, page):
             # calculation (weighted 90%). the denominator is the school's
             # within-year-average number of students (ADM average), the numerator
             # is the total number of graduates for the assessed year, and then
-            # multiply the quotient by 4
+            # quotient is multiplied by 4
             processed_data["Graduation to Enrollment|Graduation Rate"] = (
                 processed_data["Graduation to Enrollment|Cohort Count"]
                 / processed_data["ADM Average"]
@@ -418,7 +434,7 @@ def clean_academic_data(df, schools, school_type, year, page):
         # this is school, school corporation, and comparable school data
         processed_data = processed_data.reset_index()
 
-    # Page specific processing
+## Page specific processing (NOTE: Could split this into separate functions)
 
     # the dataframe can be empty if all columns other than the 1st
     # Year are null or if the dataframe has no school_id
@@ -436,7 +452,7 @@ def clean_academic_data(df, schools, school_type, year, page):
             keep_years = years[:5]
             processed_data = processed_data[processed_data["Year"].isin(keep_years)]
 
-        # TODO add multipage analysis data (currently in get_multiyear_data)
+        # TODO add multipage analysis data processing here (currently in get_multiyear_data)
         if page == "analysis":
             ## HS/AHS academic_analysis_single.py
             if school_type == "hs" or school_type == "ahs":

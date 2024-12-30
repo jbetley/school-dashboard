@@ -3,7 +3,7 @@
 ########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/22/24
+# date:     12/29/24
 
 import pandas as pd
 import numpy as np
@@ -457,7 +457,6 @@ def calculate_adult_high_school_metrics(
                 state_grades[col] = ""
 
         # NOTE: this is the former letter grade code just in case
-
         # # Letter grades are  stored in demographics table
         # # using Corp (not School) ID. so we need to convert
         # selected_school = get_school_index(school)

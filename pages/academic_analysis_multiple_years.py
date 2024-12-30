@@ -27,7 +27,7 @@ dash.register_page(
 )
 
 
-# Set dropdown options for comparison schools
+# comparison schools dropdown
 @callback(
     Output("analysis-multiyear-comparison-dropdown", "options"),
     Output("analysis-multiyear-input-warning", "children"),
@@ -54,7 +54,7 @@ def set_dropdown_options(
     selected_school = get_school_index(school_id)
     school_type = selected_school["School Type"].values[0]
 
-    # Exception for CHS (k12 pre 2021, k8 after)
+    # CHS exception (see app.py)
     if int(school_id) == 5874 and numeric_year < 2021:
         school_type = "k12"
 
@@ -68,97 +68,11 @@ def set_dropdown_options(
         school_id, year, comparison_schools, academic_type_value
         )
 
-    # # School ID, School Name, Lat & Lon
-    # schools_by_distance = get_school_coordinates(numeric_year, school_type)
-
-    # # Drop any school not testing at least 20 students. "Total|ELATotalTested"
-    # # is a proxy for school size here (probably only impacts ~20 schools)
-    # # the second condition ensures that the school is retained
-    # if school_type == "k8":
-    #     schools_by_distance = schools_by_distance[
-    #         (schools_by_distance["Total|ELA Total Tested"].astype(int) >= 20)
-    #         | (schools_by_distance["School ID"].astype(int) == int(school_id))
-    #     ]
-
-    # # If school doesn't exist
-    # if int(school_id) not in schools_by_distance["School ID"].values:
-    #     return [], [], []
-
-    # else:
-    #     # NOTE: Before we do the distance check, we reduce the size of the
-    #     # df by removing schools where there is no or only one grade overlap
-    #     # between the comparison schools. The variable "overlap" is one less
-    #     # than the the number of grades that we want as a minimum (a value of
-    #     # "1" means a 2 grade overlap, "2" means 3 grade overlap, etc.).
-
-    #     # AHS don't have a gradespan in the technical sense
-    #     if school_type != "ahs":
-    #         schools_by_distance = check_for_gradespan_overlap(
-    #             school_id, schools_by_distance
-    #         )
-
-    #     comparison_list = calculate_comparison_school_list(
-    #         school_id, schools_by_distance, 20
-    #     )
-
-    #     default_options = [
-    #         {"label": name, "value": id} for name, id in comparison_list.items()
-    #     ]
-    #     options = default_options
-
-    #     # value for number of default display selections and maximum
-    #     # display selections (because of zero indexing, max should be
-    #     # 1 less than actual desired number)
-    #     default_num_to_display = 4
-    #     max_num_to_display = 7
-
-    #     # used to display message if the number of selections exceeds the max
-    #     input_warning = None
-
-    #     # test whether any of the school ids in the current_comparison_school
-    #     # list are present in the new comparison_schools (input). isdisjoint()
-    #     # returns True if two sets don't have any common items between them.
-    #     # If False, we want to replace comparison_schools with
-    #     # current_comparison_school list. this will also take care of the initial
-    #     # load because an empty list return False
-    #     current_comparison_schools = [d["value"] for d in options]
-
-    #     if not comparison_schools or (
-    #         comparison_schools
-    #         and not set(comparison_schools).isdisjoint(current_comparison_schools)
-    #         == False
-    #     ):
-    #         comparison_schools = [d["value"] for d in options[:default_num_to_display]]
-
-    #     else:
-    #         if len(comparison_schools) > max_num_to_display:
-    #             input_warning = html.P(
-    #                 id="multiyear-input-warning",
-    #                 children="Limit reached (Maximum of "
-    #                 + str(max_num_to_display + 1)
-    #                 + " schools).",
-    #             )
-    #             options = [
-    #                 {
-    #                     "label": option["label"],
-    #                     "value": option["value"],
-    #                     "disabled": True,
-    #                 }
-    #                 for option in default_options
-    #             ]
-
-    #     # find schools in current list that aren't in the recently regenerated
-    #     # comparison_schools list (catches schools that do not exist for a year)
-    #     remove_schools = [
-    #         x for x in comparison_schools if x not in current_comparison_schools
-    #     ]
-    #     comparison_schools = [x for x in comparison_schools if x not in remove_schools]
-
     return school_options, input_warning, comparison_schools
 
 
 @callback(
-    Output("trace-color-state-multiyear", "data"),  # dcc.store for existing trace colors
+    Output("trace-color-state-multiyear", "data"),
     Output("analysis-multiyear-dropdown-container", "style"),
     Output("linechart-year-over-year-grade", "children"),
     Output("linechart-year-over-year-hs", "children"),
@@ -196,7 +110,7 @@ def update_academic_analysis_multiyear(
     selected_school = get_school_index(school)
     school_type = selected_school["School Type"].values[0]
 
-    # CHS Exception (see above)
+    # CHS exception (see app.py)
     if int(school) == 5874 and int(year) < 2021:
         school_type = "k12"
 

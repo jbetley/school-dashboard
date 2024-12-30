@@ -3,7 +3,7 @@
 ###################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/17/24
+# date:     12/29/24
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -47,7 +47,6 @@ def update_academic_info_growth_page(school: str, year: str, radio_category: str
 
     selected_school = get_school_index(school)
 
-    # Radio buttons don't play nice
     if not radio_category:
         radio_category = "all"
 

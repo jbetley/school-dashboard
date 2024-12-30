@@ -3,11 +3,10 @@
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     10/07/24
+# date:     12/29/24
 
 import dash
-from dash import html, dash_table, Input, State, Output, callback
-import dash_bootstrap_components as dbc
+from dash import html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy as np
@@ -17,47 +16,6 @@ from .load_data import get_school_index, get_financial_data
 from .tables import create_empty_page_layout
 
 dash.register_page(__name__, top_nav=True, path="/financial_information", order=1)
-
-
-# Financial data type (school or network)
-# @callback(
-#     Output("financial-information-radio", "options"),
-#     Output("financial-information-radio", "value"),
-#     Output("financial-information-radio-container", "style"),
-#     Input("charter-dropdown", "value"),
-#     State("financial-information-radio", "value"),
-# )
-# def radio_finance_info_selector(school: str, finance_value_state: str):
-#     selected_school = get_school_index(school)
-
-#     value_default = "school-finance"
-#     finance_value = value_default
-
-#     if selected_school["Network"].values[0] == "None":
-#         finance_options = []
-#         radio_input_container = {"display": "none"}
-
-#     else:
-#         finance_options = [
-#             {"label": "School", "value": "school-finance"},
-#             {"label": "Network", "value": "network-finance"},
-#         ]
-#         radio_input_container = {"display": "block"}
-
-#     if finance_value_state:
-#         # reset state when changing dropdown from a school with
-#         # network to one without
-#         if (
-#             finance_value_state == "network-finance"
-#             and selected_school["Network"].values[0] == "None"
-#         ):
-#             finance_value = value_default
-#         else:
-#             finance_value = finance_value_state
-#     else:
-#         finance_value = value_default
-
-#     return finance_options, finance_value, radio_input_container
 
 
 @callback(
@@ -102,13 +60,15 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 
     else:
         # school financial data
-        # If the selected school is a guest school, load dummy data (Schooly McSchoolface).
+        # If the selected school is a guest school, load
+        # dummy data (Schooly McSchoolface).
         if selected_school["Guest"].values[0] == "Y":
             school = "9999"
 
         financial_data = get_financial_data(school)
 
-        # don't display the school name in table title if the school isn't part of a network
+        # don't display the school name in table title if the
+        # school isn't part of a network
         if selected_school["Network"].values[0] == "None":
             if selected_school["Guest"].values[0] == "Y":
                 table_title = (
@@ -156,15 +116,16 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             )
 
         if len(financial_data.columns) > 1:
-            # change all cols to numeric except for Category
+
             for col in financial_data.columns[1:]:
                 financial_data[col] = pd.to_numeric(
                     financial_data[col], errors="coerce"
                 )
 
-            # NOTE: these categories already exist in the df, but we may remove them
-            # later, so they are calculated here. Because the rows already exist in the
-            # dataframe, we set Category as index (so we can use .loc with the Category names):
+            # NOTE: these categories already exist in the df, but we may
+            # remove them later, so they are calculated here. Because the
+            # rows already exist in the dataframe, we set Category as index
+            # (so we can use .loc with the Category names)
             financial_data = financial_data.set_index(["Category"])
             financial_data.loc["Total Grants"] = (
                 financial_data.loc["State Grants"]
@@ -179,16 +140,15 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
                 - financial_data.loc["Operating Expenses"]
             )
 
-            # reset index, which shifts Category back to column one
             financial_data = financial_data.reset_index()
 
-            # Ensure that only the "max_display_years" number of years worth of financial
-            # data is displayed (add +1 to max_display_years to account for the category
-            # column). To show all years of data, comment out this line. NOTE: column (years)
-            # are descending at this point, so we count from the front of the df
+            # Ensure that only the "max_display_years" number of years worth
+            # of financial data is displayed (add +1 to max_display_years to
+            # account for the category column). To show all years of data,
+            # comment out this line. NOTE: column (years) are descending at
+            # this point, so we count from the front of the df
             financial_data = financial_data.iloc[:, : (max_display_years + 1)]
 
-            # sort Year cols in ascending order (ignore Category)
             financial_data = (
                 financial_data.set_index("Category")
                 .sort_index(ascending=True, axis=1)
@@ -199,7 +159,8 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             string_years.pop(0)
             string_years.reverse()
 
-            # remove audit and other indicator data (it is displayed on the financial metrics page)
+            # remove audit and other indicator data (it is displayed on the
+            # financial metrics page)
             financial_data = financial_data.loc[
                 : (financial_data["Category"] == "Audit Information").idxmax() - 1
             ]
@@ -266,7 +227,8 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
             financial_data = financial_data.reindex(index=row_order)
             financial_data = financial_data.reset_index()
 
-            # Force correct format for display of df in datatable (accounting, no decimals, no "$")
+            # Force correct format for display of df in datatable (accounting,
+            # no decimals, no "$")
             for year in string_years:
                 financial_data[year] = pd.Series(
                     ["{:,.0f}".format(val) for val in financial_data[year]],
@@ -420,30 +382,6 @@ def update_financial_information_page(school: str, year: str, radio_value: str):
 def layout():
     return html.Div(
         [
-            # html.Div(
-            #     [
-            #         html.Div(
-            #             [
-            #                 html.Div(
-            #                     [
-            #                         dbc.RadioItems(
-            #                             id="financial-information-radio",
-            #                             className="btn-group",
-            #                             inputClassName="btn-check",
-            #                             labelClassName="btn btn-outline-primary",
-            #                             labelCheckedClassName="active",
-            #                             value=[],
-            #                             persistence=False,
-            #                         ),
-            #                     ],
-            #                     className="radio-group-finance",
-            #                 )
-            #             ],
-            #             className="bare-container--flex--center twelve columns",
-            #         ),
-            #     ],
-            #     id="financial-information-radio-container",
-            # ),
             html.Div(
                 [
                     html.Div(id="financial-information-table", children=[]),

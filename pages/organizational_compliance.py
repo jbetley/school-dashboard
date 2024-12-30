@@ -90,7 +90,6 @@ def update_organizational_compliance(school, year):
             # column). To show all years of data, comment out this line.
             financial_data = financial_data.iloc[:, : (max_display_years + 1)]
 
-            # sort Year cols in ascending order (ignore Category)
             financial_data = (
                 financial_data.set_index("Category")
                 .sort_index(ascending=True, axis=1)
@@ -104,7 +103,7 @@ def update_organizational_compliance(school, year):
                 ["Standard", "Description"]
             ] = organizational_indicators["Category"].str.split("|", expand=True)
 
-            # reorder and clean up dataframe
+            # reorder and clean up
             organizational_indicators = organizational_indicators.drop(
                 "Category", axis=1
             )

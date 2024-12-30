@@ -3,11 +3,10 @@
 #######################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/22/24
+# date:     12/29/24
 
 import dash
-from dash import dcc, html, dash_table, Input, State, Output, callback
-import dash_bootstrap_components as dbc
+from dash import dcc, html, dash_table, Input, Output, callback
 from dash.exceptions import PreventUpdate
 from dash.dash_table import FormatTemplate
 import plotly.express as px
@@ -15,7 +14,6 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from .globals import max_display_years
-
 from .load_data import (
     get_school_index,
     get_financial_data,
@@ -26,7 +24,6 @@ from .tables import (
     create_empty_page_layout,
     create_empty_table_layout,
 )
-
 from .process_data import find_valid_year
 from .charts import loading_fig
 from .calculations import round_nearest
@@ -206,7 +203,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             empty_container = {"display": "block"}
 
         else:
-            # NOTE: see chart_helpers.py for full list of colors
+
             color = ["#74a2d7", "#df8f2d"]
 
             for col in financial_data.columns:
@@ -249,7 +246,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             string_fig_years.pop(0)
             string_fig_years.reverse()
 
-            # TODO: Create function
+            # TODO: Turn creation of two figs into single function?
             ## Fig 1: Operating Revenue, Operating Expenses, & Change in
             # Net Assets (Net Income) show Operating Revenue and Expenses
             # as grouped bars and Change in Net Assets as line
@@ -465,10 +462,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 assets_liabilities_line_data.loc[:, :].values.flatten().tolist()
             )
 
-            # assets_liabilities_line_data = financial_data_fig.iloc[10].tolist()
-            # assets_liabilities_line_data.pop(0)
-            # assets_liabilities_line_data.reverse()
-
             assets_liabilities_line_fig = px.line(
                 x=string_fig_years,
                 y=assets_liabilities_line_data,
@@ -531,7 +524,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                 financial_data.insert(loc=i, column=missing_year[0], value=0)
                 financial_data = financial_data[default_headers]
 
-            # sort Year cols in ascending order (ignore Category)
             financial_data = (
                 financial_data.set_index("Category")
                 .sort_index(ascending=True, axis=1)
@@ -614,7 +606,7 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
                     )
 
                 # Create an empty df in the shape and order that we want
-                # (e.g., Category, YYYY, YYYY-1), use combine_first to update
+                # (e.g., Category, YYYY, YYYY-1). use combine_first to update
                 # all null elements in the empty df with a value in the same
                 # location in the existing df and then merge
                 # https://stackoverflow.com/questions/56842140/pandas-merge-dataframes-with-shared-column-fillna-in-left-with-right
@@ -817,30 +809,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
 def layout():
     return html.Div(
         [
-            # html.Div(
-            #     [
-            #         html.Div(
-            #             [
-            #                 html.Div(
-            #                     [
-            #                         dbc.RadioItems(
-            #                             id="financial-analysis-radio",
-            #                             className="btn-group",
-            #                             inputClassName="btn-check",
-            #                             labelClassName="btn btn-outline-primary",
-            #                             labelCheckedClassName="active",
-            #                             value=[],
-            #                             persistence=False,
-            #                         ),
-            #                     ],
-            #                     className="radio-group-finance",
-            #                 )
-            #             ],
-            #             className="bare-container--flex--center twelve columns",
-            #         ),
-            #     ],
-            #     id="financial-analysis-radio-container",
-            # ),
             html.Div(
                 [
                     dcc.Loading(

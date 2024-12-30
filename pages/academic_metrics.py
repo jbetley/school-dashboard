@@ -3,7 +3,7 @@
 #####################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/22/24
+# date:     12/29/24
 
 import dash
 from dash import html, Input, Output, callback
@@ -12,28 +12,21 @@ import pandas as pd
 
 
 from .globals import ethnicity, subgroup, grades_all
-
 from .load_data import (
     get_school_index,
     get_academic_data,
     get_ilearn_student_data
 )
-
 from .clean_data import clean_academic_data
-
 from .process_data import process_2yr_ilearn_data
-
 from .tables import (
     create_metric_table,
     create_proficiency_key,
     create_empty_page_layout,
     create_empty_table_layout,
 )
-
 from .layouts import set_table_layout
-
 from .string_helpers import convert_to_svg_circle
-
 from .calculate_metrics import (
     calculate_high_school_metrics,
     calculate_adult_high_school_metrics,
@@ -43,7 +36,6 @@ from .calculate_metrics import (
     calculate_comparison_ilearn_metrics,
     calculate_metric_ratings
 )
-
 from .calculations import conditional_fillna, calculate_values
 
 dash.register_page(__name__, path="/academic_metrics", top_nav=True, order=9)
@@ -118,7 +110,7 @@ def update_academic_metrics(school: str, year: str):
     selected_school_type = selected_school["School Type"].values[0]
     selected_school_id = int(selected_school["School ID"].values[0])
 
-    # split K12 school exception (CHS)
+    # CHS exception
     if selected_school_id == 5874 and selected_year_numeric < 2021:
         selected_school_type = "k12"
 
@@ -142,6 +134,13 @@ def update_academic_metrics(school: str, year: str):
         )
 
         if len(metric_data.index) > 0:
+            # NOTE: "***" is insufficent n-size, I believe that IDOE
+            # uses "^" for "complementary suppression" (when only one
+            # subgroup is masked, complementary suppression is used to
+            # prevent users from backing into the masked value of the
+            # subgroup with simple subtraction from the overall by
+            # masking the smallest unmasked group and adding its value
+            # to the “All Masked Values” subgroup.)
             metric_data = metric_data.replace({"^": "***"})
 
             k8_metrics_container = {"display": "block"}

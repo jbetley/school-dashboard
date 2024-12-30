@@ -3,7 +3,7 @@
 ##########################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/22/24
+# date:     12/29/24
 
 import pandas as pd
 import numpy as np
@@ -36,6 +36,7 @@ def conditional_fillna(df: pd.DataFrame) -> pd.DataFrame:
         if "Diff" in i or "Tested" in i or "N-Size" in i or "(N)" in i
     ]
 
+    # NOTE: do we need to do this for "^" as well?
     # We do not want insufficient n-size in any of the fill-with-dash cols
     data[fill_with_dash] = data[fill_with_dash].replace("***", np.nan)
 
@@ -206,7 +207,8 @@ def calculate_sat_rate(df: pd.DataFrame) -> pd.DataFrame:
 
     for test in tested:
         if test in data.columns:
-            # get Category + Subject string
+            
+            # Category + Subject string
             cat_sub = test.split(" Total Tested")[0]
             data[cat_sub + " Benchmark %"] = calculate_percentage(
                 data[cat_sub + " At Benchmark"], data[test]
@@ -270,7 +272,7 @@ def calculate_proficiency(df: pd.DataFrame) -> pd.DataFrame:
 
 def calculate_proficiency_manually(series):
     # get the count of students At or Above proficiency and divide by the total #
-    # of students in the series (essentially calculating proficiency)
+    # of students in the series
     return (
         (series == "At Proficiency").sum() + (series == "Above Proficiency").sum()
     ) / series.value_counts().sum()
@@ -551,7 +553,7 @@ def round_percentages(percentages: list) -> list:
         percentage[0] += 1
         difference -= 1
 
-    # order by the original order
+    # sort by the original order
     result.sort(key=lambda x: x[2])
 
     # return just the percentage
@@ -692,7 +694,7 @@ def find_nearest(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """
     Based on https://stackoverflow.com/q/43020919/190597
-    Used to find the [20] nearest schools to the selected school.
+    Used to find the [#40] nearest schools to the selected school.
     Takes a dataframe of schools and their Lat and Lon coordinates and the index of the
     selected school within that list. Calculates the distances of all schools in the
     dataframe from the lat/lon coordinates of the selected school using the scipy.spatial
@@ -820,12 +822,14 @@ def check_for_gradespan_overlap(school_id: str, schools: pd.DataFrame) -> pd.Dat
 
     return schools
 
-
+# TODO: Do we need to perform a check to ensure max val cannot be higher than
+# TODO: the total returned by find nearest?
 def calculate_comparison_school_list(
     school_id: str,
     schools: pd.DataFrame,
     max: int,
 ) -> pd.DataFrame:
+    
     # before doing anything else, we need to remove all rows where Lat
     # or Lon are blank or NaN because it chokes the spatial func
     schools[["Lat", "Lon"]] = schools[["Lat", "Lon"]].replace("", np.nan)

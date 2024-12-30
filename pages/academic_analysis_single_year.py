@@ -65,9 +65,6 @@ def set_dropdown_options(
     if not year:
         year = current_academic_year
 
-    # string_year = year
-    # numeric_year = int(string_year)
-
     # clear the list of comparison_schools when a new school is
     # selected, otherwise comparison_schools will carry over
     input_trigger = ctx.triggered_id
@@ -91,158 +88,11 @@ def set_dropdown_options(
         school_id, year, existing_comparison_schools_list, academic_type_value
     )
 
-    # # School ID, School Name, Lat & Lon
-    # schools_by_distance = get_school_coordinates(numeric_year, selected_school_type)
-
-    # # Drop any school not testing at least 20 students (k8 only- probably
-    # # impacts ~20 schools). Using "Total|ELATotalTested" as a proxy for school size
-    # # We want to include the selected school regardless of its n-size
-    # if selected_school_type == "k8":
-    #     schools_by_distance["Total|ELA Total Tested"] = pd.to_numeric(
-    #         schools_by_distance["Total|ELA Total Tested"], errors="coerce"
-    #     )
-    #     schools_by_distance = schools_by_distance[
-    #         (schools_by_distance["Total|ELA Total Tested"] >= 20)
-    #         | (schools_by_distance["School ID"] == int(school_id))
-    #     ]
-
-    # # NOTE: There is some time cost for running the dropdown selection function
-    # # (typically ~0.8 - 1.2s), so we want to exit out as early as possible if we
-    # # know it isn't necessary because the selected school didn't exist
-    # if int(school_id) not in schools_by_distance["School ID"].values:
-    #     return [], [], []
-
-    # else:
-    #     # NOTE: Before we do the distance check, we reduce the size of the df by
-    #     # removing schools where there is no, or only a one grade overlap between
-    #     # the comparison schools.
-
-    #     # AHS don't have a 'gradespan' in the technical sense
-    #     if selected_school_type != "ahs":
-    #         schools_by_distance = check_for_gradespan_overlap(
-    #             school_id, schools_by_distance
-    #         )
-
-    #     num_schools_to_display = 20
-
-    #     comparison_list = calculate_comparison_school_list(
-    #         school_id, schools_by_distance, num_schools_to_display
-    #     )
-
-    #     new_comparison_schools = [
-    #         {"label": name, "value": id} for name, id in comparison_list.items()
-    #     ]
-
-    #     # value for number of default display selections and maximum
-    #     # display selections (because of zero indexing, max should be
-    #     # 1 less than actual desired number)
-    #     default_num_to_display = 4
-    #     max_num_to_display = 7
-
-    #     # used to display message if the number of selections exceeds the max
-    #     input_warning = None
-
-    #     # there are three occasions when we want to reset the list: 1) there are
-    #     # no values (existing_comparison_schools_list = []); 2) there are values,
-    #     # but none of the existing values overlap with the new values; 3) there
-    #     # are values, and there is an overlap, but the number of overlapping
-    #     # schools is less than the total number of existing schools.
-    #     # (3) should only occur when we have a K12 school selected and are switching
-    #     # between "K8" and "HS" types where there is another K12 school in the
-    #     # comparable school list. Because the K12 school is in both lists- when
-    #     # the user switches, it is the only school that will be displayed. We don't
-    #     # want this, so we reset. NOTE: Probably easier to just reset K12 display
-    #     # every time the type changes, but I'm not quite sure how to track that
-    #     # (value vs. state?)
-
-    #     # at this point "existing_comparison_schools_list" is either [] (for no
-    #     # schools selected) or a list of currently selected schools.
-    #     # "new_comparison_schools_list" is a list of all of the schools matching
-    #     # the current selection (which is triggered by a change in type from K8 to HS)
-
-    #     new_comparison_schools_list = [d["value"] for d in new_comparison_schools]
-
-    #     # count the number of schools shared by the two lists
-    #     overlap = 0
-
-    #     if not existing_comparison_schools_list:
-    #         overlap = 0
-
-    #     else:
-    #         for sch in new_comparison_schools_list:
-    #             overlap += existing_comparison_schools_list.count(sch)
-
-    #     if (
-    #         not existing_comparison_schools_list
-    #         or existing_comparison_schools_list
-    #         and (
-    #             # isdisjoint returns True if there are no common items between the sets
-    #             # there is an existing list, but there is no overlap (e.g., K8 to HS)
-    #             set(existing_comparison_schools_list).isdisjoint(
-    #                 new_comparison_schools_list
-    #             )
-    #             == True
-    #             or
-    #             # there is an existing list, and there is overlap, but the number of overlapping
-    #             # schools is less than the length of all of the existing schools
-    #             (
-    #                 set(existing_comparison_schools_list).isdisjoint(
-    #                     new_comparison_schools_list
-    #                 )
-    #                 == False
-    #                 and overlap < len(existing_comparison_schools_list)
-    #             )
-    #         )
-    #     ):
-    #         # If any of these are true, we reset options and values
-    #         comparison_schools = [
-    #             d["value"] for d in new_comparison_schools[:default_num_to_display]
-    #         ]
-    #         school_options = new_comparison_schools
-
-    #     else:
-    #         # if none of the above cases apply, we first test the length of
-    #         # the existing list to make sure it hasn't exceeded max display
-
-    #         if len(existing_comparison_schools_list) > max_num_to_display:
-    #             # if it does, we throw a warning, keep the selected values the same
-    #             # and disable all of the options
-    #             input_warning = html.P(
-    #                 id="single-year-input-warning",
-    #                 children="Limit reached (Maximum of "
-    #                 + str(max_num_to_display + 1)
-    #                 + " schools).",
-    #             )
-
-    #             comparison_schools = existing_comparison_schools_list
-
-    #             school_options = [
-    #                 {
-    #                     "label": option["label"],
-    #                     "value": option["value"],
-    #                     "disabled": True,
-    #                 }
-    #                 for option in new_comparison_schools
-    #             ]
-
-    #         else:
-    #             # if it doesn't, we return the selected list and options.
-    #             comparison_schools = existing_comparison_schools_list
-
-    #             school_options = [
-    #                 {
-    #                     "label": option["label"],
-    #                     "value": option["value"],
-    #                     "disabled": False,
-    #                 }
-    #                 for option in new_comparison_schools
-    #             ]
-
     return school_options, input_warning, comparison_schools
 
 
 @callback(
-    Output("trace-color-state-single", "data"),  # dcc.store for existing trace colors
+    Output("trace-color-state-single", "data"),
     Output("analysis-single-dropdown-container", "style"),
     Output("fig14c", "children"),
     Output("fig14d", "children"),
@@ -303,6 +153,9 @@ def update_academic_analysis_single_year(
     selected_school_type = selected_school["School Type"].values[0]
 
     # Christel House South Exception
+    # NOTE: need this on every page because school type is stored
+    # in db and thus gets reset each time get_school_index is
+    # accessed. may want to explore better way to handle type
     if int(school_id) == 5874 and numeric_year < 2021:
         selected_school_type = "k12"
 
@@ -528,7 +381,7 @@ def update_academic_analysis_single_year(
                     and not sat_subgroup_math
                 ):
                     sat_overview = no_data_fig_label(
-                        "Comparison: % of Students At Benchmark (SAT)", 200, "pretty"
+                        f"Comparison: % of Students At Benchmark (SAT)", 200, "pretty"
                     )
                     sat_overview_container = {"display": "block"}
                 else:
@@ -582,7 +435,7 @@ def update_academic_analysis_single_year(
                         sat_subgroup_container = {"display": "none"}
 
     if selected_school_type == "k8" or selected_school_type == "k12":
-        # If school is K12 and highschool tab is selected, skip k8 data
+        
         if selected_school_type == "k12" and academic_type_value == "hs":
             k8_analysis_main_container = {"display": "none"}
 
@@ -627,8 +480,6 @@ def update_academic_analysis_single_year(
 
             k8_analysis_data = k8_analysis_data.reset_index(drop=True)
 
-            # Now that *** is Nan, we drop all columns where
-            # the selected school has null data
             school_idx = k8_analysis_data.index[
                 k8_analysis_data["School ID"] == school_id
             ].tolist()[0]
@@ -639,7 +490,7 @@ def update_academic_analysis_single_year(
 
             combined_selected_data = combined_selected_data.reset_index(drop=True)
 
-            # there are 6 "info" columns- having 6 or fewer means no
+            # there are 6 "information" columns- having 6 or fewer means no
             # academic data
             if len(combined_selected_data.columns) <= 6:
                 k8_analysis_main_container = {"display": "none"}
@@ -696,7 +547,6 @@ def update_academic_analysis_single_year(
                         fig14c_table_data, trace_colors, school_id
                     )
                 else:
-                    # NOTE: This should never ever happen. So yeah.
                     fig14c_chart = no_data_fig_label(
                         "Comparison: Current Year ELA Proficiency", 200
                     )
@@ -1140,7 +990,7 @@ def layout():
         [
             html.Div(
                 [
-                    # used to store school:color data to ensure consistency
+                    # dict used to store {school:color} to ensure consistency
                     dcc.Store(
                         id="trace-color-state-single", storage_type="memory", data={}
                     ),

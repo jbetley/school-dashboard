@@ -2,7 +2,7 @@
 # ICSB Dashboard - Layout Functions #
 #####################################
 # author:   jbetley (https://github.com/jbetley)
-# version:  1.15
+# version:  1.16
 # date:     11/11/24
 
 import pandas as pd
@@ -360,8 +360,8 @@ def create_barchart_layout(
 
 def create_line_fig_layout(table: list, fig: list, label: str) -> list:
     """
-    Creates a layout combining a px.line fig and dash datatable. If table and fig are identical, it means
-    they are empty and no endnote should appear.
+    Creates a layout combining a px.line fig and dash datatable. If table and
+    fig are identical, it means they are empty and no endnote should appear.
 
     Args:
         fig (list): a px.line

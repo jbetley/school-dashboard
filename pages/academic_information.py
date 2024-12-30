@@ -3,7 +3,7 @@
 #######################################################
 # author:   jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/19/24
+# date:     12/29/24
 # TODO: Break down into three pages: ILEARN; IREAD; WIDA
 
 import dash
@@ -12,9 +12,8 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import re
 
-# import local functions
-from .globals import ethnicity, subgroup, subject, grades_all, grades, grades_ordinal
 
+from .globals import ethnicity, subgroup, subject, grades_all, grades, grades_ordinal
 from .load_data import (
     get_school_stns,
     get_iread_student_data,
@@ -114,7 +113,7 @@ def update_academic_information_page(
     selected_school = get_school_index(school_id)
     selected_school_type = selected_school["School Type"].values[0]
 
-    # CHS Exception
+    # CHS exception (see app.py)
     if int(school_id) == 5874 and selected_year_numeric < 2021:
         selected_school_type = "k12"
 
@@ -163,7 +162,6 @@ def update_academic_information_page(
     academic_information_notes_string = ""
     academic_information_notes_string_container = {"display": "none"}
 
-    # the default is to display nothing
     main_container = {"display": "none"}
     empty_container = {"display": "none"}
 
@@ -324,7 +322,7 @@ def update_academic_information_page(
             "info",
         )
 
-        # TODO: Add figs for SAT and Grad Rates
+# TODO: Add figs for SAT and Grad Rate
         if len(hs_info_data.index) < 1 or hs_info_data.empty:
             empty_container = {"display": "block"}
             academic_information_notes_string_container = {"display": "none"}
@@ -1017,8 +1015,8 @@ def update_academic_information_page(
         # 'Oral Proficiency Level', 'Reading Proficiency Level',
         # 'Speaking Proficiency Level', 'Writing Proficiency Level'
 
-        # NOTE: Currently only displaying for K-8 Schools - may want to build
-        # WIDA table for HS/K12 as well
+        # NOTE: Currently only displaying for K-8 Schools
+        # TODO: add wida table for HS
 
         # Guests will never have WIDA data
         if is_guest == True:
@@ -1036,7 +1034,8 @@ def update_academic_information_page(
         else:
             # NOTE: Currently, the WIDA LINK file does not have a School ID column,
             # so we have to get a list of all STNs associated with the school (from
-            # both IREAD and ILEARN data files) and then match
+            # both IREAD and ILEARN data files) and then match - this would be much
+            # easier if we can get the school ID added to the raw data
             all_stns = get_school_stns(school_id)
 
             stn_list = list(set(all_stns["STN"].to_list()))
