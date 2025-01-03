@@ -51,6 +51,8 @@ dash.register_page(
 )
 
 
+# TODO: Rework logic so subcategories don't reload data
+# TODO: May need to move all data loading to app.py and pass through dcc.store
 @callback(
     Output("linechart-iread-school-level-layout", "children"),
     Output("iread-school-level-layout-container", "style"),
@@ -322,7 +324,7 @@ def update_academic_information_page(
             "info",
         )
 
-# TODO: Add figs for SAT and Grad Rate
+        # TODO: Add figs for SAT and Grad Rate
         if len(hs_info_data.index) < 1 or hs_info_data.empty:
             empty_container = {"display": "block"}
             academic_information_notes_string_container = {"display": "none"}

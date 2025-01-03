@@ -289,8 +289,14 @@ def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
 
 
-# TODO: hs multiyear select (Grad/SAT) should trigger year change- having circular
-# TODO: callback issues.
+# TODO: hs multiyear select (Grad/SAT) should trigger year change
+# TODO: Explore ways to avoid constant loading and reloading where possible (e.g., academic info)
+# TODO: dcc.store? redis? 
+# https://plotly.com/blog/polars-to-build-fast-dash-apps-for-large-datasets/
+# https://github.com/AnnMarieW/dash-multi-page-app-demos/tree/main/multi_page_cache_background_callback
+# https://github.com/AnnMarieW/dash-multi-page-app-demos/tree/main/multi_page_store
+# https://community.plotly.com/t/general-question-about-figure-loading-times/76681/15
+
 # Subnavigation - Dropdown #
 # Not thrilled with how complicated this is, but in order to avoid
 # circular callbacks given how the values are interlinked we have to
@@ -566,20 +572,6 @@ def navigation(
 
     else:
         year_value = year_state
-
-    # one last check for a very specific circumstance when a network has one
-    # less year of data than a school- we want the year to revert back to the
-    # previous school year when the user switches from network to school
-
-    # TODO: This is not triggering? is it necessary? 
-    # if (
-    #     "financial" in current_page
-    #     and "school" in financial_network_value
-    #     and (int(input_state["currentyear"]) < int(input_state["previousyear"]))
-    # ):
-    #     print("Test Triggered")
-    #     year_value = input_state["previousyear"]
-    # TODO: Testing
 
     # if the above logic changes the value of the current year, we
     # need to replace with the changed value

@@ -128,6 +128,12 @@ def update_discipline_layout(
     unique_students = discipline_category + " Unique Students|" + discipline_demographic
     discipline_fig_data = raw_discipline_data[["Year", incidents, unique_students]]
 
+    # need to manually drop excluded years in fig data because it starts
+    # with raw_discipline_data
+    excluded_years = get_excluded_years(year_value)
+    if excluded_years:
+        discipline_fig_data = discipline_fig_data[~discipline_fig_data["Year"].isin(excluded_years)]
+
     discipline_fig_data.columns = discipline_fig_data.columns.str.replace(
         discipline_category + " Unique Students", "Unique Students", regex=False
     )
@@ -600,9 +606,7 @@ def layout():
                     html.Div(
                         [
                             html.Div(""),
-                            html.Div(
-                                id="update-table", children=[]
-                            ),
+                            html.Div(id="update-table", children=[]),
                             html.Div(
                                 [
                                     html.Div(

@@ -864,10 +864,11 @@ def make_line_chart(values: pd.DataFrame) -> list:
             legend_string_length = len(legend_string)
             legend_length = legend_string_length + (legend_items * 8)
 
-            # adjust legend location location based on columns
+            # adjust vertical legend location based on total length of
+            # the legend string 
             if legend_length < 70:
                 y_value = -0.2
-            elif legend_length >= 80 or legend_length <= 100:
+            elif legend_length >= 80 and legend_length <= 150:
                 y_value = -0.3
             else:
                 y_value = -0.4
@@ -905,7 +906,7 @@ def make_line_chart(values: pd.DataFrame) -> list:
                     zeroline=False,
                 ),
                 legend=dict(
-                    orientation="h", yanchor="bottom", y=y_value, xanchor="left", x=0.01
+                    orientation="h", yanchor="bottom", y=y_value, xanchor="left", x=-0.01
                 ),
                 hovermode="x",  # "x unified"
                 height=400,

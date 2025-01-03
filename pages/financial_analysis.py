@@ -203,7 +203,6 @@ def update_financial_analysis_page(school: str, year: str, radio_value: str):
             empty_container = {"display": "block"}
 
         else:
-
             color = ["#74a2d7", "#df8f2d"]
 
             for col in financial_data.columns:
@@ -898,7 +897,8 @@ def layout():
                                                         id="financial-position-table"
                                                     ),
                                                 ],
-                                                className="pretty-container--left six columns",
+                                                className="pretty-container six columns",
+                                                # className="pretty-container--left six columns",
                                             ),
                                             html.Div(
                                                 [
@@ -925,7 +925,8 @@ def layout():
                                                         children=[],
                                                     ),
                                                 ],
-                                                className="pretty-container--left six columns",
+                                                className="pretty-container six columns",
+                                                # className="pretty-container--left six columns",
                                             ),
                                             html.Div(
                                                 [
