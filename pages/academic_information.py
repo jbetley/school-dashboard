@@ -5,6 +5,7 @@
 # version:  1.16
 # date:     12/29/24
 # TODO: Break down into three pages: ILEARN; IREAD; WIDA
+# TODO: Add hover for AHS graduation data
 
 import dash
 from dash import dcc, html, Input, Output, callback
@@ -13,7 +14,14 @@ import pandas as pd
 import re
 
 
-from .globals import ethnicity, subgroup, subject, grades_all, grades, grades_ordinal
+from .globals import (
+    ethnicity,
+    subgroup,
+    subject,
+    grades_all,
+    grades,
+    grades_ordinal
+)
 from .load_data import (
     get_school_stns,
     get_iread_student_data,
@@ -51,8 +59,6 @@ dash.register_page(
 )
 
 
-# TODO: Rework logic so subcategories don't reload data
-# TODO: May need to move all data loading to app.py and pass through dcc.store
 @callback(
     Output("linechart-iread-school-level-layout", "children"),
     Output("iread-school-level-layout-container", "style"),

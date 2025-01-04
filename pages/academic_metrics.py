@@ -411,6 +411,7 @@ def update_academic_metrics(school: str, year: str):
         )
 
         if len(metric_data.index) > 0:
+            
             # Adult High School Metrics
             if hs_local_school_type == "ahs":
                 ahs_metrics_container = {"display": "block"}
@@ -419,7 +420,7 @@ def update_academic_metrics(school: str, year: str):
 
                 cohort_grads_limits = [0.75, 0.599, 0.45]
                 all_grads_limits = [0.85, 0.699, 0.499]
-                by_enrollment_grads_limits = [0.75, 0.599, 0.45]
+                by_enrollment_grads_limits = [0.85, 0.699, 0.499]
                 ccr_limits = [0.5, 0.499, 0.234]
 
                 ahs_metric_data = calculate_adult_high_school_metrics(
@@ -439,7 +440,7 @@ def update_academic_metrics(school: str, year: str):
                 ahs_metric_label11 = ["State Letter Grade (1.1.)"]
                 ahs_metric_label12a = ["In-Cohort Graduation Rate (1.2.a.)"]
                 ahs_metric_label12b = ["Grade 12 Graduation Rate (1.2.b.)"]
-                ahs_metric_labelgte = ["Graduation to Enrollment (beta)"]
+                ahs_metric_labelgte = ["Graduation to Enrollment (1.2.c.)"]
                 ahs_metric_label13 = ["CCR Percentage (1.3.)"]
 
                 ahs_metric_data = convert_to_svg_circle(ahs_metric_data)

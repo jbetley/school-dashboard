@@ -16,7 +16,11 @@ from .string_helpers import (
     identify_missing_categories,
     create_school_label,
 )
-from .charts import make_group_bar_chart, make_multi_line_chart, make_line_chart
+from .charts import (
+    make_group_bar_chart,
+    make_multi_line_chart,
+    make_line_chart
+)
 from .tables import (
     create_comparison_table,
     create_single_header_table,

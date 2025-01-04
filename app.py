@@ -3,7 +3,7 @@
 #########################
 # author:    jbetley (https://github.com/jbetley)
 # version:  1.16
-# date:     12/29/24
+# date:     1/03/25
 
 # This is the main application file for the Indiana Charter School Board school
 # dashboard. This dashboard consists of ~10 tabs of charts and tables created
@@ -13,7 +13,7 @@
 # database with ~12 tables. One of the future goals of the app is to explore alternative
 # ways to combine and store data, although the primary speed hit in the app is in the
 # charting library and not in database access. All of the data is public and most of
-# the academic data is available (as of 10/2023) on the website of the Indiana Department
+# the academic data is available (as of 01/2025) on the website of the Indiana Department
 # of Education: https://www.in.gov/doe/it/data-center-and-reports/. Financial data is reported
 # by each school (on excel workbooks) and pulled into the db using python. Academic
 # data comes from dozens of separate csv files produced over many years and presented
@@ -73,7 +73,6 @@ from pages.load_data import (
     get_subgroup,
 )
 from pages.layouts import create_radio_layout
-from pages.process_data import find_valid_year
 from pages.subnav import subnav_academic_information, subnav_academic_analysis
 
 # Used to generate metric rating svg circles
@@ -84,7 +83,8 @@ external_stylesheets = [FONT_FAMILY, FONT_AWESOME]
 # NOTE: Cannot get static folder to work (images do not load and give 302 Found error)
 server = Flask(__name__, static_folder="static")
 
-load_dotenv()  # TODO: is this being used?
+# NOTE: Is this being used?
+load_dotenv()
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -228,8 +228,9 @@ app = dash.Dash(
 )
 
 
-# Selected School Dropdown - shows a single school if a 'school' login is used, an associated
-# group of schools if a 'network' login is used, and all schools if 'admin' login is used.
+# Selected School Dropdown - shows a single school if a 'school'
+# login is used, an associated group of schools if a 'network'
+# login is used, and all schools if 'admin' login is used.
 @callback(
     Output("charter-dropdown", "options"),
     [Input("application-state", "children")],  # dummy input
@@ -241,17 +242,19 @@ def set_dropdown_options(app_state):
     # to determine which schools to include for a network
     # login.
 
-    # group_id 0 is individual schools (and admin); negative group_ids are network logins;
-    # positive group_id integers are network schools with the integer representing the abs
-    # value of the network group_id. Current networks: CHA (-1); GEI (-2); LEADS (-3); PLA (-4);
-    # Paramount (-5); Purdue (-6); guest account (-9)
+    # group_id 0 is individual schools (and admin); negative
+    # group_ids are network logins; positive group_id integers
+    # are network schools with the integer representing the abs
+    # value of the network group_id. Current networks: CHA (-1);
+    # GEI (-2); LEADS (-3); PLA (-4); Paramount (-5); Purdue (-6);
+    # guest account (-9)
     authorized_user = current_user._get_current_object()
     group_id = current_user.group_id
     school_id = authorized_user.school_id
 
-    # this gets the list of available charters from 'school_index' which is a separate
-    # table from users_db- this is because users_db includes admin + network users
-
+    # this gets the list of available charters from 'school_index'
+    # which is a separate table from users_db- this is because
+    # users_db includes admin + network users
     available_charters = get_school_dropdown_list()
 
     # admin user
@@ -289,9 +292,8 @@ def set_dropdown_value(charter_options):
     return charter_options[0]["value"]
 
 
-# TODO: hs multiyear select (Grad/SAT) should trigger year change
-# TODO: Explore ways to avoid constant loading and reloading where possible (e.g., academic info)
-# TODO: dcc.store? redis? 
+# TODO: Explore ways to avoid constant loading and reloading where possible
+# TODO: (e.g., academic info). dcc.store? redis? primary issue is nav callback
 # https://plotly.com/blog/polars-to-build-fast-dash-apps-for-large-datasets/
 # https://github.com/AnnMarieW/dash-multi-page-app-demos/tree/main/multi_page_cache_background_callback
 # https://github.com/AnnMarieW/dash-multi-page-app-demos/tree/main/multi_page_store
@@ -373,24 +375,24 @@ def navigation(
     analysis_subnav_container = {"display": "none"}
     analysis_multiyear_hs_group_options = []
 
-    # this applies only to academic_analysis pages, where the
-    # subnavigation can get real busy- adds and controls button
-    # used to hide or show main menu
-    # TODO: move this to top so main nav can always be hidden
+    # used to hide or show main menu (top navigation row)
+    # currently applies only to academic pages
     main_navigation_container = {"display": "block"}
     space_filler = {"height": "0px"}
     display_main_menu = {"display": "none"}
     hide_main_menu = {"display": "none"}
 
     ## Selected Year Dropdown ##
-    # values: depend on which page is being accessed and, in some circumstances, the type of
-    # school (or selected type of school). for academic_information, academic_metrics, and
-    # academic_analysis pages, 'academic_dropdown_years' are the 5 most recently available
+    # values: depend on which page is being accessed and, in some
+    # circumstances, the type of school (or selected type of school).
+    # for academic_information, academic_metrics, and academic_analysis
+    # pages, 'academic_dropdown_years' are the 5 most recently available
     # years of academic data in either academic_data_k8 or academic_data_hs.
-    # for the financial_analysis page, we use a list of the 'year' column names for each
-    # year for which ADM Average is greater than '0' in the financial_data database table.
-    # All other pages use 'financial_info_dropdown_years' which is the same as
-    # 'financial_analysis_dropdown_years' except the quarterly data string (Q#) is removed.
+    # for the financial_analysis page, we use a list of the 'year' column
+    # names for each year for which ADM Average is greater than '0' in the
+    # financial_data database table. All other pages use 'financial_info_dropdown_years'
+    # which is the same as 'financial_analysis_dropdown_years' except the
+    # quarterly data string (Q#) is removed.
     max_dropdown_years = 5
 
     # used for dropdown years calculation on financial pages
@@ -480,7 +482,8 @@ def navigation(
         if not academic_type_value:
             academic_type_value = "k8"
 
-    # guest schools use academic_dropdown_years (as they do not have financial data)
+    # guest schools use academic_dropdown_years (as they do not
+    # have financial data)
     if "academic" in current_page or selected_school["Guest"].values[0] == "Y":
         if (
             "academic_information_growth" in current_page
@@ -489,14 +492,14 @@ def navigation(
             years = get_academic_growth_dropdown_years(school_id)
 
         else:
-            
+
             if school_type == "k12":
 
                 # academic_type buttons displayed only on academic info
                 # and academic analysis pages
                 if ("academic_information" in current_page or
                     "academic_analysis" in current_page):
-                
+
                     academic_type_container = {"display": "block"}
 
                 if academic_type_value == "k8":
@@ -518,8 +521,9 @@ def navigation(
             input_state["currentyear"] = str(years[0])
             year_state = str(years[0])
 
-    # edge case for a school that has no financial data other than pre-opening
-    # year (eg., no ADM) - which would otherwise return empty list
+    # edge case for a school that has no financial data other
+    # than pre-opening year (eg., no ADM) - which would otherwise
+    # return an empty list
     if not years:
         years = [int(year_value)]
 
@@ -611,13 +615,6 @@ def navigation(
     ## Begin Navigation/Subnavigation ##
     current_page = current_page.rsplit("/", 1)[-1]
 
-    # if int(school_id) == 5874 and int(year_value) < 2021:
-    #     school_type = "k12"
-    #     academic_type_container = {"display": "block"}
-
-    # elif int(school_id) == 5874 and int(year_value) >= 2021:
-    #     school_type = "k8"
-
     try:
         analysis_multiyear_hs_group_value
     except NameError:
@@ -666,6 +663,35 @@ def navigation(
     except NameError:
         financial_network_value = ""
 
+    # logic for the display/hide main menu button
+    # NOTE: Currently only appears on 'academic' pages.
+    if "academic" in current_page:
+        changed_id = [p["prop_id"] for p in dash.callback_context.triggered][0]
+
+        if "display-main-menu" in changed_id:
+            display_main_menu = {"display": "none"}
+            hide_main_menu = {"display": "block"}
+            main_navigation_container = {"display": "block"}
+
+        elif "hide-main-menu" in changed_id:
+            display_main_menu = {"display": "block"}
+            hide_main_menu = {"display": "none"}
+            space_filler = {"height": "50px"}
+            main_navigation_container = {"display": "none"}
+
+        # the default is to display the main menu. switch with
+        # commented block if the desired behavior is to start
+        # with main menu hidden
+        else: 
+            main_navigation_container = {"display": "block"}
+            display_main_menu = {"display": "none"}
+            hide_main_menu = {"display": "block"}
+
+            # main_navigation_container = {"display": "none"}
+            # space_filler = {"height": "50px"}
+            # display_main_menu = {"display": "block"}
+            # hide_main_menu = {"display": "none"}
+
     # academic_information.py and academic_information_growth.py
     if "academic_info" in current_page:
         category_options_default = [
@@ -686,7 +712,7 @@ def navigation(
 
         # categories for K12 schools who have selected the "k8" type
         # note that academic_information_growth.py does not have a
-        # type radio button (k8 only)
+        # type radio button (as it is k8 only)
         if school_type == "k12" and academic_type_value == "k8":
             school_type = "k8"
             info_subnav_container = {"display": "block"}
@@ -727,8 +753,8 @@ def navigation(
 
             info_category_container = {"display": "block"}
 
-        # there is also no subnavigation for a K12 school that
-        # has the "hs" type selected
+        # there is no subnavigation for a K12 school that has the
+        # "hs" type selected
         elif school_type == "k12" and academic_type_value == "hs":
             school_type = "hs"
 
@@ -786,25 +812,6 @@ def navigation(
     elif "academic_analysis" in current_page:
         analysis_subnav_container = {"display": "block"}
 
-        # logic for the display/hide main menu button
-        changed_id = [p["prop_id"] for p in dash.callback_context.triggered][0]
-
-        if "display-main-menu" in changed_id:
-            display_main_menu = {"display": "none"}
-            hide_main_menu = {"display": "block"}
-            main_navigation_container = {"display": "block"}
-
-        elif "hide-main-menu" in changed_id:
-            display_main_menu = {"display": "block"}
-            hide_main_menu = {"display": "none"}
-            space_filler = {"height": "50px"}
-            main_navigation_container = {"display": "none"}
-        else:
-            main_navigation_container = {"display": "none"}
-            space_filler = {"height": "50px"}
-            display_main_menu = {"display": "block"}
-            hide_main_menu = {"display": "none"}
-
         if "analysis_multiyear" in current_page:
 
             # options and values for for HS/AHS/K12 (hs type)
@@ -849,7 +856,7 @@ def navigation(
                     analysis_multiyear_category_container = {"display": "block"}
 
                 elif analysis_multiyear_hs_group_value == "SAT":
-                    
+
                     # SAT specific descriptions
                     analysis_multiyear_subject_options = [
                         {"label": "EBRW", "value": "EBRW"},
@@ -1113,9 +1120,10 @@ def navigation(
 # redirects the url from academic_information_growth.py to
 # academic_information.py if the user is at academic_information_growth
 # url and selects a HS, AHS, & K12 (HS type)
-# NOTE: Couldn't figure out a better way to do this
 @callback(
-    Output("url", "href"), Input("charter-dropdown", "value"), Input("url", "href")
+    Output("url", "href"),
+    Input("charter-dropdown", "value"),
+    Input("url", "href")
 )
 def redirect_hs(school: str, current_page: str):
     selected_school = get_school_index(school)
@@ -1127,6 +1135,7 @@ def redirect_hs(school: str, current_page: str):
         school_type == "hs" or school_type == "ahs"
     ):
         return f"/academic_information"
+    
     else:
         return dash.no_update
 
@@ -1459,7 +1468,6 @@ def layout():
             ),
         ],
     )
-
 
 # comment out if layout is set as variable
 app.layout = layout

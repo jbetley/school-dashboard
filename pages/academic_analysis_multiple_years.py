@@ -11,11 +11,10 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 
 from .globals import color
-from .load_data import get_school_index, get_multiyear_data, get_school_coordinates
+from .load_data import get_school_index, get_multiyear_data
 from .process_data import create_comparison_dropdown_list
 from .tables import create_empty_page_layout
 from .layouts import create_multiyear_layout
-from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
 from .string_helpers import generate_colors
 
 dash.register_page(

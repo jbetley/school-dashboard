@@ -14,15 +14,16 @@ from .globals import ethnicity, subgroup, ethnicity, color
 
 from .load_data import (
     get_school_index,
-    get_school_coordinates,
     get_academic_data,
     current_academic_year,
 )
-
 from .clean_data import clean_academic_data
 from .process_data import create_comparison_dropdown_list
-from .calculations import check_for_gradespan_overlap, calculate_comparison_school_list
-from .charts import no_data_fig_label, make_bar_chart, make_group_bar_chart
+from .charts import (
+    no_data_fig_label,
+    make_bar_chart,
+    make_group_bar_chart
+)
 from .tables import (
     create_comparison_table,
     create_empty_page_layout,

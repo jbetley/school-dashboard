@@ -122,41 +122,49 @@ metric_strings = {
         "The school received an C on under the State's Adult Accountability system.",
         "The school received an D on under the State's Adult Accountability system.",
     ],
-    # AHS
+    # AHS (In-Cohort Graduation Rate)
     "1.2.a.": [
         "Seventy five percent (75%) or more of in cohort students graduated in the current school year.",
         "Between (60.0-74.9%) of in cohort students graduated in the current school year.",
         "Between (45.0-59.9%) of in cohort students graduated in the current school year.",
         "Less than (45%) of in cohort students graduated in the current school year.",
     ],
-    # AHS
+    # AHS (Grade 12 Students Graduating)
     "1.2.b.": [
         "Eighty five percent (85%) or more of grade 12 students graduated in the current school year.",
         "Between (70.0-84.9%) of grade 12 students graduated in the current school year.",
         "Between (50.0-69.9%) of grade 12 students graduated in the current school year.",
         "Less than (50%) of grade 12 students graduated in the current school year.",
     ],
-    # AHS
+    # AHS (Graduation to Enrollment)
+    "1.2.c.": [
+        "Eighty five percent (85%) or more.",
+        "Between (70.0-84.9%.",
+        "Between (50.0-69.9%).",
+        "Less than (50%).",
+    ],
+    # AHS (CCR Indicator)
     "1.3.": [
         "Fifty percent (50%) or more of graduates achieved at least one CCR indicator.",
         "Between (36.8-49.9%) of graduates achieved at least one CCR indicator.",
         "Between (23.4-36.7%) of graduates achieved at least one CCR indicator.",
         "Less than (23.4%) of of graduates achieved at least one CCR indicator.",
     ],
-    # same ratings as 1.1.b
+    # Attendance Rate - same ratings as 1.1.b (Teacher Retention)
     "1.1.a.": [
         "Above the school corporation average.",
         "At or within one percent (1%) of the school corporation average.",
         "",
         "More than one percent (1%) below the school corporation average.",
     ],
-    # combined 1.1.c and 1.1.d
+    # Student Retention (Beginning to End of Year Re-Enrollment)
     "1.1.c.": [
         "More than ninety percent (90%) of the students eligible to return to the school re-enrolled the next year (85% re-enrolled year over year).",
         "Between eighty and ninety percent (80-90%) of the students eligible to return to the school re-enrolled the next year (75-85% re-enrolled year over year).",
         "Between seventy and eighty percent (70-80%) of the students eligible to return to the school re-enrolled the next year (70-75% re-enrolled year over year).",
         "Less than seventy percent (70%) of the students eligible to return to the school re-enrolled the next year (70% re-enrolled year over year).",
     ],
+    # Student Retention (Year to Year Re-Enrollment)
     "1.1.d.": [
         "More than eighty-five percent (85%) of the students eligible to return to the school re-enrolled over time.",
         "Between seventy-five and eighty-five percent (75-85%) of the students eligible to return to the school re-enrolled over time.",

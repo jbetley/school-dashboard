@@ -398,7 +398,7 @@ def calculate_adult_high_school_metrics(
 
         all_grad_metric = data[data["Category"].isin(["Grade 12 Grad Rate"])]
 
-        all_grads_limits = [0.85, 0.699, 0.499]
+        # all_grads_limits = [0.85, 0.699, 0.499]
         all_grads_rangevals = [-1, 0, -1]
 
         all_grad_metric = calculate_metric_ratings(
@@ -407,7 +407,7 @@ def calculate_adult_high_school_metrics(
 
         by_enrollment_grads_metric = data[data["Category"].isin(["Grad to Enrollment"])]
 
-        by_enrollment_grads_limits = [0.75, 0.599, 0.45]
+        # by_enrollment_grads_limits = [0.85, 0.699, 0.499]
         by_enrollment_grads_rangevals = [-1, 0, -1]
 
         by_enrollment_grads_metric = calculate_metric_ratings(
@@ -422,7 +422,7 @@ def calculate_adult_high_school_metrics(
 
         ccr_metric = data[data["Category"].isin(["CCR Percentage"])]
 
-        ccr_limits = [0.5, 0.499, 0.234]
+        # ccr_limits = [0.5, 0.499, 0.234]
         ccr_rangevals = [-1, 0, -1]
 
         ccr_metric = calculate_metric_ratings(
@@ -508,7 +508,7 @@ def calculate_adult_high_school_metrics(
             "1.1. ",
             "1.2.a. ",
             "1.2.b. ",
-            "",
+            "1.2.c. ",
             "1.3. ",
         ]
         data.insert(loc=0, column="Metric", value=ahs_metric_nums)

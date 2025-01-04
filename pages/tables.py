@@ -1950,6 +1950,11 @@ def create_metric_table(df: pd.DataFrame, label: list) -> list:
             for row, category in zip(nsize_data.to_dict("records"), nsize_categories)
         ]
 
+        # TODO: Create "Category" tooltip for some metric definitions, e.g., AHS:
+        # Grad to Enrollment: the denominator is the school's within-year-average
+        # number of students (ADM average), the numerator is the total number of
+        # graduates for the assessed year, and then quotient is multiplied by 4
+        
         table = [
             html.Div(
                 [
@@ -2147,7 +2152,7 @@ def create_comparison_table(
 
     table_layout = [html.Div([html.Div(table)])]
 
-    # NOTE: following code adds a label if one is passed (used for same row chart/
+    # NOTE: the following code adds a label if one is passed (used for same row chart/
     # table layout). If using this, need to re-add "label" variable to fn.
 
     # bar-chart tables (Math, ELA, & IREAD) should have a label multi-bar chart tables
